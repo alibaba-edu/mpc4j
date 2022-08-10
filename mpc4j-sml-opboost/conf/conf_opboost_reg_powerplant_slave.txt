@@ -1,0 +1,47 @@
+﻿# 任务类型
+task_type = REG_OP_GRAD_BOOST
+# task_type = REG_OP_XG_BOOST
+
+# 主机信息
+host_name = host
+host_ip = 127.0.0.1
+host_port = 9000
+# 从机信息
+slave_name = slave
+slave_ip = 127.0.0.1
+slave_port = 9001
+# 所属参与方
+own_name = slave
+
+# 数据集信息
+dataset_name = powerplant
+train_dataset_path = data/regression/powerplant/powerplant10_train.csv
+test_dataset_path = data/regression/powerplant/powerplant10_test.csv
+# 列信息
+column_names = AT,V,AP,RH,PE
+column_types = I,I,I,I,D
+# 标签信息
+formula = PE
+
+# 测试轮数
+total_round = 10
+
+# 训练参数
+# the number of iterations (trees)
+tree_num = 80
+# the maximum depth of the tree
+max_depth = 3
+# the shrinkage parameter in (0, 1] controls the learning rate of procedure.
+shrinkage = 0.1
+
+# 各列所属主从机情况，0表示主机，后续分别表示从机
+party_columns = 1,1,1,1,0
+# 各列是否增加差分隐私，0表示不增加，1表示增加
+ldp_columns = 1,1,1,1,0
+
+# ε，浮点数，逗号分隔
+epsilon = 0.01,0.02,0.04,0.08,0.16,0.32,0.64,1.28,2.56,5.12
+# 分区长度θ（仅LOCAL_MAP或ADJ_MAP有效），整数，逗号分隔
+theta = 2,4
+# 划分比例α（仅ADJ_MAP有效），浮点数，逗号分隔
+alpha = 0.4,0.6,0.8,1,2,5,10

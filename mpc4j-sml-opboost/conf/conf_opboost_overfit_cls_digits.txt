@@ -1,0 +1,31 @@
+# 任务类型
+task_type = CLS_OVERFIT_OP_XG_BOOST
+
+# 数据集信息
+dataset_name = pen_digits
+train_dataset_path = data/classification/pen_digits/pen_digits10_train.csv
+test_dataset_path = data/classification/pen_digits/pen_digits10_test.csv
+# 列信息
+column_names = F1,F2,F3,F4,F5,F6,F7,F8,F9,F10,F11,F12,F13,F14,F15,F16,class
+column_types = I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,I,C
+# 标签信息
+formula = class
+class_types = 0,1,2,3,4,5,6,7,8,9
+
+# 测试轮数
+total_round = 10
+
+# 训练参数
+tree_num = 80
+max_depth = 3
+shrinkage = 0.1
+
+# 各列是否增加差分隐私，0表示不增加，1表示增加
+ldp_columns = 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0
+
+# ε，浮点数，逗号分隔
+epsilon = 0.08,1.28
+# 分区长度θ（仅LOCAL_MAP或ADJ_MAP有效），整数，逗号分隔
+theta = 2,4
+# 划分比例α（仅ADJ_MAP有效），浮点数，逗号分隔
+alpha = 1,2

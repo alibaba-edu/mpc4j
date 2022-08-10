@@ -1,0 +1,18 @@
+﻿# 任务类型
+task_type = WEIGHTED_KENDALL
+
+# 数据集信息
+dataset_name = syn10
+dataset_path = data/kendall/syn10.csv
+column_index = 0
+
+# 测试轮数
+total_round = 100
+
+# ε，浮点数，逗号分隔
+epsilon = 0.01,0.02,0.04,0.08,0.16,0.32,0.64,1.28,2.56,5.12
+# 分区长度θ（仅LOCAL_MAP或ADJ_MAP有效），整数，逗号分隔
+theta = 2,4
+# 划分比例α（仅ADJ_MAP有效），浮点数，逗号分隔
+alpha = 0.5,1,2,4,8
+
