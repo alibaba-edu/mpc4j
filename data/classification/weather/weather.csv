@@ -1,0 +1,15 @@
+outlook_sunny,outlook_overcast,outlook_rainy,temperature_hor,temperature_mild,temperature_cool,humidity,windy,play
+1,0,0,1,0,0,1,0,no
+1,0,0,1,0,0,1,1,no
+0,1,0,1,0,0,1,0,yes
+0,0,1,0,1,0,1,0,yes
+0,0,1,0,0,1,0,0,yes
+0,0,1,0,0,1,0,1,no
+0,1,0,0,0,1,0,1,yes
+1,0,0,0,1,0,1,0,no
+1,0,0,0,0,1,0,0,yes
+0,0,1,0,1,0,0,0,yes
+1,0,0,0,1,0,0,1,yes
+0,1,0,0,1,0,1,1,yes
+0,1,0,1,0,0,0,0,yes
+0,0,1,0,1,0,1,1,no
