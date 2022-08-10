@@ -1,0 +1,32 @@
+# 协议类型
+pto_type = PSU
+
+# 元素字节长度
+element_byte_length = 8
+
+# 协议名称
+pto_name = ZCL22_SKE
+
+# 服务端信息
+server_name = server
+server_ip = 127.0.0.1
+server_port = 9000
+
+# 客户端信息
+client_name = client
+client_ip = 127.0.0.1
+client_port = 9001
+
+# 所属参与方
+own_name = server
+
+# 是否忽略布尔三元组生成时间
+ignore_z2_mtg = false
+# ignore_z2_mtg = true
+
+# 对数集合大小（log(n)）
+log_set_size = 20,18,16,14
+
+# GF2E-OVDM类型
+# gf2e_ovdm_type = H2_SINGLETON_GCT
+gf2e_ovdm_type = H3_SINGLETON_GCT
