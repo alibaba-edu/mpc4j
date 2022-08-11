@@ -52,7 +52,7 @@ We thank [Prof. Peihan Miao](https://www.linkedin.com/in/peihan-miao-08919932/) 
 
 We thank [Prof. Yu Chen](https://yuchen1024.github.io/) for many discussions on various MPC protocols. Here we recommend his open-source library [Kunlun](https://github.com/yuchen1024/Kunlun), a modern crypto library. 
 
-We thank [Dr. Bolin Ding](https://www.bolin-ding.com/) for many discussions on how to introduce MPC into the database field. Here we recommend his open-source library [FederatedScope](https://federatedscope.io/), an easy-to-use federated learning package.
+We thank [Dr. Bolin Ding](https://www.bolin-ding.com/) for many discussions on how to introduce MPC into the database field. Here we recommend the open-source library [FederatedScope](https://federatedscope.io/), an easy-to-use federated learning package, from his team.
 
 ## License
 
