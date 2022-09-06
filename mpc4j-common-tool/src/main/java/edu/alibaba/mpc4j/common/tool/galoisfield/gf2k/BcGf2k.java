@@ -26,9 +26,9 @@ class BcGf2k implements Gf2k {
     public byte[] mul(byte[] a, byte[] b) {
         assert a.length == CommonConstants.BLOCK_BYTE_LENGTH;
         assert b.length == CommonConstants.BLOCK_BYTE_LENGTH;
-        byte[] c = BytesUtils.reverse(a);
-        GCMUtil.multiply(c, BytesUtils.reverse(b));
-        BytesUtils.reversei(c);
+        byte[] c = BytesUtils.reverseBitArray(a);
+        GCMUtil.multiply(c, BytesUtils.reverseBitArray(b));
+        BytesUtils.innerReverseBitArray(c);
         return c;
     }
 
@@ -36,8 +36,8 @@ class BcGf2k implements Gf2k {
     public void muli(byte[] a, byte[] b) {
         assert a.length == CommonConstants.BLOCK_BYTE_LENGTH;
         assert b.length == CommonConstants.BLOCK_BYTE_LENGTH;
-        BytesUtils.reversei(a);
-        GCMUtil.multiply(a, BytesUtils.reverse(b));
-        BytesUtils.reversei(a);
+        BytesUtils.innerReverseBitArray(a);
+        GCMUtil.multiply(a, BytesUtils.reverseBitArray(b));
+        BytesUtils.innerReverseBitArray(a);
     }
 }

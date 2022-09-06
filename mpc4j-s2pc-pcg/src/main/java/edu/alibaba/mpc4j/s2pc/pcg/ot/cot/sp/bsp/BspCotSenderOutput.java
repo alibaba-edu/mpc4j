@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp;
 import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp.SspCotSenderOutput;
 
 /**
  * BSP-COT协议发送方输出。

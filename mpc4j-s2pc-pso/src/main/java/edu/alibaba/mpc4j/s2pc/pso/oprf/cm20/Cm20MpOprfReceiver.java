@@ -18,14 +18,13 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.AbstractMpOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.MpOprfReceiverOutput;
-import sun.misc.Unsafe;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,22 +40,6 @@ import java.util.stream.Stream;
  * @date 2022/03/03
  */
 public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
-    /**
-     * 不安全转换函数，参见https://stackoverflow.com/questions/43079234/convert-a-byte-array-into-an-int-array-in-java
-     */
-    private static final Unsafe UNSAFE;
-
-    static {
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            UNSAFE = (Unsafe) theUnsafe.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-            throw new IllegalStateException(e);
-        }
-    }
-
     /**
      * 核COT协议发送方
      */
@@ -232,11 +215,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
                 // 计算哈希值
                 byte[] extendPrf = f.getBytes(h1.digestToBytes(input));
                 // F: {0, 1}^λ × {0, 1}^{2λ} → [m]^w，这里使用不安全转换函数来提高效率。
-                // 不安全转换函数的转换结果与IntUtils.byteArrayToIntArray不一致，使用时一定要保证两边使用相同的转换方法
-                int[] encode = new int[w];
-                UNSAFE.copyMemory(
-                    extendPrf, Unsafe.ARRAY_BYTE_BASE_OFFSET, encode, Unsafe.ARRAY_INT_BASE_OFFSET, extendPrf.length
-                );
+                int[] encode = IntUtils.unsafeByteArrayToIntArray(extendPrf, w);
                 for (int index = 0; index < w; index++) {
                     encode[index] = Math.abs(encode[index] % n) + nOffset;
                 }

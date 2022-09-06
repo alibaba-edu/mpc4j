@@ -58,11 +58,15 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
     /**
      * {F_{k_A}(y) | y ∈ Y'å}
      */
-    private MpOprfReceiverOutput mpOprfReceiverOutput;
+    private MpOprfReceiverOutput kaOprfOutput;
     /**
      * k_B
      */
-    private MpOprfSenderOutput mpOprfSenderOutput;
+    private MpOprfSenderOutput kbOprfKey;
+    /**
+     * 客户端元素字节数组
+     */
+    private byte[][] clientElementByteArrays;
 
     public Gmr21MpPidClient(Rpc clientRpc, Party serverParty, Gmr21MpPidConfig config) {
         super(Gmr21MpPidPtoDesc.getInstance(), clientRpc, serverParty, config);
@@ -139,31 +143,25 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
         info("{}{} Client begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();
-        // PID字节长度等于λ + log(n) + log(m) = λ + log(m * n)
-        int pidByteLength = CommonConstants.STATS_BYTE_LENGTH + CommonUtils.getByteLength(
-            LongUtils.ceilLog2((long) ownSetSize * otherSetSize)
-        );
+        // PID字节长度等于λ + log(n) + log(m)
+        int pidByteLength = CommonConstants.STATS_BYTE_LENGTH
+            + CommonUtils.getByteLength(LongUtils.ceilLog2(ownSetSize))
+            + CommonUtils.getByteLength(LongUtils.ceilLog2(otherSetSize));
         pidMapPrf = PrfFactory.createInstance(envType, pidByteLength);
         pidMapPrf.setKey(pidMapPrfKey);
-        // Alice and Bob invoke the OPRF functionality F_{oprf}.
-        // Bob acts as receiver with input Y ′ and receives {F_{k_A}(y) | y ∈ Y'}.
-        byte[][] yBytes = ownElementArrayList.stream()
+        clientElementByteArrays = ownElementArrayList.stream()
             .map(ObjectUtils::objectToByteArray)
             .toArray(byte[][]::new);
-        mpOprfReceiverOutput = mpOprfReceiver.oprf(yBytes);
-        stopWatch.stop();
-        long mpOprfReceiverTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Client Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), mpOprfReceiverTime);
-
-        stopWatch.start();
+        // Alice and Bob invoke the OPRF functionality F_{oprf}.
+        // Bob acts as receiver with input Y ′ and receives {F_{k_A}(y) | y ∈ Y'}.
+        kaOprfOutput = mpOprfReceiver.oprf(clientElementByteArrays);
         // Alice and Bob invoke another OPRF functionality F_{oprf}.
         // Bob acts as sender and receives a PRF key k_B
-        mpOprfSenderOutput = mpOprfSender.oprf(serverSetSize);
+        kbOprfKey = mpOprfSender.oprf(serverSetSize);
         stopWatch.stop();
-        long mpOprfSenderTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), mpOprfSenderTime);
+        info("{}{} Client Step 1/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
 
         stopWatch.start();
         // Bob computes Pid(y_i)
@@ -171,7 +169,7 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long pidMapTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pidMapTime);
+        info("{}{} Server Step 2/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pidMapTime);
 
         stopWatch.start();
         // The parties invoke F_{psu}, with inputs {R_B(x) | y ∈ Y} for Bob
@@ -179,7 +177,7 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long psuTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), psuTime);
+        info("{}{} Server Step 3/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), psuTime);
 
         stopWatch.start();
         // Bob sends union
@@ -192,7 +190,7 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long unionTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
+        info("{}{} Server Step 4/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
 
 
         info("{}{} Client end", ptoEndLogPrefix, getPtoDesc().getPtoName());
@@ -206,9 +204,9 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
             .boxed()
             .collect(Collectors.toMap(
                     index -> {
-                        T y = ownElementArrayList.get(index);
-                        byte[] pid0 = pidMapPrf.getBytes(mpOprfReceiverOutput.getPrf(index));
-                        byte[] pid1 = pidMapPrf.getBytes(mpOprfSenderOutput.getPrf(ObjectUtils.objectToByteArray(y)));
+                        byte[] y = clientElementByteArrays[index];
+                        byte[] pid0 = pidMapPrf.getBytes(kaOprfOutput.getPrf(index));
+                        byte[] pid1 = pidMapPrf.getBytes(kbOprfKey.getPrf(y));
                         BytesUtils.xori(pid0, pid1);
                         return ByteBuffer.wrap(pid0);
                     },

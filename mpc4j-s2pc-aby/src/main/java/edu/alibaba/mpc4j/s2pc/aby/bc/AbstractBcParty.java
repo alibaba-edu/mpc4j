@@ -58,7 +58,7 @@ public abstract class AbstractBcParty extends AbstractSecureTwoPartyPto implemen
         initialized = false;
     }
 
-    protected void setAndInput(BcBitVector x0, BcBitVector y0) {
+    protected void setAndInput(BcSquareVector x0, BcSquareVector y0) {
         if (!initialized) {
             throw new IllegalStateException("Need init...");
         }
@@ -68,7 +68,7 @@ public abstract class AbstractBcParty extends AbstractSecureTwoPartyPto implemen
         num = x0.bitLength();
     }
 
-    protected void setXorInput(BcBitVector x0, BcBitVector y0) {
+    protected void setXorInput(BcSquareVector x0, BcSquareVector y0) {
         if (!initialized) {
             throw new IllegalStateException("Need init...");
         }

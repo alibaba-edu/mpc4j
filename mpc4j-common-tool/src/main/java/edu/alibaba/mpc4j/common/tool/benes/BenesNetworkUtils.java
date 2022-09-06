@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.benes;
 
-import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
+import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -52,7 +52,7 @@ public class BenesNetworkUtils {
      */
     public static int getLevel(int n) {
         assert n > 1;
-        return 2 * (int) Math.ceil(DoubleUtils.log2(n)) - 1;
+        return 2 * LongUtils.ceilLog2(n) - 1;
     }
 
     /**

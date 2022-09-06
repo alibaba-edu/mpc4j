@@ -40,7 +40,7 @@ public interface BcParty extends TwoPartyPto, SecurePto {
      * @return zi。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    BcBitVector and(BcBitVector xi, BcBitVector yi) throws MpcAbortException;
+    BcSquareVector and(BcSquareVector xi, BcSquareVector yi) throws MpcAbortException;
 
     /**
      * 执行XOR运算，得到zi，满足z0 ⊕ z1 = z = x ^ y = (x0 ⊕ x1) ^ (y0 ⊕ y1)。
@@ -50,7 +50,7 @@ public interface BcParty extends TwoPartyPto, SecurePto {
      * @return zi。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    BcBitVector xor(BcBitVector xi, BcBitVector yi) throws MpcAbortException;
+    BcSquareVector xor(BcSquareVector xi, BcSquareVector yi) throws MpcAbortException;
 
     /**
      * 执行NOT运算，得到zi，满足z0 ⊕ z1 = z = !x = (x0 ⊕ x1)。
@@ -59,7 +59,7 @@ public interface BcParty extends TwoPartyPto, SecurePto {
      * @return zi。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    BcBitVector not(BcBitVector xi) throws MpcAbortException;
+    BcSquareVector not(BcSquareVector xi) throws MpcAbortException;
 
     /**
      * 执行OR运算，得到zi，满足z0 ⊕ z1 = z = x | y = (x0 ⊕ x1) | (y0 ⊕ y1)。
@@ -69,7 +69,7 @@ public interface BcParty extends TwoPartyPto, SecurePto {
      * @return zi。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    default BcBitVector or(BcBitVector xi, BcBitVector yi) throws MpcAbortException {
+    default BcSquareVector or(BcSquareVector xi, BcSquareVector yi) throws MpcAbortException {
         return xor(xor(xi, yi), and(xi, yi));
     }
 
@@ -84,14 +84,14 @@ public interface BcParty extends TwoPartyPto, SecurePto {
      * @return zi。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    default BcBitVector mux(BcBitVector xi, BcBitVector yi, BcBitVector ci) throws MpcAbortException {
+    default BcSquareVector mux(BcSquareVector xi, BcSquareVector yi, BcSquareVector ci) throws MpcAbortException {
         assert xi.bitLength() == yi.bitLength();
         assert ci.bitLength() == 1;
         byte[] choiceBytes = new byte[xi.byteLength()];
         byte[] ciBytes = ci.getBytes();
         Arrays.fill(choiceBytes, BinaryUtils.getBoolean(ciBytes, Byte.SIZE - 1) ? (byte)0xFF : (byte)0x00);
-        BcBitVector choice = BcBitVector.create(choiceBytes, xi.bitLength(), ci.isPublic());
-        BcBitVector t = xor(xi, yi);
+        BcSquareVector choice = BcSquareVector.create(choiceBytes, xi.bitLength(), ci.isPublic());
+        BcSquareVector t = xor(xi, yi);
         t = and(t, choice);
         return xor(t, xi);
     }

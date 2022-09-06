@@ -45,20 +45,27 @@ public class EccTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurationParams = new ArrayList<>();
-        // MCL_SEC_P256_K1，测试时必须把MCL库放在最前面，否则x86的MAC下会无故出现动态库载入失败的问题，这可能是junit存在的问题
-        configurationParams.add(new Object[]{EccType.MCL_SEC_P256_K1.name(), EccType.MCL_SEC_P256_K1,});
-        // MCL_SEC_P256_R1
-        configurationParams.add(new Object[]{EccType.MCL_SEC_P256_R1.name(), EccType.MCL_SEC_P256_R1,});
-        // BC_SM2_P_256_K1
-        configurationParams.add(new Object[]{EccType.BC_SEC_P256_K1.name(), EccType.BC_SEC_P256_K1,});
-        // BC_SM2_P_256_R1
-        configurationParams.add(new Object[]{EccType.BC_SEC_P256_R1.name(), EccType.BC_SEC_P256_R1,});
-        // BC_CURVE_25519
-        configurationParams.add(new Object[]{EccType.BC_CURVE_25519.name(), EccType.BC_CURVE_25519,});
-        // BC_SM2_P_256_V1
-        configurationParams.add(new Object[]{EccType.BC_SM2_P256_V1.name(), EccType.BC_SM2_P256_V1,});
-        // BC_ED_25519
-        configurationParams.add(new Object[]{EccType.BC_ED_25519.name(), EccType.BC_ED_25519,});
+
+        // SEC_P256_K1_MCL
+        configurationParams.add(new Object[]{EccType.SEC_P256_K1_MCL.name(), EccType.SEC_P256_K1_MCL,});
+        // SEC_P256_K1_OPENSSL
+        configurationParams.add(new Object[]{EccType.SEC_P256_K1_OPENSSL.name(), EccType.SEC_P256_K1_OPENSSL,});
+        // SEC_P256_K1_BC
+        configurationParams.add(new Object[]{EccType.SEC_P256_K1_BC.name(), EccType.SEC_P256_K1_BC,});
+        // SEC_P256_R1_MCL
+        configurationParams.add(new Object[]{EccType.SEC_P256_R1_MCL.name(), EccType.SEC_P256_R1_MCL,});
+        // SEC_P256_R1_OPENSSL
+        configurationParams.add(new Object[]{EccType.SEC_P256_R1_OPENSSL.name(), EccType.SEC_P256_R1_OPENSSL,});
+        // SEC_P256_R1_BC
+        configurationParams.add(new Object[]{EccType.SEC_P256_R1_BC.name(), EccType.SEC_P256_R1_BC,});
+        // SM2_P256_V1_OPENSSL
+        configurationParams.add(new Object[]{EccType.SM2_P256_V1_OPENSSL.name(), EccType.SM2_P256_V1_OPENSSL,});
+        // SM2_P256_V1_BC
+        configurationParams.add(new Object[]{EccType.SM2_P256_V1_BC.name(), EccType.SM2_P256_V1_BC,});
+        // CURVE_25519_BC
+        configurationParams.add(new Object[]{EccType.CURVE25519_BC.name(), EccType.CURVE25519_BC,});
+        // ED_25519_BC
+        configurationParams.add(new Object[]{EccType.ED25519_BC.name(), EccType.ED25519_BC,});
 
         return configurationParams;
     }

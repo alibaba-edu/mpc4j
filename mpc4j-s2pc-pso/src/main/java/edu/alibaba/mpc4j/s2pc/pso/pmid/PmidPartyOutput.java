@@ -32,7 +32,7 @@ public class PmidPartyOutput<T> {
      * 构造PMID服务端输出。
      *
      * @param pmidByteLength PMID字节长度。
-     * @param pmidSet PID集合、
+     * @param pmidSet PID集合。
      * @param pmidMap ID映射。
      */
     public PmidPartyOutput(int pmidByteLength, Set<ByteBuffer> pmidSet, Map<ByteBuffer, T> pmidMap) {

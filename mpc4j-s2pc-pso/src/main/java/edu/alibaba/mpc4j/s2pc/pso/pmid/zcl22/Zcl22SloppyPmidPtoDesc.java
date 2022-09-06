@@ -48,9 +48,13 @@ class Zcl22SloppyPmidPtoDesc implements PtoDesc {
          */
         SERVER_SEND_PID_OKVS,
         /**
-         * 客户端发送k的OKVS
+         * 客户端发送clientU的OKVS
          */
         CLIENT_SEND_SIGMA_OKVS,
+        /**
+         * 服务端发送serverU的OKVS
+         */
+        SERVER_SEND_SIGMA_OKVS,
         /**
          * 服务端发送PSU集合大小
          */

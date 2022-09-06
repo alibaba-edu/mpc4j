@@ -7,25 +7,25 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
-import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfSender;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.AbstractBspCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.BspCotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp.SspCotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.ywl20.Ywl20MaBspCotPtoDesc.PtoStep;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.SspCotSenderOutput;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -41,9 +41,17 @@ import java.util.stream.IntStream;
  */
 public class Ywl20MaBspCotSender extends AbstractBspCotSender {
     /**
-     * COT发送方
+     * GF2K-DPPRF协议配置项
+     */
+    private final DpprfConfig gf2kDpprfConfig;
+    /**
+     * 核COT协议发送方
      */
     private final CoreCotSender coreCotSender;
+    /**
+     * GF2K-DPPRF协议发送方
+     */
+    private final DpprfSender dpprfSender;
     /**
      * GF(2^128)运算接口
      */
@@ -57,10 +65,6 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
      */
     private CotSenderOutput cotSenderOutput;
     /**
-     * 扩展COT协议发送方输出
-     */
-    private CotSenderOutput extendCotSenderOutput;
-    /**
      * 验证COT协议发送方输出
      */
     private CotSenderOutput checkCotSenderOutput;
@@ -68,23 +72,14 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
      * 随机预言机
      */
     private Prf randomOracle;
-    /**
-     * 包含h层密钥数组，第i层包含2^(i + 1)个扩展密钥
-     */
-    private ArrayList<ArrayList<byte[][]>> treeKeysArrayList;
-    /**
-     * K_0^i = ⊕_{j ∈ [2^{i - 1}]} s_{2j}^i
-     */
-    private byte[][][] k0sArray;
-    /**
-     * K_1^i = ⊕_{j ∈ [2^{i - 1}]} s_{2j + 1}^i
-     */
-    private byte[][][] k1sArray;
 
     public Ywl20MaBspCotSender(Rpc senderRpc, Party receiverParty, Ywl20MaBspCotConfig config) {
         super(Ywl20MaBspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
         coreCotSender.addLogLevel();
+        gf2kDpprfConfig = config.getGf2kDpprfConfig();
+        dpprfSender = DpprfFactory.createSender(senderRpc, receiverParty, gf2kDpprfConfig);
+        dpprfSender.addLogLevel();
         gf2k = Gf2kFactory.createInstance(envType);
         hash = HashFactory.createInstance(envType, 2 * CommonConstants.BLOCK_BYTE_LENGTH);
     }
@@ -92,29 +87,37 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
     @Override
     public void setTaskId(long taskId) {
         super.setTaskId(taskId);
-        coreCotSender.setTaskId(taskId);
+        // COT协议和GF2K-DPPRF协议需要使用不同的taskID
+        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
+        coreCotSender.setTaskId(taskIdPrf.getLong(0, taskIdBytes, Long.MAX_VALUE));
+        dpprfSender.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
     }
 
     @Override
     public void setParallel(boolean parallel) {
         super.setParallel(parallel);
         coreCotSender.setParallel(parallel);
+        dpprfSender.setParallel(parallel);
     }
 
     @Override
     public void addLogLevel() {
         super.addLogLevel();
         coreCotSender.addLogLevel();
+        dpprfSender.addLogLevel();
     }
 
     @Override
-    public void init(byte[] delta, int maxBatch, int maxNum) throws MpcAbortException {
-        setInitInput(delta, maxBatch, maxNum);
+    public void init(byte[] delta, int maxBatchNum, int maxNum) throws MpcAbortException {
+        setInitInput(delta, maxBatchNum, maxNum);
         info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();
-        // 协议执行过程要请求两次COT，一次是h * m个，一次是128个
-        coreCotSender.init(delta, maxH * maxBatch + CommonConstants.BLOCK_BIT_LENGTH);
+        // 协议执行过程要请求两次COT，一次用于DPPRF，一次是128个
+        int maxCotNum = DpprfFactory.getPrecomputeNum(gf2kDpprfConfig, maxBatchNum, maxNum)
+            + CommonConstants.BLOCK_BIT_LENGTH;
+        coreCotSender.init(delta, maxCotNum);
+        dpprfSender.init(maxBatchNum, maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -122,7 +125,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
 
         stopWatch.start();
         DataPacketHeader randomOracleKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Ywl20MaBspCotPtoDesc.PtoStep.RECEIVER_SEND_RANDOM_ORACLE_KEY.ordinal(), extraInfo,
+            taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_RANDOM_ORACLE_KEY.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> randomOracleKeyPayload = rpc.receive(randomOracleKeyHeader).getPayload();
@@ -139,14 +142,14 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
     }
 
     @Override
-    public BspCotSenderOutput send(int batch, int num) throws MpcAbortException {
-        setPtoInput(batch, num);
+    public BspCotSenderOutput send(int batchNum, int num) throws MpcAbortException {
+        setPtoInput(batchNum, num);
         return send();
     }
 
     @Override
-    public BspCotSenderOutput send(int batch, int num, CotSenderOutput preSenderOutput) throws MpcAbortException {
-        setPtoInput(batch, num, preSenderOutput);
+    public BspCotSenderOutput send(int batchNum, int num, CotSenderOutput preSenderOutput) throws MpcAbortException {
+        setPtoInput(batchNum, num, preSenderOutput);
         cotSenderOutput = preSenderOutput;
         return send();
     }
@@ -156,202 +159,76 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
 
         stopWatch.start();
         // S send (extend, h) to F_COT, which returns q_i ∈ {0,1}^κ to S
+        int dpprfCotNum = DpprfFactory.getPrecomputeNum(gf2kDpprfConfig, batchNum, num);
         if (cotSenderOutput == null) {
-            cotSenderOutput = coreCotSender.send(h * batch + CommonConstants.BLOCK_BIT_LENGTH);
+            cotSenderOutput = coreCotSender.send(dpprfCotNum + CommonConstants.BLOCK_BIT_LENGTH);
         } else {
-            cotSenderOutput.reduce(h * batch + CommonConstants.BLOCK_BIT_LENGTH);
+            cotSenderOutput.reduce(dpprfCotNum + CommonConstants.BLOCK_BIT_LENGTH);
         }
-        extendCotSenderOutput = cotSenderOutput.split(h * batch);
+        CotSenderOutput extendCotSenderOutput = cotSenderOutput.split(dpprfCotNum);
         checkCotSenderOutput = cotSenderOutput.split(CommonConstants.BLOCK_BIT_LENGTH);
         cotSenderOutput = null;
         stopWatch.stop();
         long cotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), cotTime);
+        info("{}{} Send. Step 1/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), cotTime);
 
         stopWatch.start();
-        generatePprfKeys();
+        DpprfSenderOutput dpprfSenderOutput = dpprfSender.puncture(batchNum, num, extendCotSenderOutput);
         stopWatch.stop();
-        long pprfKeyGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long dpprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pprfKeyGenTime);
+        info("{}{} Send. Step 2/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), dpprfTime);
 
         stopWatch.start();
-        DataPacketHeader binaryHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Ywl20MaBspCotPtoDesc.PtoStep.RECEIVER_SEND_BINARY.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> binaryPayload = rpc.receive(binaryHeader).getPayload();
-        List<byte[]> messagePayload = generateMessagePayload(binaryPayload);
-        DataPacketHeader messageHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Ywl20MaBspCotPtoDesc.PtoStep.SENDER_SEND_MESSAGE.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(messageHeader, messagePayload));
-        stopWatch.stop();
-        long messageTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Send. Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), messageTime);
-
-        stopWatch.start();
-        List<byte[]> correlatePayload = generateCorrelatePayload();
+        byte[][] correlateByteArrays = new byte[batchNum][];
+        SspCotSenderOutput[] senderOutputs = IntStream.range(0, batchNum)
+            .mapToObj(batchIndex -> {
+                correlateByteArrays[batchIndex] = BytesUtils.clone(delta);
+                // S sets v = (s_0^h,...,s_{n - 1}^h)
+                byte[][] vs = dpprfSenderOutput.getPrfOutputArray(batchIndex);
+                // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
+                for (int i = 0; i < num; i++) {
+                    BytesUtils.xori(correlateByteArrays[batchIndex], vs[i]);
+                }
+                return SspCotSenderOutput.create(delta, vs);
+            })
+            .toArray(SspCotSenderOutput[]::new);
+        List<byte[]> correlatePayload = Arrays.stream(correlateByteArrays).collect(Collectors.toList());
         DataPacketHeader correlateHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Ywl20MaBspCotPtoDesc.PtoStep.SENDER_SEND_CORRELATE.ordinal(), extraInfo,
+            taskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_CORRELATE.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(correlateHeader, correlatePayload));
-        SspCotSenderOutput[] senderOutputs = IntStream.range(0, batch)
-            .mapToObj(batchInde -> {
-                // 得到的COT数量为2^h，要裁剪到num个
-                byte[][] r0Array = treeKeysArrayList.get(batchInde).get(h);
-                if (num < (1 << h)) {
-                    byte[][] reduceR0Array = new byte[num][];
-                    System.arraycopy(r0Array, 0, reduceR0Array, 0, num);
-                    r0Array = reduceR0Array;
-                }
-                return SspCotSenderOutput.create(delta, r0Array);
-            })
-            .toArray(SspCotSenderOutput[]::new);
-        treeKeysArrayList = null;
+        BspCotSenderOutput senderOutput = BspCotSenderOutput.create(senderOutputs);
         stopWatch.stop();
-        long correlateTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long outputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), correlateTime);
+        info("{}{} Send. Step 3/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), outputTime);
 
         stopWatch.start();
         DataPacketHeader checkChoiceHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Ywl20MaBspCotPtoDesc.PtoStep.RECEIVER_SEND_CHECK_CHOICES.ordinal(), extraInfo,
+            taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_CHECK_CHOICES.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> checkChoicePayload = rpc.receive(checkChoiceHeader).getPayload();
         // 计算H'(V)
-        List<byte[]> actualCheckValuePayload = handleCheckChoicePayload(senderOutputs, checkChoicePayload);
+        List<byte[]> actualCheckValuePayload = handleCheckChoicePayload(senderOutput, checkChoicePayload);
         DataPacketHeader actualHashValueHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Ywl20MaBspCotPtoDesc.PtoStep.SENDER_SEND_HASH_VALUE.ordinal(), extraInfo,
+            taskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_HASH_VALUE.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(actualHashValueHeader, actualCheckValuePayload));
         stopWatch.stop();
         long checkTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), checkTime);
+        info("{}{} Send. Step 4/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), checkTime);
 
         info("{}{} Send. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
-        return BspCotSenderOutput.create(senderOutputs);
+        return senderOutput;
     }
 
-    private void generatePprfKeys() {
-        k0sArray = new byte[batch][h][];
-        k1sArray = new byte[batch][h][];
-        Prg prg = PrgFactory.createInstance(envType, 2 * CommonConstants.BLOCK_BYTE_LENGTH);
-        IntStream batchIndexIntStream = IntStream.range(0, batch);
-        batchIndexIntStream = parallel ? batchIndexIntStream.parallel() : batchIndexIntStream;
-        treeKeysArrayList = batchIndexIntStream
-            .mapToObj(batchIndex -> {
-                ArrayList<byte[][]> treeKeys = new ArrayList<>(h + 1);
-                // S picks a random s_0^0 ∈ {0, 1}^κ
-                byte[][] s0 = new byte[1][CommonConstants.BLOCK_BYTE_LENGTH];
-                secureRandom.nextBytes(s0[0]);
-                // 把s0作为第0项，从而方便后续迭代
-                treeKeys.add(s0);
-                // For each i ∈ {1,...,h}, j ∈ [2^{i − 1}], S computes (s_{2j}^i, s_{2j + 1}^i) = G(s_j^{i - 1})
-                for (int i = 1; i <= h; i++) {
-                    byte[][] lowLevelSeeds = treeKeys.get(i - 1);
-                    byte[][] currentLevelSeeds = new byte[1 << i][];
-                    for (int j = 0; j < (1 << (i - 1)); j++) {
-                        byte[] extendSeeds = prg.extendToBytes(lowLevelSeeds[j]);
-                        currentLevelSeeds[2 * j] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                        System.arraycopy(
-                            extendSeeds, 0,
-                            currentLevelSeeds[2 * j], 0,
-                            CommonConstants.BLOCK_BYTE_LENGTH
-                        );
-                        currentLevelSeeds[2 * j + 1] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                        System.arraycopy(
-                            extendSeeds, CommonConstants.BLOCK_BYTE_LENGTH,
-                            currentLevelSeeds[2 * j + 1], 0,
-                            CommonConstants.BLOCK_BYTE_LENGTH
-                        );
-                    }
-                    treeKeys.add(currentLevelSeeds);
-                }
-                // For each i ∈ {1,..., h}
-                for (int i = 1; i <= h; i++) {
-                    int hIndex = i - 1;
-                    byte[][] currentLevelSeeds = treeKeys.get(i);
-                    // S then computes K_0^i = ⊕_{j ∈ [2^{i - 1}]} s_{2j}^i
-                    k0sArray[batchIndex][hIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                    for (int j = 0; j < (1 << (i - 1)); j++) {
-                        BytesUtils.xori(k0sArray[batchIndex][hIndex], currentLevelSeeds[2 * j]);
-                    }
-                    // and K_1^i = ⊕_{j ∈ [2^{i - 1}]} s_{2j + 1}^i
-                    k1sArray[batchIndex][hIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                    for (int j = 0; j < (1 << (i - 1)); j++) {
-                        BytesUtils.xori(k1sArray[batchIndex][hIndex], currentLevelSeeds[2 * j + 1]);
-                    }
-                }
-                return treeKeys;
-            })
-            .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    private List<byte[]> generateMessagePayload(List<byte[]> binaryPayload) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(binaryPayload.size() == batch);
-        byte[][] bBytesArray = binaryPayload.toArray(new byte[0][]);
-        int offset = CommonUtils.getByteLength(h) * Byte.SIZE - h;
-        Crhf crhf = CrhfFactory.createInstance(envType, CrhfFactory.CrhfType.MMO);
-        IntStream batchIndexIntStream = IntStream.range(0, batch);
-        batchIndexIntStream = parallel ? batchIndexIntStream.parallel() : batchIndexIntStream;
-        List<byte[]> messagePayload = batchIndexIntStream
-            .mapToObj(batchIndex -> {
-                byte[] bBytes = bBytesArray[batchIndex];
-                return IntStream.range(0, h)
-                    .mapToObj(hIndex -> {
-                        // S sends M_0^i = K_0^i ⊕ H(q_i ⊕ b_i ∆, i || l)
-                        byte[] message0 = BytesUtils.clone(extendCotSenderOutput.getR0(batchIndex * h + hIndex));
-                        if (BinaryUtils.getBoolean(bBytes, offset + hIndex)) {
-                            BytesUtils.xori(message0, extendCotSenderOutput.getDelta());
-                        }
-                        message0 = crhf.hash(message0);
-                        BytesUtils.xori(message0, k0sArray[batchIndex][hIndex]);
-                        // and M_1^i = K_1^i ⊕ H(q_i ⊕ \not b_i ∆, i || l)
-                        byte[] message1 = BytesUtils.clone(extendCotSenderOutput.getR0(batchIndex * h + hIndex));
-                        if (!BinaryUtils.getBoolean(bBytes, offset + hIndex)) {
-                            BytesUtils.xori(message1, extendCotSenderOutput.getDelta());
-                        }
-                        message1 = crhf.hash(message1);
-                        BytesUtils.xori(message1, k1sArray[batchIndex][hIndex]);
-                        return new byte[][] {message0, message1};
-                    })
-                    .flatMap(Arrays::stream)
-                    .collect(Collectors.toList());
-            })
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
-        k0sArray = null;
-        k1sArray = null;
-        extendCotSenderOutput = null;
-        return messagePayload;
-    }
-
-    private List<byte[]> generateCorrelatePayload() {
-        IntStream batchIndexIntStream = IntStream.range(0, batch);
-        batchIndexIntStream = parallel ? batchIndexIntStream.parallel() : batchIndexIntStream;
-        return batchIndexIntStream
-            .mapToObj(batchIndex -> {
-                byte[] cBytes = BytesUtils.clone(delta);
-                // S sets v = (s_0^h,...,s_{n - 1}^h)
-                byte[][] vs = treeKeysArrayList.get(batchIndex).get(h);
-                // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
-                for (int i = 0; i < num; i++) {
-                    BytesUtils.xori(cBytes, vs[i]);
-                }
-                return cBytes;
-            })
-            .collect(Collectors.toList());
-    }
-
-    private List<byte[]> handleCheckChoicePayload(SspCotSenderOutput[] senderOutputs, List<byte[]> checkChoicePayload)
+    private List<byte[]> handleCheckChoicePayload(BspCotSenderOutput senderOutput, List<byte[]> checkChoicePayload)
         throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(checkChoicePayload.size() == 1);
         byte[] xPrime = checkChoicePayload.remove(0);
@@ -373,7 +250,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
         }
         checkCotSenderOutput = null;
         // S computes V := Σ_{l ∈ [m]}(Σ_{i ∈ [n]} (χ[i]·v[i])) + Y ∈ F_{2^κ}
-        IntStream lIntStream = IntStream.range(0, batch);
+        IntStream lIntStream = IntStream.range(0, batchNum);
         lIntStream = parallel ? lIntStream.parallel() : lIntStream;
         byte[][] vs = lIntStream
             .mapToObj(l -> {
@@ -384,7 +261,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
                         .putLong(extraInfo).putInt(l).putInt(i).array();
                     byte[] chi = randomOracle.getBytes(indexMessage);
                     // χ[i]·v[i]
-                    gf2k.muli(chi, senderOutputs[l].getR0(i));
+                    gf2k.muli(chi, senderOutput.get(l).getR0(i));
                     // v += χ[i]·v[i]
                     gf2k.addi(v, chi);
                 }
@@ -393,7 +270,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
             .toArray(byte[][]::new);
         // V := Σ_{l ∈ [m]} (χ[i]·v[i]) + Y
         byte[] v = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        for (int l = 0; l < batch; l++) {
+        for (int l = 0; l < batchNum; l++) {
             gf2k.addi(v, vs[l]);
         }
         gf2k.addi(v, y);

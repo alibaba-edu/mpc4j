@@ -1,26 +1,33 @@
-# 协议类型
-pto_type = PID
-
-# 协议名称
-pto_name = GMR21_SLOPPY
-
 # 服务端信息
 server_name = server
 server_ip = 127.0.0.1
-server_port = 9000
+server_port = 9002
 
 # 客户端信息
 client_name = client
 client_ip = 127.0.0.1
-client_port = 9001
+client_port = 9003
 
 # 所属参与方
 own_name = server
 
+# 协议类型
+pto_type = PID
+
 # 对数集合大小（log(n)）
 log_set_size = 20,18,16,14
 
-# Sloppy的OKVS类型
-sloppy_okvs_type = MEGA_BIN
-# sloppy_okvs_type = H2_SINGLETON_GCT
-# sloppy_okvs_type = H3_SINGLETON_GCT
+# 协议名称
+pid_pto_name = GMR21_SLOPPY
+
+# PSU类型
+psu_pto_name = KRTW19_OPT
+# psu_pto_name = GMR21
+# psu_pto_name = JSZ22_SFC
+# psu_pto_name = JSZ22_SFS
+# psu_pto_name = ZCL22_SKE
+# psu_pto_name = ZCL22_PKE
+
+# 是否压缩编码
+compress_encode = true
+# compress_encode = false

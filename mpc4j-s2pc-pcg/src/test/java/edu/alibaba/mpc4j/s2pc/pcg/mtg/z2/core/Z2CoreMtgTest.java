@@ -7,6 +7,7 @@ import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2Triple;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13.Alsz13Z2CoreMtgConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.ideal.IdealZ2CoreMtgConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -46,6 +47,11 @@ public class Z2CoreMtgTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
+
+        // IDEAL
+        configurations.add(new Object[]{
+            Z2CoreMtgFactory.Z2CoreMtgType.IDEAL.name(), new IdealZ2CoreMtgConfig.Builder().build(),
+        });
         // ALSZ13
         configurations.add(new Object[]{
             Z2CoreMtgFactory.Z2CoreMtgType.ALSZ13.name(), new Alsz13Z2CoreMtgConfig.Builder().build(),

@@ -1,12 +1,12 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zl;
 
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
- * Z_{2^l}乘法三元组。
+ * l比特三元组。
  *
  * @author Weiran Liu
  * @date 2022/4/11
@@ -17,66 +17,57 @@ public class ZlTriple {
      */
     private int l;
     /**
-     * 模数字节长度
-     */
-    private int byteL;
-    /**
      * 乘法三元组数量
      */
-    private int n;
+    private int num;
     /**
      * 随机分量a
      */
-    private byte[][] as;
+    private BigInteger[] as;
     /**
      * 随机分量b
      */
-    private byte[][] bs;
+    private BigInteger[] bs;
     /**
      * 随机分量c
      */
-    private byte[][] cs;
+    private BigInteger[] cs;
 
     /**
      * 创建Z_{2^l}乘法三元组。
      *
      * @param l 模数比特长度。
-     * @param n 乘法三元组数量。
+     * @param num 乘法三元组数量。
      * @param as 随机分量a。
      * @param bs 随机分量b。
      * @param cs 随机分量c。
      */
-    public static ZlTriple create(int l, int n, byte[][] as, byte[][] bs, byte[][] cs) {
-        assert n > 0 : "n must be greater than 0";
-        assert as.length == n : "a.length must be equal to n = " + n;
-        assert bs.length == n : "b.length must be equal to n = " + n;
-        assert cs.length == n : "c.length must be equal to n = " + n;
+    public static ZlTriple create(int l, int num, BigInteger[] as, BigInteger[] bs, BigInteger[] cs) {
+        assert num > 0 : "num must be greater than 0";
+        assert as.length == num : "a.length must be equal to num = " + num;
+        assert bs.length == num : "b.length must be equal to num = " + num;
+        assert cs.length == num : "c.length must be equal to num = " + num;
         // 验证随机分量的长度
         assert l > 0 : "l must be greater than 0";
-        int byteL = CommonUtils.getByteLength(l);
 
         ZlTriple zlTriple = new ZlTriple();
         zlTriple.l = l;
-        zlTriple.byteL = byteL;
-        zlTriple.n = n;
+        zlTriple.num = num;
         zlTriple.as = Arrays.stream(as)
             .peek(a -> {
-                assert a.length == byteL && BytesUtils.isReduceByteArray(a, l);
+                assert validElement(a, l);
             })
-            .map(BytesUtils::clone)
-            .toArray(byte[][]::new);
+            .toArray(BigInteger[]::new);
         zlTriple.bs = Arrays.stream(bs)
             .peek(b -> {
-                assert b.length == byteL && BytesUtils.isReduceByteArray(b, l);
+                assert validElement(b, l);
             })
-            .map(BytesUtils::clone)
-            .toArray(byte[][]::new);
+            .toArray(BigInteger[]::new);
         zlTriple.cs = Arrays.stream(cs)
             .peek(c -> {
-                assert c.length == byteL && BytesUtils.isReduceByteArray(c, l);
+                assert validElement(c, l);
             })
-            .map(BytesUtils::clone)
-            .toArray(byte[][]::new);
+            .toArray(BigInteger[]::new);
 
         return zlTriple;
     }
@@ -90,15 +81,13 @@ public class ZlTriple {
     public static ZlTriple createEmpty(int l) {
         // 验证随机分量的长度
         assert l > 0 : "l must be greater than 0";
-        int byteL = CommonUtils.getByteLength(l);
 
         ZlTriple emptyTriple = new ZlTriple();
         emptyTriple.l = l;
-        emptyTriple.byteL = byteL;
-        emptyTriple.n = 0;
-        emptyTriple.as = new byte[0][];
-        emptyTriple.bs = new byte[0][];
-        emptyTriple.cs = new byte[0][];
+        emptyTriple.num = 0;
+        emptyTriple.as = new BigInteger[0];
+        emptyTriple.bs = new BigInteger[0];
+        emptyTriple.cs = new BigInteger[0];
 
         return emptyTriple;
     }
@@ -115,8 +104,8 @@ public class ZlTriple {
      *
      * @return 乘法三元组数量。
      */
-    public int getN() {
-        return n;
+    public int getNum() {
+        return num;
     }
 
     /**
@@ -129,21 +118,12 @@ public class ZlTriple {
     }
 
     /**
-     * 返回乘法三元组模数字节长度。
-     *
-     * @return 乘法三元组模数字节长度。
-     */
-    public int getByteL() {
-        return byteL;
-    }
-
-    /**
      * 返回随机分量a。
      *
      * @param index 索引值。
      * @return 随机分量a。
      */
-    public byte[] getA(int index) {
+    public BigInteger getA(int index) {
         return as[index];
     }
 
@@ -152,7 +132,7 @@ public class ZlTriple {
      *
      * @return 所有随机分量a。
      */
-    public byte[][] getAs() {
+    public BigInteger[] getA() {
         return as;
     }
 
@@ -162,7 +142,7 @@ public class ZlTriple {
      * @param index 索引值。
      * @return 随机分量b。
      */
-    public byte[] getB(int index) {
+    public BigInteger getB(int index) {
         return bs[index];
     }
 
@@ -171,7 +151,7 @@ public class ZlTriple {
      *
      * @return 所有随机分量b。
      */
-    public byte[][] getBs() {
+    public BigInteger[] getB() {
         return bs;
     }
 
@@ -181,7 +161,7 @@ public class ZlTriple {
      * @param index 索引值。
      * @return 随机分量c。
      */
-    public byte[] getC(int index) {
+    public BigInteger getC(int index) {
         return cs[index];
     }
 
@@ -190,7 +170,7 @@ public class ZlTriple {
      *
      * @return 所有随机分量c。
      */
-    public byte[][] getCs() {
+    public BigInteger[] getC() {
         return cs;
     }
 
@@ -200,25 +180,27 @@ public class ZlTriple {
      * @param length 指定切分长度。
      */
     public ZlTriple split(int length) {
-        assert length > 0 && length <= n : "split length must be in range (0, " + n + "]";
+        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]";
         // 切分a
-        byte[][] aSubs = new byte[length][];
-        byte[][] aRemains = new byte[n - length][];
+        BigInteger[] aSubs = new BigInteger[length];
+        BigInteger[] aRemains = new BigInteger[num - length];
         System.arraycopy(as, 0, aSubs, 0, length);
-        System.arraycopy(as, length, aRemains, 0, n - length);
+        System.arraycopy(as, length, aRemains, 0, num - length);
         as = aRemains;
         // 切分b
-        byte[][] bSubs = new byte[length][];
-        byte[][] bRemains = new byte[n - length][];
+        BigInteger[] bSubs = new BigInteger[length];
+        BigInteger[] bRemains = new BigInteger[num - length];
         System.arraycopy(bs, 0, bSubs, 0, length);
-        System.arraycopy(bs, length, bRemains, 0, n - length);
+        System.arraycopy(bs, length, bRemains, 0, num - length);
         bs = bRemains;
         // 切分c
-        byte[][] cSubs = new byte[length][];
-        byte[][] cRemains = new byte[n - length][];
+        BigInteger[] cSubs = new BigInteger[length];
+        BigInteger[] cRemains = new BigInteger[num - length];
         System.arraycopy(cs, 0, cSubs, 0, length);
-        System.arraycopy(cs, length, cRemains, 0, n - length);
+        System.arraycopy(cs, length, cRemains, 0, num - length);
         cs = cRemains;
+        // 更新长度
+        num = num - length;
 
         return ZlTriple.create(l, length, aSubs, bSubs, cSubs);
     }
@@ -229,23 +211,23 @@ public class ZlTriple {
      * @param length 指定缩减长度。
      */
     public void reduce(int length) {
-        assert length > 0 && length <= n : "reduce length = " + length + " must be in range (0, " + n + "]";
+        assert length > 0 && length <= num : "reduce length = " + length + " must be in range (0, " + num + "]";
         // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
-        if (length < n) {
+        if (length < num) {
             // 减小a
-            byte[][] aRemains = new byte[length][];
+            BigInteger[] aRemains = new BigInteger[length];
             System.arraycopy(as, 0, aRemains, 0, length);
             as = aRemains;
             // 减小b
-            byte[][] bRemains = new byte[length][];
+            BigInteger[] bRemains = new BigInteger[length];
             System.arraycopy(bs, 0, bRemains, 0, length);
             bs = bRemains;
             // 减小c
-            byte[][] cRemains = new byte[length][];
+            BigInteger[] cRemains = new BigInteger[length];
             System.arraycopy(cs, 0, cRemains, 0, length);
             cs = cRemains;
             // 减小长度
-            n = length;
+            num = length;
         }
     }
 
@@ -257,21 +239,25 @@ public class ZlTriple {
     public void merge(ZlTriple that) {
         assert this.l == that.l : "merged triples must have the same l";
         // 合并a
-        byte[][] mergeAs = new byte[this.as.length + that.as.length][];
+        BigInteger[] mergeAs = new BigInteger[this.as.length + that.as.length];
         System.arraycopy(this.as, 0, mergeAs, 0, this.as.length);
         System.arraycopy(that.as, 0, mergeAs, this.as.length, that.as.length);
         as = mergeAs;
         // 合并b
-        byte[][] mergeBs = new byte[this.bs.length + that.bs.length][];
+        BigInteger[] mergeBs = new BigInteger[this.bs.length + that.bs.length];
         System.arraycopy(this.bs, 0, mergeBs, 0, this.bs.length);
         System.arraycopy(that.bs, 0, mergeBs, this.bs.length, that.bs.length);
         bs = mergeBs;
         // 合并c
-        byte[][] mergeCs = new byte[this.cs.length + that.cs.length][];
+        BigInteger[] mergeCs = new BigInteger[this.cs.length + that.cs.length];
         System.arraycopy(this.cs, 0, mergeCs, 0, this.cs.length);
         System.arraycopy(that.cs, 0, mergeCs, this.cs.length, that.cs.length);
         cs = mergeCs;
         // 更新长度
-        n += that.n;
+        num += that.num;
+    }
+
+    private static boolean validElement(BigInteger element, int l) {
+        return BigIntegerUtils.greaterOrEqual(element, BigInteger.ZERO) && element.bitLength() <= l;
     }
 }

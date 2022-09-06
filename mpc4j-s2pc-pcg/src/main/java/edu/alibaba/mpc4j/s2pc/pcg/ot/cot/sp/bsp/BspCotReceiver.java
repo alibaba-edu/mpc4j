@@ -24,11 +24,11 @@ public interface BspCotReceiver extends TwoPartyPto, SecurePto {
     /**
      * 初始化协议。
      *
-     * @param maxBatch 最大批处理数量。
-     * @param maxNum   最大数量。
+     * @param maxBatchNum 最大批处理数量。
+     * @param maxNum      最大数量。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    void init(int maxBatch, int maxNum) throws MpcAbortException;
+    void init(int maxBatchNum, int maxNum) throws MpcAbortException;
 
     /**
      * 执行协议。

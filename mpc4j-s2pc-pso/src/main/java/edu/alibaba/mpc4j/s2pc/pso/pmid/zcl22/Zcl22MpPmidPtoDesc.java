@@ -28,9 +28,17 @@ class Zcl22MpPmidPtoDesc implements PtoDesc {
          */
         SERVER_SEND_KEYS,
         /**
+         * 客户端发送密钥
+         */
+        CLIENT_SEND_KEYS,
+        /**
          * 客户端发送OKVS
          */
         CLIENT_SEND_SIGMA_OKVS,
+        /**
+         * 服务端发送OKVS
+         */
+        SERVER_SEND_SIGMA_OKVS,
         /**
          * 服务端发送PSU集合大小
          */

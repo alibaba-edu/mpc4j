@@ -5,8 +5,10 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
  * GMR21宽松PID协议信息。方案来自于下述论文图15（Private-ID protocol）：
+ * <p>
  * Garimella G, Mohassel P, Rosulek M, et al. Private Set Operations from Oblivious Switching. PKC 2021, Springer,
  * Cham, pp. 591-617.
+ * </p>
  *
  * @author Weiran Liu
  * @date 2022/5/11

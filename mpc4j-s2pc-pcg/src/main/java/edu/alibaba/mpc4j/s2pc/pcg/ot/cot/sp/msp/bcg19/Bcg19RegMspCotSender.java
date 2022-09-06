@@ -13,7 +13,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.AbstractMspCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.BspCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.BspCotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp.SspCotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.SspCotSenderOutput;
 
 /**
  * BCG19-REG-MSP-COT协议发送方。

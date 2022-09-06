@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.aby.bc.not;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcBitVector;
+import edu.alibaba.mpc4j.s2pc.aby.bc.BcSquareVector;
 import edu.alibaba.mpc4j.s2pc.aby.bc.BcParty;
 
 /**
@@ -18,7 +18,7 @@ class NotBcPartyThread extends Thread {
     /**
      * xi
      */
-    private final BcBitVector xi;
+    private final BcSquareVector xi;
     /**
      * 运算数量
      */
@@ -26,15 +26,15 @@ class NotBcPartyThread extends Thread {
     /**
      * zi
      */
-    private BcBitVector zi;
+    private BcSquareVector zi;
 
-    NotBcPartyThread(BcParty bcParty, BcBitVector xi) {
+    NotBcPartyThread(BcParty bcParty, BcSquareVector xi) {
         this.bcParty = bcParty;
         this.xi = xi;
         num = xi.bitLength();
     }
 
-    BcBitVector getPartyOutput() {
+    BcSquareVector getPartyOutput() {
         return zi;
     }
 

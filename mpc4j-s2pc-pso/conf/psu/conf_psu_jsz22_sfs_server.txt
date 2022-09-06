@@ -1,38 +1,32 @@
+# 服务端信息
+server_name = server
+server_ip = 127.0.0.1
+server_port = 9002
+
+# 客户端信息
+client_name = client
+client_ip = 127.0.0.1
+client_port = 9003
+
+# 所属参与方
+own_name = server
+
 # 协议类型
 pto_type = PSU
 
 # 元素字节长度
 element_byte_length = 8
 
+# 对数集合大小（log(n)）
+log_set_size = 20,18,16,14
+
 # 协议名称
-pto_name = JSZ22_SFS
-
-# 服务端信息
-server_name = server
-server_ip = 127.0.0.1
-server_port = 9000
-
-# 客户端信息
-client_name = client
-client_ip = 127.0.0.1
-client_port = 9001
-
-# 所属参与方
-own_name = server
+psu_pto_name = JSZ22_SFS
 
 # 是否使用安静OT
 silent_cot = false
 # silent_cot = true
 
-# 对数集合大小（log(n)）
-log_set_size = 20,18,16,14
-
 # OPRF类型
-oprf_type = KKRT16_OPT
-# oprf_type = CM20
-
-# 布谷鸟哈希类型
-# cuckoo_hash_bin_type = NAIVE_3_HASH
-# cuckoo_hash_bin_type = NAIVE_4_HASH
-# cuckoo_hash_bin_type = NO_STASH_PSZ18_3_HASH
-cuckoo_hash_bin_type = NO_STASH_PSZ18_4_HASH
+oprf_type = CM20
+# oprf_type = KKRT16_OPT

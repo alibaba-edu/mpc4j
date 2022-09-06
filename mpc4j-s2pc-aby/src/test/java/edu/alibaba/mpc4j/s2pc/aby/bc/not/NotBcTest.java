@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcBitVector;
+import edu.alibaba.mpc4j.s2pc.aby.bc.BcSquareVector;
 import edu.alibaba.mpc4j.s2pc.aby.bc.BcConfig;
 import edu.alibaba.mpc4j.s2pc.aby.bc.BcFactory;
 import edu.alibaba.mpc4j.s2pc.aby.bc.BcParty;
@@ -159,7 +159,7 @@ public class NotBcTest {
         byte[] x0Bytes = new byte[byteLength];
         SECURE_RANDOM.nextBytes(x0Bytes);
         BytesUtils.reduceByteArray(x0Bytes, num);
-        BcBitVector x0 = BcBitVector.create(x0Bytes, num, xPublic);
+        BcSquareVector x0 = BcSquareVector.create(x0Bytes, num, xPublic);
         // 生成x1
         byte[] x1Bytes;
         if (xPublic) {
@@ -169,7 +169,7 @@ public class NotBcTest {
             SECURE_RANDOM.nextBytes(x1Bytes);
             BytesUtils.reduceByteArray(x1Bytes, num);
         }
-        BcBitVector x1 = BcBitVector.create(x1Bytes, num, xPublic);
+        BcSquareVector x1 = BcSquareVector.create(x1Bytes, num, xPublic);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
             NotBcPartyThread senderThread = new NotBcPartyThread(sender, x0);
@@ -188,8 +188,8 @@ public class NotBcTest {
             long receiverByteLength = receiverRpc.getSendByteLength();
             senderRpc.reset();
             receiverRpc.reset();
-            BcBitVector z0 = senderThread.getPartyOutput();
-            BcBitVector z1 = receiverThread.getPartyOutput();
+            BcSquareVector z0 = senderThread.getPartyOutput();
+            BcSquareVector z1 = receiverThread.getPartyOutput();
             // 验证结果
             assertOutput(x0, x1, z0, z1);
             LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
@@ -201,7 +201,7 @@ public class NotBcTest {
         }
     }
 
-    private void assertOutput(BcBitVector x0, BcBitVector x1, BcBitVector z0, BcBitVector z1) {
+    private void assertOutput(BcSquareVector x0, BcSquareVector x1, BcSquareVector z0, BcSquareVector z1) {
         byte[] x = xPublic ? x0.getBytes() : BytesUtils.xor(x0.getBytes(), x1.getBytes());
         byte[] expectZ = BytesUtils.not(x, x0.bitLength());
         byte[] actualZ = (xPublic) ? z0.getBytes() : BytesUtils.xor(z0.getBytes(), z1.getBytes());

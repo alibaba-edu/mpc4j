@@ -18,8 +18,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.BspCotFactory.BspCotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.ywl20.Ywl20MaBspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.ywl20.Ywl20ShBspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp.SspCotReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp.SspCotSenderOutput;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -45,15 +43,19 @@ public class BspCotTest {
     /**
      * 默认数量，设置为既不是偶数、也不是2^k格式的数量
      */
-    private static final int DEFAULT_NUM = 15;
+    private static final int DEFAULT_NUM = 9;
+    /**
+     * 较大数量
+     */
+    private static final int LARGE_NUM = 1 << 16;
     /**
      * 默认批处理数量，设置为既不是偶数、也不是2^k格式的数量
      */
-    private static final int DEFAULT_BATCH = 999;
+    private static final int DEFAULT_BATCH_NUM = 9;
     /**
      * 较大批处理数量
      */
-    private static final int LARGE_BATCH = 1 << 16;
+    private static final int LARGE_BATCH_NUM = 1 << 16;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -103,7 +105,9 @@ public class BspCotTest {
     public void testFirstAlpha() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH).map(mIndex -> 0).toArray();
+        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
+            .map(mIndex -> 0)
+            .toArray();
         testPto(sender, receiver, alphaArray, DEFAULT_NUM);
     }
 
@@ -111,80 +115,116 @@ public class BspCotTest {
     public void testLastAlpha() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH).map(mIndex -> DEFAULT_NUM - 1).toArray();
+        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
+            .map(mIndex -> DEFAULT_NUM - 1)
+            .toArray();
         testPto(sender, receiver, alphaArray, DEFAULT_NUM);
     }
 
     @Test
-    public void testDefaultBatch1Num() {
+    public void test1Num() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        int n = 1;
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH).map(mIndex -> SECURE_RANDOM.nextInt(n)).toArray();
-        testPto(sender, receiver, alphaArray, n);
+        int num = 1;
+        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM).map(mIndex -> SECURE_RANDOM.nextInt(num)).toArray();
+        testPto(sender, receiver, alphaArray, num);
     }
 
     @Test
-    public void testDefaultBatch2Num() {
+    public void test2Num() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        int n = 2;
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH).map(mIndex -> SECURE_RANDOM.nextInt(n)).toArray();
-        testPto(sender, receiver, alphaArray, n);
+        int num = 2;
+        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM).map(mIndex -> SECURE_RANDOM.nextInt(num)).toArray();
+        testPto(sender, receiver, alphaArray, num);
     }
 
     @Test
-    public void test1BatchDefaultNum() {
+    public void test1BatchNum() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        int m = 1;
-        int[] alphaArray = IntStream.range(0, m).map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM)).toArray();
+        int batchNum = 1;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+            .toArray();
         testPto(sender, receiver, alphaArray, DEFAULT_NUM);
     }
 
     @Test
-    public void test2BatchDefaultNum() {
+    public void test2BatchNum() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        int m = 2;
-        int[] alphaArray = IntStream.range(0, m).map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM)).toArray();
+        int batchNum = 2;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+            .toArray();
         testPto(sender, receiver, alphaArray, DEFAULT_NUM);
     }
 
     @Test
-    public void testDefaultBatchDefaultNum() {
+    public void testDefault() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH).map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM)).toArray();
+        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
+            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+            .toArray();
         testPto(sender, receiver, alphaArray, DEFAULT_NUM);
     }
 
     @Test
-    public void testParallelDefaultBatchDefaultNum() {
+    public void testParallelDefault() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
         sender.setParallel(true);
         receiver.setParallel(true);
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH).map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM)).toArray();
+        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
+            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+            .toArray();
         testPto(sender, receiver, alphaArray, DEFAULT_NUM);
     }
 
     @Test
-    public void testLargeBatchDefaultNum() {
+    public void testLargeBatch() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        int[] alphaArray = IntStream.range(0, LARGE_BATCH).map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM)).toArray();
+        int[] alphaArray = IntStream.range(0, LARGE_BATCH_NUM)
+            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+            .toArray();
         testPto(sender, receiver, alphaArray, DEFAULT_NUM);
     }
 
     @Test
-    public void testParallelLargeBatchDefaultNum() {
+    public void testParallelLargeBatch() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
         sender.setParallel(true);
         receiver.setParallel(true);
-        int[] alphaArray = IntStream.range(0, LARGE_BATCH).map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM)).toArray();
+        int[] alphaArray = IntStream.range(0, LARGE_BATCH_NUM)
+            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+            .toArray();
         testPto(sender, receiver, alphaArray, DEFAULT_NUM);
+    }
+
+    @Test
+    public void testLargeNum() {
+        BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
+        BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
+            .map(mIndex -> SECURE_RANDOM.nextInt(LARGE_NUM))
+            .toArray();
+        testPto(sender, receiver, alphaArray, LARGE_NUM);
+    }
+
+    @Test
+    public void testParallelLargeNum() {
+        BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
+        BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        sender.setParallel(true);
+        receiver.setParallel(true);
+        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
+            .map(mIndex -> SECURE_RANDOM.nextInt(LARGE_NUM))
+            .toArray();
+        testPto(sender, receiver, alphaArray, LARGE_NUM);
     }
 
     private void testPto(BspCotSender sender, BspCotReceiver receiver, int[] alphaArray, int num) {
@@ -193,10 +233,10 @@ public class BspCotTest {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            int batch = alphaArray.length;
+            int batchNum = alphaArray.length;
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
-            BspCotSenderThread senderThread = new BspCotSenderThread(sender, delta, batch, num);
+            BspCotSenderThread senderThread = new BspCotSenderThread(sender, delta, batchNum, num);
             BspCotReceiverThread receiverThread = new BspCotReceiverThread(receiver, alphaArray, num);
             StopWatch stopWatch = new StopWatch();
             // 开始执行协议
@@ -215,7 +255,7 @@ public class BspCotTest {
             BspCotSenderOutput senderOutput = senderThread.getSenderOutput();
             BspCotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
             // 验证结果
-            assertOutput(batch, num, senderOutput, receiverOutput);
+            assertOutput(batchNum, num, senderOutput, receiverOutput);
             LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
                 senderByteLength, receiverByteLength, time
             );
@@ -226,21 +266,23 @@ public class BspCotTest {
     }
 
     @Test
-    public void testPrecomputeLargeBatchDefaultNum() {
+    public void testPrecompute() {
         BspCotSender sender = BspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
         long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
+        int batchNum = DEFAULT_BATCH_NUM;
+        int num = DEFAULT_NUM;
         try {
             LOGGER.info("-----test {} (precompute) start-----", sender.getPtoDesc().getPtoName());
-            int batch = LARGE_BATCH;
-            int num = DEFAULT_NUM;
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
-            int[] alphaArray = IntStream.range(0, batch).map(mIndex -> SECURE_RANDOM.nextInt(num)).toArray();
+            int[] alphaArray = IntStream.range(0, batchNum)
+                .map(mIndex -> SECURE_RANDOM.nextInt(num))
+                .toArray();
             CotSenderOutput preSenderOutput = CotTestUtils.genSenderOutput(
-                BspCotFactory.getPrecomputeNum(config, batch, num), delta, SECURE_RANDOM
+                BspCotFactory.getPrecomputeNum(config, batchNum, num), delta, SECURE_RANDOM
             );
             CotReceiverOutput preReceiverOutput = CotTestUtils.genReceiverOutput(preSenderOutput, SECURE_RANDOM);
             BspCotSenderThread senderThread
@@ -264,7 +306,7 @@ public class BspCotTest {
             BspCotSenderOutput senderOutput = senderThread.getSenderOutput();
             BspCotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
             // 验证结果
-            assertOutput(batch, num, senderOutput, receiverOutput);
+            assertOutput(batchNum, num, senderOutput, receiverOutput);
             LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
                 senderByteLength, receiverByteLength, time
             );
@@ -281,14 +323,17 @@ public class BspCotTest {
         long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
+        int batchNum = DEFAULT_BATCH_NUM;
+        int num = DEFAULT_NUM;
         try {
             LOGGER.info("-----test {} (reset Δ) start-----", sender.getPtoDesc().getPtoName());
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
-            int[] alphaArray = IntStream.range(0, DEFAULT_BATCH).map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM)).toArray();
+            int[] alphaArray = IntStream.range(0, batchNum)
+                .map(mIndex -> SECURE_RANDOM.nextInt(num)).toArray();
             // 第一次执行
-            BspCotSenderThread senderThread = new BspCotSenderThread(sender, delta, alphaArray.length, DEFAULT_NUM);
-            BspCotReceiverThread receiverThread = new BspCotReceiverThread(receiver, alphaArray, DEFAULT_NUM);
+            BspCotSenderThread senderThread = new BspCotSenderThread(sender, delta, alphaArray.length, num);
+            BspCotReceiverThread receiverThread = new BspCotReceiverThread(receiver, alphaArray, num);
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
             senderThread.start();
@@ -304,12 +349,14 @@ public class BspCotTest {
             receiverRpc.reset();
             BspCotSenderOutput senderOutput = senderThread.getSenderOutput();
             BspCotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            assertOutput(DEFAULT_BATCH, DEFAULT_NUM, senderOutput, receiverOutput);
+            assertOutput(batchNum, num, senderOutput, receiverOutput);
             // 第二次执行，重置Δ
             SECURE_RANDOM.nextBytes(delta);
-            alphaArray = IntStream.range(0, DEFAULT_BATCH).map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM)).toArray();
-            senderThread = new BspCotSenderThread(sender, delta, alphaArray.length, DEFAULT_NUM);
-            receiverThread = new BspCotReceiverThread(receiver, alphaArray, DEFAULT_NUM);
+            alphaArray = IntStream.range(0, batchNum)
+                .map(mIndex -> SECURE_RANDOM.nextInt(num))
+                .toArray();
+            senderThread = new BspCotSenderThread(sender, delta, alphaArray.length, num);
+            receiverThread = new BspCotReceiverThread(receiver, alphaArray, num);
             stopWatch.start();
             senderThread.start();
             receiverThread.start();
@@ -331,7 +378,7 @@ public class BspCotTest {
             // 通信量应该相等
             Assert.assertEquals(secondSenderByteLength, firstSenderByteLength);
             Assert.assertEquals(secondReceiverByteLength, firstReceiverByteLength);
-            assertOutput(DEFAULT_BATCH, DEFAULT_NUM, secondSenderOutput, secondReceiverOutput);
+            assertOutput(batchNum, num, secondSenderOutput, secondReceiverOutput);
             LOGGER.info("1st round, Send. {}B, Recv. {}B, {}ms",
                 firstSenderByteLength, firstReceiverByteLength, firstTime
             );
@@ -344,11 +391,12 @@ public class BspCotTest {
         }
     }
 
-    private void assertOutput(int batch, int num, BspCotSenderOutput senderOutput, BspCotReceiverOutput receiverOutput) {
-        Assert.assertEquals(batch, senderOutput.getBatch());
-        Assert.assertEquals(batch, receiverOutput.getBatch());
+    private void assertOutput(int batchNum, int num,
+                              BspCotSenderOutput senderOutput, BspCotReceiverOutput receiverOutput) {
+        Assert.assertEquals(batchNum, senderOutput.getBatch());
+        Assert.assertEquals(batchNum, receiverOutput.getBatch());
         // 验证各个子结果
-        IntStream.range(0, batch).forEach(batchIndex -> {
+        IntStream.range(0, batchNum).forEach(batchIndex -> {
             SspCotSenderOutput sspcotSenderOutput = senderOutput.get(batchIndex);
             SspCotReceiverOutput sspcotReceiverOutput = receiverOutput.get(batchIndex);
             Assert.assertEquals(num, sspcotSenderOutput.getNum());

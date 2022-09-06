@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.sml.opboost.main.kendall;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.correlation.KendallCorrelation;
+import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.dp.ldp.numeric.integral.*;
 import edu.alibaba.mpc4j.dp.ldp.range.PiecewiseLdpConfig;
 import edu.alibaba.mpc4j.sml.opboost.main.OpBoost;
@@ -81,33 +82,24 @@ public class WeightedKendall implements OpBoost {
 
     @Override
     public void init() throws IOException, URISyntaxException {
-        // 设置数据集名称
-        setDatasetName();
+        datasetName = PropertiesUtils.readString(properties, "dataset_name");
         // 设置数据
         setData();
         // 设置轮数
-        setTotalRound();
+        totalRound = PropertiesUtils.readInt(properties, "total_round");
+        Preconditions.checkArgument(totalRound > 0, "total_round must be greater than 0: %s", totalRound);
         // 设置LDP参数
         setLdpParameters();
     }
 
-    private void setDatasetName() {
-        LOGGER.info("-----set dataset name-----");
-        datasetName = Preconditions.checkNotNull(properties.getProperty("dataset_name"), "Please set dataset_name");
-    }
-
     private void setData() throws IOException, URISyntaxException {
         LOGGER.info("-----set data-----");
-        String datasetPath = Preconditions.checkNotNull(
-            properties.getProperty("dataset_path"), "Please set train_dataset_path"
-        );
+        String datasetPath = PropertiesUtils.readString(properties, "dataset_path");
         CSV csv = new CSV(OpBoostMainUtils.DEFAULT_CSV_FORMAT);
         DataFrame dataFrame = csv.read(datasetPath);
         LOGGER.info("dataset = {}", dataFrame.toString());
 
-        int columnIndex = Integer.parseInt(Preconditions.checkNotNull(
-            properties.getProperty("column_index"), "Please set column_index"
-        ));
+        int columnIndex = PropertiesUtils.readInt(properties, "column_index");
         String columnName = dataFrame.schema().fieldName(columnIndex);
         LOGGER.info("column index = {}, column name = {}", columnIndex, columnName);
         Preconditions.checkArgument(dataFrame.schema().field(columnIndex).type instanceof IntegerType,
@@ -124,41 +116,14 @@ public class WeightedKendall implements OpBoost {
         );
     }
 
-    private void setTotalRound() {
-        LOGGER.info("-----set total round-----");
-        totalRound = Integer.parseInt(Preconditions.checkNotNull(
-            properties.getProperty("total_round"), "Please set total_round"
-        ));
-        Preconditions.checkArgument(totalRound > 0, "total_round must be greater than 0: %s", totalRound);
-        LOGGER.info("total_round = {}", totalRound);
-    }
-
     private void setLdpParameters() {
         LOGGER.info("-----set LDP parameters-----");
         // 设置ε
-        String epsilonsString = Preconditions.checkNotNull(
-            properties.getProperty("epsilon"), "Please set epsilon"
-        );
-        epsilons = Arrays.stream(epsilonsString.split(","))
-            .mapToDouble(Double::parseDouble)
-            .toArray();
-        LOGGER.info("ε = {}", Arrays.toString(epsilons));
+        epsilons = PropertiesUtils.readDoubleArray(properties, "epsilon");
         // 设置θ
-        String thetasString = Preconditions.checkNotNull(
-            properties.getProperty("theta"), "Please set theta"
-        );
-        thetas = Arrays.stream(thetasString.split(","))
-            .mapToInt(Integer::parseInt)
-            .toArray();
-        LOGGER.info("θ = {}", thetas);
+        thetas = PropertiesUtils.readIntArray(properties, "theta");
         // 设置α
-        String alphasString = Preconditions.checkNotNull(
-            properties.getProperty("alpha"), "Please set alpha"
-        );
-        alphas = Arrays.stream(alphasString.split(","))
-            .mapToDouble(Double::parseDouble)
-            .toArray();
-        LOGGER.info("α = {}", alphas);
+        alphas = PropertiesUtils.readDoubleArray(properties, "alpha");
     }
 
     @Override

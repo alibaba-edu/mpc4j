@@ -26,7 +26,7 @@ public class BytesUtils {
      * @param byteValue 给定的{@code byte}。
      * @return 调换结果。
      */
-    public static byte reverseByte(final byte byteValue) {
+    public static byte reverseBit(final byte byteValue) {
         byte copyByteValue = byteValue;
         int reverseByteValue = 0;
         for (int i = 0; i < Byte.SIZE; i++, copyByteValue >>= 1) {
@@ -36,32 +36,30 @@ public class BytesUtils {
     }
 
     /**
-     * 调换字节数组的大小端表示。
+     * 调换字节数组的大小端表示。只调换字节数组，不调换字节数组中的元素。
      *
      * @param byteArray 给定的字节数组。
      * @return 调换结果。
      */
-    public static byte[] reverse(final byte[] byteArray) {
+    public static byte[] reverseByteArray(byte[] byteArray) {
         if (byteArray == null) {
             return null;
         }
-        byte[] result = new byte[byteArray.length];
-        for (int i = 0; i < byteArray.length; i++) {
-            result[byteArray.length - 1 - i] = reverseByte(byteArray[i]);
-        }
-        return result;
+        byte[] reverseByteArray = BytesUtils.clone(byteArray);
+        innerReverseByteArray(reverseByteArray);
+        return reverseByteArray;
     }
 
     /**
-     * 内部调换字节数组的大小端表示。
+     * 调换字节数组的大小端表示。只调换字节数组，不调换字节数组中的元素。
      *
      * @param byteArray 给定的字节数组。
      */
-    public static void reversei(byte[] byteArray) {
+    public static void innerReverseByteArray(byte[] byteArray) {
         if (byteArray == null) {
             return;
         }
-        // 先调换位置
+        // 只调换位置
         int i = 0;
         int j = byteArray.length - 1;
         byte tmp;
@@ -72,9 +70,39 @@ public class BytesUtils {
             j--;
             i++;
         }
+    }
+
+    /**
+     * 调换字节数组的大小端表示。既调换字节数组，又调换字节数组中的每一个比特。
+     *
+     * @param byteArray 给定的字节数组。
+     * @return 调换结果。
+     */
+    public static byte[] reverseBitArray(final byte[] byteArray) {
+        if (byteArray == null) {
+            return null;
+        }
+        byte[] result = new byte[byteArray.length];
+        for (int i = 0; i < byteArray.length; i++) {
+            result[byteArray.length - 1 - i] = reverseBit(byteArray[i]);
+        }
+        return result;
+    }
+
+    /**
+     * 内部调换字节数组的大小端表示。既调换字节数组，又调换字节数组中的每一个比特。
+     *
+     * @param byteArray 给定的字节数组。
+     */
+    public static void innerReverseBitArray(byte[] byteArray) {
+        if (byteArray == null) {
+            return;
+        }
+        // 先调换位置
+        innerReverseByteArray(byteArray);
         // 再每个字节分别调换
-        for (i = 0; i < byteArray.length; i++) {
-            byteArray[i] = reverseByte(byteArray[i]);
+        for (int i = 0; i < byteArray.length; i++) {
+            byteArray[i] = reverseBit(byteArray[i]);
         }
     }
 
@@ -209,6 +237,20 @@ public class BytesUtils {
             return null;
         }
         return Arrays.copyOf(byteArray, byteArray.length);
+    }
+
+    /**
+     * 从偏移量开始拷贝指定长度的字节数组。
+     *
+     * @param buf 字节数组。
+     * @param off 字节数组偏移量。
+     * @param len 拷贝长度。
+     * @return 拷贝结果。
+     */
+    public static byte[] clone(final byte[] buf, int off, int len) {
+        byte[] result = new byte[len];
+        System.arraycopy(buf, off, result, 0, len);
+        return result;
     }
 
     /**

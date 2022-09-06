@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 
+import edu.alibaba.mpc4j.common.tool.crypto.ecc.bc.Ed25519BcEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
@@ -76,7 +77,7 @@ public class Ed25519ConsistencyTest {
 
     @Test
     public void testMultiplyConsistency() {
-        BcEd25519Ecc ecc = new BcEd25519Ecc();
+        Ed25519BcEcc ecc = new Ed25519BcEcc();
         byte[] h1ByteArray = ecc.encode(ecc.multiply(ecc.getG(), ALPHA), false);
         byte[] h1TruthByteArray = ByteBuffer.allocate(POINT_BYTES * 2).put(G_ALPHA_X).put(G_ALPHA_Y).array();
         Assert.assertArrayEquals(h1TruthByteArray, h1ByteArray);
@@ -157,7 +158,7 @@ public class Ed25519ConsistencyTest {
 
     @Test
     public void testScalarMultiply() {
-        BcEd25519Ecc ecc = new BcEd25519Ecc();
+        Ed25519BcEcc ecc = new Ed25519BcEcc();
         Hash hash = HashFactory.createInstance(HashFactory.HashType.NATIVE_SHA256, POINT_BYTES);
         // h = g^α
         ECPoint h = ecc.multiply(ecc.getG(), ALPHA);

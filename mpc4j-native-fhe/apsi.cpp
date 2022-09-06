@@ -8,33 +8,6 @@
 #include <cstdint>
 #include "polynomials.h"
 
-void try_clear_irrelevant_bits(const EncryptionParameters &parms, Ciphertext &ciphertext) {
-    // If the parameter set has only one prime, we can compress the ciphertext by
-    // setting low-order bits to zero. This effectively maxes out the noise, but that
-    // doesn't matter as long as we don't use quite all noise budget.
-    if (parms.coeff_modulus().size() == 1) {
-        // The number of data bits we need to have left in each ciphertext coefficient
-        int compr_coeff_bit_count =
-                parms.plain_modulus().bit_count() +
-                seal::util::get_significant_bit_count(parms.poly_modulus_degree())
-                // Being pretty aggressive here
-                - 1;
-        int coeff_mod_bit_count = parms.coeff_modulus()[0].bit_count();
-        // The number of bits to set to zero
-        int irrelevant_bit_count = coeff_mod_bit_count - compr_coeff_bit_count;
-        // Can compression achieve anything?
-        if (irrelevant_bit_count > 0) {
-            // Mask for zeroing out the irrelevant bits
-            uint64_t mask = ~((uint64_t(1) << irrelevant_bit_count) - 1);
-            seal_for_each_n(seal::util::iter(ciphertext), ciphertext.size(), [&](auto &&I) {
-                // We only have a single RNS component so dereference once more
-                seal_for_each_n(
-                        *I, parms.poly_modulus_degree(), [&](auto &J) { J &= mask; });
-            });
-        }
-    }
-}
-
 parms_id_type get_parms_id_for_chain_idx(const SEALContext& seal_context, size_t chain_idx) {
     // This function returns a parms_id matching the given chain index or -- if the chain
     // index is too large -- for the largest possible parameters (first data level).
@@ -334,7 +307,6 @@ jbyteArray JNICALL computeMatches(JNIEnv *env, jobjectArray database_coeffs, job
     while (f_evaluated.parms_id() != context.last_parms_id()) {
         evaluator.mod_switch_to_next_inplace(f_evaluated);
     }
-    try_clear_irrelevant_bits(context.last_context_data()->parms(), f_evaluated);
     return serialize_ciphertext(env, f_evaluated);
 }
 
@@ -379,7 +351,6 @@ jbyteArray JNICALL computeMatchesNaiveMethod(JNIEnv *env, jobjectArray database_
     while (f_evaluated.parms_id() != context.last_parms_id()) {
         evaluator.mod_switch_to_next_inplace(f_evaluated);
     }
-    try_clear_irrelevant_bits(context.last_context_data()->parms(), f_evaluated);
     return serialize_ciphertext(env, f_evaluated);
 }
 
@@ -493,8 +464,6 @@ jbyteArray JNICALL computeMatches(JNIEnv *env, jobjectArray database_coeffs, job
     while (f_evaluated.parms_id() != context.last_parms_id()) {
         evaluator.mod_switch_to_next_inplace(f_evaluated);
     }
-    try_clear_irrelevant_bits(context.last_context_data()->parms(), f_evaluated);
-
     return serialize_ciphertext(env, f_evaluated);
 }
 
@@ -546,7 +515,6 @@ jbyteArray JNICALL computeMatchesNaiveMethod(JNIEnv *env, jobjectArray database_
     while (f_evaluated.parms_id() != context.last_parms_id()) {
         evaluator.mod_switch_to_next_inplace(f_evaluated);
     }
-    try_clear_irrelevant_bits(context.last_context_data()->parms(), f_evaluated);
     return serialize_ciphertext(env, f_evaluated);
 }
 
@@ -751,7 +719,6 @@ jint JNICALL checkSealParams(JNIEnv *env, jint poly_modulus_degree, jlong plain_
         while (f_evaluated.parms_id() != context.last_parms_id()) {
             evaluator.mod_switch_to_next_inplace(f_evaluated);
         }
-        try_clear_irrelevant_bits(context.last_context_data()->parms(), f_evaluated);
         return decryptor.invariant_noise_budget(f_evaluated);
     } else {
         // naive algorithm
@@ -801,7 +768,6 @@ jint JNICALL checkSealParams(JNIEnv *env, jint poly_modulus_degree, jlong plain_
         while (f_evaluated.parms_id() != context.last_parms_id()) {
             evaluator.mod_switch_to_next_inplace(f_evaluated);
         }
-        try_clear_irrelevant_bits(context.last_context_data()->parms(), f_evaluated);
         return decryptor.invariant_noise_budget(f_evaluated);
     }
 }

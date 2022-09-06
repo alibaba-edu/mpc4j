@@ -59,11 +59,15 @@ public class Gmr21MpPidServer<T> extends AbstractPidParty<T> {
     /**
      * k_A
      */
-    private MpOprfSenderOutput mpOprfSenderOutput;
+    private MpOprfSenderOutput kaOprfKey;
     /**
      * {F_{k_B}(x) | x ∈ X}
      */
-    private MpOprfReceiverOutput mpOprfReceiverOutput;
+    private MpOprfReceiverOutput kbOprfOutput;
+    /**
+     * 服务端元素字节数组
+     */
+    private byte[][] serverElementByteArrays;
 
     public Gmr21MpPidServer(Rpc serverRpc, Party clientParty, Gmr21MpPidConfig config) {
         super(Gmr21MpPidPtoDesc.getInstance(), serverRpc, clientParty, config);
@@ -140,31 +144,25 @@ public class Gmr21MpPidServer<T> extends AbstractPidParty<T> {
         info("{}{} Server begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();
-        // PID字节长度等于λ + log(n) + log(m) = λ + log(m * n)
-        int pidByteLength = CommonConstants.STATS_BYTE_LENGTH + CommonUtils.getByteLength(
-            LongUtils.ceilLog2((long) ownSetSize * otherSetSize)
-        );
+        // PID字节长度等于λ + log(n) + log(m)
+        int pidByteLength = CommonConstants.STATS_BYTE_LENGTH
+            + CommonUtils.getByteLength(LongUtils.ceilLog2(ownSetSize))
+            + CommonUtils.getByteLength(LongUtils.ceilLog2(otherSetSize));
         pidMapPrf = PrfFactory.createInstance(envType, pidByteLength);
         pidMapPrf.setKey(pidMapPrfKey);
-        // Alice and Bob invoke the OPRF functionality F_{oprf}.
-        // Alice acts as sender and receives a PRF key k_A
-        mpOprfSenderOutput = mpOprfSender.oprf(clientSetSize);
-        stopWatch.stop();
-        long mpOprfSenderTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Server Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), mpOprfSenderTime);
-
-        stopWatch.start();
-        // Alice and Bob invoke another OPRF functionality F_{oprf}.
-        // Alice acts as receiver with input X and receives {F_{k_B}(x) | x ∈ X}.
-        byte[][] xBytes = ownElementArrayList.stream()
+        serverElementByteArrays = ownElementArrayList.stream()
             .map(ObjectUtils::objectToByteArray)
             .toArray(byte[][]::new);
-        mpOprfReceiverOutput = mpOprfReceiver.oprf(xBytes);
+        // Alice and Bob invoke the OPRF functionality F_{oprf}.
+        // Alice acts as sender and receives a PRF key k_A
+        kaOprfKey = mpOprfSender.oprf(clientSetSize);
+        // Alice and Bob invoke another OPRF functionality F_{oprf}.
+        // Alice acts as receiver with input X and receives {F_{k_B}(x) | x ∈ X}.
+        kbOprfOutput = mpOprfReceiver.oprf(serverElementByteArrays);
         stopWatch.stop();
-        long mpOprfReceiverTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), mpOprfReceiverTime);
+        info("{}{} Server Step 1/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
 
         stopWatch.start();
         // Alice computes Pid(x_i)
@@ -172,7 +170,7 @@ public class Gmr21MpPidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long pidMapTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pidMapTime);
+        info("{}{} Server Step 2/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pidMapTime);
 
         stopWatch.start();
         // The parties invoke F_{psu}, with inputs {R_A(x) | x ∈ X} for Alice
@@ -180,7 +178,7 @@ public class Gmr21MpPidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long psuTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), psuTime);
+        info("{}{} Server Step 3/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), psuTime);
 
         stopWatch.start();
         // Alice receives union
@@ -196,7 +194,7 @@ public class Gmr21MpPidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long unionTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
+        info("{}{} Server Step 4/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
 
         info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
         return new PidPartyOutput<>(pidByteLength, pidSet, serverPidMap);
@@ -209,9 +207,9 @@ public class Gmr21MpPidServer<T> extends AbstractPidParty<T> {
             .boxed()
             .collect(Collectors.toMap(
                     index -> {
-                        T x = ownElementArrayList.get(index);
-                        byte[] pid0 = pidMapPrf.getBytes(mpOprfSenderOutput.getPrf(ObjectUtils.objectToByteArray(x)));
-                        byte[] pid1 = pidMapPrf.getBytes(mpOprfReceiverOutput.getPrf(index));
+                        byte[] x = serverElementByteArrays[index];
+                        byte[] pid0 = pidMapPrf.getBytes(kaOprfKey.getPrf(x));
+                        byte[] pid1 = pidMapPrf.getBytes(kbOprfOutput.getPrf(index));
                         BytesUtils.xori(pid0, pid1);
                         return ByteBuffer.wrap(pid0);
                     },

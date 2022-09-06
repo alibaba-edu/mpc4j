@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.main;
 
-import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.main.pid.PidMain;
 import edu.alibaba.mpc4j.s2pc.pso.main.pmid.PmidMain;
 import edu.alibaba.mpc4j.s2pc.pso.main.psu.PsuMain;
@@ -36,20 +36,18 @@ public class PsoMain {
         LOGGER.info("read PTO config");
         Properties properties = loadProperties(args[0]);
         // 读取协议类型
-        String ptoType = Preconditions.checkNotNull(
-            properties.getProperty("pto_type"), "Please set pto_type"
-        );
+        String ptoType = PropertiesUtils.readString(properties, "pto_type");
         LOGGER.info("pto_type = " + ptoType);
         switch (ptoType) {
-            case "PSU":
+            case PsuMain.PTO_TYPE_NAME:
                 PsuMain psuMain = new PsuMain(properties);
                 psuMain.run();
                 break;
-            case "PID":
+            case PidMain.PTO_TYPE_NAME:
                 PidMain pidMain = new PidMain(properties);
                 pidMain.run();
                 break;
-            case "PMID":
+            case PmidMain.PTO_TYPE_NAME:
                 PmidMain pmidMain = new PmidMain(properties);
                 pmidMain.run();
                 break;

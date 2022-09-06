@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory.Z2MtgType;
 
 /**
- * 布尔三元组生成协议接收方接口。
+ * 布尔三元组生成协议参与方接口。
  *
  * @author Sheng Hu, Weiran Liu
  * @date 2022/02/07

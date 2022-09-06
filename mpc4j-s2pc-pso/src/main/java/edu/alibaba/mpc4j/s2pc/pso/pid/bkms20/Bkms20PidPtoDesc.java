@@ -5,9 +5,10 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
  * Facebook的PID协议信息。论文来源：
+ * <p>
  * Buddhavarapu, Prasad, Andrew Knox, Payman Mohassel, Shubho Sengupta, Erik Taubeneck, and Vlad Vlaskin. Private
  * Matching for Compute. IACR Cryptol. ePrint Arch. 2020 (2020): 599.
- *
+ * </p>
  * 此协议实现的是论文图2所描述的PID协议，并不是流式处理协议。
  *
  * @author Weiran Liu

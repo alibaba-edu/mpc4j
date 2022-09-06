@@ -4,8 +4,8 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyParty;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyRpc;
+import edu.alibaba.mpc4j.common.rpc.RpcPropertiesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.dp.ldp.LdpConfig;
 import edu.alibaba.mpc4j.sml.opboost.OpBoostSlave;
 import edu.alibaba.mpc4j.sml.opboost.OpBoostSlaveConfig;
@@ -126,7 +126,12 @@ public abstract class AbstractOpBoost implements OpBoost {
     @Override
     public void init() throws IOException, URISyntaxException {
         // 设置通信接口
-        setRpc();
+        ownRpc = RpcPropertiesUtils.readNettyRpc(properties, "host", "slave");
+        if (ownRpc.ownParty().getPartyId() == 0) {
+            otherParty = ownRpc.getParty(1);
+        } else {
+            otherParty = ownRpc.getParty(0);
+        }
         // 设置数据集名称
         datasetName = OpBoostMainUtils.setDatasetName(properties);
         // 设置标签
@@ -145,73 +150,19 @@ public abstract class AbstractOpBoost implements OpBoost {
         setLdpParameters();
     }
 
-    private void setRpc() {
-        LOGGER.info("-----set Rpc-----");
-        // 构建参与方信息
-        Set<NettyParty> nettyPartySet = new HashSet<>(2);
-        Map<String, NettyParty> nettyPartyMap = new HashMap<>(2);
-        // 初始化主机
-        String hostName = Preconditions.checkNotNull(
-            properties.getProperty("host_name"), "Please set host_name"
-        );
-        String hostIp = Preconditions.checkNotNull(
-            properties.getProperty("host_ip"), "Please set host_ip"
-        );
-        int hostPort = Integer.parseInt(Preconditions.checkNotNull(
-            properties.getProperty("host_port", "Please set host_port")
-        ));
-        NettyParty hostNettyParty = new NettyParty(0, hostName, hostIp, hostPort);
-        nettyPartySet.add(hostNettyParty);
-        nettyPartyMap.put(hostName, hostNettyParty);
-        // 初始化从机
-        String slaveName = Preconditions.checkNotNull(
-            properties.getProperty("slave_name"), "Please set slave_name"
-        );
-        String slaveIp = Preconditions.checkNotNull(
-            properties.getProperty("slave_ip"), "Please set slave_ip"
-        );
-        int slavePort = Integer.parseInt(Preconditions.checkNotNull(
-            properties.getProperty("slave_port"), "Please set slave_port"
-        ));
-        NettyParty slaveNettyParty = new NettyParty(1, slaveName, slaveIp, slavePort);
-        nettyPartySet.add(slaveNettyParty);
-        nettyPartyMap.put(slaveName, slaveNettyParty);
-        // 获得自己的参与方信息
-        String ownName = Preconditions.checkNotNull(
-            properties.getProperty("own_name"), "Please set own_name"
-        );
-        NettyParty ownParty = Preconditions.checkNotNull(
-            nettyPartyMap.get(ownName), "own_name must be %s or %s", hostName, slaveName
-        );
-        ownRpc = new NettyRpc(ownParty, nettyPartySet);
-        if (ownName.equals(hostName)) {
-            LOGGER.info("own_name = {} for party_id = 0", hostName);
-            otherParty = slaveNettyParty;
-        } else {
-            LOGGER.info("own_name = {} for party_id = 1", slaveName);
-            otherParty = hostNettyParty;
-        }
-    }
-
     private void setDataSet() throws IOException, URISyntaxException {
         LOGGER.info("-----set whole dataset-----");
         int ncols = schema.length();
         DataFrame readTrainDataFrame = OpBoostMainUtils.setTrainDataFrame(properties, schema);
         DataFrame readTestDataFrame = OpBoostMainUtils.setTestDataFrame(properties, schema);
         LOGGER.info("-----set own dataframe-----");
-        String partyColumnsString = Preconditions.checkNotNull(
-            properties.getProperty("party_columns"), "Please set party_columns"
-        );
-        int[] partyColumns = Arrays.stream(partyColumnsString.split(","))
-            // 解析成整数
-            .mapToInt(Integer::parseInt)
-            // 验证取值范围
-            .peek(partyId -> Preconditions.checkArgument(
-                partyId == 0 || partyId == 1,
-                "Invalid party_column: %s, party_colum must be 0 or 1", partyId)
-            )
-            .toArray();
+        int[] partyColumns = PropertiesUtils.readIntArray(properties, "party_columns");
         Preconditions.checkArgument(partyColumns.length == ncols, "# of party_column must match column_num");
+        Arrays.stream(partyColumns).forEach(partyId ->
+                Preconditions.checkArgument(
+                    partyId == 0 || partyId == 1,
+                    "Invalid party_column: %s, party_colum must be 0 or 1", partyId)
+            );
         int labelIndex = schema.fieldIndex(formula.response().toString());
         Preconditions.checkArgument(
             partyColumns[labelIndex] == 0,

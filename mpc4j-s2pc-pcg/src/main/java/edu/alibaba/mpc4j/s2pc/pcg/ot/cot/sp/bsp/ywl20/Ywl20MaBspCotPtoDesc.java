@@ -18,7 +18,7 @@ class Ywl20MaBspCotPtoDesc implements PtoDesc {
     /**
      * 协议ID
      */
-    private static final int PTO_ID = Math.abs((int)5636166080693023093L);
+    private static final int PTO_ID = Math.abs((int) 5636166080693023093L);
     /**
      * 协议名称
      */
@@ -32,14 +32,6 @@ class Ywl20MaBspCotPtoDesc implements PtoDesc {
          * 接收方发送随机预言机密钥
          */
         RECEIVER_SEND_RANDOM_ORACLE_KEY,
-        /**
-         * 接收方发送纠正比特b
-         */
-        RECEIVER_SEND_BINARY,
-        /**
-         * 发送方发送纠正消息M
-         */
-        SENDER_SEND_MESSAGE,
         /**
          * 发送方发送组合消息C
          */

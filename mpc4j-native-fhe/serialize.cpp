@@ -59,6 +59,9 @@ PublicKey deserialize_public_key(JNIEnv *env, jbyteArray pk_bytes, const SEALCon
         cerr << "invalid public key for this SEALContext" << endl;
         exit(-1);
     }
+
+    // free
+    env->ReleaseByteArrayElements(pk_bytes, pk_byte_data, 0);
     return public_key;
 }
 
@@ -72,6 +75,9 @@ RelinKeys deserialize_relin_key(JNIEnv *env, jbyteArray relin_key_bytes, const S
         cerr << "invalid relinearization key for this SEALContext" << endl;
         exit(-1);
     }
+
+    // free
+    env->ReleaseByteArrayElements(relin_key_bytes, bytes, 0);
     return relin_keys;
 }
 
@@ -85,6 +91,9 @@ SecretKey deserialize_secret_key(JNIEnv *env, jbyteArray sk_bytes, const SEALCon
         cerr << "invalid secret key for this SEALContext" << endl;
         exit(-1);
     }
+
+    // free
+    env->ReleaseByteArrayElements(sk_bytes, pk_byte_data, 0);
     return secret_key;
 }
 
@@ -98,6 +107,9 @@ Ciphertext deserialize_ciphertext(JNIEnv *env, jbyteArray bytes, const SEALConte
         cerr << "invalid ciphertext for this SEALContext" << endl;
         exit(-1);
     }
+
+    // free
+    env->ReleaseByteArrayElements(bytes, byte_data, 0);
     return ciphertext;
 }
 
@@ -111,13 +123,16 @@ Plaintext deserialize_plaintext(JNIEnv *env, jbyteArray bytes, const SEALContext
         cerr << "invalid plaintext for this SEALContext" << endl;
         exit(-1);
     }
+
+    // free
+    env->ReleaseByteArrayElements(bytes, ptxt_byte_data, 0);
     return plaintext;
 }
 
 vector<Ciphertext> deserialize_ciphertexts(JNIEnv *env, jobject list, const SEALContext& context) {
-    jclass obj_class = env->FindClass("java/util/List");
+    jclass obj_class = env->FindClass("java/util/ArrayList");
     if (obj_class == nullptr) {
-        std::cout << "List not found !" << std::endl;
+        std::cout << "ArrayList not found !" << std::endl;
         return static_cast<std::vector<seal::Ciphertext>>(0);
 
     }
@@ -133,7 +148,11 @@ vector<Ciphertext> deserialize_ciphertexts(JNIEnv *env, jobject list, const SEAL
     for (uint32_t i = 0; i < size; i++) {
         auto bytes = (jbyteArray) env->CallObjectMethod(list, get_method, i);
         result.push_back(deserialize_ciphertext(env, bytes, context));
+        env->DeleteLocalRef(bytes);
     }
+
+    // free
+    env->DeleteLocalRef(obj_class);
     return result;
 }
 
@@ -158,7 +177,11 @@ jobject serialize_ciphertexts(JNIEnv *env, const vector<Ciphertext>& ciphertexts
     for (auto & ciphertext : ciphertexts) {
         jbyteArray byte_array = serialize_ciphertext(env, ciphertext);
         env->CallBooleanMethod(list_obj, list_add, byte_array);
+        env->DeleteLocalRef(byte_array);
     }
+
+    // free
+    env->DeleteLocalRef(list_jcs);
     return list_obj;
 }
 
@@ -173,6 +196,7 @@ vector<Plaintext> deserialize_plaintexts(JNIEnv *env, jobjectArray array, const 
         jlong* ptr = env->GetLongArrayElements(row, JNI_FALSE);
         vector<uint64_t> temp_vec(ptr, ptr + env->GetArrayLength(row));
         encoder.encode(temp_vec, result[i]);
+        env->ReleaseLongArrayElements(row, ptr, 0);
     }
     return result;
 }
@@ -192,5 +216,8 @@ seal::EncryptionParameters deserialize_encryption_params(JNIEnv *env, jbyteArray
     std::istringstream input(str);
     seal::EncryptionParameters params;
     params.load(input);
+
+    // free
+    env->ReleaseByteArrayElements(params_bytes, params_byte_data, 0);
     return params;
 }

@@ -102,7 +102,7 @@ public class ByteDenseBitMatrix implements DenseBitMatrix {
                 assert row.length == denseBitMatrix.byteColumns
                     : "row byte length must be " + denseBitMatrix.byteColumns + ": " + row.length;
                 assert BytesUtils.isReduceByteArray(row, columns)
-                    : "row must contain " + columns + "valid bits, current row: " + Hex.toHexString(row);
+                    : "row must contain " + columns + " valid bits, current row: " + Hex.toHexString(row);
             })
             .toArray(byte[][]::new);
         return denseBitMatrix;

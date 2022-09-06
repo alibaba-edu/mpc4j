@@ -134,10 +134,10 @@ public class Bkms20PidServer<T> extends AbstractPidParty<T> {
         info("{}{} Server begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();
-        // PID字节长度等于λ + log(n) + log(m) = λ + log(m * n)
-        int pidByteLength = CommonConstants.STATS_BYTE_LENGTH + CommonUtils.getByteLength(
-            LongUtils.ceilLog2((long)ownSetSize * otherSetSize)
-        );
+        // PID字节长度等于λ + log(n) + log(m)
+        int pidByteLength = CommonConstants.STATS_BYTE_LENGTH
+            + CommonUtils.getByteLength(LongUtils.ceilLog2(ownSetSize))
+            + CommonUtils.getByteLength(LongUtils.ceilLog2(otherSetSize));
         pidMapPrf = PrfFactory.createInstance(envType, pidByteLength);
         pidMapPrf.setKey(pidMapPrfKey);
         // 生成置乱映射，计算并发送U_c
@@ -150,7 +150,7 @@ public class Bkms20PidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long ucGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 1/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), ucGenTime);
+        info("{}{} Server Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), ucGenTime);
 
         stopWatch.start();
         // 接收U_p，根据U_p计算E_p和V_p，存储E_p并发送V_p
@@ -168,7 +168,7 @@ public class Bkms20PidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long vpGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), vpGenTime);
+        info("{}{} Server Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), vpGenTime);
 
         stopWatch.start();
         // 接收V_c，计算自己ID对应的PID
@@ -181,7 +181,7 @@ public class Bkms20PidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long idMapGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 3/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), idMapGenTime);
+        info("{}{} Server Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), idMapGenTime);
 
         stopWatch.start();
         // 接收E_c，先计算S_p、S_c并发送S_p
@@ -196,12 +196,6 @@ public class Bkms20PidServer<T> extends AbstractPidParty<T> {
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(spHeader, spPayload));
-        stopWatch.stop();
-        long spGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Server Step 4/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), spGenTime);
-
-        stopWatch.start();
         // 再计算并发送S_c'
         List<byte[]> scpPayload = generateScpPayload();
         DataPacketHeader scpHeader = new DataPacketHeader(
@@ -212,7 +206,7 @@ public class Bkms20PidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long scpGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 5/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), scpGenTime);
+        info("{}{} Server Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), scpGenTime);
 
         stopWatch.start();
         // 接收S_p'，得到非自己ID对应的PID
@@ -225,7 +219,7 @@ public class Bkms20PidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long sppHandleTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 6/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), sppHandleTime);
+        info("{}{} Server Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), sppHandleTime);
 
         info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
         return new PidPartyOutput<>(pidByteLength, new HashSet<>(serverPidSet), new HashMap<>(serverPidMap));

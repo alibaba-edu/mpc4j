@@ -22,7 +22,7 @@ import edu.alibaba.mpc4j.common.tool.okve.ovdm.gf2e.Gf2eOvdmFactory.Gf2eOvdmType
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcBitVector;
+import edu.alibaba.mpc4j.s2pc.aby.bc.BcSquareVector;
 import edu.alibaba.mpc4j.s2pc.aby.bc.BcFactory;
 import edu.alibaba.mpc4j.s2pc.aby.bc.BcParty;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
@@ -266,10 +266,10 @@ public class Zcl22SkePsuClient extends AbstractPsuClient {
         TransBitMatrix transposeTransBitMatrix = transBitMatrix.transpose();
         int logSize = LongUtils.ceilLog2(serverElementSize);
         // 客户端初始化全为0
-        BcBitVector clientPeqtShares = BcBitVector.createZeros(serverElementSize);
+        BcSquareVector clientPeqtShares = BcSquareVector.createZeros(serverElementSize);
         for (int index = 0; index < CommonConstants.BLOCK_BIT_LENGTH - logSize; index++) {
             byte[] bits = transposeTransBitMatrix.getColumn(index);
-            BcBitVector notBits = bcReceiver.not(BcBitVector.create(bits, serverElementSize, false));
+            BcSquareVector notBits = bcReceiver.not(BcSquareVector.create(bits, serverElementSize, false));
             clientPeqtShares = bcReceiver.and(clientPeqtShares, notBits);
         }
         return clientPeqtShares.getBytes();

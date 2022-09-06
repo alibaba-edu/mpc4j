@@ -7,11 +7,9 @@ import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import sun.misc.Unsafe;
+import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -26,21 +24,18 @@ import java.util.stream.IntStream;
  */
 public class LocalLinearCoder {
     /**
-     * 不安全转换函数，参见https://stackoverflow.com/questions/43079234/convert-a-byte-array-into-an-int-array-in-java
+     * 编码矩阵有d个位置为1
      */
-    private static final Unsafe UNSAFE;
-
-    static {
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            UNSAFE = (Unsafe) theUnsafe.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-            throw new IllegalStateException(e);
-        }
-    }
-
+    private static final int D = 10;
+    /**
+     * 生成d个随机整数所需要的分组数量
+     */
+    private static final int RANDOM_BLOCK_NUM = (int) Math.ceil((double) D * Integer.BYTES
+        / CommonConstants.BLOCK_BYTE_LENGTH);
+    /**
+     * 随机分组对应的整数数量
+     */
+    private static final int RANDOM_INT_NUM = RANDOM_BLOCK_NUM * CommonConstants.BLOCK_BYTE_LENGTH / Integer.BYTES;
     /**
      * 编码输出行数
      */
@@ -88,7 +83,7 @@ public class LocalLinearCoder {
      * @param parallel 是否并行计算。
      */
     public LocalLinearCoder(EnvType envType, int k, int n, byte[] seed, boolean parallel) {
-        assert k > LocalLinearCoderUtils.D : "k must be greater than D = " + LocalLinearCoderUtils.D + ": " + k;
+        assert k > D : "k must be greater than D = " + D + ": " + k;
         this.k = k;
         byteK = CommonUtils.getByteLength(k);
         offsetK = byteK * Byte.SIZE - k;
@@ -110,77 +105,36 @@ public class LocalLinearCoder {
     public boolean[] binaryEncode(boolean[] inputs) {
         assert inputs.length == k;
         boolean[] outputs = new boolean[n];
-        IntStream encodeIntStream = IntStream.range(0, n);
-        encodeIntStream = parallel ? encodeIntStream.parallel() : encodeIntStream;
-        encodeIntStream.forEach(index -> {
-            // block tmp[3]
-            ByteBuffer indexByteBuffer = ByteBuffer.allocate(
-                CommonConstants.BLOCK_BYTE_LENGTH * LocalLinearCoderUtils.RANDOM_BLOCK_NUM
-            );
-            // 不重复分配内存
-            ByteBuffer blockByteBuffer = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH);
-            for (int blockIndex = 0; blockIndex < LocalLinearCoderUtils.RANDOM_BLOCK_NUM; blockIndex++) {
-                // tmp[m] = makeBlock(i, m)
-                byte[] block = blockByteBuffer
-                    .putInt(0, index)
-                    .putInt(CommonConstants.BLOCK_BYTE_LENGTH / 2, blockIndex)
-                    .array();
-                // prp->permute_block(tmp, 3)
-                indexByteBuffer.put(prp.prp(block));
-            }
-            byte[] indexBytes = indexByteBuffer.array();
-            int[] encode = new int[LocalLinearCoderUtils.RANDOM_INT_NUM];
-            UNSAFE.copyMemory(
-                indexBytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, encode, Unsafe.ARRAY_INT_BASE_OFFSET, indexBytes.length
-            );
-            // uint32_t* r = (uint32_t*)(tmp)
-            for (int j = 0; j < LocalLinearCoderUtils.D; j++) {
-                int position = Math.abs(encode[j] % k);
-                outputs[index] ^= inputs[position];
+        IntStream rowIndexIntStream = IntStream.range(0, n);
+        rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
+        rowIndexIntStream.forEach(rowIndex -> {
+            int[] sparseRow = generateSparseRow(rowIndex);
+            for (int j = 0; j < D; j++) {
+                int position = Math.abs(sparseRow[j] % k);
+                outputs[rowIndex] ^= inputs[position];
             }
         });
         return outputs;
     }
 
     /**
-     * 给定k个分组输入，编码得到n个分组输出。
+     * 给定k个GF2E域的输入，编码得到n个GF2E域的输出。
      *
      * @param inputs k个输入。
      * @return n个输出。
      */
-    public byte[][] blockEncode(byte[][] inputs) {
+    public byte[][] gf2eEncode(byte[][] inputs) {
         assert inputs.length == k;
-        Arrays.stream(inputs).forEach(input -> {
-            assert input.length == CommonConstants.BLOCK_BYTE_LENGTH;
-        });
-        IntStream encodeIntStream = IntStream.range(0, n);
-        encodeIntStream = parallel ? encodeIntStream.parallel() : encodeIntStream;
-        return encodeIntStream
-            .mapToObj(index -> {
-                // block tmp[3]
-                ByteBuffer indexByteBuffer = ByteBuffer.allocate(
-                    CommonConstants.BLOCK_BYTE_LENGTH * LocalLinearCoderUtils.RANDOM_BLOCK_NUM
-                );
-                // 不重复分配内存
-                ByteBuffer blockByteBuffer = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH);
-                for (int blockIndex = 0; blockIndex < LocalLinearCoderUtils.RANDOM_BLOCK_NUM; blockIndex++) {
-                    // tmp[m] = makeBlock(i, m)
-                    byte[] block = blockByteBuffer
-                        .putInt(0, index)
-                        .putInt(CommonConstants.BLOCK_BYTE_LENGTH / 2, blockIndex)
-                        .array();
-                    // prp->permute_block(tmp, 3)
-                    indexByteBuffer.put(prp.prp(block));
-                }
-                byte[] indexBytes = indexByteBuffer.array();
-                int[] encode = new int[LocalLinearCoderUtils.RANDOM_INT_NUM];
-                UNSAFE.copyMemory(
-                    indexBytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, encode, Unsafe.ARRAY_INT_BASE_OFFSET, indexBytes.length
-                );
-                // uint32_t* r = (uint32_t*)(tmp)
-                byte[] output = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                for (int j = 0; j < LocalLinearCoderUtils.D; j++) {
-                    int position = Math.abs(encode[j] % k);
+        int inputByteLength = inputs[0].length;
+        // 不需要验证输入长度，xor的时候会自动监测
+        IntStream rowIndexIntStream = IntStream.range(0, n);
+        rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
+        return rowIndexIntStream
+            .mapToObj(rowIndex -> {
+                int[] sparseRow = generateSparseRow(rowIndex);
+                byte[] output = new byte[inputByteLength];
+                for (int j = 0; j < D; j++) {
+                    int position = Math.abs(sparseRow[j] % k);
                     BytesUtils.xori(output, inputs[position]);
                 }
                 return output;
@@ -189,7 +143,7 @@ public class LocalLinearCoder {
     }
 
     /**
-     * 给定k个Z2输入，编码得到n个Z2输出，输出结果压缩为字节数组。
+     * 给定k个Z2域的输入，编码得到n个Z2域的输出，输出结果压缩为字节数组。
      *
      * @param inputs k个输入。
      * @return n个输出。
@@ -198,35 +152,33 @@ public class LocalLinearCoder {
         assert inputs.length == byteK : "input byte length must be equal to " + byteK + ": " + inputs.length;
         assert BytesUtils.isReduceByteArray(inputs, k) : "input must contains at most " + k + " bits";
         boolean[] outputs = new boolean[n];
-        IntStream encodeIntStream = IntStream.range(0, n);
-        encodeIntStream = parallel ? encodeIntStream.parallel() : encodeIntStream;
-        encodeIntStream.forEach(index -> {
-            // block tmp[3]
-            ByteBuffer indexByteBuffer = ByteBuffer.allocate(
-                CommonConstants.BLOCK_BYTE_LENGTH * LocalLinearCoderUtils.RANDOM_BLOCK_NUM
-            );
-            // 不重复分配内存
-            ByteBuffer blockByteBuffer = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH);
-            for (int blockIndex = 0; blockIndex < LocalLinearCoderUtils.RANDOM_BLOCK_NUM; blockIndex++) {
-                // tmp[m] = makeBlock(i, m)
-                byte[] block = blockByteBuffer
-                    .putInt(0, index)
-                    .putInt(CommonConstants.BLOCK_BYTE_LENGTH / 2, blockIndex)
-                    .array();
-                // prp->permute_block(tmp, 3)
-                indexByteBuffer.put(prp.prp(block));
-            }
-            byte[] indexBytes = indexByteBuffer.array();
-            int[] encode = new int[LocalLinearCoderUtils.RANDOM_INT_NUM];
-            UNSAFE.copyMemory(
-                indexBytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, encode, Unsafe.ARRAY_INT_BASE_OFFSET, indexBytes.length
-            );
-            // uint32_t* r = (uint32_t*)(tmp)
-            for (int j = 0; j < LocalLinearCoderUtils.D; j++) {
-                int position = Math.abs(encode[j] % k);
-                outputs[index] ^= BinaryUtils.getBoolean(inputs, offsetK + position);
+        IntStream rowIndexIntStream = IntStream.range(0, n);
+        rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
+        rowIndexIntStream.forEach(rowIndex -> {
+            int[] sparseRow = generateSparseRow(rowIndex);
+            for (int j = 0; j < D; j++) {
+                int position = Math.abs(sparseRow[j] % k);
+                outputs[rowIndex] ^= BinaryUtils.getBoolean(inputs, offsetK + position);
             }
         });
         return BinaryUtils.binaryToRoundByteArray(outputs);
     }
+
+    private int[] generateSparseRow(int rowIndex) {
+        // block tmp[3]
+        ByteBuffer indexByteBuffer = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH * RANDOM_BLOCK_NUM);
+        // 不重复分配内存
+        ByteBuffer blockByteBuffer = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH);
+        for (int blockIndex = 0; blockIndex < RANDOM_BLOCK_NUM; blockIndex++) {
+            // tmp[m] = makeBlock(i, m)
+            byte[] block = blockByteBuffer
+                .putInt(0, rowIndex)
+                .putInt(CommonConstants.BLOCK_BYTE_LENGTH / 2, blockIndex)
+                .array();
+            // prp->permute_block(tmp, 3)
+            indexByteBuffer.put(prp.prp(block));
+        }
+        return IntUtils.unsafeByteArrayToIntArray(indexByteBuffer.array(), RANDOM_INT_NUM);
+    }
+
 }

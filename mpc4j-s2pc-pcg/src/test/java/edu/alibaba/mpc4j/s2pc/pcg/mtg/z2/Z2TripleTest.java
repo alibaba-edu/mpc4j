@@ -29,30 +29,30 @@ public class Z2TripleTest {
         try {
             // 创建长度为0的布尔三元组
             Z2Triple.create(0, new byte[0], new byte[0], new byte[0]);
-            throw new IllegalStateException("ERROR: successfully create Boolean Triple with num = 0");
+            throw new IllegalStateException("ERROR: successfully create Z2Triple with num = 0");
         } catch (AssertionError ignored) {
 
         }
         int num = 12;
         int byteNum = CommonUtils.getByteLength(num);
         try {
-            // 创建长度小的布尔三元组
+            // 创建数量小的布尔三元组
             Z2Triple.create(num, new byte[byteNum - 1], new byte[byteNum - 1], new byte[byteNum - 1]);
-            throw new IllegalStateException("ERROR: successfully create Boolean Triple with less byte length");
+            throw new IllegalStateException("ERROR: successfully create Z2Triple with less byte num");
         } catch (AssertionError ignored) {
 
         }
         try {
-            // 创建长度大的布尔三元组
+            // 创建数量大的布尔三元组
             Z2Triple.create(num, new byte[byteNum + 1], new byte[byteNum + 1], new byte[byteNum + 1]);
-            throw new IllegalStateException("ERROR: successfully create Boolean Triple with large byte length");
+            throw new IllegalStateException("ERROR: successfully create Z2Triple with large byte num");
         } catch (AssertionError ignored) {
 
         }
         try {
-            // 创建长度不一致的布尔三元组
+            // 创建数量不一致的布尔三元组
             Z2Triple.create(num, new byte[byteNum], new byte[byteNum - 1], new byte[byteNum + 1]);
-            throw new IllegalStateException("ERROR: successfully create Boolean Triple with distinct length");
+            throw new IllegalStateException("ERROR: successfully create Z2Triple with distinct byte num");
         } catch (AssertionError ignored) {
 
         }
@@ -63,7 +63,7 @@ public class Z2TripleTest {
         try {
             // 创建长度过短的布尔三元组
             Z2Triple.create(num - 1, a, b, c);
-            throw new IllegalStateException("ERROR: successfully create Boolean Triple with wrong num");
+            throw new IllegalStateException("ERROR: successfully create Z2Triple with wrong num");
         } catch (AssertionError ignored) {
 
         }
@@ -238,7 +238,7 @@ public class Z2TripleTest {
         assertCorrectness(tripleAll, 0);
         assertCorrectness(splitTripleAll, num);
         if (num > 1) {
-            // 切分n - 1比特
+            // 切分num - 1比特
             Z2Triple tripleN = Z2Triple.create(num, a, b, c);
             Z2Triple splitTripleN = tripleN.split(num - 1);
             assertCorrectness(tripleN, 1);
@@ -255,6 +255,9 @@ public class Z2TripleTest {
         if (byteNum == 0) {
             Assert.assertEquals(0, z2Triple.getNum());
             Assert.assertEquals(0, z2Triple.getByteNum());
+            Assert.assertEquals(0, z2Triple.getA().length);
+            Assert.assertEquals(0, z2Triple.getB().length);
+            Assert.assertEquals(0, z2Triple.getC().length);
             Assert.assertEquals("", z2Triple.getStringA());
             Assert.assertEquals("", z2Triple.getStringB());
             Assert.assertEquals("", z2Triple.getStringC());

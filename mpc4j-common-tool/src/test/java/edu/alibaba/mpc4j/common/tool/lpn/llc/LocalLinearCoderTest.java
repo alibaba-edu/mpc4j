@@ -69,39 +69,41 @@ public class LocalLinearCoderTest {
     }
 
     @Test
-    public void testBlockEncode() {
-        testBlockEncode(false);
+    public void testGf2eEncode() {
+        testGf2eEncode(false);
     }
 
     @Test
-    public void testParallelBlockEncode() {
-        testBlockEncode(true);
+    public void testParallelGf2eEncode() {
+        testGf2eEncode(true);
     }
 
-    private void testBlockEncode(boolean parallel) {
+    private void testGf2eEncode(boolean parallel) {
         // 随机种子，初始化本地线性编码
         byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         SECURE_RANDOM.nextBytes(seed);
         LocalLinearCoder localLinearCoder = new LocalLinearCoder(k, n, seed, parallel);
-        // 随机输入
-        byte[][] inputs = IntStream.range(0, k)
-            .mapToObj(index -> {
-                byte[] input = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                SECURE_RANDOM.nextBytes(input);
-                return input;
-            })
-            .toArray(byte[][]::new);
-        Set<ByteBuffer> outputSet = Arrays.stream(localLinearCoder.blockEncode(inputs))
-            .map(ByteBuffer::wrap)
-            .collect(Collectors.toSet());
-        // 编码结果应无重复
-        Assert.assertEquals(n, outputSet.size());
-        Set<ByteBuffer> anOutputSet = Arrays.stream(localLinearCoder.blockEncode(inputs))
-            .map(ByteBuffer::wrap)
-            .collect(Collectors.toSet());
-        // 执行两次编码，结果应该一致
-        Assert.assertTrue(outputSet.containsAll(anOutputSet));
-        Assert.assertTrue(anOutputSet.containsAll(outputSet));
+        // 编码不同的GF2E域
+        for (int inputByteLength = 1; inputByteLength <= CommonConstants.BLOCK_BYTE_LENGTH; inputByteLength = inputByteLength << 1) {
+            int currentInputByteLength = inputByteLength;
+            // 随机输入
+            byte[][] inputs = IntStream.range(0, k)
+                .mapToObj(index -> {
+                    byte[] input = new byte[currentInputByteLength];
+                    SECURE_RANDOM.nextBytes(input);
+                    return input;
+                })
+                .toArray(byte[][]::new);
+            Set<ByteBuffer> outputSet = Arrays.stream(localLinearCoder.gf2eEncode(inputs))
+                .map(ByteBuffer::wrap)
+                .collect(Collectors.toSet());
+            Set<ByteBuffer> anOutputSet = Arrays.stream(localLinearCoder.gf2eEncode(inputs))
+                .map(ByteBuffer::wrap)
+                .collect(Collectors.toSet());
+            // 执行两次编码，结果应该一致
+            Assert.assertTrue(outputSet.containsAll(anOutputSet));
+            Assert.assertTrue(anOutputSet.containsAll(outputSet));
+        }
     }
 
     @Test

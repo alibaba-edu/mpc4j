@@ -120,7 +120,7 @@ public abstract class AbstractBchCoder implements LinearCoder {
         Preconditions.checkArgument(flattenGenerateMatrix.length == size * CODE_BLOCK_BIT_LENGTH / Byte.SIZE);
         // C++和Java对于byte的比特表示顺序不一样，需要转一下
         for (int i = 0; i < flattenGenerateMatrix.length; i++) {
-            flattenGenerateMatrix[i] = BytesUtils.reverseByte(flattenGenerateMatrix[i]);
+            flattenGenerateMatrix[i] = BytesUtils.reverseBit(flattenGenerateMatrix[i]);
         }
         // 先把前面缺的位置补上0
         int offset = datawordByteLength * Byte.SIZE - datawordBitLength;

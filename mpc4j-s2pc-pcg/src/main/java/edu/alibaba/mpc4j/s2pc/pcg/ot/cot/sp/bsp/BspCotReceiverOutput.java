@@ -2,8 +2,6 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp;
 
 import java.util.Arrays;
 
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp.SspCotReceiverOutput;
-
 /**
  * BSP-COT协议接收方输出。
  *

@@ -8,6 +8,8 @@ import edu.alibaba.mpc4j.s2pc.pso.pmid.PmidFactory.PmidType;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * PMID协议客户端抽象类。
@@ -23,15 +25,19 @@ public abstract class AbstractPmidClient<T> extends AbstractSecureTwoPartyPto im
     /**
      * 客户端集合最大数量
      */
-    private int maxClientSetSize;
-    /**
-     * 服务端集合最大数量
-     */
-    private int maxServerSetSize;
+    protected int maxClientSetSize;
     /**
      * 客户端最大重复元素上界
      */
-    private int maxK;
+    protected int maxClientU;
+    /**
+     * 服务端集合最大数量
+     */
+    protected int maxServerSetSize;
+    /**
+     * 服务端最大重复元素上界
+     */
+    protected int maxServerU;
     /**
      * 客户端元素映射
      */
@@ -45,13 +51,17 @@ public abstract class AbstractPmidClient<T> extends AbstractSecureTwoPartyPto im
      */
     protected int clientSetSize;
     /**
+     * 客户端重复元素上界
+     */
+    protected int clientU;
+    /**
      * 服务端元素数量
      */
     protected int serverSetSize;
     /**
-     * 客户端重复元素上界
+     * 服务端重复元素上界
      */
-    protected int k;
+    protected int serverU;
 
     protected AbstractPmidClient(PtoDesc ptoDesc, Rpc ownRpc, Party otherParty, PmidConfig config) {
         super(ptoDesc, ownRpc, otherParty, config);
@@ -63,36 +73,66 @@ public abstract class AbstractPmidClient<T> extends AbstractSecureTwoPartyPto im
         return config.getPtoType();
     }
 
-    protected void setInitInput(int maxClientSetSize, int maxServerSetSize, int maxK) {
+    protected void setInitInput(int maxClientSetSize, int maxClientU, int maxServerSetSize, int maxServerU) {
         assert maxClientSetSize > 1 : "max(ClientSetSize) must be greater than 1";
         this.maxClientSetSize = maxClientSetSize;
+        assert maxClientU >= 1 : "max(ClientU) must be greater than or equal to 1";
+        this.maxClientU = maxClientU;
         assert maxServerSetSize > 1 : "max(ServerSetSize) must be greater than 1";
         this.maxServerSetSize = maxServerSetSize;
-        assert maxK >= 1 : "max(K) must be greater than or equal to 1";
-        this.maxK = maxK;
+        assert maxServerU >= 1 : "max(ServerU) must be greater than or equal to 1";
+        this.maxServerU = maxServerU;
+
         initialized = false;
     }
 
+    protected void setPtoInput(Set<T> clientElementSet, int serverSetSize) {
+        Map<T, Integer> clientElementMap = clientElementSet.stream()
+            .collect(Collectors.toMap(
+                    element -> element,
+                    element -> 1
+                )
+            );
+        setPtoInput(clientElementMap, serverSetSize, 1);
+    }
+
     protected void setPtoInput(Map<T, Integer> clientElementMap, int serverSetSize) {
+        setPtoInput(clientElementMap, serverSetSize, 1);
+    }
+
+    protected void setPtoInput(Set<T> clientElementSet, int serverSetSize, int serverU) {
+        Map<T, Integer> clientElementMap = clientElementSet.stream()
+            .collect(Collectors.toMap(
+                    element -> element,
+                    element -> 1
+                )
+            );
+        setPtoInput(clientElementMap, serverSetSize, serverU);
+    }
+
+    protected void setPtoInput(Map<T, Integer> clientElementMap, int serverSetSize, int serverU) {
         if (!initialized) {
             throw new IllegalStateException("Need init...");
         }
-        assert clientElementMap.keySet().size() > 1 && clientElementMap.keySet().size() <= maxClientSetSize :
+        Set<T> clientElementSet = clientElementMap.keySet();
+        assert clientElementSet.size() > 1 && clientElementSet.size() <= maxClientSetSize :
             "ClientSetSize must be in range (1, " + maxClientSetSize + "]";
+        clientElementArrayList = new ArrayList<>(clientElementSet);
+        clientSetSize = clientElementSet.size();
         this.clientElementMap = clientElementMap;
-        clientElementArrayList = new ArrayList<>(clientElementMap.keySet());
-        clientSetSize = clientElementArrayList.size();
-        k = clientElementMap.keySet().stream()
+        clientU = clientElementSet.stream()
             .mapToInt(clientElementMap::get)
-            .peek(dy -> {
-                assert dy >= 1 : "ky must be greater than or equal to 1";
+            .peek(uy -> {
+                assert uy >= 1 : "uy must be greater than or equal to 1";
             })
             .max()
             .orElse(0);
-        assert k <= maxK : "K must be in range [1, " + maxK + "]";
+        assert clientU >= 1 && clientU <= maxClientU : "ClientK must be in range [1, " + maxClientU + "]: " + clientU;
         assert serverSetSize > 1 && serverSetSize <= maxServerSetSize :
             "ServerSetSize must be in range (1, " + maxServerSetSize + "]";
         this.serverSetSize = serverSetSize;
+        assert serverU >= 1 && serverU <= maxServerU : "ServerK must be in range [1, " + maxServerU + "]: " + serverU;
+        this.serverU = serverU;
         extraInfo++;
     }
 }

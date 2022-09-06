@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.sml.opboost.main;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.dp.ldp.LdpConfig;
 import edu.alibaba.mpc4j.dp.ldp.nominal.encode.DirectEncodeLdpConfig;
 import edu.alibaba.mpc4j.dp.ldp.numeric.integral.*;
@@ -60,7 +61,7 @@ public class OpBoostMainUtils {
      */
     public static String setDatasetName(Properties properties) {
         LOGGER.info("-----set dataset name-----");
-        return Preconditions.checkNotNull(properties.getProperty("dataset_name"), "Please set dataset_name");
+        return PropertiesUtils.readString(properties, "dataset_name");
     }
 
     /**
@@ -71,7 +72,7 @@ public class OpBoostMainUtils {
      */
     public static Formula setFormula(Properties properties) {
         LOGGER.info("-----set label-----");
-        String formulaString = Preconditions.checkNotNull(properties.getProperty("formula"), "Please set formula");
+        String formulaString = PropertiesUtils.readString(properties, "formula");
         return Formula.lhs(formulaString);
     }
 
@@ -83,15 +84,9 @@ public class OpBoostMainUtils {
      */
     public static StructType setSchema(Properties properties, Formula formula) {
         LOGGER.info("-----set whole schema-----");
-        String columnTypesString = Preconditions.checkNotNull(
-            properties.getProperty("column_types"), "Please set column_types"
-        );
-        String[] columnTypes = columnTypesString.split(",");
-        String columnNamesString = Preconditions.checkNotNull(
-            properties.getProperty("column_names"), "Please set column_names"
-        );
-        String[] columnNames = columnNamesString.split(",");
-        Preconditions.checkArgument(
+        String[] columnTypes = PropertiesUtils.readStringArray(properties, "column_types");
+        String[] columnNames = PropertiesUtils.readStringArray(properties, "column_names");
+            Preconditions.checkArgument(
             Arrays.stream(columnNames).collect(Collectors.toSet()).size() == columnNames.length,
             "column_names contains duplicated names"
         );
@@ -120,10 +115,7 @@ public class OpBoostMainUtils {
                         return new StructField(columnName, DataTypes.DoubleType);
                     case "C":
                         // 分类任务的标签类型
-                        String classTypesString = Preconditions.checkNotNull(
-                            properties.getProperty("class_types"), "Please set class_types"
-                        );
-                        String[] classTypes = classTypesString.split(",");
+                        String[] classTypes = PropertiesUtils.readStringArray(properties, "class_types");
                         return new StructField(columnName, DataTypes.ByteType, new NominalScale(classTypes));
                     default:
                         throw new IllegalArgumentException("Invalid columnType: " + columnType);
@@ -142,10 +134,7 @@ public class OpBoostMainUtils {
      * @return 总测试轮数。
      */
     public static int setTotalRound(Properties properties) {
-        String totalRoundString = Preconditions.checkNotNull(
-            properties.getProperty("total_round"), "Please set total_round"
-        );
-        int totalRound = Integer.parseInt(totalRoundString);
+        int totalRound = PropertiesUtils.readInt(properties, "total_round");
         Preconditions.checkArgument(totalRound >= 1, "round must be greater than or equal to 1");
         return totalRound;
     }
@@ -160,17 +149,13 @@ public class OpBoostMainUtils {
     public static Map<String, Boolean> setLdpColumnsMap(Properties properties, StructType schema) {
         LOGGER.info("-----set LDP columns-----");
         int ncols = schema.length();
-        String dpColumnsString = Preconditions.checkNotNull(
-            properties.getProperty("ldp_columns"), "Please set ldp_columns"
-        );
-        int[] dpColumns = Arrays.stream(dpColumnsString.split(","))
-            // 解析成整数
-            .mapToInt(Integer::parseInt)
-            .peek(value -> Preconditions.checkArgument(value == 0 || value == 1,
-                "Invalid ldp_column: %s, only support 0 or 1", value)
-            )
-            .toArray();
+        int[] dpColumns = PropertiesUtils.readIntArray(properties, "ldp_columns");
         Preconditions.checkArgument(dpColumns.length == ncols, "# ldp_column must match column_num");
+        Arrays.stream(dpColumns).forEach(value ->
+                Preconditions.checkArgument(
+                    value == 0 || value == 1,
+                    "Invalid ldp_column: %s, only support 0 or 1", value)
+            );
 
         return IntStream.range(0, ncols)
             .boxed()
@@ -187,14 +172,7 @@ public class OpBoostMainUtils {
      * @return ε。
      */
     public static double[] setEpsilons(Properties properties) {
-        String epsilonsString = Preconditions.checkNotNull(
-            properties.getProperty("epsilon"), "Please set epsilon"
-        );
-        double[] epsilons = Arrays.stream(epsilonsString.split(","))
-            .mapToDouble(Double::parseDouble)
-            .toArray();
-        LOGGER.info("ε = {}", Arrays.toString(epsilons));
-        return epsilons;
+        return PropertiesUtils.readDoubleArray(properties, "epsilon");
     }
 
     /**
@@ -204,14 +182,7 @@ public class OpBoostMainUtils {
      * @return θ。
      */
     public static int[] setThetas(Properties properties) {
-        String thetasString = Preconditions.checkNotNull(
-            properties.getProperty("theta"), "Please set theta"
-        );
-        int[] thetas = Arrays.stream(thetasString.split(","))
-            .mapToInt(Integer::parseInt)
-            .toArray();
-        LOGGER.info("θ = {}", thetas);
-        return thetas;
+        return PropertiesUtils.readIntArray(properties, "theta");
     }
 
     /**
@@ -221,14 +192,7 @@ public class OpBoostMainUtils {
      * @return α
      */
     public static double[] setAlphas(Properties properties) {
-        String alphasString = Preconditions.checkNotNull(
-            properties.getProperty("alpha"), "Please set alpha"
-        );
-        double[] alphas = Arrays.stream(alphasString.split(","))
-            .mapToDouble(Double::parseDouble)
-            .toArray();
-        LOGGER.info("α = {}", alphas);
-        return alphas;
+        return PropertiesUtils.readDoubleArray(properties, "alpha");
     }
 
     /**
@@ -241,9 +205,7 @@ public class OpBoostMainUtils {
      * @throws URISyntaxException 如果文件路径有误。
      */
     public static DataFrame setTrainDataFrame(Properties properties, StructType schema) throws IOException, URISyntaxException {
-        String trainDatasetPath = Preconditions.checkNotNull(
-            properties.getProperty("train_dataset_path"), "Please set train_dataset_path"
-        );
+        String trainDatasetPath = PropertiesUtils.readString(properties, "train_dataset_path");
         return Read.csv(trainDatasetPath, DEFAULT_CSV_FORMAT, schema);
     }
 
@@ -257,9 +219,7 @@ public class OpBoostMainUtils {
      * @throws URISyntaxException 如果文件路径有误。
      */
     public static DataFrame setTestDataFrame(Properties properties, StructType schema) throws IOException, URISyntaxException {
-        String testDatasetPath = Preconditions.checkNotNull(
-            properties.getProperty("test_dataset_path"), "Please set test_dataset_path"
-        );
+        String testDatasetPath = PropertiesUtils.readString(properties, "test_dataset_path");
         return Read.csv(testDatasetPath, DEFAULT_CSV_FORMAT, schema);
     }
 

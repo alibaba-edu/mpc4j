@@ -13,14 +13,14 @@ public class BytesUtilsTest {
 
     @Test
     public void testReverseByte() {
-        Assert.assertEquals((byte)0b10000000, BytesUtils.reverseByte((byte)0b00000001));
-        Assert.assertEquals((byte)0b00000010, BytesUtils.reverseByte((byte)0b01000000));
-        Assert.assertEquals((byte)0b00000100, BytesUtils.reverseByte((byte)0b00100000));
-        Assert.assertEquals((byte)0b00001000, BytesUtils.reverseByte((byte)0b00010000));
-        Assert.assertEquals((byte)0b00010000, BytesUtils.reverseByte((byte)0b00001000));
-        Assert.assertEquals((byte)0b00100000, BytesUtils.reverseByte((byte)0b00000100));
-        Assert.assertEquals((byte)0b01000000, BytesUtils.reverseByte((byte)0b00000010));
-        Assert.assertEquals((byte)0b10000000, BytesUtils.reverseByte((byte)0b00000001));
+        Assert.assertEquals((byte)0b10000000, BytesUtils.reverseBit((byte)0b00000001));
+        Assert.assertEquals((byte)0b00000010, BytesUtils.reverseBit((byte)0b01000000));
+        Assert.assertEquals((byte)0b00000100, BytesUtils.reverseBit((byte)0b00100000));
+        Assert.assertEquals((byte)0b00001000, BytesUtils.reverseBit((byte)0b00010000));
+        Assert.assertEquals((byte)0b00010000, BytesUtils.reverseBit((byte)0b00001000));
+        Assert.assertEquals((byte)0b00100000, BytesUtils.reverseBit((byte)0b00000100));
+        Assert.assertEquals((byte)0b01000000, BytesUtils.reverseBit((byte)0b00000010));
+        Assert.assertEquals((byte)0b10000000, BytesUtils.reverseBit((byte)0b00000001));
     }
 
     @Test

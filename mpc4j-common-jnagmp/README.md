@@ -1,8 +1,8 @@
 # Introduction
 
-A JNA wrapper around the [GNU Multiple Precision Arithmetic Library](http://gmplib.org/) ("libgmp") supporting the Arm64 operating system. 
+A JNA wrapper around the [GNU Multiple Precision Arithmetic Library](http://gmplib.org/) ("libgmp") supporting the `aarch64` system. 
 
-The original JNA-GMP is provided by [JNA GMP project](https://github.com/square/jna-gmp). We modify the code for supporting the Arm64 operating system. The details are as follows:
+The original JNA-GMP is provided by [JNA GMP project](https://github.com/square/jna-gmp). We modify the code for supporting the `aarch64` system. The details are as follows:
 
 - We separate `darwin-x86_64` and `darwin-aarch64` by renaming the dictionary name `darwin` in `resources` as `darwin-x86_64` and providing a pre-compiled libgmp for Arm64 operating system in `darwin-aarch64`.
 - We found that all libgmp provided for other operating systems are in version 6.1.1. However, we cannot successfully compile libgmp 6.1.1 on the Arm64 operating system with the error `Oops, mp_limb_t is 64 bits, but the assembler code`. We tried and successfully compiled libgmp 6.2.1. Therefore, the libgmp in `darwin-aarch64` is in version 6.2.1, while others are in version 6.1.1. See `LibGmpTest.testVersion()` for more details.

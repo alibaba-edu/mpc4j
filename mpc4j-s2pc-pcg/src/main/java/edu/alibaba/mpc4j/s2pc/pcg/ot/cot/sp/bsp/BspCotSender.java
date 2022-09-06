@@ -23,31 +23,31 @@ public interface BspCotSender extends TwoPartyPto, SecurePto {
     /**
      * 初始化协议。
      *
-     * @param delta    关联值Δ。
-     * @param maxBatch 最大批处理数量。
-     * @param maxNum   最大数量。
+     * @param delta       关联值Δ。
+     * @param maxBatchNum 最大批处理数量。
+     * @param maxNum      最大数量。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    void init(byte[] delta, int maxBatch, int maxNum) throws MpcAbortException;
+    void init(byte[] delta, int maxBatchNum, int maxNum) throws MpcAbortException;
 
     /**
      * 执行协议。
      *
-     * @param batch 批处理数量。
-     * @param num   数量。
+     * @param batchNum 批处理数量。
+     * @param num      数量。
      * @return 发送方输出。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    BspCotSenderOutput send(int batch, int num) throws MpcAbortException;
+    BspCotSenderOutput send(int batchNum, int num) throws MpcAbortException;
 
     /**
      * 执行协议。
      *
-     * @param batch           批处理数量。
+     * @param batchNum        批处理数量。
      * @param num             数量。
      * @param preSenderOutput 预计算发送方输出。
      * @return 发送方输出。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    BspCotSenderOutput send(int batch, int num, CotSenderOutput preSenderOutput) throws MpcAbortException;
+    BspCotSenderOutput send(int batchNum, int num, CotSenderOutput preSenderOutput) throws MpcAbortException;
 }

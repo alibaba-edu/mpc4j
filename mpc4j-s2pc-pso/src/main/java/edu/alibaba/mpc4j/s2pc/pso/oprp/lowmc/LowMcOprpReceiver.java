@@ -12,7 +12,7 @@ import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcBitVector;
+import edu.alibaba.mpc4j.s2pc.aby.bc.BcSquareVector;
 import edu.alibaba.mpc4j.s2pc.aby.bc.BcFactory;
 import edu.alibaba.mpc4j.s2pc.aby.bc.BcParty;
 import edu.alibaba.mpc4j.s2pc.pso.oprp.AbstractOprpReceiver;
@@ -222,8 +222,8 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
         }
         // 一轮AND运算
         byte[] sbox1 = bcReceiver.and(
-            BcBitVector.create(baa1, LowMcUtils.SBOX_NUM * 3 * roundBatchSize, false),
-            BcBitVector.create(ccb1, LowMcUtils.SBOX_NUM * 3 * roundBatchSize, false)
+            BcSquareVector.create(baa1, LowMcUtils.SBOX_NUM * 3 * roundBatchSize, false),
+            BcSquareVector.create(ccb1, LowMcUtils.SBOX_NUM * 3 * roundBatchSize, false)
         ).getBytes();
         for (int sboxIndex = 0; sboxIndex < LowMcUtils.SBOX_NUM; sboxIndex++) {
             int offset = 3 * batchByteSize * sboxIndex;
@@ -234,31 +234,31 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
             byte[] bc1 = new byte[batchByteSize];
             System.arraycopy(sbox1, offset, bc1, 0, batchByteSize);
             BytesUtils.reduceByteArray(bc1, batchSize);
-            BcBitVector a1Sbox = bcReceiver.xor(
-                BcBitVector.create(a1, batchSize, false),
-                BcBitVector.create(bc1, batchSize, false)
+            BcSquareVector a1Sbox = bcReceiver.xor(
+                BcSquareVector.create(a1, batchSize, false),
+                BcSquareVector.create(bc1, batchSize, false)
             );
             byte[] a1SboxBytes = a1Sbox.getBytes();
             // b = a ⊕ b ⊕ (a ☉ c)
             byte[] ac1 = new byte[batchByteSize];
             System.arraycopy(sbox1, offset + batchByteSize, ac1, 0, batchByteSize);
             BytesUtils.reduceByteArray(ac1, batchSize);
-            BcBitVector b1Sbox = bcReceiver.xor(
-                BcBitVector.create(a1, batchSize, false),
-                BcBitVector.create(b1, batchSize, false)
+            BcSquareVector b1Sbox = bcReceiver.xor(
+                BcSquareVector.create(a1, batchSize, false),
+                BcSquareVector.create(b1, batchSize, false)
             );
-            b1Sbox = bcReceiver.xor(b1Sbox, BcBitVector.create(ac1, batchSize, false));
+            b1Sbox = bcReceiver.xor(b1Sbox, BcSquareVector.create(ac1, batchSize, false));
             byte[] b1SboxBytes = b1Sbox.getBytes();
             // c = a ⊕ b ⊕ c ⊕ (a ☉ b)
             byte[] ab1 = new byte[batchByteSize];
             System.arraycopy(sbox1, offset + 2 * batchByteSize, ab1, 0, batchByteSize);
             BytesUtils.reduceByteArray(ab1, batchSize);
-            BcBitVector c1Sbox = bcReceiver.xor(
-                BcBitVector.create(a1, batchSize, false),
-                BcBitVector.create(b1, batchSize, false)
+            BcSquareVector c1Sbox = bcReceiver.xor(
+                BcSquareVector.create(a1, batchSize, false),
+                BcSquareVector.create(b1, batchSize, false)
             );
-            c1Sbox = bcReceiver.xor(c1Sbox, BcBitVector.create(c1, batchSize, false));
-            c1Sbox = bcReceiver.xor(c1Sbox, BcBitVector.create(ab1, batchSize, false));
+            c1Sbox = bcReceiver.xor(c1Sbox, BcSquareVector.create(c1, batchSize, false));
+            c1Sbox = bcReceiver.xor(c1Sbox, BcSquareVector.create(ab1, batchSize, false));
             byte[] c1SboxBytes = c1Sbox.getBytes();
             stateBytesTransMatrix.setColumn(sboxIndex * 3, a1SboxBytes);
             stateBytesTransMatrix.setColumn(sboxIndex * 3 + 1, b1SboxBytes);

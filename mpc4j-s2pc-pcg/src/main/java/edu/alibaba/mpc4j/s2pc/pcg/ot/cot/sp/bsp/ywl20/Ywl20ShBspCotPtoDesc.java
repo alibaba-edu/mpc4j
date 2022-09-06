@@ -24,24 +24,6 @@ class Ywl20ShBspCotPtoDesc implements PtoDesc {
     private static final String PTO_NAME = "YWL20_SH_BSP_COT";
 
     /**
-     * 协议步骤
-     */
-    enum PtoStep {
-        /**
-         * 接收方发送纠正比特b
-         */
-        RECEIVER_SEND_BINARY,
-        /**
-         * 发送方发送纠正消息M
-         */
-        SENDER_SEND_MESSAGE,
-        /**
-         * 发送方发送组合消息C
-         */
-        SENDER_SEND_CORRELATE,
-    }
-
-    /**
      * 单例模式
      */
     private static final Ywl20ShBspCotPtoDesc INSTANCE = new Ywl20ShBspCotPtoDesc();
@@ -51,6 +33,16 @@ class Ywl20ShBspCotPtoDesc implements PtoDesc {
      */
     private Ywl20ShBspCotPtoDesc() {
         // empty
+    }
+
+    /**
+     * 协议步骤
+     */
+    enum PtoStep {
+        /**
+         * 发送方发送组合消息C
+         */
+        SENDER_SEND_CORRELATE,
     }
 
     public static PtoDesc getInstance() {

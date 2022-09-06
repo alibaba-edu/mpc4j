@@ -85,6 +85,6 @@ public class CotFactory {
      * @return 默认协议配置项。
      */
     public static CotConfig createDefaultConfig(SecurityModel securityModel) {
-        return new CacheCotConfig.Builder(securityModel).build();
+        return new DirectCotConfig.Builder(securityModel).build();
     }
 }

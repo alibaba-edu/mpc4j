@@ -38,7 +38,7 @@ class Gmr21MpPidPtoDesc implements PtoDesc {
     /**
      * 协议名称
      */
-    private static final String PTO_NAME = "ZCL22_MP_PID";
+    private static final String PTO_NAME = "GMR21_MP_PID";
 
     /**
      * 协议步骤

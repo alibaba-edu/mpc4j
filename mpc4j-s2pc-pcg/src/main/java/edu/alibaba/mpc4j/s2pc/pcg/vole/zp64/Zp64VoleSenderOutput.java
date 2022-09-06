@@ -40,17 +40,17 @@ public class Zp64VoleSenderOutput {
         assert BigInteger.valueOf(prime).isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "input prime is not a prime: " + prime;
         senderOutput.prime = prime;
         senderOutput.x = Arrays.stream(x)
-                .peek(xi -> {
-                    assert xi >= 0 && xi < prime
-                            : "xi must be in range [0, " + prime + "): " + xi;
-                })
-                .toArray();
+            .peek(xi -> {
+                assert xi >= 0 && xi < prime
+                    : "xi must be in range [0, " + prime + "): " + xi;
+            })
+            .toArray();
         senderOutput.t = Arrays.stream(t)
-                .peek(ti -> {
-                    assert ti >= 0 && ti < prime
-                            : "ti must be in range [0, " + prime + "): " + ti;
-                })
-                .toArray();
+            .peek(ti -> {
+                assert ti >= 0 && ti < prime
+                    : "ti must be in range [0, " + prime + "): " + ti;
+            })
+            .toArray();
         return senderOutput;
     }
 
