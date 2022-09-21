@@ -56,8 +56,7 @@ public class Ra17MpOprfConfig implements MpOprfConfig {
         private boolean compressEncode;
 
         public Builder() {
-            super();
-            this.envType = EnvType.STANDARD;
+            envType = EnvType.STANDARD;
             compressEncode = true;
         }
 

@@ -49,9 +49,9 @@ public class LdpcCreatorUtils {
             : "log(n) must be in range [" + MIN_LOG_N + ", " + MAX_LOG_N + "]";
         switch (codeType) {
             case SILVER_5:
-                return Silver5Utils.CRR21_SILVER5_SH_BCG19_REG_LPN_PARAMS_MAP.get(ceilLogN);
+                return Silver5Utils.CRR21_SILVER5_LPN_PARAMS_MAP.get(ceilLogN);
             case SILVER_11:
-                return Silver11Utils.CRR21_SILVER11_SH_BCG19_REG_LPN_PARAMS_MAP.get(ceilLogN);
+                return Silver11Utils.CRR21_SILVER11_LPN_PARAMS_MAP.get(ceilLogN);
             default:
                 throw new IllegalArgumentException("Invalid CodeType: " + codeType.name());
         }

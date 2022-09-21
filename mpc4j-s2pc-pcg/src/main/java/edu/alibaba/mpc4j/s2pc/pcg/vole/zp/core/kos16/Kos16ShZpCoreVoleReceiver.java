@@ -130,7 +130,7 @@ public class Kos16ShZpCoreVoleReceiver extends AbstractZpCoreVoleReceiver {
             int columnIndex = index % k;
             // 从payload中读取Zp元素u
             BigInteger u = BigIntegerUtils.byteArrayToNonNegBigInteger(matrixPayloadArray[index]);
-            // 计算tb = PRF(kb, i), q(i,j) = u + delta_j * tb,
+            // 计算t_b = PRF(kb, i), q(i,j) = u + Δ_j * t_b,
             byte[] tbSeed = ByteBuffer
                 .allocate(Long.BYTES + Integer.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
                 .putLong(extraInfo).putInt(rowIndex).put(baseOtReceiverOutput.getRb(columnIndex))

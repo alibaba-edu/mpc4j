@@ -14,7 +14,11 @@ import java.util.Set;
  * @date 2022/02/15
  */
 public interface PsuServer extends TwoPartyPto, SecurePto {
-
+    /**
+     * 返回PSU协议类型。
+     *
+     * @return PSU协议类型。
+     */
     @Override
     PsuFactory.PsuType getPtoType();
 

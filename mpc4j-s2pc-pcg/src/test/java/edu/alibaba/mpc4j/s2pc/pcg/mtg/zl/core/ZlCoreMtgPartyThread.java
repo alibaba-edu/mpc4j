@@ -15,10 +15,6 @@ public class ZlCoreMtgPartyThread extends Thread {
      */
     private final ZlCoreMtgParty party;
     /**
-     * l的值
-     */
-    private final int l;
-    /**
      * 布尔三元组数量
      */
     private final int num;
@@ -27,9 +23,8 @@ public class ZlCoreMtgPartyThread extends Thread {
      */
     private ZlTriple output;
 
-    ZlCoreMtgPartyThread(ZlCoreMtgParty party, int l, int num) {
+    ZlCoreMtgPartyThread(ZlCoreMtgParty party, int num) {
         this.party = party;
-        this.l = l;
         this.num = num;
     }
 
@@ -41,7 +36,7 @@ public class ZlCoreMtgPartyThread extends Thread {
     public void run() {
         try {
             party.getRpc().connect();
-            party.init(l, num);
+            party.init(num);
             output = party.generate(num);
             party.getRpc().disconnect();
         } catch (MpcAbortException e) {

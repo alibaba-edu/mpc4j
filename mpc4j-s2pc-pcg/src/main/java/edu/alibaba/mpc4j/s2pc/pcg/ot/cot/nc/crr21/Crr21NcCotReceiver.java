@@ -14,10 +14,10 @@ import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.AbstractNcCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiver;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiverOutput;
 
 /**
  * CRR21-NC-COT协议接收方。

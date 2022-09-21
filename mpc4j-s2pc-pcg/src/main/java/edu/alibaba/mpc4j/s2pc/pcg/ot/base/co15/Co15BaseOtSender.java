@@ -15,10 +15,9 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.AbstractBaseOtSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.co15.Co15BaseOtPtoDesc.PtoStep;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -29,9 +28,9 @@ import org.bouncycastle.math.ec.ECPoint;
  */
 public class Co15BaseOtSender extends AbstractBaseOtSender {
     /**
-     * 配置项
+     * 是否压缩表示
      */
-    private final Co15BaseOtConfig config;
+    private final boolean compressEncode;
     /**
      * 椭圆曲线参数
      */
@@ -51,8 +50,8 @@ public class Co15BaseOtSender extends AbstractBaseOtSender {
 
     public Co15BaseOtSender(Rpc senderRpc, Party receiverParty, Co15BaseOtConfig config) {
         super(Co15BaseOtPtoDesc.getInstance(), senderRpc, receiverParty, config);
+        compressEncode = config.getCompressEncode();
         ecc = EccFactory.createInstance(envType);
-        this.config = config;
     }
 
     @Override
@@ -72,8 +71,8 @@ public class Co15BaseOtSender extends AbstractBaseOtSender {
         stopWatch.start();
         List<byte[]> sPayload = generateSenderPayload();
         DataPacketHeader sDataPacketHeader = new DataPacketHeader(
-                taskId, ptoDesc.getPtoId(), Co15BaseOtPtoDesc.PtoStep.SENDER_SEND_S.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
+            taskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_S.ordinal(), extraInfo,
+            ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(sDataPacketHeader, sPayload));
         stopWatch.stop();
@@ -83,8 +82,8 @@ public class Co15BaseOtSender extends AbstractBaseOtSender {
 
         stopWatch.start();
         DataPacketHeader rHeader = new DataPacketHeader(
-                taskId, ptoDesc.getPtoId(), Co15BaseOtPtoDesc.PtoStep.RECEIVER_SEND_R.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
+            taskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_R.ordinal(), extraInfo,
+            otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> rPayload = rpc.receive(rHeader).getPayload();
         BaseOtSenderOutput senderOutput = handleReceiverPayload(rPayload);
@@ -105,14 +104,13 @@ public class Co15BaseOtSender extends AbstractBaseOtSender {
         // 计算T = yS
         capitalT = ecc.multiply(capitalS, y);
         List<byte[]> senderPayload = new LinkedList<>();
-        senderPayload.add(ecc.encode(capitalS, config.getCompressEncode()));
+        senderPayload.add(ecc.encode(capitalS, compressEncode));
 
         return senderPayload;
     }
 
     private BaseOtSenderOutput handleReceiverPayload(List<byte[]> receiverPayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(receiverPayload.size() == num);
-        Kdf kdf = KdfFactory.createInstance(envType);
         byte[][] rByteArray = receiverPayload.toArray(new byte[0][]);
         byte[][] r0Array = new byte[num][];
         byte[][] r1Array = new byte[num][];
@@ -126,20 +124,19 @@ public class Co15BaseOtSender extends AbstractBaseOtSender {
             // 计算k0 = H(index,K)
             byte[] k0InputByteArray = ecc.encode(capitalK, false);
             r0Array[index] = kdf.deriveKey(ByteBuffer
-                    .allocate(Integer.BYTES + k0InputByteArray.length)
-                    .putInt(index).put(k0InputByteArray)
-                    .array());
+                .allocate(Integer.BYTES + k0InputByteArray.length)
+                .putInt(index).put(k0InputByteArray)
+                .array());
             // 计算k1 = H(index, K - T)
             byte[] k1InputByteArray = ecc.encode(capitalK.subtract(capitalT), false);
             r1Array[index] = kdf.deriveKey(ByteBuffer
-                    .allocate(Integer.BYTES + k1InputByteArray.length)
-                    .putInt(index).put(k1InputByteArray)
-                    .array());
+                .allocate(Integer.BYTES + k1InputByteArray.length)
+                .putInt(index).put(k1InputByteArray)
+                .array());
         });
         y = null;
         capitalS = null;
         capitalT = null;
-
         return new BaseOtSenderOutput(r0Array, r1Array);
     }
 }

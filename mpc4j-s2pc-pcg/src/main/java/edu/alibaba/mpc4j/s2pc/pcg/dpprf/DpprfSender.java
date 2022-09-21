@@ -18,7 +18,7 @@ public interface DpprfSender extends TwoPartyPto, SecurePto {
      * @return 协议类型。
      */
     @Override
-    DpprfFactory.Gf2kDpprfType getPtoType();
+    DpprfFactory.DpprfType getPtoType();
 
     /**
      * 初始化协议。

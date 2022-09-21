@@ -150,7 +150,7 @@ public class FilterTest {
     }
 
     @Test
-    public void testPacket() {
+    public void testSerialize() {
         byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashNum(type, DEFAULT_SIZE), SECURE_RANDOM);
         Filter<ByteBuffer> filter = FilterFactory.createFilter(EnvType.STANDARD, type, DEFAULT_SIZE, keys);
         // 向过滤器插入元素

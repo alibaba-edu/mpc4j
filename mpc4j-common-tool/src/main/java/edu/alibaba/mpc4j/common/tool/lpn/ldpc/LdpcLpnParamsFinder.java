@@ -1,5 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.lpn.ldpc;
 
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.hashbin.MaxBinSizeUtils;
+import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParamsChecker;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
@@ -90,14 +93,18 @@ class LdpcLpnParamsFinder {
     }
 
     /**
-     * 计算BCG19_REG Mspcot协议消耗的COT数量
+     * 计算YWL20_UNI Mspcot 恶意安全协议消耗的COT数量
+     * 该MSPCOT所需COT最多。据此计算预留COT数量可以满足其他协议需求
+     * 为避免循环依赖，将计算Mspcot消耗的代码复制到此处
      *
      * @param n 参数n
      * @param t 参数t
      * @return 消耗的COT数量
      */
     static int getPreCotSize(int n, int t) {
-        int m = (int) Math.ceil((double) n / (double) t);
-        return LongUtils.ceilLog2(m) * t;
+        int binNum = IntCuckooHashBinFactory.getBinNum(IntCuckooHashBinFactory.IntCuckooHashBinType.NO_STASH_NAIVE, t);
+        int keyNum = IntCuckooHashBinFactory.getHashNum(IntCuckooHashBinFactory.IntCuckooHashBinType.NO_STASH_NAIVE);
+        int maxBinSize = MaxBinSizeUtils.expectMaxBinSize(keyNum * n, binNum);
+        return LongUtils.ceilLog2(maxBinSize) * (binNum + 1) + CommonConstants.BLOCK_BIT_LENGTH;
     }
 }

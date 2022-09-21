@@ -25,7 +25,7 @@ public class DpprfFactory {
     /**
      * 协议类型
      */
-    public enum Gf2kDpprfType {
+    public enum DpprfType {
         /**
          * YWL20协议
          */
@@ -43,13 +43,13 @@ public class DpprfFactory {
     public static int getPrecomputeNum(DpprfConfig config, int batchNum, int alphaBound) {
         assert batchNum > 0 : "BatchNum must be greater than 0: " + batchNum;
         assert alphaBound > 0 : "alphaBound must be greater than 0: " + alphaBound;
-        Gf2kDpprfType type = config.getPtoType();
+        DpprfType type = config.getPtoType();
         //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
             case YWL20:
                 return LongUtils.ceilLog2(alphaBound) * batchNum;
             default:
-                throw new IllegalArgumentException("Invalid " + Gf2kDpprfType.class.getSimpleName() + ": " + type.name());
+                throw new IllegalArgumentException("Invalid " + DpprfType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -62,13 +62,13 @@ public class DpprfFactory {
      * @return 发送方。
      */
     public static DpprfSender createSender(Rpc senderRpc, Party receiverParty, DpprfConfig config) {
-        Gf2kDpprfType type = config.getPtoType();
+        DpprfType type = config.getPtoType();
         //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
             case YWL20:
                 return new Ywl20DpprfSender(senderRpc, receiverParty, (Ywl20DpprfConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid " + Gf2kDpprfType.class.getSimpleName() + ": " + type.name());
+                throw new IllegalArgumentException("Invalid " + DpprfType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -81,13 +81,13 @@ public class DpprfFactory {
      * @return 接收方。
      */
     public static DpprfReceiver createReceiver(Rpc receiverRpc, Party senderParty, DpprfConfig config) {
-        Gf2kDpprfType type = config.getPtoType();
+        DpprfType type = config.getPtoType();
         //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
             case YWL20:
                 return new Ywl20DpprfReceiver(receiverRpc, senderParty, (Ywl20DpprfConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid " + Gf2kDpprfType.class.getSimpleName() + ": " + type.name());
+                throw new IllegalArgumentException("Invalid " + DpprfType.class.getSimpleName() + ": " + type.name());
         }
     }
 

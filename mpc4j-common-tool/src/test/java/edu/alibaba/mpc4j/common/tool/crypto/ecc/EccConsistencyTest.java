@@ -68,19 +68,19 @@ public class EccConsistencyTest {
     @Test
     public void testEcDomainParameters() {
         Ecc jdkEcc = EccFactory.createInstance(jdkType);
-        Ecc mclEcc = EccFactory.createInstance(nativeType);
-        Assert.assertEquals(jdkEcc.getEcDomainParameters(), mclEcc.getEcDomainParameters());
+        Ecc nativeEcc = EccFactory.createInstance(nativeType);
+        Assert.assertEquals(jdkEcc.getEcDomainParameters(), nativeEcc.getEcDomainParameters());
     }
 
     @Test
     public void testHashToPoint() {
         Ecc jdkEcc = EccFactory.createInstance(jdkType);
-        Ecc mclEcc = EccFactory.createInstance(nativeType);
+        Ecc nativeEcc = EccFactory.createInstance(nativeType);
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
             byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(message);
             ECPoint jdkHash = jdkEcc.hashToCurve(message);
-            ECPoint mclHash = mclEcc.hashToCurve(message);
+            ECPoint mclHash = nativeEcc.hashToCurve(message);
             Assert.assertEquals(jdkHash, mclHash);
         }
     }
@@ -88,12 +88,12 @@ public class EccConsistencyTest {
     @Test
     public void testMultiply() {
         Ecc jdkEcc = EccFactory.createInstance(jdkType);
-        Ecc mclEcc = EccFactory.createInstance(nativeType);
+        Ecc nativeEcc = EccFactory.createInstance(nativeType);
         BigInteger n = jdkEcc.getN();
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
             BigInteger alpha = BigIntegerUtils.randomPositive(n, SECURE_RANDOM);
             ECPoint jdkMultiply = jdkEcc.multiply(jdkEcc.getG(), alpha);
-            ECPoint mclMultiply = mclEcc.multiply(mclEcc.getG(), alpha);
+            ECPoint mclMultiply = nativeEcc.multiply(nativeEcc.getG(), alpha);
             Assert.assertEquals(jdkMultiply, mclMultiply);
         }
     }
@@ -101,17 +101,17 @@ public class EccConsistencyTest {
     @Test
     public void testPrecompute() {
         Ecc jdkEcc = EccFactory.createInstance(jdkType);
-        Ecc mclEcc = EccFactory.createInstance(nativeType);
+        Ecc nativeEcc = EccFactory.createInstance(nativeType);
         BigInteger n = jdkEcc.getN();
         jdkEcc.precompute(jdkEcc.getG());
-        mclEcc.precompute(mclEcc.getG());
+        nativeEcc.precompute(nativeEcc.getG());
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
             BigInteger alpha = BigIntegerUtils.randomPositive(n, SECURE_RANDOM);
             ECPoint jdkMultiply = jdkEcc.multiply(jdkEcc.getG(), alpha);
-            ECPoint mclMultiply = mclEcc.multiply(mclEcc.getG(), alpha);
+            ECPoint mclMultiply = nativeEcc.multiply(nativeEcc.getG(), alpha);
             Assert.assertEquals(jdkMultiply, mclMultiply);
         }
         jdkEcc.destroyPrecompute(jdkEcc.getG());
-        mclEcc.destroyPrecompute(mclEcc.getG());
+        nativeEcc.destroyPrecompute(nativeEcc.getG());
     }
 }

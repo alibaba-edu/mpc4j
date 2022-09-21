@@ -15,8 +15,6 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.AbstractBaseOtReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtPtoDesc.PtoStep;
@@ -30,9 +28,9 @@ import org.bouncycastle.math.ec.ECPoint;
  */
 public class Np01BaseOtReceiver extends AbstractBaseOtReceiver {
     /**
-     * 配置项
+     * 是否压缩表示
      */
-    private final Np01BaseOtConfig config;
+    private final boolean compressEncode;
     /**
      * 椭圆曲线
      */
@@ -40,7 +38,7 @@ public class Np01BaseOtReceiver extends AbstractBaseOtReceiver {
     /**
      * C
      */
-    private ECPoint upperC;
+    private ECPoint c;
     /**
      * g^r
      */
@@ -52,7 +50,7 @@ public class Np01BaseOtReceiver extends AbstractBaseOtReceiver {
 
     public Np01BaseOtReceiver(Rpc receiverRpc, Party senderParty, Np01BaseOtConfig config) {
         super(Np01BaseOtPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        this.config = config;
+        compressEncode = config.getCompressEncode();
         ecc = EccFactory.createInstance(envType);
     }
 
@@ -72,68 +70,66 @@ public class Np01BaseOtReceiver extends AbstractBaseOtReceiver {
 
         stopWatch.start();
         DataPacketHeader initHeader = new DataPacketHeader(
-                taskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_INIT.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
+            taskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_INIT.ordinal(), extraInfo,
+            otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> initPayload = rpc.receive(initHeader).getPayload();
-        handleSenderPayload(initPayload);
+        handleInitPayload(initPayload);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         info("{}{} Recv. Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
 
         stopWatch.start();
-        List<byte[]> publicKeyPayload = generateReceiverPayload();
-        DataPacketHeader publicKeyHeader = new DataPacketHeader(
-                taskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_PK.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
+        List<byte[]> pkPayload = generatePkPayload();
+        DataPacketHeader pkHeader = new DataPacketHeader(
+            taskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_PK.ordinal(), extraInfo,
+            ownParty().getPartyId(), otherParty().getPartyId()
         );
-        rpc.send(DataPacket.fromByteArrayList(publicKeyHeader, publicKeyPayload));
+        rpc.send(DataPacket.fromByteArrayList(pkHeader, pkPayload));
+        BaseOtReceiverOutput receiverOutput = new BaseOtReceiverOutput(choices, rbArray);
+        rbArray = null;
         stopWatch.stop();
         long pkTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         info("{}{} Recv. Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pkTime);
 
         info("{}{} Recv. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
-        BaseOtReceiverOutput receiverOutput = new BaseOtReceiverOutput(choices, rbArray);
-        rbArray = null;
-
         return receiverOutput;
     }
 
-    private void handleSenderPayload(List<byte[]> senderPayload) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(senderPayload.size() == 2);
+    private void handleInitPayload(List<byte[]> initPayload) throws MpcAbortException {
+        MpcAbortPreconditions.checkArgument(initPayload.size() == 2);
         // 解包g^r、C
-        g2r = ecc.decode(senderPayload.remove(0));
-        upperC = ecc.decode(senderPayload.remove(0));
+        g2r = ecc.decode(initPayload.remove(0));
+        c = ecc.decode(initPayload.remove(0));
     }
 
-    private List<byte[]> generateReceiverPayload() {
-        Kdf kdf = KdfFactory.createInstance(envType);
-        rbArray = new byte[choices.length][];
+    private List<byte[]> generatePkPayload() {
+        rbArray = new byte[num][];
         // 公钥生成流
-        IntStream publicKeyIntStream = IntStream.range(0, choices.length);
+        IntStream publicKeyIntStream = IntStream.range(0, num);
         publicKeyIntStream = parallel ? publicKeyIntStream.parallel() : publicKeyIntStream;
         List<byte[]> receiverPayload = publicKeyIntStream
-                .mapToObj(index -> {
-                    // The receiver picks a random k
-                    BigInteger k = ecc.randomZn(secureRandom);
-                    // The receiver sets public keys PK_{\sigma} = g^k
-                    ECPoint pkSigma = ecc.multiply(ecc.getG(), k);
-                    // and PK_{1 - \sigma} = C / PK_{\sigma}
-                    ECPoint pkOneMinusSigma = upperC.add(pkSigma.negate());
-                    // 存储OT的密钥key=H(index,g^rk)
-                    byte[] kInputByteArray = ecc.encode(ecc.multiply(g2r, k), false);
-                    rbArray[index] = kdf.deriveKey(ByteBuffer
-                            .allocate(Integer.BYTES + kInputByteArray.length)
-                            .putInt(index).put(kInputByteArray)
-                            .array());
-                    // 返回密钥
-                    return choices[index] ? pkOneMinusSigma : pkSigma;
-                })
-                .map(pk -> ecc.encode(pk, config.getCompressEncode()))
-                .collect(Collectors.toList());
-        upperC = null;
+            .mapToObj(index -> {
+                // The receiver picks a random k
+                BigInteger k = ecc.randomZn(secureRandom);
+                // The receiver sets public keys PK_{\sigma} = g^k
+                ECPoint pkSigma = ecc.multiply(ecc.getG(), k);
+                // and PK_{1 - \sigma} = C / PK_{\sigma}
+                ECPoint pkOneMinusSigma = c.add(pkSigma.negate());
+                // 存储OT的密钥key=H(index,g^rk)
+                byte[] kInputByteArray = ecc.encode(ecc.multiply(g2r, k), false);
+                rbArray[index] = kdf.deriveKey(ByteBuffer
+                    .allocate(Integer.BYTES + kInputByteArray.length)
+                    .putInt(index).put(kInputByteArray)
+                    .array());
+                // 返回密钥
+                return choices[index] ? pkOneMinusSigma : pkSigma;
+            })
+            .map(pk -> ecc.encode(pk, compressEncode))
+            .collect(Collectors.toList());
+        c = null;
         g2r = null;
 
         return receiverPayload;

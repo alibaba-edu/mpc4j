@@ -6,8 +6,8 @@ import java.util.Map;
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParamsChecker;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
 
 /**
  * YWL20-NC-COT协议LPN参数查找器。参数查找方法的思路来自于下述论文第7节：

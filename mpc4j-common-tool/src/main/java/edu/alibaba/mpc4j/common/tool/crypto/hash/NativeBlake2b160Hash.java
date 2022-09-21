@@ -11,28 +11,29 @@ import java.util.Arrays;
  * @author Weiran Liu
  * @date 2021/12/31
  */
-public class NativeBlake2b160Hash implements Hash {
+class NativeBlake2b160Hash implements Hash {
     static {
         System.loadLibrary(CommonConstants.MPC4J_NATIVE_TOOL_NAME);
     }
     /**
      * 单位输出长度
      */
-    static final int UNIT_BYTE_LENGTH = 20;
+    static final int DIGEST_BYTE_LENGTH = 20;
     /**
      * 输出字节长度
      */
     private final int outputByteLength;
 
     NativeBlake2b160Hash(int outputByteLength) {
-        assert outputByteLength > 0 && outputByteLength <= UNIT_BYTE_LENGTH;
+        assert outputByteLength > 0 && outputByteLength <= DIGEST_BYTE_LENGTH
+            : "Output byte length must be in range (0, " + DIGEST_BYTE_LENGTH + "]";
         this.outputByteLength = outputByteLength;
     }
 
     @Override
     public byte[] digestToBytes(byte[] message) {
-        assert message.length > 0;
-        if (outputByteLength == UNIT_BYTE_LENGTH) {
+        assert message.length > 0 : "Message length must be greater than 0: " + message.length;
+        if (outputByteLength == DIGEST_BYTE_LENGTH) {
             // 如果输出字节长度等于哈希函数单位输出长度，则只调用一次哈希函数，且可以避免一次数组拷贝
             return digest(message);
         } else {

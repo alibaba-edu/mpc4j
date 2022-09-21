@@ -9,8 +9,8 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.EmptyPadHashBin;
@@ -58,17 +58,9 @@ public class Krtw19OptPsuClient extends AbstractPsuClient {
      */
     private final Crhf crhf;
     /**
-     * PEQT输出哈希密钥
-     */
-    private byte[] peqtHashKey;
-    /**
      * 桶哈希函数密钥
      */
     private byte[][] hashBinKeys;
-    /**
-     * 有限域哈希函数密钥
-     */
-    private byte[] finiteFieldHashKey;
     /**
      * 桶数量（β）
      */
@@ -92,11 +84,11 @@ public class Krtw19OptPsuClient extends AbstractPsuClient {
     /**
      * 有限域哈希函数
      */
-    private Prf finiteFieldHash;
+    private Hash finiteFieldHash;
     /**
      * PEQT输出哈希函数
      */
-    private Prf peqtHash;
+    private Hash peqtHash;
     /**
      * 加密伪随机数生成器
      */
@@ -160,14 +152,10 @@ public class Krtw19OptPsuClient extends AbstractPsuClient {
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> keysPayload = rpc.receive(keysHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(keysPayload.size() == 3);
+        MpcAbortPreconditions.checkArgument(keysPayload.size() == 1);
         // 初始化哈希桶密钥
         hashBinKeys = new byte[1][];
         hashBinKeys[0] = keysPayload.remove(0);
-        // 初始化有限域哈希密钥
-        finiteFieldHashKey = keysPayload.remove(0);
-        // 初始化PEQT哈希密钥
-        peqtHashKey = keysPayload.remove(0);
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -222,14 +210,12 @@ public class Krtw19OptPsuClient extends AbstractPsuClient {
         int fieldBitLength = Krtw19PsuUtils.getFiniteFieldBitLength(binNum, maxBinSize);
         fieldByteLength = fieldBitLength / Byte.SIZE;
         // 设置有限域哈希
-        finiteFieldHash = PrfFactory.createInstance(envType, fieldByteLength);
-        finiteFieldHash.setKey(finiteFieldHashKey);
+        finiteFieldHash = HashFactory.createInstance(envType, fieldByteLength);
         // 设置多项式运算服务
         gf2ePoly = Gf2ePolyFactory.createInstance(envType, fieldBitLength);
         // 初始化PEQT哈希
-        int peqtLength = Krtw19PsuUtils.getPeqtByteLength(binNum, maxBinSize);
-        peqtHash = PrfFactory.createInstance(getEnvType(), peqtLength);
-        peqtHash.setKey(peqtHashKey);
+        int peqtByteLength = Krtw19PsuUtils.getPeqtByteLength(binNum, maxBinSize);
+        peqtHash = HashFactory.createInstance(envType, peqtByteLength);
         // 设置加密伪随机数生成器
         encPrg = PrgFactory.createInstance(envType, elementByteLength);
     }
@@ -296,7 +282,7 @@ public class Krtw19OptPsuClient extends AbstractPsuClient {
         sIntStream = parallel ? sIntStream.parallel() : sIntStream;
         ByteBuffer[] sOprfs = sIntStream
             .mapToObj(peqtOprfReceiverOutput::getPrf)
-            .map(peqtHash::getBytes)
+            .map(peqtHash::digestToBytes)
             .map(ByteBuffer::wrap)
             .toArray(ByteBuffer[]::new);
         // 接收sStarsOprf
@@ -365,7 +351,7 @@ public class Krtw19OptPsuClient extends AbstractPsuClient {
                 .distinct()
                 // q_i = F_k(x_i)
                 .map(x -> rpmtOprfSenderOutput.getPrf(binIndex, x))
-                .map(q -> finiteFieldHash.getBytes(q))
+                .map(q -> finiteFieldHash.digestToBytes(q))
                 .toArray(byte[][]::new);
             // 构造多项式
             polys[binIndex - start] = gf2ePoly.rootInterpolate(maxBinSize - 1, qs, ss[binIndex]);

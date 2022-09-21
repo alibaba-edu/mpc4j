@@ -6,6 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlMtgTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlTriple;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15.Dsz15ZlCoreMtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ideal.IdealZlCoreMtgConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -42,25 +43,34 @@ public class ZlCoreMtgTest {
      * 较大数量
      */
     private static final int LARGE_NUM = 1 << 10;
-    /**
-     * 较小l
-     */
-    private static final int SMALL_L = 1;
-    /**
-     * 奇数l
-     */
-    private static final int ODD_L = 9;
-    /**
-     * 默认l
-     */
-    private static final int DEFAULT_L = 32;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
-        // IDEAL
+        // IDEAL (l = 1)
         configurations.add(new Object[]{
-            ZlCoreMtgFactory.ZlCoreMtgType.IDEAL.name(), new IdealZlCoreMtgConfig.Builder().build(),
+            ZlCoreMtgFactory.ZlCoreMtgType.IDEAL.name() + " (l = 1)", new IdealZlCoreMtgConfig.Builder(1).build(),
+        });
+        // IDEAL (l = 63)
+        configurations.add(new Object[]{
+            ZlCoreMtgFactory.ZlCoreMtgType.IDEAL.name() + " (l = 9)", new IdealZlCoreMtgConfig.Builder(63).build(),
+        });
+        // IDEAL (l = 128)
+        configurations.add(new Object[]{
+            ZlCoreMtgFactory.ZlCoreMtgType.IDEAL.name() + " (l = 32)", new IdealZlCoreMtgConfig.Builder(128).build(),
+        });
+
+        // DSZ15 (l = 1)
+        configurations.add(new Object[]{
+            ZlCoreMtgFactory.ZlCoreMtgType.DSZ15.name() + " (l = 1)", new Dsz15ZlCoreMtgConfig.Builder(1).build(),
+        });
+        // DSZ15 (l = 63)
+        configurations.add(new Object[]{
+            ZlCoreMtgFactory.ZlCoreMtgType.DSZ15.name() + " (l = 9)", new Dsz15ZlCoreMtgConfig.Builder(63).build(),
+        });
+        // DSZ15 (l = 128)
+        configurations.add(new Object[]{
+            ZlCoreMtgFactory.ZlCoreMtgType.DSZ15.name() + " (l = 32)", new Dsz15ZlCoreMtgConfig.Builder(128).build(),
         });
 
         return configurations;
@@ -99,35 +109,21 @@ public class ZlCoreMtgTest {
     public void test1Num() {
         ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_L, 1);
+        testPto(sender, receiver, 1);
     }
 
     @Test
     public void test2Num() {
         ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_L, 2);
-    }
-
-    @Test
-    public void testSmallL() {
-        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, SMALL_L, DEFAULT_NUM);
-    }
-
-    @Test
-    public void testOddL() {
-        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, ODD_L, DEFAULT_NUM);
+        testPto(sender, receiver, 2);
     }
 
     @Test
     public void testDefault() {
         ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_L, DEFAULT_NUM);
+        testPto(sender, receiver, DEFAULT_NUM);
     }
 
     @Test
@@ -136,14 +132,14 @@ public class ZlCoreMtgTest {
         ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
         sender.setParallel(true);
         receiver.setParallel(true);
-        testPto(sender, receiver, DEFAULT_L, DEFAULT_NUM);
+        testPto(sender, receiver, DEFAULT_NUM);
     }
 
     @Test
     public void testLargeNum() {
         ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_L, LARGE_NUM);
+        testPto(sender, receiver, LARGE_NUM);
     }
 
     @Test
@@ -152,17 +148,17 @@ public class ZlCoreMtgTest {
         ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
         sender.setParallel(true);
         receiver.setParallel(true);
-        testPto(sender, receiver, DEFAULT_L, LARGE_NUM);
+        testPto(sender, receiver, LARGE_NUM);
     }
 
-    private void testPto(ZlCoreMtgParty sender, ZlCoreMtgParty receiver, int l, int num) {
+    private void testPto(ZlCoreMtgParty sender, ZlCoreMtgParty receiver, int num) {
         long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            ZlCoreMtgPartyThread senderThread = new ZlCoreMtgPartyThread(sender, l, num);
-            ZlCoreMtgPartyThread receiverThread = new ZlCoreMtgPartyThread(receiver, l, num);
+            ZlCoreMtgPartyThread senderThread = new ZlCoreMtgPartyThread(sender, num);
+            ZlCoreMtgPartyThread receiverThread = new ZlCoreMtgPartyThread(receiver, num);
             StopWatch stopWatch = new StopWatch();
             // 开始执行协议
             stopWatch.start();
@@ -180,7 +176,7 @@ public class ZlCoreMtgTest {
             ZlTriple senderOutput = senderThread.getOutput();
             ZlTriple receiverOutput = receiverThread.getOutput();
             // 验证结果
-            ZlMtgTestUtils.assertOutput(l, num, senderOutput, receiverOutput);
+            ZlMtgTestUtils.assertOutput(config.getL(), num, senderOutput, receiverOutput);
             LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
                 senderByteLength, receiverByteLength, time
             );

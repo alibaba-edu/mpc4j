@@ -17,6 +17,13 @@ public interface ZlCoreMtgConfig extends SecurePtoConfig {
     ZlCoreMtgFactory.ZlCoreMtgType getPtoType();
 
     /**
+     * 返回乘法三元组比特长度。
+     *
+     * @return 乘法三元组比特长度。
+     */
+    int getL();
+
+    /**
      * 返回最大支持数量。
      *
      * @return 最大支持数量。

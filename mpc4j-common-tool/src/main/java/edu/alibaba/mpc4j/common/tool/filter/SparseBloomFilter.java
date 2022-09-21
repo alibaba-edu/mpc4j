@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.filter;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
@@ -166,7 +167,7 @@ public class SparseBloomFilter<T> implements MergeFilter<T> {
      * @return 稀疏布隆过滤器。
      */
     static <X> SparseBloomFilter<X> fromByteArrayList(EnvType envType, List<byte[]> filterList) {
-        assert filterList.size() >= 5;
+        Preconditions.checkArgument(filterList.size() >= 5);
         SparseBloomFilter<X> sparseBloomFilter = new SparseBloomFilter<>();
         // 移除过滤器类型
         filterList.remove(0);

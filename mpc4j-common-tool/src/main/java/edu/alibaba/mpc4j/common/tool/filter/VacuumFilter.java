@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.filter;
 
+import com.google.common.base.Preconditions;
 import com.google.common.math.DoubleMath;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
@@ -156,7 +157,7 @@ public class VacuumFilter<T> implements Filter<T> {
      * @return 真空过滤器。
      */
     static <X> VacuumFilter<X> fromByteArrayList(EnvType envType, List<byte[]> byteArrayList) {
-        assert byteArrayList.size() >= 6;
+        Preconditions.checkArgument(byteArrayList.size() >= 6);
         VacuumFilter<X> vacuumFilter = new VacuumFilter<>();
         // 移除过滤器类型
         byteArrayList.remove(0);
@@ -184,7 +185,7 @@ public class VacuumFilter<T> implements Filter<T> {
         vacuumFilter.bucketHash.setKey(bucketHashKey);
         vacuumFilter.secureRandom = new SecureRandom();
         // 桶中的元素
-        assert byteArrayList.size() == vacuumFilter.bucketNum * ENTRIES_PER_BUCKET;
+        Preconditions.checkArgument(byteArrayList.size() == vacuumFilter.bucketNum * ENTRIES_PER_BUCKET);
         ByteBuffer[] bucketFlattenedElements = byteArrayList.stream().map(ByteBuffer::wrap).toArray(ByteBuffer[]::new);
         vacuumFilter.buckets = IntStream.range(0, vacuumFilter.bucketNum)
             .mapToObj(bucketIndex -> {

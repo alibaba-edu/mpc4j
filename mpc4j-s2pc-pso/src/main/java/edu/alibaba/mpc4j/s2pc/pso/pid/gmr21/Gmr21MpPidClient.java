@@ -1,21 +1,18 @@
 package edu.alibaba.mpc4j.s2pc.pso.pid.gmr21;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pso.pid.AbstractPidParty;
 import edu.alibaba.mpc4j.s2pc.pso.pid.PidPartyOutput;
+import edu.alibaba.mpc4j.s2pc.pso.pid.PidUtils;
 import edu.alibaba.mpc4j.s2pc.pso.pid.gmr21.Gmr21MpPidPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuClient;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
@@ -48,13 +45,9 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
      */
     private final PsuClient psuClient;
     /**
-     * PID映射密钥
-     */
-    private byte[] pidMapPrfKey;
-    /**
      * PID映射函数
      */
-    private Prf pidMapPrf;
+    private Hash pidMap;
     /**
      * {F_{k_A}(y) | y ∈ Y'å}
      */
@@ -104,51 +97,31 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
     }
 
     @Override
-    public void init(int maxClientSetSize, int maxServerSetSize) throws MpcAbortException {
-        setInitInput(maxClientSetSize, maxServerSetSize);
+    public void init(int maxClientElementSize, int maxServerElementSize) throws MpcAbortException {
+        setInitInput(maxClientElementSize, maxServerElementSize);
         info("{}{} Client Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();
-        mpOprfReceiver.init(maxClientSetSize);
-        mpOprfSender.init(maxServerSetSize);
-        psuClient.init(maxClientSetSize, maxServerSetSize);
+        mpOprfReceiver.init(maxClientElementSize);
+        mpOprfSender.init(maxServerElementSize);
+        psuClient.init(maxClientElementSize, maxServerElementSize);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
-
-        stopWatch.start();
-        // 接收服务端密钥
-        DataPacketHeader serverKeysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> serverKeysPayload = rpc.receive(serverKeysHeader).getPayload();
-        // PID映射密钥
-        MpcAbortPreconditions.checkArgument(serverKeysPayload.size() == 1);
-        // 初始化PID映射伪随机函数
-        pidMapPrfKey = serverKeysPayload.remove(0);
-        stopWatch.stop();
-        long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Client Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyTime);
+        info("{}{} Client Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
 
         initialized = true;
         info("{}{} Client Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
     }
 
     @Override
-    public PidPartyOutput<T> pid(Set<T> clientElementSet, int serverSetSize) throws MpcAbortException {
-        setPtoInput(clientElementSet, serverSetSize);
+    public PidPartyOutput<T> pid(Set<T> clientElementSet, int serverElementSize) throws MpcAbortException {
+        setPtoInput(clientElementSet, serverElementSize);
         info("{}{} Client begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();
-        // PID字节长度等于λ + log(n) + log(m)
-        int pidByteLength = CommonConstants.STATS_BYTE_LENGTH
-            + CommonUtils.getByteLength(LongUtils.ceilLog2(ownSetSize))
-            + CommonUtils.getByteLength(LongUtils.ceilLog2(otherSetSize));
-        pidMapPrf = PrfFactory.createInstance(envType, pidByteLength);
-        pidMapPrf.setKey(pidMapPrfKey);
+        int pidByteLength = PidUtils.getPidByteLength(otherSetSize, ownSetSize);
+        pidMap = HashFactory.createInstance(envType, pidByteLength);
         clientElementByteArrays = ownElementArrayList.stream()
             .map(ObjectUtils::objectToByteArray)
             .toArray(byte[][]::new);
@@ -157,7 +130,7 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
         kaOprfOutput = mpOprfReceiver.oprf(clientElementByteArrays);
         // Alice and Bob invoke another OPRF functionality F_{oprf}.
         // Bob acts as sender and receives a PRF key k_B
-        kbOprfKey = mpOprfSender.oprf(serverSetSize);
+        kbOprfKey = mpOprfSender.oprf(serverElementSize);
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -173,7 +146,7 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
 
         stopWatch.start();
         // The parties invoke F_{psu}, with inputs {R_B(x) | y ∈ Y} for Bob
-        Set<ByteBuffer> pidSet = psuClient.psu(clientPidMap.keySet(), serverSetSize, pidByteLength);
+        Set<ByteBuffer> pidSet = psuClient.psu(clientPidMap.keySet(), serverElementSize, pidByteLength);
         stopWatch.stop();
         long psuTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -192,7 +165,6 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
         stopWatch.reset();
         info("{}{} Server Step 4/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
 
-
         info("{}{} Client end", ptoEndLogPrefix, getPtoDesc().getPtoName());
         return new PidPartyOutput<>(pidByteLength, pidSet, clientPidMap);
     }
@@ -205,8 +177,8 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
             .collect(Collectors.toMap(
                     index -> {
                         byte[] y = clientElementByteArrays[index];
-                        byte[] pid0 = pidMapPrf.getBytes(kaOprfOutput.getPrf(index));
-                        byte[] pid1 = pidMapPrf.getBytes(kbOprfKey.getPrf(y));
+                        byte[] pid0 = pidMap.digestToBytes(kaOprfOutput.getPrf(index));
+                        byte[] pid1 = pidMap.digestToBytes(kbOprfKey.getPrf(y));
                         BytesUtils.xori(pid0, pid1);
                         return ByteBuffer.wrap(pid0);
                     },

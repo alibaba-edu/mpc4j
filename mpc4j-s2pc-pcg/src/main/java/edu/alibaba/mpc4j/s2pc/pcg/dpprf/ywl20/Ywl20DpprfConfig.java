@@ -28,8 +28,8 @@ public class Ywl20DpprfConfig implements DpprfConfig {
     }
 
     @Override
-    public DpprfFactory.Gf2kDpprfType getPtoType() {
-        return DpprfFactory.Gf2kDpprfType.YWL20;
+    public DpprfFactory.DpprfType getPtoType() {
+        return DpprfFactory.DpprfType.YWL20;
     }
 
     @Override

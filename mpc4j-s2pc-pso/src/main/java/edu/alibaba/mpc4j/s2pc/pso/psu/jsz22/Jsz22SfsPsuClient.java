@@ -6,8 +6,8 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.MaxBinSizeUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.EmptyPadHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
@@ -57,17 +57,13 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
      */
     private final int cuckooHashNum;
     /**
-     * OPRF输出哈希密钥
-     */
-    private byte[] oprfOutputHashKey;
-    /**
      * OPRF输出字节长度
      */
     private int oprfOutputByteLength;
     /**
-     * OPRF输出哈希
+     * OPRF输出映射
      */
-    private Prf oprfOutputHash;
+    private Hash oprfOutputMap;
     /**
      * π
      */
@@ -144,21 +140,7 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
-
-        stopWatch.start();
-        // 接收OPRF输出哈希密钥
-        DataPacketHeader keysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Jsz22SfsPsuPtoDesc.PtoStep.SERVER_SEND_KEY.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> keysPayload = rpc.receive(keysHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(keysPayload.size() == 1);
-        oprfOutputHashKey = keysPayload.remove(0);
-        stopWatch.stop();
-        long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Client Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyTime);
+        info("{}{} Client Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
 
         initialized = true;
         info("{}{} Client Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
@@ -174,9 +156,8 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
         // 初始化OPRF哈希
         binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
         maxBinSize = MaxBinSizeUtils.expectMaxBinSize(clientElementSize, binNum);
-        oprfOutputByteLength = Jsz22PsuUtils.getOprfByteLength(binNum, maxBinSize);
-        oprfOutputHash = PrfFactory.createInstance(getEnvType(), oprfOutputByteLength);
-        oprfOutputHash.setKey(oprfOutputHashKey);
+        oprfOutputByteLength = Jsz22SfsPsuPtoDesc.getOprfByteLength(binNum, maxBinSize);
+        oprfOutputMap = HashFactory.createInstance(getEnvType(), oprfOutputByteLength);
         // 构造交换映射
         List<Integer> firstPiList = IntStream.range(0, binNum)
             .boxed()
@@ -292,7 +273,7 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
                 for (int index = 0; index < bin.size(); index++) {
                     // F(k, y_j ⊕ a′_i)
                     byte[] input = BytesUtils.xor(aPrimeArray[binIndex], bin.get(index).array());
-                    oprfs[index] = oprfOutputHash.getBytes(oprfSenderOutput.getPrf(binIndex, input));
+                    oprfs[index] = oprfOutputMap.digestToBytes(oprfSenderOutput.getPrf(binIndex, input));
                 }
                 // r ← {0, 1}^{l_2}
                 for (int index = bin.size(); index < maxBinSize; index++) {

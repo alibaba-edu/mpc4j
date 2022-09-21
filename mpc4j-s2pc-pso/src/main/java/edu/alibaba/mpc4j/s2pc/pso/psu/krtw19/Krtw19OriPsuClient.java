@@ -9,8 +9,8 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.EmptyPadHashBin;
@@ -64,17 +64,9 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
      */
     private final Crhf crhf;
     /**
-     * PEQT输出哈希密钥
-     */
-    private byte[] peqtHashKey;
-    /**
      * 桶哈希函数密钥
      */
     private byte[][] hashBinKeys;
-    /**
-     * 有限域哈希函数密钥
-     */
-    private byte[] finiteFieldHashKey;
     /**
      * OKVS哈希函数
      */
@@ -102,11 +94,11 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
     /**
      * 有限域哈希函数
      */
-    private Prf finiteFieldHash;
+    private Hash finiteFieldHash;
     /**
      * PEQT输出哈希函数
      */
-    private Prf peqtHash;
+    private Hash peqtHash;
     /**
      * 加密伪随机数生成器
      */
@@ -172,14 +164,10 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
         );
         List<byte[]> keysPayload = rpc.receive(keysHeader).getPayload();
         int okvsHashKeyNum = OkvsFactory.getHashNum(okvsType);
-        MpcAbortPreconditions.checkArgument(keysPayload.size() == 3 + okvsHashKeyNum);
+        MpcAbortPreconditions.checkArgument(keysPayload.size() == 1 + okvsHashKeyNum);
         // 初始化哈希桶密钥
         hashBinKeys = new byte[1][];
         hashBinKeys[0] = keysPayload.remove(0);
-        // 初始化有限域哈希密钥
-        finiteFieldHashKey = keysPayload.remove(0);
-        // 初始化PEQT哈希密钥
-        peqtHashKey = keysPayload.remove(0);
         // 初始化OKVS密钥
         okvsHashKeys = keysPayload.toArray(new byte[0][]);
         stopWatch.stop();
@@ -236,12 +224,10 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
         fieldBitLength = Krtw19PsuUtils.getFiniteFieldBitLength(binNum, maxBinSize);
         fieldByteLength = fieldBitLength / Byte.SIZE;
         // 设置有限域哈希
-        finiteFieldHash = PrfFactory.createInstance(envType, fieldByteLength);
-        finiteFieldHash.setKey(finiteFieldHashKey);
+        finiteFieldHash = HashFactory.createInstance(envType, fieldByteLength);
         // 初始化PEQT哈希
-        int peqtLength = Krtw19PsuUtils.getPeqtByteLength(binNum, maxBinSize);
-        peqtHash = PrfFactory.createInstance(getEnvType(), peqtLength);
-        peqtHash.setKey(peqtHashKey);
+        int peqtByteLength = Krtw19PsuUtils.getPeqtByteLength(binNum, maxBinSize);
+        peqtHash = HashFactory.createInstance(getEnvType(), peqtByteLength);
         // 设置加密伪随机数生成器
         encPrg = PrgFactory.createInstance(envType, elementByteLength);
     }
@@ -308,7 +294,7 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
         sIntStream = parallel ? sIntStream.parallel() : sIntStream;
         ByteBuffer[] sOprfs = sIntStream
             .mapToObj(peqtOprfReceiverOutput::getPrf)
-            .map(peqtHash::getBytes)
+            .map(peqtHash::digestToBytes)
             .map(ByteBuffer::wrap)
             .toArray(ByteBuffer[]::new);
         // 接收sStarsOprf
@@ -376,7 +362,7 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
                 .distinct()
                 .map(ByteBuffer::array)
                 // 哈希到有限域中
-                .map(x -> finiteFieldHash.getBytes(x))
+                .map(x -> finiteFieldHash.digestToBytes(x))
                 .map(ByteBuffer::wrap)
                 .toArray(ByteBuffer[]::new);
             // s XOR q_i
@@ -387,7 +373,7 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
                 .map(ByteBuffer::array)
                 // q_i = F_k(x_i)
                 .map(x -> rpmtOprfSenderOutput.getPrf(binIndex, x))
-                .map(fx -> finiteFieldHash.getBytes(fx))
+                .map(fx -> finiteFieldHash.digestToBytes(fx))
                 // s XOR q_i
                 .map(fx -> BytesUtils.xor(fx, ss[binIndex]))
                 .toArray(byte[][]::new);

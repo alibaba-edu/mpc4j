@@ -215,7 +215,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
                 // 计算哈希值
                 byte[] extendPrf = f.getBytes(h1.digestToBytes(input));
                 // F: {0, 1}^λ × {0, 1}^{2λ} → [m]^w，这里使用不安全转换函数来提高效率。
-                int[] encode = IntUtils.unsafeByteArrayToIntArray(extendPrf, w);
+                int[] encode = IntUtils.byteArrayToIntArray(extendPrf);
                 for (int index = 0; index < w; index++) {
                     encode[index] = Math.abs(encode[index] % n) + nOffset;
                 }

@@ -82,6 +82,22 @@ endif()
 find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
+# 引入libsodium
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    IF(NOT DEFINED LIBSODIUM_ROOT_DIR)
+        set(LIBSODIUM_ROOT_DIR "/opt/homebrew/opt/libsodium")
+        message(STATUS "LIBSODIUM_ROOT_DIR set to default: ${LIBSODIUM_ROOT_DIR}")
+    ENDIF()
+ELSE()
+    set(LIBSODIUM_ROOT_DIR "/usr/local")
+    message(STATUS "LIBSODIUM_ROOT_DIR set to default: ${LIBSODIUM_ROOT_DIR}")
+ENDIF()
+set(LIBSODIUM_INCLUDE_DIR "${LIBSODIUM_ROOT_DIR}/include/")
+find_library(LIBSODIUM_LIBRARY NAMES sodium)
+message(STATUS "LIBSODIUM_INCLUDE_DIR:  ${LIBSODIUM_INCLUDE_DIR}")
+message(STATUS "LIBSODIUM_LIBRARY:  ${LIBSODIUM_LIBRARY}")
+include_directories(${LIBSODIUM_INCLUDE_DIR})
+
 link_directories("/usr/local/lib")
 
 # 构建libent库
@@ -134,6 +150,8 @@ add_library(
         ecc_openssl/edu_alibaba_mpc4j_common_tool_crypto_ecc_openssl_SecP256k1OpensslNativeEcc.cpp
         ecc_openssl/edu_alibaba_mpc4j_common_tool_crypto_ecc_openssl_Sm2P256v1OpensslNativeEcc.cpp
         ecc_openssl/edu_alibaba_mpc4j_common_tool_crypto_ecc_openssl_SecP256r1OpensslNativeEcc.cpp
+        ecc_sodium/edu_alibaba_mpc4j_common_tool_crypto_ecc_sodium_X25519SodiumByteMulEcc.cpp
+        ecc_sodium/edu_alibaba_mpc4j_common_tool_crypto_ecc_sodium_Ed25519SodiumByteFullEcc.cpp
 )
 
 target_include_directories(
@@ -149,5 +167,6 @@ target_link_libraries(
         ${NTL_LIBRARY}
         ${GMP_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}
+        ${LIBSODIUM_LIBRARY}
         libmcl.a
 )

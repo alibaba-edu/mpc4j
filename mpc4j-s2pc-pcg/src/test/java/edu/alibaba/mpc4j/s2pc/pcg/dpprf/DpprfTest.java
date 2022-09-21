@@ -60,12 +60,12 @@ public class DpprfTest {
         Collection<Object[]> configurationParams = new ArrayList<>();
         // YWL20 (semi-honest)
         configurationParams.add(new Object[] {
-            DpprfFactory.Gf2kDpprfType.YWL20.name() + " (semi-honest)",
+            DpprfFactory.DpprfType.YWL20.name() + " (semi-honest)",
             new Ywl20DpprfConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
         // YWL20 (malicious)
         configurationParams.add(new Object[] {
-            DpprfFactory.Gf2kDpprfType.YWL20.name() + " (malicious)",
+            DpprfFactory.DpprfType.YWL20.name() + " (malicious)",
             new Ywl20DpprfConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
 

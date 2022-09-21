@@ -14,5 +14,5 @@ public interface DpprfConfig extends SecurePtoConfig {
      *
      * @return 协议类型。
      */
-    DpprfFactory.Gf2kDpprfType getPtoType();
+    DpprfFactory.DpprfType getPtoType();
 }

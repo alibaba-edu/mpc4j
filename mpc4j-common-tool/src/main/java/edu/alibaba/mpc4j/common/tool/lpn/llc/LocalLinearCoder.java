@@ -33,10 +33,6 @@ public class LocalLinearCoder {
     private static final int RANDOM_BLOCK_NUM = (int) Math.ceil((double) D * Integer.BYTES
         / CommonConstants.BLOCK_BYTE_LENGTH);
     /**
-     * 随机分组对应的整数数量
-     */
-    private static final int RANDOM_INT_NUM = RANDOM_BLOCK_NUM * CommonConstants.BLOCK_BYTE_LENGTH / Integer.BYTES;
-    /**
      * 编码输出行数
      */
     private final int n;
@@ -178,7 +174,6 @@ public class LocalLinearCoder {
             // prp->permute_block(tmp, 3)
             indexByteBuffer.put(prp.prp(block));
         }
-        return IntUtils.unsafeByteArrayToIntArray(indexByteBuffer.array(), RANDOM_INT_NUM);
+        return IntUtils.byteArrayToIntArray(indexByteBuffer.array());
     }
-
 }

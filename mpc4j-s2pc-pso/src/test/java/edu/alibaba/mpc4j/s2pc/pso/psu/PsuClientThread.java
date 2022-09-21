@@ -6,22 +6,22 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 
 /**
- * PSU协议接收方线程。
+ * PSU协议客户端线程。
  *
  * @author Weiran Liu
  * @date 2022/02/15
  */
-public class PsuClientThread extends Thread {
+class PsuClientThread extends Thread {
     /**
-     * PSU接收方
+     * PSU客户端
      */
     private final PsuClient psuClient;
     /**
-     * 接收方集合
+     * 客户端集合
      */
     private final Set<ByteBuffer> clientElementSet;
     /**
-     * 发送方元素数量
+     * 服务端元素数量
      */
     private final int serverElementSize;
     /**

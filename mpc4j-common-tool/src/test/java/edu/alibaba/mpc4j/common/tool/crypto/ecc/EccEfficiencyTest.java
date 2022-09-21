@@ -67,7 +67,9 @@ public class EccEfficiencyTest {
      * 字节椭圆曲线测试类型
      */
     private static final ByteEccFactory.ByteEccType[] BYTE_MUL_ECC_TYPES = new ByteEccFactory.ByteEccType[] {
+        ByteEccFactory.ByteEccType.X25519_SODIUM,
         ByteEccFactory.ByteEccType.X25519_BC,
+        ByteEccFactory.ByteEccType.ED25519_SODIUM,
         ByteEccFactory.ByteEccType.ED25519_BC,
     };
 
@@ -191,7 +193,7 @@ public class EccEfficiencyTest {
             STOP_WATCH.reset();
             LOGGER.info(
                 "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                StringUtils.leftPad("(BYTE) " + type.name(), 20),
+                StringUtils.leftPad("(B) " + type.name(), 20),
                 StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(hashToCurveTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(randomPointTime), 10),

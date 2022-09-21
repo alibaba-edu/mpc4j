@@ -43,6 +43,9 @@ public abstract class AbstractZlCoreMtgParty extends AbstractSecureTwoPartyPto i
     public AbstractZlCoreMtgParty(PtoDesc ptoDesc, Rpc ownRpc, Party otherParty, ZlCoreMtgConfig config) {
         super(ptoDesc, ownRpc, otherParty, config);
         this.config = config;
+        l = config.getL();
+        mask = BigInteger.ONE.shiftLeft(l).subtract(BigInteger.ONE);
+        byteL = CommonUtils.getByteLength(l);
     }
 
     @Override
@@ -50,11 +53,7 @@ public abstract class AbstractZlCoreMtgParty extends AbstractSecureTwoPartyPto i
         return config.getPtoType();
     }
 
-    protected void setInitInput(int l, int maxNum) {
-        assert l > 0 : "l must be greater than 0:" + l;
-        this.l = l;
-        mask = BigInteger.ONE.shiftLeft(l).subtract(BigInteger.ONE);
-        byteL = CommonUtils.getByteLength(l);
+    protected void setInitInput(int maxNum) {
         assert maxNum > 0 && maxNum <= config.maxAllowNum()
             : "maxNum must be in range (0, " + config.maxAllowNum() + "]: " + maxNum;
         this.maxNum = maxNum;

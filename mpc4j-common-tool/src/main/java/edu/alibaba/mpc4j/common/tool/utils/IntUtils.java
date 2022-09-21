@@ -1,8 +1,5 @@
 package edu.alibaba.mpc4j.common.tool.utils;
 
-import sun.misc.Unsafe;
-
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.stream.IntStream;
@@ -52,9 +49,9 @@ public class IntUtils {
     public static byte[] boundedIntToByteArray(int value, int bound) {
         assert (value >= 0 && value <= bound);
         if (bound <= Byte.MAX_VALUE) {
-            return ByteBuffer.allocate(Byte.BYTES).put((byte)value).array();
+            return ByteBuffer.allocate(Byte.BYTES).put((byte) value).array();
         } else if (bound <= Short.MAX_VALUE) {
-            return ByteBuffer.allocate(Short.BYTES).putShort((short)value).array();
+            return ByteBuffer.allocate(Short.BYTES).putShort((short) value).array();
         } else {
             return ByteBuffer.allocate(Integer.BYTES).putInt(value).array();
         }
@@ -166,42 +163,6 @@ public class IntUtils {
         IntBuffer intBuffer = ByteBuffer.wrap(byteArray).asIntBuffer();
         IntStream.range(0, intBuffer.capacity()).forEach(index -> intArray[index] = intBuffer.get());
 
-        return intArray;
-    }
-
-    /**
-     * 不安全转换函数，参见https://stackoverflow.com/questions/43079234/convert-a-byte-array-into-an-int-array-in-java
-     */
-    private static final Unsafe UNSAFE;
-
-    static {
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            UNSAFE = (Unsafe) theUnsafe.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-            throw new IllegalStateException(e);
-        }
-    }
-
-    /**
-     * 用UNSAFE方法将{@code byte[]}转换为{@code int[]}。注意，此方法的转换结果与标准转换结果不一致，大小端表示会发生变化。
-     *
-     * @param byteArray 待转换的{@code byte[]}。
-     * @return 转换结果。
-     */
-    public static int[] unsafeByteArrayToIntArray(byte[] byteArray, int intArrayLength) {
-        int requireByteLength = intArrayLength * Integer.BYTES;
-        assert requireByteLength >= 0 && requireByteLength <= byteArray.length
-            : "RequireByteLength must be in range [0, " + byteArray.length + ": " + requireByteLength;
-        if (requireByteLength == 0) {
-            return new int[0];
-        }
-        int[] intArray = new int[intArrayLength];
-        UNSAFE.copyMemory(
-            byteArray, Unsafe.ARRAY_BYTE_BASE_OFFSET, intArray, Unsafe.ARRAY_INT_BASE_OFFSET, requireByteLength
-        );
         return intArray;
     }
 }

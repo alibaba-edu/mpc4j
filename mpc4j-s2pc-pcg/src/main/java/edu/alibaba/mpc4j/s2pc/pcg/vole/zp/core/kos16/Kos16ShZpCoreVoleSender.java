@@ -136,8 +136,8 @@ public class Kos16ShZpCoreVoleSender extends AbstractZpCoreVoleSender {
                     .array();
                 t0[rowIndex][columnIndex] = zpGadget.randomElement(t0Seed);
                 BigInteger t1 = zpGadget.randomElement(t1Seed);
-                // 计算u = t0[i,j] - t1[i,j] + x[i] mod p
-                BigInteger u = t0[rowIndex][columnIndex].subtract(t1).add(x[rowIndex]).mod(prime);
+                // 计算u = t0[i,j] - t1[i,j] - x[i] mod p
+                BigInteger u = t0[rowIndex][columnIndex].subtract(t1).subtract(x[rowIndex]).mod(prime);
                 return BigIntegerUtils.nonNegBigIntegerToByteArray(u, zpGadget.getByteK());
             })
             .collect(Collectors.toList());
@@ -147,7 +147,7 @@ public class Kos16ShZpCoreVoleSender extends AbstractZpCoreVoleSender {
         IntStream outputStream = IntStream.range(0, num);
         outputStream = parallel ? outputStream.parallel() : outputStream;
         BigInteger[] t = outputStream
-            .mapToObj(index -> zpGadget.composition(t0[index]).negate().mod(prime))
+            .mapToObj(index -> zpGadget.composition(t0[index]))
             .toArray(BigInteger[]::new);
         return ZpVoleSenderOutput.create(prime, x, t);
     }

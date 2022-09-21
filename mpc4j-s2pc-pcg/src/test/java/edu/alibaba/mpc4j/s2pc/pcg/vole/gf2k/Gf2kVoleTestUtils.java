@@ -4,8 +4,8 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.vole.Gf2kVoleReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.vole.Gf2kVoleSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kVoleReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kVoleSenderOutput;
 import org.junit.Assert;
 
 import java.security.SecureRandom;
@@ -64,7 +64,7 @@ public class Gf2kVoleTestUtils {
         byte[][] t = IntStream.range(0, num)
             .mapToObj(index -> {
                 byte[] ti = GF2K.mul(x[index], delta);
-                GF2K.subi(ti, receiverOutput.getQ(index));
+                GF2K.addi(ti, receiverOutput.getQ(index));
                 return ti;
             })
             .toArray(byte[][]::new);
@@ -89,9 +89,9 @@ public class Gf2kVoleTestUtils {
             Assert.assertEquals(num, senderOutput.getNum());
             Assert.assertEquals(num, receiverOutput.getNum());
             IntStream.range(0, num).forEach(index -> {
-                byte[] qt = GF2K.add(senderOutput.getT(index), receiverOutput.getQ(index));
-                byte[] xDelta = GF2K.mul(senderOutput.getX(index), receiverOutput.getDelta());
-                Assert.assertArrayEquals(qt, xDelta);
+                byte[] actualT = GF2K.mul(senderOutput.getX(index), receiverOutput.getDelta());
+                GF2K.addi(actualT, receiverOutput.getQ(index));
+                Assert.assertArrayEquals(senderOutput.getT(index), actualT);
             });
         }
     }

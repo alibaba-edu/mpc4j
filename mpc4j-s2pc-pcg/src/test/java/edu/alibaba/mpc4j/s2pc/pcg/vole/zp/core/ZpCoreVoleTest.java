@@ -10,6 +10,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ShZpCoreVoleConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -181,7 +182,7 @@ public class ZpCoreVoleTest {
             ZpVoleSenderOutput senderOutput = senderThread.getSenderOutput();
             ZpVoleReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
             // 验证结果
-            assertOutput(num, senderOutput, receiverOutput);
+            ZpVoleTestUtils.assertOutput(num, senderOutput, receiverOutput);
             LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
                 senderByteLength, receiverByteLength, time
             );
@@ -223,7 +224,7 @@ public class ZpCoreVoleTest {
             receiverRpc.reset();
             ZpVoleSenderOutput senderOutput = senderThread.getSenderOutput();
             ZpVoleReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            assertOutput(DEFAULT_NUM, senderOutput, receiverOutput);
+            ZpVoleTestUtils.assertOutput(DEFAULT_NUM, senderOutput, receiverOutput);
             // 第二次执行，重置Δ
             delta = new BigInteger(DEFAULT_PRIME.bitLength() - 1, SECURE_RANDOM);
             x = IntStream.range(0, DEFAULT_NUM)
@@ -245,7 +246,7 @@ public class ZpCoreVoleTest {
             receiverRpc.reset();
             ZpVoleSenderOutput secondSenderOutput = senderThread.getSenderOutput();
             ZpVoleReceiverOutput secondReceiverOutput = receiverThread.getReceiverOutput();
-            assertOutput(DEFAULT_NUM, secondSenderOutput, secondReceiverOutput);
+            ZpVoleTestUtils.assertOutput(DEFAULT_NUM, secondSenderOutput, secondReceiverOutput);
             // Δ应该不等
             Assert.assertNotEquals(secondReceiverOutput.getDelta(), receiverOutput.getDelta());
             // 通信量应该相等
@@ -260,26 +261,6 @@ public class ZpCoreVoleTest {
             LOGGER.info("-----test {} (reset Δ) end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void assertOutput(int num, ZpVoleSenderOutput senderOutput, ZpVoleReceiverOutput receiverOutput) {
-        if (num == 0) {
-            Assert.assertEquals(0, senderOutput.getNum());
-            Assert.assertEquals(0, senderOutput.getX().length);
-            Assert.assertEquals(0, senderOutput.getT().length);
-            Assert.assertEquals(0, receiverOutput.getNum());
-            Assert.assertEquals(0, receiverOutput.getQ().length);
-        } else {
-            Assert.assertEquals(num, senderOutput.getNum());
-            Assert.assertEquals(num, receiverOutput.getNum());
-            BigInteger prime = senderOutput.getPrime();
-            Assert.assertEquals(prime, receiverOutput.getPrime());
-            IntStream.range(0, num).forEach(index -> {
-                BigInteger qt = senderOutput.getT(index).add(receiverOutput.getQ(index)).mod(prime);
-                BigInteger xDelta = senderOutput.getX(index).multiply(receiverOutput.getDelta()).mod(prime);
-                Assert.assertEquals(qt, xDelta);
-            });
         }
     }
 }

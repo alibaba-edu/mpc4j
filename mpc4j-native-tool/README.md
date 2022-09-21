@@ -6,9 +6,10 @@
 
 `mpc4j-native-tool` relies on the following C/C++ libraries:
 
-- [GMP](https://gmplib.org/): an efficient library for operations with arbitrary precision integers, rationals, and floating-point numbers.
-- [NTL](https://libntl.org/): a high-performance, portable C++ library providing data structures and algorithms for manipulating signed, arbitrary length integers and for vectors, matrices, and polynomials over the integers and over finite fields, developed by [Victor Shoup](https://shoup.net/). Note that one can further introduce [GF2X](https://gitlab.inria.fr/gf2x/gf2x) for more efficient operations in a Galois Field. However, since the installation procedure for [GF2X](https://gitlab.inria.fr/gf2x/gf2x) is rather complicated, we use NTL by default.
+- [GMP](https://gmplib.org/): An efficient library for operations with arbitrary precision integers, rationals, and floating-point numbers.
+- [NTL](https://libntl.org/): A high-performance, portable C++ library providing data structures and algorithms for manipulating signed, arbitrary length integers and for vectors, matrices, and polynomials over the integers and over finite fields, developed by [Victor Shoup](https://shoup.net/). Note that one can further introduce [GF2X](https://gitlab.inria.fr/gf2x/gf2x) for more efficient operations in a Galois Field. However, since the installation procedure for [GF2X](https://gitlab.inria.fr/gf2x/gf2x) is rather complicated, we use NTL by default.
 - [MCL](https://github.com/herumi/mcl): A portable and fast pairing-based cryptography library. MCL also includes fast Elliptic Curve implementations. 
+- [libsodium](https://doc.libsodium.org/): A modern, easy-to-use software library for encryption, decryption, signatures, password hashing, and more. libsodium includes efficient X25519 and Ed25519 implementations. 
 
 Installing `mpc4j-native-tool` might be a bit complicated for ones who are not that familiar with Unix-like systems. As the procedures differ across platforms, here we provide installation instructions for macOS (x86_64), macOS (M1), Ubuntu, and CentOS, respectively.
 
@@ -103,6 +104,14 @@ make
 sudo make install
 cd .. # return to the build path
 cd .. # return to the original path
+```
+
+### libsodium
+
+You need to install libsodium via `homebrew`: 
+
+```shell
+brew install libsodium
 ```
 
 ### JAVA and JAVA_HOME
@@ -234,6 +243,14 @@ make
 sudo make install
 cd .. # return to the build path
 cd .. # return to the original path
+```
+
+### libsodium
+
+You need to install libsodium via `homebrew`: 
+
+```shell
+brew install libsodium
 ```
 
 ### JAVA and JAVA_HOME
@@ -389,6 +406,31 @@ cmake ..
 make
 sudo make install
 cd .. # return to the build path
+cd .. # return to the original path
+```
+
+### libsodium
+
+Download the latest version of libsodium. Currently, the latest version is [1.0.18](https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz).
+
+```shell
+wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz
+```
+
+Extract source codes from `libsodium-1.0.18.tar.gz`.
+
+```shell
+tar -xvzf libsodium-1.0.18.tar.gz
+```
+
+Compile, check, and install Libsodium on the default path.
+
+```shell
+cd libsodium-1.0.18
+./configure
+make
+make check
+sudo make install
 cd .. # return to the original path
 ```
 
@@ -554,6 +596,31 @@ cmake ..
 make
 sudo make install
 cd .. # return to the build path
+cd .. # return to the original path
+```
+
+### libsodium
+
+Download the latest version of libsodium. Currently, the latest version is [1.0.18](https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz).
+
+```shell
+wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz
+```
+
+Extract source codes from `libsodium-1.0.18.tar.gz`.
+
+```shell
+tar -xvzf libsodium-1.0.18.tar.gz
+```
+
+Compile, check, and install Libsodium on the default path.
+
+```shell
+cd libsodium-1.0.18
+./configure
+make
+make check
+sudo make install
 cd .. # return to the original path
 ```
 

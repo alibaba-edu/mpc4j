@@ -18,10 +18,10 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.AbstractNcCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20.Ywl20NcCotPtoDesc.PtoStep;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSenderOutput;
 
 /**
  * YWL20-NC-COT协议发送方。

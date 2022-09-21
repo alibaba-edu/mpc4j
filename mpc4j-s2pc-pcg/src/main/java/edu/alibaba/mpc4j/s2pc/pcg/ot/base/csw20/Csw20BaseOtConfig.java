@@ -56,7 +56,6 @@ public class Csw20BaseOtConfig implements BaseOtConfig {
         private boolean compressEncode;
 
         public Builder() {
-            super();
             envType = EnvType.STANDARD;
             compressEncode = true;
         }

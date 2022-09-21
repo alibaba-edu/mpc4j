@@ -2,6 +2,8 @@ package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.bc.*;
+import edu.alibaba.mpc4j.common.tool.crypto.ecc.sodium.Ed25519SodiumByteFullEcc;
+import edu.alibaba.mpc4j.common.tool.crypto.ecc.sodium.X25519SodiumByteMulEcc;
 
 /**
  * 字节椭圆曲线工厂。
@@ -22,9 +24,17 @@ public class ByteEccFactory {
      */
     public enum ByteEccType {
         /**
+         * Sodium实现的X25519
+         */
+        X25519_SODIUM,
+        /**
          * BC实现的X25519
          */
         X25519_BC,
+        /**
+         * Sodium实现的ED25519
+         */
+        ED25519_SODIUM,
         /**
          * BC实现的ED25519
          */
@@ -39,9 +49,10 @@ public class ByteEccFactory {
      */
     public static ByteFullEcc createFullInstance(ByteEccType byteEccType) {
         switch (byteEccType) {
+            case ED25519_SODIUM:
+                return new Ed25519SodiumByteFullEcc();
             case ED25519_BC:
                 return new Ed25519BcByteFullEcc();
-            case X25519_BC:
             default:
                 throw new IllegalArgumentException(
                     "Invalid " + ByteEccType.class.getSimpleName() + ": " + byteEccType.name()
@@ -58,8 +69,9 @@ public class ByteEccFactory {
     public static ByteFullEcc createFullInstance(EnvType envType) {
         switch (envType) {
             case STANDARD:
-            case STANDARD_JDK:
             case INLAND:
+                return createFullInstance(ByteEccType.ED25519_SODIUM);
+            case STANDARD_JDK:
             case INLAND_JDK:
                 return createFullInstance(ByteEccType.ED25519_BC);
             default:
@@ -75,10 +87,14 @@ public class ByteEccFactory {
      */
     public static ByteMulEcc createMulInstance(ByteEccType byteEccType) {
         switch (byteEccType) {
-            case ED25519_BC:
-                return new Ed25519BcByteFullEcc();
+            case X25519_SODIUM:
+                return new X25519SodiumByteMulEcc();
             case X25519_BC:
                 return new X25519BcByteMulEcc();
+            case ED25519_SODIUM:
+                return new Ed25519SodiumByteFullEcc();
+            case ED25519_BC:
+                return new Ed25519BcByteFullEcc();
             default:
                 throw new IllegalArgumentException(
                     "Invalid " + ByteEccType.class.getSimpleName() + ": " + byteEccType.name()
@@ -95,10 +111,11 @@ public class ByteEccFactory {
     public static ByteMulEcc createMulInstance(EnvType envType) {
         switch (envType) {
             case STANDARD:
-            case STANDARD_JDK:
             case INLAND:
+                return createMulInstance(ByteEccType.X25519_SODIUM);
+            case STANDARD_JDK:
             case INLAND_JDK:
-                return createFullInstance(ByteEccType.X25519_BC);
+                return createMulInstance(ByteEccType.X25519_BC);
             default:
                 throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }

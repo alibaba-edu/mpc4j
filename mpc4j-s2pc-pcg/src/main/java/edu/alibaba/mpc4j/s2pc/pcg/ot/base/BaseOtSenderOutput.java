@@ -16,11 +16,14 @@ public class BaseOtSenderOutput {
      * R0数组
      */
     private final byte[][] r0Array;
-
     /**
      * R1数组
      */
     private final byte[][] r1Array;
+    /**
+     * 数量
+     */
+    private final int num;
 
     /**
      * 构建2选1-ROT发送方输出。
@@ -29,8 +32,9 @@ public class BaseOtSenderOutput {
      * @param r1Array R1数组。
      */
     public BaseOtSenderOutput(byte[][] r0Array, byte[][] r1Array) {
-        assert r0Array.length == r1Array.length;
-        assert r0Array.length > 0;
+        assert r0Array.length > 0 : "num must be greater than 0: " + r0Array.length;
+        num = r0Array.length;
+        assert r1Array.length == num: "# of R1 must be equal to " + num + ": " + r1Array.length;
         this.r0Array = Arrays.stream(r0Array)
             .peek(r0 -> {
                 assert r0.length == CommonConstants.BLOCK_BYTE_LENGTH;
@@ -73,6 +77,6 @@ public class BaseOtSenderOutput {
      * @return 数量。
      */
     public int getNum() {
-        return r0Array.length;
+        return num;
     }
 }

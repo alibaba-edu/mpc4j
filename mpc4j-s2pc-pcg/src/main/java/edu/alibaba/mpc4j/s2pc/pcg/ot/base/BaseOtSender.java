@@ -11,7 +11,11 @@ import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
  * @date 2022/02/03
  */
 public interface BaseOtSender extends TwoPartyPto, SecurePto {
-
+    /**
+     * 返回基础OT协议类型。
+     *
+     * @return 基础OT协议类型。
+     */
     @Override
     BaseOtFactory.BaseOtType getPtoType();
 

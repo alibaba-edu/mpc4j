@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.filter;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
@@ -104,7 +105,7 @@ public class BloomFilter<T> implements MergeFilter<T> {
      * @return 布隆过滤器。
      */
     static <X> BloomFilter<X> fromByteArrayList(EnvType envType, List<byte[]> byteArrayList) {
-        assert byteArrayList.size() == 5 + HASH_NUM;
+        Preconditions.checkArgument(byteArrayList.size() == 5 + HASH_NUM);
         BloomFilter<X> bloomFilter = new BloomFilter<>();
         // 移除过滤器类型
         byteArrayList.remove(0);

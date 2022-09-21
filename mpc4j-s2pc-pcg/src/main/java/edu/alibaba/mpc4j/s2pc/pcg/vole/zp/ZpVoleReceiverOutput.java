@@ -7,7 +7,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
- * ZP-VOLE协议接收方输出。
+ * Zp-VOLE协议接收方输出。接收方得到(Δ, q)，满足t = q + Δ · x（x和t由发送方持有）。
  *
  * @author Hanwen Feng
  * @date 2022/06/08

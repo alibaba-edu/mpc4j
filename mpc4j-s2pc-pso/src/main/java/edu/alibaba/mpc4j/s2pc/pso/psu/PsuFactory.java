@@ -70,28 +70,28 @@ public class PsuFactory {
         PsuType type = config.getPtoType();
         switch (type) {
             case KRTW19_ORI:
-                return new Krtw19OriPsuServer(serverRpc, clientParty, (Krtw19OriPsuConfig)config);
+                return new Krtw19OriPsuServer(serverRpc, clientParty, (Krtw19OriPsuConfig) config);
             case KRTW19_OPT:
-                return new Krtw19OptPsuServer(serverRpc, clientParty, (Krtw19OptPsuConfig)config);
+                return new Krtw19OptPsuServer(serverRpc, clientParty, (Krtw19OptPsuConfig) config);
             case GMR21:
-                return new Gmr21PsuServer(serverRpc, clientParty, (Gmr21PsuConfig)config);
+                return new Gmr21PsuServer(serverRpc, clientParty, (Gmr21PsuConfig) config);
             case ZCL22_SKE:
-                return new Zcl22SkePsuServer(serverRpc, clientParty, (Zcl22SkePsuConfig)config);
+                return new Zcl22SkePsuServer(serverRpc, clientParty, (Zcl22SkePsuConfig) config);
             case ZCL22_PKE:
-                return new Zcl22PkePsuServer(serverRpc, clientParty, (Zcl22PkePsuConfig)config);
+                return new Zcl22PkePsuServer(serverRpc, clientParty, (Zcl22PkePsuConfig) config);
             case JSZ22_SFC:
-                return new Jsz22SfcPsuServer(serverRpc, clientParty, (Jsz22SfcPsuConfig)config);
+                return new Jsz22SfcPsuServer(serverRpc, clientParty, (Jsz22SfcPsuConfig) config);
             case JSZ22_SFS:
-                return new Jsz22SfsPsuServer(serverRpc, clientParty, (Jsz22SfsPsuConfig)config);
+                return new Jsz22SfsPsuServer(serverRpc, clientParty, (Jsz22SfsPsuConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid PsuType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + PsuType.class.getSimpleName() + ": " + type.name());
         }
     }
 
     /**
      * 构建客户端。
      *
-     * @param clientRpc 客户端通信接口。
+     * @param clientRpc   客户端通信接口。
      * @param serverParty 服务端信息。
      * @param config      配置项。
      * @return 客户端。
@@ -100,21 +100,21 @@ public class PsuFactory {
         PsuType type = config.getPtoType();
         switch (type) {
             case KRTW19_ORI:
-                return new Krtw19OriPsuClient(clientRpc, serverParty, (Krtw19OriPsuConfig)config);
+                return new Krtw19OriPsuClient(clientRpc, serverParty, (Krtw19OriPsuConfig) config);
             case KRTW19_OPT:
-                return new Krtw19OptPsuClient(clientRpc, serverParty, (Krtw19OptPsuConfig)config);
+                return new Krtw19OptPsuClient(clientRpc, serverParty, (Krtw19OptPsuConfig) config);
             case GMR21:
-                return new Gmr21PsuClient(clientRpc, serverParty, (Gmr21PsuConfig)config);
+                return new Gmr21PsuClient(clientRpc, serverParty, (Gmr21PsuConfig) config);
             case ZCL22_SKE:
-                return new Zcl22SkePsuClient(clientRpc, serverParty, (Zcl22SkePsuConfig)config);
+                return new Zcl22SkePsuClient(clientRpc, serverParty, (Zcl22SkePsuConfig) config);
             case ZCL22_PKE:
-                return new Zcl22PkePsuClient(clientRpc, serverParty, (Zcl22PkePsuConfig)config);
+                return new Zcl22PkePsuClient(clientRpc, serverParty, (Zcl22PkePsuConfig) config);
             case JSZ22_SFC:
-                return new Jsz22SfcPsuClient(clientRpc, serverParty, (Jsz22SfcPsuConfig)config);
+                return new Jsz22SfcPsuClient(clientRpc, serverParty, (Jsz22SfcPsuConfig) config);
             case JSZ22_SFS:
-                return new Jsz22SfsPsuClient(clientRpc, serverParty, (Jsz22SfsPsuConfig)config);
+                return new Jsz22SfsPsuClient(clientRpc, serverParty, (Jsz22SfsPsuConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid PsuType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + PsuType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -126,7 +126,7 @@ public class PsuFactory {
             case COVERT:
             case MALICIOUS:
             default:
-                throw new IllegalArgumentException("Invalid SecurityModel: " + securityModel.name());
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

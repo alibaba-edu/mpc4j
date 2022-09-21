@@ -5,7 +5,7 @@ import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.main.psu.PsuConfigUtils;
 import edu.alibaba.mpc4j.s2pc.pso.pid.PidConfig;
-import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.Bkms20PidConfig;
+import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.Bkms20EccPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.pid.gmr21.Gmr21MpPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.pid.gmr21.Gmr21SloppyPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
@@ -37,7 +37,7 @@ public class PidConfigUtils {
         String pidTypeString = PropertiesUtils.readString(properties, "pid_pto_name");
         PidFactory.PidType pidType = PidFactory.PidType.valueOf(pidTypeString);
         switch (pidType) {
-            case BKMS20:
+            case BKMS20_ECC:
                 return createBkms20PidConfig(properties);
             case GMR21_MP:
                 return createGmr21MpPidConfig(properties);
@@ -50,11 +50,11 @@ public class PidConfigUtils {
         }
     }
 
-    private static Bkms20PidConfig createBkms20PidConfig(Properties properties) {
+    private static Bkms20EccPidConfig createBkms20PidConfig(Properties properties) {
         // 是否使用压缩编码
         boolean compressEncode = PropertiesUtils.readBoolean(properties, "compress_encode", false);
 
-        return new Bkms20PidConfig.Builder()
+        return new Bkms20EccPidConfig.Builder()
             .setCompressEncode(compressEncode)
             .build();
     }

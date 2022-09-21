@@ -6,7 +6,8 @@ import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
-import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.Bkms20PidConfig;
+import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.Bkms20ByteEccPidConfig;
+import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.Bkms20EccPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.pid.gmr21.Gmr21MpPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.pid.gmr21.Gmr21SloppyPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
@@ -79,13 +80,20 @@ public class PidTest {
             new Gmr21SloppyPidConfig.Builder().setPsuConfig(new Jsz22SfcPsuConfig.Builder().build()).build(),
         });
 
-        // BKMS20 (compress)
+        // BKMS20_BYTE_ECC
         configurationParams.add(new Object[] {
-            PidFactory.PidType.BKMS20.name() + " (compress)", new Bkms20PidConfig.Builder().setCompressEncode(true).build(),
+            PidFactory.PidType.BKMS20_BYTE_ECC.name(), new Bkms20ByteEccPidConfig.Builder().build(),
         });
-        // BKMS20 (uncompress)
+
+        // BKMS20_ECC (compress)
         configurationParams.add(new Object[] {
-            PidFactory.PidType.BKMS20.name() + " (uncompress)", new Bkms20PidConfig.Builder().setCompressEncode(false).build(),
+            PidFactory.PidType.BKMS20_ECC.name() + " (compress)",
+            new Bkms20EccPidConfig.Builder().setCompressEncode(true).build(),
+        });
+        // BKMS20_ECC (uncompress)
+        configurationParams.add(new Object[] {
+            PidFactory.PidType.BKMS20_ECC.name() + " (uncompress)",
+            new Bkms20EccPidConfig.Builder().setCompressEncode(false).build(),
         });
 
         return configurationParams;

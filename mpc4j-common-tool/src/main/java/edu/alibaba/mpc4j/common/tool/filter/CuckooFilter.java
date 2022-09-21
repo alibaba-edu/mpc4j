@@ -142,7 +142,7 @@ public class CuckooFilter<T> implements Filter<T> {
      * @return 布谷鸟过滤器。
      */
     static <X> CuckooFilter<X> fromByteArrayList(EnvType envType, List<byte[]> byteArrayList) {
-        assert byteArrayList.size() >= 6;
+        Preconditions.checkArgument(byteArrayList.size() >= 6);
         CuckooFilter<X> cuckooFilter = new CuckooFilter<>();
         // 移除过滤器类型
         byteArrayList.remove(0);
@@ -163,7 +163,7 @@ public class CuckooFilter<T> implements Filter<T> {
         cuckooFilter.bucketHash.setKey(bucketHashKey);
         cuckooFilter.secureRandom = new SecureRandom();
         // 桶中的元素
-        assert byteArrayList.size() == cuckooFilter.bucketNum * ENTRIES_PER_BUCKET;
+        Preconditions.checkArgument(byteArrayList.size() == cuckooFilter.bucketNum * ENTRIES_PER_BUCKET);
         ByteBuffer[] bucketFlattenedElements = byteArrayList.stream().map(ByteBuffer::wrap).toArray(ByteBuffer[]::new);
         cuckooFilter.buckets = IntStream.range(0, cuckooFilter.bucketNum)
             .mapToObj(bucketIndex -> {

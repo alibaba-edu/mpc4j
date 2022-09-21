@@ -13,17 +13,27 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ZlCoreMtgFactory;
  */
 public class IdealZlCoreMtgConfig implements ZlCoreMtgConfig {
     /**
+     * 乘法三元组比特长度
+     */
+    private final int l;
+    /**
      * 环境类型
      */
     private final EnvType envType;
 
     private IdealZlCoreMtgConfig(Builder builder) {
+        l = builder.l;
         envType = builder.envType;
     }
 
     @Override
     public ZlCoreMtgFactory.ZlCoreMtgType getPtoType() {
         return ZlCoreMtgFactory.ZlCoreMtgType.IDEAL;
+    }
+
+    @Override
+    public int getL() {
+        return l;
     }
 
     @Override
@@ -43,12 +53,18 @@ public class IdealZlCoreMtgConfig implements ZlCoreMtgConfig {
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<IdealZlCoreMtgConfig> {
         /**
+         * 乘法三元组比特长度
+         */
+        private final int l;
+        /**
          * 环境类型
          */
         private EnvType envType;
 
-        public Builder() {
+        public Builder(int l) {
             super();
+            assert l > 0 : "l must be greater than 0: " + l;
+            this.l = l;
             this.envType = EnvType.STANDARD;
         }
 

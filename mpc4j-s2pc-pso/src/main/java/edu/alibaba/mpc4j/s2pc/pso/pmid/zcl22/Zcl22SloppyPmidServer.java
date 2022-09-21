@@ -7,6 +7,8 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
@@ -17,8 +19,10 @@ import edu.alibaba.mpc4j.common.tool.okve.okvs.Okvs;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.*;
+import edu.alibaba.mpc4j.s2pc.pso.pid.PidUtils;
 import edu.alibaba.mpc4j.s2pc.pso.pmid.AbstractPmidServer;
 import edu.alibaba.mpc4j.s2pc.pso.pmid.PmidPartyOutput;
+import edu.alibaba.mpc4j.s2pc.pso.pmid.PmidUtils;
 import edu.alibaba.mpc4j.s2pc.pso.pmid.zcl22.Zcl22SloppyPmidPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuServer;
@@ -69,21 +73,9 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
      */
     private final int cuckooHashNum;
     /**
-     * PID映射密钥
-     */
-    private byte[] pidMapPrfKey;
-    /**
      * 服务端PID的PRF密钥
      */
     private byte[] serverPidPrfKey;
-    /**
-     * PMID映射密钥
-     */
-    private byte[] pmidMapPrfKey;
-    /**
-     * σ的OKVS值映射密钥
-     */
-    private byte[] sigmaOkvsValueMapPrfKey;
     /**
      * 服务端PID的OKVS密钥
      */
@@ -111,7 +103,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
     /**
      * PID映射函数
      */
-    private Prf pidMapPrf;
+    private Hash pidMap;
     /**
      * 服务端PID伪随机函数
      */
@@ -119,7 +111,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
     /**
      * PMID映射伪随机函数
      */
-    private Prf pmidMapPrf;
+    private Hash pmidMap;
     /**
      * σ的OKVS值字节长度
      */
@@ -127,7 +119,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
     /**
      * σ的OKVS值映射函数
      */
-    private Prf sigmaOkvsValueMapPrf;
+    private Hash sigmaOkvsValueMap;
     /**
      * 服务端桶数量
      */
@@ -221,22 +213,10 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
         info("{}{} Server Init Step 1/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
 
         stopWatch.start();
-        List<byte[]> serverKeysPayload = new LinkedList<>();
-        // PID映射密钥
-        pidMapPrfKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(pidMapPrfKey);
-        serverKeysPayload.add(pidMapPrfKey);
-        // s^A（不用放在数据包中）
+        // s^A
         serverPidPrfKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(serverPidPrfKey);
-        // PMID映射密钥
-        pmidMapPrfKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(pmidMapPrfKey);
-        serverKeysPayload.add(pmidMapPrfKey);
-        // σ的OKVS值映射密钥
-        sigmaOkvsValueMapPrfKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(sigmaOkvsValueMapPrfKey);
-        serverKeysPayload.add(sigmaOkvsValueMapPrfKey);
+        List<byte[]> serverKeysPayload = new LinkedList<>();
         // 服务端PID的OKVS密钥
         int sloppyOkvsHashKeyNum = OkvsFactory.getHashNum(sloppyOkvsType);
         serverSloppyOkvsHashKeys = IntStream.range(0, sloppyOkvsHashKeyNum)
@@ -370,26 +350,16 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
     }
 
     private void initVariables() throws MpcAbortException {
-        // PID字节长度等于λ + log(n) + log(m) = λ + log(m * n)
-        pidByteLength = CommonConstants.STATS_BYTE_LENGTH
-            + CommonUtils.getByteLength(LongUtils.ceilLog2(serverSetSize))
-            + CommonUtils.getByteLength(LongUtils.ceilLog2(clientSetSize));
-        pidMapPrf = PrfFactory.createInstance(envType, pidByteLength);
-        pidMapPrf.setKey(pidMapPrfKey);
+        pidByteLength = PidUtils.getPidByteLength(serverSetSize, clientSetSize);
+        pidMap = HashFactory.createInstance(envType, pidByteLength);
         serverPidPrf = PrfFactory.createInstance(envType, pidByteLength);
         serverPidPrf.setKey(serverPidPrfKey);
-        // PMID字节长度等于λ + log(m * serverU * clientU) + log(n * serverU * clientU)
-        pmidByteLength = CommonConstants.STATS_BYTE_LENGTH
-            + CommonUtils.getByteLength(LongUtils.ceilLog2((long) serverSetSize * serverU * clientU))
-            + CommonUtils.getByteLength(LongUtils.ceilLog2((long) clientSetSize * serverU * clientU));
-        pmidMapPrf = PrfFactory.createInstance(envType, pmidByteLength);
-        pmidMapPrf.setKey(pmidMapPrfKey);
-        // σ的OKVS值长度 = λ + Max{log(m * clientU), log(n * serverU)}
-        sigmaOkvsValueByteLength = CommonConstants.STATS_BYTE_LENGTH + Math.max(
-            LongUtils.ceilLog2((long) clientU * serverSetSize), LongUtils.ceilLog2((long) serverU * clientSetSize)
+        pmidByteLength = PmidUtils.getPmidByteLength(serverSetSize, serverU, clientSetSize, clientU);
+        pmidMap = HashFactory.createInstance(envType, pmidByteLength);
+        sigmaOkvsValueByteLength = Zcl22PmidUtils.getSigmaOkvsValueByteLength(
+            serverSetSize, serverU, clientSetSize, clientU
         );
-        sigmaOkvsValueMapPrf = PrfFactory.createInstance(envType, sigmaOkvsValueByteLength);
-        sigmaOkvsValueMapPrf.setKey(sigmaOkvsValueMapPrfKey);
+        sigmaOkvsValueMap = HashFactory.createInstance(envType, sigmaOkvsValueByteLength);
         // Alice inserts items into cuckoo hash
         List<byte[]> serverCuckooHashKeyPayload = generateServerCuckooHashKeyPayload();
         DataPacketHeader serverCuckooHashKeyHeader = new DataPacketHeader(
@@ -505,7 +475,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
                 hashExtendElementStream = parallel ? hashExtendElementStream.parallel() : hashExtendElementStream;
                 return hashExtendElementStream
                     .map(ByteBuffer::array)
-                    .map(pidMapPrf::getBytes)
+                    .map(pidMap::digestToBytes)
                     .toArray(byte[][]::new);
             })
             .flatMap(Arrays::stream)
@@ -523,7 +493,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
                         byte[] extendElementBytes = serverExtendElementByteBuffers[hashIndex][index].array();
                         byte[] pid0 = serverPidPrf.getBytes(elementBytes);
                         int clientBinIndex = clientCuckooHashes[hashIndex].getInteger(elementBytes, clientBinNum);
-                        byte[] pid1 = pidMapPrf.getBytes(kaOprfKey.getPrf(clientBinIndex, extendElementBytes));
+                        byte[] pid1 = pidMap.digestToBytes(kaOprfKey.getPrf(clientBinIndex, extendElementBytes));
                         BytesUtils.xori(pid0, pid1);
                         return pid0;
                     })
@@ -567,10 +537,10 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
                     .put(elementBytes)
                     .putInt(hashIndex)
                     .array();
-                ByteBuffer pidExtendElementBytes = ByteBuffer.wrap(pidMapPrf.getBytes(extendElementBytes));
+                ByteBuffer pidExtendElementBytes = ByteBuffer.wrap(pidMap.digestToBytes(extendElementBytes));
                 // R^A(x) = P^B(x || i) ⊕ f^A_{h_i(x)} ⊕ PRF'(s^A, x)
                 byte[] pidBytes = clientPidOkvs.decode(clientOkvsStorage, pidExtendElementBytes);
-                BytesUtils.xori(pidBytes, pidMapPrf.getBytes(kbOprfOutput.getPrf(serverBinIndex)));
+                BytesUtils.xori(pidBytes, pidMap.digestToBytes(kbOprfOutput.getPrf(serverBinIndex)));
                 BytesUtils.xori(pidBytes, serverPidPrf.getBytes(elementBytes));
                 return ByteBuffer.wrap(pidBytes);
             })
@@ -596,7 +566,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
                 serverPid -> {
                     byte[] pid = serverPid.array();
                     byte[] extendPid = ByteBuffer.allocate(pid.length + Integer.BYTES).put(pid).putInt(0).array();
-                    return sigmaOkvsValueMapPrf.getBytes(extendPid);
+                    return sigmaOkvsValueMap.digestToBytes(extendPid);
                 })
             );
     }
@@ -634,7 +604,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
             serverPid -> serverPid,
             serverPid -> {
                 T x = serverPidMap.get(serverPid);
-                ByteBuffer xi = ByteBuffer.wrap(sigmaOkvsValueMapPrf.getBytes(ObjectUtils.objectToByteArray(x)));
+                ByteBuffer xi = ByteBuffer.wrap(sigmaOkvsValueMap.digestToBytes(ObjectUtils.objectToByteArray(x)));
                 // Alice computes d_i = q_{x_i} ⊕ Decode_H(D, x_i) for i ∈ [m].
                 byte[] qxBytes = qxMap.get(serverPid);
                 byte[] dxBytes = clientSigmaOkvs.decode(clientSigmaOkvsStorage, xi);
@@ -660,7 +630,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
                 // key = x_i
                 serverPid -> {
                     T x = serverPidMap.get(serverPid);
-                    return ByteBuffer.wrap(sigmaOkvsValueMapPrf.getBytes(ObjectUtils.objectToByteArray(x)));
+                    return ByteBuffer.wrap(sigmaOkvsValueMap.digestToBytes(ObjectUtils.objectToByteArray(x)));
                 },
                 // value = q_{x_i} ⊕ c_{x_i}
                 serverPid -> {
@@ -705,7 +675,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
                     .put(serverPidBytes)
                     .putInt(j)
                     .array();
-                byte[] pmid = pmidMapPrf.getBytes(extendServerPid);
+                byte[] pmid = pmidMap.digestToBytes(extendServerPid);
                 serverPmidMap.put(ByteBuffer.wrap(pmid), x);
             }
         });

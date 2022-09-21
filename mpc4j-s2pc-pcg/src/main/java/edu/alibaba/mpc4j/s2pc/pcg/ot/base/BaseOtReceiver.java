@@ -12,7 +12,11 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory.BaseOtType;
  * @date 2022/02/03
  */
 public interface BaseOtReceiver extends TwoPartyPto, SecurePto {
-
+    /**
+     * 返回基础OT协议类型。
+     *
+     * @return 基础OT协议类型。
+     */
     @Override
     BaseOtType getPtoType();
 

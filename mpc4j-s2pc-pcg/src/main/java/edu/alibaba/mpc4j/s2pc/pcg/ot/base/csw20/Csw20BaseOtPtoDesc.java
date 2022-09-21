@@ -5,13 +5,15 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
  * Csw20-基础OT协议信息。论文来源：
- * Canetti R, Sarkar P, Wang X. Blazing Fast OT for Three-Round UC OT Extension. PKC 2020, Springer, 2020, pp. 299-327.
  * <p>
+ * Canetti R, Sarkar P, Wang X. Blazing Fast OT for Three-Round UC OT Extension. PKC 2020, Springer, 2020, pp. 299-327.
+ * </p>
  * 采用了安全批处理操作，提高批量生成效率。批处理方法来自论文：
- * Vladimir Kolesnikov, Ranjit Kumaresan, Mike Rosulek, Ni Trieu. Efficient Batched Oblivious PRF with
- * Applications to Private Set Intersection. CCS 2016: 818-829。
+ * <p>
+ * McQuoid I, Rosulek M, Roy L. Batching base oblivious transfers. ASIACRYPT 2021, Springer, Cham, 2021: 281-310.
+ * </p>
  *
- * @author Hanwen Feng
+ * @author Hanwen Feng, Weiran Liu
  * @date 2022/04/26
  */
 class Csw20BaseOtPtoDesc implements PtoDesc {

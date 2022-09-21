@@ -1,20 +1,15 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.base;
 
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
-
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.tool.crypto.kyber.KyberEngineFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory.BaseOtType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.co15.Co15BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.csw20.Csw20BaseOtConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19BaseOtConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19EccBaseOtConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19KyberBaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -24,6 +19,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 /**
  * 基础OT协议测试。
@@ -46,45 +48,75 @@ public class BaseOtTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurationParams = new ArrayList<>();
-        // MR19，压缩编码
-        configurationParams.add(new Object[] {
-            BaseOtType.MR19.name() + " (compress)",
-            new Mr19BaseOtConfig.Builder().setCompressEncode(true).build(),
+        // MR19_ECC (compress)
+        configurationParams.add(new Object[]{
+            BaseOtType.MR19_ECC.name() + " (compress)",
+            new Mr19EccBaseOtConfig.Builder().setCompressEncode(true).build(),
         });
-        // MR19，非压缩编码
-        configurationParams.add(new Object[] {
-            BaseOtType.MR19.name() + " (uncompress)",
-            new Mr19BaseOtConfig.Builder().setCompressEncode(false).build(),
+        // MR19_ECC (uncompress)
+        configurationParams.add(new Object[]{
+            BaseOtType.MR19_ECC.name() + " (uncompress)",
+            new Mr19EccBaseOtConfig.Builder().setCompressEncode(false).build(),
         });
-        // CO15，压缩编码
-        configurationParams.add(new Object[] {
+        // MR19_KYBER (CCA, k = 2)
+        configurationParams.add(new Object[]{
+            BaseOtType.MR19_KYBER.name() + "(CCA, k = 2)",
+            new Mr19KyberBaseOtConfig.Builder().setParamsK(2).setKyberType(KyberEngineFactory.KyberType.KYBER_CCA).build(),
+        });
+        // MR19_KYBER (CCA, K = 3)
+        configurationParams.add(new Object[]{
+            BaseOtType.MR19_KYBER.name() + "(CCA, k = 3)",
+            new Mr19KyberBaseOtConfig.Builder().setParamsK(3).setKyberType(KyberEngineFactory.KyberType.KYBER_CCA).build(),
+        });
+        // MR19_KYBER (CCA, K = 4)
+        configurationParams.add(new Object[]{
+            BaseOtType.MR19_KYBER.name() + "(CCA, k = 4)",
+            new Mr19KyberBaseOtConfig.Builder().setParamsK(4).setKyberType(KyberEngineFactory.KyberType.KYBER_CCA).build(),
+        });
+        // MR19_KYBER (CPA, K = 2)
+        configurationParams.add(new Object[]{
+            BaseOtType.MR19_KYBER.name() + "(CPA, k = 2)",
+            new Mr19KyberBaseOtConfig.Builder().setParamsK(2).setKyberType(KyberEngineFactory.KyberType.KYBER_CPA).build(),
+        });
+        // MR19_KYBER (CPA, K = 3)
+        configurationParams.add(new Object[]{
+            BaseOtType.MR19_KYBER.name() + "(CPA, k = 3)",
+            new Mr19KyberBaseOtConfig.Builder().setParamsK(3).setKyberType(KyberEngineFactory.KyberType.KYBER_CPA).build(),
+        });
+        // MR19_KYBER (CPA, K = 4)
+        configurationParams.add(new Object[]{
+            BaseOtType.MR19_KYBER.name() + "(CPA, k = 4)",
+            new Mr19KyberBaseOtConfig.Builder().setParamsK(4).setKyberType(KyberEngineFactory.KyberType.KYBER_CPA).build(),
+        });
+        // CO15 (compress)
+        configurationParams.add(new Object[]{
             BaseOtType.CO15.name() + " (compress)",
             new Co15BaseOtConfig.Builder().setCompressEncode(true).build(),
         });
-        // CO15，非压缩编码
-        configurationParams.add(new Object[] {
+        // CO15 (uncompress)
+        configurationParams.add(new Object[]{
             BaseOtType.CO15.name() + " (uncompress)",
             new Co15BaseOtConfig.Builder().setCompressEncode(false).build(),
         });
-        // NP01，压缩编码
-        configurationParams.add(new Object[] {
+        // NP01 (compress)
+        configurationParams.add(new Object[]{
             BaseOtType.NP01.name() + " (compress)",
             new Np01BaseOtConfig.Builder().setCompressEncode(true).build(),
         });
-        // NP01，非压缩编码
-        configurationParams.add(new Object[] {
+        // NP01 (uncompress)
+        configurationParams.add(new Object[]{
             BaseOtType.NP01.name() + " (uncompress)",
             new Np01BaseOtConfig.Builder().setCompressEncode(false).build(),
         });
-        // CSW20，压缩编码
-        configurationParams.add(new Object[] {
-                BaseOtType.CSW20.name() + " (compress)",
-                new Csw20BaseOtConfig.Builder().setCompressEncode(true).build(),
+        // CSW20 (compress)
+        configurationParams.add(new Object[]{
+            BaseOtType.CSW20.name() + " (compress)",
+            new Csw20BaseOtConfig.Builder().setCompressEncode(true).build(),
         });
-        // CSW20，非压缩编码
-        configurationParams.add(new Object[] {
-                BaseOtType.CSW20.name() + " (uncompress)",
-                new Csw20BaseOtConfig.Builder().setCompressEncode(false).build(),
+        // CSW20 (uncompress)
+        configurationParams.add(new Object[]{
+            BaseOtType.CSW20.name() + " (uncompress)",
+            new Csw20BaseOtConfig.Builder().setCompressEncode(false).build(),
         });
 
         return configurationParams;

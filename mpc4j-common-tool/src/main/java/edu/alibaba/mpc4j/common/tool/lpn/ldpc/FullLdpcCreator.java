@@ -2,8 +2,13 @@ package edu.alibaba.mpc4j.common.tool.lpn.ldpc;
 
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.tool.lpn.matrix.SparseMatrix;
+import edu.alibaba.mpc4j.common.tool.lpn.matrix.SparseVector;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * FullLdpcCreator 类
@@ -25,6 +30,11 @@ public class FullLdpcCreator extends AbstractLdpcCreator {
     private static final int MAX_TRY_TIME = 100;
 
     /**
+     * 优化了右矩阵 （A,F）的生成逻辑，对应的种子信息被记录为improvedSeed， 在LdpcCreatorUtils.
+     */
+    private final int[][] rightImprovedSeed;
+
+    /**
      * 构造函数
      *
      * @param codeType Ldpc类型
@@ -32,6 +42,7 @@ public class FullLdpcCreator extends AbstractLdpcCreator {
      */
     public FullLdpcCreator(LdpcCreatorUtils.CodeType codeType, int ceilLogN) {
         super(codeType, ceilLogN);
+        rightImprovedSeed = LdpcCreatorUtils.getImprovedRightSeed(codeType);
         // 首先计算一组使得LPN假设成立，且可以输出足够数量OT的LPN参数。
         LpnParams lpnParams = new LdpcLpnParamsFinder(codeType).computeLpnParams(ceilLogN);
         // 读取LPN的k，t值，作为临时的LDPC参数。
@@ -102,47 +113,35 @@ public class FullLdpcCreator extends AbstractLdpcCreator {
     }
 
     /**
-     * 生成右矩阵。
+     * 生成右矩阵，使用了OnlineLdpcCreator的改进方法。
      *
      * @param kValue 当前尝试的kvalue。
      */
     private void rightCodeInit(int kValue) {
-        SparseMatrix.PointList pnts = new SparseMatrix.PointList(kValue, kValue - gapValue);
-        // 添加主对角线。
-        for (int i = 0; i < kValue - gapValue; i++) {
-            pnts.addPoint(new SparseMatrix.Point(i, i));
-        }
-        // 添加gap区元素。
-        for (int i = 0; i < kValue; i++) {
-            int rem = i % gapValue;
-            int startIndex = 0;
-            while (i - gapValue + rightSeed[rem][startIndex] < 0) {
-                startIndex++;
-                if (startIndex >= weight - 1)
-                    break;
-            }
-            for (int k = startIndex; k < weight - 1; k++) {
-                if (i - gapValue + rightSeed[rem][k] >= kValue - gapValue)
-                    break;
-                pnts.addPoint(new SparseMatrix.Point(i, i - gapValue + rightSeed[rem][k]));
-            }
-        }
-        // 添加辅助对角线1。
-        for (int i = LdpcCreatorUtils.BAND_POSITION[0] + gapValue, j = 0; i < kValue; i++, j++) {
-            pnts.addPoint(new SparseMatrix.Point(i, j));
-        }
-        // 添加辅助对角线2。
-        for (int i = LdpcCreatorUtils.BAND_POSITION[1] + gapValue, j = 0; i < kValue; i++, j++) {
-            pnts.addPoint(new SparseMatrix.Point(i, j));
-        }
-        // 创建右矩阵。
-        SparseMatrix rightMtx = SparseMatrix.createFromPointsList(pnts, SparseMatrix.WorkType.Full);
-        // 从右矩阵中提取出分块矩阵C。
-        tempC = rightMtx.getSubMatrix(0, 0, kValue - gapValue, kValue - gapValue, SparseMatrix.WorkType.Full);
-        // 设置C为下三角矩阵。
+        /*
+         * 创建存储矩阵C和矩阵F各个列的数组。
+         * 由于并发访问每列，选择用数组存储而不是arrayList。
+         */
+        SparseVector[] cColsArray = new SparseVector[kValue - gapValue];
+        SparseVector[] fColsArray = new SparseVector[kValue - gapValue];
+        // 根据rightImprovedSeed 生成左矩阵各列。
+        IntStream.range(0, kValue - gapValue).parallel()
+                .forEach(colIndex -> {
+                    int rem = colIndex % gapValue;
+                    SparseVector fullCol = new SparseVector(rightImprovedSeed[rem], kValue, true).shiftConstant(colIndex);
+                    // 矩阵C的列为左矩阵每列的前 k - gap 项。
+                    cColsArray[colIndex] = fullCol.getSubArray(0, kValue - gapValue);
+                    // 矩阵F的列为左矩阵每列的后 gap 项。
+                    fColsArray[colIndex] = fullCol.getSubArray(kValue - gapValue, kValue);
+                });
+        // 将数组转为ArrayList，然后生成对应的稀疏矩阵。
+        ArrayList<SparseVector> cColsList = Stream.of(cColsArray).collect(Collectors.toCollection(ArrayList::new));
+        tempC = new SparseMatrix(cColsList, SparseMatrix.WorkType.ColsOnly, kValue - gapValue, kValue - gapValue);
+        tempC.setType(SparseMatrix.WorkType.Full);
         tempC.setDiagMtx();
-        // 提取分块矩阵F。
-        tempF = rightMtx.getSubMatrix(kValue - gapValue, 0, gapValue, kValue - gapValue, SparseMatrix.WorkType.Full);
+        ArrayList<SparseVector> fColsList = Stream.of(fColsArray).collect(Collectors.toCollection(ArrayList::new));
+        tempF = new SparseMatrix(fColsList, SparseMatrix.WorkType.ColsOnly, gapValue, kValue - gapValue);
+        tempF.setType(SparseMatrix.WorkType.Full);
     }
 
     /**

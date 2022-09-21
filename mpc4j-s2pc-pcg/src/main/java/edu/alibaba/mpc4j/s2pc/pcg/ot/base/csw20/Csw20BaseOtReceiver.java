@@ -9,11 +9,11 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.AbstractBaseOtReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.csw20.Csw20BaseOtPtoDesc.PtoStep;
+
 import org.bouncycastle.math.ec.ECPoint;
 
 import java.math.BigInteger;
@@ -33,9 +33,9 @@ import java.util.stream.IntStream;
  */
 public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
     /**
-     * 配置项
+     * 是否压缩表示
      */
-    private final Csw20BaseOtConfig config;
+    private final boolean compressEncode;
     /**
      * 椭圆曲线
      */
@@ -45,24 +45,21 @@ public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
      */
     private byte[][] rbArray;
     /**
-     * 群元素T
-     */
-    private ECPoint upperT;
-    /**
-     * OT 协议接收方参数
+     * OT协议接收方参数
      */
     private BigInteger[] aArray;
 
     public Csw20BaseOtReceiver(Rpc receiverRpc, Party senderParty, Csw20BaseOtConfig config) {
         super(Csw20BaseOtPtoDesc.getInstance(), receiverRpc, senderParty, config);
+        compressEncode = config.getCompressEncode();
         ecc = EccFactory.createInstance(envType);
-        this.config = config;
     }
 
     @Override
     public void init() throws MpcAbortException {
         setInitInput();
         info("{}{} Recv. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+
         initialized = true;
         info("{}{} Recv. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
     }
@@ -74,8 +71,8 @@ public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
 
         stopWatch.start();
         DataPacketHeader rChooseHeader = new DataPacketHeader(
-                taskId, getPtoDesc().getPtoId(), Csw20BaseOtPtoDesc.PtoStep.RECEIVER_SEND_C.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
+            taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_C.ordinal(), extraInfo,
+            ownParty().getPartyId(), otherParty().getPartyId()
         );
         List<byte[]> rChoosePayLoad = generateReceiverChoosePayLoad();
         rpc.send(DataPacket.fromByteArrayList(rChooseHeader, rChoosePayLoad));
@@ -86,8 +83,8 @@ public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
 
         stopWatch.start();
         DataPacketHeader senderHeader = new DataPacketHeader(
-                taskId, getPtoDesc().getPtoId(), Csw20BaseOtPtoDesc.PtoStep.SENDER_SEND_S.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
+            taskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_S.ordinal(), extraInfo,
+            otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> senderPayload = rpc.receive(senderHeader).getPayload();
         stopWatch.stop();
@@ -98,14 +95,12 @@ public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
         stopWatch.start();
         List<byte[]> receiverPayload = generateReceiverPayload(senderPayload);
         DataPacketHeader receiverHeader = new DataPacketHeader(
-                taskId, getPtoDesc().getPtoId(), Csw20BaseOtPtoDesc.PtoStep.RECEIVER_SEND_R.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
+            taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_R.ordinal(), extraInfo,
+            ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(receiverHeader, receiverPayload));
         BaseOtReceiverOutput receiverOutput = new BaseOtReceiverOutput(choices, rbArray);
         rbArray = null;
-        upperT = null;
-        aArray = null;
         stopWatch.stop();
         long rTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -120,24 +115,24 @@ public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
         // 随机选取种子，用于生成群元素T
         byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(seed);
-        upperT = ecc.hashToCurve(ByteBuffer
-                .allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                .putLong(extraInfo).put(seed)
-                .array());
+        ECPoint upperT = ecc.hashToCurve(ByteBuffer
+            .allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
+            .putLong(extraInfo).put(seed)
+            .array());
         aArray = new BigInteger[choices.length];
         // 涉及密码学操作，与输入数量相关，需要并行化处理
         IntStream aIntStream = IntStream.range(0, choices.length);
         aIntStream = parallel ? aIntStream.parallel() : aIntStream;
         List<byte[]> receiverChoosePayLoad = aIntStream
-                .mapToObj(index -> {
-                    // 采样a_i
-                    aArray[index] = ecc.randomZn(secureRandom);
-                    // 计算B_i = a_i*G + b_i*T
-                    return choices[index] ?
-                            ecc.multiply(ecc.getG(), aArray[index]).add(upperT) : ecc.multiply(ecc.getG(), aArray[index]);
-                })
-                .map(capitalB -> ecc.encode(capitalB, config.getCompressEncode()))
-                .collect(Collectors.toList());
+            .mapToObj(index -> {
+                // 采样a_i
+                aArray[index] = ecc.randomZn(secureRandom);
+                // 计算B_i = a_i*G + b_i*T
+                return choices[index] ?
+                    ecc.multiply(ecc.getG(), aArray[index]).add(upperT) : ecc.multiply(ecc.getG(), aArray[index]);
+            })
+            .map(capitalB -> ecc.encode(capitalB, compressEncode))
+            .collect(Collectors.toList());
         receiverChoosePayLoad.add(seed);
         return receiverChoosePayLoad;
     }
@@ -146,7 +141,6 @@ public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
         MpcAbortPreconditions.checkArgument(senderPayload.size() == choices.length + 2);
         // 由于要先移除最后一个元素，因此先转换为数组
         ArrayList<byte[]> senderPayloadArrayList = new ArrayList<>(senderPayload);
-        Kdf kdf = KdfFactory.createInstance(envType);
         ECPoint capitalS = ecc.decode(senderPayloadArrayList.remove(senderPayloadArrayList.size() - 1));
         byte[] gammaBytes = senderPayloadArrayList.remove(senderPayloadArrayList.size() - 1);
         rbArray = new byte[choices.length][];
@@ -159,14 +153,15 @@ public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
             // 计算密钥 k = H(index, a * S)
             byte[] kInputByteArray = ecc.encode(ecc.multiply(capitalS, aArray[index]), false);
             rbArray[index] = kdf.deriveKey(ByteBuffer
-                    .allocate(Integer.BYTES + kInputByteArray.length)
-                    .putInt(index).put(kInputByteArray)
-                    .array());
+                .allocate(Integer.BYTES + kInputByteArray.length)
+                .putInt(index).put(kInputByteArray)
+                .array());
             // 计算resp = H(k) \xor b* chall
             respByteArray[index] = choices[index] ?
-                    BytesUtils.xor(kdf.deriveKey(rbArray[index]), sByteArray[index]) :
-                    kdf.deriveKey(rbArray[index]);
+                BytesUtils.xor(kdf.deriveKey(rbArray[index]), sByteArray[index]) :
+                kdf.deriveKey(rbArray[index]);
         });
+        aArray = null;
         // 计算ans' = H(resp_1, ... , resp_n)
         ByteBuffer ansInputByteBuffer = ByteBuffer.allocate(respByteArray[0].length * choices.length);
         for (int i = 0; i < choices.length; i++) {

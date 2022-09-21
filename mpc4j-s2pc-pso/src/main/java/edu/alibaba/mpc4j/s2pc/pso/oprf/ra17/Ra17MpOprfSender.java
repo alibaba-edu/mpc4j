@@ -8,7 +8,6 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.AbstractMpOprfSender;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.MpOprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.ra17.Ra17MpOprfPtoDesc.PtoStep;
@@ -50,6 +49,14 @@ public class Ra17MpOprfSender extends AbstractMpOprfSender {
         setInitInput(maxBatchSize);
         info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
+        stopWatch.start();
+        // 生成α
+        alpha = ecc.randomZn(secureRandom);
+        stopWatch.stop();
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        info("{}{} Send Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+
         initialized = true;
         info("{}{} Send. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
     }
@@ -60,7 +67,6 @@ public class Ra17MpOprfSender extends AbstractMpOprfSender {
         info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();
-        alpha = BigIntegerUtils.randomPositive(ecc.getN(), secureRandom);
         DataPacketHeader blindHeader = new DataPacketHeader(
             taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_BLIND.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()

@@ -293,8 +293,9 @@ public class SparseMatrix {
         PointList pnts = new PointList(rows, cols);
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                if (dMtx.getValue(i, j))
+                if (dMtx.getValue(i, j)) {
                     pnts.addPoint(new Point(i, j));
+                }
             }
         }
         return SparseMatrix.createFromPointsList(pnts, type);
@@ -738,11 +739,11 @@ public class SparseMatrix {
                 int end = rowI.getSize() - 1;
                 int indexOfTem = 0;
                 while (index != end && indexOfTem != temList4xCol.size()) {
-                    if (rowI.getValue(index) < temList4xCol.get(indexOfTem))
+                    if (rowI.getValue(index) < temList4xCol.get(indexOfTem)) {
                         ++index;
-                    else if (temList4xCol.get(indexOfTem) < rowI.getValue(index))
+                    } else if (temList4xCol.get(indexOfTem) < rowI.getValue(index)) {
                         ++indexOfTem;
-                    else {
+                    } else {
                         bit ^= 1;
                         ++index;
                         ++indexOfTem;
@@ -797,8 +798,9 @@ public class SparseMatrix {
                 int colIndexNow = colsList.get(rowI.getValue(j)).getValue(colIterators[rowI.getValue(j)]);
                 if (colIndexNow != i) {
                     System.out.println(" test col is unsorted");
-                    if (colsList.get(rowI.getValue(j)).isSorted())
+                    if (colsList.get(rowI.getValue(j)).isSorted()) {
                         System.out.println("but it is already sorted");
+                    }
                     return false;
                 }
                 colIterators[rowI.getValue(j)]++;
@@ -987,6 +989,7 @@ public class SparseMatrix {
             default:
                 throw new IllegalArgumentException("Unknown Type");
         }
+        this.type = type;
     }
 
     /**
@@ -1106,6 +1109,7 @@ public class SparseMatrix {
         ArrayList<SparseVector> targetList = new ArrayList<>();
 
         int[] targetCounter = new int[originList.get(0).getBitSize()];
+        targetList.ensureCapacity(targetCounter.length);
 
         for (SparseVector array : originList) {
             array.indexCounter(targetCounter);

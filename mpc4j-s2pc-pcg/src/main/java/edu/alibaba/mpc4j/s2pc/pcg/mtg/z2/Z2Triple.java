@@ -43,17 +43,17 @@ public class Z2Triple {
      * @param c   随机分量c。
      */
     public static Z2Triple create(int num, byte[] a, byte[] b, byte[] c) {
-        assert num > 0 : "num must be greater than 0";
+        assert num > 0 : "num must be greater than 0: " + num;
         // 验证随机分量的长度
-        int byteN = CommonUtils.getByteLength(num);
-        assert a.length == byteN && BytesUtils.isReduceByteArray(a, num);
-        assert b.length == byteN && BytesUtils.isReduceByteArray(b, num);
-        assert c.length == byteN && BytesUtils.isReduceByteArray(c, num);
+        int byteNum = CommonUtils.getByteLength(num);
+        assert a.length == byteNum && BytesUtils.isReduceByteArray(a, num);
+        assert b.length == byteNum && BytesUtils.isReduceByteArray(b, num);
+        assert c.length == byteNum && BytesUtils.isReduceByteArray(c, num);
 
         // 将byte[]转换为BigInteger时已经数进行了拷贝
         Z2Triple triple = new Z2Triple();
         triple.num = num;
-        triple.byteNum = byteN;
+        triple.byteNum = byteNum;
         triple.a = BigIntegerUtils.byteArrayToNonNegBigInteger(a);
         triple.b = BigIntegerUtils.byteArrayToNonNegBigInteger(b);
         triple.c = BigIntegerUtils.byteArrayToNonNegBigInteger(c);
@@ -86,7 +86,7 @@ public class Z2Triple {
      * @param c   随机分量c。
      */
     private static Z2Triple create(int num, BigInteger a, BigInteger b, BigInteger c) {
-        assert num > 0 : "num must be greater than 0";
+        assert num > 0 : "num must be greater than 0: " + num;
         assert BigIntegerUtils.nonNegative(a) && a.bitLength() <= num;
         assert BigIntegerUtils.nonNegative(b) && b.bitLength() <= num;
         assert BigIntegerUtils.nonNegative(c) && c.bitLength() <= num;
@@ -207,7 +207,7 @@ public class Z2Triple {
      * @param length 指定切分长度。
      */
     public Z2Triple split(int length) {
-        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]";
+        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]: " + length;
         // 切分方法：分别对2^length取模数和取余数，模数作为split结果，余数作为剩余结果
         BigInteger mask = BigInteger.ONE.shiftLeft(length).subtract(BigInteger.ONE);
         // 由于模数一定是2^length格式，因此可以用位运算更高效地实现
@@ -230,7 +230,7 @@ public class Z2Triple {
      * @param length 指定缩减长度。
      */
     public void reduce(int length) {
-        assert length > 0 && length <= num : "reduce length = " + length + " must be in range (0, " + num + "]";
+        assert length > 0 && length <= num : "reduce length must be in range (0, " + num + "]: " + length;
         if (length < num) {
             // 缩减长度，方法为原始数据与长度对应全1比特串求AND
             BigInteger mask = BigInteger.ONE.shiftLeft(length).subtract(BigInteger.ONE);

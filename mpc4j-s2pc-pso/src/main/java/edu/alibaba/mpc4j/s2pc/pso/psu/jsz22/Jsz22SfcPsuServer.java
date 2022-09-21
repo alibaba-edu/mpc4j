@@ -10,6 +10,8 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -68,10 +70,6 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
      */
     private final Crhf crhf;
     /**
-     * OPRF输出哈希密钥
-     */
-    private byte[] oprfOutputHashKey;
-    /**
      * OPRF输出字节长度
      */
     private int oprfOutputByteLength;
@@ -80,9 +78,9 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
      */
     private int binNum;
     /**
-     * OPRF输出哈希
+     * OPRF输出映射
      */
-    private Prf oprfOutputHash;
+    private Hash oprfOutputMap;
     /**
      * 布谷鸟哈希桶所用的哈希函数
      */
@@ -154,23 +152,7 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
-
-        stopWatch.start();
-        List<byte[]> keysPayload = new LinkedList<>();
-        // 初始化OPRF输出哈希密钥
-        oprfOutputHashKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(oprfOutputHashKey);
-        keysPayload.add(oprfOutputHashKey);
-        DataPacketHeader keysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEY.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(keysHeader, keysPayload));
-        stopWatch.stop();
-        long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Server Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyTime);
+        info("{}{} Server Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
 
         initialized = true;
         info("{}{} Server Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
@@ -185,9 +167,8 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
         stopWatch.start();
         binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, clientElementSize);
         // 初始化OPRF哈希
-        oprfOutputByteLength = Jsz22PsuUtils.getOprfByteLength(binNum);
-        oprfOutputHash = PrfFactory.createInstance(getEnvType(), oprfOutputByteLength);
-        oprfOutputHash.setKey(oprfOutputHashKey);
+        oprfOutputByteLength = Jsz22SfcPsuPtoDesc.getOprfByteLength(binNum);
+        oprfOutputMap = HashFactory.createInstance(getEnvType(), oprfOutputByteLength);
         // 构造交换映射
         List<Integer> piList = IntStream.range(0, binNum)
             .boxed()
@@ -275,12 +256,10 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
 
     private void handleCuckooHashKeyPayload(List<byte[]> cuckooHashKeyPayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(cuckooHashKeyPayload.size() == cuckooHashNum);
-        byte[][] cuckooHashKeys = cuckooHashKeyPayload.toArray(new byte[0][]);
-        // 依次设置密钥
-        hashes = IntStream.range(0, cuckooHashNum)
-            .mapToObj(hashIndex -> {
+        hashes = cuckooHashKeyPayload.stream()
+            .map(key -> {
                 Prf prf = PrfFactory.createInstance(envType, Integer.BYTES);
-                prf.setKey(cuckooHashKeys[hashIndex]);
+                prf.setKey(key);
                 return prf;
             })
             .toArray(Prf[]::new);
@@ -300,7 +279,7 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
                     // F(k, x′_i ⊕ a′_{q_j})
                     int binIndex = inversePi[positions[index]];
                     byte[] input = BytesUtils.xor(element.array(), aPrimeArray[binIndex]);
-                    oprfs[index] = oprfOutputHash.getBytes(oprfSenderOutput.getPrf(binIndex, input));
+                    oprfs[index] = oprfOutputMap.digestToBytes(oprfSenderOutput.getPrf(binIndex, input));
                 }
                 // r ← {0, 1}^{l_2}
                 for (int index = positions.length; index < cuckooHashNum; index++) {

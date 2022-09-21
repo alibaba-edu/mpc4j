@@ -4,6 +4,8 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
+import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory.BaseOtType;
 
 /**
@@ -18,6 +20,10 @@ public abstract class AbstractBaseOtSender extends AbstractSecureTwoPartyPto imp
      */
     private final BaseOtConfig config;
     /**
+     * 密钥派生函数
+     */
+    protected final Kdf kdf;
+    /**
      * 数量
      */
     protected int num;
@@ -25,6 +31,7 @@ public abstract class AbstractBaseOtSender extends AbstractSecureTwoPartyPto imp
     protected AbstractBaseOtSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, BaseOtConfig config) {
         super(ptoDesc, senderRpc, receiverParty, config);
         this.config = config;
+        kdf = KdfFactory.createInstance(envType);
     }
 
     @Override
@@ -40,7 +47,7 @@ public abstract class AbstractBaseOtSender extends AbstractSecureTwoPartyPto imp
         if (!initialized) {
             throw new IllegalStateException("Need init...");
         }
-        assert num > 0;
+        assert num > 0 : "num must be greater than 0: " + num;
         this.num = num;
         extraInfo++;
     }

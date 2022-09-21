@@ -3,6 +3,9 @@ package edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15.Dsz15ZlCoreMtgConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15.Dsz15ZlCoreMtgReceiver;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15.Dsz15ZlCoreMtgSender;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ideal.IdealZlCoreMtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ideal.IdealZlCoreMtgReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ideal.IdealZlCoreMtgSender;
@@ -61,6 +64,7 @@ public class ZlCoreMtgFactory {
             case IDEAL:
                 return new IdealZlCoreMtgSender(senderRpc, receiverParty, (IdealZlCoreMtgConfig) config);
             case DSZ15:
+                return new Dsz15ZlCoreMtgSender(senderRpc, receiverParty, (Dsz15ZlCoreMtgConfig) config);
             case KOS16_SEMI_HONEST:
             case KOS16_MALICIOUS:
             case MZ17:
@@ -83,6 +87,7 @@ public class ZlCoreMtgFactory {
             case IDEAL:
                 return new IdealZlCoreMtgReceiver(receiverRpc, senderParty, (IdealZlCoreMtgConfig) config);
             case DSZ15:
+                return new Dsz15ZlCoreMtgReceiver(receiverRpc, senderParty, (Dsz15ZlCoreMtgConfig) config);
             case KOS16_SEMI_HONEST:
             case KOS16_MALICIOUS:
             case MZ17:
@@ -94,14 +99,16 @@ public class ZlCoreMtgFactory {
     /**
      * 创建默认配置项。
      *
+     * @param l 乘法三元组比特长度。
      * @param securityModel 安全模型。
      * @return 默认配置项。
      */
-    public static ZlCoreMtgConfig createDefaultConfig(SecurityModel securityModel) {
+    public static ZlCoreMtgConfig createDefaultConfig(SecurityModel securityModel, int l) {
         switch (securityModel) {
             case IDEAL:
-                return new IdealZlCoreMtgConfig.Builder().build();
+                return new IdealZlCoreMtgConfig.Builder(l).build();
             case SEMI_HONEST:
+                return new Dsz15ZlCoreMtgConfig.Builder(l).build();
             case COVERT:
             case MALICIOUS:
             default:

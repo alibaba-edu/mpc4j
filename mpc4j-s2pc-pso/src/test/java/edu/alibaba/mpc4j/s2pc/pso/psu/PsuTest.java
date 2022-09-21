@@ -6,18 +6,8 @@ import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
-import edu.alibaba.mpc4j.common.tool.okve.ovdm.ecc.EccOvdmFactory.EccOvdmType;
-import edu.alibaba.mpc4j.common.tool.okve.ovdm.gf2e.Gf2eOvdmFactory.Gf2eOvdmType;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcConfig;
-import edu.alibaba.mpc4j.s2pc.aby.bc.bea91.Bea91BcConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.impl.file.FileZ2MtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotConfig;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
-import edu.alibaba.mpc4j.s2pc.pso.oprp.OprpConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprp.lowmc.LowMcOprpConfig;
 import edu.alibaba.mpc4j.s2pc.pso.osn.OsnConfig;
 import edu.alibaba.mpc4j.s2pc.pso.osn.gmr21.Gmr21OsnConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
@@ -60,7 +50,7 @@ public class PsuTest {
     /**
      * 默认数量
      */
-    private static final int DEFAULT_SIZE = 1000;
+    private static final int DEFAULT_SIZE = 99;
     /**
      * 默认元素字节长度
      */
@@ -80,163 +70,57 @@ public class PsuTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
+        Collection<Object[]> configurations = new ArrayList<>();
         // 用直接COT实现的OSN
         OsnConfig directCotOsnConfig = new Gmr21OsnConfig.Builder()
             .setCotConfig(new DirectCotConfig.Builder(SecurityModel.SEMI_HONEST).build())
             .build();
 
-        // JSZ22_SFS (direct COT, NAIVE_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.JSZ22_SFS.name() + " (direct COT, NAIVE_3_HASH)",
+        // JSZ22_SFS (direct COT)
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.JSZ22_SFS.name() + " (direct COT)",
             new Jsz22SfsPsuConfig.Builder().setOsnConfig(directCotOsnConfig).build(),
         });
-        // JSZ22_SFS (silent OT, NAIVE_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.JSZ22_SFS.name() + " (silent COT, NAIVE_3_HASH)",
-            new Jsz22SfsPsuConfig.Builder().build(),
+        // JSZ22_SFS (silent COT)
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.JSZ22_SFS.name() + " (silent COT)", new Jsz22SfsPsuConfig.Builder().build(),
         });
-        // JSZ22_SFS (direct COT, NAIVE_4_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.JSZ22_SFS.name() + " (direct COT, NAIVE_4_HASH)",
-            new Jsz22SfsPsuConfig.Builder()
-                .setOsnConfig(directCotOsnConfig)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_4_HASH)
-                .build(),
-        });
-        // JSZ22_SFS (direct COT, NO_STASH_PSZ18_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.JSZ22_SFS.name() + " (direct COT, NO_STASH_PSZ18_3_HASH)",
-            new Jsz22SfsPsuConfig.Builder()
-                .setOsnConfig(directCotOsnConfig)
-                .setCuckooHashBinType(CuckooHashBinType.NO_STASH_PSZ18_3_HASH)
-                .build(),
-        });
-
-        // JSZ22_SFC (direct COT, NAIVE_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.JSZ22_SFC.name() + " (direct COT, NAIVE_3_HASH)",
+        // JSZ22_SFC (direct COT)
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.JSZ22_SFC.name() + " (direct COT)",
             new Jsz22SfcPsuConfig.Builder().setOsnConfig(directCotOsnConfig).build(),
         });
-        // JSZ22_SFC (silent COT, NAIVE_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.JSZ22_SFC.name() + " (silent COT, NAIVE_3_HASH)",
-            new Jsz22SfcPsuConfig.Builder().build(),
+        // JSZ22_SFC (silent COT)
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.JSZ22_SFC.name() + " (silent COT)", new Jsz22SfcPsuConfig.Builder().build(),
         });
-        // JSZ22_SFC (direct COT, NAIVE_4_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.JSZ22_SFC.name() + " (direct COT, NAIVE_4_HASH)",
-            new Jsz22SfcPsuConfig.Builder()
-                .setOsnConfig(directCotOsnConfig)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_4_HASH)
-                .build(),
+        // ZCL22_PKE
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.ZCL22_PKE.name(), new Zcl22PkePsuConfig.Builder().build(),
         });
-        // JSZ22_SFC (direct COT, NO_STASH_PSZ18_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.JSZ22_SFC.name() + " (direct COT, NO_STASH_PSZ18_3_HASH)",
-            new Jsz22SfcPsuConfig.Builder()
-                .setOsnConfig(directCotOsnConfig)
-                .setCuckooHashBinType(CuckooHashBinType.NO_STASH_PSZ18_3_HASH)
-                .build(),
+        // ZCL22_SKE
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.ZCL22_SKE.name(), new Zcl22SkePsuConfig.Builder().build(),
         });
-
-        // ZCL22_PKE (H3_SINGLETON_GCT)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.ZCL22_PKE.name() + " (H3_SINGLETON_GCT)",
-            new Zcl22PkePsuConfig.Builder().setEccOvdmType(EccOvdmType.H3_SINGLETON_GCT).build(),
+        // GMR21 (silent COT)
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.GMR21.name() + " (silent COT)", new Gmr21PsuConfig.Builder().build(),
         });
-        // ZCL22_PKE (H2_SINGLETON_GCT)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.ZCL22_PKE.name() + " (H3_SINGLETON_GCT)",
-            new Zcl22PkePsuConfig.Builder().setEccOvdmType(EccOvdmType.H2_SINGLETON_GCT).build(),
+        // GMR21 (direct COT)
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.GMR21.name() + " (direct COT)",
+            new Gmr21PsuConfig.Builder().setOsnConfig(directCotOsnConfig).build(),
         });
-
-        // ZCL22_SKE (H3_SINGLETON_GCT)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.ZCL22_SKE.name() + " (H3_SINGLETON_GCT)",
-            new Zcl22SkePsuConfig.Builder().setGf2eOvdmType(Gf2eOvdmType.H3_SINGLETON_GCT).build(),
-        });
-        // ZCL22_SKE (H2_SINGLETON_GCT)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.ZCL22_SKE.name() + " (H2_SINGLETON_GCT)",
-            new Zcl22SkePsuConfig.Builder().setGf2eOvdmType(Gf2eOvdmType.H2_SINGLETON_GCT).build(),
-        });
-        // ZCL22_SKE (file Z2_MTG)
-        Z2MtgConfig fileZ2MtgConfig = new FileZ2MtgConfig.Builder(SecurityModel.SEMI_HONEST).build();
-        BcConfig fileBcConfig = new Bea91BcConfig.Builder().setZ2MtgConfig(fileZ2MtgConfig).build();
-        OprpConfig fileOprpConfig = new LowMcOprpConfig.Builder().setBcConfig(fileBcConfig).build();
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.ZCL22_SKE.name() + " (File Z2_MTG)",
-            new Zcl22SkePsuConfig.Builder().setOprpConfig(fileOprpConfig).setBcConfig(fileBcConfig).build()
-        });
-
-        // GMR21 (H3_SINGLETON_GCT OKVS, direct COT, NAIVE_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.GMR21.name() + " (H3_SINGLETON_GCT OKVS, direct COT, NAIVE_3_HASH)",
-            new Gmr21PsuConfig.Builder().setOsnConfig(directCotOsnConfig).setOkvsType(OkvsType.H3_SINGLETON_GCT).build(),
-        });
-        // GMR21 (H2_SINGLETON_GCT OKVS, direct COT, NAIVE_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.GMR21.name() + " (H2_SINGLETON_GCT OKVS, direct COT, NAIVE_3_HASH)",
-            new Gmr21PsuConfig.Builder().setOsnConfig(directCotOsnConfig).setOkvsType(OkvsType.H2_SINGLETON_GCT).build(),
-        });
-        // GMR21 (MEGA_BIN OKVS, silent COT, NAIVE_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.GMR21.name() + " (MEGA_BIN OKVS, silent COT, NAIVE_3_HASH)",
-            new Gmr21PsuConfig.Builder().setOkvsType(OkvsType.MEGA_BIN).build(),
-        });
-        // GMR21 (MEGA_BIN OKVS, direct COT, NAIVE_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.GMR21.name() + " (MEGA_BIN OKVS, direct COT, NAIVE_3_HASH)",
-            new Gmr21PsuConfig.Builder().setOsnConfig(directCotOsnConfig).setOkvsType(OkvsType.MEGA_BIN).build(),
-        });
-        // GMR21 (MEGA_BIN OKVS, direct COT, NAIVE_4_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.GMR21.name() + " (MEGA_BIN OKVS, direct COT, NAIVE_4_HASH)",
-            new Gmr21PsuConfig.Builder()
-                .setOsnConfig(directCotOsnConfig)
-                .setOkvsType(OkvsType.MEGA_BIN)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_4_HASH)
-                .build(),
-        });
-        // GMR21 (MEGA_BIN OKVS, direct COT, NO_STASH_PSZ18_3_HASH)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.GMR21.name() + " (MEGA_BIN OKVS, direct COT, NO_STASH_PSZ18_3_HASH)",
-            new Gmr21PsuConfig.Builder()
-                .setOsnConfig(directCotOsnConfig)
-                .setOkvsType(OkvsType.MEGA_BIN)
-                .setCuckooHashBinType(CuckooHashBinType.NO_STASH_PSZ18_3_HASH)
-                .build(),
-        });
-
         // KRTW19_OPT
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.KRTW19_OPT.name(),
-            new Krtw19OptPsuConfig.Builder().build(),
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.KRTW19_OPT.name(), new Krtw19OptPsuConfig.Builder().build(),
+        });
+        // KRTW19_ORI
+        configurations.add(new Object[] {
+            PsuFactory.PsuType.KRTW19_ORI.name(), new Krtw19OriPsuConfig.Builder().build(),
         });
 
-        // KRTW19_ORI (H3_SINGLETON_GCT OKVS)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.KRTW19_ORI.name() + " (H2_SINGLETON_GCT OKVS)",
-            new Krtw19OriPsuConfig.Builder().setOkvsType(OkvsType.H3_SINGLETON_GCT).build(),
-        });
-        // KRTW19_ORI (H2_SINGLETON_GCT OKVS)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.KRTW19_ORI.name() + " (H2_SINGLETON_GCT OKVS)",
-            new Krtw19OriPsuConfig.Builder().setOkvsType(OkvsType.H2_SINGLETON_GCT).build(),
-        });
-        // KRTW19_ORI (MEGA_BIN OKVS)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.KRTW19_ORI.name() + " (MEGA_BIN OKVS)",
-            new Krtw19OriPsuConfig.Builder().setOkvsType(OkvsType.MEGA_BIN).build(),
-        });
-        // KRTW19_ORI (POLYNOMIAL OKVS)
-        configurationParams.add(new Object[] {
-            PsuFactory.PsuType.KRTW19_ORI.name() + " (POLYNOMIAL OKVS)",
-            new Krtw19OriPsuConfig.Builder().setOkvsType(OkvsType.POLYNOMIAL).build(),
-        });
-
-        return configurationParams;
+        return configurations;
     }
 
     /**
@@ -385,11 +269,11 @@ public class PsuTest {
         }
     }
 
-    private void assertOutput(Set<ByteBuffer> serverSet, Set<ByteBuffer> clientSet, Set<ByteBuffer> clientUnionSet) {
+    private void assertOutput(Set<ByteBuffer> serverSet, Set<ByteBuffer> clientSet, Set<ByteBuffer> outputUnionSet) {
         // 计算并集
-        Set<ByteBuffer> union = new HashSet<>(serverSet);
-        union.addAll(clientSet);
-        Assert.assertTrue(clientUnionSet.containsAll(union));
-        Assert.assertTrue(union.containsAll(clientUnionSet));
+        Set<ByteBuffer> expectUnioniSet = new HashSet<>(serverSet);
+        expectUnioniSet.addAll(clientSet);
+        Assert.assertTrue(outputUnionSet.containsAll(expectUnioniSet));
+        Assert.assertTrue(expectUnioniSet.containsAll(outputUnionSet));
     }
 }

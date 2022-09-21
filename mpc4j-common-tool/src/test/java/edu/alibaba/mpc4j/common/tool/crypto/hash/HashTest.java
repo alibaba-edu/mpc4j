@@ -51,15 +51,22 @@ public class HashTest {
         configurationParams.add(new Object[]{HashType.NATIVE_BLAKE_3.name(), HashType.NATIVE_BLAKE_3,});
         // NATIVE_BLAKE_2B_160
         configurationParams.add(new Object[]{HashType.NATIVE_BLAKE_2B_160.name(), HashType.NATIVE_BLAKE_2B_160,});
-        // BC_Black2b160
+        // BC_BLAKE_2B_160
         configurationParams.add(new Object[]{HashType.BC_BLAKE_2B_160.name(), HashType.BC_BLAKE_2B_160,});
         // NATIVE_SHA256
         configurationParams.add(new Object[]{HashType.NATIVE_SHA256.name(), HashType.NATIVE_SHA256,});
         // JDK_SHA256
         configurationParams.add(new Object[]{HashType.JDK_SHA256.name(), HashType.JDK_SHA256,});
+        // BC_SHAKE_128
+        configurationParams.add(new Object[]{HashType.BC_SHAKE_128.name(), HashType.BC_SHAKE_128,});
+        // BC_SHAKE_256
+        configurationParams.add(new Object[]{HashType.BC_SHAKE_256.name(), HashType.BC_SHAKE_256,});
+        // BC_SHA3_256
+        configurationParams.add(new Object[]{HashType.BC_SHA3_256.name(), HashType.BC_SHA3_256,});
+        // BC_SHA3_512
+        configurationParams.add(new Object[]{HashType.BC_SHA3_512.name(), HashType.BC_SHA3_512,});
         // BC_SM3
         configurationParams.add(new Object[]{HashType.BC_SM3.name(), HashType.BC_SM3,});
-
 
         return configurationParams;
     }

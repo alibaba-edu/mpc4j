@@ -7,14 +7,15 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.Okvs;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pso.pmid.AbstractPmidClient;
 import edu.alibaba.mpc4j.s2pc.pso.pmid.PmidPartyOutput;
+import edu.alibaba.mpc4j.s2pc.pso.pmid.PmidUtils;
 import edu.alibaba.mpc4j.s2pc.pso.pmid.zcl22.Zcl22MpPmidPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuClient;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
@@ -53,14 +54,6 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
      */
     private final OkvsType sigmaOkvsType;
     /**
-     * PMID映射密钥
-     */
-    private byte[] pmidMapPrfKey;
-    /**
-     * σ的OKVS值映射密钥
-     */
-    private byte[] sigmaOkvsValueMapPrfKey;
-    /**
      * 客户端σ的OKVS密钥
      */
     private byte[][] clientSigmaOkvsHashKeys;
@@ -75,7 +68,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
     /**
      * PMID映射函数
      */
-    private Prf pmidMapPrf;
+    private Hash pmidMap;
     /**
      * σ的OKVS值字节长度
      */
@@ -83,7 +76,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
     /**
      * σ的OKVS值映射函数
      */
-    private Prf sigmaOkvsValueMapPrf;
+    private Hash sigmaOkvsValueMap;
     /**
      * {F_{k_A}(y) | y ∈ Y'}
      */
@@ -179,10 +172,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverKeysPayload = rpc.receive(serverKeysHeader).getPayload();
-        // PID映射密钥、σ映射密钥、σ的OKVS密钥
-        MpcAbortPreconditions.checkArgument(serverKeysPayload.size() == 2 + okvsHashKeyNum);
-        pmidMapPrfKey = serverKeysPayload.remove(0);
-        sigmaOkvsValueMapPrfKey = serverKeysPayload.remove(0);
+        MpcAbortPreconditions.checkArgument(serverKeysPayload.size() == okvsHashKeyNum);
         serverSigmaOkvsHashKeys = serverKeysPayload.toArray(new byte[0][]);
         stopWatch.stop();
         long serverKeyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -264,18 +254,12 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
     }
 
     private void initVariables() {
-        // PMID字节长度等于λ + log(m * serverU * clientU) + log(n * serverU * clientU)
-        pmidByteLength = CommonConstants.STATS_BYTE_LENGTH
-            + CommonUtils.getByteLength(LongUtils.ceilLog2((long) serverSetSize * serverU * clientU))
-            + CommonUtils.getByteLength(LongUtils.ceilLog2((long) clientSetSize * serverU * clientU));
-        pmidMapPrf = PrfFactory.createInstance(envType, pmidByteLength);
-        pmidMapPrf.setKey(pmidMapPrfKey);
-        // σ的OKVS值长度 = λ + Max{log(m * clientU), log(n * serverU)}
-        sigmaOkvsValueByteLength = CommonConstants.STATS_BYTE_LENGTH + Math.max(
-            LongUtils.ceilLog2((long) clientU * serverSetSize), LongUtils.ceilLog2((long) serverU * clientSetSize)
+        pmidByteLength = PmidUtils.getPmidByteLength(serverSetSize, serverU, clientSetSize, clientU);
+        pmidMap = HashFactory.createInstance(envType, pmidByteLength);
+        sigmaOkvsValueByteLength = Zcl22PmidUtils.getSigmaOkvsValueByteLength(
+            serverSetSize, serverU, clientSetSize, clientU
         );
-        sigmaOkvsValueMapPrf = PrfFactory.createInstance(envType, sigmaOkvsValueByteLength);
-        sigmaOkvsValueMapPrf.setKey(sigmaOkvsValueMapPrfKey);
+        sigmaOkvsValueMap = HashFactory.createInstance(envType, sigmaOkvsValueByteLength);
         clientElementByteArrays = clientElementArrayList.stream()
             .map(ObjectUtils::objectToByteArray)
             .toArray(byte[][]::new);
@@ -300,7 +284,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
                 byte[] fykb = kbMpOprfKey.getPrf(y);
                 return ByteBuffer.allocate(fykb.length + Integer.BYTES).put(fykb).putInt(0).array();
             })
-            .map(sigmaOkvsValueMapPrf::getBytes)
+            .map(sigmaOkvsValueMap::digestToBytes)
             .toArray(byte[][]::new);
         // Bob computes an σ-OKVS D^B
         IntStream clientElementIndexStream = IntStream.range(0, clientSetSize);
@@ -310,7 +294,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
             .collect(Collectors.toMap(
                 index -> {
                     byte[] y = clientElementByteArrays[index];
-                    return ByteBuffer.wrap(sigmaOkvsValueMapPrf.getBytes(y));
+                    return ByteBuffer.wrap(sigmaOkvsValueMap.digestToBytes(y));
                 },
                 index -> {
                     T y = clientElementArrayList.get(index);
@@ -357,7 +341,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
                 byte[] fyka = kaMpOprfOutput.getPrf(index);
                 return ByteBuffer.allocate(fyka.length + Integer.BYTES).put(fyka).putInt(0).array();
             })
-            .map(sigmaOkvsValueMapPrf::getBytes)
+            .map(sigmaOkvsValueMap::digestToBytes)
             .toArray(byte[][]::new);
         // Bob receives σ-OKVS D^A
         DataPacketHeader serverSigmaOkvsHeader = new DataPacketHeader(
@@ -379,7 +363,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
         clientElementIndexStream.forEach(index -> {
             // Bob computes d_y = q_{y_i}^A ⊕ Decode_H(D, y_i) for i ∈ [n].
             byte[] y = clientElementByteArrays[index];
-            ByteBuffer yi = ByteBuffer.wrap(sigmaOkvsValueMapPrf.getBytes(y));
+            ByteBuffer yi = ByteBuffer.wrap(sigmaOkvsValueMap.digestToBytes(y));
             byte[] dyBytes = serverSigmaOkvs.decode(serverSigmaOkvsStorage, yi);
             BytesUtils.xori(dyBytes, qykaArray[index]);
             BigInteger dyBigInteger = BigIntegerUtils.byteArrayToNonNegBigInteger(dyBytes);
@@ -407,12 +391,12 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
                     .put(fyka)
                     .put(IntUtils.intToByteArray(j))
                     .array();
-                extendPmid0 = pmidMapPrf.getBytes(extendPmid0);
+                extendPmid0 = pmidMap.digestToBytes(extendPmid0);
                 byte[] extendPmid1 = ByteBuffer.allocate(fykb.length + Integer.BYTES)
                     .put(fykb)
                     .put(IntUtils.intToByteArray(j))
                     .array();
-                extendPmid1 = pmidMapPrf.getBytes(extendPmid1);
+                extendPmid1 = pmidMap.digestToBytes(extendPmid1);
                 BytesUtils.xori(extendPmid0, extendPmid1);
                 clientPmidMap.put(ByteBuffer.wrap(extendPmid0), y);
             }

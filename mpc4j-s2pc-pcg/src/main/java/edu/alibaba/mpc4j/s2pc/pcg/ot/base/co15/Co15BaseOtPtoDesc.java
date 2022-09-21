@@ -5,13 +5,15 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
  * CO15-基础OT协议信息。此方案实现论文Introduction提供的2选1-OT。论文来源：
- * Chou T, Orlandi C. The simplest protocol for oblivious transfer. LATINCRYPT 2015, Springer, 2015, pp. 40-58.
  * <p>
+ * Chou T, Orlandi C. The simplest protocol for oblivious transfer. LATINCRYPT 2015, Springer, 2015, pp. 40-58.
+ * </p>
  * 采用了安全批处理操作，提高批量生成效率。批处理方法来自论文：
- * Vladimir Kolesnikov, Ranjit Kumaresan, Mike Rosulek, Ni Trieu. Efficient Batched Oblivious PRF with
- * Applications to Private Set Intersection. CCS 2016: 818-829。
+ * <p>
+ * McQuoid I, Rosulek M, Roy L. Batching base oblivious transfers. ASIACRYPT 2021, Springer, Cham, 2021: 281-310.
+ * </p>
  *
- * @author Weiran Liu
+ * @author Weiran Liu, Hanwen Feng
  * @date 2020/08/13
  */
 class Co15BaseOtPtoDesc implements PtoDesc {

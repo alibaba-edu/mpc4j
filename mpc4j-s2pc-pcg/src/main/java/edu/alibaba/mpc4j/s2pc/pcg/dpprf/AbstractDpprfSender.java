@@ -49,7 +49,7 @@ public abstract class AbstractDpprfSender extends AbstractSecureTwoPartyPto impl
     }
 
     @Override
-    public DpprfFactory.Gf2kDpprfType getPtoType() {
+    public DpprfFactory.DpprfType getPtoType() {
         return config.getPtoType();
     }
 

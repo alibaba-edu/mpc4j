@@ -34,7 +34,7 @@ public class LdpcCreatorTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurationParams = new ArrayList<>();
         // 测试silver 5 和 Silver11 两类。12~13会调用FullLdpcCreator，14～15 会调用OnlineLdpcCreator。
-        for (int ceilLogN = 12; ceilLogN < 15; ceilLogN++) {
+        for (int ceilLogN = 12; ceilLogN < 16; ceilLogN++) {
             configurationParams.add(
                 new Object[] {" ceilLogN = " + ceilLogN + ", codeType = Silver5", ceilLogN, SILVER_5});
             configurationParams.add(

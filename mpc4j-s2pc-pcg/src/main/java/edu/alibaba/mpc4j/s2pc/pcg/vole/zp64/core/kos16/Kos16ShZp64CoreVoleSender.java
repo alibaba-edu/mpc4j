@@ -135,8 +135,8 @@ public class Kos16ShZp64CoreVoleSender extends AbstractZp64CoreVoleSender {
                     .array();
                 t0[rowIndex][columnIndex] = zp64.createRandom(t0Seed);
                 long t1 = zp64.createRandom(t1Seed);
-                // 计算u = t0[i,j] - t1[i,j] + x[i] mod p
-                long u = zp64.add(zp64.sub(t0[rowIndex][columnIndex], t1), x[rowIndex]);
+                // 计算u = t0[i,j] - t1[i,j] - x[i] mod p
+                long u = zp64.sub(zp64.sub(t0[rowIndex][columnIndex], t1), x[rowIndex]);
                 return LongUtils.longToByteArray(u);
             })
             .collect(Collectors.toList());
@@ -146,7 +146,7 @@ public class Kos16ShZp64CoreVoleSender extends AbstractZp64CoreVoleSender {
         IntStream outputStream = IntStream.range(0, num);
         outputStream = parallel ? outputStream.parallel() : outputStream;
         long[] t = outputStream
-            .mapToLong(index -> zp64.neg(zp64Gadget.composition(t0[index])))
+            .mapToLong(index -> zp64Gadget.composition(t0[index]))
             .toArray();
         return Zp64VoleSenderOutput.create(zp64.getPrime(), x, t);
     }

@@ -23,11 +23,10 @@ public interface ZlCoreMtgParty extends TwoPartyPto, SecurePto {
     /**
      * 初始化协议。
      *
-     * @param l 比特长度。
      * @param maxNum 最大数量。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    void init(int l, int maxNum) throws MpcAbortException;
+    void init(int maxNum) throws MpcAbortException;
 
     /**
      * 执行协议。

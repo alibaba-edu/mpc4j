@@ -2,9 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.pid;
 
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.Bkms20PidClient;
-import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.Bkms20PidConfig;
-import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.Bkms20PidServer;
+import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.*;
 import edu.alibaba.mpc4j.s2pc.pso.pid.gmr21.*;
 
 /**
@@ -28,7 +26,11 @@ public class PidFactory {
         /**
          * Facebook的PID方案
          */
-        BKMS20,
+        BKMS20_ECC,
+        /**
+         * 用字节椭圆曲线实现的Facebook的PID方案
+         */
+        BKMS20_BYTE_ECC,
         /**
          * GMR21的多点OPRF方案
          */
@@ -51,14 +53,16 @@ public class PidFactory {
     public static <X> PidParty<X> createServer(Rpc serverRpc, Party clientParty, PidConfig config) {
         PidType type = config.getPtoType();
         switch (type) {
-            case BKMS20:
-                return new Bkms20PidServer<>(serverRpc, clientParty, (Bkms20PidConfig) config);
+            case BKMS20_ECC:
+                return new Bkms20EccPidServer<>(serverRpc, clientParty, (Bkms20EccPidConfig) config);
+            case BKMS20_BYTE_ECC:
+                return new Bkms20ByteEccPidServer<>(serverRpc, clientParty, (Bkms20ByteEccPidConfig) config);
             case GMR21_SLOPPY:
                 return new Gmr21SloppyPidServer<>(serverRpc, clientParty, (Gmr21SloppyPidConfig) config);
             case GMR21_MP:
                 return new Gmr21MpPidServer<>(serverRpc, clientParty, (Gmr21MpPidConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid PidType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + PidType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -74,14 +78,16 @@ public class PidFactory {
     public static <X> PidParty<X> createClient(Rpc clientRpc, Party serverParty, PidConfig config) {
         PidType type = config.getPtoType();
         switch (type) {
-            case BKMS20:
-                return new Bkms20PidClient<>(clientRpc, serverParty, (Bkms20PidConfig) config);
+            case BKMS20_ECC:
+                return new Bkms20EccPidClient<>(clientRpc, serverParty, (Bkms20EccPidConfig) config);
+            case BKMS20_BYTE_ECC:
+                return new Bkms20ByteEccPidClient<>(clientRpc, serverParty, (Bkms20ByteEccPidConfig) config);
             case GMR21_SLOPPY:
                 return new Gmr21SloppyPidClient<>(clientRpc, serverParty, (Gmr21SloppyPidConfig) config);
             case GMR21_MP:
                 return new Gmr21MpPidClient<>(clientRpc, serverParty, (Gmr21MpPidConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid PidType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + PidType.class.getSimpleName() + ": " + type.name());
         }
     }
 }

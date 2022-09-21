@@ -53,8 +53,8 @@ public class IdealZlCoreMtgReceiver extends AbstractZlCoreMtgParty {
     }
 
     @Override
-    public void init(int l, int maxNum) throws MpcAbortException {
-        setInitInput(l, maxNum);
+    public void init(int maxNum) throws MpcAbortException {
+        setInitInput(maxNum);
         info("{}{} Recv. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();

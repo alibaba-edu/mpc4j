@@ -11,27 +11,28 @@ import java.util.Arrays;
  * @author Weiran Liu
  * @date 2021/12/05
  */
-public class BcBlake2b160Hash implements Hash {
+class BcBlake2b160Hash implements Hash {
     /**
      * 单位输出长度
      */
-    static final int UNIT_BYTE_LENGTH = 20;
+    static final int DIGEST_BYTE_LENGTH = 20;
     /**
      * 输出字节长度
      */
     private final int outputByteLength;
 
     BcBlake2b160Hash(int outputByteLength) {
-        assert outputByteLength > 0 && outputByteLength <= UNIT_BYTE_LENGTH;
+        assert outputByteLength > 0 && outputByteLength <= DIGEST_BYTE_LENGTH
+            : "Output byte length must be in range (0, " + DIGEST_BYTE_LENGTH + "]";
         this.outputByteLength = outputByteLength;
     }
 
     @Override
     public byte[] digestToBytes(byte[] message) {
-        assert message.length > 0;
+        assert message.length > 0 : "Message length must be greater than 0: " + message.length;
         // 哈希函数不是线程安全的，因此每调用一次都需要创建一个新的哈希函数实例，保证线程安全性
         BCMessageDigest messageDigest = new Blake2b.Blake2b160();
-        if (outputByteLength == UNIT_BYTE_LENGTH) {
+        if (outputByteLength == DIGEST_BYTE_LENGTH) {
             return messageDigest.digest(message);
         } else {
             // 如果输出字节长度小于等于哈希函数单位输出长度，则只调用一次哈希函数，截断输出

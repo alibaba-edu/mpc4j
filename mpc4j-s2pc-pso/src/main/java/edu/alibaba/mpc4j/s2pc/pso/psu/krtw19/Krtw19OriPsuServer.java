@@ -10,8 +10,8 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.EmptyPadHashBin;
@@ -67,17 +67,9 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
      */
     private final Crhf crhf;
     /**
-     * PEQT输出哈希密钥
-     */
-    private byte[] peqtHashKey;
-    /**
      * 桶哈希函数密钥
      */
     private byte[][] hashBinKeys;
-    /**
-     * 有限域哈希函数密钥
-     */
-    private byte[] finiteFieldHashKey;
     /**
      * OKVS哈希函数
      */
@@ -105,11 +97,11 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
     /**
      * 有限域哈希函数
      */
-    private Prf finiteFieldHash;
+    private Hash finiteFieldHash;
     /**
      * PEQT输出哈希函数
      */
-    private Prf peqtHash;
+    private Hash peqtHash;
     /**
      * 加密伪随机数生成器
      */
@@ -176,14 +168,6 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
         hashBinKeys = new byte[1][CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(hashBinKeys[0]);
         keysPayload.add(hashBinKeys[0]);
-        // 初始化有限域哈希密钥
-        finiteFieldHashKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(finiteFieldHashKey);
-        keysPayload.add(finiteFieldHashKey);
-        // 初始化PEQT哈希密钥
-        peqtHashKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(peqtHashKey);
-        keysPayload.add(peqtHashKey);
         // 初始化OKVS密钥
         int okvsHashKeyNum = OkvsFactory.getHashNum(okvsType);
         okvsHashKeys = IntStream.range(0, okvsHashKeyNum)
@@ -251,11 +235,9 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
         fieldBitLength = Krtw19PsuUtils.getFiniteFieldBitLength(binNum, maxBinSize);
         int fieldByteLength = fieldBitLength / Byte.SIZE;
         // 设置有限域哈希
-        finiteFieldHash = PrfFactory.createInstance(envType, fieldByteLength);
-        finiteFieldHash.setKey(finiteFieldHashKey);
-        int peqtLength = Krtw19PsuUtils.getPeqtByteLength(binNum, maxBinSize);
-        peqtHash = PrfFactory.createInstance(getEnvType(), peqtLength);
-        peqtHash.setKey(peqtHashKey);
+        finiteFieldHash = HashFactory.createInstance(envType, fieldByteLength);
+        int peqtByteLength = Krtw19PsuUtils.getPeqtByteLength(binNum, maxBinSize);
+        peqtHash = HashFactory.createInstance(getEnvType(), peqtByteLength);
         // 设置加密伪随机数生成器
         encPrg = PrgFactory.createInstance(envType, elementByteLength);
     }
@@ -273,7 +255,7 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
         qIntStream = parallel ? qIntStream.parallel() : qIntStream;
         byte[][] qs = qIntStream.mapToObj(i -> {
             byte[] q = rpmtOprfReceiverOprfOutput.getPrf(i);
-            return finiteFieldHash.getBytes(q);
+            return finiteFieldHash.digestToBytes(q);
         }).toArray(byte[][]::new);
         stopWatch.stop();
         long qTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -317,7 +299,7 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
         sOprfIntStream = parallel ? sOprfIntStream.parallel() : sOprfIntStream;
         List<byte[]> sStarOprfPayload = sOprfIntStream
             .mapToObj(sIndex -> peqtOprfSenderOutput.getPrf(sIndex, ss[sIndex]))
-            .map(peqtHash::getBytes)
+            .map(peqtHash::digestToBytes)
             .collect(Collectors.toList());
         DataPacketHeader sStarOprfHeader = new DataPacketHeader(
             taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_S_STAR_OPRFS.ordinal(), extraInfo,
@@ -366,7 +348,7 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
             int okvsStart = index - start;
             int okvsEnd = (index + 1) - start;
             byte[][] okvsStorage = Arrays.copyOfRange(flatStorageArray, okvsStart * okvsM, okvsEnd * okvsM);
-            ByteBuffer xStar = ByteBuffer.wrap(finiteFieldHash.getBytes(xs[index]));
+            ByteBuffer xStar = ByteBuffer.wrap(finiteFieldHash.digestToBytes(xs[index]));
             Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(
                 envType, okvsType, maxBinSize - 1, fieldBitLength, okvsHashKeys
             );

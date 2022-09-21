@@ -47,6 +47,6 @@ public class DataPacketBuffer {
         while (!dataPacketBuffer.containsKey(header)) {
             wait();
         }
-        return DataPacket.fromByteArrayList(header, this.dataPacketBuffer.remove(header));
+        return DataPacket.fromByteArrayList(header, dataPacketBuffer.remove(header));
     }
 }

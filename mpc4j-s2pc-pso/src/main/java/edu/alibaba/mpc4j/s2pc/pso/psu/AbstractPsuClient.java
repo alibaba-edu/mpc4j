@@ -63,9 +63,9 @@ public abstract class AbstractPsuClient extends AbstractSecureTwoPartyPto implem
     }
 
     protected void setInitInput(int maxClientElementSize, int maxServerElementSize) {
-        assert maxClientElementSize > 1;
+        assert maxClientElementSize > 1 : "max client element size must be greater than 1: " + maxClientElementSize;
         this.maxClientElementSize = maxClientElementSize;
-        assert maxServerElementSize > 1;
+        assert maxServerElementSize > 1 : "max server element size must be greater than 1: " + maxServerElementSize;
         this.maxServerElementSize = maxServerElementSize;
         extraInfo++;
         initialized = false;
@@ -81,15 +81,17 @@ public abstract class AbstractPsuClient extends AbstractSecureTwoPartyPto implem
         byte[] botElementByteArray = new byte[elementByteLength];
         Arrays.fill(botElementByteArray, (byte)0xFF);
         botElementByteBuffer = ByteBuffer.wrap(botElementByteArray);
-        assert clientElementSet.size() > 1 && clientElementSet.size() <= maxClientElementSize;
-        this.clientElementArrayList = clientElementSet.stream()
+        assert clientElementSet.size() > 1 && clientElementSet.size() <= maxClientElementSize
+            : "client element size must be in range (1, " + maxServerElementSize + "]: " + clientElementSet.size();
+        clientElementSize = clientElementSet.size();
+        clientElementArrayList = clientElementSet.stream()
             .peek(receiverElement -> {
                 assert receiverElement.array().length == elementByteLength;
                 assert !receiverElement.equals(botElementByteBuffer) : "input equals ⊥";
             })
             .collect(Collectors.toCollection(ArrayList::new));
-        clientElementSize = clientElementSet.size();
-        assert serverElementSize > 1 && serverElementSize <= maxServerElementSize;
+        assert serverElementSize > 1 && serverElementSize <= maxServerElementSize
+            : "server element size must be in range (1, " + maxServerElementSize + "]: " + serverElementSize;
         this.serverElementSize = serverElementSize;
         extraInfo++;
     }

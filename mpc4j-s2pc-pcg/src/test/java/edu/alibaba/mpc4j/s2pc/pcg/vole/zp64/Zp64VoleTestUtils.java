@@ -66,7 +66,7 @@ public class Zp64VoleTestUtils {
                 .mapToLong(i -> LongUtils.randomNonNegative(prime, secureRandom))
                 .toArray();
         long[] t = IntStream.range(0, num)
-                .mapToLong(i -> zp64.subtract(zp64.multiply(x[i], delta), receiverOutput.getQ(i)))
+                .mapToLong(i -> zp64.add(zp64.multiply(x[i], delta), receiverOutput.getQ(i)))
                 .toArray();
         return Zp64VoleSenderOutput.create(prime, x, t);
     }
@@ -92,10 +92,10 @@ public class Zp64VoleTestUtils {
             long prime = senderOutput.getPrime();
             IntegersZp64 zp64 = new IntegersZp64(prime);
             IntStream.range(0, num).forEach(i -> {
-                long qt = zp64.add(senderOutput.getT(i), receiverOutput.getQ(i));
-                long xDelta = zp64.multiply(senderOutput.getX(i), receiverOutput.getDelta());
-                Assert.assertEquals(qt, xDelta);
-                assert qt == xDelta;
+                long actualT = zp64.add(
+                    zp64.multiply(senderOutput.getX(i), receiverOutput.getDelta()), receiverOutput.getQ(i)
+                );
+                Assert.assertEquals(senderOutput.getT(i), actualT);
             });
         }
     }

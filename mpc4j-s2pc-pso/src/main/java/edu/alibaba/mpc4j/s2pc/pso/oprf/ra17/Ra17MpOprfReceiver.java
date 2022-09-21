@@ -8,7 +8,6 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.AbstractMpOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.MpOprfReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.ra17.Ra17MpOprfPtoDesc.PtoStep;
@@ -102,7 +101,7 @@ public class Ra17MpOprfReceiver extends AbstractMpOprfReceiver {
         return batchIntStream
             .mapToObj(index -> {
                 // 生成盲化因子
-                BigInteger beta = BigIntegerUtils.randomPositive(n, secureRandom);
+                BigInteger beta = ecc.randomZn(secureRandom);
                 inverseBetas[index] = beta.modInverse(n);
                 // hash to point
                 ECPoint element = ecc.hashToCurve(inputs[index]);

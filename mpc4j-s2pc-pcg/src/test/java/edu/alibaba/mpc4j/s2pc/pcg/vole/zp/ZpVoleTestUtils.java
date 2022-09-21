@@ -59,7 +59,7 @@ public class ZpVoleTestUtils {
             .mapToObj(i -> BigIntegerUtils.randomPositive(prime, secureRandom))
             .toArray(BigInteger[]::new);
         BigInteger[] t = IntStream.range(0, num)
-            .mapToObj(i -> x[i].multiply(delta).mod(prime).subtract(receiverOutput.getQ(i)).mod(prime))
+            .mapToObj(i -> x[i].multiply(delta).mod(prime).add(receiverOutput.getQ(i)).mod(prime))
             .toArray(BigInteger[]::new);
         return ZpVoleSenderOutput.create(prime, x, t);
     }
@@ -84,9 +84,10 @@ public class ZpVoleTestUtils {
             Assert.assertEquals(num, receiverOutput.getNum());
             BigInteger prime = senderOutput.getPrime();
             IntStream.range(0, num).forEach(i -> {
-                BigInteger qt = senderOutput.getT(i).add(receiverOutput.getQ(i)).mod(prime);
-                BigInteger xDelta = senderOutput.getX(i).multiply(receiverOutput.getDelta()).mod(prime);
-                Assert.assertEquals(qt, xDelta);
+                BigInteger actualT = senderOutput.getX(i).multiply(receiverOutput.getDelta()).mod(prime)
+                    .add(receiverOutput.getQ(i)).mod(prime);
+                BigInteger expectT = senderOutput.getT(i);
+                Assert.assertEquals(expectT, actualT);
             });
         }
     }

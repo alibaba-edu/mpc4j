@@ -35,6 +35,7 @@ The aim of `mpc4j` is to provide an academic library for researchers to study an
 - [blake3](https://github.com/BLAKE3-team/BLAKE3): Much faster cryptographic hash function implementations. We introduce its original implementations and compare the efficiency with Java counterparts provided by [Bouncy Castle](https://www.bouncycastle.org/java.html) and other hash functions (e.g., [blake2](https://github.com/BLAKE2/BLAKE2)). See `crypto/blake3` in `mpc4j-native-tool` for details.
 - [emp-toolkit](https://github.com/emp-toolkit): Efficient bit-matrix transpose (See `bit_matrix_trans` in `mpc4j-native-tool`), AES-NI implementations (See `crypto/aes.h` in `mpc4j-native-tool`), efficient $GF(2^\kappa)$ operations (See `gf2k` in `mpc4j-native-tool`), and the implementation of the Silent OT protocol presented in the paper "Ferret : Fast Extension for coRRElated oT with Small Communication" accepted at [CCS 2020](https://eprint.iacr.org/2020/924.pdf) (See `cot` in `mpc4j-s2pc-pcg`).
 - [Kunlun](https://github.com/yuchen1024/Kunlun): A C++ wrapper for OpenSSL, making it handy to use without worrying about cumbersome memory management and memorizing complex interfaces. Based on this wrapper, Kunlun builds an efficient and modular crypto library. We introduce its OpenSSL wrapper for Elliptic Curve and the Window Method implementation in `mpc4j`, see `ecc_openssl` in `mpc4j-native-tool` for details. 
+- [KyberJCE](https://github.com/fisherstevenk/kyberJCE): Kyber is an IND-CCA2-secure key encapsulation mechanism (KEM), whose security is based on the hardness of solving the learning-with-errors (LWE) problem over module lattices. KyberJCE is a pure-Java implementation of Kyber. We introduce its Kyber implemention in `mpc4j` for supporting post-quantum secure oblivious transfer. See `crypto/kyber` in `mpc4j-native-tool` for details.
 - [PSI-analytics](https://github.com/osu-crypto/PSI-analytics): The implementation of the protocols presented in the paper "Private Set Operations from Oblivious Switching" accepted at [PKC 2021](https://eprint.iacr.org/2021/243.pdf). We introduce its switching network implementations in `mpc4j`. See package `benes_network` in `mpc4j-native-tool` for details.
 - [Diffprivlib](https://github.com/IBM/differential-privacy-library): A general-purpose library for experimenting with, investigating, and developing applications in differential privacy. We understand how to organize source codes for implementing differential privacy mechanisms. See `mpc4j-dp-cdp` for details.
 - [b2_exponential_mchanism](https://github.com/cilvento/b2_exponential_mechanism): An exponential mechanism implementation with base-2 differential privacy. We re-implement the base-2 exponential mechanism in `mpc4j`. See package `edu.alibaba.mpc4j.dp.cdp.nomial` for details.
@@ -68,7 +69,7 @@ This library is licensed under the Apache License 2.0.
 
 ## Specifications
 
-Most of the codes are in Java, except for very efficient implementations in C/C++. You need [OpenSSL](https://www.openssl.org/), [GMP](https://gmplib.org/), [NTL,](https://libntl.org/) and [MCL](https://github.com/herumi/mcl)  to compile `mpc4j-native-tool`, and [SEAL 4.0.0](https://github.com/microsoft/SEAL) to compile `mpc4j-native-fhe`. Please see READMD.md in `mpc4j-native-cool` on how to install required C/C++ libraries.
+Most of the codes are in Java, except for very efficient implementations in C/C++. You need [OpenSSL](https://www.openssl.org/), [GMP](https://gmplib.org/), [NTL,](https://libntl.org/), [MCL](https://github.com/herumi/mcl) and [libsodium](https://doc.libsodium.org/installation) to compile `mpc4j-native-tool`, and [SEAL 4.0.0](https://github.com/microsoft/SEAL) to compile `mpc4j-native-fhe`. Please see READMD.md in `mpc4j-native-cool` on how to install required C/C++ libraries.
 
  After successfully obtaining the compiled C/C++ library (named `libmpc4j-native-tool` and `libmpc4j-native-fhe`, respectively), you need to assign the native library location when running `mpc4j` using `-Djava.library.path`.
 
@@ -77,10 +78,6 @@ Most of the codes are in Java, except for very efficient implementations in C/C+
 `mpc4j` has been tested on MAC OS x86_64, MAC OS M1, and Linux x86_64. We welcome developers to do tests on other platforms. 
 
 ## Development
-
-### Attention
-
-`mpc4j` is developed under `JDK 8`. Specifically, `mpc4j` leverages `sun.misc.Unsafe`, which has been deprecated since `JDK 9`, to do fast `byte[]` to `int[]` conversions. Therefore, you should also use `JDK 8` when you are implementing your protocols based `mpc4j`. Otherwise, you may encounter a problem like "sun.misc.Unsafe is not found" when you compile the code to get the runnable `jar` file. Once obtaining the `jar` file, you can run it using any `JRE` with a higher version.
 
 ### Development Guideline
 

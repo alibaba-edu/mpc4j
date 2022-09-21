@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.filter;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
@@ -55,7 +56,7 @@ public class SetFilter<T> implements MergeFilter<T> {
      * @return 集合过滤器。
      */
     static <X> SetFilter<X> fromByteArrayList(List<byte[]> byteArrayList) {
-        assert byteArrayList.size() >= 3;
+        Preconditions.checkArgument(byteArrayList.size() >= 3);
         SetFilter<X> setFilter = new SetFilter<>();
         // 移除过滤器类型
         byteArrayList.remove(0);
@@ -63,7 +64,7 @@ public class SetFilter<T> implements MergeFilter<T> {
         setFilter.maxSize = IntUtils.byteArrayToInt(byteArrayList.remove(0));
         // 已经插入的元素数量
         int size = IntUtils.byteArrayToInt(byteArrayList.remove(0));
-        assert byteArrayList.size() == size;
+        Preconditions.checkArgument(byteArrayList.size() == size);
         // 剩余的元素应该都是SetFilter中的元素，插入即可
         setFilter.set = byteArrayList.stream().map(ByteBuffer::wrap).collect(Collectors.toSet());
         byteArrayList.clear();

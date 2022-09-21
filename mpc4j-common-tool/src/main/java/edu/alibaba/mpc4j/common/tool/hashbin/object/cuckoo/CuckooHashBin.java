@@ -52,6 +52,12 @@ public interface CuckooHashBin<T> extends HashBin<T> {
      */
     int stashSize();
 
+    /**
+     * 返回布谷鸟哈希桶中指定桶索引的桶中元素集合。
+     *
+     * @param index 哈希桶索引值。
+     * @return 指定桶索引的桶中元素集合。
+     */
     @Override
     default Collection<HashBinEntry<T>> getBin(int index) {
         HashBinEntry<T> hashBinEntry = getHashBinEntry(index);
@@ -87,6 +93,11 @@ public interface CuckooHashBin<T> extends HashBin<T> {
      */
     void insertPaddingItems(SecureRandom secureRandom);
 
+    /**
+     * 返回布谷鸟哈希桶每个哈希桶支持的最大数量（固定为1）。
+     *
+     * @return 每个哈希桶支持的最大数量（固定为1）。
+     */
     @Override
     default int maxBinSize() {
         return 1;

@@ -9,9 +9,12 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.base.co15.Co15BaseOtSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.csw20.Csw20BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.csw20.Csw20BaseOtReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.csw20.Csw20BaseOtSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19BaseOtConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19BaseOtReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19BaseOtSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19EccBaseOtConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19EccBaseOtReceiver;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19EccBaseOtSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19KyberBaseOtConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19KyberBaseOtReceiver;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19KyberBaseOtSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtSender;
@@ -43,9 +46,13 @@ public class BaseOtFactory {
          */
         CO15,
         /**
-         * MR19协议
+         * MR19椭圆曲线协议
          */
-        MR19,
+        MR19_ECC,
+        /**
+         * MR19-Kyber协议
+         */
+        MR19_KYBER,
         /**
          * CSW20协议
          */
@@ -63,16 +70,18 @@ public class BaseOtFactory {
     public static BaseOtSender createSender(Rpc senderRpc, Party receiverParty, BaseOtConfig config) {
         BaseOtType type = config.getPtoType();
         switch (type) {
-            case MR19:
-                return new Mr19BaseOtSender(senderRpc, receiverParty, (Mr19BaseOtConfig)config);
+            case MR19_ECC:
+                return new Mr19EccBaseOtSender(senderRpc, receiverParty, (Mr19EccBaseOtConfig) config);
+            case MR19_KYBER:
+                return new Mr19KyberBaseOtSender(senderRpc, receiverParty, (Mr19KyberBaseOtConfig) config);
             case CO15:
-                return new Co15BaseOtSender(senderRpc, receiverParty, (Co15BaseOtConfig)config);
+                return new Co15BaseOtSender(senderRpc, receiverParty, (Co15BaseOtConfig) config);
             case NP01:
-                return new Np01BaseOtSender(senderRpc, receiverParty, (Np01BaseOtConfig)config);
+                return new Np01BaseOtSender(senderRpc, receiverParty, (Np01BaseOtConfig) config);
             case CSW20:
-                return new Csw20BaseOtSender(senderRpc,receiverParty, (Csw20BaseOtConfig)config);
+                return new Csw20BaseOtSender(senderRpc, receiverParty, (Csw20BaseOtConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid BaseOtType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + BaseOtType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -87,16 +96,18 @@ public class BaseOtFactory {
     public static BaseOtReceiver createReceiver(Rpc receiverRpc, Party senderParty, BaseOtConfig config) {
         BaseOtType type = config.getPtoType();
         switch (type) {
-            case MR19:
-                return new Mr19BaseOtReceiver(receiverRpc, senderParty, (Mr19BaseOtConfig)config);
+            case MR19_ECC:
+                return new Mr19EccBaseOtReceiver(receiverRpc, senderParty, (Mr19EccBaseOtConfig) config);
+            case MR19_KYBER:
+                return new Mr19KyberBaseOtReceiver(receiverRpc, senderParty, (Mr19KyberBaseOtConfig) config);
             case CO15:
-                return new Co15BaseOtReceiver(receiverRpc, senderParty, (Co15BaseOtConfig)config);
+                return new Co15BaseOtReceiver(receiverRpc, senderParty, (Co15BaseOtConfig) config);
             case NP01:
-                return new Np01BaseOtReceiver(receiverRpc, senderParty, (Np01BaseOtConfig)config);
+                return new Np01BaseOtReceiver(receiverRpc, senderParty, (Np01BaseOtConfig) config);
             case CSW20:
-                return new Csw20BaseOtReceiver(receiverRpc, senderParty, (Csw20BaseOtConfig)config);
+                return new Csw20BaseOtReceiver(receiverRpc, senderParty, (Csw20BaseOtConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid BaseOtType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + BaseOtType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -112,9 +123,9 @@ public class BaseOtFactory {
             case SEMI_HONEST:
             case COVERT:
             case MALICIOUS:
-                return new Np01BaseOtConfig.Builder().build();
+                return new Co15BaseOtConfig.Builder().build();
             default:
-                throw new IllegalArgumentException("Invalid SecurityModel: " + securityModel.name());
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

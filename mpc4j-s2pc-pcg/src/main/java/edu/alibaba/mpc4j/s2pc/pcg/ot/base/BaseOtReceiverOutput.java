@@ -14,6 +14,10 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
  */
 public class BaseOtReceiverOutput {
     /**
+     * 数量
+     */
+    private final int num;
+    /**
      * 选择比特
      */
     private final boolean[] choices;
@@ -23,8 +27,9 @@ public class BaseOtReceiverOutput {
     private final byte[][] rbArray;
 
     public BaseOtReceiverOutput(boolean[] choices, byte[][] rbArray) {
-        assert choices.length == rbArray.length;
-        assert choices.length > 0;
+        assert choices.length > 0 : "num must be greater than 0: " + choices.length;
+        num = choices.length;
+        assert rbArray.length == num : "# of Rb must be equal to " + num + ": " + rbArray.length;
         this.choices = BinaryUtils.clone(choices);
         this.rbArray = Arrays.stream(rbArray)
             .peek(rb -> {
@@ -41,7 +46,6 @@ public class BaseOtReceiverOutput {
      * @return 选择比特。
      */
     public boolean getChoice(int index) {
-        assert index >= 0 && index < getNum();
         return choices[index];
     }
 
@@ -52,7 +56,6 @@ public class BaseOtReceiverOutput {
      * @return Rb。
      */
     public byte[] getRb(int index) {
-        assert index >= 0 && index < getNum();
         return rbArray[index];
     }
 
@@ -62,6 +65,6 @@ public class BaseOtReceiverOutput {
      * @return 数量。
      */
     public int getNum() {
-        return rbArray.length;
+        return num;
     }
 }

@@ -29,6 +29,22 @@ public class HashFactory {
          */
         NATIVE_SHA256,
         /**
+         * Bouncy Castle的Shake128
+         */
+        BC_SHAKE_128,
+        /**
+         * Bouncy Castle的Shake256
+         */
+        BC_SHAKE_256,
+        /**
+         * Bouncy Castle的SHA3-256
+         */
+        BC_SHA3_256,
+        /**
+         * Bouncy Castle的SHA3-512
+         */
+        BC_SHA3_512,
+        /**
          * Bouncy Castle的SM3
          */
         BC_SM3,
@@ -55,19 +71,26 @@ public class HashFactory {
     public static int getUnitByteLength(HashType hashType) {
         switch (hashType) {
             case JDK_SHA256:
-                return JdkSha256Hash.UNIT_BYTE_LENGTH;
+                return JdkSha256Hash.DIGEST_BYTE_LENGTH;
             case NATIVE_SHA256:
-                return NativeSha256Hash.UNIT_BYTE_LENGTH;
+                return NativeSha256Hash.DIGEST_BYTE_LENGTH;
+            case BC_SHAKE_128:
+            case BC_SHAKE_256:
+                return Integer.MAX_VALUE / Byte.SIZE;
+            case BC_SHA3_256:
+                return BcSha3Series256Hash.DIGEST_BYTE_LENGTH;
+            case BC_SHA3_512:
+                return BcSha3Series512Hash.DIGEST_BYTE_LENGTH;
             case BC_SM3:
-                return BcSm3Hash.UNIT_BYTE_LENGTH;
+                return BcSm3Hash.DIGEST_BYTE_LENGTH;
             case BC_BLAKE_2B_160:
-                return BcBlake2b160Hash.UNIT_BYTE_LENGTH;
+                return BcBlake2b160Hash.DIGEST_BYTE_LENGTH;
             case NATIVE_BLAKE_2B_160:
-                return NativeBlake2b160Hash.UNIT_BYTE_LENGTH;
+                return NativeBlake2b160Hash.DIGEST_BYTE_LENGTH;
             case NATIVE_BLAKE_3:
-                return NativeBlake3Hash.UNIT_BYTE_LENGTH;
+                return NativeBlake3Hash.DIGEST_BYTE_LENGTH;
             default:
-                throw new IllegalArgumentException("Invalid HashType " + hashType.name());
+                throw new IllegalArgumentException("Invalid " + HashType.class.getSimpleName() + ": " + hashType.name());
         }
     }
 
@@ -84,6 +107,14 @@ public class HashFactory {
                 return new JdkSha256Hash(outputByteLength);
             case NATIVE_SHA256:
                 return new NativeSha256Hash(outputByteLength);
+            case BC_SHAKE_128:
+                return new BcShake128Hash(outputByteLength);
+            case BC_SHAKE_256:
+                return new BcShake256Hash(outputByteLength);
+            case BC_SHA3_256:
+                return new BcSha3Series256Hash(outputByteLength);
+            case BC_SHA3_512:
+                return new BcSha3Series512Hash(outputByteLength);
             case BC_SM3:
                 return new BcSm3Hash(outputByteLength);
             case BC_BLAKE_2B_160:
@@ -93,7 +124,7 @@ public class HashFactory {
             case NATIVE_BLAKE_3:
                 return new NativeBlake3Hash(outputByteLength);
             default:
-                throw new IllegalArgumentException("Invalid HashType " + hashType.name());
+                throw new IllegalArgumentException("Invalid " + HashType.class.getSimpleName() + ": " + hashType.name());
         }
     }
 
@@ -101,6 +132,7 @@ public class HashFactory {
      * 创建哈希函数实例。
      *
      * @param envType 哈希函数类型。
+     * @param outputByteLength 输出字节长度。
      * @return 哈希函数实例。
      */
     public static Hash createInstance(EnvType envType, int outputByteLength) {
@@ -112,7 +144,7 @@ public class HashFactory {
             case INLAND_JDK:
                 return new BcSm3Hash(outputByteLength);
             default:
-                throw new IllegalArgumentException("Invalid EnvType " + envType.name());
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }
     }
 }

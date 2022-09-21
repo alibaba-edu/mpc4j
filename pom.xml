@@ -7,7 +7,7 @@
     <groupId>edu.alibaba</groupId>
     <artifactId>mpc4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <modules>
         <module>mpc4j-common-data</module>
         <module>mpc4j-common-jnagmp</module>

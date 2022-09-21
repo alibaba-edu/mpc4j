@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.MaxBinSizeUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
@@ -58,10 +58,6 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
      */
     private final int cuckooHashNum;
     /**
-     * OPRF输出哈希密钥
-     */
-    private byte[] oprfOutputHashKey;
-    /**
      * 布谷鸟哈希
      */
     private CuckooHashBin<ByteBuffer> cuckooHashBin;
@@ -74,9 +70,9 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
      */
     private int maxBinSize;
     /**
-     * OPRF输出哈希
+     * OPRF输出映射
      */
-    private Prf oprfOutputHash;
+    private Hash oprfOutputMap;
     /**
      * π′
      */
@@ -149,23 +145,7 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
-
-        stopWatch.start();
-        List<byte[]> keysPayload = new LinkedList<>();
-        // 初始化OPRF输出哈希密钥
-        oprfOutputHashKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(oprfOutputHashKey);
-        keysPayload.add(oprfOutputHashKey);
-        DataPacketHeader keysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEY.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(keysHeader, keysPayload));
-        stopWatch.stop();
-        long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Server Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyTime);
+        info("{}{} Server Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
 
         initialized = true;
         info("{}{} Server Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
@@ -181,9 +161,8 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
         maxBinSize = MaxBinSizeUtils.expectMaxBinSize(clientElementSize, binNum);
         // 初始化OPRF哈希
-        int oprfOutputByteLength = Jsz22PsuUtils.getOprfByteLength(binNum, maxBinSize);
-        oprfOutputHash = PrfFactory.createInstance(getEnvType(), oprfOutputByteLength);
-        oprfOutputHash.setKey(oprfOutputHashKey);
+        int oprfOutputByteLength = Jsz22SfsPsuPtoDesc.getOprfByteLength(binNum, maxBinSize);
+        oprfOutputMap = HashFactory.createInstance(envType, oprfOutputByteLength);
         // S inserts set X into the Cuckoo hash table, and fills empty bins with the dummy item d
         List<byte[]> cuckooHashKeyPayload = generateCuckooHashKeyPayload();
         DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
@@ -227,7 +206,7 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         binIndexIntStream = parallel ? binIndexIntStream.parallel() : binIndexIntStream;
         serverOprfSet = binIndexIntStream
             .mapToObj(oprfReceiverOutput::getPrf)
-            .map(oprf -> oprfOutputHash.getBytes(oprf))
+            .map(oprf -> oprfOutputMap.digestToBytes(oprf))
             .map(ByteBuffer::wrap)
             .collect(Collectors.toSet());
         stopWatch.stop();

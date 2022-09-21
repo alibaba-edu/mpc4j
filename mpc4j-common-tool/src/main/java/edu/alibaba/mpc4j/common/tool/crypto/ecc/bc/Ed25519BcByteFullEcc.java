@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.ecc.bc;
 
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteFullEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.ecc.utils.Ed25519ByteEccUtils;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
@@ -9,7 +10,6 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Locale;
 
 /**
  * Bouncy Castle实现的Ed25519全功能字节椭圆曲线。
@@ -19,36 +19,9 @@ import java.util.Locale;
  */
 public class Ed25519BcByteFullEcc implements ByteFullEcc {
     /**
-     * l = 2^{252} + 27742317777372353535851937790883648493
-     */
-    private static final BigInteger N = BigInteger.ONE.shiftLeft(252)
-        .add(new BigInteger("27742317777372353535851937790883648493"));
-    /**
      * 椭圆曲线点字节长度
      */
     private static final int POINT_BYTE_LENGTH = Ed25519ByteEccUtils.POINT_BYTES;
-    /**
-     * 幂指数字节长度
-     */
-    private static final int SCALAR_BYTE_LENGTH = Ed25519ByteEccUtils.SCALAR_BYTES;
-    /**
-     * 幂指数-1
-     */
-    private static final byte[] NEG_SCALAR_ONE;
-
-    static {
-        BigInteger negate = BigInteger.ONE.negate().mod(N);
-        NEG_SCALAR_ONE = BigIntegerUtils.nonNegBigIntegerToByteArray(negate, POINT_BYTE_LENGTH);
-        BytesUtils.innerReverseByteArray(NEG_SCALAR_ONE);
-    }
-
-    /**
-     * 协因子
-     */
-    private static final byte[] SCALAR_COFACTOR = new byte[]{
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08,
-    };
     /**
      * 哈希函数
      */
@@ -61,18 +34,18 @@ public class Ed25519BcByteFullEcc implements ByteFullEcc {
 
     @Override
     public BigInteger getN() {
-        return N;
+        return Ed25519ByteEccUtils.N;
     }
 
     @Override
     public BigInteger randomZn(SecureRandom secureRandom) {
-        return BigIntegerUtils.randomPositive(N, secureRandom);
+        return BigIntegerUtils.randomPositive(Ed25519ByteEccUtils.N, secureRandom);
     }
 
     @Override
     public byte[] randomScalar(SecureRandom secureRandom) {
         BigInteger zn = randomZn(secureRandom);
-        byte[] k = BigIntegerUtils.nonNegBigIntegerToByteArray(zn, SCALAR_BYTE_LENGTH);
+        byte[] k = BigIntegerUtils.nonNegBigIntegerToByteArray(zn, Ed25519ByteEccUtils.SCALAR_BYTES);
         BytesUtils.innerReverseByteArray(k);
         return k;
     }
@@ -98,11 +71,12 @@ public class Ed25519BcByteFullEcc implements ByteFullEcc {
         boolean success = false;
         while (!success) {
             secureRandom.nextBytes(p);
+            p[Ed25519ByteEccUtils.POINT_BYTES - 1] &= 0x7F;
             success = Ed25519ByteEccUtils.validPoint(p);
         }
         // 需要乘以cofactor
         byte[] r = new byte[POINT_BYTE_LENGTH];
-        Ed25519ByteEccUtils.scalarMultEncoded(SCALAR_COFACTOR, p, r);
+        Ed25519ByteEccUtils.scalarMultEncoded(Ed25519ByteEccUtils.SCALAR_COFACTOR, p, r);
         return r;
     }
 
@@ -110,16 +84,18 @@ public class Ed25519BcByteFullEcc implements ByteFullEcc {
     public byte[] hashToCurve(byte[] message) {
         // 简单的重复哈希
         byte[] p = hash.digestToBytes(message);
+        p[Ed25519ByteEccUtils.POINT_BYTES - 1] &= 0x7F;
         boolean success = false;
         while (!success) {
             success = Ed25519ByteEccUtils.validPoint(p);
             if (!success) {
                 p = hash.digestToBytes(p);
+                p[Ed25519ByteEccUtils.POINT_BYTES - 1] &= 0x7F;
             }
         }
         // 需要乘以cofactor
         byte[] r = new byte[POINT_BYTE_LENGTH];
-        Ed25519ByteEccUtils.scalarMultEncoded(SCALAR_COFACTOR, p, r);
+        Ed25519ByteEccUtils.scalarMultEncoded(Ed25519ByteEccUtils.SCALAR_COFACTOR, p, r);
         return r;
     }
 
@@ -183,7 +159,7 @@ public class Ed25519BcByteFullEcc implements ByteFullEcc {
     @Override
     public byte[] mul(byte[] p, BigInteger k) {
         assert p.length == POINT_BYTE_LENGTH;
-        byte[] byteK = toByteK(k);
+        byte[] byteK = Ed25519ByteEccUtils.toByteK(k);
         byte[] r = new byte[POINT_BYTE_LENGTH];
         Ed25519ByteEccUtils.scalarMultEncoded(byteK, p, r);
         return r;
@@ -191,7 +167,7 @@ public class Ed25519BcByteFullEcc implements ByteFullEcc {
 
     @Override
     public byte[] baseMul(BigInteger k) {
-        byte[] byteK = toByteK(k);
+        byte[] byteK = Ed25519ByteEccUtils.toByteK(k);
         byte[] r = new byte[POINT_BYTE_LENGTH];
         Ed25519ByteEccUtils.scalarMultBaseEncoded(byteK, r);
         return r;
@@ -200,13 +176,5 @@ public class Ed25519BcByteFullEcc implements ByteFullEcc {
     @Override
     public ByteEccFactory.ByteEccType getByteEccType() {
         return ByteEccFactory.ByteEccType.ED25519_BC;
-    }
-
-    private byte[] toByteK(BigInteger k) {
-        assert BigIntegerUtils.greaterOrEqual(k, BigInteger.ZERO) && BigIntegerUtils.less(k, N) :
-            "k must be in range [0, " + N.toString().toUpperCase(Locale.ROOT) + "): " + k;
-        byte[] byteK = BigIntegerUtils.nonNegBigIntegerToByteArray(k, SCALAR_BYTE_LENGTH);
-        BytesUtils.innerReverseByteArray(byteK);
-        return byteK;
     }
 }

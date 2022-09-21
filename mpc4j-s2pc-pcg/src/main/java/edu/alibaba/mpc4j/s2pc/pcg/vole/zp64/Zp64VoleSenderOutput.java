@@ -6,7 +6,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
- * Zp64-VOLE发送方输出。
+ * Zp64-VOLE发送方输出。发送方得到(x, t)，满足t = q + Δ · x（Δ和q由接收方持有）。
  *
  * @author Hanwen Feng
  * @date 2022/06/15

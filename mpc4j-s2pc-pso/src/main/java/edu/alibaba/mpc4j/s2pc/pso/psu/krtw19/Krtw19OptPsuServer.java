@@ -10,8 +10,8 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
+import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.EmptyPadHashBin;
@@ -62,17 +62,9 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
      */
     private final Crhf crhf;
     /**
-     * PEQT输出哈希密钥
-     */
-    private byte[] peqtHashKey;
-    /**
      * 桶哈希函数密钥
      */
     private byte[][] hashBinKeys;
-    /**
-     * 有限域哈希函数密钥
-     */
-    private byte[] finiteFieldHashKey;
     /**
      * 桶数量（β）
      */
@@ -96,11 +88,11 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
     /**
      * 有限域哈希函数
      */
-    private Prf finiteFieldHash;
+    private Hash finiteFieldHash;
     /**
      * PEQT输出哈希函数
      */
-    private Prf peqtHash;
+    private Hash peqtHash;
     /**
      * 加密伪随机数生成器
      */
@@ -166,14 +158,6 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         hashBinKeys = new byte[1][CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(hashBinKeys[0]);
         keysPayload.add(hashBinKeys[0]);
-        // 初始化有限域哈希密钥
-        finiteFieldHashKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(finiteFieldHashKey);
-        keysPayload.add(finiteFieldHashKey);
-        // 初始化PEQT哈希密钥
-        peqtHashKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(peqtHashKey);
-        keysPayload.add(peqtHashKey);
         DataPacketHeader keysHeader = new DataPacketHeader(
             taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
@@ -229,16 +213,14 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         int fieldBitLength = Krtw19PsuUtils.getFiniteFieldBitLength(binNum, maxBinSize);
         int fieldByteLength = fieldBitLength / Byte.SIZE;
         // 设置有限域哈希
-        finiteFieldHash = PrfFactory.createInstance(envType, fieldByteLength);
-        finiteFieldHash.setKey(finiteFieldHashKey);
+        finiteFieldHash = HashFactory.createInstance(envType, fieldByteLength);
         // 设置多项式运算服务
         gf2ePoly = Gf2ePolyFactory.createInstance(envType, fieldBitLength);
         // 设置多项式系数数量，客户端会用根插值算法插值maxBinSize - 1个元素，因此多项式系数数量为maxBinSize
         coefficientNum = gf2ePoly.rootCoefficientNum(maxBinSize - 1);
         // 设置PEQT哈希
         int peqtLength = Krtw19PsuUtils.getPeqtByteLength(binNum, maxBinSize);
-        peqtHash = PrfFactory.createInstance(getEnvType(), peqtLength);
-        peqtHash.setKey(peqtHashKey);
+        peqtHash = HashFactory.createInstance(getEnvType(), peqtLength);
         // 设置加密伪随机数生成器
         encPrg = PrgFactory.createInstance(envType, elementByteLength);
     }
@@ -256,7 +238,7 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         qIntStream = parallel ? qIntStream.parallel() : qIntStream;
         byte[][] qs = qIntStream.mapToObj(i -> {
             byte[] q = rpmtOprfReceiverOprfOutput.getPrf(i);
-            return finiteFieldHash.getBytes(q);
+            return finiteFieldHash.digestToBytes(q);
         }).toArray(byte[][]::new);
         stopWatch.stop();
         long qTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -300,7 +282,7 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         sIntStream = parallel ? sIntStream.parallel() : sIntStream;
         List<byte[]> sStarPayload = sIntStream
             .mapToObj(sIndex -> peqtOprfSenderOutput.getPrf(sIndex, ss[sIndex]))
-            .map(peqtHash::getBytes)
+            .map(peqtHash::digestToBytes)
             .collect(Collectors.toList());
         DataPacketHeader sStarHeader = new DataPacketHeader(
             taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_S_STAR_OPRFS.ordinal(), extraInfo,
@@ -351,7 +333,7 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
             byte[][] coefficients = Arrays.copyOfRange(
                 flatPolyArray, polyStart * coefficientNum, polyEnd * coefficientNum
             );
-            byte[] qStar = finiteFieldHash.getBytes(qs[index]);
+            byte[] qStar = finiteFieldHash.digestToBytes(qs[index]);
             ss[index] = gf2ePoly.evaluate(coefficients, qStar);
         });
     }
