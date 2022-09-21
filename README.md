@@ -6,7 +6,13 @@ Multi-Party Computation for Java (`mpc4j`) is an efficient and easy-to-use Secur
 
 The aim of `mpc4j` is to provide an academic library for researchers to study and develop MPC and related protocols in a unified manner. As `mpc4j` tries to provide state-of-the-art MPC implementations, researchers could leverage the library to have fair and quick comparisons between the new protocols they proposed and existing ones.
 
-`mpc4j` is sponsored by the [DataTrust](https://dp.alibaba.com/product/datatrust) team.
+## Contact
+
+`mpc4j` is mainly developed by Weiran Liu. Feel free to contact me at [mailto:liuweiran900217@gmail.com](mailto:liuweiran900217@gmail.com).
+
+## Who Uses `mpc4j`
+
+Currently, [DataTrust](https://dp.alibaba.com/product/datatrust) is powered by `mpc4j`. If your project uses `mpc4j` and you do not mind it appearing here please contact me.
 
 ## Features
 
