@@ -8,7 +8,7 @@ The aim of `mpc4j` is to provide an academic library for researchers to study an
 
 ## Contact
 
-`mpc4j` is mainly developed by Weiran Liu. Feel free to contact me at [mailto:liuweiran900217@gmail.com](mailto:liuweiran900217@gmail.com).
+`mpc4j` is mainly developed by Weiran Liu. Feel free to contact me at [mailto:liuweiran900217@gmail.com](mailto:liuweiran900217@gmail.com). The submodules involving Fully Homomorphic Encryption (FHE) is mainly developed by Liqiang Peng. The submodules involving Vector Oblivious Linear Evaluation (VOLE) is mainly developed by Hanwen Feng. 
 
 ## Who Uses `mpc4j`
 
@@ -23,9 +23,11 @@ Currently, [DataTrust](https://dp.alibaba.com/product/datatrust) is powered by `
 
 ## Some Implementations of our Work
 
-- Package `psu` in `mpc4j-s2pc-pso` contains the implementation of our paper ["Optimal Private Set Union from Multi-Query Reverse Private Membership Test"](https://eprint.iacr.org/2022/358.pdf). The configuration files are under `conf/psu` in `mpc4j-s2pc-pso`. Just run `java -jar mpc4j-s2pc-pso-X.X.X-jar-with-dependencies.jar conf_file_name.txt` separately on two platforms with direct network connections (using the network channel assigned in config files) or on two terminals in one platform (using local network 127.0.0.1).
-- Module `mpc4j-sml-opboost` contains the implementation of our paper "OpBoost: A Vertical Federated Tree Boosting Framework Based on Order-Preserving Desensitization" (manuscript). The configuration files are under `conf` in `mpc4j-sml-opboost`. The paper is under review. We will release the final version when possible.
-- Package `pmid` in `mpc4j-s2pc-pso` contains the implementation of our paper "Efficient Private Multiset ID Protocols and Applications to Private Multiset Operations" (manuscript). The configuration files are under `conf/pmid` in `mpc4j-s2pc-pso`. We are still updating the paper. We will release the final version when possible.
+Package `pmid` in `mpc4j-s2pc-pso` contains the implementation of our paper "Efficient Private Multiset ID Protocols and Applications to Private Multiset Operations" (manuscript). The configuration files are under `conf/pmid` in `mpc4j-s2pc-pso`. We are still updating the paper. We will release the final version when possible.
+
+Our paper ["Linear Private Set Union from Multi-Query Reverse Private Membership Test"](https://eprint.iacr.org/2022/358.pdf) was accepted to USENIX Security 2023. Package `psu` in `mpc4j-s2pc-pso` contains the implementation of this paper. The configuration files are under `conf/psu` in `mpc4j-s2pc-pso`. Just run `java -jar mpc4j-s2pc-pso-X.X.X-jar-with-dependencies.jar conf_file_name.txt` separately on two platforms with direct network connections (using the network channel assigned in config files) or on two terminals in one platform (using local network 127.0.0.1).
+
+Our paper ["OpBoost: A Vertical Federated Tree Boosting Framework Based on Order-Preserving Desensitization"](https://arxiv.org/abs/2210.01318) was accpeted to VLDB 2023. Module `mpc4j-sml-opboost` contains the implementation of this paper. The configuration files are under `conf` in `mpc4j-sml-opboost`. Like `psu`, just run `java -jar mpc4j-s2pc-pso-X.X.X-jar-with-dependencies.jar conf_file_name.txt` separately on two platforms with direct network connections (using the network channel assigned in config files) or on two terminals in one platform (using local network 127.0.0.1).
 
 ## References
 
