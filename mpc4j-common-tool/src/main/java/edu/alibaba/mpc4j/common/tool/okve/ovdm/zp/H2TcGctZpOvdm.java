@@ -72,7 +72,7 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
     private Map<T, boolean[]> dataHrMap;
 
     H2TcGctZpOvdm(EnvType envType, BigInteger prime, int n, byte[][] keys, CuckooTableTcFinder<T> tcFinder) {
-        super(prime, n, getLm(n) + getRm(n));
+        super(envType, prime, n, getLm(n) + getRm(n));
         assert (tcFinder instanceof CuckooTableSingletonTcFinder || tcFinder instanceof H2CuckooTableTcFinder);
         lm = getLm(n);
         rm = getRm(n);
@@ -95,13 +95,13 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
         BigInteger value = BigInteger.ZERO;
         // 如果两个哈希结果相同，则只计算一次加法
         if (h1Value != h2Value) {
-            value = value.add(storage[h1Value]).add(storage[h2Value]).mod(prime);
+            value = zp.add(zp.add(value, storage[h1Value]), storage[h2Value]);
         } else {
-            value = value.add(storage[h1Value]).mod(prime);
+            value = zp.add(value, storage[h1Value]);
         }
         for (int rmIndex = 0; rmIndex < rm; rmIndex++) {
             if (rxBinary[rmIndex]) {
-                value = value.add(storage[lm + rmIndex]).mod(prime);
+                value = zp.add(value, storage[lm + rmIndex]);
             }
         }
         return value;
@@ -157,9 +157,9 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
         Map<T, BigInteger> removedDataInnerProductMap = removedDataStack.stream()
             .collect(Collectors.toMap(Function.identity(), removedData -> {
                 boolean[] rx = dataHrMap.get(removedData);
-                BigInteger rightInnerProduct = BigIntegerUtils.innerProduct(rightStorage, prime, rx);
+                BigInteger rightInnerProduct = zp.innerProduct(rightStorage, rx);
                 BigInteger value = keyValueMap.get(removedData);
-                return value.subtract(rightInnerProduct);
+                return zp.sub(value, rightInnerProduct);
             }));
         while (!removedDataStack.empty()) {
             T removedData = removedDataStack.pop();
@@ -180,14 +180,14 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
                 // 起点和重点不一致，有4种情况
                 if (leftStorage[source] == null && leftStorage[target] == null) {
                     // 情况1：左右都为空
-                    leftStorage[source] = BigIntegerUtils.randomPositive(prime, secureRandom);
-                    leftStorage[target] = innerProduct.subtract(leftStorage[source]).mod(prime);
+                    leftStorage[source] = zp.createNonZeroRandom(secureRandom);
+                    leftStorage[target] = zp.sub(innerProduct, leftStorage[source]);
                 } else if (leftStorage[source] == null) {
                     // 情况2：左端点为空，右端点不为空
-                    leftStorage[source] = innerProduct.subtract(leftStorage[target]).mod(prime);
+                    leftStorage[source] = zp.sub(innerProduct, leftStorage[target]);
                 } else if (leftStorage[target] == null) {
                     // 情况3：左端点不为空，右端点为空
-                    leftStorage[target] = innerProduct.subtract(leftStorage[source]).mod(prime);
+                    leftStorage[target] = zp.sub(innerProduct, leftStorage[source]);
                 } else {
                     // 左右端点都不为空，实现存在问题
                     throw new IllegalStateException(removedData + "左右顶点同时有数据，算法实现有误");
@@ -197,7 +197,7 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
         // 左侧矩阵补充随机数
         for (int vertex = 0; vertex < lm; vertex++) {
             if (leftStorage[vertex] == null) {
-                leftStorage[vertex] = BigIntegerUtils.randomPositive(prime, secureRandom);
+                leftStorage[vertex] = zp.createNonZeroRandom(secureRandom);
             }
         }
         // 更新矩阵
@@ -216,9 +216,7 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
         int dTilde = coreDataSet.size();
         // 如果没有2-core边，则补充的边都设置为随机数
         if (dTilde == 0) {
-            IntStream.range(lm, lm + rm).forEach(index ->
-                storage[index] = BigIntegerUtils.randomPositive(prime, secureRandom)
-            );
+            IntStream.range(lm, lm + rm).forEach(index -> storage[index] = zp.createNonZeroRandom(secureRandom));
             return storage;
         }
         if (dTilde > rm) {
@@ -236,7 +234,7 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
             tildePrimeMatrixRowIndex++;
         }
         // Otherwise let M˜* be one such matrix and C ⊂ [d + λ] index the corresponding columns of M˜.
-        ZpMaxLisFinder maxLisFinder = new ZpMaxLisFinder(prime, tildePrimeMatrix);
+        ZpMaxLisFinder maxLisFinder = new ZpMaxLisFinder(zp.getPrime(), tildePrimeMatrix);
         Set<Integer> setC = maxLisFinder.getLisRows();
         BigInteger[][] tildeStarMatrix = new BigInteger[dTilde][setC.size()];
         int tildeStarMatrixRowIndex = 0;
@@ -262,7 +260,7 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
         }
         // For i ∈ C' assign P_i ∈ G
         for (Integer primeIndexC : setPrimeC) {
-            storage[primeIndexC] = BigIntegerUtils.randomPositive(prime, secureRandom);
+            storage[primeIndexC] = zp.createNonZeroRandom(secureRandom);
         }
         // For i ∈ R, define v'_i = v_i - (MP), where P_i is assigned to be zero if unassigned.
         BigInteger[] vectorY = new BigInteger[dTilde];
@@ -279,21 +277,21 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
                 storage[h2Value] = BigInteger.ZERO;
             }
             if (h1Value == h2Value) {
-                mp = mp.add(storage[h1Value]).mod(prime);
+                mp = zp.add(mp, storage[h1Value]);
             } else {
-                mp = mp.add(storage[h1Value]).mod(prime);
-                mp = mp.add(storage[h2Value]).mod(prime);
+                mp = zp.add(mp, storage[h1Value]);
+                mp = zp.add(mp, storage[h2Value]);
             }
             for (int rxIndex = 0; rxIndex < rx.length; rxIndex++) {
                 if (rx[rxIndex]) {
                     if (storage[lm + rxIndex] == null) {
                         storage[lm + rxIndex] = BigInteger.ZERO;
                     }
-                    mp = mp.add(storage[lm + rxIndex]).mod(prime);
+                    mp = zp.add(mp, storage[lm + rxIndex]);
                 }
             }
             BigInteger value = keyValueMap.get(data);
-            vectorY[coreRowIndex] = value.subtract(mp).mod(prime);
+            vectorY[coreRowIndex] = zp.sub(value, mp);
             coreRowIndex++;
         }
         // Using Gaussian elimination solve the system

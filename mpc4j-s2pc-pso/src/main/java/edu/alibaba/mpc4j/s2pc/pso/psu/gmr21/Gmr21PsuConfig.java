@@ -88,6 +88,13 @@ public class Gmr21PsuConfig implements PsuConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        peqtOprfConfig.setEnvType(envType);
+        osnConfig.setEnvType(envType);
+        coreCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return cuckooHashOprfConfig.getEnvType();
     }

@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.base;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.co15.Co15BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.co15.Co15BaseOtReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.co15.Co15BaseOtSender;
@@ -25,7 +26,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtSender;
  * @author Weiran Liu
  * @date 2021/01/23
  */
-public class BaseOtFactory {
+public class BaseOtFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

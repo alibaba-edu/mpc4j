@@ -39,13 +39,6 @@ public interface ZpOvdm<T> {
     int getN();
 
     /**
-     * 返回模数p。
-     *
-     * @return 模数p。
-     */
-    BigInteger getPrime();
-
-    /**
      * 返回OVDM的行数，满足{@code m / Byte.SIZE == 0}。
      *
      * @return 行数。

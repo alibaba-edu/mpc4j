@@ -102,4 +102,14 @@ public class X25519SodiumByteMulEcc implements ByteMulEcc {
     public ByteEccFactory.ByteEccType getByteEccType() {
         return ByteEccFactory.ByteEccType.X25519_SODIUM;
     }
+
+    @Override
+    public int pointByteLength() {
+        return X25519ByteEccUtils.POINT_BYTES;
+    }
+
+    @Override
+    public int scalarByteLength() {
+        return X25519ByteEccUtils.SCALAR_BYTES;
+    }
 }

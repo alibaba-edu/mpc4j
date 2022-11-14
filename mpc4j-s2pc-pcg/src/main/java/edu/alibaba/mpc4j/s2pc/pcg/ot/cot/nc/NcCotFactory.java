@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.crr21.Crr21NcCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.crr21.Crr21NcCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.crr21.Crr21NcCotSender;
@@ -19,7 +20,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20.Ywl20NcCotSender;
  * @author Weiran Liu
  * @date 2022/01/26
  */
-public class NcCotFactory {
+public class NcCotFactory implements PtoFactory {
     /**
      * 私有构造函数
      */
@@ -104,9 +105,7 @@ public class NcCotFactory {
             case MALICIOUS:
                 return new Ywl20NcCotConfig.Builder(SecurityModel.MALICIOUS).build();
             default:
-                throw new IllegalArgumentException(
-                    "Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name()
-                );
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

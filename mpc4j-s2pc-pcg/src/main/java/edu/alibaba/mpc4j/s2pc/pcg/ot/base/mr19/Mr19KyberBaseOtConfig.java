@@ -15,10 +15,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
  */
 public class Mr19KyberBaseOtConfig implements BaseOtConfig {
     /**
-     * 环境类型
-     */
-    private final EnvType envType;
-    /**
      * Kyber安全系数
      */
     private final int paramsK;
@@ -26,17 +22,26 @@ public class Mr19KyberBaseOtConfig implements BaseOtConfig {
      * Kyber方案类型
      */
     private final KyberType kyberType;
+    /**
+     * 环境类型
+     */
+    private EnvType envType;
 
     private Mr19KyberBaseOtConfig(Mr19KyberBaseOtConfig.Builder builder) {
         assert KyberParams.validParamsK(builder.paramsK) : KyberParams.INVALID_PARAMS_K_ERROR_MESSAGE + builder.paramsK;
-        envType = builder.envType;
         paramsK = builder.paramsK;
         kyberType = builder.kyberType;
+        envType = EnvType.STANDARD;
     }
 
     @Override
     public BaseOtFactory.BaseOtType getPtoType() {
         return BaseOtFactory.BaseOtType.MR19_KYBER;
+    }
+
+    @Override
+    public void setEnvType(EnvType envType) {
+        this.envType = envType;
     }
 
     @Override
@@ -59,10 +64,6 @@ public class Mr19KyberBaseOtConfig implements BaseOtConfig {
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Mr19KyberBaseOtConfig> {
         /**
-         * 环境类型
-         */
-        private EnvType envType;
-        /**
          * Kyber安全系数
          */
         private int paramsK;
@@ -72,14 +73,8 @@ public class Mr19KyberBaseOtConfig implements BaseOtConfig {
         private KyberType kyberType;
 
         public Builder() {
-            envType = EnvType.STANDARD;
             paramsK = 4;
             kyberType = KyberType.KYBER_CCA;
-        }
-
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
         }
 
         public Builder setParamsK(int paramsK) {

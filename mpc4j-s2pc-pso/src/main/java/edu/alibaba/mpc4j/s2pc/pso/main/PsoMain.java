@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pso.main;
 
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
+import edu.alibaba.mpc4j.s2pc.pso.main.blackip.PsuBlackIpMain;
 import edu.alibaba.mpc4j.s2pc.pso.main.pid.PidMain;
 import edu.alibaba.mpc4j.s2pc.pso.main.pmid.PmidMain;
 import edu.alibaba.mpc4j.s2pc.pso.main.psu.PsuMain;
@@ -39,6 +40,10 @@ public class PsoMain {
         String ptoType = PropertiesUtils.readString(properties, "pto_type");
         LOGGER.info("pto_type = " + ptoType);
         switch (ptoType) {
+            case PsuBlackIpMain.PTO_TYPE_NAME:
+                PsuBlackIpMain psuBlackIpMain = new PsuBlackIpMain(properties);
+                psuBlackIpMain.run();
+                break;
             case PsuMain.PTO_TYPE_NAME:
                 PsuMain psuMain = new PsuMain(properties);
                 psuMain.run();

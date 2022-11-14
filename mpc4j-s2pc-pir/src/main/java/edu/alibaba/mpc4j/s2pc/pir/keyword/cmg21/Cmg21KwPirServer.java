@@ -43,11 +43,6 @@ import java.util.stream.Stream;
  * @date 2022/6/20
  */
 public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
-
-    static {
-        System.loadLibrary(CommonConstants.MPC4J_NATIVE_FHE_NAME);
-    }
-
     /**
      * 流密码
      */
@@ -554,7 +549,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         IntStream queryIntStream = parallel ?
             IntStream.range(0, ciphertextNum).parallel() : IntStream.range(0, ciphertextNum);
         ArrayList<byte[]> queryPowers = queryIntStream
-            .mapToObj(i -> Cmg21KwPirNativeServer.computeEncryptedPowers(
+            .mapToObj(i -> Cmg21KwPirNativeUtils.computeEncryptedPowers(
                 encryptionParamsList.get(0),
                 encryptionParamsList.get(1),
                 encryptedQueryList.subList(i * params.getQueryPowers().length, (i + 1) * params.getQueryPowers().length),
@@ -568,7 +563,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
                 .mapToObj(i ->
                     (parallel ? IntStream.range(0, partitionCount).parallel() : IntStream.range(0, partitionCount))
                         .mapToObj(j ->
-                            Cmg21KwPirNativeServer.computeMatches(
+                            Cmg21KwPirNativeUtils.optComputeMatches(
                                 encryptionParamsList.get(0),
                                 encryptionParamsList.get(2),
                                 encryptionParamsList.get(1),
@@ -583,7 +578,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
                     (parallel ? IntStream.range(0, partitionCount * labelPartitionCount).parallel() :
                         IntStream.range(0, partitionCount * labelPartitionCount))
                         .mapToObj(j ->
-                            Cmg21KwPirNativeServer.computeMatches(
+                            Cmg21KwPirNativeUtils.optComputeMatches(
                                 encryptionParamsList.get(0),
                                 encryptionParamsList.get(2),
                                 encryptionParamsList.get(1),
@@ -598,10 +593,9 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
                 .mapToObj(i ->
                     (parallel ? IntStream.range(0, partitionCount).parallel() : IntStream.range(0, partitionCount))
                         .mapToObj(j ->
-                            Cmg21KwPirNativeServer.computeMatchesNaiveMethod(
+                            Cmg21KwPirNativeUtils.naiveComputeMatches(
                                 encryptionParamsList.get(0),
                                 encryptionParamsList.get(2),
-                                encryptionParamsList.get(1),
                                 serverKeywordEncode[i * partitionCount + j],
                                 queryPowers.subList(i * powerDegree.length, (i + 1) * powerDegree.length)))
                         .toArray(byte[][]::new))
@@ -612,10 +606,9 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
                     (parallel ? IntStream.range(0, partitionCount * labelPartitionCount).parallel() :
                         IntStream.range(0, partitionCount * labelPartitionCount))
                         .mapToObj(j ->
-                            Cmg21KwPirNativeServer.computeMatchesNaiveMethod(
+                            Cmg21KwPirNativeUtils.naiveComputeMatches(
                                 encryptionParamsList.get(0),
                                 encryptionParamsList.get(2),
-                                encryptionParamsList.get(1),
                                 serverLabelEncode[i * partitionCount + j],
                                 queryPowers.subList(i * powerDegree.length, (i + 1) * powerDegree.length)))
                         .toArray(byte[][]::new))

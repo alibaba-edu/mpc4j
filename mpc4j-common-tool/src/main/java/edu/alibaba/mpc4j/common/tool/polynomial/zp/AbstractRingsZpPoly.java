@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.polynomial.zp;
 
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 
 import java.math.BigInteger;
@@ -20,21 +21,16 @@ abstract class AbstractRingsZpPoly extends AbstractZpPoly {
      */
     protected final Ring<cc.redberry.rings.bigint.BigInteger> finiteField;
 
-    AbstractRingsZpPoly(int l, Ring<cc.redberry.rings.bigint.BigInteger> finiteField) {
+    AbstractRingsZpPoly(int l) {
         super(l);
-        this.finiteField = finiteField;
+        finiteField = ZpManager.getFiniteField(l);
     }
 
     @Override
-    public int coefficientNum(int num) {
-        assert num >= 1 : "# of points must be greater than or equal to 1: " + num;
-        return num;
-    }
-
-    @Override
-    public BigInteger[] interpolate(int num, BigInteger[] xArray, BigInteger[] yArray) {
-        assert xArray.length == yArray.length;
-        assert num >= 1 && xArray.length <= num;
+    public BigInteger[] interpolate(int expectNum, BigInteger[] xArray, BigInteger[] yArray) {
+        assert xArray.length == yArray.length
+            : "x.length must be equal to y.length, x.length: " + xArray.length + ", y.length: " + yArray.length;
+        assert expectNum >= 1 && xArray.length <= expectNum : "x.length must be in range [1, " + expectNum + "]: " + xArray.length;
         for (BigInteger x : xArray) {
             assert validPoint(x);
         }
@@ -42,10 +38,9 @@ abstract class AbstractRingsZpPoly extends AbstractZpPoly {
             assert validPoint(y);
         }
         // 插值
-        UnivariatePolynomial<cc.redberry.rings.bigint.BigInteger> interpolatePolynomial
-            = polynomialInterpolate(num, xArray, yArray);
+        UnivariatePolynomial<cc.redberry.rings.bigint.BigInteger> interpolatePolynomial = polynomialInterpolate(xArray, yArray);
         // 如果插值点数量小于最大点数量，则补充虚拟点
-        if (xArray.length < num) {
+        if (xArray.length < expectNum) {
             // 转换成多项式点
             cc.redberry.rings.bigint.BigInteger[] pointXs = Arrays.stream(xArray)
                 .map(cc.redberry.rings.bigint.BigInteger::new)
@@ -59,7 +54,7 @@ abstract class AbstractRingsZpPoly extends AbstractZpPoly {
             }
             // 构造随机多项式
             cc.redberry.rings.bigint.BigInteger[] prCoefficients
-                = new cc.redberry.rings.bigint.BigInteger[num - pointXs.length];
+                = new cc.redberry.rings.bigint.BigInteger[expectNum - pointXs.length];
             for (int index = 0; index < prCoefficients.length; index++) {
                 prCoefficients[index] = new cc.redberry.rings.bigint.BigInteger(BigIntegerUtils.randomNonNegative(p, secureRandom));
             }
@@ -68,26 +63,20 @@ abstract class AbstractRingsZpPoly extends AbstractZpPoly {
             // 计算P_0(x) + P_1(x) * P_r(x)
             interpolatePolynomial = interpolatePolynomial.add(p1.multiply(pr));
         }
-        return polynomialToBigIntegers(num, interpolatePolynomial);
+        return polynomialToBigIntegers(xArray.length, expectNum, interpolatePolynomial);
     }
 
     @Override
-    public int rootCoefficientNum(int num) {
-        assert num >= 1 : "# of points must be greater than or equal to 1: " + num;
-        return num + 1;
-    }
-
-    @Override
-    public BigInteger[] rootInterpolate(int num, BigInteger[] xArray, BigInteger y) {
-        assert num >= 1 && xArray.length <= num;
+    public BigInteger[] rootInterpolate(int expectNum, BigInteger[] xArray, BigInteger y) {
+        assert expectNum >= 1 && xArray.length <= expectNum : "num must be in range [0, " + expectNum + "]: " + xArray.length;
         if (xArray.length == 0) {
             // 返回随机多项式
-            BigInteger[] coefficients = new BigInteger[num + 1];
-            for (int index = 0; index < num; index++) {
+            BigInteger[] coefficients = new BigInteger[expectNum + 1];
+            for (int index = 0; index < expectNum; index++) {
                 coefficients[index] = BigIntegerUtils.randomNonNegative(p, secureRandom);
             }
             // 将最高位设置为1
-            coefficients[num] = BigInteger.ONE;
+            coefficients[expectNum] = BigInteger.ONE;
             return coefficients;
         }
         // 如果有插值数据，则继续插值
@@ -108,38 +97,37 @@ abstract class AbstractRingsZpPoly extends AbstractZpPoly {
             );
             polynomial = polynomial.multiply(linear);
         }
-        if (xArray.length < num) {
+        if (xArray.length < expectNum) {
             // 构造随机多项式
-            cc.redberry.rings.bigint.BigInteger[] prCoefficients = IntStream.range(0, num - xArray.length)
+            cc.redberry.rings.bigint.BigInteger[] prCoefficients = IntStream.range(0, expectNum - xArray.length)
                 .mapToObj(index -> new cc.redberry.rings.bigint.BigInteger(BigIntegerUtils.randomNonNegative(p, secureRandom)))
                 .toArray(cc.redberry.rings.bigint.BigInteger[]::new);
             UnivariatePolynomial<cc.redberry.rings.bigint.BigInteger> dummyPolynomial
                 = UnivariatePolynomial.create(finiteField, prCoefficients);
             // 把最高位设置为1
-            dummyPolynomial.set(num - xArray.length, finiteField.getOne());
+            dummyPolynomial.set(expectNum - xArray.length, finiteField.getOne());
             // 计算P_0(x) * P_r(x)
             polynomial = polynomial.multiply(dummyPolynomial);
         }
         cc.redberry.rings.bigint.BigInteger pointY = new cc.redberry.rings.bigint.BigInteger(y);
         polynomial = polynomial.add(UnivariatePolynomial.constant(finiteField, pointY));
 
-        return rootPolynomialToBigIntegers(num, polynomial);
+        return rootPolynomialToBigIntegers(xArray.length, expectNum, polynomial);
     }
 
     /**
      * 多项式插值，得到多项式f(x)，使得y = f(x)，返回多项式本身。
      *
-     * @param num    插值点数量。
      * @param xArray x数组。
      * @param yArray y数组。
      * @return 多项式。
      */
     protected abstract UnivariatePolynomial<cc.redberry.rings.bigint.BigInteger> polynomialInterpolate(
-        int num, BigInteger[] xArray, BigInteger[] yArray);
+        BigInteger[] xArray, BigInteger[] yArray);
 
     @Override
     public BigInteger evaluate(BigInteger[] coefficients, BigInteger x) {
-        assert coefficients.length >= 1;
+        assert coefficients.length >= 1 : "coefficient num must be greater than or equal to 1: " + coefficients.length;
         for (BigInteger coefficient : coefficients) {
             assert validPoint(coefficient);
         }
@@ -170,8 +158,8 @@ abstract class AbstractRingsZpPoly extends AbstractZpPoly {
             .toArray(BigInteger[]::new);
     }
 
-    private BigInteger[] polynomialToBigIntegers(int num, UnivariatePolynomial<cc.redberry.rings.bigint.BigInteger> polynomial) {
-        BigInteger[] coefficients = new BigInteger[num];
+    protected BigInteger[] polynomialToBigIntegers(int pointNum, int expectNum, UnivariatePolynomial<cc.redberry.rings.bigint.BigInteger> polynomial) {
+        BigInteger[] coefficients = new BigInteger[coefficientNum(pointNum, expectNum)];
         // 低阶系数正常拷贝
         IntStream.range(0, polynomial.degree() + 1).forEach(degreeIndex -> coefficients[degreeIndex]
             = BigIntegerUtils.byteArrayToBigInteger(polynomial.get(degreeIndex).toByteArray())
@@ -184,8 +172,8 @@ abstract class AbstractRingsZpPoly extends AbstractZpPoly {
         return coefficients;
     }
 
-    private BigInteger[] rootPolynomialToBigIntegers(int num, UnivariatePolynomial<cc.redberry.rings.bigint.BigInteger> polynomial) {
-        BigInteger[] coefficients = new BigInteger[num + 1];
+    private BigInteger[] rootPolynomialToBigIntegers(int pointNum, int expectNum, UnivariatePolynomial<cc.redberry.rings.bigint.BigInteger> polynomial) {
+        BigInteger[] coefficients = new BigInteger[rootCoefficientNum(pointNum, expectNum)];
         // 低阶系数正常拷贝
         IntStream.range(0, polynomial.degree() + 1).forEach(degreeIndex -> coefficients[degreeIndex]
             = BigIntegerUtils.byteArrayToBigInteger(polynomial.get(degreeIndex).toByteArray())

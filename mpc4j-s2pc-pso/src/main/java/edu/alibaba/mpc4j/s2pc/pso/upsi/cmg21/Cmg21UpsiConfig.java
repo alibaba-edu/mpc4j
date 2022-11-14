@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pso.upsi.cmg21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.MpOprfConfig;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
@@ -21,6 +22,20 @@ public class Cmg21UpsiConfig implements UpsiConfig {
 
     public Cmg21UpsiConfig(Builder builder) {
         mpOprfConfig = builder.mpOprfConfig;
+        EnvType envType = mpOprfConfig.getEnvType();
+        assert (!envType.equals(EnvType.STANDARD_JDK)) && (!envType.equals(EnvType.INLAND_JDK)) :
+            "Protocol using " + CommonConstants.MPC4J_NATIVE_FHE_NAME
+                + " must not be " + EnvType.STANDARD_JDK.name() + " or " + EnvType.INLAND_JDK.name()
+                + ": " + envType.name();
+    }
+
+    @Override
+    public void setEnvType(EnvType envType) {
+        if (envType.equals(EnvType.STANDARD_JDK) || envType.equals(EnvType.INLAND_JDK)) {
+            throw new IllegalArgumentException("Protocol using " + CommonConstants.MPC4J_NATIVE_FHE_NAME
+                + " must not be " + EnvType.STANDARD_JDK.name() + " or " + EnvType.INLAND_JDK.name()
+                + ": " + envType.name());
+        }
     }
 
     @Override

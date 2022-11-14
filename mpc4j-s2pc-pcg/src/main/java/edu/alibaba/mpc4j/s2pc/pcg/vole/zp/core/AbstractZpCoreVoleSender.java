@@ -4,8 +4,8 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -24,7 +24,15 @@ public abstract class AbstractZpCoreVoleSender extends AbstractSecureTwoPartyPto
     /**
      * 素数域Zp
      */
-    protected BigInteger prime;
+    protected Zp zp;
+    /**
+     * 有限域比特长度
+     */
+    protected int l;
+    /**
+     * 质数字节长度
+     */
+    protected int primeByteLength;
     /**
      * 最大数量
      */
@@ -49,8 +57,10 @@ public abstract class AbstractZpCoreVoleSender extends AbstractSecureTwoPartyPto
     }
 
     protected void setInitInput(BigInteger prime, int maxNum) {
-        assert prime.isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "input prime is not a prime: " + prime;
-        this.prime = prime;
+        zp = ZpFactory.createInstance(envType, prime);
+        l = zp.getL();
+        primeByteLength = zp.getPrimeByteLength();
+        assert maxNum > 0 : "max num must be greater than 0: " + maxNum;
         this.maxNum = maxNum;
         initialized = false;
     }
@@ -63,8 +73,7 @@ public abstract class AbstractZpCoreVoleSender extends AbstractSecureTwoPartyPto
         num = x.length;
         this.x = Arrays.stream(x)
             .peek(xi -> {
-                assert BigIntegerUtils.greaterOrEqual(xi, BigInteger.ZERO) && BigIntegerUtils.less(xi, prime)
-                    : "xi must be in range [0, " + prime + "): " + xi;
+                assert zp.validateElement(xi) : "xi must be in range [0, " + zp.getPrime() + "): " + xi;
             })
             .toArray(BigInteger[]::new);
         extraInfo++;

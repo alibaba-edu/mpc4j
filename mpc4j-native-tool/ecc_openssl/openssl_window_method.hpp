@@ -73,7 +73,7 @@ public:
     }
 
     bool powArray(EC_POINT *z, uint64_t *y, size_t bitLength) const {
-        for (int i = 0; i < (bitLength + (1 << 6) - 1) >> 6; i++) {
+        for (size_t i = 0; i < (bitLength + (1 << 6) - 1) >> 6; i++) {
             // Little-endian to Big-endian
             y[i] = __builtin_bswap64(y[i]);
         }

@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.common.tool.polynomial.zp;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.univar.UnivariateInterpolation;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp.ZpPolyFactory.ZpPolyType;
 
 import java.util.Arrays;
@@ -17,7 +16,7 @@ import java.util.Arrays;
 class RingsLagrangeZpPoly extends AbstractRingsZpPoly {
 
     RingsLagrangeZpPoly(int l) {
-        super(l, ZpManager.getFiniteField(l));
+        super(l);
     }
 
     @Override
@@ -26,9 +25,7 @@ class RingsLagrangeZpPoly extends AbstractRingsZpPoly {
     }
 
     @Override
-    protected UnivariatePolynomial<BigInteger> polynomialInterpolate(int num,
-                                                                     java.math.BigInteger[] xArray,
-                                                                     java.math.BigInteger[] yArray) {
+    protected UnivariatePolynomial<BigInteger> polynomialInterpolate(java.math.BigInteger[] xArray, java.math.BigInteger[] yArray) {
         // 转换成多项式点
         BigInteger[] points = Arrays.stream(xArray)
             .map(BigInteger::new)

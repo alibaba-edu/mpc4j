@@ -202,32 +202,42 @@ public class BinaryUtils {
     }
 
     /**
-     * 给定字节数组，返回指定位置所对应的布尔值，大端表示。
+     * Get the i'th bit of a byte array, big-endian representation.
+     * For example:
+     * <p><ul>
+     * <li> the 0'th bit is a byte array is the most significant bit bit in the 0'th byte. </li>
+     * <li> the 7'th bit is a byte array is the least significant bit bit in the 0'th byte. </li>
+     * <li> the 8'th bit is a byte array is the most significant bit in the 1'th byte. </li>
+     * </ul></p>
      *
-     * @param byteArray 字节数组。
-     * @param position  位置。
-     * @return 位置对应的布尔值。
+     * @param byteArray the byte array.
+     * @param i         the bit index.
+     * @return the value of the i'th bit in byteArray.
      */
-    public static boolean getBoolean(final byte[] byteArray, final int position) {
-        assert position >= 0 && position < byteArray.length * Byte.SIZE
-            : "position must be in range [0, " + byteArray.length * Byte.SIZE + "): " + position;
-        int byteIndex = position >> 3;
-        int binaryIndex = position & 0x07;
-        return (byteArray[byteIndex] & BYTE_BOOLEAN_TRUE_TABLE[binaryIndex]) != 0;
+    public static boolean getBoolean(final byte[] byteArray, final int i) {
+        assert i >= 0 && i < byteArray.length * Byte.SIZE
+            : "i must be in range [0, " + byteArray.length * Byte.SIZE + "): " + i;
+        return (byteArray[i >> 3] & BYTE_BOOLEAN_TRUE_TABLE[i & 0x07]) != 0;
     }
 
     /**
-     * 给定字节数组，将指定位置所对应的布尔值设置为给定的布尔值，大端表示。
+     * Set the i'th bit of a byte array, big-endian representation.
+     * For example:
+     * <p><ul>
+     * <li> the 0'th bit is a byte array is the most significant bit bit in the 0'th byte. </li>
+     * <li> the 7'th bit is a byte array is the least significant bit bit in the 0'th byte. </li>
+     * <li> the 8'th bit is a byte array is the most significant bit in the 1'th byte. </li>
+     * </ul></p>
      *
-     * @param byteArray    字节数组。
-     * @param position     位置。
-     * @param booleanValue 设置的布尔值。
+     * @param byteArray the byte array.
+     * @param i         the bit index.
+     * @param value     the set value of the i'th bit in byteArray.
      */
-    public static void setBoolean(byte[] byteArray, final int position, final boolean booleanValue) {
-        assert position >= 0 && position < byteArray.length * Byte.SIZE;
-        int byteIndex = position >> 3;
-        int binaryIndex = position & 0x07;
-        if (booleanValue) {
+    public static void setBoolean(byte[] byteArray, final int i, final boolean value) {
+        assert i >= 0 && i < byteArray.length * Byte.SIZE;
+        int byteIndex = i >> 3;
+        int binaryIndex = i & 0x07;
+        if (value) {
             byteArray[byteIndex] |= BYTE_BOOLEAN_TRUE_TABLE[binaryIndex];
         } else {
             byteArray[byteIndex] &= BYTE_BOOLEAN_FALSE_TABLE[binaryIndex];
@@ -235,23 +245,29 @@ public class BinaryUtils {
     }
 
     /**
-     * 给定字节数组，将指定位置所对应的布尔值设置为给定的布尔值，大端表示。
+     * Set all i'th bits of a byte array, big-endian representation.
+     * For example:
+     * <p><ul>
+     * <li> the 0'th bit is a byte array is the most significant bit bit in the 0'th byte. </li>
+     * <li> the 7'th bit is a byte array is the least significant bit bit in the 0'th byte. </li>
+     * <li> the 8'th bit is a byte array is the most significant bit in the 1'th byte. </li>
+     * </ul></p>
      *
-     * @param byteArray    字节数组。
-     * @param positions    位置。
-     * @param booleanValue 设置的布尔值。
+     * @param byteArray    the byte array.
+     * @param i            all bit indices.
+     * @param booleanValue the set value of all bit indices in byteArray.
      */
-    public static void setBoolean(byte[] byteArray, final int[] positions, final boolean booleanValue) {
+    public static void setBoolean(byte[] byteArray, final int[] i, final boolean booleanValue) {
         // 提前判断设置的数据，这样可以减少很多次判断操作
         if (booleanValue) {
-            Arrays.stream(positions).forEach(position -> {
+            Arrays.stream(i).forEach(position -> {
                 assert position >= 0 && position < byteArray.length * Byte.SIZE;
                 int byteIndex = position >> 3;
                 int binaryIndex = position & 0x07;
                 byteArray[byteIndex] |= BYTE_BOOLEAN_TRUE_TABLE[binaryIndex];
             });
         } else {
-            Arrays.stream(positions).forEach(position -> {
+            Arrays.stream(i).forEach(position -> {
                 assert position >= 0 && position < byteArray.length * Byte.SIZE;
                 int byteIndex = position >> 3;
                 int binaryIndex = position & 0x07;

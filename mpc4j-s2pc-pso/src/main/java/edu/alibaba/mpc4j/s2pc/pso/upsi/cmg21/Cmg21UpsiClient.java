@@ -6,8 +6,8 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64Factory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -136,7 +136,7 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
 
         stopWatch.start();
         // 客户端生成BFV算法密钥和参数
-        List<byte[]> encryptionParams = Cmg21UpsiNativeClient.genEncryptionParameters(
+        List<byte[]> encryptionParams = Cmg21UpsiNativeUtils.genEncryptionParameters(
             params.getPolyModulusDegree(), params.getPlainModulus(), params.getCoeffModulusBits()
         );
         List<byte[]> fheParams = encryptionParams.subList(0, 2);
@@ -155,7 +155,7 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
         List<long[][]> encodedQuery = encodeQuery();
         Stream<long[][]> encodeStream = parallel ? encodedQuery.stream().parallel() : encodedQuery.stream();
         List<byte[]> queryPayload = encodeStream
-            .map(i -> Cmg21UpsiNativeClient.generateQuery(
+            .map(i -> Cmg21UpsiNativeUtils.generateQuery(
                 encryptionParams.get(0), encryptionParams.get(2), encryptionParams.get(3), i))
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
@@ -179,7 +179,7 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
         // 客户端解密密文匹配结果
         Stream<byte[]> responseStream = parallel ? responsePayload.stream().parallel() : responsePayload.stream();
         ArrayList<long[]> decodedResponse = responseStream
-            .map(i -> Cmg21UpsiNativeClient.decodeReply(encryptionParams.get(0), encryptionParams.get(3), i))
+            .map(i -> Cmg21UpsiNativeUtils.decodeReply(encryptionParams.get(0), encryptionParams.get(3), i))
             .collect(Collectors.toCollection(ArrayList::new));
         Set<T> intersectionSet = recoverPsiResult(decodedResponse, oprfMap);
         stopWatch.stop();

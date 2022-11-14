@@ -9,6 +9,12 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
  * @date 2022/01/15
  */
 public class Gf2kFactory {
+    /**
+     * 私有构造函数
+     */
+    private Gf2kFactory() {
+        // empty
+    }
 
     /**
      * GF(2^128)运算类型
@@ -30,13 +36,6 @@ public class Gf2kFactory {
          * Rings实现的GF(2^128)运算
          */
         RINGS,
-    }
-
-    /**
-     * 私有构造函数
-     */
-    private Gf2kFactory() {
-        // empty
     }
 
     /**

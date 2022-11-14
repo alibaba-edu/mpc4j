@@ -203,4 +203,48 @@ public class DenseBitMatrixTest {
             Assert.assertEquals(origin, recover);
         }
     }
+
+    @Test
+    public void testLextMul() {
+        for (int rows : SIZES) {
+            for (int columns : SIZES) {
+                testLextMul(rows, columns);
+            }
+        }
+    }
+
+    private void testLextMul(int rows, int columns) {
+        for (int round = 0; round < ROUND; round++) {
+            DenseBitMatrix a = DenseBitMatrixTestUtils.createRandom(rows, rows, SECURE_RANDOM);
+            DenseBitMatrix b = DenseBitMatrixTestUtils.createRandom(rows, columns, SECURE_RANDOM);
+            // 测试方法： (A^T*B)^T = (A.toArrays())*B
+            DenseBitMatrix aTranspose = a.transpose(EnvType.STANDARD_JDK, false);
+            byte[][] expectArray = aTranspose.multiply(b).transpose(EnvType.STANDARD_JDK, false).toByteArrays();
+            byte[][] byteVectorActualArray = b.lExtMul(a.toByteArrays());
+            Assert.assertArrayEquals(expectArray, byteVectorActualArray);
+        }
+    }
+
+    @Test
+    public void testLextMulAddi(){
+        for (int rows : SIZES) {
+            for (int columns : SIZES) {
+                testLextMulAddi(rows, columns);
+            }
+        }
+    }
+
+    private void testLextMulAddi(int rows, int columns) {
+        for (int round = 0; round < ROUND; round++) {
+            DenseBitMatrix a = DenseBitMatrixTestUtils.createRandom(rows, rows, SECURE_RANDOM);
+            DenseBitMatrix b = DenseBitMatrixTestUtils.createRandom(rows, columns, SECURE_RANDOM);
+            DenseBitMatrix c = DenseBitMatrixTestUtils.createRandom(rows, columns, SECURE_RANDOM);
+            // 测试方法： ((A^T*B) + C)^T = (A.toArrays())*B + C^T.toArray()
+            DenseBitMatrix aTranspose = a.transpose(EnvType.STANDARD_JDK, false);
+            byte[][] expectArray = aTranspose.multiply(b).add(c).transpose(EnvType.STANDARD_JDK, false).toByteArrays();
+            byte[][] byteVectorActualArray = c.transpose(EnvType.STANDARD_JDK, false).toByteArrays();
+            b.lExtMulAddi(a.toByteArrays(), byteVectorActualArray);
+            Assert.assertArrayEquals(expectArray, byteVectorActualArray);
+        }
+    }
 }

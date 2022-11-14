@@ -51,6 +51,12 @@ public class CacheCotConfig implements CotConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        ncCotConfig.setEnvType(envType);
+        preCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return ncCotConfig.getEnvType();
     }

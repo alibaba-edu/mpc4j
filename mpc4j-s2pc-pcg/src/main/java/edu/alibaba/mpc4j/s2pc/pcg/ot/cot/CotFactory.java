@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache.CacheCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache.CacheCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache.CacheCotSender;
@@ -16,7 +17,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotSender;
  * @author Weiran Liu
  * @date 2022/7/13
  */
-public class CotFactory {
+public class CotFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

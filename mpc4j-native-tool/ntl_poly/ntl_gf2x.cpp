@@ -47,7 +47,7 @@ void gf2x_interpolate(uint64_t lBytes, uint64_t num, std::vector<uint8_t*> &setX
     polynomial = polynomial + dummy_polynomial * root_polynomial;
     // 构建返回系数
     coeffs.resize(static_cast<unsigned long>(NTL::deg(polynomial) + 1));
-    for (int i = 0; i < coeffs.size(); i++) {
+    for (uint32_t i = 0; i < coeffs.size(); i++) {
         // get the coefficient polynomial
         temp = NTL::coeff(polynomial, i);
         coeffs[i] = new uint8_t [lBytes];
@@ -76,7 +76,7 @@ void gf2x_root_interpolate(uint64_t lBytes, uint64_t num, std::vector<uint8_t*> 
     NTL::GF2EX polynomial = e + dummy_polynomial * root_polynomial;
     // 构建返回系数
     coeffs.resize(NTL::deg(polynomial) + 1);
-    for (int i = 0; i < coeffs.size(); i++) {
+    for (uint32_t i = 0; i < coeffs.size(); i++) {
         // get the coefficient polynomial
         e = NTL::coeff(polynomial, i);
         coeffs[i] = new uint8_t [lBytes];

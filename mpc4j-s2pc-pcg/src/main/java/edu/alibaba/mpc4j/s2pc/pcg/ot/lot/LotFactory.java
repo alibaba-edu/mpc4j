@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.lot;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 
 /**
  * 2^l选1-OT协议工厂类。
@@ -10,7 +11,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
  * @author Weiran Liu
  * @date 2022/5/23
  */
-public class LotFactory {
+public class LotFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

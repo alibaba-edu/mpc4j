@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.polynomial.zp64;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64Manager;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Manager;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 import java.math.BigInteger;

@@ -50,7 +50,7 @@ public class Zp64PolyFactory {
             case RINGS_LAGRANGE:
                 return new RingsLagrangeZp64Poly(l);
             default:
-                throw new IllegalArgumentException("Invalid Zp64PolyType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + Zp64PolyType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -70,7 +70,7 @@ public class Zp64PolyFactory {
             case INLAND_JDK:
                 return createInstance(Zp64PolyType.RINGS_NEWTON, l);
             default:
-                throw new IllegalArgumentException("Invalid EnvType" + envType.name());
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }
     }
 
@@ -90,7 +90,7 @@ public class Zp64PolyFactory {
             case RINGS_LAGRANGE:
                 return new RingsLagrangeZp64Poly(p);
             default:
-                throw new IllegalArgumentException("Invalid Zp64PolyType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + Zp64PolyType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -110,7 +110,7 @@ public class Zp64PolyFactory {
             case INLAND_JDK:
                 return createInstance(Zp64PolyType.RINGS_NEWTON, p);
             default:
-                throw new IllegalArgumentException("Invalid EnvType" + envType.name());
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }
     }
 }

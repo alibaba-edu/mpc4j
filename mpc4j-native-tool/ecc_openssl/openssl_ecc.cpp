@@ -27,7 +27,7 @@ void stringSetToBnSet(std::vector<std::string> &stringSet, std::vector<BIGNUM*> 
         BN_free(bn);
     }
     bnSet.resize(stringSet.size());
-    for (uint64_t index = 0; index < stringSet.size(); index++) {
+    for (std::vector<BIGNUM*>::size_type index = 0; index < stringSet.size(); index++) {
         bnSet[index] = BN_new();
         bnFromString(stringSet[index], bnSet[index]);
     }
@@ -35,7 +35,7 @@ void stringSetToBnSet(std::vector<std::string> &stringSet, std::vector<BIGNUM*> 
 
 void pointSetToStringSet(std::vector<EC_POINT*> &pointSet, std::vector<std::string> &stringSet, BN_CTX *ctx) {
     stringSet.resize(pointSet.size());
-    for (uint64_t index = 0; index < stringSet.size(); index++) {
+    for (std::vector<std::string>::size_type index = 0; index < stringSet.size(); index++) {
         stringSet[index] = pointToString(pointSet[index], ctx);
         EC_POINT_free(pointSet[index]);
     }
@@ -105,7 +105,7 @@ jobjectArray openssl_fixed_point_multiply(JNIEnv *env, jobject jWindowHandler, j
     auto *windowHandler = (WindowMethod *) (*env).GetDirectBufferAddress(jWindowHandler);
     // 定点计算
     std::vector<EC_POINT*> pointSet(bnSet.size());
-    for (uint64_t index = 0; index < bnSet.size(); index++) {
+    for (std::vector<EC_POINT*>::size_type index = 0; index < bnSet.size(); index++) {
         pointSet[index] = EC_POINT_new(openssl_ec_group);
         (*windowHandler).multiply(pointSet[index], bnSet[index]);
         BN_free(bnSet[index]);
@@ -165,7 +165,7 @@ jobjectArray openssl_multiply(JNIEnv *env, jstring jPointString, jobjectArray jB
     bnStringSet.clear();
     // 计算乘法
     std::vector<EC_POINT*> pointMulSet(bnSet.size());
-    for (uint64_t index = 0; index < bnSet.size(); index++) {
+    for (std::vector<EC_POINT*>::size_type index = 0; index < bnSet.size(); index++) {
         pointMulSet[index] = EC_POINT_new(openssl_ec_group);
         EC_POINT_mul(openssl_ec_group, pointMulSet[index], nullptr, point, bnSet[index], nullptr);
         BN_free(bnSet[index]);

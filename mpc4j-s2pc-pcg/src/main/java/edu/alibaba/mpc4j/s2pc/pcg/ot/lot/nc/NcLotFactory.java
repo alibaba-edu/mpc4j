@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.lot.nc;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.nc.direct.DirectNcLotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.nc.direct.DirectNcLotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.nc.direct.DirectNcLotSender;
@@ -13,7 +14,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.nc.direct.DirectNcLotSender;
  * @author Hanwen Feng
  * @date 2022/08/16
  */
-public class NcLotFactory {
+public class NcLotFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

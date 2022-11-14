@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.psi;
 
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psi.hfh99.*;
 import edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16.Kkrt16PsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16.Kkrt16PsiConfig;
@@ -13,7 +14,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16.Kkrt16PsiServer;
  * @author Weiran Liu
  * @date 2022/9/19
  */
-public class PsiFactory {
+public class PsiFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

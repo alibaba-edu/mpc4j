@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirFactory;
@@ -13,17 +14,11 @@ import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirFactory;
  */
 public class Cmg21KwPirConfig implements KwPirConfig {
     /**
-     * 环境类型
-     */
-    private final EnvType envType;
-    /**
      * 是否使用压缩椭圆曲线编码
      */
     private final boolean compressEncode;
 
-
     public Cmg21KwPirConfig(Builder builder) {
-        this.envType = builder.envType;
         compressEncode = builder.compressEncode;
     }
 
@@ -33,8 +28,17 @@ public class Cmg21KwPirConfig implements KwPirConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        if (envType.equals(EnvType.STANDARD_JDK) || envType.equals(EnvType.INLAND_JDK)) {
+            throw new IllegalArgumentException("Protocol using " + CommonConstants.MPC4J_NATIVE_FHE_NAME
+                + " must not be " + EnvType.STANDARD_JDK.name() + " or " + EnvType.INLAND_JDK.name()
+                + ": " + envType.name());
+        }
+    }
+
+    @Override
     public EnvType getEnvType() {
-        return envType;
+        return EnvType.STANDARD;
     }
 
     public boolean getCompressEncode() {
@@ -48,22 +52,12 @@ public class Cmg21KwPirConfig implements KwPirConfig {
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Cmg21KwPirConfig> {
         /**
-         * 环境类型
-         */
-        private EnvType envType;
-        /**
          * 是否使用压缩椭圆曲线编码
          */
         private boolean compressEncode;
 
         public Builder() {
-            envType = EnvType.STANDARD;
             compressEncode = true;
-        }
-
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
         }
 
         public Builder setCompressEncode(boolean compressEncode) {

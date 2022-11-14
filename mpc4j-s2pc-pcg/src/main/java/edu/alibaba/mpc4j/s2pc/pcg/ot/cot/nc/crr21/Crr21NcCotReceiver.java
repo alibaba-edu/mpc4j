@@ -9,6 +9,7 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCoder;
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
+import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreator;
 import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorFactory;
 import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
@@ -96,28 +97,28 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         // 重新初始化时需要清空之前存留的输出
         rCotReceiverOutput = null;
 
+        // 初始化CRR21的编码器。
         stopWatch.start();
-        LpnParams lpnParams = Crr21NcCotPtoDesc.getLpnParams(mspCotConfig, codeType, num);
+        LdpcCreator ldpcCreator = LdpcCreatorFactory
+            .createLdpcCreator(codeType, LongUtils.ceilLog2(num, Crr21NcCotPtoDesc.MIN_LOG_N));
+        LpnParams lpnParams = ldpcCreator.getLpnParams();
+        ldpcCoder = ldpcCreator.createLdpcCoder();
+        ldpcCoder.setParallel(parallel);
+        stopWatch.stop();
+        long encoderInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        info("{}{} Recv. Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), encoderInitTime);
+
+        // 初始化MSP-COT协议
+        stopWatch.start();
         iterationN = lpnParams.getN();
         iterationT = lpnParams.getT();
-        // 初始化MSP-COT协议
         mspCotReceiver.init(iterationT, iterationN);
         preCotSize = MspCotFactory.getPrecomputeNum(mspCotConfig, iterationT, iterationN);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
-
-        // 初始化CRR21的编码器。
-        stopWatch.start();
-        ldpcCoder = LdpcCreatorFactory
-            .createLdpcCreator(codeType, LongUtils.ceilLog2(num, Crr21NcCotPtoDesc.MIN_LOG_N))
-            .createLdpcCoder();
-        ldpcCoder.setParallel(parallel);
-        stopWatch.stop();
-        long encoderInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Recv. Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), encoderInitTime);
+        info("{}{} Recv. Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
 
         initialized = true;
         info("{}{} Recv. Init end", ptoBeginLogPrefix, getPtoDesc().getPtoName());

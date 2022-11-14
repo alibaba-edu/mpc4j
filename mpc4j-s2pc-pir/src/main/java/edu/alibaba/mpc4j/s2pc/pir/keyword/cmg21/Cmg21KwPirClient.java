@@ -15,8 +15,8 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipher;
 import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipherFactory;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64Factory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
@@ -42,11 +42,6 @@ import static edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinF
  * @date 2022/6/20
  */
 public class Cmg21KwPirClient<T> extends AbstractKwPirClient<T> {
-
-    static {
-        System.loadLibrary(CommonConstants.MPC4J_NATIVE_FHE_NAME);
-    }
-
     /**
      * 流密码
      */
@@ -148,7 +143,7 @@ public class Cmg21KwPirClient<T> extends AbstractKwPirClient<T> {
 
         stopWatch.start();
         // 客户端生成BFV算法密钥和参数
-        List<byte[]> fheParams = Cmg21KwPirNativeClient.genEncryptionParameters(
+        List<byte[]> fheParams = Cmg21KwPirNativeUtils.genEncryptionParameters(
             params.getPolyModulusDegree(), params.getPlainModulus(), params.getCoeffModulusBits()
         );
         DataPacketHeader fheParamsHeader = new DataPacketHeader(
@@ -168,7 +163,7 @@ public class Cmg21KwPirClient<T> extends AbstractKwPirClient<T> {
         Stream<long[][]> encodedQueryStream = encodedQueryList.stream();
         encodedQueryStream = parallel ? encodedQueryStream.parallel() : encodedQueryStream;
         List<byte[]> encryptedQueryList = encodedQueryStream
-            .map(i -> Cmg21KwPirNativeClient.generateQuery(fheParams.get(0), fheParams.get(2), fheParams.get(3), i))
+            .map(i -> Cmg21KwPirNativeUtils.generateQuery(fheParams.get(0), fheParams.get(2), fheParams.get(3), i))
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
         DataPacketHeader clientQueryDataPacketHeader = new DataPacketHeader(
@@ -199,12 +194,12 @@ public class Cmg21KwPirClient<T> extends AbstractKwPirClient<T> {
         Stream<byte[]> keywordResponseStream = keywordResponsePayload.stream();
         keywordResponseStream = parallel ? keywordResponseStream.parallel() : keywordResponseStream;
         ArrayList<long[]> decryptedKeywordResponse = keywordResponseStream
-            .map(i -> Cmg21KwPirNativeClient.decodeReply(fheParams.get(0), fheParams.get(3), i))
+            .map(i -> Cmg21KwPirNativeUtils.decodeReply(fheParams.get(0), fheParams.get(3), i))
             .collect(Collectors.toCollection(ArrayList::new));
         Stream<byte[]> labelResponseStream = labelResponsePayload.stream();
         labelResponseStream = parallel ? labelResponseStream.parallel() : labelResponseStream;
         ArrayList<long[]> decryptedLabelResponse = labelResponseStream
-            .map(i -> Cmg21KwPirNativeClient.decodeReply(fheParams.get(0), fheParams.get(3), i))
+            .map(i -> Cmg21KwPirNativeUtils.decodeReply(fheParams.get(0), fheParams.get(3), i))
             .collect(Collectors.toCollection(ArrayList::new));
         Map<T, ByteBuffer> pirResult = recoverPirResult(decryptedKeywordResponse, decryptedLabelResponse, prfKeywordMap);
         stopWatch.stop();

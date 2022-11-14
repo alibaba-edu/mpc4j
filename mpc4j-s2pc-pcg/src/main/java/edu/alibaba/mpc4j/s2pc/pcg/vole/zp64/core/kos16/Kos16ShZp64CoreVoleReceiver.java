@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64Gadget;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Gadget;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtReceiver;
@@ -82,7 +82,7 @@ public class Kos16ShZp64CoreVoleReceiver extends AbstractZp64CoreVoleReceiver {
         zp64Gadget = new Zp64Gadget(zp64);
         l = zp64.getL();
         baseOtReceiver.init();
-        deltaBinary = zp64Gadget.decomposition(delta);
+        deltaBinary = zp64Gadget.bitDecomposition(delta);
         baseOtReceiverOutput = baseOtReceiver.receive(deltaBinary);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -140,7 +140,7 @@ public class Kos16ShZp64CoreVoleReceiver extends AbstractZp64CoreVoleReceiver {
         Stream<long[]> qMatrixStream = Arrays.stream(qMatrix);
         qMatrixStream = parallel ? qMatrixStream.parallel() : qMatrixStream;
         long[] q = qMatrixStream
-            .mapToLong(row -> zp64Gadget.composition(row))
+            .mapToLong(row -> zp64Gadget.innerProduct(row))
             .toArray();
         return Zp64VoleReceiverOutput.create(zp64.getPrime(), delta, q);
     }

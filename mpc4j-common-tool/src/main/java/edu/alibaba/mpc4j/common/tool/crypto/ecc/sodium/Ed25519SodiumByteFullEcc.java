@@ -25,20 +25,12 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
     }
 
     /**
-     * 椭圆曲线点字节长度
-     */
-    private static final int POINT_BYTE_LENGTH = Ed25519ByteEccUtils.POINT_BYTES;
-    /**
-     * 幂指数字节长度
-     */
-    private static final int SCALAR_BYTE_LENGTH = Ed25519ByteEccUtils.SCALAR_BYTES;
-    /**
      * 哈希函数
      */
     private final Hash hash;
 
     public Ed25519SodiumByteFullEcc() {
-        hash = HashFactory.createInstance(HashFactory.HashType.JDK_SHA256, POINT_BYTE_LENGTH);
+        hash = HashFactory.createInstance(HashFactory.HashType.JDK_SHA256, Ed25519ByteEccUtils.POINT_BYTES);
         Ed25519ByteEccUtils.precomputeBase();
     }
 
@@ -77,7 +69,7 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
 
     @Override
     public byte[] randomPoint(SecureRandom secureRandom) {
-        byte[] p = new byte[POINT_BYTE_LENGTH];
+        byte[] p = new byte[Ed25519ByteEccUtils.POINT_BYTES];
         boolean success = false;
         while (!success) {
             secureRandom.nextBytes(p);
@@ -85,8 +77,8 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
             success = Ed25519ByteEccUtils.validPoint(p);
         }
         // 需要乘以cofactor
-        byte[] r = new byte[POINT_BYTE_LENGTH];
-        Ed25519ByteEccUtils.scalarMultEncoded(Ed25519ByteEccUtils.SCALAR_COFACTOR, p, r);
+        byte[] r = new byte[Ed25519ByteEccUtils.POINT_BYTES];
+        Ed25519ByteEccUtils.scalarMulEncoded(Ed25519ByteEccUtils.SCALAR_COFACTOR, p, r);
         return r;
     }
 
@@ -103,26 +95,26 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
                 p[Ed25519ByteEccUtils.POINT_BYTES - 1] &= 0x7F;
             }
         }
-        byte[] r = new byte[POINT_BYTE_LENGTH];
-        Ed25519ByteEccUtils.scalarMultEncoded(Ed25519ByteEccUtils.SCALAR_COFACTOR, p, r);
+        byte[] r = new byte[Ed25519ByteEccUtils.POINT_BYTES];
+        Ed25519ByteEccUtils.scalarMulEncoded(Ed25519ByteEccUtils.SCALAR_COFACTOR, p, r);
         return r;
     }
 
     @Override
     public byte[] mul(byte[] p, byte[] k) {
-        assert k.length == SCALAR_BYTE_LENGTH;
+        assert k.length == Ed25519ByteEccUtils.SCALAR_BYTES;
         return nativeMul(p, k);
     }
 
     @Override
     public byte[] baseMul(byte[] k) {
-        assert k.length == SCALAR_BYTE_LENGTH;
+        assert k.length == Ed25519ByteEccUtils.SCALAR_BYTES;
         return nativeBaseMul(k);
     }
 
     @Override
     public byte[] add(byte[] p, byte[] q) {
-        assert p.length == POINT_BYTE_LENGTH && q.length == POINT_BYTE_LENGTH;
+        assert p.length == Ed25519ByteEccUtils.POINT_BYTES && q.length == Ed25519ByteEccUtils.POINT_BYTES;
         byte[] r = BytesUtils.clone(p);
         Ed25519ByteEccUtils.pointAdd(r, q);
         return r;
@@ -130,13 +122,13 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
 
     @Override
     public void addi(byte[] p, byte[] q) {
-        assert p.length == POINT_BYTE_LENGTH && q.length == POINT_BYTE_LENGTH;
+        assert p.length == Ed25519ByteEccUtils.POINT_BYTES && q.length == Ed25519ByteEccUtils.POINT_BYTES;
         Ed25519ByteEccUtils.pointAdd(p, q);
     }
 
     @Override
     public byte[] neg(byte[] p) {
-        assert p.length == POINT_BYTE_LENGTH;
+        assert p.length == Ed25519ByteEccUtils.POINT_BYTES;
         byte[] r = BytesUtils.clone(p);
         // 翻转符号位
         Ed25519ByteEccUtils.pointNegate(r);
@@ -145,13 +137,13 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
 
     @Override
     public void negi(byte[] p) {
-        assert p.length == POINT_BYTE_LENGTH;
+        assert p.length == Ed25519ByteEccUtils.POINT_BYTES;
         Ed25519ByteEccUtils.pointNegate(p);
     }
 
     @Override
     public byte[] sub(byte[] p, byte[] q) {
-        assert p.length == POINT_BYTE_LENGTH && q.length == POINT_BYTE_LENGTH;
+        assert p.length == Ed25519ByteEccUtils.POINT_BYTES && q.length == Ed25519ByteEccUtils.POINT_BYTES;
         byte[] r = BytesUtils.clone(p);
         Ed25519ByteEccUtils.pointSubtract(r, q);
         return r;
@@ -159,13 +151,13 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
 
     @Override
     public void subi(byte[] p, byte[] q) {
-        assert p.length == POINT_BYTE_LENGTH && q.length == POINT_BYTE_LENGTH;
+        assert p.length == Ed25519ByteEccUtils.POINT_BYTES && q.length == Ed25519ByteEccUtils.POINT_BYTES;
         Ed25519ByteEccUtils.pointSubtract(p, q);
     }
 
     @Override
     public byte[] mul(byte[] p, BigInteger k) {
-        assert p.length == POINT_BYTE_LENGTH;
+        assert p.length == Ed25519ByteEccUtils.POINT_BYTES;
         byte[] byteK = Ed25519ByteEccUtils.toByteK(k);
         return nativeMul(p, byteK);
     }
@@ -183,5 +175,15 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
     @Override
     public ByteEccFactory.ByteEccType getByteEccType() {
         return ByteEccFactory.ByteEccType.ED25519_SODIUM;
+    }
+
+    @Override
+    public int pointByteLength() {
+        return Ed25519ByteEccUtils.POINT_BYTES;
+    }
+
+    @Override
+    public int scalarByteLength() {
+        return Ed25519ByteEccUtils.SCALAR_BYTES;
     }
 }

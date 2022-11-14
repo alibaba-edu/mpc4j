@@ -119,7 +119,7 @@ public class DenseBitMatrixTestUtils {
      * @param secureRandom 随机状态。
      * @return 方阵。
      */
-    static SquareDenseBitMatrix createRandom(SquareDenseBitMatrixType type, int size, SecureRandom secureRandom) {
+    public static SquareDenseBitMatrix createRandom(SquareDenseBitMatrixType type, int size, SecureRandom secureRandom) {
         int byteSize = CommonUtils.getByteLength(size);
         byte[][] byteBitMatrix = IntStream.range(0, size)
             .mapToObj(rowIndex -> {
@@ -140,7 +140,7 @@ public class DenseBitMatrixTestUtils {
      * @param secureRandom 随机状态。
      * @return 稠密矩阵。
      */
-    static DenseBitMatrix createRandom(int rows, int columns, SecureRandom secureRandom) {
+    public static DenseBitMatrix createRandom(int rows, int columns, SecureRandom secureRandom) {
         int byteColumns = CommonUtils.getByteLength(columns);
         byte[][] byteBitMatrix = IntStream.range(0, rows)
             .mapToObj(rowIndex -> {

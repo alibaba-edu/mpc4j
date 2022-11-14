@@ -61,7 +61,7 @@ public class ZpPolyEfficiencyTest {
         // RINGS_LAGRANGE
         ZpPolyFactory.ZpPolyType.RINGS_LAGRANGE,
         // JDK_LAGRANGE
-        ZpPolyFactory.ZpPolyType.JDK_LAGRANGE
+        ZpPolyFactory.ZpPolyType.JDK_LAGRANGE,
     };
 
     @Test

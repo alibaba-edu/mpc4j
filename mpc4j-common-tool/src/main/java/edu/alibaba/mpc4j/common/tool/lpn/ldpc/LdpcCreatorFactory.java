@@ -41,13 +41,14 @@ public class LdpcCreatorFactory {
             case FULL:
                 return new FullLdpcCreator(codeType, ceilLogN);
             case ONLINE:
-                if (ceilLogN < 25 && ceilLogN > 13) {
+                try {
                     return new OnlineLdpcCreator(codeType, ceilLogN);
-                } else {
-                    throw new IllegalArgumentException("Type: " + type.name() + "is not ready for ceilLogN :" + ceilLogN);
+                } catch (IllegalStateException e) {
+                    System.out.println("Silver File: " + codeType.name() + "_" + ceilLogN + "is NOT ready. Starting Full LDPC Creator...");
+                    return new FullLdpcCreator(codeType, ceilLogN);
                 }
             default:
-                throw new IllegalArgumentException("Type: " + type.name() + "is not supported");
+                throw new IllegalArgumentException("Type: " + type.name() + " is not supported");
         }
     }
 
@@ -59,9 +60,13 @@ public class LdpcCreatorFactory {
      * @return LdpcCreator
      */
     public static LdpcCreator createLdpcCreator(LdpcCreatorUtils.CodeType codeType, int ceilLogN) {
-        if (ceilLogN >= 14 && ceilLogN <= 24) {
+        if (ceilLogN < LdpcCreatorUtils.MIN_LOG_N || ceilLogN > LdpcCreatorUtils.MAX_LOG_N) {
+            return new FullLdpcCreator(codeType, ceilLogN);
+        }
+        try {
             return new OnlineLdpcCreator(codeType, ceilLogN);
-        } else {
+        } catch (IllegalStateException e) {
+            System.out.println("Silver File: " + codeType.name() + "_" + ceilLogN + " is NOT ready. Starting Full LDPC Creator...");
             return new FullLdpcCreator(codeType, ceilLogN);
         }
     }

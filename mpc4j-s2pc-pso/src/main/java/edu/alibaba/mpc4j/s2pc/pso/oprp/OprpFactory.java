@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pso.oprp;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.aby.bc.BcFactory;
 import edu.alibaba.mpc4j.s2pc.pso.oprp.lowmc.LowMcOprpConfig;
 import edu.alibaba.mpc4j.s2pc.pso.oprp.lowmc.LowMcOprpReceiver;
@@ -14,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pso.oprp.lowmc.LowMcOprpSender;
  * @author Weiran Liu
  * @date 2022/02/11
  */
-public class OprpFactory {
+public class OprpFactory implements PtoFactory {
     /**
      * 私有构造函数
      */
@@ -51,7 +52,7 @@ public class OprpFactory {
                 return new LowMcOprpSender(senderRpc, receiverParty, (LowMcOprpConfig)config);
             case LOW_MC_INV:
             default:
-                throw new IllegalArgumentException("Invalid OprpType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + OprpType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -70,7 +71,7 @@ public class OprpFactory {
                 return new LowMcOprpReceiver(receiverRpc, senderParty, (LowMcOprpConfig)config);
             case LOW_MC_INV:
             default:
-                throw new IllegalArgumentException("Invalid OprpType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + OprpType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -93,7 +94,7 @@ public class OprpFactory {
             case COVERT:
             case MALICIOUS:
             default:
-                throw new IllegalArgumentException("Invalid SecurityModel: " + securityModel.name());
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

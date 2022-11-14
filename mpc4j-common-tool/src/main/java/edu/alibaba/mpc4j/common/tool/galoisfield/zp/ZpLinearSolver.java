@@ -2,7 +2,6 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.zp;
 
 import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.util.ArraysUtil;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.math.BigInteger;
@@ -21,13 +20,12 @@ import static cc.redberry.rings.linear.LinearSolver.SystemInfo.*;
  */
 public class ZpLinearSolver {
     /**
-     * 模数p
+     * Zp运算库
      */
-    private final BigInteger p;
+    private final Zp zp;
 
-    public ZpLinearSolver(BigInteger p) {
-        assert p.isProbablePrime(CommonConstants.STATS_BIT_LENGTH);
-        this.p = p;
+    public ZpLinearSolver(Zp zp) {
+        this.zp = zp;
     }
 
     /**
@@ -77,13 +75,13 @@ public class ZpLinearSolver {
             }
             // pivot within A and b
             for (int iRow = row + 1; iRow < nRows; ++iRow) {
-                BigInteger alpha = lhs[iRow][iColumn].multiply(lhs[row][iColumn].modInverse(p)).mod(p);
+                BigInteger alpha = zp.div(lhs[iRow][iColumn], lhs[row][iColumn]);
                 if (rhs != null) {
-                    rhs[iRow] = rhs[iRow].subtract(rhs[row].multiply(alpha)).mod(p);
+                    rhs[iRow] = zp.sub(rhs[iRow], zp.mul(rhs[row], alpha));
                 }
                 if (!alpha.equals(BigInteger.ZERO)) {
                     for (int iCol = iColumn; iCol < nColumns; ++iCol) {
-                        lhs[iRow][iCol] = lhs[iRow][iCol].subtract(alpha.multiply(lhs[row][iCol]).mod(p)).mod(p);
+                        lhs[iRow][iCol] = zp.sub(lhs[iRow][iCol], zp.mul(alpha, lhs[row][iCol]));
                     }
                 }
             }
@@ -111,7 +109,7 @@ public class ZpLinearSolver {
         if (rhs.length == 1) {
             // 如果只有一个约束条件，则方程变为ax = b，此时x = b * (a^-1)
             if (lhs[0].length == 1) {
-                result[0] = rhs[0].multiply(lhs[0][0].modInverse(p)).mod(p);
+                result[0] = zp.div(rhs[0], lhs[0][0]);
                 return Consistent;
             }
             if (solveIfUnderDetermined) {
@@ -123,7 +121,7 @@ public class ZpLinearSolver {
                 // 如果b != 0，则只需要考虑第一个约束条件
                 for (int i = 0; i < result.length; ++i) {
                     if (!lhs[0][i].equals(BigInteger.ZERO)) {
-                        result[i] = rhs[0].multiply(lhs[0][i].modInverse(p)).mod(p);
+                        result[i] = zp.div(rhs[0], lhs[0][i]);
                         return Consistent;
                     }
                 }
@@ -174,9 +172,9 @@ public class ZpLinearSolver {
             for (int i = nColumns - 1; i >= 0; i--) {
                 BigInteger sum = BigInteger.ZERO;
                 for (int j = i + 1; j < nColumns; j++) {
-                    sum = sum.add(result[j].multiply(lhs[i][j])).mod(p);
+                    sum = zp.add(sum, zp.mul(result[j], lhs[i][j]));
                 }
-                result[i] = rhs[i].subtract(sum).mod(p).multiply(lhs[i][i].modInverse(p)).mod(p);
+                result[i] = zp.div(zp.sub(rhs[i], sum), lhs[i][i]);
             }
             return Consistent;
         }
@@ -201,13 +199,13 @@ public class ZpLinearSolver {
             // scale current row
             BigInteger[] row = lhs[iRow];
             BigInteger val = row[iColumn];
-            BigInteger valInv = val.modInverse(p);
+            BigInteger valInv = zp.inv(val);
 
             for (int i = iColumn; i < nColumns; i++) {
-                row[i] = valInv.multiply(row[i]).mod(p);
+                row[i] = zp.mul(valInv, row[i]);
             }
 
-            rhs[iRow] = rhs[iRow].multiply(valInv).mod(p);
+            rhs[iRow] = zp.mul(rhs[iRow], valInv);
 
             // scale all rows before
             for (int i = 0; i < iRow; i++) {
@@ -217,9 +215,9 @@ public class ZpLinearSolver {
                     continue;
                 }
                 for (int j = iColumn; j < nColumns; ++j) {
-                    pRow[j] = pRow[j].subtract(v.multiply(row[j]).mod(p)).mod(p);
+                    pRow[j] = zp.sub(pRow[j], zp.mul(v, row[j]));
                 }
-                rhs[i] = rhs[i].subtract(rhs[iRow].multiply(v).mod(p)).mod(p);
+                rhs[i] = zp.sub(rhs[i], zp.mul(rhs[iRow], v));
             }
             if (!rhs[iRow].equals(BigInteger.ZERO) && lhs[iRow][iColumn].equals(BigInteger.ZERO)) {
                 return Inconsistent;

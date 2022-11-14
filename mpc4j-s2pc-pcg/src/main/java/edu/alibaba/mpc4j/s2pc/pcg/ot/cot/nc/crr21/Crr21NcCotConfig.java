@@ -46,6 +46,11 @@ public class Crr21NcCotConfig implements NcCotConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        mspCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return mspCotConfig.getEnvType();
     }

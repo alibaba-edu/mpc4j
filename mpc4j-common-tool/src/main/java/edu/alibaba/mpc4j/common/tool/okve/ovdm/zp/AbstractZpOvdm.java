@@ -1,6 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.okve.ovdm.zp;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpLinearSolver;
 
 import java.math.BigInteger;
@@ -26,9 +28,9 @@ public abstract class AbstractZpOvdm<T> implements ZpOvdm<T> {
      */
     final int mByteLength;
     /**
-     * 模数p
+     * Zp有限域
      */
-    protected final BigInteger prime;
+    protected final Zp zp;
     /**
      * Zp线性求解器
      */
@@ -38,12 +40,11 @@ public abstract class AbstractZpOvdm<T> implements ZpOvdm<T> {
      */
     protected final SecureRandom secureRandom;
 
-    protected AbstractZpOvdm(BigInteger prime, int n, int m) {
-        assert n > 0;
+    protected AbstractZpOvdm(EnvType envType, BigInteger prime, int n, int m) {
+        assert n > 0 : "n must be greater than 0: " + n;
         this.n = n;
-        assert prime.isProbablePrime(CommonConstants.STATS_BIT_LENGTH);
-        this.prime = prime;
-        zpLinearSolver = new ZpLinearSolver(prime);
+        zp = ZpFactory.createInstance(envType, prime);
+        zpLinearSolver = new ZpLinearSolver(zp);
         // 要求m >= n，且m可以被Byte.SIZE整除
         assert m >= n && m % Byte.SIZE == 0;
         this.m = m;
@@ -58,9 +59,4 @@ public abstract class AbstractZpOvdm<T> implements ZpOvdm<T> {
 
     @Override
     public int getM() { return m; }
-
-    @Override
-    public BigInteger getPrime() {
-        return prime;
-    }
 }

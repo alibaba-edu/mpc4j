@@ -33,6 +33,11 @@ public class Kos16ShZp64CoreVoleConfig implements Zp64CoreVoleConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        baseOtConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return baseOtConfig.getEnvType();
     }

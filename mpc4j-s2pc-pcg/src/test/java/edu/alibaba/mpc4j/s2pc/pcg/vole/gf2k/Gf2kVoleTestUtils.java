@@ -4,15 +4,13 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kVoleReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kVoleSenderOutput;
 import org.junit.Assert;
 
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
 /**
- * GF(2^128)-VOLE测试工具类。
+ * GK2K-VOLE测试工具类。
  *
  * @author Weiran Liu
  * @date 2022/6/9

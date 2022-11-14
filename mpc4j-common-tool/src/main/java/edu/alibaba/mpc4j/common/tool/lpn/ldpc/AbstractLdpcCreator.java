@@ -1,11 +1,20 @@
 package edu.alibaba.mpc4j.common.tool.lpn.ldpc;
 
+import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.ByteSquareDenseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.SquareDenseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.LowerTriangularSparseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.SparseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
-import edu.alibaba.mpc4j.common.tool.lpn.matrix.DenseMatrix;
-import edu.alibaba.mpc4j.common.tool.lpn.matrix.ExtremeSparseMatrix;
-import edu.alibaba.mpc4j.common.tool.lpn.matrix.SparseMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.ExtremeSparseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.io.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Objects;
+
 /**
  * LdpcCreator的抽象类，实现接口LdpcCreator。
  *
@@ -17,7 +26,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  * 矩阵 D，行 gap, 列 k - gap；
  * 矩阵 E，行 gap, 列 gap；
  * 矩阵 F，行 gap， 列 k - gap；
- * 以上矩阵均为稀疏矩阵 SparseMatrix，其中 D,F 大部分列为空，属于极度稀疏矩阵 ExtremeSparseMatrix。
+ * 以上矩阵均为稀疏矩阵 SparseMatrix，其中 D,F 大部分列为空，属于极度稀疏矩阵 ExtremeSparseBitMatrix。
  *
  * 此外，LdpcCoder 的转置编码计算 需要 矩阵 Ep = (F*C^{-1}*B）+ E)^{-1}。
  * LdpcCreator 需要根据指定输出OT数量和Ldpc 类型，生成上述矩阵及相关参数，用于创建 LdpcCoder。
@@ -31,36 +40,36 @@ public abstract class AbstractLdpcCreator implements LdpcCreator {
     /**
      * 需要生成的Ldpc 类型
      */
-    protected final LdpcCreatorUtils.CodeType codeType;
+    protected LdpcCreatorUtils.CodeType codeType;
     /**
      * 分块矩阵A
      */
-    protected SparseMatrix matrixA;
+    protected SparseBitMatrix matrixA;
     /**
      * 分块矩阵B
      */
-    protected SparseMatrix matrixB;
+    protected SparseBitMatrix matrixB;
     /**
      * 分块矩阵C
      */
-    protected SparseMatrix matrixC;
+    protected LowerTriangularSparseBitMatrix matrixC;
     /**
      * 分块矩阵D
      */
-    protected ExtremeSparseMatrix matrixD;
+    protected ExtremeSparseBitMatrix matrixD;
     /**
      * 分块矩阵F
      */
-    protected ExtremeSparseMatrix matrixF;
+    protected ExtremeSparseBitMatrix matrixF;
     /**
      * 矩阵Ep
      */
-    protected DenseMatrix matrixEp;
+    protected SquareDenseBitMatrix matrixEp;
     /**
      * Ldpc Encoder 最终生成的OT数量的对数。
      * 例如ceilLogN = 24, 则该Ldpc 可以产生 2^24的OT。
      */
-    protected final int ceilLogN;
+    protected int ceilLogN;
     /**
      * Ldpc 参数 gap
      */
@@ -85,23 +94,82 @@ public abstract class AbstractLdpcCreator implements LdpcCreator {
      */
     protected LpnParams lpnParams;
     /**
-     * 包私有构造函数
-     * @param codeType Ldpc类型
-     * @param ceilLogN 目标OT数量的对数
+     * 存储目录
      */
-    AbstractLdpcCreator(LdpcCreatorUtils.CodeType codeType, int ceilLogN) {
-        this.ceilLogN = ceilLogN;
-        this.codeType = codeType;
-        initParams();
-    }
+    protected static final String SILVER_RESOURCES_FILE_PATH = "silver" + File.separator + "Z2" + File.separator;
+    /**
+     * 存储文件后缀
+     */
+    protected static final String SILVER_RESOURCES_FILE_SURFFIX = ".txt";
     /**
      * 根据code类型，读取生成Ldpc参数信息。
      */
-    private void initParams() {
+    protected void initParams(LdpcCreatorUtils.CodeType codeType, int ceilLogN) {
+        this.ceilLogN = ceilLogN;
+        this.codeType = codeType;
         rightSeed = LdpcCreatorUtils.getRightSeed(codeType);
         leftSeed = LdpcCreatorUtils.getLeftSeed(codeType);
         gapValue = LdpcCreatorUtils.getGap(codeType);
         weight = LdpcCreatorUtils.getWeight(codeType);
+    }
+
+    /**
+     * 将lpn参数和矩阵ep写入文件
+     */
+    protected void writeToFile() {
+        String silverFileName = getFileName();
+        try {
+            File silverFile = new File(silverFileName);
+            if (silverFile.exists()) {
+                boolean deleted = silverFile.delete();
+                if (!deleted) {
+                    throw new IllegalStateException("File: " + silverFileName + " exists and cannot delete!");
+                }
+            }
+            silverFile.getParentFile().mkdirs();
+            FileWriter fileWriter = new FileWriter(silverFile);
+            PrintWriter printWriter = new PrintWriter(fileWriter, true);
+            // write lpn params
+            int[] lpnParaArray = {lpnParams.getN(), lpnParams.getK(), lpnParams.getT()};
+            printWriter.println(Base64.getEncoder().encodeToString(IntUtils.intArrayToByteArray(lpnParaArray)));
+            // write matrix Ep
+            Arrays.stream(matrixEp.toByteArrays()).forEach( byteArray ->
+                printWriter.println(Base64.getEncoder().encodeToString(byteArray))
+            );
+            printWriter.close();
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new IllegalStateException("Unknown IOException");
+        }
+    }
+
+    protected void initFromFile() {
+        String silverFileName = getFileName();
+        try {
+            InputStream silverInputStream = Objects.requireNonNull(
+                AbstractLdpcCreator.class.getClassLoader().getResourceAsStream(silverFileName)
+            );
+            BufferedReader silverBufferedReader = new BufferedReader(new InputStreamReader(silverInputStream));
+            // read lpnParams
+            int[] lpnArray = IntUtils.byteArrayToIntArray(Base64.getDecoder().decode(silverBufferedReader.readLine()));
+            assert lpnArray.length == 3;
+            lpnParams = LpnParams.uncheckCreate(lpnArray[0], lpnArray[1], lpnArray[2]);
+            // read matrixEp
+            byte[][] matrixEpArrays = new byte[gapValue][];
+            for (int rowIndex = 0; rowIndex < gapValue; rowIndex++) {
+                matrixEpArrays[rowIndex] = Base64.getDecoder().decode(silverBufferedReader.readLine());
+            }
+            matrixEp = ByteSquareDenseBitMatrix.fromDense(matrixEpArrays);
+            silverBufferedReader.close();
+            silverInputStream.close();
+        } catch (NullPointerException | IOException e) {
+            throw new IllegalStateException("File: " + silverFileName + " cannot be read.");
+        }
+    }
+
+    private String getFileName() {
+        return SILVER_RESOURCES_FILE_PATH + codeType.name() + "_" + ceilLogN + SILVER_RESOURCES_FILE_SURFFIX;
     }
 
     @Override

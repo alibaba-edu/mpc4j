@@ -6,6 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfFactory.DpprfType;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.ywl20.Ywl20DpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -60,13 +61,11 @@ public class DpprfTest {
         Collection<Object[]> configurationParams = new ArrayList<>();
         // YWL20 (semi-honest)
         configurationParams.add(new Object[] {
-            DpprfFactory.DpprfType.YWL20.name() + " (semi-honest)",
-            new Ywl20DpprfConfig.Builder(SecurityModel.SEMI_HONEST).build(),
+            DpprfType.YWL20.name() + " (semi-honest)", new Ywl20DpprfConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
         // YWL20 (malicious)
         configurationParams.add(new Object[] {
-            DpprfFactory.DpprfType.YWL20.name() + " (malicious)",
-            new Ywl20DpprfConfig.Builder(SecurityModel.MALICIOUS).build(),
+            DpprfType.YWL20.name() + " (malicious)", new Ywl20DpprfConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
 
         return configurationParams;

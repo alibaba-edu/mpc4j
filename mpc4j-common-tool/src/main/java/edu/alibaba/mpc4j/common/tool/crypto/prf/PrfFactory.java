@@ -54,13 +54,12 @@ public class PrfFactory {
             case BC_SM4_CBC:
                 return new BcSm4CbcPrf(outputByteLength);
             default:
-                throw new IllegalArgumentException("Invalid PrfType " + prfType.name());
+                throw new IllegalArgumentException("Invalid " + PrfType.class.getSimpleName() + ": " + prfType.name());
         }
     }
 
     /**
      * 创建伪随机函数实例。经过测试，在任意输出字节长度下，JDK_AES_CBC的性能都是最优的。
-     *
      *
      * @param envType 环境类型。
      * @param outputByteLength 输出字节长度。
@@ -75,7 +74,7 @@ public class PrfFactory {
             case INLAND_JDK:
                 return createInstance(PrfType.BC_SM4_CBC, outputByteLength);
             default:
-                throw new IllegalArgumentException("Invalid EnvType " + envType.name());
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }
     }
 }

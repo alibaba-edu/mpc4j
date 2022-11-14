@@ -4,14 +4,13 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
-import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ShZpCoreVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.ZpCoreVoleFactory.ZpCoreVoleType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -62,10 +61,9 @@ public class ZpCoreVoleTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
         // KOS16_SEMI_HONEST
-        configurations.add(new Object[]{
-            ZpCoreVoleFactory.ZpCoreVoleType.KOS16_SEMI_HONEST.name(),
-            new Kos16ShZpCoreVoleConfig.Builder().setBaseOtConfig(new Np01BaseOtConfig.Builder().setEnvType(EnvType.STANDARD_JDK).build()).build(),
-        });
+        configurations.add(
+            new Object[]{ZpCoreVoleType.KOS16_SEMI_HONEST.name(), new Kos16ShZpCoreVoleConfig.Builder().build(),}
+        );
 
         return configurations;
     }

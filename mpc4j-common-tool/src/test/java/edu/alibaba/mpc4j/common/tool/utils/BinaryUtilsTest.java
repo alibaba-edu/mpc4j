@@ -144,16 +144,16 @@ public class BinaryUtilsTest {
     public void testConstantBinaryByteArray() {
         // 验证转换大小端的正确性
         testConstantBinaryToByteArray(
-            // 0100,0011 <-> 0x43
+            // 01000011 <-> 0x43
             new boolean[] {false, true, false, false, false, false, true, true,},
-            new byte[] {0x43,}
+            new byte[] {0b01000011,}
         );
         testConstantBinaryToByteArray(
-            // 0011,1010,0100,0011 <-> 0x3A,0x43
+            // 00111010,01000011 <-> 0x3A,0x43
             new boolean[] {
                 false, false, true, true, true, false, true, false,
                 false, true, false, false, false, false, true, true,},
-            new byte[] {0x3A, 0x43,}
+            new byte[] {0b00111010, 0b01000011,}
         );
     }
 
@@ -243,21 +243,34 @@ public class BinaryUtilsTest {
 
     @Test
     public void testConstantByteArrayToBinary() {
-        // 验证大小端和裁剪的正确性
         // 0x03 <-> 11
-        testConstantByteArrayBinary(new byte[] {0x03, }, new boolean[] {true, true, });
+        testConstantByteArrayBinary(
+            new byte[] {0b00000011, }, new boolean[] {true, true, }
+        );
         // 0x03 <-> 11
-        testConstantByteArrayBinary(new byte[] {0x03, }, new boolean[] {false, true, true, });
+        testConstantByteArrayBinary(
+            new byte[] {0b00000011, }, new boolean[] {false, true, true, }
+        );
         // 0x03 <-> 0011
-        testConstantByteArrayBinary(new byte[] {0x03, }, new boolean[] {false, false, true, true, });
-        // 0x1F <-> 1,1111
-        testConstantByteArrayBinary(new byte[] {0x1F, }, new boolean[] {true, true, true, true, true, });
-        // 0x1F <-> 01,1111
-        testConstantByteArrayBinary(new byte[] {0x1F, }, new boolean[] {false, true, true, true, true, true, });
-        // 0x1F <-> 001,1111
-        testConstantByteArrayBinary(new byte[] {0x1F, }, new boolean[] {false, false, true, true, true, true, true, });
-        // 0x1F <-> 0001,1111
-        testConstantByteArrayBinary(new byte[] {0x1F, }, new boolean[] {false, false, false, true, true, true, true, true, });
+        testConstantByteArrayBinary(
+            new byte[] {0b00000011, }, new boolean[] {false, false, true, true, }
+        );
+        // 0x1F <-> 11111
+        testConstantByteArrayBinary(
+            new byte[] {0b00011111, }, new boolean[] {true, true, true, true, true, }
+        );
+        // 0x1F <-> 011111
+        testConstantByteArrayBinary(
+            new byte[] {0b00011111, }, new boolean[] {false, true, true, true, true, true, }
+        );
+        // 0x1F <-> 0011111
+        testConstantByteArrayBinary(
+            new byte[] {0b00011111, }, new boolean[] {false, false, true, true, true, true, true, }
+        );
+        // 0x1F <-> 00011111
+        testConstantByteArrayBinary(
+            new byte[] {0b00011111, }, new boolean[] {false, false, false, true, true, true, true, true, }
+        );
     }
 
     private void testConstantByteArrayBinary(byte[] byteArray, boolean[] binary) {
@@ -291,16 +304,18 @@ public class BinaryUtilsTest {
     @Test
     public void testByteArrayGetBoolean() {
         testByteArrayGetBoolean(
-            // 0x43 <-> 0100,0011
-            new byte[] {0x43, },
-            new boolean[] {false, true, false, false, false, false, true, true,}
+            // 0x43 <-> 01000011
+            new byte[] {0b01000011, },
+            new boolean[] {false, true, false, false, false, false, true, true,
+            }
         );
         testByteArrayGetBoolean(
-            // 0x3A,0x43 <-> 0011,1010,0100,0011
-            new byte[] {0x3A, 0x43, },
+            // 0x3A,0x43 <-> 00111010,01000011
+            new byte[] {0b00111010, 0b01000011, },
             new boolean[] {
                 false, false, true, true, true, false, true, false,
-                false, true, false, false, false, false, true, true,}
+                false, true, false, false, false, false, true, true,
+            }
         );
     }
 
@@ -314,7 +329,7 @@ public class BinaryUtilsTest {
     public void testLongArrayGetBoolean() {
         testLongArrayGetBoolean(
             // 0x43,00,00,00,00,00,00,43L
-            new long[] {0x4300000000000043L, },
+            new long[] {0b01000011_00000000_00000000_00000000_00000000_00000000_00000000_01000011L, },
             // 01000011,00000000,00000000,00000000,00000000,00000000,00000000,01000011
             new boolean[] {
                 false, true, false, false, false, false, true, true,
@@ -329,7 +344,9 @@ public class BinaryUtilsTest {
         );
         testLongArrayGetBoolean(
             // 0x3A,43,00,00,00,00,00,00L, 0x00,00,00,00,00,00,3A,43L
-            new long[] {0x3A43000000000000L, 0x0000000000003A43L, },
+            new long[] {
+                0b00111010_01000011_00000000_00000000_00000000_00000000_00000000_00000000L,
+                0b00000000_00000000_00000000_00000000_00000000_00000000_00111010_01000011L, },
             // 00111010,01000011,00000000,00000000,00000000,00000000,00000000,00000000
             // 00000000,00000000,00000000,00000000,00000000,00000000,00111010,01000011
             new boolean[] {
@@ -361,8 +378,8 @@ public class BinaryUtilsTest {
 
     @Test
     public void testByteArraySetBoolean() {
-        testByteArraySetBoolean(new byte[] {0x43, });
-        testByteArraySetBoolean(new byte[] {0x3A, 0x43, });
+        testByteArraySetBoolean(new byte[] {0b01000011, });
+        testByteArraySetBoolean(new byte[] {0b00111010, 0b01000011, });
     }
 
     private void testByteArraySetBoolean(byte[] byteArray) {

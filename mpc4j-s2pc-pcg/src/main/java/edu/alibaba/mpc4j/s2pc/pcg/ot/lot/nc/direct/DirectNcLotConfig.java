@@ -38,6 +38,11 @@ public class DirectNcLotConfig implements NcLotConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        coreLotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return coreLotConfig.getEnvType();
     }

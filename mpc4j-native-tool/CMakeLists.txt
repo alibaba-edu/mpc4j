@@ -5,100 +5,190 @@ set(CMAKE_CXX_STANDARD 17)
 # 增加汇编指令支持（参见：https://www.zhihu.com/question/61037115）
 ENABLE_LANGUAGE(ASM)
 # C编译指令
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -Wall -funroll-loops")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wfatal-errors -fPIC -Wno-ignored-attributes -pthread -Wall -funroll-loops")
 message("Platform: ${CMAKE_SYSTEM_PROCESSOR}")
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(aarch64)|(arm64)")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a+simd+crypto+crc")
 ELSE()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -maes -mrdseed")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -mrdseed -maes -msse2 -msse4.1 -mpclmul")
 ENDIF()
-# 打印C编译指令
-message(STATUS "C Flags (CMAKE_C_FLAGS): ${CMAKE_C_FLAGS}")
-# 设置C++编译指令
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} -std=c++11")
 # 默认为Release编译
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
-endif(NOT CMAKE_BUILD_TYPE)
+endif()
 message(STATUS "Build type (CMAKE_BUILD_TYPE): ${CMAKE_BUILD_TYPE}")
 # 如果为debug模式，则不使用优化，增加调试编译指令
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -ggdb")
 endif()
 # 如果为release模式，则使用优化
 if (CMAKE_BUILD_TYPE MATCHES Release)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 endif()
-# 打印C++编译指令
+# 设置C++编译指令
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS}")
+# 打印C/C++编译指令
+message(STATUS "C Flags (CMAKE_C_FLAGS): ${CMAKE_C_FLAGS}")
 message(STATUS "CXX Flags (CMAKE_CXX_FLAGS): ${CMAKE_CXX_FLAGS}")
+# 设置默认路径
 set(DEFAULT_DIR "/usr/local")
 
 # 引入NTL
-set(NTL_INCLUDE_DIR "${DEFAULT_DIR}/include/")
-find_library(NTL_LIBRARY NAMES ntl)
-message(STATUS "NTL_INCLUDE_DIRS:  ${NTL_INCLUDE_DIR}")
-set(CMAKE_C_FLAGS "-Wall -maes -msse2 -msse4.1 -mpclmul -Wfatal-errors -pthread -fPIC -Wno-ignored-attributes -c")
+if(NOT DEFINED NTL_ROOT_DIR)
+    set(NTL_ROOT_DIR ${DEFAULT_DIR})
+endif()
+find_path(NTL_INCLUDE_DIR
+        NAMES NTL/ZZ.h
+        HINTS ENV NTL_ROOT_DIR
+        PATH_SUFFIXES include
+        DOC "The directory containing the NTL include files"
+        )
+find_library(NTL_LIBRARY
+        NAMES ntl
+        HINTS ENV NTL_ROOT_DIR
+        PATH_SUFFIXES lib
+        DOC "Path to the NTL library"
+        REQUIRED
+        )
+if(NTL_INCLUDE_DIR AND NTL_LIBRARY)
+    set(NTL_FOUND TRUE)
+endif()
+if(NTL_FOUND)
+    include_directories(${NTL_INCLUDE_DIRS})
+    message(STATUS "NTL_INCLUDE_DIRS: ${NTL_INCLUDE_DIR}")
+    message(STATUS "NTL_LIBRARY_PATH: ${NTL_LIBRARY}")
+else(NTL_FOUND)
+    if (NTL_FIND_REQUIRED)
+        message(FATAL_ERROR "Could not find NTL")
+    endif()
+endif()
 
 # 引入GMP
-set(GMP_INCLUDE_DIR "${DEFAULT_DIR}/include/")
-find_library(GMP_LIBRARY NAMES gmp)
-message(STATUS "GMP_INCLUDE_DIRS:  ${GMP_INCLUDE_DIR}")
+if(NOT DEFINED GMP_ROOT_DIR)
+    set(GMP_ROOT_DIR ${DEFAULT_DIR})
+endif()
+find_path(GMP_INCLUDE_DIR
+        NAMES gmp.h
+        HINTS ENV GMP_ROOT_DIR
+        PATH_SUFFIXES include
+        DOC "The directory containing the GMP include files"
+        )
+find_library(GMP_LIBRARY
+        NAMES gmp
+        HINTS ENV GMP_ROOT_DIR
+        PATH_SUFFIXES lib
+        DOC "Path to the GMP library"
+        REQUIRED
+        )
+if(GMP_INCLUDE_DIR AND GMP_LIBRARY)
+    set(GMP_FOUND TRUE)
+endif()
+if(GMP_FOUND)
+    include_directories(${GMP_INCLUDE_DIRS})
+    message(STATUS "GMP_INCLUDE_DIRS: ${GMP_INCLUDE_DIR}")
+    message(STATUS "GMP_LIBRARY_PATH: ${GMP_LIBRARY}")
+else(GMP_FOUND)
+    if(GMP_FIND_REQUIRED)
+        message(FATAL_ERROR "Could not find GMP")
+    endif()
+endif()
+
+# 引入libsodium
+if(NOT DEFINED LIBSODIUM_ROOT_DIR)
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        set(LIBSODIUM_ROOT_DIR "/opt/homebrew/opt/libsodium")
+    else()
+        set(LIBSODIUM_ROOT_DIR ${DEFAULT_DIR})
+    endif()
+endif()
+find_path(LIBSODIUM_INCLUDE_DIR
+        NAMES sodium.h
+        HINTS ENV LIBSODIUM_ROOT_DIR
+        PATH_SUFFIXES include
+        DOC "The directory containing the libsodium include files"
+        )
+find_library(LIBSODIUM_LIBRARY
+        NAMES sodium
+        HINTS ENV LIBSODIUM_ROOT_DIR
+        PATH_SUFFIXES lib
+        DOC "Path to the libsodium library"
+        REQUIRED
+        )
+if (LIBSODIUM_INCLUDE_DIR AND LIBSODIUM_LIBRARY)
+    set(LIBSODIUM_FOUND TRUE)
+endif()
+if(LIBSODIUM_FOUND)
+    include_directories(${LIBSODIUM_INCLUDE_DIR})
+    message(STATUS "LIBSODIUM_INCLUDE_DIRS: ${LIBSODIUM_INCLUDE_DIR}")
+    message(STATUS "LIBSODIUM_LIBRARY_PATH: ${LIBSODIUM_LIBRARY}")
+else()
+    if(LIBSODIUM_FIND_REQUIRED)
+        message(FATAL_ERROR "Could not find libsodium")
+    endif()
+endif()
 
 # 寻找JNI路径并引入JNI目录
+if(NOT DEFINED ENV{JAVA_HOME})
+    # 没有找到JAVA_HOME环境变量，输出错误信息退出
+    message(FATAL_ERROR "not defined environment variable:JAVA_HOME")
+endif()
 if (APPLE)
-    if(NOT DEFINED ENV{JAVA_HOME})
-        # 没有找到JAVA_HOME环境变量，输出错误信息退出
-        message(FATAL_ERROR "not defined environment variable:JAVA_HOME")
-    endif()
     set(JNI_INCLUDE_DIRS "$ENV{JAVA_HOME}/include")
     include_directories(${JNI_INCLUDE_DIRS})
     include_directories(${JNI_INCLUDE_DIRS}/darwin)
-    message(STATUS "JNI_INCLUDE_DIRS:  ${JNI_INCLUDE_DIRS}")
-ELSEIF (UNIX)
-    if(NOT DEFINED ENV{JAVA_HOME})
-        # 没有找到JAVA_HOME环境变量，输出错误信息退出
-        message(FATAL_ERROR "not defined environment variable:JAVA_HOME")
-    endif()
+elseif(UNIX)
     set(JNI_INCLUDE_DIRS "$ENV{JAVA_HOME}/include")
     include_directories(${JNI_INCLUDE_DIRS})
     include_directories(${JNI_INCLUDE_DIRS}/linux)
-    message(STATUS "JNI_INCLUDE_DIRS:  ${JNI_INCLUDE_DIRS}")
-ENDIF()
+endif()
+message(STATUS "JNI_INCLUDE_DIRS:  ${JNI_INCLUDE_DIRS}")
 
 # 引入openssl
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     if(NOT DEFINED OPENSSL_ROOT_DIR)
-        IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(aarch64)|(arm64)")
+        if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(aarch64)|(arm64)")
             # M1 Apple
             set(OPENSSL_ROOT_DIR "/opt/homebrew/opt/openssl")
-            message(STATUS "OPENSSL_ROOT_DIR set to default: ${OPENSSL_ROOT_DIR}")
-        ELSE()
+        else()
             # Intel Apple
             set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
-            message(STATUS "OPENSSL_ROOT_DIR set to default: ${OPENSSL_ROOT_DIR}")
-        ENDIF()
+        endif()
     endif()
 endif()
 find_package(OpenSSL REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIR})
+if(OPENSSL_FOUND)
+    include_directories(${OPENSSL_INCLUDE_DIR})
+    message(STATUS "OPENSSL_INCLUDE_DIRS: ${OPENSSL_INCLUDE_DIR}")
+    message(STATUS "OPENSSL_LIBRARY_PATH: ${OPENSSL_LIBRARIES}")
+else()
+    if(OPENSSL_FIND_REQUIRED)
+        message(FATAL_ERROR "Could not find openssl")
+    endif()
+endif()
 
-# 引入libsodium
-IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    IF(NOT DEFINED LIBSODIUM_ROOT_DIR)
-        set(LIBSODIUM_ROOT_DIR "/opt/homebrew/opt/libsodium")
-        message(STATUS "LIBSODIUM_ROOT_DIR set to default: ${LIBSODIUM_ROOT_DIR}")
-    ENDIF()
-ELSE()
-    set(LIBSODIUM_ROOT_DIR "/usr/local")
-    message(STATUS "LIBSODIUM_ROOT_DIR set to default: ${LIBSODIUM_ROOT_DIR}")
-ENDIF()
-set(LIBSODIUM_INCLUDE_DIR "${LIBSODIUM_ROOT_DIR}/include/")
-find_library(LIBSODIUM_LIBRARY NAMES sodium)
-message(STATUS "LIBSODIUM_INCLUDE_DIR:  ${LIBSODIUM_INCLUDE_DIR}")
-message(STATUS "LIBSODIUM_LIBRARY:  ${LIBSODIUM_LIBRARY}")
-include_directories(${LIBSODIUM_INCLUDE_DIR})
-
-link_directories("/usr/local/lib")
+# 引入MCL，如果使用find_library，不知为何会找到libntl，因此这里使用绝对位置
+if(NOT DEFINED MCL_ROOT_DIR)
+    set(MCL_ROOT_DIR ${DEFAULT_DIR})
+endif()
+find_path(MCL_INCLUDE_DIR
+        NAMES mcl/bn.h
+        HINTS ENV MCL_ROOT_DIR
+        PATH_SUFFIXES include
+        DOC "The directory containing the mcl include files"
+        )
+set(MCL_LIBRARY ${MCL_ROOT_DIR}/lib/libmcl.a)
+if (MCL_INCLUDE_DIR AND MCL_LIBRARY)
+    set(MCL_FOUND TRUE)
+endif()
+if(MCL_FOUND)
+    include_directories(${MCL_INCLUDE_DIR})
+    message(STATUS "MCL_INCLUDE_DIRS: ${MCL_INCLUDE_DIR}")
+    message(STATUS "MCL_LIBRARY_PATH: ${MCL_LIBRARY}")
+else()
+    if(MCL_FIND_REQUIRED)
+        message(FATAL_ERROR "Could not find MCL")
+    endif()
+endif()
 
 # 构建libent库
 add_library(
@@ -152,6 +242,10 @@ add_library(
         ecc_openssl/edu_alibaba_mpc4j_common_tool_crypto_ecc_openssl_SecP256r1OpensslNativeEcc.cpp
         ecc_sodium/edu_alibaba_mpc4j_common_tool_crypto_ecc_sodium_X25519SodiumByteMulEcc.cpp
         ecc_sodium/edu_alibaba_mpc4j_common_tool_crypto_ecc_sodium_Ed25519SodiumByteFullEcc.cpp
+        ntl_poly/ntl_tree_zp.h
+        ntl_poly/ntl_tree_zp.cpp
+        ntl_poly/edu_alibaba_mpc4j_common_tool_polynomial_zp_NtlTreeZpPoly.cpp
+        ntl_poly/ntl_zp_util.cpp
 )
 
 target_include_directories(
@@ -168,5 +262,5 @@ target_link_libraries(
         ${GMP_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}
         ${LIBSODIUM_LIBRARY}
-        libmcl.a
+        ${MCL_LIBRARY}
 )

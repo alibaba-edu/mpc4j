@@ -39,10 +39,6 @@ public class Kos16ShZpCoreVoleReceiver extends AbstractZpCoreVoleReceiver {
      */
     private ZpGadget zpGadget;
     /**
-     * 有限域比特长度
-     */
-    private int k;
-    /**
      * 基础OT协议接收方输出
      */
     private BaseOtReceiverOutput baseOtReceiverOutput;
@@ -81,8 +77,7 @@ public class Kos16ShZpCoreVoleReceiver extends AbstractZpCoreVoleReceiver {
         info("{}{} Recv. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();
-        zpGadget = ZpGadget.createFromPrime(envType, prime);
-        k = zpGadget.getK();
+        zpGadget = new ZpGadget(zp);
         baseOtReceiver.init();
         deltaBinary = zpGadget.decomposition(delta);
         baseOtReceiverOutput = baseOtReceiver.receive(deltaBinary);
@@ -118,16 +113,16 @@ public class Kos16ShZpCoreVoleReceiver extends AbstractZpCoreVoleReceiver {
     }
 
     private ZpVoleReceiverOutput handleMatrixPayload(List<byte[]> matrixPayload) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(matrixPayload.size() == num * k);
+        MpcAbortPreconditions.checkArgument(matrixPayload.size() == num * l);
         byte[][] matrixPayloadArray = matrixPayload.toArray(new byte[0][]);
         // 创建q矩阵
-        BigInteger[][] qMatrix = new BigInteger[num][k];
-        IntStream matrixStream = IntStream.range(0, num * k);
+        BigInteger[][] qMatrix = new BigInteger[num][l];
+        IntStream matrixStream = IntStream.range(0, num * l);
         matrixStream = parallel ? matrixStream.parallel() : matrixStream;
         matrixStream.forEach(index -> {
             // 计算当前处理q矩阵的位置(i,j)
-            int rowIndex = index / k;
-            int columnIndex = index % k;
+            int rowIndex = index / l;
+            int columnIndex = index % l;
             // 从payload中读取Zp元素u
             BigInteger u = BigIntegerUtils.byteArrayToNonNegBigInteger(matrixPayloadArray[index]);
             // 计算t_b = PRF(kb, i), q(i,j) = u + Δ_j * t_b,
@@ -135,15 +130,15 @@ public class Kos16ShZpCoreVoleReceiver extends AbstractZpCoreVoleReceiver {
                 .allocate(Long.BYTES + Integer.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
                 .putLong(extraInfo).putInt(rowIndex).put(baseOtReceiverOutput.getRb(columnIndex))
                 .array();
-            BigInteger tb = zpGadget.randomElement(tbSeed);
-            qMatrix[rowIndex][columnIndex] = deltaBinary[columnIndex] ? u.add(tb).mod(prime) : tb;
+            BigInteger tb = zp.createRandom(tbSeed);
+            qMatrix[rowIndex][columnIndex] = deltaBinary[columnIndex] ? zp.add(u, tb) : tb;
         });
         // 将矩阵q的每一行按照gadget组合为一个Zp元素，得到Zp数组q。
         Stream<BigInteger[]> qMatrixStream = Arrays.stream(qMatrix);
         qMatrixStream = parallel ? qMatrixStream.parallel() : qMatrixStream;
         BigInteger[] q = qMatrixStream
-            .map(row -> zpGadget.composition(row))
+            .map(row -> zpGadget.innerProduct(row))
             .toArray(BigInteger[]::new);
-        return ZpVoleReceiverOutput.create(prime, delta, q);
+        return ZpVoleReceiverOutput.create(zp.getPrime(), delta, q);
     }
 }

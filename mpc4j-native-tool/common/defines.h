@@ -1,12 +1,18 @@
-//
-// Created by Weiran Liu on 2021/12/11.
-//
+/*
+ * Created by Weiran Liu on 2021/12/11.
+ *
+ * 2022/10/19 updates:
+ * Thanks the anonymous USENIX Security 2023 AE reviewer for the suggestion.
+ * We now use std::reverse to implement reverseBytes.
+ */
+
 #include <cstdint>
 #include <jni.h>
 #include <vector>
 #include <string>
 #include <NTL/GF2E.h>
 #include <cstring>
+#include <algorithm>
 
 #ifndef MPC4J_NATIVE_TOOL_DEFINES_H
 #define MPC4J_NATIVE_TOOL_DEFINES_H
@@ -21,13 +27,32 @@
  */
 inline void reverseBytes(uint8_t* data, uint64_t size) {
     uint8_t *low = data;
-    uint8_t *high = data + size - 1;
-    uint8_t swap;
-    while (low < high) {
-        swap = *low;
-        *low++ = *high;
-        *high-- = swap;
+    uint8_t *high = data + size;
+    std::reverse(low, high);
+}
+
+inline uint64_t ceilLog2(uint64_t x) {
+    static const uint64_t t[6] = {
+            0xFFFFFFFF00000000ull,
+            0x00000000FFFF0000ull,
+            0x000000000000FF00ull,
+            0x00000000000000F0ull,
+            0x000000000000000Cull,
+            0x0000000000000002ull
+    };
+
+    uint64_t y = (((x & (x - 1)) == 0) ? 0 : 1);
+    uint64_t j = 32;
+    uint64_t i;
+
+    for (i = 0; i < 6; i++) {
+        uint64_t k = (((x & t[i]) == 0) ? 0 : j);
+        y += k;
+        x >>= k;
+        j >>= 1;
     }
+
+    return y;
 }
 
 void initGF2E(JNIEnv *env, jbyteArray jMinBytes);
@@ -52,6 +77,13 @@ void jByteArrayToSet(JNIEnv *env, jobjectArray jBytesArray, uint64_t byteLength,
  * @param jArray 转换结果存储地址。
  */
 void setTojByteArray(JNIEnv *env, std::vector<uint8_t*> &set, uint64_t byteLength, jint jNum, jobjectArray &jArray);
+
+/**
+ * 释放字节数组集合中各个元素的内存。
+ *
+ * @param set 字节数组集合
+ */
+void freeByteArraySet(std::vector<uint8_t*> &set);
 
 /**
  * 将jlongArray表示的二维长整数数组解析为set<long>。

@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zl;
 
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.Zp64Triple;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -237,7 +238,7 @@ public class ZlTriple {
      * @param that 另一个乘法三元组。
      */
     public void merge(ZlTriple that) {
-        assert this.l == that.l : "merged triples must have the same l";
+        assert this.l == that.l : "merged " + ZlTriple.class.getSimpleName() + " must have the same l";
         // 合并a
         BigInteger[] mergeAs = new BigInteger[this.as.length + that.as.length];
         System.arraycopy(this.as, 0, mergeAs, 0, this.as.length);

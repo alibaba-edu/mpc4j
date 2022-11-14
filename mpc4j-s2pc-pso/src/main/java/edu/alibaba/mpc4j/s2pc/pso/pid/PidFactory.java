@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.pid;
 
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pso.pid.bkms20.*;
 import edu.alibaba.mpc4j.s2pc.pso.pid.gmr21.*;
 
@@ -11,7 +12,7 @@ import edu.alibaba.mpc4j.s2pc.pso.pid.gmr21.*;
  * @author Weiran Liu
  * @date 2022/01/19
  */
-public class PidFactory {
+public class PidFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

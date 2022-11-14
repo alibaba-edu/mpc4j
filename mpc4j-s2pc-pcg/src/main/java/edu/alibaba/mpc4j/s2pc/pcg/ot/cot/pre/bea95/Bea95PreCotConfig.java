@@ -15,15 +15,20 @@ public class Bea95PreCotConfig implements PreCotConfig {
     /**
      * 环境类型
      */
-    private final EnvType envType;
+    private EnvType envType;
 
     private Bea95PreCotConfig(Builder builder) {
-        envType = builder.envType;
+        envType = EnvType.STANDARD;
     }
 
     @Override
     public PreCotFactory.PreCotType getPtoType() {
         return PreCotFactory.PreCotType.Bea95;
+    }
+
+    @Override
+    public void setEnvType(EnvType envType) {
+        this.envType = envType;
     }
 
     @Override
@@ -37,19 +42,9 @@ public class Bea95PreCotConfig implements PreCotConfig {
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Bea95PreCotConfig> {
-        /**
-         * 环境类型
-         */
-        private EnvType envType;
 
         public Builder() {
-            super();
-            this.envType = EnvType.STANDARD;
-        }
 
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
         }
 
         @Override

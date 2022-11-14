@@ -80,7 +80,7 @@ public class X25519BcByteMulEcc implements ByteMulEcc {
         assert X25519ByteEccUtils.checkPoint(p);
         assert X25519ByteEccUtils.checkClampScalar(k);
         byte[] r = new byte[X25519ByteEccUtils.POINT_BYTES];
-        X25519ByteEccUtils.clampScalarMult(k, p, r);
+        X25519ByteEccUtils.clampScalarMul(k, p, r);
         return r;
     }
 
@@ -88,12 +88,22 @@ public class X25519BcByteMulEcc implements ByteMulEcc {
     public byte[] baseMul(byte[] k) {
         assert X25519ByteEccUtils.checkClampScalar(k);
         byte[] r = new byte[X25519ByteEccUtils.POINT_BYTES];
-        X25519ByteEccUtils.clampScalarMultBase(k, r);
+        X25519ByteEccUtils.clampScalarBaseMul(k, r);
         return r;
     }
 
     @Override
     public ByteEccFactory.ByteEccType getByteEccType() {
         return ByteEccFactory.ByteEccType.X25519_BC;
+    }
+
+    @Override
+    public int pointByteLength() {
+        return X25519ByteEccUtils.POINT_BYTES;
+    }
+
+    @Override
+    public int scalarByteLength() {
+        return X25519ByteEccUtils.SCALAR_BYTES;
     }
 }

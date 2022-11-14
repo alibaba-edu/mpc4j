@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pso.osn;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pso.osn.gmr21.Gmr21OsnConfig;
 import edu.alibaba.mpc4j.s2pc.pso.osn.gmr21.Gmr21OsnReceiver;
 import edu.alibaba.mpc4j.s2pc.pso.osn.gmr21.Gmr21OsnSender;
@@ -24,7 +25,7 @@ import edu.alibaba.mpc4j.s2pc.pso.osn.ms13.Ms13OsnSender;
  * @author Weiran Liu
  * @date 2022/02/09
  */
-public class OsnFactory {
+public class OsnFactory implements PtoFactory {
     /**
      * 私有构造函数
      */
@@ -62,7 +63,7 @@ public class OsnFactory {
             case GMR21:
                 return new Gmr21OsnSender(senderRpc, receiverParty,(Gmr21OsnConfig)config);
             default:
-                throw new IllegalArgumentException("Invalid OsnType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + OsnType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -82,7 +83,7 @@ public class OsnFactory {
             case GMR21:
                 return new Gmr21OsnReceiver(receiverRpc, senderParty, (Gmr21OsnConfig)config);
             default:
-                throw new IllegalArgumentException("Invalid OsnType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + OsnType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -100,7 +101,7 @@ public class OsnFactory {
             case COVERT:
             case MALICIOUS:
             default:
-                throw new IllegalArgumentException("Invalid SecurityModel: " + securityModel.name());
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

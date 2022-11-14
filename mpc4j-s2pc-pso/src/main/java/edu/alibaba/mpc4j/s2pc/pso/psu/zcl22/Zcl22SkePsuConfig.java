@@ -68,6 +68,13 @@ public class Zcl22SkePsuConfig implements PsuConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        bcConfig.setEnvType(envType);
+        oprpConfig.setEnvType(envType);
+        coreCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return bcConfig.getEnvType();
     }

@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64Gadget;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Gadget;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSender;
@@ -146,7 +146,7 @@ public class Kos16ShZp64CoreVoleSender extends AbstractZp64CoreVoleSender {
         IntStream outputStream = IntStream.range(0, num);
         outputStream = parallel ? outputStream.parallel() : outputStream;
         long[] t = outputStream
-            .mapToLong(index -> zp64Gadget.composition(t0[index]))
+            .mapToLong(index -> zp64Gadget.innerProduct(t0[index]))
             .toArray();
         return Zp64VoleSenderOutput.create(zp64.getPrime(), x, t);
     }

@@ -1,7 +1,5 @@
 package edu.alibaba.mpc4j.common.tool.lpn.ldpc;
 
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
-
 /**
  * LdpcCreator类，提供公开方法获取指定LDPC类型的相关参数。
  *
@@ -33,59 +31,17 @@ public class LdpcCreatorUtils {
     }
 
     /**
-     * 记录LDPC右矩阵两条复制对角线的相对位置
-     */
-    static final int[] BAND_POSITION = {5, 31};
-
-    /**
-     * 获取指定输出目标和LDPC类型对应的LPN参数。
-     *
-     * @param ceilLogN 目标输出OT数量的对数，支持[14, 24]。
-     * @param codeType LDPC编码类型。
-     * @return LPN参数。
-     */
-    public static LpnParams getLpnParams(int ceilLogN, CodeType codeType) {
-        assert ceilLogN >= MIN_LOG_N && ceilLogN <= MAX_LOG_N
-            : "log(n) must be in range [" + MIN_LOG_N + ", " + MAX_LOG_N + "]";
-        switch (codeType) {
-            case SILVER_5:
-                return Silver5Utils.CRR21_SILVER5_LPN_PARAMS_MAP.get(ceilLogN);
-            case SILVER_11:
-                return Silver11Utils.CRR21_SILVER11_LPN_PARAMS_MAP.get(ceilLogN);
-            default:
-                throw new IllegalArgumentException("Invalid CodeType: " + codeType.name());
-        }
-    }
-
-    /**
      * 获取右种子。
-     *
-     * @param codeType LDPC编码类型。
-     * @return 右种子。
-     */
-    static int[][] getRightSeed(CodeType codeType) {
-        switch (codeType) {
-            case SILVER_5:
-                return Silver5Utils.SILVER5_RIGHT_SEED;
-            case SILVER_11:
-                return Silver11Utils.SILVER11_RIGHT_SEED;
-            default:
-                throw new IllegalArgumentException("Invalid CodeType: " + codeType.name());
-        }
-    }
-
-    /**
-     * 获取改进后的右种子。
      *
      * @param codeType LDPC编码类型。
      * @return 改进后的右种子。
      */
-    static int[][] getImprovedRightSeed(CodeType codeType) {
+    static int[][] getRightSeed(CodeType codeType) {
         switch (codeType) {
             case SILVER_5:
-                return Silver5Utils.SILVER5_RIGHT_IMPROVED_SEED;
+                return SILVER5_RIGHT_SEED;
             case SILVER_11:
-                return Silver11Utils.SILVER11_RIGHT_IMPROVED_SEED;
+                return SILVER11_RIGHT_SEED;
             default:
                 throw new IllegalArgumentException("Invalid CodeType: " + codeType.name());
         }
@@ -100,81 +56,11 @@ public class LdpcCreatorUtils {
     static double[] getLeftSeed(CodeType codeType) {
         switch (codeType) {
             case SILVER_5:
-                return Silver5Utils.SILVER5_LEFT_SEED;
+                return SILVER5_LEFT_SEED;
             case SILVER_11:
-                return Silver11Utils.SILVER11_LEFT_SEED;
+                return SILVER11_LEFT_SEED;
             default:
                 throw new IllegalArgumentException("CodeType: " + codeType + "does not support!");
-        }
-    }
-
-    /**
-     * 获取预先计算已经存储的矩阵Ep。
-     *
-     * @param ceilLogN 目标输出OT数量的对数，支持支持[14, 24]。
-     * @param codeType Ldpc类型。
-     * @return 矩阵Ep。
-     */
-    public static byte[][] getMatrixEp(int ceilLogN, CodeType codeType) {
-        assert ceilLogN >= MIN_LOG_N && ceilLogN <= MAX_LOG_N
-            : "log(n) must be in range [" + MIN_LOG_N + ", " + MAX_LOG_N + "]";
-        switch (codeType) {
-            case SILVER_5:
-                switch (ceilLogN) {
-                    case 14:
-                        return Silver5Utils.SILVER_5_M_EP_14;
-                    case 15:
-                        return Silver5Utils.SILVER_5_M_EP_15;
-                    case 16:
-                        return Silver5Utils.SILVER_5_M_EP_16;
-                    case 17:
-                        return Silver5Utils.SILVER_5_M_EP_17;
-                    case 18:
-                        return Silver5Utils.SILVER_5_M_EP_18;
-                    case 19:
-                        return Silver5Utils.SILVER_5_M_EP_19;
-                    case 20:
-                        return Silver5Utils.SILVER_5_M_EP_20;
-                    case 21:
-                        return Silver5Utils.SILVER_5_M_EP_21;
-                    case 22:
-                        return Silver5Utils.SILVER_5_M_EP_22;
-                    case 23:
-                        return Silver5Utils.SILVER_5_M_EP_23;
-                    case 24:
-                        return Silver5Utils.SILVER_5_M_EP_24;
-                    default:
-                        throw new IllegalArgumentException("log(n) must be in range [" + MIN_LOG_N + ", " + MAX_LOG_N + "]");
-                }
-            case SILVER_11:
-                switch (ceilLogN) {
-                    case 14:
-                        return Silver11Utils.SILVER_11_M_EP_14;
-                    case 15:
-                        return Silver11Utils.SILVER_11_M_EP_15;
-                    case 16:
-                        return Silver11Utils.SILVER_11_M_EP_16;
-                    case 17:
-                        return Silver11Utils.SILVER_11_M_EP_17;
-                    case 18:
-                        return Silver11Utils.SILVER_11_M_EP_18;
-                    case 19:
-                        return Silver11Utils.SILVER_11_M_EP_19;
-                    case 20:
-                        return Silver11Utils.SILVER_11_M_EP_20;
-                    case 21:
-                        return Silver11Utils.SILVER_11_M_EP_21;
-                    case 22:
-                        return Silver11Utils.SILVER_11_M_EP_22;
-                    case 23:
-                        return Silver11Utils.SILVER_11_M_EP_23;
-                    case 24:
-                        return Silver11Utils.SILVER_11_M_EP_24;
-                    default:
-                        throw new IllegalArgumentException("log(n) must be in range [" + MIN_LOG_N + ", " + MAX_LOG_N + "]");
-                }
-            default:
-                throw new IllegalArgumentException("Invalid CodeType: " + codeType.name());
         }
     }
 
@@ -187,9 +73,9 @@ public class LdpcCreatorUtils {
     static int getGap(CodeType codeType) {
         switch (codeType) {
             case SILVER_5:
-                return Silver5Utils.GAP_VALUE;
+                return SILVER5_GAP_VALUE;
             case SILVER_11:
-                return Silver11Utils.GAP_VALUE;
+                return SILVER11_GAP_VALUE;
             default:
                 throw new IllegalArgumentException("Invalid CodeType: " + codeType.name());
         }
@@ -204,11 +90,102 @@ public class LdpcCreatorUtils {
     static int getWeight(CodeType codeType) {
         switch (codeType) {
             case SILVER_5:
-                return Silver5Utils.WEIGHT;
+                return SILVER5_WEIGHT;
             case SILVER_11:
-                return Silver11Utils.WEIGHT;
+                return SILVER11_WEIGHT;
             default:
                 throw new IllegalArgumentException("Invalid CodeType: " + codeType.name());
         }
     }
+
+    /**
+     * Silver5 gap值
+     */
+    private static final int SILVER5_GAP_VALUE = 16;
+    /**
+     * Silver11 gap值
+     */
+    private static final int SILVER11_GAP_VALUE = 32;
+    /**
+     * Silver5 左矩阵每列的汉明重量
+     */
+    private static final int SILVER5_WEIGHT = 5;
+    /**
+     * Silver 11 左矩阵每列的汉明重量
+     */
+    private static final int SILVER11_WEIGHT = 11;
+    /**
+     * Silver5左矩阵种子
+     * 左矩阵是循环矩阵，种子为第一列非零点坐标的百分位。
+     */
+    private static final double[] SILVER5_LEFT_SEED = {0,
+        0.372071, 0.576568, 0.608917, 0.854475};
+    /**
+     * Silver11左矩阵种子
+     * 左矩阵是循环矩阵，种子为第一列非零点坐标的百分位
+     */
+    private static final double[] SILVER11_LEFT_SEED = {0,
+        0.00278835, 0.0883852, 0.238023, 0.240532,
+        0.274624, 0.390639, 0.531551, 0.637619,
+        0.945265, 0.965874};
+    /**
+     * Silver5右矩阵种子
+     * 改进的右种子，是右矩阵每列的非零点，按周期移位重复。
+     */
+    private static final int[][] SILVER5_RIGHT_SEED = {
+        {0, 2, 11, 14, 16, 21, 47},
+        {0, 3, 8, 9, 16, 21, 47},
+        {0, 1, 2, 4, 8, 21, 47},
+        {0, 1, 10, 15, 16, 21, 47},
+        {0, 7, 8, 12, 14, 21, 47},
+        {0, 1, 2, 9, 10, 21, 47},
+        {0, 2, 3, 8, 16, 21, 47},
+        {0, 5, 6, 13, 14, 21, 47},
+        {0, 3, 4, 11, 15, 21, 47},
+        {0, 4, 6, 8, 12, 21, 47},
+        {0, 2, 3, 7, 15, 21, 47},
+        {0, 3, 5, 6, 8, 21, 47},
+        {0, 6, 9, 12, 13, 21, 47},
+        {0, 8, 10, 11, 13, 21, 47},
+        {0, 1, 10, 12, 13, 21, 47},
+        {0, 1, 7, 8, 16, 21, 47},
+    };
+    /**
+     * Silver11右矩阵种子
+     * 改进的右种子，是右矩阵每列的非零点，按周期移位重复。
+     */
+    private static final int[][] SILVER11_RIGHT_SEED = {
+        {0, 1, 2, 4, 15, 16, 17, 19, 24, 25, 26, 37, 63},
+        {0, 1, 9, 10, 12, 18, 23, 24, 25, 30, 32, 37, 63},
+        {0, 5, 6, 13, 14, 15, 16, 18, 19, 24, 31, 37, 63},
+        {0, 2, 11, 14, 15, 19, 20, 22, 24, 28, 31, 37, 63},
+        {0, 2, 3, 5, 6, 8, 19, 21, 22, 23, 27, 37, 63},
+        {0, 1, 6, 8, 10, 12, 13, 16, 17, 21, 26, 37, 63},
+        {0, 2, 4, 7, 8, 10, 24, 25, 26, 28, 29, 37, 63},
+        {0, 4, 8, 10, 12, 13, 15, 23, 25, 26, 29, 37, 63},
+        {0, 2, 6, 7, 8, 12, 17, 24, 27, 29, 30, 37, 63},
+        {0, 2, 4, 5, 11, 12, 17, 19, 21, 22, 25, 37, 63},
+        {0, 2, 5, 8, 9, 11, 12, 18, 20, 28, 32, 37, 63},
+        {0, 4, 6, 8, 12, 17, 18, 19, 20, 22, 27, 37, 63},
+        {0, 9, 16, 17, 20, 22, 23, 24, 27, 29, 30, 37, 63},
+        {0, 3, 5, 7, 16, 17, 18, 20, 23, 30, 32, 37, 63},
+        {0, 1, 2, 5, 7, 8, 9, 11, 19, 20, 28, 37, 63},
+        {0, 3, 9, 11, 13, 15, 24, 27, 28, 31, 32, 37, 63},
+        {0, 5, 10, 13, 14, 16, 19, 21, 26, 29, 32, 37, 63},
+        {0, 1, 4, 7, 10, 12, 15, 20, 21, 24, 26, 37, 63},
+        {0, 6, 10, 13, 15, 16, 17, 18, 19, 20, 21, 37, 63},
+        {0, 4, 6, 7, 8, 18, 20, 24, 25, 27, 30, 37, 63},
+        {0, 1, 4, 12, 13, 19, 25, 29, 30, 31, 32, 37, 63},
+        {0, 2, 9, 15, 16, 19, 22, 23, 25, 28, 29, 37, 63},
+        {0, 5, 7, 10, 15, 19, 21, 24, 26, 29, 30, 37, 63},
+        {0, 4, 6, 11, 13, 15, 21, 25, 29, 31, 32, 37, 63},
+        {0, 8, 10, 11, 15, 16, 17, 25, 27, 30, 32, 37, 63},
+        {0, 3, 4, 5, 7, 14, 15, 16, 20, 28, 32, 37, 63},
+        {0, 2, 3, 9, 11, 14, 15, 18, 19, 20, 25, 37, 63},
+        {0, 10, 12, 13, 17, 19, 23, 27, 28, 29, 32, 37, 63},
+        {0, 7, 8, 10, 12, 13, 16, 26, 28, 29, 31, 37, 63},
+        {0, 6, 7, 11, 12, 15, 23, 27, 28, 30, 31, 37, 63},
+        {0, 5, 6, 8, 10, 11, 14, 22, 25, 29, 30, 37, 63},
+        {0, 2, 11, 14, 16, 17, 23, 24, 27, 30, 32, 37, 63},
+    };
 }

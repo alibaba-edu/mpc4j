@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core;
 
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ShZpCoreVoleConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ShZpCoreVoleSender;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ShZpCoreVoleReceiver;
@@ -12,7 +13,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ShZpCoreVoleReceiver;
  * @author Hanwen Feng
  * @date 2022/06/07
  */
-public class ZpCoreVoleFactory {
+public class ZpCoreVoleFactory implements PtoFactory {
     /**
      * 私有构造函数。
      */

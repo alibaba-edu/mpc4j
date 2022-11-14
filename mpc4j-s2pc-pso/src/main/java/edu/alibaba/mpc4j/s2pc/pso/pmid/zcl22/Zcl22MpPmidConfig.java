@@ -44,13 +44,26 @@ public class Zcl22MpPmidConfig implements PmidConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        mpOprfConfig.setEnvType(envType);
+        psuConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return mpOprfConfig.getEnvType();
     }
 
     @Override
     public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
+        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
+        if (mpOprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
+            securityModel = mpOprfConfig.getSecurityModel();
+        }
+        if (psuConfig.getSecurityModel().compareTo(securityModel) < 0) {
+            securityModel = psuConfig.getSecurityModel();
+        }
+        return securityModel;
     }
 
     public MpOprfConfig getMpOprfConfig() {

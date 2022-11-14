@@ -1,6 +1,11 @@
-//
-// Created by Weiran Liu on 2022/1/15.
-//
+/*
+ * Created by Weiran Liu on 2022/1/15.
+ *
+ * 2022/10/19 updates:
+ * Thanks the anonymous USENIX Security 2023 AE reviewer for the suggestion.
+ * All heap allocations (e.g., auto *p = new uint8_t[]) are replaced with stack allocations (e.g., uint8_t p[]).
+ */
+
 #include "edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_SseGf2k.h"
 #include "defines.h"
 #include "gf2k.h"
@@ -41,11 +46,10 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2k
     (*env).ReleaseByteArrayElements(jb, jbBuffer, 0);
     __m128i c;
     gf2k_multiply(a, b, &c);
-    auto *c_byte = new uint8_t[BLOCK_BYTE_LENGTH];
+    uint8_t c_byte[BLOCK_BYTE_LENGTH];
     block_to_bytes(c_byte, c);
     jbyteArray jc = (*env).NewByteArray((jsize) BLOCK_BYTE_LENGTH);
     (*env).SetByteArrayRegion(jc, 0, BLOCK_BYTE_LENGTH, (const jbyte *) c_byte);
-    delete[] c_byte;
 
     return jc;
 }
@@ -60,9 +64,8 @@ JNIEXPORT void JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_SseGf
     (*env).ReleaseByteArrayElements(jb, jbBuffer, 0);
     __m128i c;
     gf2k_multiply(a, b, &c);
-    auto *c_byte = new uint8_t[BLOCK_BYTE_LENGTH];
+    uint8_t c_byte[BLOCK_BYTE_LENGTH];
     block_to_bytes(c_byte, c);
     // 不用创造新的对象，直接赋值即可
     (*env).SetByteArrayRegion(ja, 0, BLOCK_BYTE_LENGTH, (const jbyte *) c_byte);
-    delete[] c_byte;
 }

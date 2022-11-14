@@ -15,15 +15,20 @@ public class Hfh99ByteEccPsiConfig implements PsiConfig {
     /**
      * 环境类型
      */
-    private final EnvType envType;
+    private EnvType envType;
 
     private Hfh99ByteEccPsiConfig(Builder builder) {
-        envType = builder.envType;
+        envType = EnvType.STANDARD;
     }
 
     @Override
     public PsiFactory.PsiType getPtoType() {
         return PsiFactory.PsiType.HFH99_BYTE_ECC;
+    }
+
+    @Override
+    public void setEnvType(EnvType envType) {
+        this.envType = envType;
     }
 
     @Override
@@ -37,18 +42,9 @@ public class Hfh99ByteEccPsiConfig implements PsiConfig {
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Hfh99ByteEccPsiConfig> {
-        /**
-         * 环境类型
-         */
-        private EnvType envType;
 
         public Builder() {
-            envType = EnvType.STANDARD;
-        }
-
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
+            // empty
         }
 
         @Override

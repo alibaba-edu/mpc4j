@@ -42,7 +42,7 @@ public abstract class AbstractCoreCotReceiver extends AbstractSecureTwoPartyPto 
     }
 
     protected void setInitInput(int maxNum) {
-        assert maxNum > 0 : "maxNum must be greater than 0: " + maxNum;
+        assert maxNum > 0 : "max num must be greater than 0: " + maxNum;
         this.maxNum = maxNum;
         initialized = false;
     }

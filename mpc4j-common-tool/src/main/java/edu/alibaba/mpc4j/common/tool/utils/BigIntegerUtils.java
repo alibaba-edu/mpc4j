@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 /**
  * 大整数工具类，主要完成很多代数计算。
@@ -41,6 +42,7 @@ public class BigIntegerUtils {
      * 如果可以成功调用GMP库，则此变量将被设置为true
      */
     public static final boolean USE_GMP;
+
     /*
      * 检查是否可以使用GMP库
      */
@@ -95,14 +97,16 @@ public class BigIntegerUtils {
      * 将非负数的{@code BigInteger}转换为{@code byte[]}，大端表示。
      *
      * @param nonNegBigInteger 待转换的非负数{@code BigInteger}。
-     * @param byteLength 指定转换结果的字节长度。
+     * @param byteLength       指定转换结果的字节长度。
      * @return 转换结果。
      */
     public static byte[] nonNegBigIntegerToByteArray(BigInteger nonNegBigInteger, int byteLength) {
         if (nonNegBigInteger.equals(BigInteger.ZERO)) {
             return new byte[byteLength];
         }
-        assert CommonUtils.getByteLength(nonNegBigInteger.bitLength()) <= byteLength;
+        int inputByteLength = CommonUtils.getByteLength(nonNegBigInteger.bitLength());
+        assert inputByteLength <= byteLength
+            : "input byte length must be less than or equal to " + byteLength + ": " + inputByteLength;
         assert BigIntegerUtils.greaterOrEqual(nonNegBigInteger, BigInteger.ZERO);
         byte[] directByteArray = nonNegBigInteger.toByteArray();
         byte[] resultByteArray = new byte[byteLength];
@@ -124,6 +128,19 @@ public class BigIntegerUtils {
     }
 
     /**
+     * 将BigInteger[]形式的数据转换为byte[][]形式的数据。
+     *
+     * @param nonNegBigIntegers 待转换的非负数数组{@code BigInteger[]}。
+     * @param byteLength        字节长度。
+     * @return 转换结果。
+     */
+    public static byte[][] nonNegBigIntegersToByteArrays(BigInteger[] nonNegBigIntegers, int byteLength) {
+        return Arrays.stream(nonNegBigIntegers)
+            .map(x -> BigIntegerUtils.nonNegBigIntegerToByteArray(x, byteLength))
+            .toArray(byte[][]::new);
+    }
+
+    /**
      * 将{@code byte[]}转换为非负数的{@code BigInteger}。注意：转换过程已经对数据进行了拷贝。
      *
      * @param byteArray 待转换的{@code byte[]}。
@@ -131,6 +148,18 @@ public class BigIntegerUtils {
      */
     public static BigInteger byteArrayToNonNegBigInteger(byte[] byteArray) {
         return new BigInteger(1, byteArray);
+    }
+
+    /**
+     * 将byte[][]形式的数据转换为BigInteger[]形式的数据。
+     *
+     * @param xs         byte[][]形式的数据。
+     * @return 转换结果。
+     */
+    public static BigInteger[] byteArraysToNonNegBigIntegers(byte[][] xs) {
+        return Arrays.stream(xs)
+            .map(BigIntegerUtils::byteArrayToNonNegBigInteger)
+            .toArray(BigInteger[]::new);
     }
 
     /**
@@ -155,7 +184,7 @@ public class BigIntegerUtils {
     /**
      * 计算模b条件下a的乘法逆元。
      *
-     * @param a 待求逆的数。
+     * @param a       待求逆的数。
      * @param modulus 模数。
      * @return a^(-1)，满足a * a^(-1) == 1 mod modulus。
      * @throws ArithmeticException 如果乘法逆元不存在。
@@ -255,14 +284,14 @@ public class BigIntegerUtils {
     /**
      * 返回一个属于[1, n)的随机数。
      *
-     * @param n 上界。
+     * @param n            上界。
      * @param secureRandom 随机状态。
      * @return 随机数。
      */
     public static BigInteger randomPositive(final BigInteger n, SecureRandom secureRandom) {
         assert BigIntegerUtils.greater(n, BigInteger.ONE) : "n must be greater than 1:" + n;
         int bits = n.bitLength();
-        while(true) {
+        while (true) {
             BigInteger r = new BigInteger(bits, secureRandom);
             if (BigIntegerUtils.less(r, BigInteger.ONE) || BigIntegerUtils.greaterOrEqual(r, n)) {
                 continue;
@@ -274,14 +303,14 @@ public class BigIntegerUtils {
     /**
      * 返回一个属于[0, n)的随机数。
      *
-     * @param n 上界。
+     * @param n            上界。
      * @param secureRandom 随机状态。
      * @return 随机数。
      */
     public static BigInteger randomNonNegative(final BigInteger n, SecureRandom secureRandom) {
         assert BigIntegerUtils.greater(n, BigInteger.ZERO) : "n must be greater than 0:" + n;
         int bits = n.bitLength();
-        while(true) {
+        while (true) {
             // r必然属于[0, 2^k)，只需要进一步判断是否小于n
             BigInteger r = new BigInteger(bits, secureRandom);
             if (BigIntegerUtils.greaterOrEqual(r, n)) {
@@ -289,25 +318,6 @@ public class BigIntegerUtils {
             }
             return r;
         }
-    }
-
-    /**
-     * 求x和y的内积。
-     *
-     * @param matrix 用{@code BigInteger[]}表示的矩阵。
-     * @param prime 质数p。
-     * @param x      用布尔值表示的x。
-     * @return x和y的内积。
-     */
-    public static BigInteger innerProduct(BigInteger[] matrix, BigInteger prime, boolean[] x) {
-        assert x.length == matrix.length;
-        BigInteger value = BigInteger.ZERO;
-        for (int i = 0; i < x.length; i++) {
-            if (x[i]) {
-                value = value.add(matrix[i]).mod(prime);
-            }
-        }
-        return value;
     }
 
     /**
@@ -390,7 +400,7 @@ public class BigIntegerUtils {
         if (j > 0 && x.testBit(j - 1)) {
             mantissa++;
         }
-        double f = mantissa / (double)(1L << 52);
+        double f = mantissa / (double) (1L << 52);
         /*
          * Add the logarithm to the number of bits, and subtract 1 because the number of bits is always higher than
          * necessary for a number (i.e. log_2(x) < n for every x).

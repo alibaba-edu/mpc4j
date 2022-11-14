@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.bea95.Bea95PreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.bea95.Bea95PreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.bea95.Bea95PreCotSender;
@@ -13,7 +14,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.bea95.Bea95PreCotSender;
  * @author Weiran Liu
  * @date 2022/01/14
  */
-public class PreCotFactory {
+public class PreCotFactory implements PtoFactory {
     /**
      * 私有构造函数
      */
@@ -83,9 +84,7 @@ public class PreCotFactory {
             case MALICIOUS:
                 return new Bea95PreCotConfig.Builder().build();
             default:
-                throw new IllegalArgumentException(
-                    "Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name()
-                );
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

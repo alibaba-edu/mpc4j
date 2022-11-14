@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.MaxBinSizeUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotConfig;
@@ -21,7 +22,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotSender;
  * @author Weiran Liu
  * @date 2022/01/22
  */
-public class MspCotFactory {
+public class MspCotFactory implements PtoFactory {
     /**
      * 私有构造函数
      */
@@ -59,7 +60,7 @@ public class MspCotFactory {
             case YWL20_UNI:
                 return new Ywl20UniMspCotSender(senderRpc, receiverParty, (Ywl20UniMspCotConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid MspCotType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + MspCotType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -79,7 +80,7 @@ public class MspCotFactory {
             case YWL20_UNI:
                 return new Ywl20UniMspCotReceiver(receiverRpc, senderParty, (Ywl20UniMspCotConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid MspCotType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + MspCotType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -105,7 +106,7 @@ public class MspCotFactory {
                 int maxBinSize = MaxBinSizeUtils.expectMaxBinSize(keyNum * num, binNum);
                 return BspCotFactory.getPrecomputeNum(ywl20BspCotConfig, binNum, maxBinSize + 1);
             default:
-                throw new IllegalArgumentException("Invalid MspCotType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + MspCotType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -124,7 +125,7 @@ public class MspCotFactory {
             case MALICIOUS:
                 return new Bcg19RegMspCotConfig.Builder(SecurityModel.MALICIOUS).build();
             default:
-                throw new IllegalArgumentException("Invalid SecurityModel: " + securityModel.name());
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

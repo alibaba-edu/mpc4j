@@ -50,6 +50,12 @@ public class Gmr21SloppyPidConfig implements PidConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        oprfConfig.setEnvType(envType);
+        psuConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return oprfConfig.getEnvType();
     }

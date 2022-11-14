@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.common.tool.polynomial.zp64;
 
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64Manager;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Manager;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;

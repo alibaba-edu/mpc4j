@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.pmid;
 
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pso.pmid.zcl22.*;
 
 /**
@@ -10,7 +11,7 @@ import edu.alibaba.mpc4j.s2pc.pso.pmid.zcl22.*;
  * @author Weiran Liu
  * @date 2022/5/6
  */
-public class PmidFactory {
+public class PmidFactory implements PtoFactory {
     /**
      * 私有构造函数
      */
@@ -49,7 +50,7 @@ public class PmidFactory {
             case ZCL22_SLOPPY:
                 return new Zcl22SloppyPmidServer<>(serverRpc, clientParty, (Zcl22SloppyPmidConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid PmidConfig: " + type.name());
+                throw new IllegalArgumentException("Invalid " + PmidType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -70,7 +71,7 @@ public class PmidFactory {
             case ZCL22_SLOPPY:
                 return new Zcl22SloppyPmidClient<>(clientRpc, serverParty, (Zcl22SloppyPmidConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid PmidConfig: " + type.name());
+                throw new IllegalArgumentException("Invalid " + PmidType.class.getSimpleName() + ": " + type.name());
         }
     }
 }

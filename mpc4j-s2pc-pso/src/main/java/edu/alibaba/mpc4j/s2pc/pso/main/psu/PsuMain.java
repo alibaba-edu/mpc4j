@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.main.psu;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
@@ -77,8 +78,16 @@ public class PsuMain {
         // 读取元素字节长度
         int elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
         // 读取集合大小
-        int[] logSetSizes = PropertiesUtils.readLogIntArray(properties, "log_set_size");
-        int[] setSizes = Arrays.stream(logSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
+        int[] clientLogSetSizes = PropertiesUtils.readLogIntArray(properties, "client_log_set_size");
+        Preconditions.checkArgument(
+            serverLogSetSizes.length == clientLogSetSizes.length,
+            "# of server log_set_size = %s, $ of client log_set_size = %s, they must be equal",
+            serverLogSetSizes.length, clientLogSetSizes.length
+        );
+        int setSizeNum = serverLogSetSizes.length;
+        int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
         // 读取特殊参数
         LOGGER.info("{} read PTO config", serverRpc.ownParty().getPartyName());
         PsuConfig config = PsuConfigUtils.createPsuConfig(properties);
@@ -86,8 +95,8 @@ public class PsuMain {
         LOGGER.info("{} generate warm-up element files", serverRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
         LOGGER.info("{} generate element files", serverRpc.ownParty().getPartyName());
-        for (int setSize : setSizes) {
-            PsoUtils.generateBytesInputFiles(setSize, elementByteLength);
+        for (int setSizeIndex = 0 ; setSizeIndex < setSizeNum; setSizeIndex++) {
+            PsoUtils.generateBytesInputFiles(serverSetSizes[setSizeIndex], clientSetSizes[setSizeIndex], elementByteLength);
         }
         LOGGER.info("{} create result file", serverRpc.ownParty().getPartyName());
         // 创建统计结果文件
@@ -113,11 +122,15 @@ public class PsuMain {
         warmupServer(serverRpc, clientParty, config, taskId);
         taskId++;
         // 正式测试
-        for (int setSize : setSizes) {
-            Set<ByteBuffer> serverElementSet = readServerElementSet(setSize, elementByteLength);
-            runServer(serverRpc, clientParty, config, taskId, true, serverElementSet, setSize, elementByteLength, printWriter);
+        for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
+            int serverSetSize = serverSetSizes[setSizeIndex];
+            int clientSetSize = clientSetSizes[setSizeIndex];
+            Set<ByteBuffer> serverElementSet = readServerElementSet(serverSetSize, elementByteLength);
+            runServer(serverRpc, clientParty, config, taskId, true, serverElementSet, clientSetSize,
+                elementByteLength, printWriter);
             taskId++;
-            runServer(serverRpc, clientParty, config, taskId, false, serverElementSet, setSize, elementByteLength, printWriter);
+            runServer(serverRpc, clientParty, config, taskId, false, serverElementSet, clientSetSize,
+                elementByteLength, printWriter);
             taskId++;
         }
         // 断开连接
@@ -217,8 +230,16 @@ public class PsuMain {
         // 读取元素字节长度
         int elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
         // 读取集合大小
-        int[] logSetSizes = PropertiesUtils.readLogIntArray(properties, "log_set_size");
-        int[] setSizes = Arrays.stream(logSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
+        int[] clientLogSetSizes = PropertiesUtils.readLogIntArray(properties, "client_log_set_size");
+        Preconditions.checkArgument(
+            serverLogSetSizes.length == clientLogSetSizes.length,
+            "# of server log_set_size = %s, $ of client log_set_size = %s, they must be equal",
+            serverLogSetSizes.length, clientLogSetSizes.length
+        );
+        int setSizeNum = serverLogSetSizes.length;
+        int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
         // 读取特殊参数
         LOGGER.info("{} read PTO config", clientRpc.ownParty().getPartyName());
         PsuConfig config = PsuConfigUtils.createPsuConfig(properties);
@@ -226,8 +247,8 @@ public class PsuMain {
         LOGGER.info("{} generate warm-up element files", clientRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
         LOGGER.info("{} generate element files", clientRpc.ownParty().getPartyName());
-        for (int setSize : setSizes) {
-            PsoUtils.generateBytesInputFiles(setSize, elementByteLength);
+        for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
+            PsoUtils.generateBytesInputFiles(serverSetSizes[setSizeIndex], clientSetSizes[setSizeIndex], elementByteLength);
         }
         // 创建统计结果文件
         LOGGER.info("{} create result file", clientRpc.ownParty().getPartyName());
@@ -252,14 +273,18 @@ public class PsuMain {
         // 预热
         warmupClient(clientRpc, serverParty, config, taskId);
         taskId++;
-        for (int setSize : setSizes) {
+        for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
+            int serverSetSize = serverSetSizes[setSizeIndex];
+            int clientSetSize = clientSetSizes[setSizeIndex];
             // 读取输入文件
-            Set<ByteBuffer> clientElementSet = readClientElementSet(setSize, elementByteLength);
+            Set<ByteBuffer> clientElementSet = readClientElementSet(clientSetSize, elementByteLength);
             // 多线程
-            runClient(clientRpc, serverParty, config, taskId, true, clientElementSet, setSize, elementByteLength, printWriter);
+            runClient(clientRpc, serverParty, config, taskId, true, clientElementSet, serverSetSize,
+                elementByteLength, printWriter);
             taskId++;
             // 单线程
-            runClient(clientRpc, serverParty, config, taskId, false, clientElementSet, setSize, elementByteLength, printWriter);
+            runClient(clientRpc, serverParty, config, taskId, false, clientElementSet, serverSetSize,
+                elementByteLength, printWriter);
             taskId++;
         }
         // 断开连接

@@ -55,6 +55,12 @@ public class Zcl22SloppyPmidConfig implements PmidConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        oprfConfig.setEnvType(envType);
+        psuConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return oprfConfig.getEnvType();
     }

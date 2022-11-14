@@ -225,6 +225,14 @@ public class LongSquareDenseBitMatrix implements SquareDenseBitMatrix {
     }
 
     @Override
+    public byte[][] lExtMul(byte[][] v) {
+        assert v.length == size : "length of v must be " + size + ": " + v.length;
+        byte[][] output = new byte[size][v[0].length];
+        lExtMulAddi(v, output);
+        return output;
+    }
+
+    @Override
     public void lmulAddi(byte[] v, byte[] t) {
         assert v.length == byteSize : "byte length of v must be " + byteSize + ": " + v.length;
         assert BytesUtils.isReduceByteArray(v, size)
@@ -251,6 +259,21 @@ public class LongSquareDenseBitMatrix implements SquareDenseBitMatrix {
             }
         }
     }
+
+    @Override
+    public void lExtMulAddi(byte[][] v, byte[][] t) {
+        assert v.length == size : "length of v must be " + size + ": " + v.length;
+        assert t.length == size :  "length of t must be " + size + ": " + t.length;
+        assert v[0].length == t[0].length : "length of t[i] must be " + v[0].length + ": " + t[0].length;
+        for (int columnIndex = 0; columnIndex < size; columnIndex++) {
+            for (int rowIndex = 0; rowIndex < size; rowIndex++) {
+                if (BinaryUtils.getBoolean(longBitMatrix[rowIndex], columnIndex + longOffset)) {
+                    BytesUtils.xori(t[columnIndex], v[rowIndex]);
+                }
+            }
+        }
+    }
+
 
     /**
      * 当前布尔矩阵左乘向量，即计算v·M。

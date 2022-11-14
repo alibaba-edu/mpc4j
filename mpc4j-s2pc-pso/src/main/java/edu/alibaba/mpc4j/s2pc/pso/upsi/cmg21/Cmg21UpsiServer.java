@@ -321,7 +321,7 @@ public class Cmg21UpsiServer<T> extends AbstractUpsiServer<T> {
         IntStream queryIntStream = parallel ?
             IntStream.range(0, ciphertextNum).parallel() : IntStream.range(0, ciphertextNum);
         List<byte[]> queryPowers = queryIntStream
-            .mapToObj(i -> Cmg21UpsiNativeServer.computeEncryptedPowers(
+            .mapToObj(i -> Cmg21UpsiNativeUtils.computeEncryptedPowers(
                 encryptionParams.get(0),
                 encryptionParams.get(1),
                 ciphertextPoly.subList(i * params.getQueryPowers().length, (i + 1) * params.getQueryPowers().length),
@@ -335,7 +335,7 @@ public class Cmg21UpsiServer<T> extends AbstractUpsiServer<T> {
             return (parallel ? IntStream.range(0, ciphertextNum).parallel() : IntStream.range(0, ciphertextNum))
                 .mapToObj(i ->
                     (parallel ? IntStream.range(0, partitionCount).parallel() : IntStream.range(0, partitionCount))
-                        .mapToObj(j -> Cmg21UpsiNativeServer.computeMatches(
+                        .mapToObj(j -> Cmg21UpsiNativeUtils.optComputeMatches(
                             encryptionParams.get(0),
                             encryptionParams.get(1),
                             plaintextPoly.get(i * partitionCount + j),
@@ -349,9 +349,8 @@ public class Cmg21UpsiServer<T> extends AbstractUpsiServer<T> {
             return (parallel ? IntStream.range(0, ciphertextNum).parallel() : IntStream.range(0, ciphertextNum))
                 .mapToObj(i ->
                     (parallel ? IntStream.range(0, partitionCount).parallel() : IntStream.range(0, partitionCount))
-                        .mapToObj(j -> Cmg21UpsiNativeServer.computeMatchesNaiveMethod(
+                        .mapToObj(j -> Cmg21UpsiNativeUtils.naiveComputeMatches(
                                 encryptionParams.get(0),
-                                encryptionParams.get(1),
                                 plaintextPoly.get(i * partitionCount + j),
                                 queryPowers.subList(i * powerDegree.length, (i + 1) * powerDegree.length)
                             )

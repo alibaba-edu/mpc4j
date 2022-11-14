@@ -33,6 +33,11 @@ public class Ms13OsnConfig implements OsnConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        cotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return cotConfig.getEnvType();
     }

@@ -78,4 +78,18 @@ public interface ByteMulEcc {
      * @return 椭圆曲线类型。
      */
     ByteEccFactory.ByteEccType getByteEccType();
+
+    /**
+     * 返回椭圆曲线点的字节长度。
+     *
+     * @return 椭圆曲线点的字节长度。
+     */
+    int pointByteLength();
+
+    /**
+     * 返回幂指数的字节长度。
+     *
+     * @return 幂指数的字节长度。
+     */
+    int scalarByteLength();
 }

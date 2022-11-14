@@ -36,6 +36,12 @@ public class Gmr21MpPidConfig implements PidConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        mpOprfConfig.setEnvType(envType);
+        psuConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return mpOprfConfig.getEnvType();
     }

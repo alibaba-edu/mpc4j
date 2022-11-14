@@ -39,6 +39,11 @@ public class DirectNcCotConfig implements NcCotConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        coreCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return coreCotConfig.getEnvType();
     }

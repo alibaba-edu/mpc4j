@@ -15,10 +15,10 @@ public class IdealZ2CoreMtgConfig implements Z2CoreMtgConfig {
     /**
      * 环境类型
      */
-    private final EnvType envType;
+    private EnvType envType;
 
     private IdealZ2CoreMtgConfig(Builder builder) {
-        envType = builder.envType;
+        envType = EnvType.STANDARD;
     }
 
     @Override
@@ -32,6 +32,11 @@ public class IdealZ2CoreMtgConfig implements Z2CoreMtgConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        this.envType = envType;
+    }
+
+    @Override
     public EnvType getEnvType() {
         return envType;
     }
@@ -42,19 +47,9 @@ public class IdealZ2CoreMtgConfig implements Z2CoreMtgConfig {
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<IdealZ2CoreMtgConfig> {
-        /**
-         * 环境类型
-         */
-        private EnvType envType;
 
         public Builder() {
-            super();
-            this.envType = EnvType.STANDARD;
-        }
 
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
         }
 
         @Override

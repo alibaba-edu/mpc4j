@@ -33,6 +33,11 @@ public class Kk13OptCoreLotConfig implements CoreLotConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        coreCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return coreCotConfig.getEnvType();
     }

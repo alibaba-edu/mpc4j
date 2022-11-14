@@ -33,7 +33,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_common_tool_polynomial_gf2e_
 
 /*
  * Class:     edu_alibaba_mpc4j_common_tool_polynomial_gf2e_NtlNativeGf2ePoly
- * Method:    evaluate
+ * Method:    zp_tree_main_evaluate
  * Signature: ([BI[[B[[B)[[B
  */
 JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_polynomial_gf2e_NtlNativeGf2ePoly_evaluate

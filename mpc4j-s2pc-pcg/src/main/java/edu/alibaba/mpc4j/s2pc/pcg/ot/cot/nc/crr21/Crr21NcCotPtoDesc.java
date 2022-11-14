@@ -66,27 +66,4 @@ class Crr21NcCotPtoDesc implements PtoDesc {
      * 单次输出支持的最大COT数量
      */
     static final int MAX_LOG_N = LdpcCreatorUtils.MAX_LOG_N;
-
-    /**
-     * 返回初始化LPN参数。
-     *
-     * @param config 配置项。
-     * @param num    数量。
-     * @return 初始化LPN参数。
-     */
-    static LpnParams getLpnParams(MspCotConfig config, LdpcCreatorUtils.CodeType silverCodeType, int num) {
-        int ceilLogN = LongUtils.ceilLog2(num);
-        assert ceilLogN <= MAX_LOG_N : "log(num) must be less or equal than " + MAX_LOG_N + ": " + ceilLogN;
-        if (ceilLogN < MIN_LOG_N) {
-            ceilLogN = MIN_LOG_N;
-        }
-        MspCotFactory.MspCotType mspCotType = config.getPtoType();
-        switch (mspCotType) {
-            case BCG19_REG:
-            case YWL20_UNI:
-                return LdpcCreatorUtils.getLpnParams(ceilLogN, silverCodeType);
-            default: throw new IllegalArgumentException("Invalid MspCot Type :" + mspCotType.name());
-        }
-
-    }
 }

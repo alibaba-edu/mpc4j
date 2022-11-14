@@ -15,15 +15,20 @@ public class Bkms20ByteEccPidConfig implements PidConfig {
     /**
      * 环境类型
      */
-    private final EnvType envType;
+    private EnvType envType;
 
     private Bkms20ByteEccPidConfig(Builder builder) {
-        envType = builder.envType;
+        envType = EnvType.STANDARD;
     }
 
     @Override
     public PidFactory.PidType getPtoType() {
         return PidFactory.PidType.BKMS20_BYTE_ECC;
+    }
+
+    @Override
+    public void setEnvType(EnvType envType) {
+        this.envType = envType;
     }
 
     @Override
@@ -37,19 +42,9 @@ public class Bkms20ByteEccPidConfig implements PidConfig {
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Bkms20ByteEccPidConfig> {
-        /**
-         * 环境类型
-         */
-        private EnvType envType;
 
         public Builder() {
-            super();
-            this.envType = EnvType.STANDARD;
-        }
-
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
+            // empty
         }
 
         @Override

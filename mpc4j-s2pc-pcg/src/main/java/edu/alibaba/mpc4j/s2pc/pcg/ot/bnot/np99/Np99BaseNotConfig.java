@@ -34,6 +34,11 @@ public class Np99BaseNotConfig implements BaseNotConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        baseOtConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return baseOtConfig.getEnvType();
     }

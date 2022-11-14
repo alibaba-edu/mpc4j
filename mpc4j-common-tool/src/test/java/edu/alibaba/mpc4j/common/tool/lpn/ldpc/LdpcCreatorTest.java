@@ -89,7 +89,7 @@ public class LdpcCreatorTest {
         double codeGenTime = (double)stopWatch.getTime(TimeUnit.MICROSECONDS) / 1000;
         stopWatch.reset();
 
-        LOGGER.info("ceilLogN: \t{} , CodeType: \t{}, Online. \t{} ms", ceilLogN, codeType.name(),
+        LOGGER.info("ceilLogN: \t{} , CodeType: \t{}, Time. \t{} ms", ceilLogN, codeType.name(),
             TIME_DECIMAL_FORMAT.format(codeGenTime));
     }
 

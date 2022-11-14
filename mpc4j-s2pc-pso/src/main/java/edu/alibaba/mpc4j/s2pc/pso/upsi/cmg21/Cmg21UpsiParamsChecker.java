@@ -85,7 +85,7 @@ public class Cmg21UpsiParamsChecker {
             PowerNode[] powerNodes = PowerUtils.computePowers(sourcePowersSet, params.getMaxPartitionSizePerBin());
             parentPowers = Arrays.stream(powerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
         }
-        return Cmg21UpsiNativeParamsChecker.checkSealParams(
+        return Cmg21UpsiNativeUtils.checkSealParams(
             params.getPolyModulusDegree(), params.getPlainModulus(), params.getCoeffModulusBits(),
             parentPowers, params.getQueryPowers(), params.getPsLowDegree(), params.getMaxPartitionSizePerBin());
     }

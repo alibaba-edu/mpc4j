@@ -68,6 +68,13 @@ public class Jsz22SfcPsuConfig implements PsuConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        oprfConfig.setEnvType(envType);
+        osnConfig.setEnvType(envType);
+        coreCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return oprfConfig.getEnvType();
     }

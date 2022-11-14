@@ -13,22 +13,27 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.BaseNotFactory;
  */
 public class Mr19EccBaseNotConfig implements BaseNotConfig {
     /**
-     * 环境类型
-     */
-    private final EnvType envType;
-    /**
      * 是否使用压缩椭圆曲线编码
      */
     private final boolean compressEncode;
+    /**
+     * 环境类型
+     */
+    private EnvType envType;
 
     private Mr19EccBaseNotConfig(Builder builder) {
-        envType = builder.envType;
         compressEncode = builder.compressEncode;
+        envType = EnvType.STANDARD;
     }
 
     @Override
     public BaseNotFactory.BaseNotType getPtoType() {
         return BaseNotFactory.BaseNotType.MR19_ECC;
+    }
+
+    @Override
+    public void setEnvType(EnvType envType) {
+        this.envType = envType;
     }
 
     @Override
@@ -47,23 +52,12 @@ public class Mr19EccBaseNotConfig implements BaseNotConfig {
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Mr19EccBaseNotConfig> {
         /**
-         * 环境类型
-         */
-        private EnvType envType;
-        /**
          * 是否使用压缩椭圆曲线编码
          */
         private boolean compressEncode;
 
         public Builder() {
-            super();
-            envType = EnvType.STANDARD;
             compressEncode = true;
-        }
-
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
         }
 
         public Builder setCompressEncode(boolean compressEncode) {

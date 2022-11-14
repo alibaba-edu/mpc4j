@@ -13,6 +13,13 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
  */
 public interface SecurePtoConfig extends Config {
     /**
+     * 设置环境类型。
+     *
+     * @param envType 环境类型。
+     */
+    void setEnvType(EnvType envType);
+
+    /**
      * 返回环境类型。
      *
      * @return 环境类型。

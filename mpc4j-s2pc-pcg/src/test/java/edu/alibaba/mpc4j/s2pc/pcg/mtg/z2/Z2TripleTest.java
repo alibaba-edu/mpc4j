@@ -29,7 +29,7 @@ public class Z2TripleTest {
         try {
             // 创建长度为0的布尔三元组
             Z2Triple.create(0, new byte[0], new byte[0], new byte[0]);
-            throw new IllegalStateException("ERROR: successfully create Z2Triple with num = 0");
+            throw new IllegalStateException("ERROR: successfully create " + Z2Triple.class.getSimpleName() + " with num = 0");
         } catch (AssertionError ignored) {
 
         }
@@ -38,21 +38,21 @@ public class Z2TripleTest {
         try {
             // 创建数量小的布尔三元组
             Z2Triple.create(num, new byte[byteNum - 1], new byte[byteNum - 1], new byte[byteNum - 1]);
-            throw new IllegalStateException("ERROR: successfully create Z2Triple with less byte num");
+            throw new IllegalStateException("ERROR: successfully create " + Z2Triple.class.getSimpleName() + " with less byte num");
         } catch (AssertionError ignored) {
 
         }
         try {
             // 创建数量大的布尔三元组
             Z2Triple.create(num, new byte[byteNum + 1], new byte[byteNum + 1], new byte[byteNum + 1]);
-            throw new IllegalStateException("ERROR: successfully create Z2Triple with large byte num");
+            throw new IllegalStateException("ERROR: successfully create " + Z2Triple.class.getSimpleName() + " with large byte num");
         } catch (AssertionError ignored) {
 
         }
         try {
             // 创建数量不一致的布尔三元组
             Z2Triple.create(num, new byte[byteNum], new byte[byteNum - 1], new byte[byteNum + 1]);
-            throw new IllegalStateException("ERROR: successfully create Z2Triple with distinct byte num");
+            throw new IllegalStateException("ERROR: successfully create " + Z2Triple.class.getSimpleName() + " with distinct byte num");
         } catch (AssertionError ignored) {
 
         }
@@ -63,7 +63,7 @@ public class Z2TripleTest {
         try {
             // 创建长度过短的布尔三元组
             Z2Triple.create(num - 1, a, b, c);
-            throw new IllegalStateException("ERROR: successfully create Z2Triple with wrong num");
+            throw new IllegalStateException("ERROR: successfully create " + Z2Triple.class.getSimpleName() + " with wrong num");
         } catch (AssertionError ignored) {
 
         }

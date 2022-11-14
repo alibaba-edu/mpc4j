@@ -5,7 +5,6 @@ import edu.alibaba.mpc4j.common.tool.polynomial.zp.ZpPolyFactory.ZpPolyType;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * NTL的Zp有限域多项式插值本地函数。
@@ -40,46 +39,34 @@ public class NtlZpPoly extends AbstractZpPoly {
     }
 
     @Override
-    public int coefficientNum(int num) {
-        assert num >= 1 : "# of points must be greater than or equal to 1: " + num;
-        return num;
-    }
-
-    @Override
-    public BigInteger[] interpolate(int num, BigInteger[] xArray, BigInteger[] yArray) {
+    public BigInteger[] interpolate(int expectNum, BigInteger[] xArray, BigInteger[] yArray) {
         assert xArray.length == yArray.length;
-        assert num >= 1 && xArray.length <= num;
+        assert expectNum >= 1 && xArray.length <= expectNum;
         for (BigInteger x : xArray) {
             assert validPoint(x);
         }
         for (BigInteger y : yArray) {
             assert validPoint(y);
         }
-        byte[][] xByteArray = bigIntegersToByteArrays(xArray);
-        byte[][] yByteArray = bigIntegersToByteArrays(yArray);
+        byte[][] xByteArray = BigIntegerUtils.nonNegBigIntegersToByteArrays(xArray, pByteLength);
+        byte[][] yByteArray = BigIntegerUtils.nonNegBigIntegersToByteArrays(yArray, pByteLength);
         // 调用本地函数完成插值
-        byte[][] polynomial = nativeInterpolate(pByteArray, num, xByteArray, yByteArray);
+        byte[][] polynomial = nativeInterpolate(pByteArray, expectNum, xByteArray, yByteArray);
         // 转换为大整数
-        return byteArraysToBigIntegers(polynomial);
+        return BigIntegerUtils.byteArraysToNonNegBigIntegers(polynomial);
     }
 
     @Override
-    public int rootCoefficientNum(int num) {
-        assert num >= 1 : "# of points must be greater than or equal to 1: " + num;
-        return num + 1;
-    }
-
-    @Override
-    public BigInteger[] rootInterpolate(int num, BigInteger[] xArray, BigInteger y) {
-        assert num >= 1 && xArray.length <= num;
+    public BigInteger[] rootInterpolate(int expectNum, BigInteger[] xArray, BigInteger y) {
+        assert expectNum >= 1 && xArray.length <= expectNum;
         if (xArray.length == 0) {
             // 返回随机多项式
-            BigInteger[] coefficients = new BigInteger[num + 1];
-            for (int index = 0; index < num; index++) {
+            BigInteger[] coefficients = new BigInteger[expectNum + 1];
+            for (int index = 0; index < expectNum; index++) {
                 coefficients[index] = BigIntegerUtils.randomNonNegative(p, secureRandom);
             }
             // 将最高位设置为1
-            coefficients[num] = BigInteger.ONE;
+            coefficients[expectNum] = BigInteger.ONE;
             return coefficients;
         }
         // 如果有插值数据，则继续插值
@@ -87,35 +74,35 @@ public class NtlZpPoly extends AbstractZpPoly {
             assert validPoint(x);
         }
         assert validPoint(y);
-        byte[][] xByteArray = bigIntegersToByteArrays(xArray);
+        byte[][] xByteArray = BigIntegerUtils.nonNegBigIntegersToByteArrays(xArray, pByteLength);
         byte[] yBytes = BigIntegerUtils.nonNegBigIntegerToByteArray(y, pByteLength);
         // 调用本地函数完成插值
-        byte[][] polynomial = nativeRootInterpolate(pByteArray, num, xByteArray, yBytes);
+        byte[][] polynomial = nativeRootInterpolate(pByteArray, expectNum, xByteArray, yBytes);
         // 转换为大整数
-        return byteArraysToBigIntegers(polynomial);
+        return BigIntegerUtils.byteArraysToNonNegBigIntegers(polynomial);
     }
 
     /**
      * NTL底层库的虚拟点插值。
      *
      * @param primeBytes 质数字节数组。
-     * @param num        插值点数量。
+     * @param expectNum  期望点数量。
      * @param xArray     x_i数组。
      * @param yBytes     y。
      * @return 插值多项式的系数。
      */
-    private static native byte[][] nativeRootInterpolate(byte[] primeBytes, int num, byte[][] xArray, byte[] yBytes);
+    private static native byte[][] nativeRootInterpolate(byte[] primeBytes, int expectNum, byte[][] xArray, byte[] yBytes);
 
     /**
      * NTL底层库的虚拟点插值。
      *
      * @param primeBytes 质数字节数组。
-     * @param num        插值点数量。
+     * @param expectNum  期望点数量。
      * @param xArray     x_i数组。
      * @param yArray     y_i数组。
      * @return 插值多项式的系数。
      */
-    private static native byte[][] nativeInterpolate(byte[] primeBytes, int num, byte[][] xArray, byte[][] yArray);
+    private static native byte[][] nativeInterpolate(byte[] primeBytes, int expectNum, byte[][] xArray, byte[][] yArray);
 
     @Override
     public BigInteger evaluate(BigInteger[] coefficients, BigInteger x) {
@@ -126,7 +113,7 @@ public class NtlZpPoly extends AbstractZpPoly {
         // 验证x的有效性
         assert validPoint(x);
 
-        byte[][] coefficientByteArrays = bigIntegersToByteArrays(coefficients);
+        byte[][] coefficientByteArrays = BigIntegerUtils.nonNegBigIntegersToByteArrays(coefficients, pByteLength);
         byte[] xByteArray = BigIntegerUtils.nonNegBigIntegerToByteArray(x, pByteLength);
         // 调用本地函数完成求值
         byte[] yByteArray = nativeSingleEvaluate(pByteArray, coefficientByteArrays, xByteArray);
@@ -155,12 +142,12 @@ public class NtlZpPoly extends AbstractZpPoly {
             assert validPoint(x);
         }
 
-        byte[][] coefficientByteArrays = bigIntegersToByteArrays(coefficients);
-        byte[][] xByteArrays = bigIntegersToByteArrays(xArray);
+        byte[][] coefficientByteArrays = BigIntegerUtils.nonNegBigIntegersToByteArrays(coefficients, pByteLength);
+        byte[][] xByteArrays = BigIntegerUtils.nonNegBigIntegersToByteArrays(xArray, pByteLength);
         // 调用本地函数完成求值
         byte[][] yByteArrays = nativeEvaluate(pByteArray, coefficientByteArrays, xByteArrays);
 
-        return byteArraysToBigIntegers(yByteArrays);
+        return BigIntegerUtils.byteArraysToNonNegBigIntegers(yByteArrays);
     }
 
     /**
@@ -172,28 +159,4 @@ public class NtlZpPoly extends AbstractZpPoly {
      * @return f(x_i)数组。
      */
     private static native byte[][] nativeEvaluate(byte[] primeBytes, byte[][] coefficients, byte[][] xArray);
-
-    /**
-     * 将BigInteger[]形式的数据转换为byte[][]形式的数据。
-     *
-     * @param bigIntegers BigInteger[]形式的数据。
-     * @return 转换结果。
-     */
-    private byte[][] bigIntegersToByteArrays(BigInteger[] bigIntegers) {
-        return Arrays.stream(bigIntegers)
-            .map(x -> BigIntegerUtils.nonNegBigIntegerToByteArray(x, pByteLength))
-            .toArray(byte[][]::new);
-    }
-
-    /**
-     * 将byte[][]形式的数据转换为BigInteger[]形式的数据。
-     *
-     * @param byteArrays byte[][]形式的数据。
-     * @return 转换结果。
-     */
-    private static BigInteger[] byteArraysToBigIntegers(byte[][] byteArrays) {
-        return Arrays.stream(byteArrays)
-            .map(BigIntegerUtils::byteArrayToNonNegBigInteger)
-            .toArray(BigInteger[]::new);
-    }
 }

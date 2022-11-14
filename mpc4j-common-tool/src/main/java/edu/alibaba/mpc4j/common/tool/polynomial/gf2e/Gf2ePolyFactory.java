@@ -50,7 +50,7 @@ public class Gf2ePolyFactory {
             case RINGS_LAGRANGE:
                 return new RingsLagrangeGf2ePoly(l);
             default:
-                throw new IllegalArgumentException("Invalid Gf2xPolyType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + Gf2ePolyType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -70,7 +70,7 @@ public class Gf2ePolyFactory {
             case INLAND_JDK:
                 return createInstance(Gf2ePolyType.RINGS_NEWTON, l);
             default:
-                throw new IllegalArgumentException("Invalid EnvType" + envType.name());
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }
     }
 }

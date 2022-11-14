@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.zp;
 
 import cc.redberry.rings.linear.LinearSolver.SystemInfo;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,17 +29,18 @@ public class ZpLinearSolverTest {
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
-     * 模数p
+     * Zp有限域
      */
-    private final BigInteger p;
+    private final Zp zp;
     /**
      * 线性求解器
      */
     private final ZpLinearSolver zpLinearSolver;
 
     public ZpLinearSolverTest() {
-        p = ZpManager.getPrime(CommonConstants.BLOCK_BIT_LENGTH);
-        zpLinearSolver = new ZpLinearSolver(p);
+        BigInteger p = ZpManager.getPrime(CommonConstants.BLOCK_BIT_LENGTH);
+        zp = ZpFactory.createInstance(EnvType.STANDARD, p);
+        zpLinearSolver = new ZpLinearSolver(zp);
     }
 
     @Test
@@ -49,12 +50,12 @@ public class ZpLinearSolverTest {
             BigInteger[][] matrixA = new BigInteger[DIMENSION][DIMENSION];
             for (int row = 0; row < DIMENSION; row++) {
                 for (int column = 0; column < DIMENSION; column++) {
-                    matrixA[row][column] = BigIntegerUtils.randomNonNegative(p, SECURE_RANDOM);
+                    matrixA[row][column] = zp.createRandom(SECURE_RANDOM);
                 }
             }
             BigInteger[] b = new BigInteger[DIMENSION];
             for (int row = 0; row < DIMENSION; row++) {
-                b[row] = BigIntegerUtils.randomNonNegative(p, SECURE_RANDOM);
+                b[row] = zp.createRandom(SECURE_RANDOM);
             }
             testGaussianElimination(matrixA, b);
         }
@@ -71,14 +72,14 @@ public class ZpLinearSolverTest {
             // 剩余行随机选择
             for (int row = 1; row < DIMENSION; row++) {
                 for (int column = 0; column < DIMENSION; column++) {
-                    matrixA[row][column] = BigIntegerUtils.randomNonNegative(p, SECURE_RANDOM);
+                    matrixA[row][column] = zp.createRandom(SECURE_RANDOM);
                 }
             }
             BigInteger[] b = new BigInteger[DIMENSION];
             // y_0设置为0
             b[0] = BigInteger.ZERO;
             for (int row = 1; row < DIMENSION; row++) {
-                b[row] = BigIntegerUtils.randomNonNegative(p, SECURE_RANDOM);
+                b[row] = zp.createRandom(SECURE_RANDOM);
             }
             testGaussianElimination(matrixA, b);
         }
@@ -91,12 +92,12 @@ public class ZpLinearSolverTest {
             BigInteger[][] matrixA = new BigInteger[DIMENSION][DIMENSION * 2];
             for (int row = 0; row < DIMENSION; row++) {
                 for (int column = 0; column < DIMENSION * 2; column++) {
-                    matrixA[row][column] = BigIntegerUtils.randomNonNegative(p, SECURE_RANDOM);
+                    matrixA[row][column] = zp.createRandom(SECURE_RANDOM);
                 }
             }
             BigInteger[] b = new BigInteger[DIMENSION];
             for (int row = 0; row < DIMENSION; row++) {
-                b[row] = BigIntegerUtils.randomNonNegative(p, SECURE_RANDOM);
+                b[row] = zp.createRandom(SECURE_RANDOM);
             }
             testGaussianElimination(matrixA, b);
         }
@@ -111,7 +112,7 @@ public class ZpLinearSolverTest {
         for (int rowIndex = 0; rowIndex < nrow; rowIndex++) {
             BigInteger res = BigInteger.ZERO;
             for (int columnIndex = 0; columnIndex < ncol; columnIndex++) {
-                res = res.add(x[columnIndex].multiply(matrixA[rowIndex][columnIndex])).mod(p);
+                res = zp.add(res, zp.mul(x[columnIndex], matrixA[rowIndex][columnIndex]));
             }
             Assert.assertEquals(b[rowIndex], res);
         }

@@ -38,41 +38,42 @@ public class ByteEccConsistencyTest {
         configurationParams.add(new Object[] {"X25519 (BC v.s. Sodium)", ByteEccType.X25519_BC, ByteEccType.X25519_SODIUM});
         // ED25519
         configurationParams.add(new Object[] {"ED25519 (BC v.s. Sodium)", ByteEccType.ED25519_BC, ByteEccType.ED25519_SODIUM});
+        configurationParams.add(new Object[] {"ED25519 (BC v.s. Cafe)", ByteEccType.ED25519_BC, ByteEccType.ED25519_CAFE});
 
         return configurationParams;
     }
 
     /**
-     * JDK类型
+     * 被比较类型
      */
-    private final ByteEccType jdkType;
+    private final ByteEccType thisType;
     /**
-     * 本地类型
+     * 比较类型
      */
-    private final ByteEccType nativeType;
+    private final ByteEccType thatType;
 
-    public ByteEccConsistencyTest(String name, ByteEccType jdkType, ByteEccType nativeType) {
+    public ByteEccConsistencyTest(String name, ByteEccType thisType, ByteEccType thatType) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        this.jdkType = jdkType;
-        this.nativeType = nativeType;
+        this.thisType = thisType;
+        this.thatType = thatType;
     }
 
     @Test
     public void testMul() {
-        ByteMulEcc jdkByteMulEcc = ByteEccFactory.createMulInstance(jdkType);
-        ByteMulEcc nativeByteMulEcc = ByteEccFactory.createMulInstance(nativeType);
+        ByteMulEcc thisByteMulEcc = ByteEccFactory.createMulInstance(thisType);
+        ByteMulEcc thatByteMulEcc = ByteEccFactory.createMulInstance(thatType);
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            // 用JDK的ByteEcc生成随机数
-            byte[] k = jdkByteMulEcc.randomScalar(SECURE_RANDOM);
-            byte[] p = jdkByteMulEcc.randomPoint(SECURE_RANDOM);
-            byte[] jdkMul = jdkByteMulEcc.mul(p, k);
-            byte[] nativeMul = nativeByteMulEcc.mul(p, k);
+            // 用被比较的ByteEcc生成随机数
+            byte[] k = thisByteMulEcc.randomScalar(SECURE_RANDOM);
+            byte[] p = thisByteMulEcc.randomPoint(SECURE_RANDOM);
+            byte[] jdkMul = thisByteMulEcc.mul(p, k);
+            byte[] nativeMul = thatByteMulEcc.mul(p, k);
             Assert.assertArrayEquals(jdkMul, nativeMul);
-            // 用Native的ByteEcc生成随机数
-            k = nativeByteMulEcc.randomScalar(SECURE_RANDOM);
-            p = nativeByteMulEcc.randomPoint(SECURE_RANDOM);
-            jdkMul = jdkByteMulEcc.mul(p, k);
-            nativeMul = nativeByteMulEcc.mul(p, k);
+            // 用比较的ByteEcc生成随机数
+            k = thatByteMulEcc.randomScalar(SECURE_RANDOM);
+            p = thatByteMulEcc.randomPoint(SECURE_RANDOM);
+            jdkMul = thisByteMulEcc.mul(p, k);
+            nativeMul = thatByteMulEcc.mul(p, k);
             Assert.assertArrayEquals(jdkMul, nativeMul);
         }
     }

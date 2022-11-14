@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.polynomial.power.PowerNode;
 import edu.alibaba.mpc4j.common.tool.polynomial.power.PowerUtils;
@@ -18,11 +17,6 @@ import java.util.stream.IntStream;
  * @date 2022/8/9
  */
 public class Cmg21KwPirParamsChecker {
-
-    static {
-        System.loadLibrary(CommonConstants.MPC4J_NATIVE_FHE_NAME);
-    }
-
     /**
      * 私有构造函数
      */
@@ -86,7 +80,7 @@ public class Cmg21KwPirParamsChecker {
             PowerNode[] powerNodes = PowerUtils.computePowers(sourcePowersSet, params.getMaxPartitionSizePerBin());
             parentPowers = Arrays.stream(powerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
         }
-        return Cmg21KwPirNativeParamsChecker.checkSealParams(
+        return Cmg21KwPirNativeUtils.checkSealParams(
             params.getPolyModulusDegree(), params.getPlainModulus(), params.getCoeffModulusBits(), parentPowers,
             params.getQueryPowers(), params.getPsLowDegree(), params.getMaxPartitionSizePerBin()
         );

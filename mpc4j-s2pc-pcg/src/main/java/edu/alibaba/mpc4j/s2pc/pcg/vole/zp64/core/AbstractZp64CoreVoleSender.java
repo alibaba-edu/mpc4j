@@ -5,8 +5,8 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64Factory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -52,6 +52,7 @@ public abstract class AbstractZp64CoreVoleSender extends AbstractSecureTwoPartyP
     protected void setInitInput(long prime, int maxNum) {
         assert BigInteger.valueOf(prime).isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "input prime is not a prime: " + prime;
         zp64 = Zp64Factory.createInstance(envType, prime);
+        assert maxNum > 0 : "max num must be greater than 0: " + maxNum;
         this.maxNum = maxNum;
         initialized = false;
     }

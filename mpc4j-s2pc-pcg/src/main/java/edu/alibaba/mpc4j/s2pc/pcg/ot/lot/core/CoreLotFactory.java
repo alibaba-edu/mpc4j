@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.lot.core;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.core.kk13.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.core.oos17.Oos17CoreLotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.core.oos17.Oos17CoreLotReceiver;
@@ -14,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.core.oos17.Oos17CoreLotSender;
  * @author Weiran Liu
  * @date 2022/9/21
  */
-public class CoreLotFactory {
+public class CoreLotFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

@@ -1,40 +1,31 @@
-//
-// Created by Liqiang Peng on 2022/7/14.
-//
+/*
+ * Created by pengliqiang on 2022/7/14.
+ * This implementation is based on the public domain SealPIR in APSI project:
+ * <p>
+ * https://github.com/microsoft/APSI/blob/95ff2cbad3e523e3788a5f8e4baf4638fbf0c6c7/sender/apsi/bin_bundle.cpp
+ * </p>
+ */
 
 #include <jni.h>
 #include "seal/seal.h"
 
+using namespace seal;
+using namespace std;
+
 #ifndef MPC3J_NATIVE_FHE_APSI_H
 #define MPC3J_NATIVE_FHE_APSI_H
 
-jobject JNICALL genEncryptionParameters(JNIEnv *env, jint poly_modulus_degree, jlong plain_modulus,
-                                        jintArray coeff_modulus_bits);
+vector<Ciphertext> compute_encrypted_powers(const EncryptionParameters& parms, vector<Ciphertext> query, vector<vector<uint32_t>> parent_powers,
+                                            vector<uint32_t> source_power_index, int ps_low_power, const RelinKeys& relin_keys);
 
-jobject JNICALL generateQuery(JNIEnv *env, jobjectArray jenc_arrays, jbyteArray params_bytes, jbyteArray pk_bytes,
-                              jbyteArray sk_bytes);
+Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts, const PublicKey& public_key);
 
-jlongArray JNICALL decodeReply(JNIEnv *env, jbyteArray response, jbyteArray params_bytes, jbyteArray sk_bytes);
+Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts,
+                                 int ps_low_power, const RelinKeys& relin_keys, const PublicKey& public_key);
 
-jobject JNICALL computeEncryptedPowers(JNIEnv *env, jobject query_list, jbyteArray relin_keys_bytes,
-                                       jbyteArray params_bytes, jobjectArray jparent_powers,
-                                       jintArray jsource_power_index, jint ps_low_power);
+Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts,
+                                 int ps_low_power, const RelinKeys& relin_keys);
 
-jbyteArray JNICALL computeMatches(JNIEnv *env, jobjectArray database_coeffs, jobject query_list,
-                                  jbyteArray relin_keys_bytes, jbyteArray pk_bytes, jbyteArray params_bytes,
-                                  jint ps_low_power);
-
-jbyteArray JNICALL computeMatchesNaiveMethod(JNIEnv *env, jobjectArray database_coeffs, jobject query_list,
-                                             jbyteArray relin_keys_bytes, jbyteArray params_bytes, jbyteArray pk_bytes);
-
-jbyteArray JNICALL computeMatches(JNIEnv *env, jobjectArray database_coeffs, jobject query_list,
-                                  jbyteArray relin_keys_bytes, jbyteArray params_bytes, jint ps_low_power);
-
-jbyteArray JNICALL computeMatchesNaiveMethod(JNIEnv *env, jobjectArray database_coeffs, jobject query_list,
-                                             jbyteArray relin_keys_bytes, jbyteArray params_bytes);
-
-jint JNICALL checkSealParams(JNIEnv *env, jint poly_modulus_degree, jlong plain_modulus, jintArray coeff_modulus_bits,
-                             jobjectArray jparent_powers, jintArray jsource_power_index, jint ps_low_power,
-                             jint max_bin_size);
+Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts);
 
 #endif //MPC3J_NATIVE_FHE_APSI_H

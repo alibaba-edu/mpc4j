@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.mqrpmt.czz22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.s2pc.pso.mqrpmt.MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.pso.mqrpmt.MqRpmtFactory;
 
@@ -14,22 +14,27 @@ import edu.alibaba.mpc4j.s2pc.pso.mqrpmt.MqRpmtFactory;
  */
 public class Czz22ByteEccCwMqRpmtConfig implements MqRpmtConfig {
     /**
-     * 环境类型
-     */
-    private final EnvType envType;
-    /**
      * 过滤器类型
      */
-    private final FilterFactory.FilterType filterType;
+    private final FilterType filterType;
+    /**
+     * 环境类型
+     */
+    private EnvType envType;
 
     private Czz22ByteEccCwMqRpmtConfig(Builder builder) {
-        envType = builder.envType;
         filterType = builder.filterType;
+        envType = EnvType.STANDARD;
     }
 
     @Override
     public MqRpmtFactory.MqRpmtType getPtoType() {
         return MqRpmtFactory.MqRpmtType.CZZ22_BYTE_ECC_CW;
+    }
+
+    @Override
+    public void setEnvType(EnvType envType) {
+        this.envType = envType;
     }
 
     @Override
@@ -42,31 +47,21 @@ public class Czz22ByteEccCwMqRpmtConfig implements MqRpmtConfig {
         return SecurityModel.SEMI_HONEST;
     }
 
-    public FilterFactory.FilterType getFilterType() {
+    public FilterType getFilterType() {
         return filterType;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Czz22ByteEccCwMqRpmtConfig> {
         /**
-         * 环境类型
-         */
-        private EnvType envType;
-        /**
          * 过滤器类型
          */
-        private FilterFactory.FilterType filterType;
+        private FilterType filterType;
 
         public Builder() {
-            envType = EnvType.STANDARD;
-            filterType = FilterFactory.FilterType.SET_FILTER;
+            filterType = FilterType.SET_FILTER;
         }
 
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
-        }
-
-        public Builder setFilterType(FilterFactory.FilterType filterType) {
+        public Builder setFilterType(FilterType filterType) {
             this.filterType = filterType;
             return this;
         }

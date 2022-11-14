@@ -64,7 +64,7 @@ class NativeTransBitMatrix extends AbstractTransBitMatrix {
     public boolean get(int x, int y) {
         assert (x >= 0 && x < rows);
         assert (y >= 0 && y < columns);
-        return BinaryUtils.getBoolean(data[y + this.columnOffset], x + rowOffset);
+        return BinaryUtils.getBoolean(data[y + columnOffset], x + rowOffset);
     }
 
     @Override
@@ -78,25 +78,25 @@ class NativeTransBitMatrix extends AbstractTransBitMatrix {
         assert (y >= 0 && y < columns);
         assert byteArray.length == rowBytes;
         assert BytesUtils.isReduceByteArray(byteArray, rows);
-        this.data[y + this.columnOffset] = byteArray;
+        data[y + columnOffset] = byteArray;
     }
 
     @Override
     public TransBitMatrix transpose() {
         // 将矩阵数据打平
-        byte[] flattenMatrix = new byte[this.roundByteColumn * this.rowBytes];
-        IntStream.range(0, this.roundByteColumn).forEach(column ->
-            System.arraycopy(this.data[column], 0, flattenMatrix, column * this.rowBytes, this.rowBytes)
+        byte[] flattenMatrix = new byte[roundByteColumn * rowBytes];
+        IntStream.range(0, roundByteColumn).forEach(column ->
+            System.arraycopy(data[column], 0, flattenMatrix, column * rowBytes, rowBytes)
         );
         // 本地转置
-        byte[] transposeFlattenMatrix = this.nativeTranspose(flattenMatrix, this.roundByteRow, this.roundByteColumn);
+        byte[] transposeFlattenMatrix = nativeTranspose(flattenMatrix, roundByteRow, roundByteColumn);
         // 将打平数据变回为矩阵
-        byte[][] bMatrix = new byte[this.roundByteRow][this.columnBytes];
-        IntStream.range(0, this.roundByteRow).forEach(row ->
-            System.arraycopy(transposeFlattenMatrix, row * this.columnBytes, bMatrix[row], 0, this.columnBytes)
+        byte[][] bMatrix = new byte[roundByteRow][columnBytes];
+        IntStream.range(0, roundByteRow).forEach(row ->
+            System.arraycopy(transposeFlattenMatrix, row * columnBytes, bMatrix[row], 0, columnBytes)
         );
-        NativeTransBitMatrix b = new NativeTransBitMatrix(this.columns, this.rows);
-        IntStream.range(0, this.roundByteRow).forEach(row -> b.data[row] = bMatrix[row]);
+        NativeTransBitMatrix b = new NativeTransBitMatrix(columns, rows);
+        IntStream.range(0, roundByteRow).forEach(row -> b.data[row] = bMatrix[row]);
 
         return b;
     }

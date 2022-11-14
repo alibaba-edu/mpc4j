@@ -42,6 +42,11 @@ public class Kkrt16PsiConfig implements PsiConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        oprfConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return oprfConfig.getEnvType();
     }

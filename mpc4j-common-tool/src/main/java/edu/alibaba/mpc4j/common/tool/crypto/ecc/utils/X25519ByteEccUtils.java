@@ -19,7 +19,7 @@ public class X25519ByteEccUtils {
      * Curve25519有限域
      */
     private static class Curve25519Field extends X25519Field {
-
+        // empty
     }
 
     /**
@@ -66,17 +66,9 @@ public class X25519ByteEccUtils {
      */
     private static final int C_A24 = (C_A + 2) / 4;
 
-    private static int decode32(byte[] bs, int off) {
-        int n = bs[off] & 0xFF;
-        n |= (bs[++off] & 0xFF) << 8;
-        n |= (bs[++off] & 0xFF) << 16;
-        n |= bs[++off] << 24;
-        return n;
-    }
-
     private static void decodeScalar(byte[] k, int[] n) {
         for (int i = 0; i < SCALAR_INTS; ++i) {
-            n[i] = decode32(k, i * 4);
+            n[i] = ByteEccUtils.decodeInt32(k, i * 4);
         }
         // 指数模l
         n[0] &= 0xFFFFFFF8;
@@ -115,7 +107,7 @@ public class X25519ByteEccUtils {
      * @param u 基点U。
      * @param r 结果点R。
      */
-    public static void clampScalarMult(byte[] k, byte[] u, byte[] r) {
+    public static void clampScalarMul(byte[] k, byte[] u, byte[] r) {
         int[] n = new int[SCALAR_INTS];
         decodeScalar(k, n);
 
@@ -179,7 +171,7 @@ public class X25519ByteEccUtils {
      * @param k 幂指数k。
      * @param r 结果R。
      */
-    public static void clampScalarMultBase(byte[] k, byte[] r) {
+    public static void clampScalarBaseMul(byte[] k, byte[] r) {
         int[] y = Curve25519Field.create();
         int[] z = Curve25519Field.create();
         Ed25519ByteEccUtils.scalarMultBaseYZ(k, y, z);

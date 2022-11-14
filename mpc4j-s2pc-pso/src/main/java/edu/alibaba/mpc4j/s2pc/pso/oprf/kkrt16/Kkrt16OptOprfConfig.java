@@ -33,6 +33,11 @@ public class Kkrt16OptOprfConfig implements OprfConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        coreCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return coreCotConfig.getEnvType();
     }

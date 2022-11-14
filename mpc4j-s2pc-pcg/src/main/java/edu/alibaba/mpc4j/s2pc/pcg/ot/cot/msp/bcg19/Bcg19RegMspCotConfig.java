@@ -33,6 +33,11 @@ public class Bcg19RegMspCotConfig implements MspCotConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        bspCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return bspCotConfig.getEnvType();
     }

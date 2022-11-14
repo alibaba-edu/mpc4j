@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pso.psu;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuClient;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuServer;
@@ -16,7 +17,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.*;
  * @author Weiran Liu
  * @date 2022/02/14
  */
-public class PsuFactory {
+public class PsuFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

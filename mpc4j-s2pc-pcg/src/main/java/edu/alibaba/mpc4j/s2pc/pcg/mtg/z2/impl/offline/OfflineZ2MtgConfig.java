@@ -38,6 +38,11 @@ public class OfflineZ2MtgConfig implements Z2MtgConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        z2CoreMtgConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return z2CoreMtgConfig.getEnvType();
     }

@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.impl.cache.CacheZ2MtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.impl.cache.CacheZ2MtgReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.impl.cache.CacheZ2MtgSender;
@@ -19,7 +20,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.impl.offline.OfflineZ2MtgSender;
  * @author Weiran Liu
  * @date 2022/02/07
  */
-public class Z2MtgFactory {
+public class Z2MtgFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

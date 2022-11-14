@@ -446,6 +446,46 @@ public class SquareDenseBitMatrixTest {
     }
 
     @Test
+    public void testLextMulAddi() {
+        for (int size : SIZES) {
+            testLextMulAddi(size);
+        }
+    }
+
+    private void testLextMulAddi(int size) {
+        for (int round = 0; round < ROUND; round++) {
+            SquareDenseBitMatrix a = DenseBitMatrixTestUtils.createRandom(type, size, SECURE_RANDOM);
+            SquareDenseBitMatrix b = DenseBitMatrixTestUtils.createRandom(type, size, SECURE_RANDOM);
+            SquareDenseBitMatrix c = DenseBitMatrixTestUtils.createRandom(type, size, SECURE_RANDOM);
+            // 测试方法： ((A^T*B) + C)^T = (A.toArrays())*B + C^T.toArray()
+            SquareDenseBitMatrix aTranspose = a.transpose(EnvType.STANDARD_JDK, false);
+            byte[][] expectArray = aTranspose.multiply(b).add(c).transpose(EnvType.STANDARD_JDK, false).toByteArrays();
+            byte[][] byteVectorActualArray = c.transpose(EnvType.STANDARD_JDK, false).toByteArrays();
+            b.lExtMulAddi(a.toByteArrays(), byteVectorActualArray);
+            Assert.assertArrayEquals(expectArray, byteVectorActualArray);
+        }
+    }
+
+    @Test
+    public void testLextMul() {
+        for (int size : SIZES) {
+           testLextMul(size);
+        }
+    }
+
+    private void testLextMul(int size) {
+        for (int round = 0; round < ROUND; round++) {
+            DenseBitMatrix a = DenseBitMatrixTestUtils.createRandom(type, size, SECURE_RANDOM);
+            DenseBitMatrix b = DenseBitMatrixTestUtils.createRandom(type, size, SECURE_RANDOM);
+            // 测试方法： (A^T*B)^T = (A.toArrays())*B
+            DenseBitMatrix aTranspose = a.transpose(EnvType.STANDARD_JDK, false);
+            byte[][] expectArray = aTranspose.multiply(b).transpose(EnvType.STANDARD_JDK, false).toByteArrays();
+            byte[][] byteVectorActualArray = b.lExtMul(a.toByteArrays());
+            Assert.assertArrayEquals(expectArray, byteVectorActualArray);
+        }
+    }
+
+    @Test
     public void testTranspose() {
         for (int size : SIZES) {
             testTranspose(size);

@@ -38,6 +38,11 @@ public class Alsz13Z2CoreMtgConfig implements Z2CoreMtgConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        ncCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return ncCotConfig.getEnvType();
     }

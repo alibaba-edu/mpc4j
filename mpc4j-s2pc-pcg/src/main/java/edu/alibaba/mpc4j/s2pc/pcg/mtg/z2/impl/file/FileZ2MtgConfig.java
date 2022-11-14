@@ -13,10 +13,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory;
  */
 public class FileZ2MtgConfig implements Z2MtgConfig {
     /**
-     * 环境类型
-     */
-    private final EnvType envType;
-    /**
      * 文件存储路径
      */
     private final String filePath;
@@ -24,11 +20,15 @@ public class FileZ2MtgConfig implements Z2MtgConfig {
      * 安全模型
      */
     private final SecurityModel securityModel;
+    /**
+     * 环境类型
+     */
+    private EnvType envType;
 
     private FileZ2MtgConfig(Builder builder) {
         securityModel = builder.securityModel;
-        envType = builder.envType;
         filePath = builder.filePath;
+        envType = EnvType.STANDARD;
     }
 
     public String getFilePath() {
@@ -43,6 +43,11 @@ public class FileZ2MtgConfig implements Z2MtgConfig {
     @Override
     public int maxBaseNum() {
         return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public void setEnvType(EnvType envType) {
+        this.envType = envType;
     }
 
     @Override
@@ -61,10 +66,6 @@ public class FileZ2MtgConfig implements Z2MtgConfig {
          */
         private final SecurityModel securityModel;
         /**
-         * 环境类型
-         */
-        private EnvType envType;
-        /**
          * 文件路径
          */
         private String filePath;
@@ -73,13 +74,7 @@ public class FileZ2MtgConfig implements Z2MtgConfig {
             assert securityModel.compareTo(SecurityModel.SEMI_HONEST) <= 0
                 : "Only support Security Model less than or equal to " + SecurityModel.SEMI_HONEST + ": " + securityModel;
             this.securityModel = securityModel;
-            envType = EnvType.STANDARD;
             filePath = ".";
-        }
-
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
         }
 
         public Builder setFilePath(String filePath) {

@@ -36,7 +36,7 @@ public class ZlTripleTest {
         try {
             // 创建长度为0的三元组
             ZlTriple.create(1, 0, new BigInteger[0], new BigInteger[0], new BigInteger[0]);
-            throw new IllegalStateException("ERROR: successfully create ZlTriple with num = 0");
+            throw new IllegalStateException("ERROR: successfully create " + ZlTriple.class.getSimpleName() + " with num = 0");
         } catch (AssertionError ignored) {
 
         }
@@ -50,7 +50,7 @@ public class ZlTripleTest {
             BigInteger[] cs = new BigInteger[num];
             Arrays.fill(cs, BigInteger.ZERO);
             ZlTriple.create(0, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create ZlTriple with l = 0");
+            throw new IllegalStateException("ERROR: successfully create " + ZlTriple.class.getSimpleName() + " with l = 0");
         } catch (AssertionError ignored) {
 
         }
@@ -65,7 +65,7 @@ public class ZlTripleTest {
             BigInteger[] cs = new BigInteger[num - 1];
             Arrays.fill(cs, element);
             ZlTriple.create(l, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create ZlTriple with less num");
+            throw new IllegalStateException("ERROR: successfully create " + ZlTriple.class.getSimpleName() + " with less num");
         } catch (AssertionError ignored) {
 
         }
@@ -78,7 +78,7 @@ public class ZlTripleTest {
             BigInteger[] cs = new BigInteger[num + 1];
             Arrays.fill(cs, element);
             ZlTriple.create(l, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create ZlTriple with large num");
+            throw new IllegalStateException("ERROR: successfully create " + ZlTriple.class.getSimpleName() + " with large num");
         } catch (AssertionError ignored) {
 
         }
@@ -91,7 +91,7 @@ public class ZlTripleTest {
             BigInteger[] cs = new BigInteger[num + 1];
             Arrays.fill(cs, element);
             ZlTriple.create(l, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create ZlTriple with distinct num");
+            throw new IllegalStateException("ERROR: successfully create " + ZlTriple.class.getSimpleName() + " with distinct num");
         } catch (AssertionError ignored) {
 
         }
@@ -105,7 +105,7 @@ public class ZlTripleTest {
             BigInteger[] cs = new BigInteger[num];
             Arrays.fill(cs, element);
             ZlTriple.create(l, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create ZlTriple with wrong bit length");
+            throw new IllegalStateException("ERROR: successfully create " + ZlTriple.class.getSimpleName() + " with large bit length");
         } catch (AssertionError ignored) {
 
         }
@@ -119,7 +119,7 @@ public class ZlTripleTest {
             BigInteger[] cs = new BigInteger[num];
             Arrays.fill(cs, element);
             ZlTriple.create(l, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create ZlTriple with negative element");
+            throw new IllegalStateException("ERROR: successfully create " + ZlTriple.class.getSimpleName() + " with negative element");
         } catch (AssertionError ignored) {
 
         }

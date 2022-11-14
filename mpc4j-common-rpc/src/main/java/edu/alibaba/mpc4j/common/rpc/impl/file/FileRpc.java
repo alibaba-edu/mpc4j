@@ -230,13 +230,14 @@ public class FileRpc implements Rpc {
                 byte[] byteArray = Base64.getDecoder().decode(payloadString);
                 byteArrayData.add(byteArray);
             }
+            // Fix Issue #5, close() should be called before "deleted = payloadFile.delete()"
+            bufferedReader.close();
             // 删除负载文件
             deleted = payloadFile.delete();
             Thread.sleep(DEFAULT_DELETE_WAIT_MILLI_SECOND);
             if (!deleted) {
                 throw new IllegalStateException("Cannot delete file: " + payloadFile.getName());
             }
-            bufferedReader.close();
             return DataPacket.fromByteArrayList(header, byteArrayData);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();

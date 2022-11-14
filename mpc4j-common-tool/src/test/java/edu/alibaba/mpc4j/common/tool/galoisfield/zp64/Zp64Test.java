@@ -2,8 +2,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.zp64;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.Zp64.Zp64Factory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory.Zp64Type;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,25 +39,25 @@ public class Zp64Test {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
         // Rings
-        configurations.add(new Object[]{Zp64Factory.Zp64Type.RINGS.name() + " (l = 1)", Zp64Factory.Zp64Type.RINGS, 1});
-        configurations.add(new Object[]{Zp64Factory.Zp64Type.RINGS.name() + " (l = 2)", Zp64Factory.Zp64Type.RINGS, 2});
-        configurations.add(new Object[]{Zp64Factory.Zp64Type.RINGS.name() + " (l = 3)", Zp64Factory.Zp64Type.RINGS, 3});
-        configurations.add(new Object[]{Zp64Factory.Zp64Type.RINGS.name() + " (l = 4)", Zp64Factory.Zp64Type.RINGS, 4});
-        configurations.add(new Object[]{Zp64Factory.Zp64Type.RINGS.name() + " (l = 39)", Zp64Factory.Zp64Type.RINGS, 39});
-        configurations.add(new Object[]{Zp64Factory.Zp64Type.RINGS.name() + " (l = 40)", Zp64Factory.Zp64Type.RINGS, 40});
-        configurations.add(new Object[]{Zp64Factory.Zp64Type.RINGS.name() + " (l = 41)", Zp64Factory.Zp64Type.RINGS, 41});
-        configurations.add(new Object[]{Zp64Factory.Zp64Type.RINGS.name() + " (l = 61)", Zp64Factory.Zp64Type.RINGS, 61});
-        configurations.add(new Object[]{Zp64Factory.Zp64Type.RINGS.name() + " (l = 62)", Zp64Factory.Zp64Type.RINGS, 62});
+        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 1)", Zp64Type.RINGS, 1});
+        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 2)", Zp64Type.RINGS, 2});
+        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 3)", Zp64Type.RINGS, 3});
+        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 4)", Zp64Type.RINGS, 4});
+        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 39)", Zp64Type.RINGS, 39});
+        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 40)", Zp64Type.RINGS, 40});
+        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 41)", Zp64Type.RINGS, 41});
+        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 61)", Zp64Type.RINGS, 61});
+        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 62)", Zp64Type.RINGS, 62});
 
         return configurations;
     }
 
     /**
-     * GF(2^l)运算类型
+     * Zp64运算类型
      */
-    private final Zp64Factory.Zp64Type type;
+    private final Zp64Type zp64Type;
     /**
-     * GF(2^l)运算
+     * Zp64有限域
      */
     private final Zp64 zp64;
     /**
@@ -66,16 +65,35 @@ public class Zp64Test {
      */
     private final long constant;
 
-    public Zp64Test(String name, Zp64Factory.Zp64Type type, int l) {
+    public Zp64Test(String name, Zp64Type zp64Type, int l) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        this.type = type;
-        zp64 = Zp64Factory.createInstance(EnvType.STANDARD, type, l);
+        this.zp64Type = zp64Type;
+        zp64 = Zp64Factory.createInstance(EnvType.STANDARD, zp64Type, l);
         constant = 1L << l;
     }
 
     @Test
     public void testType() {
-        Assert.assertEquals(type, zp64.getZp64Type());
+        Assert.assertEquals(zp64Type, zp64.getZp64Type());
+    }
+
+    @Test
+    public void testBitLength() {
+        int primeBitLength = zp64.getPrimeBitLength();
+        int l = zp64.getL();
+        Assert.assertEquals(primeBitLength, l + 1);
+    }
+
+    @Test
+    public void testByteLength() {
+        int primeByteLength = zp64.getPrimeByteLength();
+        int byteL = zp64.getByteL();
+        if (zp64.getL() % Byte.SIZE == 0) {
+            // 如果l刚好可以被Byte.SIZE整除，则质数字节长度会更大一点
+            Assert.assertEquals(primeByteLength, byteL + 1);
+        } else {
+            Assert.assertEquals(primeByteLength, byteL);
+        }
     }
 
     @Test

@@ -1,7 +1,3 @@
-//
-// Created by pengliqiang on 2022/8/9.
-//
-
 #include "polynomials.h"
 
 uint64_t mul_mod(uint64_t a, uint64_t b, uint64_t m, bool small_modulus) {

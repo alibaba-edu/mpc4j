@@ -415,21 +415,6 @@ public class Ed25519ByteEccUtils {
     }
 
     /**
-     * 将字节数组偏移量开始的后32比特解码为整数。
-     *
-     * @param bs  字节数组。
-     * @param off 字节数组偏移量。
-     * @return 解码结果。
-     */
-    private static int decode32(byte[] bs, int off) {
-        int n = bs[off] & 0xFF;
-        n |= (bs[++off] & 0xFF) << 8;
-        n |= (bs[++off] & 0xFF) << 16;
-        n |= bs[++off] << 24;
-        return n;
-    }
-
-    /**
      * 将字节数组偏移量开始后的每32比特解码为1个整数，放置在给定整数数组中。
      *
      * @param bs   字节数组。
@@ -438,7 +423,7 @@ public class Ed25519ByteEccUtils {
      */
     private static void decode32(byte[] bs, int[] n, int nLen) {
         for (int i = 0; i < nLen; ++i) {
-            n[i] = decode32(bs, i * Integer.BYTES);
+            n[i] = ByteEccUtils.decodeInt32(bs, i * Integer.BYTES);
         }
     }
 
@@ -448,7 +433,7 @@ public class Ed25519ByteEccUtils {
             throw new IllegalArgumentException("Invalid point p = " + Hex.toHexString(p));
         }
         // 恢复坐标y
-        int x_0 = (py[POINT_BYTES - 1] & 0x80) >>> 7;
+        int x0 = (py[POINT_BYTES - 1] & 0x80) >>> 7;
         py[POINT_BYTES - 1] &= 0x7F;
         Curve25519Field.decode(py, 0, r.y);
         // 恢复坐标x
@@ -469,11 +454,11 @@ public class Ed25519ByteEccUtils {
         // x进行归一化处理
         Curve25519Field.normalize(r.x);
         // 不能符号位是负数，但是x的取值为0
-        if (x_0 == 1 && Curve25519Field.isZeroVar(r.x)) {
+        if (x0 == 1 && Curve25519Field.isZeroVar(r.x)) {
             throw new IllegalArgumentException("Invalid point p = " + Hex.toHexString(p));
         }
         // 设置x的符号位
-        if ((x_0 != (r.x[0] & 1))) {
+        if ((x0 != (r.x[0] & 1))) {
             Curve25519Field.negate(r.x, r.x);
         }
     }
@@ -878,7 +863,7 @@ public class Ed25519ByteEccUtils {
      */
     static void scalarMultBaseYZ(byte[] k, int[] y, int[] z) {
         PointAccum p = new PointAccum();
-        scalarMultBase(k, p);
+        scalarBaseMul(k, p);
         if (0 == checkPoint(p.x, p.y, p.z)) {
             throw new IllegalStateException();
         }
@@ -1072,7 +1057,7 @@ public class Ed25519ByteEccUtils {
      * @param p 点p。
      * @param r 计算结果。
      */
-    private static void scalarMult(byte[] k, PointAffine p, PointAccum r) {
+    private static void scalarMul(byte[] k, PointAffine p, PointAccum r) {
         int[] nk = new int[SCALAR_INTS];
         decodeScalar(k, nk);
         // 将幂指数展开为WNAF格式
@@ -1106,13 +1091,13 @@ public class Ed25519ByteEccUtils {
      * @param p 点p。
      * @param r 计算结果。
      */
-    public static void scalarMultEncoded(byte[] k, byte[] p, byte[] r) {
+    public static void scalarMulEncoded(byte[] k, byte[] p, byte[] r) {
         // 解码点
         PointAffine pointAffline = new PointAffine();
         decodePointVar(p, pointAffline);
         // 计算结果
         PointAccum result = new PointAccum();
-        scalarMult(k, pointAffline, result);
+        scalarMul(k, pointAffline, result);
         // 编码点
         if (0 == encodePoint(result, r)) {
             throw new IllegalStateException();
@@ -1125,7 +1110,7 @@ public class Ed25519ByteEccUtils {
      * @param k 幂指数k。
      * @param r 计算结果。
      */
-    private static void scalarMultBase(byte[] k, PointAccum r) {
+    private static void scalarBaseMul(byte[] k, PointAccum r) {
         precomputeBase();
 
         int[] n = new int[SCALAR_INTS];
@@ -1175,9 +1160,9 @@ public class Ed25519ByteEccUtils {
      * @param k 幂指数k。
      * @param r 计算结果。
      */
-    public static void scalarMultBaseEncoded(byte[] k, byte[] r) {
+    public static void scalarBaseMulEncoded(byte[] k, byte[] r) {
         PointAccum p = new PointAccum();
-        scalarMultBase(k, p);
+        scalarBaseMul(k, p);
         if (0 == encodePoint(p, r)) {
             throw new IllegalStateException();
         }

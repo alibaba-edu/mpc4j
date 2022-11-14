@@ -37,10 +37,6 @@ public class Kos16ShZpCoreVoleSender extends AbstractZpCoreVoleSender {
      */
     private ZpGadget zpGadget;
     /**
-     * 有限域比特长度
-     */
-    private int k;
-    /**
      * 基础OT协议发送方输出
      */
     private BaseOtSenderOutput baseOtSenderOutput;
@@ -79,10 +75,9 @@ public class Kos16ShZpCoreVoleSender extends AbstractZpCoreVoleSender {
         info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
 
         stopWatch.start();
-        zpGadget = ZpGadget.createFromPrime(envType, prime);
-        k = zpGadget.getK();
+        zpGadget = new ZpGadget(zp);
         baseOtSender.init();
-        baseOtSenderOutput = baseOtSender.send(k);
+        baseOtSenderOutput = baseOtSender.send(l);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -117,14 +112,14 @@ public class Kos16ShZpCoreVoleSender extends AbstractZpCoreVoleSender {
 
     private List<byte[]> generateMatrixPayLoad() {
         // 创建t0和t1数组, t0和t1的每行对应对应一个X值。
-        t0 = new BigInteger[num][k];
-        IntStream payLoadStream = IntStream.range(0, num * k);
+        t0 = new BigInteger[num][l];
+        IntStream payLoadStream = IntStream.range(0, num * l);
         payLoadStream = parallel ? payLoadStream.parallel() : payLoadStream;
         return payLoadStream
             .mapToObj(index -> {
                 // 计算当前处理的t0和t1数组的位置
-                int rowIndex = index / k;
-                int columnIndex = index % k;
+                int rowIndex = index / l;
+                int columnIndex = index % l;
                 // 令k0和k1分别是baseOT的第j对密钥，计算 t0[i][j] = PRF(k0，i), t1[i][j] = PRF(k1, i)
                 byte[] t0Seed = ByteBuffer
                     .allocate(Long.BYTES + Integer.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
@@ -134,11 +129,11 @@ public class Kos16ShZpCoreVoleSender extends AbstractZpCoreVoleSender {
                     .allocate(Long.BYTES + Integer.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
                     .putLong(extraInfo).putInt(rowIndex).put(baseOtSenderOutput.getR1(columnIndex))
                     .array();
-                t0[rowIndex][columnIndex] = zpGadget.randomElement(t0Seed);
-                BigInteger t1 = zpGadget.randomElement(t1Seed);
+                t0[rowIndex][columnIndex] = zp.createRandom(t0Seed);
+                BigInteger t1 = zp.createRandom(t1Seed);
                 // 计算u = t0[i,j] - t1[i,j] - x[i] mod p
-                BigInteger u = t0[rowIndex][columnIndex].subtract(t1).subtract(x[rowIndex]).mod(prime);
-                return BigIntegerUtils.nonNegBigIntegerToByteArray(u, zpGadget.getByteK());
+                BigInteger u = zp.sub(zp.sub(t0[rowIndex][columnIndex], t1), x[rowIndex]);
+                return BigIntegerUtils.nonNegBigIntegerToByteArray(u, primeByteLength);
             })
             .collect(Collectors.toList());
     }
@@ -147,9 +142,9 @@ public class Kos16ShZpCoreVoleSender extends AbstractZpCoreVoleSender {
         IntStream outputStream = IntStream.range(0, num);
         outputStream = parallel ? outputStream.parallel() : outputStream;
         BigInteger[] t = outputStream
-            .mapToObj(index -> zpGadget.composition(t0[index]))
+            .mapToObj(index -> zpGadget.innerProduct(t0[index]))
             .toArray(BigInteger[]::new);
-        return ZpVoleSenderOutput.create(prime, x, t);
+        return ZpVoleSenderOutput.create(zp.getPrime(), x, t);
     }
 
 }

@@ -52,7 +52,7 @@ public abstract class AbstractCoreCotSender extends AbstractSecureTwoPartyPto im
         // 拷贝一份
         this.delta = BytesUtils.clone(delta);
         deltaBinary = BinaryUtils.byteArrayToBinary(delta);
-        assert maxNum > 0 : "maxNum must be greater than 0: " + maxNum;
+        assert maxNum > 0 : "max num must be greater than 0: " + maxNum;
         this.maxNum = maxNum;
         initialized = false;
     }

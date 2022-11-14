@@ -76,6 +76,13 @@ public class Gmr21MqRpmtConfig implements MqRpmtConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        cuckooHashOprfConfig.setEnvType(envType);
+        peqtOprfConfig.setEnvType(envType);
+        osnConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return cuckooHashOprfConfig.getEnvType();
     }

@@ -51,6 +51,12 @@ public class Ywl20NcCotConfig implements NcCotConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        coreCotConfig.setEnvType(envType);
+        mspCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return mspCotConfig.getEnvType();
     }

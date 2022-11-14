@@ -41,12 +41,19 @@ public interface DenseBitMatrix {
     byte[] lmul(final byte[] v);
 
     /**
-     * 当前布尔矩阵左乘v，即计算v·M。
+     * 当前布尔矩阵左乘布尔向量v，即计算v·M。
      *
      * @param v 向量v。
      * @return v·M。
      */
     boolean[] lmul(final boolean[] v);
+
+    /**
+     * 当前布尔矩阵左乘扩域GF2E的向量v，即计算v·M
+     * @param v 扩域GF2E上的向量v。
+     * @return v·M。
+     */
+    byte[][] lExtMul(final byte[][] v);
 
     /**
      * 计算v·M + t，结果更新至t中。
@@ -63,6 +70,14 @@ public interface DenseBitMatrix {
      * @param t 向量t。
      */
     void lmulAddi(final boolean[] v, boolean[] t);
+
+    /**
+     * 计算v·M + t，结果更新至t中。
+     *
+     * @param v 扩域GF2E上的向量v。
+     * @param t 扩域GF2E上的向量t。
+     */
+    void lExtMulAddi(final byte[][] v, byte[][] t);
 
     /**
      * 布尔矩阵转置。

@@ -1,8 +1,9 @@
 package edu.alibaba.mpc4j.common.tool.lpn.ldpc;
 
-import edu.alibaba.mpc4j.common.tool.lpn.matrix.DenseMatrix;
-import edu.alibaba.mpc4j.common.tool.lpn.matrix.ExtremeSparseMatrix;
-import edu.alibaba.mpc4j.common.tool.lpn.matrix.SparseMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.ExtremeSparseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.LowerTriangularSparseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.SparseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 
 import java.util.Arrays;
@@ -20,7 +21,7 @@ import java.util.Arrays;
  *  矩阵D，行 gap, 列 k - gap
  *  矩阵E，行 gap, 列 gap
  *  矩阵F，行 gap， 列 k - gap
- * 以上矩阵均为稀疏矩阵 SparseMatrix，其中 D,F 大部分列为空，属于极度稀疏矩阵 ExtremeSparseMatrix.
+ * 以上矩阵均为稀疏矩阵 SparseMatrix，其中 D,F 大部分列为空，属于极度稀疏矩阵 ExtremeSparseBitMatrix.
  *
  * 对于消息e, 转置编码过程是计算 e*G^T， 其中矩阵G是矩阵H的奇偶校验矩阵。 使用矩阵H的分块矩阵信息可以完成转置编码的计算。
  * 矩阵Ep = (F*C^{-1}*B）+ E)^{-1} 可预先计算完成，因此将其作为LdpcCoder的成员变量进行初始化
@@ -32,27 +33,27 @@ public class LdpcCoder {
     /**
      * 分块矩阵A
      */
-    private final SparseMatrix matrixA;
+    private final SparseBitMatrix matrixA;
     /**
      * 分块矩阵B
      */
-    private final SparseMatrix matrixB;
+    private final SparseBitMatrix matrixB;
     /**
      * 分块矩阵C
      */
-    private final SparseMatrix matrixC;
+    private final LowerTriangularSparseBitMatrix matrixC;
     /**
      * 分块矩阵D
      */
-    private final ExtremeSparseMatrix matrixD;
+    private final ExtremeSparseBitMatrix matrixD;
     /**
      * 分块矩阵F
      */
-    private final ExtremeSparseMatrix matrixF;
+    private final ExtremeSparseBitMatrix matrixF;
     /**
      * 矩阵Ep = (F*C^{-1}*B）+ E)^{-1}
      */
-    private final DenseMatrix matrixEp;
+    private final DenseBitMatrix matrixEp;
     /**
      * Ldpc 参数gap
      */
@@ -65,8 +66,8 @@ public class LdpcCoder {
      * 包私有构造函数
      * 传入所有成员变量，完成初始化。
      */
-    LdpcCoder(SparseMatrix matrixA, SparseMatrix matrixB, SparseMatrix matrixC, ExtremeSparseMatrix matrixD,
-              ExtremeSparseMatrix matrixF, DenseMatrix matrixEp,int gapValue, int kValue) {
+    LdpcCoder(SparseBitMatrix matrixA, SparseBitMatrix matrixB, LowerTriangularSparseBitMatrix matrixC, ExtremeSparseBitMatrix matrixD,
+              ExtremeSparseBitMatrix matrixF, DenseBitMatrix matrixEp, int gapValue, int kValue) {
         this.matrixA = matrixA;
         this.matrixB = matrixB;
         this.matrixC = matrixC;
@@ -102,21 +103,21 @@ public class LdpcCoder {
         boolean[] pp = Arrays.copyOfRange(messageE, kValue, messageE.length);
         boolean[] ppp = new boolean[kValue - gapValue];
         // step 1 计算 pp = pp * C^{-1}。
-        pp = matrixC.diagInvLmul(pp);
+        pp = matrixC.invLmul(pp);
         // step2  计算 p = pp * B + p。
-        matrixB.lmulAdd(pp, p);
+        matrixB.lmulAddi(pp, p);
         // step 3， 计算 p = p*E'^{-1}。
         p = matrixEp.lmul(p);
         //step 4, 计算 x = p *D + x。
         //noinspection SuspiciousNameCombination
-        matrixD.lmulAdd(p, x);
+        matrixD.lmulAddi(p, x);
         // step 5 计算 ppp = p * F + ppp。
-        matrixF.lmulAdd(p, ppp);
+        matrixF.lmulAddi(p, ppp);
         // step 6, 计算 pp = ppp * C^{-1} + pp。
-        matrixC.diagInvLmulAdd(ppp, pp);
+        matrixC.invLmulAddi(ppp, pp);
         // step 7, 计算 x = pp * A + x
         //noinspection SuspiciousNameCombination
-        matrixA.lmulAdd(pp, x);
+        matrixA.lmulAddi(pp, x);
         return x;
     }
 
@@ -147,15 +148,15 @@ public class LdpcCoder {
         }
         byte[][] ppp = new byte[kValue - gapValue][byteLength];
         // 各步骤定义和对 boolean[] 的transEncode相同。
-        pp = matrixC.diagInvLmul(pp);
-        matrixB.lmulAdd(pp, p);
-        p = matrixEp.lmul(p);
+        pp = matrixC.invLextMul(pp);
+        matrixB.lExtMulAddi(pp, p);
+        p = matrixEp.lExtMul(p);
         //noinspection SuspiciousNameCombination
-        matrixD.lmulAdd(p, x);
-        matrixF.lmulAdd(p, ppp);
-        matrixC.diagInvLmulAdd(ppp, pp);
+        matrixD.lExtMulAddi(p, x);
+        matrixF.lExtMulAddi(p, ppp);
+        matrixC.invLextMulAddi(ppp, pp);
         //noinspection SuspiciousNameCombination
-        matrixA.lmulAdd(pp, x);
+        matrixA.lExtMulAddi(pp, x);
         return x;
     }
 }

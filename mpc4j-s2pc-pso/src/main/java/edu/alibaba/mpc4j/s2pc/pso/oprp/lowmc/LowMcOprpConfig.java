@@ -33,6 +33,11 @@ public class LowMcOprpConfig implements OprpConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        bcConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return bcConfig.getEnvType();
     }

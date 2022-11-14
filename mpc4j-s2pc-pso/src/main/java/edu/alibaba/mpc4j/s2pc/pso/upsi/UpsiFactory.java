@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pso.upsi;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pso.upsi.cmg21.Cmg21UpsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.upsi.cmg21.Cmg21UpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.upsi.cmg21.Cmg21UpsiServer;
@@ -13,7 +14,7 @@ import edu.alibaba.mpc4j.s2pc.pso.upsi.cmg21.Cmg21UpsiServer;
  * @author Liqiang Peng
  * @date 2022/6/13
  */
-public class UpsiFactory {
+public class UpsiFactory implements PtoFactory {
     /**
      * 私有构造函数
      */

@@ -44,6 +44,11 @@ public class Dsz15ZlCoreMtgConfig implements ZlCoreMtgConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        cotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return cotConfig.getEnvType();
     }

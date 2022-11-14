@@ -15,14 +15,14 @@ void znFromString(const std::string &znString, Zn &zn) {
 
 void stringSetToZnSet(std::vector<std::string> &stringSet, std::vector<Zn> &znSet) {
     znSet.resize(stringSet.size());
-    for (uint64_t index = 0; index < stringSet.size(); index++) {
+    for (std::vector<std::string>::size_type index = 0; index < stringSet.size(); index++) {
         znFromString(stringSet[index], znSet[index]);
     }
 }
 
 void ecSetToStringSet(std::vector<Ec> &ecSet, std::vector<std::string> &stringSet) {
     stringSet.resize(ecSet.size());
-    for (uint64_t index = 0; index < stringSet.size(); index++) {
+    for (std::vector<std::string>::size_type index = 0; index < stringSet.size(); index++) {
         stringSet[index] = ecSet[index].getStr(MCL_RADIX);
     }
 }
@@ -76,7 +76,7 @@ jobjectArray mcl_fixed_point_multiply(JNIEnv *env, jobject jWindowHandler, jobje
     auto *windowHandler = (mcl::fp::WindowMethod<Ec> *) (*env).GetDirectBufferAddress(jWindowHandler);
     // 定点计算
     std::vector<Ec> ecSet(znSet.size());
-    for (uint64_t index = 0; index < znSet.size(); index++) {
+    for (std::vector<Ec>::size_type index = 0; index < znSet.size(); index++) {
         (*windowHandler).mul(ecSet[index], znSet[index]);
         ecSet[index].normalize();
     }
@@ -129,7 +129,7 @@ jobjectArray mcl_multiply(JNIEnv *env, jstring jEcString, jobjectArray jZnString
     znStringSet.clear();
     // 计算乘法
     std::vector<Ec> ecMulSet(znSet.size());
-    for (uint64_t index = 0; index < znSet.size(); index++) {
+    for (std::vector<Ec>::size_type index = 0; index < znSet.size(); index++) {
         Ec::mul(ecMulSet[index], ec, znSet[index]);
         ecMulSet[index].normalize();
     }

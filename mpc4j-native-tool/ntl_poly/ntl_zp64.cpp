@@ -42,7 +42,7 @@ void zp64_interpolate(uint64_t num, std::vector<long> &setX, std::vector<long> &
     polynomial = polynomial + dummy_polynomial * root_polynomial;
 
     coeffs.resize(NTL::deg(polynomial) + 1);
-    for (int i = 0; i < coeffs.size(); i++) {
+    for (uint32_t i = 0; i < coeffs.size(); i++) {
         // get the coefficient polynomial
         e_ZZ = rep(NTL::coeff(polynomial, i));
         coeffs[i] = NTL::to_long(e_ZZ);
@@ -71,7 +71,7 @@ void zp64_root_interpolate(uint64_t num, std::vector<long> &setX, long y, std::v
     NTL::ZZ_pX polynomial = e_ZZ_p + dummy_polynomial * root_polynomial;
     // 构建返回系数
     coeffs.resize(NTL::deg(polynomial) + 1);
-    for (int i = 0; i < coeffs.size(); i++) {
+    for (uint32_t i = 0; i < coeffs.size(); i++) {
         // get the coefficient polynomial
         e_ZZ = rep(NTL::coeff(polynomial, i));
         coeffs[i] = NTL::to_long(e_ZZ);

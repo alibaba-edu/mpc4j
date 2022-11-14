@@ -46,6 +46,12 @@ public class Ywl20MaBspCotConfig implements BspCotConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        coreCotConfig.setEnvType(envType);
+        dpprfConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return coreCotConfig.getEnvType();
     }

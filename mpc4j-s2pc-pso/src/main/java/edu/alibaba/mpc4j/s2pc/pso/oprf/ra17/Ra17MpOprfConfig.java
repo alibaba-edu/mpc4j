@@ -13,22 +13,27 @@ import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
  */
 public class Ra17MpOprfConfig implements MpOprfConfig {
     /**
-     * 环境类型
-     */
-    private final EnvType envType;
-    /**
      * 是否使用压缩椭圆曲线编码
      */
     private final boolean compressEncode;
+    /**
+     * 环境类型
+     */
+    private EnvType envType;
 
     private Ra17MpOprfConfig(Builder builder) {
-        envType = builder.envType;
         compressEncode = builder.compressEncode;
+        envType = EnvType.STANDARD;
     }
 
     @Override
     public OprfFactory.OprfType getPtoType() {
         return OprfFactory.OprfType.RA17;
+    }
+
+    @Override
+    public void setEnvType(EnvType envType) {
+        this.envType = envType;
     }
 
     @Override
@@ -47,22 +52,12 @@ public class Ra17MpOprfConfig implements MpOprfConfig {
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Ra17MpOprfConfig> {
         /**
-         * 环境类型
-         */
-        private EnvType envType;
-        /**
          * 是否使用压缩椭圆曲线编码
          */
         private boolean compressEncode;
 
         public Builder() {
-            envType = EnvType.STANDARD;
             compressEncode = true;
-        }
-
-        public Builder setEnvType(EnvType envType) {
-            this.envType = envType;
-            return this;
         }
 
         public Builder setCompressEncode(boolean compressEncode) {

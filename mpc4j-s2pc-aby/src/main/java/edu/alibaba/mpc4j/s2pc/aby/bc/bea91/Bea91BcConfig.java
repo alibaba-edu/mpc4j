@@ -38,6 +38,11 @@ public class Bea91BcConfig implements BcConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        z2MtgConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return z2MtgConfig.getEnvType();
     }

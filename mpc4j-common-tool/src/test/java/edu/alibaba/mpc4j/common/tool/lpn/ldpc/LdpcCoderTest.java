@@ -54,8 +54,8 @@ public class LdpcCoderTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurationParams = new ArrayList<>();
-        // 设置输出OT数量的对数 12 ~ 15。
-        for (int ceilLogN = 12; ceilLogN < 16; ceilLogN++) {
+        // 设置输出OT数量的对数 12 ~ 19。
+        for (int ceilLogN = 12; ceilLogN < 20; ceilLogN++) {
             configurationParams.add(new Object[] {"Silver5, ceilLogN = " + ceilLogN, SILVER_5, ceilLogN});
             configurationParams.add(new Object[] {"Silver11, ceilLogN = " + ceilLogN, SILVER_11, ceilLogN});
         }

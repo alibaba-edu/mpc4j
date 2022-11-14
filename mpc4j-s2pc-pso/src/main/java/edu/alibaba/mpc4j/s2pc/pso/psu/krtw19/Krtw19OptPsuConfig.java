@@ -49,6 +49,13 @@ public class Krtw19OptPsuConfig implements PsuConfig {
     }
 
     @Override
+    public void setEnvType(EnvType envType) {
+        rpmtOprfConfig.setEnvType(envType);
+        peqtOprfConfig.setEnvType(envType);
+        coreCotConfig.setEnvType(envType);
+    }
+
+    @Override
     public EnvType getEnvType() {
         return rpmtOprfConfig.getEnvType();
     }

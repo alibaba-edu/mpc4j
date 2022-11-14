@@ -1,10 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pso;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,41 +44,22 @@ import java.util.stream.IntStream;
 public class PsoUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(PsoUtils.class);
     /**
+     * 将总集合大小切分成4份
+     */
+    private static final int SPLIT_NUM = 4;
+    /**
+     * 第一份的索引值
+     */
+    private static final int FIRST_SPLIT_INDEX = 1;
+    /**
+     * 最后一份的索引值
+     */
+    private static final int LAST_SPLIT_INDEX = 3;
+    /**
      * 私有构造函数
      */
     private PsoUtils() {
         // empty
-    }
-
-    /**
-     * 计算用于相等性验证的PRF输出字节长度。
-     *
-     * @param securityModel 安全模型。
-     * @param serverSetSize 服务端集合大小。
-     * @param clientSetSize 客户端集合大小。
-     * @return PRF输出字节长度。
-     */
-    public static int getVerifyByteLength(SecurityModel securityModel, int serverSetSize, int clientSetSize) {
-        // 服务端元素数量和客户端元素数量都必须大于0
-        assert serverSetSize > 0 && clientSetSize > 0;
-        switch (securityModel) {
-            case IDEAL:
-            case SEMI_HONEST:
-                return getSemiHonestVerifyByteLength(serverSetSize, clientSetSize);
-            case COVERT:
-            case MALICIOUS:
-                return getMaliciousVerifyByteLength(clientSetSize);
-            default:
-                throw new IllegalArgumentException("Invalid SecurityModel: " + securityModel.name());
-        }
-    }
-
-    private static int getSemiHonestVerifyByteLength(int serverSetSize, int clientSetSize) {
-        return CommonConstants.STATS_BIT_LENGTH + LongUtils.ceilLog2(serverSetSize) + LongUtils.ceilLog2(clientSetSize);
-    }
-
-    private static int getMaliciousVerifyByteLength(int clientSetSize) {
-        return CommonConstants.STATS_BIT_LENGTH + CommonConstants.BLOCK_BIT_LENGTH + LongUtils.ceilLog2(clientSetSize);
     }
 
     /**
@@ -118,10 +97,10 @@ public class PsoUtils {
         );
         // 按照最小集合大小添加部分交集元素
         IntStream.range(0, minSize).forEach(index -> {
-            if (index < minSize / 4) {
+            if (index < minSize / SPLIT_NUM * FIRST_SPLIT_INDEX) {
                 // 所有集合添加ID_i
                 stringSetArrayList.forEach(set -> set.add(prefix + "_" + index));
-            } else if (index < minSize / 4 * 3) {
+            } else if (index < minSize / SPLIT_NUM * LAST_SPLIT_INDEX) {
                 // 各个集合添加不同的元素
                 IntStream.range(0, sizes.length).forEach(partyIndex ->
                     stringSetArrayList.get(partyIndex).add(prefix + "_PARTY_" + partyIndex + "_" + index)
@@ -170,14 +149,14 @@ public class PsoUtils {
         // 按照最小集合大小添加部分交集元素
         int minSize = Math.min(serverSize, clientSize);
         IntStream.range(0, minSize).forEach(index -> {
-            if (index < minSize / 4) {
+            if (index < minSize / SPLIT_NUM * FIRST_SPLIT_INDEX) {
                 // 两个集合添加整数值[0, 0, 0, index]
                 ByteBuffer intersectionByteBuffer = ByteBuffer.allocate(elementByteLength);
                 intersectionByteBuffer.putInt(elementByteLength - Integer.BYTES, index);
                 byte[] intersectionBytes = intersectionByteBuffer.array();
                 serverSet.add(ByteBuffer.wrap(BytesUtils.clone(intersectionBytes)));
                 clientSet.add(ByteBuffer.wrap(BytesUtils.clone(intersectionBytes)));
-            } else if (index < minSize / 4 * 3) {
+            } else if (index < minSize / SPLIT_NUM * LAST_SPLIT_INDEX) {
                 // 服务端集合添加整数值[0, 0, 1, index]
                 // 客户端集合添加整数值[0, 0, 2, index]
                 ByteBuffer serverByteBuffer = ByteBuffer.allocate(elementByteLength);
@@ -239,9 +218,22 @@ public class PsoUtils {
      * @throws IOException 如果出现IO异常。
      */
     public static void generateBytesInputFiles(int setSize, int elementByteLength) throws IOException {
+        generateBytesInputFiles(setSize, setSize, elementByteLength);
+    }
+
+    /**
+     * 生成字节数组输入文件。
+     *
+     * @param serverSetSize 服务端集合大小。
+     * @param clientSetSize 客户端集合大小。
+     * @param elementByteLength 元素字节长度。
+     * @throws IOException 如果出现IO异常。
+     */
+    public static void generateBytesInputFiles(int serverSetSize, int clientSetSize, int elementByteLength)
+        throws IOException {
         assert elementByteLength >= CommonConstants.STATS_BYTE_LENGTH;
-        File serverInputFile = new File(getBytesFileName(BYTES_SERVER_PREFIX, setSize, elementByteLength));
-        File clientInputFile = new File(getBytesFileName(BYTES_CLIENT_PREFIX, setSize, elementByteLength));
+        File serverInputFile = new File(getBytesFileName(BYTES_SERVER_PREFIX, serverSetSize, elementByteLength));
+        File clientInputFile = new File(getBytesFileName(BYTES_CLIENT_PREFIX, clientSetSize, elementByteLength));
 
         if (serverInputFile.exists() && clientInputFile.exists()) {
             // 文件都存在，跳过生成阶段
@@ -261,7 +253,7 @@ public class PsoUtils {
             );
         }
         // 生成文件
-        ArrayList<Set<ByteBuffer>> sets = generateBytesSets(setSize, elementByteLength);
+        ArrayList<Set<ByteBuffer>> sets = generateBytesSets(serverSetSize, clientSetSize, elementByteLength);
         Set<ByteBuffer> serverSet = sets.get(0);
         Set<ByteBuffer> clientSet = sets.get(1);
         // 写入服务端输入

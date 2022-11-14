@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pso.oprf;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.cm20.Cm20MpOprfConfig;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.cm20.Cm20MpOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.cm20.Cm20MpOprfSender;
@@ -17,7 +18,7 @@ import edu.alibaba.mpc4j.s2pc.pso.oprf.ra17.Ra17MpOprfSender;
  * @author Weiran Liu
  * @date 2022/02/06
  */
-public class OprfFactory {
+public class OprfFactory implements PtoFactory {
     /**
      * 私有构造函数
      */
@@ -67,7 +68,7 @@ public class OprfFactory {
             case CM20:
                 return new Cm20MpOprfSender(senderRpc, receiverParty, (Cm20MpOprfConfig)config);
             default:
-                throw new IllegalArgumentException("Invalid OprfType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + OprfType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -91,7 +92,7 @@ public class OprfFactory {
             case CM20:
                 return new Cm20MpOprfReceiver(receiverRpc, senderParty, (Cm20MpOprfConfig)config);
             default:
-                throw new IllegalArgumentException("Invalid OprfTypes: " + type.name());
+                throw new IllegalArgumentException("Invalid " + OprfType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -109,7 +110,7 @@ public class OprfFactory {
             case COVERT:
             case MALICIOUS:
             default:
-                throw new IllegalArgumentException("Invalid SecurityModel: " + securityModel.name());
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 
@@ -129,7 +130,7 @@ public class OprfFactory {
             case CM20:
                 return new Cm20MpOprfSender(senderRpc, receiverParty, (Cm20MpOprfConfig)config);
             default:
-                throw new IllegalArgumentException("Invalid MpOprfType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + OprfType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -149,7 +150,7 @@ public class OprfFactory {
             case CM20:
                 return new Cm20MpOprfReceiver(receiverRpc, senderParty, (Cm20MpOprfConfig)config);
             default:
-                throw new IllegalArgumentException("Invalid MpOprfType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + OprfType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -167,7 +168,7 @@ public class OprfFactory {
             case COVERT:
             case MALICIOUS:
             default:
-                throw new IllegalArgumentException("Invalid SecurityModel: " + securityModel.name());
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

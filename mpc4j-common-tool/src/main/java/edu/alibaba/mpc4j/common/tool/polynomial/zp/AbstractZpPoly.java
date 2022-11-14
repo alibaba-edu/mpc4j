@@ -42,8 +42,8 @@ abstract class AbstractZpPoly implements ZpPoly {
         return p;
     }
 
-
-    protected boolean validPoint(BigInteger point) {
+    @Override
+    public boolean validPoint(BigInteger point) {
         return BigIntegerUtils.greaterOrEqual(point, BigInteger.ZERO) && BigIntegerUtils.less(point, p);
     }
 }
