@@ -22,6 +22,15 @@ public class BigDecimalUtils {
     }
 
     /**
+     * 统计安全常数所对应的可忽略函数值
+     */
+    public static final BigDecimal STAT_NEG_PROBABILITY = BigDecimal.valueOf(0.5).pow(CommonConstants.STATS_BIT_LENGTH);
+    /**
+     * 小数点后保留20位即可以满足统计安全常数的计算准确性
+     */
+    public static final int STRUCTURE_SCALE = 20;
+
+    /**
      * 计算给定输入的log2值。
      * 代码源自Maarten Bodewes (http://stackoverflow.com/questions/739532/logarithm-of-a-bigdecimal)
      *

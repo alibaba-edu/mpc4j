@@ -7,9 +7,6 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -64,10 +61,6 @@ public class Jsz22SfcPsuClient extends AbstractPsuClient {
      */
     private final int cuckooHashNum;
     /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
-    /**
      * 布谷鸟哈希
      */
     private CuckooHashBin<ByteBuffer> cuckooHashBin;
@@ -90,7 +83,6 @@ public class Jsz22SfcPsuClient extends AbstractPsuClient {
         coreCotReceiver.addLogLevel();
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
-        crhf = CrhfFactory.createInstance(getEnvType(), CrhfType.MMO);
     }
 
     @Override
@@ -225,9 +217,8 @@ public class Jsz22SfcPsuClient extends AbstractPsuClient {
                 if (choiceArray[index]) {
                     return botElementByteBuffer;
                 } else {
-                    byte[] key = cotReceiverOutput.getRb(index);
-                    key = crhf.hash(key);
-                    byte[] message = encPrg.extendToBytes(key);
+                    // do not need CRHF since we call prg
+                    byte[] message = encPrg.extendToBytes(cotReceiverOutput.getRb(index));
                     BytesUtils.xori(message, encArrayList.get(index));
                     return ByteBuffer.wrap(message);
                 }

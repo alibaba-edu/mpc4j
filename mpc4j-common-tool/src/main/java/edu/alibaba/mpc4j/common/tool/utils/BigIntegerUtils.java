@@ -1,10 +1,13 @@
 package edu.alibaba.mpc4j.common.tool.utils;
 
+import com.google.common.math.BigIntegerMath;
 import edu.alibaba.mpc4j.common.jnagmp.Gmp;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
@@ -289,7 +292,7 @@ public class BigIntegerUtils {
      * @return 随机数。
      */
     public static BigInteger randomPositive(final BigInteger n, SecureRandom secureRandom) {
-        assert BigIntegerUtils.greater(n, BigInteger.ONE) : "n must be greater than 1:" + n;
+        MathPreconditions.checkGreater("n", n, BigInteger.ONE);
         int bits = n.bitLength();
         while (true) {
             BigInteger r = new BigInteger(bits, secureRandom);
@@ -308,7 +311,7 @@ public class BigIntegerUtils {
      * @return 随机数。
      */
     public static BigInteger randomNonNegative(final BigInteger n, SecureRandom secureRandom) {
-        assert BigIntegerUtils.greater(n, BigInteger.ZERO) : "n must be greater than 0:" + n;
+        MathPreconditions.checkPositive("n", n);
         int bits = n.bitLength();
         while (true) {
             // r必然属于[0, 2^k)，只需要进一步判断是否小于n
@@ -321,58 +324,44 @@ public class BigIntegerUtils {
     }
 
     /**
-     * 计算{@code BigInteger n}开平方的整数部分。核心代码来自于Faruk Akgul，并进行了一些调整：
-     * http://faruk.akgul.org/blog/javas-missing-algorithm-biginteger-sqrt/
+     * Returns the square root of {@code x}, rounded with the RoundingMode.FLOOR. Return 0 if {@code x = 0}.
      *
-     * @param n 待开平方的数。
-     * @return {@code n}开平方的整数部分。
+     * @param x the input x.
+     * @return the square root of {@code x}, rounded with the RoundingMode.FLOOR.
+     * @throws IllegalArgumentException if {@code x < 0}.
+     * @throws ArithmeticException if {@code mode} is {@link RoundingMode#UNNECESSARY} and {@code sqrt(x)} is not an integer.
      */
-    public static BigInteger sqrt(BigInteger n) {
-        assert BigIntegerUtils.greater(n, BigInteger.ZERO);
-        if (n.equals(BigInteger.ONE)) {
-            return BigInteger.ONE;
-        }
-        BigInteger a = BigInteger.ONE;
-        BigInteger b = n.shiftRight(5).add(BigInteger.valueOf(8));
-        while (b.compareTo(a) >= 0) {
-            BigInteger mid = a.add(b).shiftRight(1);
-            if (mid.multiply(mid).compareTo(n) > 0) {
-                b = mid.subtract(BigInteger.ONE);
-            } else {
-                a = mid.add(BigInteger.ONE);
-            }
-        }
-        return a.subtract(BigInteger.ONE);
+    public static BigInteger sqrtFloor(BigInteger x) {
+        return BigIntegerMath.sqrt(x, RoundingMode.FLOOR);
     }
 
     /**
-     * 计算组合数：从n个不同元素中任取m ≤ n个元素所有可能的个数，用符号C(n, m)表示。
+     * Returns {@code n} choose {@code k}, also known as the binomial coefficient of {@code n} and {@code k}, that is,
+     * {@code n! / (k! (n - k)!)}.
      *
-     * @param n 共有n个元素。
-     * @param m 选择m个元素。
-     * @return C(n, m)的值。
+     * <p><b>Warning:</b> the result can take as much as <i>O(k log n)</i> space.
+     *
+     * @param n total n.
+     * @param k choose k.
+     * @return the binomial coefficient of {@code n} and {@code k}.
+     * @throws IllegalArgumentException if {@code n < 0}, {@code k < 0}, or {@code k > n}.
      */
-    public static BigInteger combinatorial(int n, int m) {
-        assert m >= 0 && m <= n;
-        BigInteger combinatoral = BigInteger.ONE;
-        // C(n, m) = C(n, n - m)，选择小的m
-        int minM = m > n / 2 ? n - m : m;
-        for (int i = 1; i <= minM; i++) {
-            combinatoral = combinatoral.multiply(BigInteger.valueOf(n + 1 - i));
-            combinatoral = combinatoral.divide(BigInteger.valueOf(i));
-        }
-        return combinatoral;
+    public static BigInteger binomial(int n, int k) {
+        return BigIntegerMath.binomial(n, k);
     }
 
     /**
-     * 计算log_2(x)。
-     * 代码源自Maarten Bodewes (http://stackoverflow.com/questions/739532/logarithm-of-a-bigdecimal)。
+     * Returns the base-2 logarithm of {@code x}. The source code is from Maarten Bodewes:
+     * <p>
+     * http://stackoverflow.com/questions/739532/logarithm-of-a-bigdecimal
+     * </p>
      *
-     * @param x 输入值。
-     * @return log_2(x)。
+     * @param x the input x.
+     * @return the base-2 logarithm of {@code x}.
+     * @throws IllegalArgumentException if {@code x <= 0}.
      */
     public static double log2(BigInteger x) {
-        assert BigIntegerUtils.greater(x, BigInteger.ZERO);
+        MathPreconditions.checkPositive("x", x);
         if (x.equals(BigInteger.ONE)) {
             return 0.0;
         }

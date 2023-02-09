@@ -4,14 +4,15 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2Triple;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.AbstractZ2CoreMtgParty;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotSender;
@@ -36,10 +37,6 @@ public class Alsz13Z2CoreMtgReceiver extends AbstractZ2CoreMtgParty {
      */
     private final NcCotSender ncCotSender;
     /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
-    /**
      * 偏置量
      */
     private int offset;
@@ -62,7 +59,6 @@ public class Alsz13Z2CoreMtgReceiver extends AbstractZ2CoreMtgParty {
         ncCotReceiver.addLogLevel();
         ncCotSender = NcCotFactory.createSender(receiverRpc, senderParty, config.getNcCotConfig());
         ncCotSender.addLogLevel();
-        crhf = CrhfFactory.createInstance(getEnvType(), CrhfFactory.CrhfType.MMO);
     }
 
     @Override
@@ -159,13 +155,10 @@ public class Alsz13Z2CoreMtgReceiver extends AbstractZ2CoreMtgParty {
         // S and R perform a silent R-OT. R obtains bits a and xa as output.
         CotReceiverOutput cotReceiverOutput = ncCotReceiver.receive();
         cotReceiverOutput.reduce(num);
+        RotReceiverOutput rotReceiverOutput = new RotReceiverOutput(envType, CrhfType.MMO, cotReceiverOutput);
         a1 = BinaryUtils.binaryToRoundByteArray(cotReceiverOutput.getChoices());
         // R sets u = xa
-        IntStream tripleIndexIntStream = IntStream.range(0, num);
-        tripleIndexIntStream = parallel ? tripleIndexIntStream.parallel() : tripleIndexIntStream;
-        byte[][] rbArray = tripleIndexIntStream
-                .mapToObj(tripleIndex -> crhf.hash(cotReceiverOutput.getRb(tripleIndex)))
-                .toArray(byte[][]::new);
+        byte[][] rbArray = rotReceiverOutput.getRbArray();
         IntStream.range(0, num).forEach(tripleIndex -> {
             // 只取每个ROT的最高位1比特
             BinaryUtils.setBoolean(c1, offset + tripleIndex, rbArray[tripleIndex][0] % 2 == 1);
@@ -176,15 +169,10 @@ public class Alsz13Z2CoreMtgReceiver extends AbstractZ2CoreMtgParty {
         // S and R perform a silent R-OT. S obtains bits x0, x1.
         CotSenderOutput cotSenderOutput = ncCotSender.send();
         cotSenderOutput.reduce(num);
-        byte[][] r0Array = new byte[num][];
-        byte[][] r1Array = new byte[num][];
-        IntStream tripleIndexIntStream = IntStream.range(0, num);
-        tripleIndexIntStream = parallel ? tripleIndexIntStream.parallel() : tripleIndexIntStream;
-        tripleIndexIntStream.forEach(tripleIndex -> {
-            // S sets b = x0 ⊕ x1 and v = x0.
-            r0Array[tripleIndex] = crhf.hash(cotSenderOutput.getR0(tripleIndex));
-            r1Array[tripleIndex] = crhf.hash(cotSenderOutput.getR1(tripleIndex));
-        });
+        RotSenderOutput rotSenderOutput = new RotSenderOutput(envType, CrhfType.MMO, cotSenderOutput);
+        byte[][] r0Array = rotSenderOutput.getR0Array();
+        byte[][] r1Array = rotSenderOutput.getR1Array();
+        // S sets b = x0 ⊕ x1 and v = x0.
         byte[] cb = new byte[byteNum];
         byte[] x1 = new byte[byteNum];
         IntStream.range(0, num).forEach(tripleIndex -> {

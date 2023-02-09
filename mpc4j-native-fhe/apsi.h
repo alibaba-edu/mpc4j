@@ -16,15 +16,15 @@ using namespace std;
 #define MPC3J_NATIVE_FHE_APSI_H
 
 vector<Ciphertext> compute_encrypted_powers(const EncryptionParameters& parms, vector<Ciphertext> query, vector<vector<uint32_t>> parent_powers,
-                                            vector<uint32_t> source_power_index, int ps_low_power, const RelinKeys& relin_keys);
+                                            vector<uint32_t> source_power_index, uint32_t ps_low_power, const RelinKeys& relin_keys);
 
 Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts, const PublicKey& public_key);
 
 Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts,
-                                 int ps_low_power, const RelinKeys& relin_keys, const PublicKey& public_key);
+                                 uint32_t ps_low_power, const RelinKeys& relin_keys, const PublicKey& public_key);
 
 Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts,
-                                 int ps_low_power, const RelinKeys& relin_keys);
+                                 uint32_t ps_low_power, const RelinKeys& relin_keys);
 
 Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts);
 

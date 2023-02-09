@@ -1,104 +1,131 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2;
 
-import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
-import java.math.BigInteger;
+import java.security.SecureRandom;
 
 /**
- * 布尔三元组。
+ * Z2 triple.
  *
  * @author Sheng Hu, Weiran Liu
  * @date 2022/02/07
  */
 public class Z2Triple {
     /**
-     * 布尔三元组数量
+     * triple num
      */
     private int num;
     /**
-     * 布尔三元组字节长度
+     * triple byte num
      */
     private int byteNum;
     /**
-     * 随机分量a
+     * 'a'
      */
-    private BigInteger a;
+    private BitVector a;
     /**
-     * 随机分量b
+     * 'b'
      */
-    private BigInteger b;
+    private BitVector b;
     /**
-     * 随机分量c
+     * 'c'
      */
-    private BigInteger c;
+    private BitVector c;
 
     /**
-     * 创建布尔三元组随机分量。
+     * create a triple, each element is represented by bytes.
      *
-     * @param num 布尔三元组数量。
-     * @param a   随机分量a。
-     * @param b   随机分量b。
-     * @param c   随机分量c。
+     * @param num triple num.
+     * @param a   'a' represented by bytes.
+     * @param b   'b' represented by bytes.
+     * @param c   'c' represented by bytes.
+     * @return the created triple.
      */
     public static Z2Triple create(int num, byte[] a, byte[] b, byte[] c) {
         assert num > 0 : "num must be greater than 0: " + num;
-        // 验证随机分量的长度
         int byteNum = CommonUtils.getByteLength(num);
-        assert a.length == byteNum && BytesUtils.isReduceByteArray(a, num);
-        assert b.length == byteNum && BytesUtils.isReduceByteArray(b, num);
-        assert c.length == byteNum && BytesUtils.isReduceByteArray(c, num);
-
-        // 将byte[]转换为BigInteger时已经数进行了拷贝
         Z2Triple triple = new Z2Triple();
         triple.num = num;
         triple.byteNum = byteNum;
-        triple.a = BigIntegerUtils.byteArrayToNonNegBigInteger(a);
-        triple.b = BigIntegerUtils.byteArrayToNonNegBigInteger(b);
-        triple.c = BigIntegerUtils.byteArrayToNonNegBigInteger(c);
+        triple.a = BitVectorFactory.create(num, a);
+        triple.b = BitVectorFactory.create(num, b);
+        triple.c = BitVectorFactory.create(num, c);
+        return triple;
+    }
+
+    /**
+     * create a random triple.
+     *
+     * @param num triple num.
+     * @return the created triple.
+     */
+    public static Z2Triple createRandom(int num, SecureRandom secureRandom) {
+        assert num > 0 : "num must be greater than 0: " + num;
+        int byteNum = CommonUtils.getByteLength(num);
+        Z2Triple triple = new Z2Triple();
+        triple.num = num;
+        triple.byteNum = byteNum;
+        triple.a = BitVectorFactory.createRandom(num, secureRandom);
+        triple.b = BitVectorFactory.createRandom(num, secureRandom);
+        triple.c = BitVectorFactory.createRandom(num, secureRandom);
+        return triple;
+    }
+
+    /**
+     * Create a triple with all elements are 1.
+     *
+     * @param num triple num.
+     * @return the created triple.
+     */
+    static Z2Triple createOnes(int num) {
+        assert num > 0 : "num must be greater than 0: " + num;
+        int byteNum = CommonUtils.getByteLength(num);
+        Z2Triple triple = new Z2Triple();
+        triple.num = num;
+        triple.byteNum = byteNum;
+        triple.a = BitVectorFactory.createOnes(num);
+        triple.b = BitVectorFactory.createOnes(num);
+        triple.c = BitVectorFactory.createOnes(num);
+        return triple;
+    }
+
+    /**
+     * create an empty triple.
+     *
+     * @return the created triple.
+     */
+    public static Z2Triple createEmpty() {
+        Z2Triple triple = new Z2Triple();
+        triple.num = 0;
+        triple.byteNum = 0;
+        triple.a = BitVectorFactory.createEmpty();
+        triple.b = BitVectorFactory.createEmpty();
+        triple.c = BitVectorFactory.createEmpty();
 
         return triple;
     }
 
     /**
-     * 创建长度为0的布尔三元组随机分量。
+     * create a triple, each element is represented by BitVector.
      *
-     * @return 长度为0的布尔三元组随机分量。
+     * @param num triple num.
+     * @param a   a represented by BitVector.
+     * @param b   b represented by BitVector.
+     * @param c   c represented by BitVector.
+     * @return the created triple.
      */
-    public static Z2Triple createEmpty() {
-        Z2Triple emptyTriple = new Z2Triple();
-        emptyTriple.num = 0;
-        emptyTriple.byteNum = 0;
-        emptyTriple.a = BigInteger.ZERO;
-        emptyTriple.b = BigInteger.ZERO;
-        emptyTriple.c = BigInteger.ZERO;
-
-        return emptyTriple;
-    }
-
-    /**
-     * 内部构建布尔三元组随机分量。
-     *
-     * @param num 布尔三元组数量。
-     * @param a   随机分量a。
-     * @param b   随机分量b。
-     * @param c   随机分量c。
-     */
-    private static Z2Triple create(int num, BigInteger a, BigInteger b, BigInteger c) {
+    private static Z2Triple create(int num, BitVector a, BitVector b, BitVector c) {
         assert num > 0 : "num must be greater than 0: " + num;
-        assert BigIntegerUtils.nonNegative(a) && a.bitLength() <= num;
-        assert BigIntegerUtils.nonNegative(b) && b.bitLength() <= num;
-        assert BigIntegerUtils.nonNegative(c) && c.bitLength() <= num;
+        Z2Triple triple = new Z2Triple();
+        triple.num = num;
+        triple.byteNum = CommonUtils.getByteLength(num);
+        triple.a = a;
+        triple.b = b;
+        triple.c = c;
 
-        Z2Triple booleanTriple = new Z2Triple();
-        booleanTriple.num = num;
-        booleanTriple.byteNum = CommonUtils.getByteLength(num);
-        booleanTriple.a = a;
-        booleanTriple.b = b;
-        booleanTriple.c = c;
-
-        return booleanTriple;
+        return triple;
     }
 
     /**
@@ -109,157 +136,127 @@ public class Z2Triple {
     }
 
     /**
-     * 返回布尔三元组数量。
+     * Get the triple num.
      *
-     * @return 布尔三元组数量。
+     * @return the triple num.
      */
     public int getNum() {
         return num;
     }
 
     /**
-     * 返回布尔三元组字节长度。
+     * Get the triple byte num.
      *
-     * @return 布尔三元组字节长度。
+     * @return the triple byte num.
      */
     public int getByteNum() {
         return byteNum;
     }
 
     /**
-     * 返回随机分量a。
+     * Get 'a'.
      *
-     * @return 随机分量a。
+     * @return 'a'.
      */
     public byte[] getA() {
-        return BigIntegerUtils.nonNegBigIntegerToByteArray(a, byteNum);
+        return a.getBytes();
     }
 
     /**
-     * 返回随机分量a的二进制字符串表示。
+     * Get 'a' represented by String.
      *
-     * @return 随机分量a的二进制字符串表示。
+     * @return 'a' represented by String.
      */
     public String getStringA() {
-        if (num == 0) {
-            return "";
-        }
-        StringBuilder stringA = new StringBuilder(a.toString(2));
-        while (stringA.length() < num) {
-            stringA.insert(0, "0");
-        }
-        return stringA.toString();
+        return a.toString();
     }
 
     /**
-     * 返回随机分量b。
+     * Get 'b'.
      *
-     * @return 随机分量b。
+     * @return 'b'.
      */
     public byte[] getB() {
-        return BigIntegerUtils.nonNegBigIntegerToByteArray(b, byteNum);
+        return b.getBytes();
     }
 
     /**
-     * 返回随机分量b的二进制字符串表示。
+     * Get 'b' represented by String.
      *
-     * @return 随机分量b的二进制字符串表示。
+     * @return 'b' represented by String.
      */
     public String getStringB() {
-        if (num == 0) {
-            return "";
-        }
-        StringBuilder stringB = new StringBuilder(b.toString(2));
-        while (stringB.length() < num) {
-            stringB.insert(0, "0");
-        }
-        return stringB.toString();
+        return b.toString();
     }
 
     /**
-     * 返回随机分量c。
+     * Get 'c'.
      *
-     * @return 随机分量c。
+     * @return 'c'.
      */
     public byte[] getC() {
-        return BigIntegerUtils.nonNegBigIntegerToByteArray(c, byteNum);
+        return c.getBytes();
     }
 
     /**
-     * 返回随机分量b的二进制字符串表示。
+     * Get 'c' represented by String.
      *
-     * @return 随机分量b的二进制字符串表示。
+     * @return 'c' represented by String.
      */
     public String getStringC() {
-        if (num == 0) {
-            return "";
-        }
-        StringBuilder stringC = new StringBuilder(c.toString(2));
-        while (stringC.length() < num) {
-            stringC.insert(0, "0");
-        }
-        return stringC.toString();
+        return c.toString();
     }
 
     /**
-     * 从布尔三元组中切分出指定长度的子布尔三元组。
+     * Split with the given tripe num. The current one keeps the triples.
      *
-     * @param length 指定切分长度。
+     * @param num the assigned triple num.
+     * @return the split result.
      */
-    public Z2Triple split(int length) {
-        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]: " + length;
-        // 切分方法：分别对2^length取模数和取余数，模数作为split结果，余数作为剩余结果
-        BigInteger mask = BigInteger.ONE.shiftLeft(length).subtract(BigInteger.ONE);
-        // 由于模数一定是2^length格式，因此可以用位运算更高效地实现
-        BigInteger splitA = a.and(mask);
-        BigInteger spiltB = b.and(mask);
-        BigInteger splitC = c.and(mask);
-        // 更新剩余的布尔三元组
-        a = a.shiftRight(length);
-        b = b.shiftRight(length);
-        c = c.shiftRight(length);
-        num = num - length;
-        byteNum = num == 0 ? 0 : CommonUtils.getByteLength(num);
-        // 返回切分出的布尔三元组
-        return Z2Triple.create(length, splitA, spiltB, splitC);
+    public Z2Triple split(int num) {
+        assert num > 0 && num <= this.num : "split num must be in range (0, " + this.num + "]: " + num;
+        BitVector splitA = a.split(num);
+        BitVector spiltB = b.split(num);
+        BitVector splitC = c.split(num);
+        this.num = this.num - num;
+        byteNum = this.num == 0 ? 0 : CommonUtils.getByteLength(this.num);
+        // create a new instance
+        return Z2Triple.create(num, splitA, spiltB, splitC);
     }
 
     /**
-     * 将布尔三元组长度缩减为指定长度。
+     * Split to the given tripe num.
      *
-     * @param length 指定缩减长度。
+     * @param num the assigned triple num.
      */
-    public void reduce(int length) {
-        assert length > 0 && length <= num : "reduce length must be in range (0, " + num + "]: " + length;
-        if (length < num) {
-            // 缩减长度，方法为原始数据与长度对应全1比特串求AND
-            BigInteger mask = BigInteger.ONE.shiftLeft(length).subtract(BigInteger.ONE);
-            a = a.and(mask);
-            b = b.and(mask);
-            c = c.and(mask);
-            // 更改长度
-            num = length;
-            byteNum = CommonUtils.getByteLength(length);
+    public void reduce(int num) {
+        assert num > 0 && num <= this.num : "reduce num must be in range (0, " + this.num + "]: " + num;
+        if (num < this.num) {
+            a.reduce(num);
+            b.reduce(num);
+            c.reduce(num);
+            // update num
+            this.num = num;
+            byteNum = CommonUtils.getByteLength(num);
         }
     }
 
     /**
-     * 合并两个布尔三元组。
+     * Merge the other triple.
      *
-     * @param that 另一个布尔三元组。
+     * @param that the other triple.
      */
     public void merge(Z2Triple that) {
-        // 移位
-        a = a.shiftLeft(that.num).add(that.a);
-        b = b.shiftLeft(that.num).add(that.b);
-        c = c.shiftLeft(that.num).add(that.c);
-        // 更新长度
+        a.merge(that.a);
+        b.merge(that.b);
+        c.merge(that.c);
+        // update num
         num += that.num;
         byteNum = num == 0 ? 0 : CommonUtils.getByteLength(num);
     }
 
     @Override
     public String toString() {
-        return "[" + getStringA() + ", " + getStringB() + ", " + getStringC() + "] (n = " + num + ")";
+        return "[" + a.toString() + ", " + b.toString() + ", " + c.toString() + "] (n = " + num + ")";
     }
 }

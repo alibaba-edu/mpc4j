@@ -28,8 +28,8 @@ public class PsiUtils {
         assert clientElementSize > 0 : "client element size must be greater than 0: " + clientElementSize;
         // λ + log(m) + log(n)
         return CommonConstants.STATS_BYTE_LENGTH
-            + CommonUtils.getByteLength(LongUtils.ceilLog2(serverElementSize))
-            + CommonUtils.getByteLength(LongUtils.ceilLog2(clientElementSize));
+            + CommonUtils.getByteLength(LongUtils.ceilLog2(serverElementSize, 1))
+            + CommonUtils.getByteLength(LongUtils.ceilLog2(clientElementSize, 1));
     }
 
     /**

@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtSenderOutput;
 
 /**
  * COT协议发送方输出。
@@ -11,7 +12,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
  * @author Weiran Liu
  * @date 2021/12/26
  */
-public class CotSenderOutput {
+public class CotSenderOutput implements OtSenderOutput {
     /**
      * 关联值Δ
      */
@@ -30,12 +31,14 @@ public class CotSenderOutput {
      */
     public static CotSenderOutput create(byte[] delta, byte[][] r0Array) {
         CotSenderOutput senderOutput = new CotSenderOutput();
-        assert delta.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert delta.length == CommonConstants.BLOCK_BYTE_LENGTH
+            : "Δ byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + delta.length;
         senderOutput.delta = BytesUtils.clone(delta);
-        assert r0Array.length > 0 : "R0 Array Length must be greater than 0";
+        assert r0Array.length > 0 : "num must be greater than 0: " + r0Array.length;
         senderOutput.r0Array = Arrays.stream(r0Array)
             .peek(r0 -> {
-                assert r0.length == CommonConstants.BLOCK_BYTE_LENGTH;
+                assert r0.length == CommonConstants.BLOCK_BYTE_LENGTH
+                    : "r0 byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + r0.length;
             })
             .map(BytesUtils::clone)
             .toArray(byte[][]::new);
@@ -121,51 +124,29 @@ public class CotSenderOutput {
         return delta;
     }
 
-    /**
-     * 返回R0。
-     *
-     * @param index 索引值。
-     * @return R0。
-     */
+    @Override
     public byte[] getR0(int index) {
         return r0Array[index];
     }
 
-    /**
-     * 返回R0数组。
-     *
-     * @return R0数组。
-     */
+    @Override
     public byte[][] getR0Array() {
         return r0Array;
     }
 
-    /**
-     * 返回R1。
-     *
-     * @param index 索引值。
-     * @return R1。
-     */
+    @Override
     public byte[] getR1(int index) {
         return BytesUtils.xor(delta, getR0(index));
     }
 
-    /**
-     * 返回R1数组。
-     *
-     * @return R1数组。
-     */
+    @Override
     public byte[][] getR1Array() {
         return Arrays.stream(r0Array)
             .map(r0 -> BytesUtils.xor(delta, r0))
             .toArray(byte[][]::new);
     }
 
-    /**
-     * 返回COT数量。
-     *
-     * @return COT数量。
-     */
+    @Override
     public int getNum() {
         return r0Array.length;
     }

@@ -6,47 +6,47 @@ import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
 /**
- * DPPRF协议发送方。
+ * DPPRF sender.
  *
  * @author Weiran Liu
  * @date 2022/8/16
  */
 public interface DpprfSender extends TwoPartyPto, SecurePto {
     /**
-     * 返回协议类型。
+     * Get the protocol type.
      *
-     * @return 协议类型。
+     * @return the protocol type.
      */
     @Override
     DpprfFactory.DpprfType getPtoType();
 
     /**
-     * 初始化协议。
+     * Init the protocol.
      *
-     * @param maxBatchNum   最大批处理数量。
-     * @param maxAlphaBound 最大α上界。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param maxBatchNum   maximal batch num.
+     * @param maxAlphaBound maximal α upper bound.
+     * @throws MpcAbortException if the protocol aborts.
      */
     void init(int maxBatchNum, int maxAlphaBound) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Execute the protocol.
      *
-     * @param batchNum   批处理数量。
-     * @param alphaBound α上界。
-     * @return 发送方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param batchNum   batch num.
+     * @param alphaBound α upper bound.
+     * @return sender output.
+     * @throws MpcAbortException if the protocol aborts.
      */
     DpprfSenderOutput puncture(int batchNum, int alphaBound) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Execute the protocol.
      *
-     * @param batchNum        批处理数量。
-     * @param alphaBound      α上界。
-     * @param preSenderOutput 预计算发送方输出。
-     * @return 发送方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param batchNum        batch num.
+     * @param alphaBound      α upper bound.
+     * @param preSenderOutput pre-computed COT sender output.
+     * @return sender output.
+     * @throws MpcAbortException if the protocol aborts.
      */
     DpprfSenderOutput puncture(int batchNum, int alphaBound, CotSenderOutput preSenderOutput) throws MpcAbortException;
 }

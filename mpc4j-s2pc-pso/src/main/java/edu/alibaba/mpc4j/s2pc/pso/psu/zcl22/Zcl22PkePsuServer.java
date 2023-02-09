@@ -7,9 +7,6 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -61,10 +58,6 @@ public class Zcl22PkePsuServer extends AbstractPsuServer {
      */
     private final Ecc ecc;
     /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
-    /**
      * ECC-OVDM哈希密钥
      */
     private byte[][] eccOvdmHashKeys;
@@ -93,7 +86,6 @@ public class Zcl22PkePsuServer extends AbstractPsuServer {
         compressEncode = config.getCompressEncode();
         pipeSize = config.getPipeSize();
         ecc = EccFactory.createInstance(getEnvType());
-        crhf = CrhfFactory.createInstance(getEnvType(), CrhfType.MMO);
     }
 
     @Override
@@ -214,9 +206,8 @@ public class Zcl22PkePsuServer extends AbstractPsuServer {
         encIntStream = parallel ? encIntStream.parallel() : encIntStream;
         List<byte[]> encPayload = encIntStream
             .mapToObj(index -> {
-                byte[] key = cotSenderOutput.getR0(index);
-                key = crhf.hash(key);
-                byte[] ciphertext = encPrg.extendToBytes(key);
+                // do not need CRHF since we call prg
+                byte[] ciphertext = encPrg.extendToBytes(cotSenderOutput.getR0(index));
                 BytesUtils.xori(ciphertext, serverElementArrayList.get(index).array());
                 return ciphertext;
             })

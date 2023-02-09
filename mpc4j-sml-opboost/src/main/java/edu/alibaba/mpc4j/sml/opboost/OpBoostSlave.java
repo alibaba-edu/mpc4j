@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPto;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.correlation.RankUtils;
+import edu.alibaba.mpc4j.common.tool.utils.RankUtils;
 import edu.alibaba.mpc4j.common.tool.utils.*;
 import smile.data.DataFrame;
 import smile.data.measure.NominalScale;

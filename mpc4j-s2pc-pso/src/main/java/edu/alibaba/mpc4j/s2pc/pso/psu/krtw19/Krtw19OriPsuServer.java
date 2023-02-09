@@ -7,9 +7,6 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -63,10 +60,6 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
      */
     private final int pipeSize;
     /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
-    /**
      * 桶哈希函数密钥
      */
     private byte[][] hashBinKeys;
@@ -117,7 +110,6 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
         coreCotSender.addLogLevel();
         okvsType = config.getOkvsType();
         pipeSize = config.getPipeSize();
-        crhf = CrhfFactory.createInstance(getEnvType(), CrhfType.MMO);
     }
 
     @Override
@@ -318,9 +310,8 @@ public class Krtw19OriPsuServer extends AbstractPsuServer {
         List<byte[]> encPayload = encIntStream
             .mapToObj(binIndex -> {
                 byte[] element = xs[binIndex];
-                // 密钥处理
-                byte[] key = crhf.hash(cotSenderOutput.getR0(binIndex));
-                byte[] ciphertext = encPrg.extendToBytes(key);
+                // do not need CRHF since we call prg
+                byte[] ciphertext = encPrg.extendToBytes(cotSenderOutput.getR0(binIndex));
                 BytesUtils.xori(ciphertext, element);
                 return ciphertext;
             })

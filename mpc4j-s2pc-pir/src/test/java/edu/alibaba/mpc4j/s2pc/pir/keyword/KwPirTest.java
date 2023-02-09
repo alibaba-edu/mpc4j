@@ -34,7 +34,7 @@ public class KwPirTest {
     /**
      * 默认标签字节长度
      */
-    private static final int DEFAULT_LABEL_BYTE_LENGTH = 32;
+    private static final int DEFAULT_LABEL_BYTE_LENGTH = 8;
     /**
      * 长标签字节长度
      */
@@ -98,6 +98,18 @@ public class KwPirTest {
     public void test1M4096ShortLabelParallel() {
         Cmg21KwPirConfig config = new Cmg21KwPirConfig.Builder().build();
         testPir(config, Cmg21KwPirParams.SERVER_1M_CLIENT_MAX_4096, SHORT_LABEL_BYTE_LENGTH, true);
+    }
+
+    @Test
+    public void test500K22082ShortLabelParallel() {
+        Cmg21KwPirConfig config = new Cmg21KwPirConfig.Builder().build();
+        testPir(config, Cmg21KwPirParams.SERVER_1M_CLIENT_MAX_11041, SHORT_LABEL_BYTE_LENGTH, true);
+    }
+
+    @Test
+    public void test100K1ShortLabelParallel() {
+        Cmg21KwPirConfig config = new Cmg21KwPirConfig.Builder().build();
+        testPir(config, Cmg21KwPirParams.SERVER_100K_CLIENT_MAX_1, SHORT_LABEL_BYTE_LENGTH, true);
     }
 
     @Test

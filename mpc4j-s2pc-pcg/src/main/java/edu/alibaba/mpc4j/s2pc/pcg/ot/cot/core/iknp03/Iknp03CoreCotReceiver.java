@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.iknp03;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -15,15 +14,13 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.KdfOtSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.AbstractCoreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.iknp03.Iknp03CoreCotPtoDesc.PtoStep;
@@ -40,13 +37,9 @@ public class Iknp03CoreCotReceiver extends AbstractCoreCotReceiver {
      */
     private final BaseOtSender baseOtSender;
     /**
-     * 密钥派生函数
+     * KDF-OT协议输出
      */
-    private final Kdf kdf;
-    /**
-     * 基础OT协议输出
-     */
-    private BaseOtSenderOutput baseOtSenderOutput;
+    private KdfOtSenderOutput kdfOtSenderOutput;
     /**
      * 布尔矩阵
      */
@@ -56,7 +49,6 @@ public class Iknp03CoreCotReceiver extends AbstractCoreCotReceiver {
         super(Iknp03CoreCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtSender = BaseOtFactory.createSender(receiverRpc, senderParty, config.getBaseOtConfig());
         baseOtSender.addLogLevel();
-        kdf = KdfFactory.createInstance(envType);
     }
 
     @Override
@@ -84,7 +76,7 @@ public class Iknp03CoreCotReceiver extends AbstractCoreCotReceiver {
 
         stopWatch.start();
         baseOtSender.init();
-        baseOtSenderOutput = baseOtSender.send(CommonConstants.BLOCK_BIT_LENGTH);
+        kdfOtSenderOutput = new KdfOtSenderOutput(envType, baseOtSender.send(CommonConstants.BLOCK_BIT_LENGTH));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -136,18 +128,10 @@ public class Iknp03CoreCotReceiver extends AbstractCoreCotReceiver {
                 tMatrix.setColumn(columnIndex, column0Bytes);
                 byte[] column1Bytes = BytesUtils.xor(column0Bytes, choiceBytes);
                 // Sender and receiver interact with OT^k_m: the receiver acts as OT sender with input t_0, t_1
-                byte[] r0Seed = ByteBuffer.allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                    .putLong(extraInfo).put(baseOtSenderOutput.getR0(columnIndex))
-                    .array();
-                r0Seed = kdf.deriveKey(r0Seed);
-                byte[] message0 = prg.extendToBytes(r0Seed);
+                byte[] message0 = prg.extendToBytes(kdfOtSenderOutput.getK0(columnIndex, extraInfo));
                 BytesUtils.reduceByteArray(message0, num);
                 BytesUtils.xori(message0, column0Bytes);
-                byte[] r1Seed = ByteBuffer.allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                    .putLong(extraInfo).put(baseOtSenderOutput.getR1(columnIndex))
-                    .array();
-                r1Seed = kdf.deriveKey(r1Seed);
-                byte[] message1 = prg.extendToBytes(r1Seed);
+                byte[] message1 = prg.extendToBytes(kdfOtSenderOutput.getK1(columnIndex, extraInfo));
                 BytesUtils.reduceByteArray(message1, num);
                 BytesUtils.xori(message1, column1Bytes);
 

@@ -36,6 +36,7 @@ public class Cmg21UpsiConfig implements UpsiConfig {
                 + " must not be " + EnvType.STANDARD_JDK.name() + " or " + EnvType.INLAND_JDK.name()
                 + ": " + envType.name());
         }
+        mpOprfConfig.setEnvType(envType);
     }
 
     @Override

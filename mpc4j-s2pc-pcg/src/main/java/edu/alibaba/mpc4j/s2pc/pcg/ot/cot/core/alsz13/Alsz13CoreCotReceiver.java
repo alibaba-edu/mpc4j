@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.alsz13;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -14,15 +13,13 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.KdfOtSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.AbstractCoreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.alsz13.Alsz13CoreCotPtoDesc.PtoStep;
@@ -39,13 +36,9 @@ public class Alsz13CoreCotReceiver extends AbstractCoreCotReceiver {
      */
     private final BaseOtSender baseOtSender;
     /**
-     * 密钥派生函数
+     * KDF-OT协议输出
      */
-    private final Kdf kdf;
-    /**
-     * 基础OT协议输出
-     */
-    private BaseOtSenderOutput baseOtSenderOutput;
+    private KdfOtSenderOutput kdfOtSenderOutput;
     /**
      * 布尔矩阵
      */
@@ -55,7 +48,6 @@ public class Alsz13CoreCotReceiver extends AbstractCoreCotReceiver {
         super(Alsz13CoreCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtSender = BaseOtFactory.createSender(receiverRpc, senderParty, config.getBaseOtConfig());
         baseOtSender.addLogLevel();
-        kdf = KdfFactory.createInstance(envType);
     }
 
     @Override
@@ -83,7 +75,7 @@ public class Alsz13CoreCotReceiver extends AbstractCoreCotReceiver {
 
         stopWatch.start();
         baseOtSender.init();
-        baseOtSenderOutput = baseOtSender.send(CommonConstants.BLOCK_BIT_LENGTH);
+        kdfOtSenderOutput = new KdfOtSenderOutput(envType, baseOtSender.send(CommonConstants.BLOCK_BIT_LENGTH));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -128,19 +120,11 @@ public class Alsz13CoreCotReceiver extends AbstractCoreCotReceiver {
         return columnIndexIntStream
             .mapToObj(columnIndex -> {
                 // R computes t^i = G(k^0_i)
-                byte[] r0Seed = ByteBuffer.allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                    .putLong(extraInfo).put(baseOtSenderOutput.getR0(columnIndex))
-                    .array();
-                r0Seed = kdf.deriveKey(r0Seed);
-                byte[] tBytes = prg.extendToBytes(r0Seed);
+                byte[] tBytes = prg.extendToBytes(kdfOtSenderOutput.getK0(columnIndex, extraInfo));
                 BytesUtils.reduceByteArray(tBytes, num);
                 tMatrix.setColumn(columnIndex, tBytes);
                 // and u^i = t^i ⊕ G(k_i^1) ⊕ r
-                byte[] r1Seed = ByteBuffer.allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                    .putLong(extraInfo).put(baseOtSenderOutput.getR1(columnIndex))
-                    .array();
-                r1Seed = kdf.deriveKey(r1Seed);
-                byte[] uBytes = prg.extendToBytes(r1Seed);
+                byte[] uBytes = prg.extendToBytes(kdfOtSenderOutput.getK1(columnIndex, extraInfo));
                 BytesUtils.reduceByteArray(uBytes, num);
                 BytesUtils.xori(uBytes, tBytes);
                 BytesUtils.xori(uBytes, rBytes);

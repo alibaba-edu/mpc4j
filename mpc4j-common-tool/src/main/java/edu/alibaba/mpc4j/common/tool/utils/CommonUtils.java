@@ -27,7 +27,8 @@ public class CommonUtils {
      * @return 为容纳输入长度所需的单位长度数量。
      */
     public static int getUnitNum(int length, int unitLength) {
-        assert length > 0 && unitLength > 0;
+        assert length > 0 : "length must be greater than 0: " + length;
+        assert unitLength > 0 : "unit length must be greater than 0: " + unitLength;
         return (length + unitLength - 1) / unitLength;
     }
 

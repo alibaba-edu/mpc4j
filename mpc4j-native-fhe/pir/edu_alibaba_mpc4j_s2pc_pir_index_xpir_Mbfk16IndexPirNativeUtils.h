@@ -26,7 +26,7 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16Index
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils
  * Method:    nttTransform
- * Signature: ([BLjava/util/ArrayList;)Ljava/util/ArrayList;
+ * Signature: ([BLjava/util/List;)Ljava/util/ArrayList;
  */
 JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils_nttTransform
   (JNIEnv *, jclass, jbyteArray, jobject);
@@ -34,15 +34,15 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16Index
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils
  * Method:    generateQuery
- * Signature: ([B[B[B[I)Ljava/util/ArrayList;
+ * Signature: ([B[B[B[I[I)Ljava/util/ArrayList;
  */
 JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils_generateQuery
-  (JNIEnv *, jclass, jbyteArray, jbyteArray, jbyteArray, jintArray);
+  (JNIEnv *, jclass, jbyteArray, jbyteArray, jbyteArray, jintArray, jintArray);
 
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils
  * Method:    generateReply
- * Signature: ([BLjava/util/ArrayList;Ljava/util/ArrayList;[I)Ljava/util/ArrayList;
+ * Signature: ([BLjava/util/List;Ljava/util/List;[I)Ljava/util/ArrayList;
  */
 JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils_generateReply
   (JNIEnv *, jclass, jbyteArray, jobject, jobject, jintArray);
@@ -50,10 +50,18 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16Index
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils
  * Method:    decryptReply
- * Signature: ([B[BLjava/util/ArrayList;I)[J
+ * Signature: ([B[BLjava/util/List;I)[J
  */
 JNIEXPORT jlongArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils_decryptReply
   (JNIEnv *, jclass, jbyteArray, jbyteArray, jobject, jint);
+
+/*
+ * Class:     edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils
+ * Method:    expansionRatio
+ * Signature: ([B)I
+ */
+JNIEXPORT jint JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils_expansionRatio
+  (JNIEnv *, jclass, jbyteArray);
 
 #ifdef __cplusplus
 }

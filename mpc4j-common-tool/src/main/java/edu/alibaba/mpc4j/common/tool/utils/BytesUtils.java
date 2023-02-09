@@ -149,15 +149,49 @@ public class BytesUtils {
     }
 
     /**
-     * 验证给定{@code byte[]}的有效位数是否为{@code bitLength}，大端表示。
+     * Verify that the given {@code byte[]} contains at most {@code bitLength} valid bits.
+     * The bits are represented in Big-endian format.
+     * <p>
+     * Here we allow the length of the given {@code byte[]} can be greater than the byte length of {@code bitLength}.
+     * For example,
+     * <li>it returns true when {@code byteArray = {0x01}} and {@code bitLength = 1}.</li>
+     * <li>it returns true when {@code byteArray = {0x00, 0x01}} and {@code bitLength = 1}.</li>
+     * <li>it returns false when {@code byteArray = {0x00, 0x02}} and {@code bitLength = 1}.</li>
+     * <li>it throws a Runtime Exception when {@code byteArray = {0x01}} and {@code bitLength = 9}.</li>
+     * </p>
      *
-     * @param byteArray 给定的{@code byte[]}。
-     * @param bitLength 期望的比特长度。
+     * @param byteArray the given {@code byte[]}.
+     * @param bitLength the expected bit length.
+     * @return true if the given {@code byte[]} contains at most {@code bitLength} valid bits.
      */
     public static boolean isReduceByteArray(byte[] byteArray, final int bitLength) {
         // 这里的bitLength指的是要保留多少个比特位，因此可以取到[0, byteArray.length * Byte.SIZE]
         assert bitLength >= 0 && bitLength <= byteArray.length * Byte.SIZE
             : "bitLength must be in range [0, " + byteArray.length * Byte.SIZE + "]: " + bitLength;
+        for (int binaryIndex = 0; binaryIndex < byteArray.length * Byte.SIZE - bitLength; binaryIndex++) {
+            if (BinaryUtils.getBoolean(byteArray, binaryIndex)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Verify that the given {@code byte[]} has the fixed size and contains at most {@code bitLength} valid bits.
+     * The bits are represented in Big-endian format.
+     *
+     * @param byteArray the given {@code byte[]}.
+     * @param byteLength the expected byte length.
+     * @param bitLength the expected bit length.
+     * @return true the given {@code byte[]} has the fixed size and contains at most {@code bitLength} valid bits.
+     */
+    public static boolean isFixedReduceByteArray(byte[] byteArray, final int byteLength, final int bitLength) {
+        assert byteLength >= 0 : "byteLength must be greater than or equal to 0: " + byteLength;
+        if (byteArray.length != byteLength) {
+            return false;
+        }
+        assert bitLength >= 0 && bitLength <= byteLength * Byte.SIZE
+            : "bitLength must be in range [0, " + byteLength * Byte.SIZE + "]: " + bitLength;
         for (int binaryIndex = 0; binaryIndex < byteArray.length * Byte.SIZE - bitLength; binaryIndex++) {
             if (BinaryUtils.getBoolean(byteArray, binaryIndex)) {
                 return false;

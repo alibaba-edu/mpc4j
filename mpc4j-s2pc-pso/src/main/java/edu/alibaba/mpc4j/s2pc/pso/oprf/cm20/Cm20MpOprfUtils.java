@@ -118,7 +118,7 @@ public class Cm20MpOprfUtils {
         for (int k = 0; k <= CommonConstants.BLOCK_BIT_LENGTH - 1; k++) {
             negl = negl.add(pBigDecimal.pow(k)
                 .multiply(BigDecimal.ONE.subtract(pBigDecimal).pow(w - k))
-                .multiply(new BigDecimal(BigIntegerUtils.combinatorial(w, k))));
+                .multiply(new BigDecimal(BigIntegerUtils.binomial(w, k))));
         }
         return negl.multiply(BigDecimal.valueOf(n));
     }

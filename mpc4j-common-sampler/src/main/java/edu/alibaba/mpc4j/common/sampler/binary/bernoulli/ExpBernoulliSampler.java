@@ -7,32 +7,35 @@ import java.security.SecureRandom;
 import java.util.Random;
 
 /**
- * Bernoulli(exp(−γ))采样。伯努利分布的输入为概率值exp(−γ) = p ∈ [0, 1]，输出为{0, 1}，其概率分布为：
- * - Pr[f(x|p) = 0] = p。
- * - Pr[f(x|p) = 1] = 1 - p。
- *
- * 采样算法来自于下属论文的Algorithm 1: Algorithm for Sampling Bernoulli(exp(−γ)):
+ * Bernoulli sampler with p = exp(-γ) for γ >= 0 (so that exp(-γ) ∈ (0, 1]), where
+ * <p><ul>
+ * <li> Pr[f(x|p) = 1] = p. </li>
+ * <li> Pr[f(x|p) = 0] = 1 - p. </li>
+ * </ul></p>
+ * The algorithm comes from the following paper, Algorithm 1: Algorithm for Sampling Bernoulli(exp(−γ)):
+ * <p>
  * Canonne, Clément L., Gautam Kamath, and Thomas Steinke. The discrete gaussian for differential privacy. Advances in
  * Neural Information Processing Systems 33 (2020): 15676-15688.
+ * </p>
  *
  * @author Weiran Liu
  * @date 2022/03/24
  */
 public class ExpBernoulliSampler implements BernoulliSampler {
     /**
-     * 随机数生成器
+     * the random state
      */
     private final Random random;
     /**
-     * Bernoulli(exp(−1))采样器
+     * Bernoulli sampler with p = exp(−1)
      */
     private final BernoulliSampler expNeg1BernoulliSampler;
     /**
-     * γ的取值
+     * γ
      */
     private final double gamma;
     /**
-     * p = exp(−γ)
+     * the success probability p = exp(−γ)
      */
     private final double p;
 
@@ -41,7 +44,7 @@ public class ExpBernoulliSampler implements BernoulliSampler {
     }
 
     public ExpBernoulliSampler(Random random, double gamma) {
-        assert gamma >= 0 : "γ must be greater or equal than 0";
+        assert gamma >= 0 : "γ must be greater or equal than 0: " + gamma;
         this.gamma = gamma;
         p = Math.exp(-gamma);
         this.random = random;

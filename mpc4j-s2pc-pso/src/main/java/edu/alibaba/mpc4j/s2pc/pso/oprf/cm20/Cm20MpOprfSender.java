@@ -5,9 +5,6 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
@@ -34,10 +31,6 @@ public class Cm20MpOprfSender extends AbstractMpOprfSender {
      * 核COT协议接收方
      */
     private final CoreCotReceiver coreCotReceiver;
-    /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
     /**
      * 规约批处理数量
      */
@@ -67,7 +60,6 @@ public class Cm20MpOprfSender extends AbstractMpOprfSender {
         super(Cm20MpOprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(senderRpc, receiverParty, config.getCoreCotConfig());
         coreCotReceiver.addLogLevel();
-        crhf = CrhfFactory.createInstance(envType, CrhfType.MMO);
     }
 
     @Override
@@ -173,9 +165,8 @@ public class Cm20MpOprfSender extends AbstractMpOprfSender {
         IntStream wIntStream = IntStream.range(0, w);
         wIntStream = parallel ? wIntStream.parallel() : wIntStream;
         matrixC = wIntStream.mapToObj(index -> {
-            byte[] choiceSeed = cotReceiverOutput.getRb(index);
-            choiceSeed = crhf.hash(choiceSeed);
-            byte[] cColumn = prg.extendToBytes(choiceSeed);
+            // We do not need to use CRHF since we need to call PRG.
+            byte[] cColumn = prg.extendToBytes(cotReceiverOutput.getRb(index));
             BytesUtils.reduceByteArray(cColumn, n);
             if (s[index]) {
                 BytesUtils.xori(cColumn, deltaArray[index]);

@@ -19,8 +19,9 @@ public class RandomCoderUtilsTest {
     @Test
     public void testMaxCallTime() {
         LOGGER.info("l(B)\tl(b)\tmax call time");
-        // 经过测试，输出51字节长度的伪随机数编码支持的PRC调用次数已经为负数了
-        for (int codewordByteLength = 52; codewordByteLength < 65; codewordByteLength++) {
+        // We thank Qixian Zhou for pointing out that
+        // the maximal number of RPC calling is negative when codeword byte length is less than or equal to 49.
+        for (int codewordByteLength = 50; codewordByteLength < 65; codewordByteLength++) {
             testMaxCallTime(codewordByteLength);
         }
     }

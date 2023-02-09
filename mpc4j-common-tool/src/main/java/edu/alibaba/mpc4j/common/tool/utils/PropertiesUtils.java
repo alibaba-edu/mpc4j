@@ -4,6 +4,10 @@ import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 /**
@@ -17,6 +21,36 @@ public class PropertiesUtils {
 
     private PropertiesUtils() {
         // empty
+    }
+
+    /**
+     * 从配置文件中读取参数。
+     *
+     * @param file 配置文件。
+     * @return 参数。
+     */
+    public static Properties loadProperties(String file) {
+        try (InputStream input = new FileInputStream(file)) {
+            Properties properties = new Properties();
+            // load a properties file
+            properties.load(input);
+            return properties;
+        } catch (IOException e) {
+            File fileObject = new File(file);
+            throw new IllegalArgumentException("Failed to load config file: " + fileObject.getAbsolutePath());
+        }
+    }
+
+    /**
+     * 判断是否设置了指定关键字的属性。
+     *
+     * @param properties 配置项。
+     * @param keyword 关键字。
+     * @return 是否设置了此关键字的属性。
+     */
+    public static boolean containsKeyword(Properties properties, String keyword) {
+        String readString = properties.getProperty(keyword);
+        return !Objects.isNull(readString);
     }
 
     /**
@@ -54,17 +88,17 @@ public class PropertiesUtils {
     }
 
     /**
-     * 读取字符串数组。
+     * Reads a String array, each of which is trimmed (i.e., with any leading and trailing whitespace removed).
      *
-     * @param properties 配置项。
-     * @param keyword    关键字。
-     * @return 字符串数组。
+     * @param properties the properties.
+     * @param keyword    the keyword.
+     * @return the trimmed String array.
      */
-    public static String[] readStringArray(Properties properties, String keyword) {
+    public static String[] readTrimStringArray(Properties properties, String keyword) {
         String stringArrayString = readString(properties, keyword);
-        String[] stringArray = stringArrayString.split(",");
-        LOGGER.info("{} = {}", keyword, Arrays.toString(stringArray));
-        return stringArray;
+        return Arrays.stream(stringArrayString.split(","))
+            .map(String::trim)
+            .toArray(String[]::new);
     }
 
 
@@ -77,21 +111,19 @@ public class PropertiesUtils {
      */
     public static boolean readBoolean(Properties properties, String keyword) {
         String booleanString = readString(properties, keyword);
-        boolean booleanValue = Boolean.parseBoolean(booleanString);
-        LOGGER.info("{} = {}", keyword, booleanValue);
-        return booleanValue;
+        return Boolean.parseBoolean(booleanString);
     }
 
     /**
      * 读取布尔值。
      *
-     * @param properties 配置项。
-     * @param keyword    关键字。
-     * @param defaultValue  默认值。
+     * @param properties   配置项。
+     * @param keyword      关键字。
+     * @param defaultValue 默认值。
      * @return 布尔值。
      */
     public static boolean readBoolean(Properties properties, String keyword, boolean defaultValue) {
-        String booleanString = properties.getProperty(keyword);
+        String booleanString = readString(properties, keyword);
         if (booleanString == null) {
             LOGGER.info("{} is not set, choose default value: {}", keyword, defaultValue);
             return defaultValue;
@@ -111,13 +143,7 @@ public class PropertiesUtils {
      */
     public static int readInt(Properties properties, String keyword) {
         String intString = readString(properties, keyword);
-        int intValue = Integer.parseInt(intString);
-        Preconditions.checkArgument(
-            intValue > 0 && intValue < Integer.MAX_VALUE,
-            "Int value must be in range (%s, %s)", 0, Integer.MAX_VALUE
-        );
-        LOGGER.info("{} = {}", keyword, intValue);
-        return intValue;
+        return Integer.parseInt(intString);
     }
 
     /**
@@ -129,11 +155,9 @@ public class PropertiesUtils {
      */
     public static int[] readIntArray(Properties properties, String keyword) {
         String intArrayString = readString(properties, keyword);
-        int[] intArray = Arrays.stream(intArrayString.split(","))
+        return Arrays.stream(intArrayString.split(","))
             .mapToInt(Integer::parseInt)
             .toArray();
-        LOGGER.info("{} = {}", keyword, Arrays.toString(intArray));
-        return intArray;
     }
 
     /**
@@ -145,15 +169,24 @@ public class PropertiesUtils {
      */
     public static int[] readLogIntArray(Properties properties, String keyword) {
         String intArrayString = readString(properties, keyword);
-        int[] logIntArray = Arrays.stream(intArrayString.split(","))
+        return Arrays.stream(intArrayString.split(","))
             .mapToInt(Integer::parseInt)
             .peek(logIntValue -> Preconditions.checkArgument(
                 logIntValue > 0 && logIntValue < Integer.SIZE,
                 "Log int value must be in range (%s, %s)", 0, Integer.SIZE))
             .toArray();
-        LOGGER.info("{} = {}", keyword, Arrays.toString(logIntArray));
+    }
 
-        return logIntArray;
+    /**
+     * 读取浮点数。
+     *
+     * @param properties 配置项。
+     * @param keyword    关键字。
+     * @return 浮点数。
+     */
+    public static double readDouble(Properties properties, String keyword) {
+        String doubleString = readString(properties, keyword);
+        return Double.parseDouble(doubleString);
     }
 
     /**
@@ -165,10 +198,8 @@ public class PropertiesUtils {
      */
     public static double[] readDoubleArray(Properties properties, String keyword) {
         String doubleString = readString(properties, keyword);
-        double[] doubleArray = Arrays.stream(doubleString.split(","))
+        return Arrays.stream(doubleString.split(","))
             .mapToDouble(Double::parseDouble)
             .toArray();
-        LOGGER.info("{} = {}", keyword, Arrays.toString(doubleArray));
-        return doubleArray;
     }
 }

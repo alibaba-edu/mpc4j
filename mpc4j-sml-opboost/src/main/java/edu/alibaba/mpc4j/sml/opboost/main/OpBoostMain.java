@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.sml.opboost.main;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.sml.opboost.main.kendall.WeightedKendall;
 import edu.alibaba.mpc4j.sml.opboost.main.opboost.grad.ClsOpGradBoost;
 import edu.alibaba.mpc4j.sml.opboost.main.opboost.grad.RegOpGradBoost;
@@ -11,9 +12,6 @@ import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -33,12 +31,9 @@ public class OpBoostMain {
         PropertyConfigurator.configure(log4jProperties);
         // 读取配置文件
         LOGGER.info("read config file");
-        Properties properties = loadProperties(args[0]);
+        Properties properties = PropertiesUtils.loadProperties(args[0]);
         // 读取协议类型
-        String taskTypeString = Preconditions.checkNotNull(
-            properties.getProperty("task_type"), "Please set task_type"
-        );
-        LOGGER.info("task_type = " + taskTypeString);
+        String taskTypeString = PropertiesUtils.readString(properties, "task_type");
         OpBoostTaskType taskType = OpBoostTaskType.valueOf(taskTypeString);
         switch (taskType) {
             case REG_OP_GRAD_BOOST:
@@ -75,17 +70,5 @@ public class OpBoostMain {
                 throw new IllegalArgumentException("Invalid task_type: " + taskType);
         }
         System.exit(0);
-    }
-
-    private static Properties loadProperties(String file) {
-        try (InputStream input = new FileInputStream(file)) {
-            Properties properties = new Properties();
-            // load a properties file
-            properties.load(input);
-            return properties;
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new IllegalArgumentException("Failed to load config file: " +  file);
-        }
     }
 }

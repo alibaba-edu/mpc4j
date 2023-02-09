@@ -6,9 +6,6 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -53,10 +50,6 @@ public class Krtw19OptPsuClient extends AbstractPsuClient {
      * 流水线执行数量
      */
     private final int pipeSize;
-    /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
     /**
      * 桶哈希函数密钥
      */
@@ -103,7 +96,6 @@ public class Krtw19OptPsuClient extends AbstractPsuClient {
         coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
         coreCotReceiver.addLogLevel();
         pipeSize = config.getPipeSize();
-        crhf = CrhfFactory.createInstance(getEnvType(), CrhfType.MMO);
     }
 
     @Override
@@ -322,9 +314,8 @@ public class Krtw19OptPsuClient extends AbstractPsuClient {
                 if (choiceArray[binIndex]) {
                     return botElementByteBuffer;
                 } else {
-                    // 密钥处理
-                    byte[] key = crhf.hash(cotReceiverOutput.getRb(binIndex));
-                    byte[] message = encPrg.extendToBytes(key);
+                    // do not need CRHF since we call prg
+                    byte[] message = encPrg.extendToBytes(cotReceiverOutput.getRb(binIndex));
                     BytesUtils.xori(message, encArrayList.get(binIndex));
                     return ByteBuffer.wrap(message);
                 }

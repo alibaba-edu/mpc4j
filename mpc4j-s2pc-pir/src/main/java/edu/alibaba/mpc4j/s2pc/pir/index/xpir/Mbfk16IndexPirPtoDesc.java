@@ -22,7 +22,7 @@ public class Mbfk16IndexPirPtoDesc implements PtoDesc {
     /**
      * 协议名称
      */
-    private static final String PTO_NAME = "MBFK16_INDEX_PIR";
+    private static final String PTO_NAME = "XPIR";
 
     /**
      * 协议步骤

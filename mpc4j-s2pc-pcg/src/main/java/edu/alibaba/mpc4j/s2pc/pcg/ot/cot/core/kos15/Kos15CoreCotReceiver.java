@@ -9,8 +9,6 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -20,9 +18,9 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.KdfOtSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.AbstractCoreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.kos15.Kos15CoreCotPtoDesc.PtoStep;
@@ -46,17 +44,13 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
      */
     private final BaseOtSender baseOtSender;
     /**
-     * 密钥派生函数
-     */
-    private final Kdf kdf;
-    /**
      * GF(2^128)运算接口
      */
     private final Gf2k gf2k;
     /**
-     * 基础OT协议输出
+     * KDF-OT协议输出
      */
-    private BaseOtSenderOutput baseOtSenderOutput;
+    private KdfOtSenderOutput kdfOtSenderOutput;
     /**
      * 随机预言机
      */
@@ -82,7 +76,6 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
         super(Kos15CoreCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtSender = BaseOtFactory.createSender(receiverRpc, senderParty, config.getBaseOtConfig());
         baseOtSender.addLogLevel();
-        kdf = KdfFactory.createInstance(envType);
         gf2k = Gf2kFactory.createInstance(envType);
     }
 
@@ -111,7 +104,7 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
 
         stopWatch.start();
         baseOtSender.init();
-        baseOtSenderOutput = baseOtSender.send(CommonConstants.BLOCK_BIT_LENGTH);
+        kdfOtSenderOutput = new KdfOtSenderOutput(envType, baseOtSender.send(CommonConstants.BLOCK_BIT_LENGTH));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -194,19 +187,11 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
         return columnIndexIntStream
             .mapToObj(columnIndex -> {
                 // R computes t^i = G(k^0_i)
-                byte[] r0Seed = ByteBuffer.allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                    .putLong(extraInfo).put(baseOtSenderOutput.getR0(columnIndex))
-                    .array();
-                r0Seed = kdf.deriveKey(r0Seed);
-                byte[] tExtendBytes = prg.extendToBytes(r0Seed);
+                byte[] tExtendBytes = prg.extendToBytes(kdfOtSenderOutput.getK0(columnIndex, extraInfo));
                 BytesUtils.reduceByteArray(tExtendBytes, extendNum);
                 tMatrix.setColumn(columnIndex, tExtendBytes);
                 // and u^i = t^i ⊕ G(k_i^1) ⊕ r
-                byte[] r1Seed = ByteBuffer.allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                    .putLong(extraInfo).put(baseOtSenderOutput.getR1(columnIndex))
-                    .array();
-                r1Seed = kdf.deriveKey(r1Seed);
-                byte[] uExtendBytes = prg.extendToBytes(r1Seed);
+                byte[] uExtendBytes = prg.extendToBytes(kdfOtSenderOutput.getK1(columnIndex, extraInfo));
                 BytesUtils.reduceByteArray(uExtendBytes, extendNum);
                 BytesUtils.xori(uExtendBytes, tExtendBytes);
                 BytesUtils.xori(uExtendBytes, rExtendBytes);

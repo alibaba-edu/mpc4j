@@ -6,9 +6,6 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -59,10 +56,6 @@ public class Zcl22PkePsuClient extends AbstractPsuClient {
      */
     private final Ecc ecc;
     /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
-    /**
      * ECC-OVDM哈希密钥
      */
     private byte[][] zpOvdmHashKeys;
@@ -99,7 +92,6 @@ public class Zcl22PkePsuClient extends AbstractPsuClient {
         compressEncode = config.getCompressEncode();
         pipeSize = config.getPipeSize();
         ecc = EccFactory.createInstance(getEnvType());
-        crhf = CrhfFactory.createInstance(getEnvType(), CrhfType.MMO);
     }
 
     @Override
@@ -220,9 +212,8 @@ public class Zcl22PkePsuClient extends AbstractPsuClient {
                 if (peqtArray[index]) {
                     return botElementByteBuffer;
                 } else {
-                    byte[] key = cotReceiverOutput.getRb(index);
-                    key = crhf.hash(key);
-                    byte[] message = encPrg.extendToBytes(key);
+                    // do not need CRHF since we call prg
+                    byte[] message = encPrg.extendToBytes(cotReceiverOutput.getRb(index));
                     BytesUtils.xori(message, encArrayList.get(index));
                     return ByteBuffer.wrap(message);
                 }

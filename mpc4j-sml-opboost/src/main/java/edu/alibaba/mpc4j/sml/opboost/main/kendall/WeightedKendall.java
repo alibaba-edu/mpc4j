@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.sml.opboost.main.kendall;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.correlation.KendallCorrelation;
+import edu.alibaba.mpc4j.common.tool.metrics.KendallCorrelation;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.dp.ldp.numeric.integral.*;
 import edu.alibaba.mpc4j.dp.ldp.range.PiecewiseLdpConfig;

@@ -28,27 +28,14 @@ public class BinaryUtilsTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void testInvalidBinaryByte() {
-        // 尝试将长度为0的布尔数组转换成字节
-        try {
-            BinaryUtils.binaryToByte(new boolean[0]);
-            throw new IllegalStateException("ERROR: successfully convert binary with length 0 to byte");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试将长度小于Byte.SIZE的布尔数组转换成字节
-        try {
-            BinaryUtils.binaryToByte(new boolean[Byte.SIZE - 1]);
-            throw new IllegalStateException("ERROR: successfully convert binary with less length to byte");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试将长度超过Byte.SIZE的布尔数组转换成字节
-        try {
-            BinaryUtils.binaryToByte(new boolean[Byte.SIZE + 1]);
-            throw new IllegalStateException("ERROR: successfully convert binary with long length to byte");
-        } catch (AssertionError ignored) {
-
-        }
+        // convert binary with length 0 to byte
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByte(new boolean[0]));
+        // convert binary with less length to byte
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByte(new boolean[1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByte(new boolean[Byte.SIZE - 1]));
+        // convert binary with long length to byte
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByte(new boolean[Byte.SIZE + 1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByte(new boolean[Byte.SIZE * 2]));
     }
 
     @Test
@@ -74,27 +61,14 @@ public class BinaryUtilsTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void testInvalidBinaryLong() {
-        // 尝试将长度为0的布尔数组转换成长整数
-        try {
-            BinaryUtils.binaryToLong(new boolean[0]);
-            throw new IllegalStateException("ERROR: successfully convert binary with length 0 to long");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试将长度小于Long.SIZE的布尔数组转换成字节
-        try {
-            BinaryUtils.binaryToLong(new boolean[1]);
-            throw new IllegalStateException("ERROR: successfully convert binary with less length to long");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试将长度大于Long.SIZE的布尔数组转换成字节
-        try {
-            BinaryUtils.binaryToByte(new boolean[Long.SIZE + 1]);
-            throw new IllegalStateException("ERROR: successfully convert binary with long length to long");
-        } catch (AssertionError ignored) {
-
-        }
+        // convert binary with length 0 to long
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLong(new boolean[0]));
+        // convert binary with less length to long
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLong(new boolean[1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLong(new boolean[Long.SIZE - 1]));
+        // convert binary with long length to long
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLong(new boolean[Long.SIZE + 1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLong(new boolean[Long.SIZE * 2]));
     }
 
     @Test
@@ -125,34 +99,26 @@ public class BinaryUtilsTest {
 
     @Test
     public void testInvalidBinaryToByteArray() {
-        try {
-            BinaryUtils.binaryToByteArray(new boolean[1]);
-            throw new IllegalStateException("ERROR: successfully convert binary with less length to byte array");
-        } catch (AssertionError ignored) {
-
-        }
-
-        try {
-            BinaryUtils.binaryToByteArray(new boolean[Byte.SIZE + 1]);
-            throw new IllegalStateException("ERROR: successfully convert binary with long length to byte array");
-        } catch (AssertionError ignored) {
-
-        }
+        // convert binary with less length to byte array
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByteArray(new boolean[1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByteArray(new boolean[Byte.SIZE - 1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByteArray(new boolean[Byte.SIZE * 2 - 1]));
+        // convert binary with long length to byte array
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByteArray(new boolean[Byte.SIZE + 1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByteArray(new boolean[Byte.SIZE * 2 + 1]));
     }
 
     @Test
     public void testConstantBinaryByteArray() {
-        // 验证转换大小端的正确性
         testConstantBinaryToByteArray(
-            // 01000011 <-> 0x43
             new boolean[] {false, true, false, false, false, false, true, true,},
             new byte[] {0b01000011,}
         );
         testConstantBinaryToByteArray(
-            // 00111010,01000011 <-> 0x3A,0x43
             new boolean[] {
                 false, false, true, true, true, false, true, false,
-                false, true, false, false, false, false, true, true,},
+                false, true, false, false, false, false, true, true,
+            },
             new byte[] {0b00111010, 0b01000011,}
         );
     }
@@ -191,19 +157,13 @@ public class BinaryUtilsTest {
 
     @Test
     public void testInvalidBinaryToLongArray() {
-        try {
-            BinaryUtils.binaryToByteArray(new boolean[1]);
-            throw new IllegalStateException("ERROR: successfully convert binary with less length to long array");
-        } catch (AssertionError ignored) {
-
-        }
-
-        try {
-            BinaryUtils.binaryToByteArray(new boolean[Long.SIZE + 1]);
-            throw new IllegalStateException("ERROR: successfully convert binary with long length to long array");
-        } catch (AssertionError ignored) {
-
-        }
+        // convert binary with less length to long array
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLongArray(new boolean[1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLongArray(new boolean[Long.SIZE - 1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLongArray(new boolean[Long.SIZE * 2 - 1]));
+        // convert binary with long length to long array
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLongArray(new boolean[Long.SIZE + 1]));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLongArray(new boolean[Long.SIZE * 2 + 1]));
     }
 
     @Test
@@ -233,12 +193,9 @@ public class BinaryUtilsTest {
 
     @Test
     public void testInvalidByteArrayToBinary() {
-        try {
-            BinaryUtils.byteArrayToBinary(new byte[1], Byte.SIZE + 1);
-            throw new IllegalStateException("ERROR: successfully convert byte[] to binary with larger length");
-        } catch (AssertionError ignored) {
-
-        }
+        // convert byte[] to binary with long length
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.byteArrayToBinary(new byte[1], Byte.SIZE + 1));
+        Assert.assertThrows(AssertionError.class, () -> BinaryUtils.byteArrayToBinary(new byte[1], Byte.SIZE * 2));
     }
 
     @Test

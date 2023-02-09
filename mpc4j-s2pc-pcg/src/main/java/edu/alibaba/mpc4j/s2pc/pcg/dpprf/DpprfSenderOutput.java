@@ -1,83 +1,85 @@
 package edu.alibaba.mpc4j.s2pc.pcg.dpprf;
 
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 import java.util.Arrays;
 
 /**
- * DPPRF协议发送方输出。
+ * Distributed Puncturable PRF (DPPRF) sender output interface.
  *
  * @author Weiran Liu
- * @date 2022/8/16
+ * @date 2022/12/21
  */
 public class DpprfSenderOutput {
     /**
-     * α上界
+     * α upper bound
      */
     private final int alphaBound;
     /**
-     * α比特长度
+     * α bit length
      */
     private final int h;
     /**
-     * 批处理数量组PRF输出，每组输出都有α上界个元素
+     * batched PRF output groups, each output group contains α-bound PRF key
      */
-    private final byte[][][] prfOutputArrays;
+    private final byte[][][] prfArrays;
     /**
-     * 批处理数量
+     * batch num
      */
     private final int batchNum;
 
-    public DpprfSenderOutput(int alphaBound, byte[][][] prfOutputArrays) {
-        // 批处理数量设置
-        batchNum = prfOutputArrays.length;
-        assert batchNum > 0 : "Batch Num must be greater than 0: " + batchNum;
-        // α设置
-        assert alphaBound > 0 : "AlphaBound must be greater than 0: " + alphaBound;
+    public DpprfSenderOutput(int alphaBound, byte[][][] prfArrays) {
+        batchNum = prfArrays.length;
+        assert batchNum > 0 : "batch num must be greater than 0: " + batchNum;
+        assert alphaBound > 0 : "α upper bound must be greater than 0: " + alphaBound;
         this.alphaBound = alphaBound;
         h = LongUtils.ceilLog2(alphaBound);
-        this.prfOutputArrays = Arrays.stream(prfOutputArrays)
-            .peek(prfKey -> {
-                // 每一个PRF密钥都有α上界个
-                assert prfKey.length == alphaBound : "PrfKey length should be " + alphaBound + ": " + prfKey.length;
+        this.prfArrays = Arrays.stream(prfArrays)
+            .peek(prfKeys -> {
+                assert prfKeys.length == alphaBound : "# of PRF keys must be " + alphaBound + ": " + prfKeys.length;
+                Arrays.stream(prfKeys).forEach(prfKey -> {
+                    assert prfKey.length == CommonConstants.BLOCK_BYTE_LENGTH
+                        : "key byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + prfKey.length;
+                });
             })
             .toArray(byte[][][]::new);
     }
 
     /**
-     * 返回α比特长度。
+     * Get α bit length.
      *
-     * @return α比特长度。
+     * @return α bit length.
      */
     public int getH() {
         return h;
     }
 
     /**
-     * 返回α上界。
+     * Get α upper bound.
      *
-     * @return α上界。
+     * @return α upper bound.
      */
     public int getAlphaBound() {
         return alphaBound;
     }
 
     /**
-     * 返回批处理数量。
+     * Get batch num.
      *
-     * @return 批处理数量。
+     * @return batch num.
      */
     public int getBatchNum() {
         return batchNum;
     }
 
     /**
-     * 返回PRF输出。
+     * Get PRF keys at the given batch index.
      *
-     * @param batchIndex 批处理索引。
-     * @return PRF输出。
+     * @param batchIndex the batch index.
+     * @return PRF keys.
      */
-    public byte[][] getPrfOutputArray(int batchIndex) {
-        return prfOutputArrays[batchIndex];
+    public byte[][] getPrfs(int batchIndex) {
+        return prfArrays[batchIndex];
     }
 }

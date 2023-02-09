@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.security.SecureRandom;
@@ -43,39 +44,28 @@ public class CotOutputTest {
 
     @Test
     public void testIllegalInputs() {
-        try {
-            // 创建长度为0的发送方输出
-            CotSenderOutput.create(ALL_ONE_DELTA, new byte[0][]);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with n = 0");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建Δ长度过小的发送方输出
+        // 创建长度为0的发送方输出
+        Assert.assertThrows(AssertionError.class, () -> CotSenderOutput.create(ALL_ONE_DELTA, new byte[0][]));
+        // 创建Δ长度过小的发送方输出
+        Assert.assertThrows(AssertionError.class, () -> {
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH - 1];
             SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
                 .mapToObj(index -> IntUtils.nonNegIntToFixedByteArray(index, CommonConstants.BLOCK_BYTE_LENGTH))
                 .toArray(byte[][]::new);
             CotSenderOutput.create(delta, r0Array);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with small length Δ");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建Δ长度过大的发送方输出
+        });
+        // 创建Δ长度过大的发送方输出
+        Assert.assertThrows(AssertionError.class, () -> {
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH + 1];
             SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
                 .mapToObj(index -> IntUtils.nonNegIntToFixedByteArray(index, CommonConstants.BLOCK_BYTE_LENGTH))
                 .toArray(byte[][]::new);
             CotSenderOutput.create(delta, r0Array);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with large length Δ");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建R0长度过小的发送方输出
+        });
+        // 创建R0长度过小的发送方输出
+        Assert.assertThrows(AssertionError.class, () -> {
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
                 .mapToObj(index -> {
                     byte[] r0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH - 1];
@@ -84,12 +74,9 @@ public class CotOutputTest {
                 })
                 .toArray(byte[][]::new);
             CotSenderOutput.create(ALL_ONE_DELTA, r0Array);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with small length R0");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建R0长度过大的发送方输出
+        });
+        // 创建R0长度过大的发送方输出
+        Assert.assertThrows(AssertionError.class, () -> {
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
                 .mapToObj(index -> {
                     byte[] r0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH + 1];
@@ -98,11 +85,9 @@ public class CotOutputTest {
                 })
                 .toArray(byte[][]::new);
             CotSenderOutput.create(ALL_ONE_DELTA, r0Array);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with large length R0");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
+        });
+        // 合并两个Δ不相等的发送方输出
+        Assert.assertThrows(AssertionError.class, () -> {
             // 合并两个Δ不相等的发送方输出
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
                 .mapToObj(index -> IntUtils.nonNegIntToFixedByteArray(index, CommonConstants.BLOCK_BYTE_LENGTH))
@@ -110,19 +95,11 @@ public class CotOutputTest {
             CotSenderOutput senderOutput0 = CotSenderOutput.create(ALL_ONE_DELTA, r0Array);
             CotSenderOutput senderOutput1 = CotSenderOutput.create(ALL_ZERO_DELTA, r0Array);
             senderOutput0.merge(senderOutput1);
-            throw new IllegalStateException("ERROR: successfully merge SenderOutput with different Δ");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建长度为0的接收方输出
-            CotReceiverOutput.create(new boolean[0], new byte[0][]);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with n = 0");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建选择比特和Rb长度不匹配的接收方输出
+        });
+        // 创建长度为0的接收方输出
+        Assert.assertThrows(AssertionError.class, () -> CotReceiverOutput.create(new boolean[0], new byte[0][]));
+        // 创建选择比特和Rb长度不匹配的接收方输出
+        Assert.assertThrows(AssertionError.class, () -> {
             boolean[] choices = new boolean[MIN_NUM];
             IntStream.range(0, choices.length).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
             byte[][] rbArray = IntStream.range(0, MAX_NUM)
@@ -133,12 +110,9 @@ public class CotOutputTest {
                 })
                 .toArray(byte[][]::new);
             CotReceiverOutput.create(choices, rbArray);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with different array length");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建Rb长度过小的接收方输出
+        });
+        // 创建Rb长度过小的接收方输出
+        Assert.assertThrows(AssertionError.class, () -> {
             boolean[] choices = new boolean[MAX_NUM];
             IntStream.range(0, choices.length).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
             byte[][] rbArray = IntStream.range(0, MAX_NUM)
@@ -149,12 +123,9 @@ public class CotOutputTest {
                 })
                 .toArray(byte[][]::new);
             CotReceiverOutput.create(choices, rbArray);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with small length Rb");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建Rb长度过大的接收方输出
+        });
+        // 创建Rb长度过大的接收方输出
+        Assert.assertThrows(AssertionError.class, () -> {
             boolean[] choices = new boolean[MAX_NUM];
             IntStream.range(0, choices.length).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
             byte[][] rbArray = IntStream.range(0, MAX_NUM)
@@ -165,10 +136,7 @@ public class CotOutputTest {
                 })
                 .toArray(byte[][]::new);
             CotReceiverOutput.create(choices, rbArray);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with large length Rb");
-        } catch (AssertionError ignored) {
-
-        }
+        });
     }
 
     @Test

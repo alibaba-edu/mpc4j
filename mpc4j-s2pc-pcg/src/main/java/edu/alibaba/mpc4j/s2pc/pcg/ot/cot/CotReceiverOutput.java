@@ -5,6 +5,7 @@ import java.util.Arrays;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtReceiverOutput;
 
 /**
  * COT协议接收方输出。
@@ -12,7 +13,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
  * @author Weiran Liu
  * @date 2021/12/26
  */
-public class CotReceiverOutput {
+public class CotReceiverOutput implements OtReceiverOutput {
     /**
      * 选择比特
      */
@@ -31,12 +32,14 @@ public class CotReceiverOutput {
      */
     public static CotReceiverOutput create(boolean[] choices, byte[][] rbArray) {
         CotReceiverOutput receiverOutput = new CotReceiverOutput();
-        assert choices.length == rbArray.length;
-        assert choices.length > 0;
+        assert choices.length > 0 : "num must be greater than 0: " + choices.length;
+        int num = choices.length;
+        assert rbArray.length == num : "# of Rb must be equal to " + num + ": " + rbArray.length;
         receiverOutput.choices = BinaryUtils.clone(choices);
         receiverOutput.rbArray = Arrays.stream(rbArray)
             .peek(rb -> {
-                assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH;
+                assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH
+                    : "rb byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + rb.length;
             })
             .map(BytesUtils::clone)
             .toArray(byte[][]::new);
@@ -126,49 +129,27 @@ public class CotReceiverOutput {
         rbArray = mergeRbArray;
     }
 
-    /**
-     * 返回选择比特。
-     *
-     * @param index 索引值。
-     * @return 选择比特。
-     */
+    @Override
     public boolean getChoice(int index) {
         return choices[index];
     }
 
-    /**
-     * 返回选择比特数组。
-     *
-     * @return 选择比特数组。
-     */
+    @Override
     public boolean[] getChoices() {
         return choices;
     }
 
-    /**
-     * 返回Rb。
-     *
-     * @param index 索引值。
-     * @return Rb。
-     */
+    @Override
     public byte[] getRb(int index) {
         return rbArray[index];
     }
 
-    /**
-     * 返回Rb数组。
-     *
-     * @return Rb数组。
-     */
+    @Override
     public byte[][] getRbArray() {
         return rbArray;
     }
 
-    /**
-     * 返回COT数量。
-     *
-     * @return COT数量。
-     */
+    @Override
     public int getNum() {
         return rbArray.length;
     }

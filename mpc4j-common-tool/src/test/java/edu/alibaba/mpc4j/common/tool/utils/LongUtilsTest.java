@@ -183,8 +183,8 @@ public class LongUtilsTest {
 
     @Test
     public void testCeilLog2() {
-        Assert.assertEquals(1, LongUtils.ceilLog2(1));
-        // 从2^2 - 1测试到2^62 + 1
+        Assert.assertEquals(0, LongUtils.ceilLog2(1));
+        // from 2^1 - 1 to 2^62 + 1
         for (int t = 2; t < Long.SIZE - 1; t++) {
             // x = 2^t
             long exactX = 1L << t;
@@ -196,11 +196,6 @@ public class LongUtilsTest {
             long primeX = ZpManager.getPrime(t - 1).longValue();
             Assert.assertEquals(t, LongUtils.ceilLog2(primeX));
         }
-        // 测试63比特
-        long exactX = Long.MAX_VALUE;
-        Assert.assertEquals(63, LongUtils.ceilLog2(exactX));
-        long primeX = ZpManager.getPrime(62).longValue();
-        Assert.assertEquals(63, LongUtils.ceilLog2(primeX));
     }
 
     @Test

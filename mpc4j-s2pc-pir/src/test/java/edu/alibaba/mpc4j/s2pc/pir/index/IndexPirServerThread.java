@@ -19,7 +19,7 @@ public class IndexPirServerThread extends Thread {
     /**
      * 索引PIR参数
      */
-    private final IndexPirParams indexPirParams;
+    private final AbstractIndexPirParams indexPirParams;
     /**
      * 服务端元素数组
      */
@@ -33,7 +33,7 @@ public class IndexPirServerThread extends Thread {
      */
     private final int repeatTime;
 
-    IndexPirServerThread(IndexPirServer server, IndexPirParams indexPirParams,
+    IndexPirServerThread(IndexPirServer server, AbstractIndexPirParams indexPirParams,
                       ArrayList<ByteBuffer> elementArrayList, int elementByteLength, int repeatTime) {
         this.server = server;
         this.indexPirParams = indexPirParams;

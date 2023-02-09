@@ -9,15 +9,12 @@ import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
 import edu.alibaba.mpc4j.common.tool.coder.random.RandomCoder;
 import edu.alibaba.mpc4j.common.tool.coder.random.RandomCoderUtils;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.KdfOtReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pso.oprf.AbstractOprfSender;
@@ -39,10 +36,6 @@ public class Kkrt16OptOprfSender extends AbstractOprfSender {
      */
     private final CoreCotReceiver coreCotReceiver;
     /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
-    /**
      * 关联值Δ
      */
     private byte[] delta;
@@ -63,15 +56,14 @@ public class Kkrt16OptOprfSender extends AbstractOprfSender {
      */
     private int codewordBitLength;
     /**
-     * 矩阵Q的密钥
+     * KDF-OT接收方输出
      */
-    private byte[][] qMatrixKey;
+    private KdfOtReceiverOutput kdfOtReceiverOutput;
 
     public Kkrt16OptOprfSender(Rpc senderRpc, Party receiverParty, Kkrt16OptOprfConfig config) {
         super(Kkrt16OptOprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(senderRpc, receiverParty, config.getCoreCotConfig());
         coreCotReceiver.addLogLevel();
-        crhf = CrhfFactory.createInstance(envType, CrhfType.MMO);
     }
 
     @Override
@@ -113,15 +105,8 @@ public class Kkrt16OptOprfSender extends AbstractOprfSender {
         delta = new byte[codewordByteLength];
         secureRandom.nextBytes(delta);
         deltaBinary = BinaryUtils.byteArrayToBinary(delta);
-        // 执行COT
-        CotReceiverOutput cotReceiverOutput = coreCotReceiver.receive(deltaBinary);
-        // 将COT转换为密钥
-        IntStream qMatrixKeyIntStream = IntStream.range(0, codewordBitLength);
-        qMatrixKeyIntStream = parallel ? qMatrixKeyIntStream.parallel() : qMatrixKeyIntStream;
-        qMatrixKey = qMatrixKeyIntStream
-            .mapToObj(cotReceiverOutput::getRb)
-            .map(crhf::hash)
-            .toArray(byte[][]::new);
+        // 执行COT协议
+        kdfOtReceiverOutput = new KdfOtReceiverOutput(envType, coreCotReceiver.receive(deltaBinary));
         stopWatch.stop();
         long cotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -177,7 +162,7 @@ public class Kkrt16OptOprfSender extends AbstractOprfSender {
         IntStream matrixColumnIntStream = IntStream.range(0, codewordBitLength);
         matrixColumnIntStream = parallel ? matrixColumnIntStream.parallel() : matrixColumnIntStream;
         matrixColumnIntStream.forEach(columnIndex -> {
-            byte[] columnBytes = prg.extendToBytes(qMatrixKey[columnIndex]);
+            byte[] columnBytes = prg.extendToBytes(kdfOtReceiverOutput.getKb(columnIndex, extraInfo));
             BytesUtils.reduceByteArray(columnBytes, batchSize);
             if (deltaBinary[columnIndex]) {
                 BytesUtils.xori(columnBytes, uByteArrays[columnIndex]);

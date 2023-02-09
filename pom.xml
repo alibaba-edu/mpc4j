@@ -7,7 +7,7 @@
     <groupId>edu.alibaba</groupId>
     <artifactId>mpc4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <modules>
         <module>mpc4j-common-data</module>
         <module>mpc4j-common-jnagmp</module>
@@ -17,11 +17,13 @@
         <module>mpc4j-crypto-phe</module>
         <module>mpc4j-dp-cdp</module>
         <module>mpc4j-dp-ldp</module>
+        <module>mpc4j-dp-service</module>
         <module>mpc4j-s2pc-aby</module>
         <module>mpc4j-s2pc-pcg</module>
         <module>mpc4j-s2pc-pir</module>
         <module>mpc4j-s2pc-pso</module>
         <module>mpc4j-sml-opboost</module>
+        <module>mpc4j-s2pc-pjc</module>
     </modules>
 
     <properties>
@@ -145,11 +147,59 @@
                 <artifactId>smile-io</artifactId>
                 <version>${smile.version}</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/org.bytedeco/openblas -->
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>openblas</artifactId>
+                <version>0.3.21-1.5.8</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>javacpp-platform</artifactId>
+                <version>1.5.8</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.bytedeco/openblas-platform -->
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>openblas-platform</artifactId>
+                <version>0.3.21-1.5.8</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.bytedeco/arpack-ng-platform -->
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>arpack-ng-platform</artifactId>
+                <version>3.8.0-1.5.8</version>
+            </dependency>
+
             <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-csv -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-csv</artifactId>
                 <version>1.9.0</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.openjdk.jol/jol-core -->
+            <dependency>
+                <groupId>org.openjdk.jol</groupId>
+                <artifactId>jol-core</artifactId>
+                <version>0.16</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.roaringbitmap/RoaringBitmap -->
+            <dependency>
+                <groupId>org.roaringbitmap</groupId>
+                <artifactId>RoaringBitmap</artifactId>
+                <version>0.9.36</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.googlecode.javaewah/JavaEWAH -->
+            <dependency>
+                <groupId>com.googlecode.javaewah</groupId>
+                <artifactId>JavaEWAH</artifactId>
+                <version>1.1.13</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.lz4/lz4-java -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>1.8.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -163,6 +213,24 @@
                 <configuration>
                     <source>8</source>
                     <target>8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <attach>true</attach>
                 </configuration>
             </plugin>
         </plugins>

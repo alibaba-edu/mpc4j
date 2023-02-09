@@ -5,6 +5,7 @@ import java.util.Arrays;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtReceiverOutput;
 
 /**
  * 基础OT协议接收方输出。
@@ -12,11 +13,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
  * @author Weiran Liu
  * @date 2022/01/10
  */
-public class BaseOtReceiverOutput {
-    /**
-     * 数量
-     */
-    private final int num;
+public class BaseOtReceiverOutput implements OtReceiverOutput {
     /**
      * 选择比特
      */
@@ -28,43 +25,40 @@ public class BaseOtReceiverOutput {
 
     public BaseOtReceiverOutput(boolean[] choices, byte[][] rbArray) {
         assert choices.length > 0 : "num must be greater than 0: " + choices.length;
-        num = choices.length;
+        int num = choices.length;
         assert rbArray.length == num : "# of Rb must be equal to " + num + ": " + rbArray.length;
         this.choices = BinaryUtils.clone(choices);
         this.rbArray = Arrays.stream(rbArray)
             .peek(rb -> {
-                assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH;
+                assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH
+                    : "rb byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + rb.length;
             })
             .map(BytesUtils::clone)
             .toArray(byte[][]::new);
     }
 
-    /**
-     * 返回选择比特。
-     *
-     * @param index 索引值。
-     * @return 选择比特。
-     */
+    @Override
     public boolean getChoice(int index) {
         return choices[index];
     }
 
-    /**
-     * 返回Rb。
-     *
-     * @param index 索引值。
-     * @return Rb。
-     */
+    @Override
+    public boolean[] getChoices() {
+        return choices;
+    }
+
+    @Override
     public byte[] getRb(int index) {
         return rbArray[index];
     }
 
-    /**
-     * 返回数量。
-     *
-     * @return 数量。
-     */
+    @Override
+    public byte[][] getRbArray() {
+        return rbArray;
+    }
+
+    @Override
     public int getNum() {
-        return num;
+        return choices.length;
     }
 }

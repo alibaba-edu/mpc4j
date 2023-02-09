@@ -36,6 +36,12 @@ public class ObjectUtils {
             return BytesUtils.clone((byte[])object);
         } else if (object instanceof ByteBuffer) {
             return BytesUtils.clone(((ByteBuffer)object).array());
+        } else if (object instanceof Integer) {
+            return IntUtils.intToByteArray((Integer) object);
+        } else if (object instanceof Long) {
+            return LongUtils.longToByteArray((Long) object);
+        } else if (object instanceof Double) {
+            return DoubleUtils.doubleToByteArray((Double) object);
         } else if (object instanceof Serializable) {
             return serializableObjectToByteArray(object);
         }

@@ -8,16 +8,14 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.KdfOtSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.LotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.core.AbstractCoreLotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.core.kk13.Kk13OriCoreLotPtoDesc.PtoStep;
 
 import java.util.Arrays;
@@ -38,13 +36,9 @@ public class Kk13OriCoreLotReceiver extends AbstractCoreLotReceiver {
      */
     private final CoreCotSender coreCotSender;
     /**
-     * 抗关联哈希函数
+     * KDF-OT协议发送方输出
      */
-    private final Crhf crhf;
-    /**
-     * COT协议发送方输出
-     */
-    private CotSenderOutput cotSenderOutput;
+    private KdfOtSenderOutput kdfOtSenderOutput;
     /**
      * 布尔矩阵
      */
@@ -54,7 +48,6 @@ public class Kk13OriCoreLotReceiver extends AbstractCoreLotReceiver {
         super(Kk13OriCoreLotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreCotSender = CoreCotFactory.createSender(receiverRpc, senderParty, config.getCoreCotConfig());
         coreCotSender.addLogLevel();
-        crhf = CrhfFactory.createInstance(envType, CrhfFactory.CrhfType.MMO);
     }
 
     @Override
@@ -84,7 +77,7 @@ public class Kk13OriCoreLotReceiver extends AbstractCoreLotReceiver {
         byte[] cotDelta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(cotDelta);
         coreCotSender.init(cotDelta, outputBitLength);
-        cotSenderOutput = coreCotSender.send(outputBitLength);
+        kdfOtSenderOutput = new KdfOtSenderOutput(envType, coreCotSender.send(outputBitLength));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -141,10 +134,10 @@ public class Kk13OriCoreLotReceiver extends AbstractCoreLotReceiver {
                 BytesUtils.reduceByteArray(column0Bytes, num);
                 tMatrix.setColumn(columnIndex, column0Bytes);
                 byte[] column1Bytes = BytesUtils.xor(column0Bytes, codeTransposeMatrix.getColumn(columnIndex));
-                byte[] message0 = prg.extendToBytes(crhf.hash(cotSenderOutput.getR0(columnIndex)));
+                byte[] message0 = prg.extendToBytes(kdfOtSenderOutput.getK0(columnIndex, extraInfo));
                 BytesUtils.reduceByteArray(message0, num);
                 BytesUtils.xori(message0, column0Bytes);
-                byte[] message1 = prg.extendToBytes(crhf.hash(cotSenderOutput.getR1(columnIndex)));
+                byte[] message1 = prg.extendToBytes(kdfOtSenderOutput.getK1(columnIndex, extraInfo));
                 BytesUtils.reduceByteArray(message1, num);
                 BytesUtils.xori(message1, column1Bytes);
                 // The sender and the receiver interact with OT^k_m: the receiver acts as OT sender with input t_0, t_1

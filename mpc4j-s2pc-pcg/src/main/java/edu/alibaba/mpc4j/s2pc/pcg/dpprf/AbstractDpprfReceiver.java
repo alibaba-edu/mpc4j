@@ -7,60 +7,61 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.RdpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
- * DPPRF接收方抽象类。
+ * DPPRF abstract receiver.
  *
  * @author Weiran Liu
  * @date 2022/8/16
  */
 public abstract class AbstractDpprfReceiver extends AbstractSecureTwoPartyPto implements DpprfReceiver {
     /**
-     * 配置项
+     * config
      */
     private final DpprfConfig config;
     /**
-     * 最大α上界
+     * max α upper bound
      */
     protected int maxAlphaBound;
     /**
-     * 最大α比特长度
+     * max α bit length
      */
     protected int maxH;
     /**
-     * 最大批处理数量
+     * max batch num
      */
     private int maxBatchNum;
     /**
-     * α上界
+     * α upper bound
      */
     protected int alphaBound;
     /**
-     * α数组
+     * α array
      */
     protected int[] alphaArray;
     /**
-     * α比特值数组
+     * α binary arrays
      */
     protected boolean[][] alphaBinaryArray;
     /**
-     * 非α比特值数组
+     * negative α binary arrays
      */
     protected boolean[][] notAlphaBinaryArray;
     /**
-     * α比特长度
+     * α bit length
      */
     protected int h;
     /**
-     * 批处理数量
+     * batch num
      */
     protected int batchNum;
 
-    protected AbstractDpprfReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, DpprfConfig config) {
+    protected AbstractDpprfReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, RdpprfConfig config) {
         super(ptoDesc, receiverRpc, senderParty, config);
         this.config = config;
     }
@@ -75,7 +76,7 @@ public abstract class AbstractDpprfReceiver extends AbstractSecureTwoPartyPto im
         this.maxBatchNum = maxBatchNum;
         assert maxAlphaBound > 0 : "maxAlphaBound must be greater than 0: " + maxAlphaBound;
         this.maxAlphaBound = maxAlphaBound;
-        maxH = LongUtils.ceilLog2(maxAlphaBound);
+        maxH = LongUtils.ceilLog2(maxAlphaBound, 1);
         initialized = false;
     }
 
@@ -86,7 +87,7 @@ public abstract class AbstractDpprfReceiver extends AbstractSecureTwoPartyPto im
         assert alphaBound > 0 && alphaBound <= maxAlphaBound
             : "alphaBound must be in range (0, " + maxAlphaBound + "]: " + alphaBound;
         this.alphaBound = alphaBound;
-        h = LongUtils.ceilLog2(alphaBound);
+        h = LongUtils.ceilLog2(alphaBound, 1);
         batchNum = alphaArray.length;
         assert batchNum > 0 && batchNum <= maxBatchNum : "batch must be in range (0, " + maxBatchNum + "]: " + batchNum;
         this.alphaArray = Arrays.stream(alphaArray)

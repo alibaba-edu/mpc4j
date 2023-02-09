@@ -6,9 +6,6 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
@@ -45,10 +42,6 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
      */
     private final CoreCotSender coreCotSender;
     /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
-    /**
      * H_1: {0,1}^* → {0,1}^{2λ}
      */
     private final Hash h1;
@@ -81,7 +74,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
      */
     private Prf f;
     /**
-     * COT发送方输出
+     * ROT发送方输出
      */
     private CotSenderOutput cotSenderOutput;
     /**
@@ -97,7 +90,6 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         super(Cm20MpOprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreCotSender = CoreCotFactory.createSender(receiverRpc, senderParty, config.getCoreCotConfig());
         coreCotSender.addLogLevel();
-        crhf = CrhfFactory.createInstance(envType, CrhfType.MMO);
         h1 = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH * 2);
     }
 
@@ -239,12 +231,11 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         IntStream deltaIntStream = IntStream.range(0, w);
         deltaIntStream = parallel ? deltaIntStream.parallel() : deltaIntStream;
         return deltaIntStream.mapToObj(index -> {
-            byte[] seed0 = crhf.hash(cotSenderOutput.getR0(index));
-            matrixA[index] = prg.extendToBytes(seed0);
+            // We do not need to use CRHF since we need to call PRG.
+            matrixA[index] = prg.extendToBytes(cotSenderOutput.getR0(index));
             BytesUtils.reduceByteArray(matrixA[index], n);
             // B_i = A_i ⊕ D_i, Δ_i = B_i ⊕ r_i^1
-            byte[] seed1 = crhf.hash(cotSenderOutput.getR1(index));
-            byte[] deltaColumn = prg.extendToBytes(seed1);
+            byte[] deltaColumn = prg.extendToBytes(cotSenderOutput.getR1(index));
             BytesUtils.reduceByteArray(deltaColumn, n);
             BytesUtils.xori(deltaColumn, matrixA[index]);
             BytesUtils.xori(deltaColumn, matrixD[index]);

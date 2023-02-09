@@ -1,12 +1,14 @@
 package edu.alibaba.mpc4j.common.tool.hashbin;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BigDecimalUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+
+import static edu.alibaba.mpc4j.common.tool.utils.BigDecimalUtils.STRUCTURE_SCALE;
 
 /**
  * 哈希桶工具类。
@@ -16,18 +18,9 @@ import java.math.RoundingMode;
  */
 public class MaxBinSizeUtils {
     /**
-     * 统计安全常数所对应的可忽略函数值
-     */
-    public static final BigDecimal STAT_NEG_PROBABILITY = BigDecimal.valueOf(0.5).pow(CommonConstants.STATS_BIT_LENGTH);
-    /**
-     * 小数点后保留20位即可以满足统计安全常数的计算准确性
-     */
-    private static final int STRUCTURE_SCALE = 20;
-
-    /**
      * 根据桶的个数、元素的个数，计算每个桶估计的大小。算法参见下述论文的第3.1节：
-     *  Pinkas B, Schneider T, Zohner M. Scalable private set intersection based on OT extension. ACM Transactions on
-     *  Privacy and Security (TOPS), 2018, 21(2): 1-35.
+     * Pinkas B, Schneider T, Zohner M. Scalable private set intersection based on OT extension. ACM Transactions on
+     * Privacy and Security (TOPS), 2018, 21(2): 1-35.
      *
      * @param b 桶的个数。
      * @param n 元素的个数。
@@ -103,14 +96,14 @@ public class MaxBinSizeUtils {
         int k = Math.max(1, n / b);
         // 先计算一轮溢出概率，如果上来满足要求，则直接返回k
         BigDecimal probability = exactProbability(n, b, k);
-        if (probability.compareTo(STAT_NEG_PROBABILITY) <= 0) {
+        if (probability.compareTo(BigDecimalUtils.STAT_NEG_PROBABILITY) <= 0) {
             return k;
         }
         int step = 1;
         // 应用二分查找算法找到最接近给定统计安全常数的桶大小
         boolean doubling = true;
-        while (probability.compareTo(STAT_NEG_PROBABILITY) > 0 || step > 1) {
-            if (probability.compareTo(STAT_NEG_PROBABILITY) > 0) {
+        while (probability.compareTo(BigDecimalUtils.STAT_NEG_PROBABILITY) > 0 || step > 1) {
+            if (probability.compareTo(BigDecimalUtils.STAT_NEG_PROBABILITY) > 0) {
                 // 如果当前溢出概率大于要求溢出概率，意味着桶的大小设置得太小，需要增加
                 if (doubling) {
                     step = Math.max(1, step * 2);
@@ -155,7 +148,7 @@ public class MaxBinSizeUtils {
         BigDecimal probability = BigDecimal.ZERO
             .setScale(STRUCTURE_SCALE, RoundingMode.HALF_UP);
         for (int i = k; i <= n; i++) {
-            BigInteger combinatorial = BigIntegerUtils.combinatorial(n, i);
+            BigInteger combinatorial = BigIntegerUtils.binomial(n, i);
             probability = probability.add(
                 new BigDecimal(combinatorial).setScale(STRUCTURE_SCALE, RoundingMode.HALF_UP)
                     .multiply(binInverseBigDecimal.pow(i)).setScale(STRUCTURE_SCALE, RoundingMode.HALF_UP)

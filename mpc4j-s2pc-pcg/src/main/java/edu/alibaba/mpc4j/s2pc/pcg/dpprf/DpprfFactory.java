@@ -5,32 +5,36 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.dpprf.ywl20.Ywl20DpprfConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.dpprf.ywl20.Ywl20DpprfReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.dpprf.ywl20.Ywl20DpprfSender;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.ywl20.Ywl20RdpprfConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.ywl20.Ywl20RdpprfReceiver;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.ywl20.Ywl20RdpprfSender;
 
 /**
- * DPPRF工厂。
+ * DPPRF factory.
  *
  * @author Weiran Liu
  * @date 2022/8/16
  */
 public class DpprfFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private DpprfFactory() {
         // empty
     }
 
     /**
-     * 协议类型
+     * protocol type.
      */
     public enum DpprfType {
         /**
-         * YWL20协议
+         * GYW22 correlated DPPRF
          */
-        YWL20,
+        GYW22_CORRELATED,
+        /**
+         * YWL20 random DPPRF
+         */
+        YWL20_RANDOM,
     }
 
     /**
@@ -47,8 +51,8 @@ public class DpprfFactory implements PtoFactory {
         DpprfType type = config.getPtoType();
         //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
-            case YWL20:
-                return LongUtils.ceilLog2(alphaBound) * batchNum;
+            case YWL20_RANDOM:
+                return LongUtils.ceilLog2(alphaBound, 1) * batchNum;
             default:
                 throw new IllegalArgumentException("Invalid " + DpprfType.class.getSimpleName() + ": " + type.name());
         }
@@ -66,8 +70,8 @@ public class DpprfFactory implements PtoFactory {
         DpprfType type = config.getPtoType();
         //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
-            case YWL20:
-                return new Ywl20DpprfSender(senderRpc, receiverParty, (Ywl20DpprfConfig) config);
+            case YWL20_RANDOM:
+                return new Ywl20RdpprfSender(senderRpc, receiverParty, (Ywl20RdpprfConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + DpprfType.class.getSimpleName() + ": " + type.name());
         }
@@ -85,8 +89,8 @@ public class DpprfFactory implements PtoFactory {
         DpprfType type = config.getPtoType();
         //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
-            case YWL20:
-                return new Ywl20DpprfReceiver(receiverRpc, senderParty, (Ywl20DpprfConfig) config);
+            case YWL20_RANDOM:
+                return new Ywl20RdpprfReceiver(receiverRpc, senderParty, (Ywl20RdpprfConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + DpprfType.class.getSimpleName() + ": " + type.name());
         }
@@ -99,6 +103,6 @@ public class DpprfFactory implements PtoFactory {
      * @return 默认协议配置项。
      */
     public static DpprfConfig createDefaultConfig(SecurityModel securityModel) {
-        return new Ywl20DpprfConfig.Builder(securityModel).build();
+        return new Ywl20RdpprfConfig.Builder(securityModel).build();
     }
 }

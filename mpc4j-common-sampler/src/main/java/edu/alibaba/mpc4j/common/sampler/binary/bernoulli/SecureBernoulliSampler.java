@@ -7,18 +7,22 @@ import java.security.SecureRandom;
 import java.util.Random;
 
 /**
- * 应用SecureRandom实现的伯努利采样。
+ * Bernoulli sampler with p ∈ [0, 1] using Random provided by JDK, where
+ * <p><ul>
+ * <li> Pr[f(x|p) = 1] = p. </li>
+ * <li> Pr[f(x|p) = 0] = 1 - p. </li>
+ * </ul></p>
  *
  * @author Weiran Liu
  * @date 2022/03/25
  */
 public class SecureBernoulliSampler implements BernoulliSampler {
     /**
-     * 随机数生成器
+     * the random state
      */
     private final Random random;
     /**
-     * 取值为1的概率
+     * the success probability
      */
     private final double p;
 
@@ -27,7 +31,7 @@ public class SecureBernoulliSampler implements BernoulliSampler {
     }
 
     public SecureBernoulliSampler(Random random, double p) {
-        assert p >= 0 && p <= 1 : "p must be in range [0, 1]";
+        assert p >= 0 && p <= 1 : "p must be in range [0, 1]: " + p;
         this.random = random;
         this.p = p;
     }

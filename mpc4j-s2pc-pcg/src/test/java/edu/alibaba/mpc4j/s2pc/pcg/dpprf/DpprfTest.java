@@ -7,7 +7,8 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfFactory.DpprfType;
-import edu.alibaba.mpc4j.s2pc.pcg.dpprf.ywl20.Ywl20DpprfConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.RdpprfConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.ywl20.Ywl20RdpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotTestUtils;
@@ -61,11 +62,11 @@ public class DpprfTest {
         Collection<Object[]> configurationParams = new ArrayList<>();
         // YWL20 (semi-honest)
         configurationParams.add(new Object[] {
-            DpprfType.YWL20.name() + " (semi-honest)", new Ywl20DpprfConfig.Builder(SecurityModel.SEMI_HONEST).build(),
+            DpprfType.YWL20_RANDOM.name() + " (semi-honest)", new Ywl20RdpprfConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
         // YWL20 (malicious)
         configurationParams.add(new Object[] {
-            DpprfType.YWL20.name() + " (malicious)", new Ywl20DpprfConfig.Builder(SecurityModel.MALICIOUS).build(),
+            DpprfType.YWL20_RANDOM.name() + " (malicious)", new Ywl20RdpprfConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
 
         return configurationParams;
@@ -82,9 +83,9 @@ public class DpprfTest {
     /**
      * 协议类型
      */
-    private final DpprfConfig config;
+    private final RdpprfConfig config;
 
-    public DpprfTest(String name, DpprfConfig config) {
+    public DpprfTest(String name, RdpprfConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         RpcManager rpcManager = new MemoryRpcManager(2);
         senderRpc = rpcManager.getRpc(0);
@@ -325,8 +326,8 @@ public class DpprfTest {
         Assert.assertEquals(alphaBound, receiverOutput.getAlphaBound());
         // 验证各个子结果
         IntStream.range(0, batchNum).forEach(batchIndex -> {
-            byte[][] prfKey = senderOutput.getPrfOutputArray(batchIndex);
-            byte[][] pprfKey = receiverOutput.getPprfOutputArray(batchIndex);
+            byte[][] prfKey = senderOutput.getPrfs(batchIndex);
+            byte[][] pprfKey = receiverOutput.getPprfs(batchIndex);
             IntStream.range(0, alphaBound).forEach(index -> {
                 if (index == receiverOutput.getAlpha(batchIndex)) {
                     Assert.assertNull(pprfKey[index]);

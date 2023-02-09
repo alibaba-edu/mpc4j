@@ -9,9 +9,6 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.okve.ovdm.gf2e.Gf2eOvdm;
@@ -19,9 +16,9 @@ import edu.alibaba.mpc4j.common.tool.okve.ovdm.gf2e.Gf2eOvdmFactory;
 import edu.alibaba.mpc4j.common.tool.okve.ovdm.gf2e.Gf2eOvdmFactory.Gf2eOvdmType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcSquareVector;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcFactory;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcParty;
+import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareSbitVector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcParty;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
@@ -62,10 +59,6 @@ public class Zcl22SkePsuServer extends AbstractPsuServer {
      */
     private final Gf2eOvdmType gf2eOvdmType;
     /**
-     * 抗关联哈希函数
-     */
-    private final Crhf crhf;
-    /**
      * GF(2^l)-OVDM哈希密钥
      */
     private byte[][] gf2eOvdmHashKeys;
@@ -83,7 +76,6 @@ public class Zcl22SkePsuServer extends AbstractPsuServer {
         coreCotSender = CoreCotFactory.createSender(serverRpc, clientParty, config.getCoreCotConfig());
         coreCotSender.addLogLevel();
         gf2eOvdmType = config.getGf2eOvdmType();
-        crhf = CrhfFactory.createInstance(getEnvType(), CrhfType.MMO);
     }
 
     @Override
@@ -202,9 +194,8 @@ public class Zcl22SkePsuServer extends AbstractPsuServer {
         encIntStream = parallel ? encIntStream.parallel() : encIntStream;
         List<byte[]> encPayload = encIntStream
             .mapToObj(index -> {
-                byte[] key = cotSenderOutput.getR0(index);
-                key = crhf.hash(key);
-                byte[] ciphertext = encPrg.extendToBytes(key);
+                // do not need CRHF since we call prg
+                byte[] ciphertext = encPrg.extendToBytes(cotSenderOutput.getR0(index));
                 BytesUtils.xori(ciphertext, serverElementArrayList.get(index).array());
                 return ciphertext;
             })
@@ -247,10 +238,10 @@ public class Zcl22SkePsuServer extends AbstractPsuServer {
         TransBitMatrix transposeTransBitMatrix = transBitMatrix.transpose();
         int logSize = LongUtils.ceilLog2(serverElementSize);
         // 服务端结构初始化全为1
-        BcSquareVector serverPeqtShares = BcSquareVector.createOnes(serverElementSize);
+        SquareSbitVector serverPeqtShares = SquareSbitVector.createOnes(serverElementSize);
         for (int index = 0; index < CommonConstants.BLOCK_BIT_LENGTH - logSize; index++) {
             byte[] bits = transposeTransBitMatrix.getColumn(index);
-            BcSquareVector notBits = bcSender.not(BcSquareVector.create(bits, serverElementSize, false));
+            SquareSbitVector notBits = bcSender.not(SquareSbitVector.create(serverElementSize, bits, false));
             serverPeqtShares = bcSender.and(serverPeqtShares, notBits);
         }
         return serverPeqtShares.getBytes();

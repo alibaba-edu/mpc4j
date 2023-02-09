@@ -1,20 +1,21 @@
 package edu.alibaba.mpc4j.common.data;
 
+import com.google.common.base.Preconditions;
 import org.apache.commons.csv.CSVFormat;
 
 /**
- * 数据集管理器。
+ * Dataset manager.
  *
  * @author Weiran Liu
  * @date 2021/10/03
  */
 public class DatasetManager {
     /**
-     * 路径前缀
+     * path prefix
      */
     public static String pathPrefix = "../data/";
     /**
-     * 默认CSV格式
+     * the default CSV formart
      */
     public static final CSVFormat DEFAULT_CSV_FORMAT = CSVFormat.Builder.create()
         .setHeader()
@@ -26,12 +27,12 @@ public class DatasetManager {
     }
 
     /**
-     * 设置路径前缀。
+     * Set the path prefix.
      *
-     * @param pathPrefix 路径前缀。
+     * @param pathPrefix the path prefix.
      */
     public static void setPathPrefix(String pathPrefix) {
-        assert pathPrefix.endsWith("/") : "Path Prefix must end with '/': " + pathPrefix;
+        Preconditions.checkArgument(pathPrefix.endsWith("/"), "Path Prefix must end with '/': %s", pathPrefix);
         DatasetManager.pathPrefix = pathPrefix;
     }
 }

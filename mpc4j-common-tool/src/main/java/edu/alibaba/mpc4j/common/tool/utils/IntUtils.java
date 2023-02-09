@@ -5,49 +5,72 @@ import java.nio.IntBuffer;
 import java.util.stream.IntStream;
 
 /**
- * 整数工具类。
+ * Integer Utilities.
  *
  * @author Weiran Liu
  * @date 2021/12/09
  */
 public class IntUtils {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private IntUtils() {
         // empty
     }
 
     /**
-     * 将{@code int}转换为{@code byte[]}，大端表示。
+     * maximal signed power of 2
+     */
+    public static final int MAX_SIGNED_POWER_OF_TWO = 1 << (Integer.SIZE - 2);
+
+    /**
+     * Converts an int value to a byte array (length = Integer.BYTES) using big-endian format.
      *
-     * @param value 给定的{@code int}。
-     * @return 转换结果。
+     * @param value the given int value.
+     * @return the resulting byte array.
      */
     public static byte[] intToByteArray(int value) {
         return ByteBuffer.allocate(Integer.BYTES).putInt(value).array();
     }
 
     /**
-     * 将{@code byte[]}转换为{@code int}，大端表示。
+     * Converts a byte array (length must be Integer.BYTES) to an int value using big-endian format.
      *
-     * @param value 给定的{@code byte[]}。
-     * @return 转换结果。
+     * @param bytes the given byte array (length must be Integer.BYTES).
+     * @return the resulting int value.
      */
-    public static int byteArrayToInt(byte[] value) {
-        assert value.length == Integer.BYTES;
-        return ByteBuffer.wrap(value).getInt();
+    public static int byteArrayToInt(byte[] bytes) {
+        assert bytes.length == Integer.BYTES : "value.length must be equal to " + Integer.BYTES + ": " + bytes.length;
+        return ByteBuffer.wrap(bytes).getInt();
     }
 
     /**
-     * 将{@code int}转换为{@code byte[]}，尽可能使用较小的转换长度。
+     * Returns the byte length for the given int upper bound.
      *
-     * @param value 给定的{@code int}。
-     * @param bound value的最大取值（包括此最大值）。
-     * @return 转换结果。
+     * @param bound the int upper bound (inclusive).
+     * @return the byte length for the given int upper bound.
      */
-    public static byte[] boundedIntToByteArray(int value, int bound) {
-        assert (value >= 0 && value <= bound);
+    public static int boundedNonNegIntByteLength(int bound) {
+        assert bound > 0 : "bound must be greater than 0: " + bound;
+        if (bound <= Byte.MAX_VALUE) {
+            return Byte.BYTES;
+        } else if (bound <= Short.MAX_VALUE) {
+            return Short.BYTES;
+        } else {
+            return Integer.BYTES;
+        }
+    }
+
+    /**
+     * Converts a non-negative int value to a byte array, trying to use short byte length.
+     *
+     * @param value the given value.
+     * @param bound the upper bound (inclusive) for the given value.
+     * @return the resulting byte array.
+     */
+    public static byte[] boundedNonNegIntToByteArray(int value, int bound) {
+        assert bound > 0 : "bound must be greater than 0: " + bound;
+        assert value >= 0 && value <= bound : "value must be in range [0, " + bound + "]: " + value;
         if (bound <= Byte.MAX_VALUE) {
             return ByteBuffer.allocate(Byte.BYTES).put((byte) value).array();
         } else if (bound <= Short.MAX_VALUE) {
@@ -58,32 +81,34 @@ public class IntUtils {
     }
 
     /**
-     * 将{@code byte[]}转换为{@code int}，尽可能使用较小的转换长度。
+     * Converts a byte array to a non-negative int value, trying to use short byte length.
      *
-     * @param bytes 给定的{@code byte[]}。
-     * @param bound value的最大取值（包括此最大值）。
-     * @return 转换结果。
+     * @param bytes the given byte array (length must match the upper bound (inclusive)).
+     * @param bound the upper bound (inclusive) for the given value.
+     * @return the resulting int value.
      */
-    public static int byteArrayToBoundedInt(byte[] bytes, int bound) {
+    public static int byteArrayToBoundedNonNegInt(byte[] bytes, int bound) {
         int output;
         if (bound <= Byte.MAX_VALUE) {
-            assert bytes.length == Byte.BYTES;
+            assert bytes.length == Byte.BYTES : "byte.length must be equal to " + Byte.BYTES + ": " + bytes.length;
             output = ByteBuffer.wrap(bytes).get();
         } else if (bound <= Short.MAX_VALUE) {
-            assert bytes.length == Short.BYTES;
+            assert bytes.length == Short.BYTES : "byte.length must be equal to " + Short.BYTES + ": " + bytes.length;
             output = ByteBuffer.wrap(bytes).getShort();
         } else {
-            assert bytes.length == Integer.BYTES;
+            assert bytes.length == Integer.BYTES : "byte.length must be equal to " + Integer.BYTES + ": " + bytes.length;
             output = ByteBuffer.wrap(bytes).getInt();
         }
-        assert output >= 0;
+        assert output >= 0 && output <= bound: "the output must be in range [0, " + bound + "]: " + output;
         return output;
     }
 
     /**
      * 将{@code int}转换为指定长度的{@code byte[]}，大端表示，不能用于负数。
-     * - 如果指定长度{@code byteLength}小于{@code Integer.BYTES}，则在前面截断。
-     * - 如果指定长度{@code byteLength}大于{@code Integer.BYTES}，则在前面补0.
+     * <p>
+     * <li>如果指定长度{@code byteLength}小于{@code Integer.BYTES}，则在前面截断。</li>
+     * <li>如果指定长度{@code byteLength}大于{@code Integer.BYTES}，则在前面补0。</li>
+     * </p>
      *
      * @param value      给定的{@code int}。
      * @param byteLength 要求字节长度。
@@ -108,8 +133,10 @@ public class IntUtils {
 
     /**
      * 将指定长度的{@code byte[]}转换为{@code int}，大端表示。转换结果一定为正整数。
-     * - 如果{@code byte[]}的长度小于{@code Integer.BYTES}，则在前面补0后转换。
-     * - 如果{@code byte[]}的长度大于{@code Integer.BYTES}，则支取最后{@code Integer.BYTES}个字节转换。
+     * <p>
+     * <li>如果{@code byte[]}的长度小于{@code Integer.BYTES}，则在前面补0后转换。</li>
+     * <li>如果{@code byte[]}的长度大于{@code Integer.BYTES}，则只取最后{@code Integer.BYTES}个字节转换。</li>
+     * </p>
      *
      * @param value 给定的{@code byte[]}。
      * @return 转换结果。
@@ -164,5 +191,18 @@ public class IntUtils {
         IntStream.range(0, intBuffer.capacity()).forEach(index -> intArray[index] = intBuffer.get());
 
         return intArray;
+    }
+
+    /**
+     * Gets the binary value in the given position. The position is in little-endian format.
+     *
+     * @param intValue the int value.
+     * @param position the position.
+     * @return the binary value in the given position.
+     */
+    public static boolean getLittleEndianBoolean(int intValue, int position) {
+        assert position >= 0 && position < Integer.SIZE
+            : "position must be in range [0, " + Integer.SIZE + "): " + intValue;
+        return (intValue & (1 << position)) != 0;
     }
 }

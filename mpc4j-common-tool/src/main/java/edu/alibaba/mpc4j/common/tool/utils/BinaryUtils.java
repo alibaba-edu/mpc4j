@@ -69,7 +69,7 @@ public class BinaryUtils {
      * @return 转换结果。
      */
     public static byte binaryToByte(final boolean[] binary) {
-        assert binary.length == Byte.SIZE;
+        assert binary.length == Byte.SIZE : "binary.length must be equal to " + Byte.SIZE + ": " + binary.length;
         byte byteValue = 0;
         for (int index = 0; index < Byte.SIZE; index++) {
             byteValue = binary[index] ? (byte) (byteValue | BYTE_BOOLEAN_TRUE_TABLE[index]) : byteValue;
@@ -106,8 +106,10 @@ public class BinaryUtils {
      * @return 转换结果。
      */
     public static boolean[] byteArrayToBinary(final byte[] byteArray, int bitLength) {
-        assert bitLength <= byteArray.length * Byte.SIZE;
+        assert bitLength >= 0 && bitLength <= byteArray.length * Byte.SIZE
+            : "bitLength must be in range [0, " + byteArray.length * Byte.SIZE + "]: " + bitLength;
         if (byteArray.length == 0) {
+            // byteArray.length = 0 implies bitLength = 0
             return new boolean[0];
         }
         assert BytesUtils.isReduceByteArray(byteArray, bitLength);

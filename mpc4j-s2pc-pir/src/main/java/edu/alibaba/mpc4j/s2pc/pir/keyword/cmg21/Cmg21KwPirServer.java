@@ -167,9 +167,8 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
+        info("{}{} Server Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
 
-        stopWatch.start();
         // 接收客户端布谷鸟哈希分桶结果
         DataPacketHeader cuckooHashResultHeader = new DataPacketHeader(
             taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_RESULT.ordinal(), extraInfo,
@@ -177,12 +176,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         );
         List<byte[]> cuckooHashResultPayload = rpc.receive(cuckooHashResultHeader).getPayload();
         handleCuckooHashResultPayload(cuckooHashResultPayload);
-        stopWatch.stop();
-        long cuckooHashResultTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Server Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), cuckooHashResultTime);
 
-        stopWatch.start();
         // 接收客户端的加密密钥
         DataPacketHeader fheParamsHeader = new DataPacketHeader(
             taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_FHE_PARAMS.ordinal(), extraInfo,
@@ -192,12 +186,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         MpcAbortPreconditions.checkArgument(
             fheParamsPayload.size() == 3, "Failed to receive BFV encryption parameters"
         );
-        stopWatch.stop();
-        long fheParamsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Server Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), fheParamsTime);
 
-        stopWatch.start();
         // 接收客户端的加密查询信息
         DataPacketHeader queryHeader = new DataPacketHeader(
             taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
@@ -209,10 +198,6 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
             queryPayload.size() == ciphertextNumber * params.getQueryPowers().length,
             "The size of query is incorrect"
         );
-        stopWatch.stop();
-        long queryTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Server Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), queryTime);
 
         stopWatch.start();
         // 密文多项式运算
@@ -230,7 +215,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         stopWatch.stop();
         long replyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), replyTime);
+        info("{}{} Server Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), replyTime);
 
         info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
     }

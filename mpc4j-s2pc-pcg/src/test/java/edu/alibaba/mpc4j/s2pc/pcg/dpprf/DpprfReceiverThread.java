@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 /**
- * DPPRF接收方线程。
+ * RDPPRF接收方线程。
  *
  * @author Weiran Liu
  * @date 2022/8/16

@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
 /**
- * DPPRF发送方抽象类。
+ * DPPRF abstract sender.
  *
  * @author Weiran Liu
  * @date 2022/8/16
@@ -58,7 +58,7 @@ public abstract class AbstractDpprfSender extends AbstractSecureTwoPartyPto impl
         this.maxBatchNum = maxBatchNum;
         assert maxAlphaBound > 0 : "maxAlphaBound must be greater than 0: " + maxAlphaBound;
         this.maxAlphaBound = maxAlphaBound;
-        maxH = LongUtils.ceilLog2(maxAlphaBound);
+        maxH = LongUtils.ceilLog2(maxAlphaBound, 1);
         initialized = false;
     }
 
@@ -71,7 +71,7 @@ public abstract class AbstractDpprfSender extends AbstractSecureTwoPartyPto impl
         assert alphaBound > 0 && alphaBound <= maxAlphaBound
             : "alphaBound must be in range (0, " + maxAlphaBound + "]: " + alphaBound;
         this.alphaBound = alphaBound;
-        h = LongUtils.ceilLog2(alphaBound);
+        h = LongUtils.ceilLog2(alphaBound, 1);
         extraInfo++;
     }
 

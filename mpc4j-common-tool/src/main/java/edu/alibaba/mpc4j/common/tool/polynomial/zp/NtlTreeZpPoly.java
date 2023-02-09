@@ -146,7 +146,7 @@ public class NtlTreeZpPoly extends AbstractZpTreePoly {
             singleEvaluatePoint = xByteArrays[0];
         } else {
             // 一次可以并行计算的阶数要求是离polynomial.degree()最近的n = 2^k
-            intervalPointNum = 1 << (LongUtils.ceilLog2(evaluatePolynomialPointNum) - 1);
+            intervalPointNum = 1 << (LongUtils.ceilLog2(evaluatePolynomialPointNum, 1) - 1);
             int intervalNum = CommonUtils.getUnitNum(evaluatePointNum, intervalPointNum);
             evaluateTreeHandlerArrayList = new ArrayList<>(intervalNum);
             for (int pointIndex = 0; pointIndex < evaluatePointNum; pointIndex += intervalPointNum) {

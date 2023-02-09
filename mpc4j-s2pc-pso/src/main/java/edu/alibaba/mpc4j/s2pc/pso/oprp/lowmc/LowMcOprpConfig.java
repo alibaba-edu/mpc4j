@@ -2,8 +2,8 @@ package edu.alibaba.mpc4j.s2pc.pso.oprp.lowmc;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcConfig;
-import edu.alibaba.mpc4j.s2pc.aby.bc.BcFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcFactory;
 import edu.alibaba.mpc4j.s2pc.pso.oprp.OprpConfig;
 import edu.alibaba.mpc4j.s2pc.pso.oprp.OprpFactory.OprpType;
 

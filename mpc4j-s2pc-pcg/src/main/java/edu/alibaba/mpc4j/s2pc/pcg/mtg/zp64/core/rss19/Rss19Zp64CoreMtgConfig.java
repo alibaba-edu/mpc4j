@@ -31,8 +31,8 @@ public class Rss19Zp64CoreMtgConfig implements Zp64CoreMtgConfig {
 
     private Rss19Zp64CoreMtgConfig(Builder builder) {
         polyModulusDegree = builder.polyModulusDegree;
-        p = Rss19Zp64CoreMtgNativeUtils.checkCreatePlainModulus(polyModulusDegree, builder.plainModulusSize);
-        assert (BigInteger.valueOf(p).bitLength() == builder.plainModulusSize);
+        p = Rss19Zp64CoreMtgNativeUtils.checkCreatePlainModulus(polyModulusDegree, builder.primeBitLength);
+        assert (BigInteger.valueOf(p).bitLength() == builder.primeBitLength);
     }
 
     @Override
@@ -82,26 +82,32 @@ public class Rss19Zp64CoreMtgConfig implements Zp64CoreMtgConfig {
         /**
          * 明文模数比特长度
          */
-        private int plainModulusSize;
+        private int primeBitLength;
         /**
          * 模多项式阶
          */
         private int polyModulusDegree;
 
         public Builder() {
-            this.plainModulusSize = CommonConstants.STATS_BIT_LENGTH;
-            this.polyModulusDegree = Rss19Zp64CoreMtgPtoDesc.defaultPolyModulusDegree(this.plainModulusSize);
+            primeBitLength = CommonConstants.STATS_BIT_LENGTH;
+            polyModulusDegree = Rss19Zp64CoreMtgPtoDesc.defaultPolyModulusDegree(primeBitLength);
         }
 
         public Builder setPolyModulusDegree(int polyModulusDegree, int plainModulusSize) {
             this.polyModulusDegree = polyModulusDegree;
-            this.plainModulusSize = plainModulusSize;
+            this.primeBitLength = plainModulusSize;
             return this;
         }
 
-        public Builder setPlainModulusSize(int plainModulusSize) {
-            this.plainModulusSize = plainModulusSize;
-            this.polyModulusDegree = Rss19Zp64CoreMtgPtoDesc.defaultPolyModulusDegree(plainModulusSize);
+        /**
+         * 设置Zp64中质数p的比特长度（即log_2(p)）。
+         *
+         * @param primeBitLength 质数p的比特长度。
+         * @return 构造器。
+         */
+        public Builder setPrimeBitLength(int primeBitLength) {
+            this.primeBitLength = primeBitLength;
+            polyModulusDegree = Rss19Zp64CoreMtgPtoDesc.defaultPolyModulusDegree(primeBitLength);
             return this;
         }
 

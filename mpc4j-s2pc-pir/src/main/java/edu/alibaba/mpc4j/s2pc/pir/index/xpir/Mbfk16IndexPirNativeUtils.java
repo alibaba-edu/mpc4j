@@ -42,7 +42,7 @@ class Mbfk16IndexPirNativeUtils {
      * @param plaintext   系数表示的多项式。
      * @return 点值表示的多项式。
      */
-    static native ArrayList<byte[]> nttTransform(byte[] sealContext, ArrayList<long[]> plaintext);
+    static native ArrayList<byte[]> nttTransform(byte[] sealContext, List<long[]> plaintext);
 
     /**
      * 生成问询密文。
@@ -50,21 +50,24 @@ class Mbfk16IndexPirNativeUtils {
      * @param sealContext SEAL上下文参数。
      * @param publicKey   公钥。
      * @param secretKey   私钥。
-     * @param message     明文检索值。
+     * @param indices     明文检索值。
+     * @param nvec        各维度向量长度。
      * @return 问询密文。
      */
-    static native ArrayList<byte[]> generateQuery(byte[] sealContext, byte[] publicKey, byte[] secretKey, int[] message);
+    static native ArrayList<byte[]> generateQuery(byte[] sealContext, byte[] publicKey, byte[] secretKey, int[] indices,
+                                                  int[] nvec);
 
     /**
      * 生成回复密文。
      *
-     * @param sealContext   SEAL上下文参数。
-     * @param queryList     检索值密文。
-     * @param plaintextList 数据库明文。
-     * @param nvec          各维度长度。
+     * @param sealContext  SEAL上下文参数。
+     * @param queryList    检索值密文。
+     * @param dbPlaintexts 数据库明文。
+     * @param nvec         各维度长度。
      * @return 检索结果密文。
      */
-    static native ArrayList<byte[]> generateReply(byte[] sealContext, ArrayList<byte[]> queryList, ArrayList<byte[]> plaintextList, int[] nvec);
+    static native ArrayList<byte[]> generateReply(byte[] sealContext, List<byte[]> queryList, List<byte[]> dbPlaintexts,
+                                                  int[] nvec);
 
     /**
      * 解密回复密文。
@@ -75,5 +78,13 @@ class Mbfk16IndexPirNativeUtils {
      * @param dimension   维度。
      * @return 查询结果。
      */
-    static native long[] decryptReply(byte[] sealContext, byte[] secretKey, ArrayList<byte[]> response, int dimension);
+    static native long[] decryptReply(byte[] sealContext, byte[] secretKey, List<byte[]> response, int dimension);
+
+    /**
+     * 返回密文和明文的比例。
+     *
+     * @param sealContext SEAL上下文参数。
+     * @return 密文和明文的比例。
+     */
+    static native int expansionRatio(byte[] sealContext);
 }

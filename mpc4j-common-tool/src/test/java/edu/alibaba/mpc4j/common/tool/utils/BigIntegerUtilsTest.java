@@ -82,58 +82,44 @@ public class BigIntegerUtilsTest {
     }
 
     @Test
-    public void testInvalidCombinatorial() {
-        try {
-            BigIntegerUtils.combinatorial(-1, 0);
-            throw new IllegalStateException("ERROR: successfully compute C(-1, 0)");
-        } catch (AssertionError ignored) {
-
-        }
-
-        try {
-            BigIntegerUtils.combinatorial(10, -1);
-            throw new IllegalStateException("ERROR: successfully compute C(10, -1)");
-        } catch (AssertionError ignored) {
-
-        }
-
-        try {
-            BigIntegerUtils.combinatorial(10, 11);
-            throw new IllegalStateException("ERROR: successfully compute C(10, 11)");
-        } catch (AssertionError ignored) {
-
-        }
+    public void testInvalidBinomial() {
+        // try to compute C(-1, 0)
+        Assert.assertThrows(IllegalArgumentException.class, () -> BigIntegerUtils.binomial(-1, 0));
+        // try to compute C(10, -1)
+        Assert.assertThrows(IllegalArgumentException.class, () -> BigIntegerUtils.binomial(10, -1));
+        // try to compute C(10, 11)
+        Assert.assertThrows(IllegalArgumentException.class, () -> BigIntegerUtils.binomial(10, 11));
     }
 
     @Test
-    public void testCombinatorial() {
+    public void testBinomial() {
         // C(1, 0) = 1
-        testCombinatorial(1, 0, BigInteger.ONE);
+        testBinomial(1, 0, BigInteger.ONE);
         // C(1, 1) = 1
-        testCombinatorial(1, 1, BigInteger.ONE);
+        testBinomial(1, 1, BigInteger.ONE);
         // C(10, 0) = 1
-        testCombinatorial(10, 0, BigInteger.ONE);
+        testBinomial(10, 0, BigInteger.ONE);
         // C(10, 1) = 10
-        testCombinatorial(10, 1, BigInteger.valueOf(10));
+        testBinomial(10, 1, BigInteger.valueOf(10));
         // C(10, 9) = 10
-        testCombinatorial(10, 9, BigInteger.valueOf(10));
+        testBinomial(10, 9, BigInteger.valueOf(10));
         // C(10, 10) = 1
-        testCombinatorial(10, 10, BigInteger.ONE);
+        testBinomial(10, 10, BigInteger.ONE);
         // C(10, 5) = 252
-        testCombinatorial(10, 5, BigInteger.valueOf(252));
+        testBinomial(10, 5, BigInteger.valueOf(252));
         // C(10, 3) = 120
-        testCombinatorial(10, 3, BigInteger.valueOf(120));
+        testBinomial(10, 3, BigInteger.valueOf(120));
         // C(10, 6) = 210
-        testCombinatorial(10, 6, BigInteger.valueOf(210));
+        testBinomial(10, 6, BigInteger.valueOf(210));
     }
 
-    private void testCombinatorial(int n, int m, BigInteger truth) {
-        BigInteger combinatorial = BigIntegerUtils.combinatorial(n, m);
+    private void testBinomial(int n, int m, BigInteger truth) {
+        BigInteger combinatorial = BigIntegerUtils.binomial(n, m);
         Assert.assertEquals(truth, combinatorial);
     }
 
     @Test
-    public void testBigIntegerSignum() {
+    public void testSign() {
         // 1的验证结果
         Assert.assertTrue(BigIntegerUtils.positive(BigInteger.ONE));
         Assert.assertTrue(BigIntegerUtils.nonNegative(BigInteger.ONE));
@@ -168,14 +154,16 @@ public class BigIntegerUtilsTest {
     }
 
     @Test
-    public void testSqrt() {
-        // 测试1的开根号
-        Assert.assertEquals(BigInteger.ONE, BigIntegerUtils.sqrt(BigInteger.ONE));
+    public void testSqrtFloor() {
+        // √0 = 0
+        Assert.assertEquals(BigInteger.ZERO, BigIntegerUtils.sqrtFloor(BigInteger.ZERO));
+        // √0 = 1
+        Assert.assertEquals(BigInteger.ONE, BigIntegerUtils.sqrtFloor(BigInteger.ONE));
         for (int round = 0; round < RANDOM_ROUND; round++) {
-            // 随机取[1, 2^512)中的一个元素，求平方，并开根号
+            // random picks an element in [1, 2^512), first square then square root.
             BigInteger n = BigIntegerUtils.randomPositive(BigInteger.ONE.shiftLeft(512), SECURE_RANDOM);
             BigInteger nSquared = n.multiply(n);
-            Assert.assertEquals(n, BigIntegerUtils.sqrt(nSquared));
+            Assert.assertEquals(n, BigIntegerUtils.sqrtFloor(nSquared));
         }
     }
 
@@ -189,21 +177,19 @@ public class BigIntegerUtilsTest {
     }
 
     @Test
+    public void testIllegalRandomNonNegative() {
+        // try to generate random non-negative with negative n
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            BigIntegerUtils.randomNonNegative(BigInteger.valueOf(-1), SECURE_RANDOM)
+        );
+        // generate random non-negative with n = 0
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            BigIntegerUtils.randomNonNegative(BigInteger.ZERO, SECURE_RANDOM)
+        );
+    }
+
+    @Test
     public void testRandomNonNegative() {
-        try {
-            BigIntegerUtils.randomNonNegative(BigInteger.valueOf(-1), SECURE_RANDOM);
-            throw new IllegalStateException("ERROR: successfully generate random non-negative with negative n"
-            );
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            BigIntegerUtils.randomNonNegative(BigInteger.ZERO, SECURE_RANDOM);
-            throw new IllegalStateException("ERROR: successfully generate random non-negative with n = " + BigInteger.ZERO);
-        } catch (AssertionError ignored) {
-
-        }
-        // 测试输出结果范围
         for (int bound = 1; bound < UPPER_BOUND; bound++) {
             for (int round = 0; round < RANDOM_ROUND; round++) {
                 int random = BigIntegerUtils.randomNonNegative(BigInteger.valueOf(bound), SECURE_RANDOM).intValue();
@@ -213,27 +199,23 @@ public class BigIntegerUtilsTest {
     }
 
     @Test
+    public void testIllegalRandomPositive() {
+        // try to generate random positive with negative n
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            BigIntegerUtils.randomPositive(BigInteger.valueOf(-1), SECURE_RANDOM)
+        );
+        // try to generate random positive with n = 0
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            BigIntegerUtils.randomPositive(BigInteger.ZERO, SECURE_RANDOM)
+        );
+        // try to generate random positive with n = 1
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            BigIntegerUtils.randomPositive(BigInteger.ONE, SECURE_RANDOM)
+        );
+    }
+
+    @Test
     public void testRandomPositive() {
-        try {
-            BigIntegerUtils.randomPositive(BigInteger.valueOf(-1), SECURE_RANDOM);
-            throw new IllegalStateException("ERROR: successfully generate random positive with negative n"
-            );
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            BigIntegerUtils.randomPositive(BigInteger.ZERO, SECURE_RANDOM);
-            throw new IllegalStateException("ERROR: successfully generate random positive with n = " + BigInteger.ZERO);
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            BigIntegerUtils.randomPositive(BigInteger.ONE, SECURE_RANDOM);
-            throw new IllegalStateException("ERROR: successfully generate random positive with n =  " + BigInteger.ONE);
-        } catch (AssertionError ignored) {
-
-        }
-        // 测试输出结果范围
         for (int bound = 2; bound < UPPER_BOUND; bound++) {
             for (int round = 0; round < RANDOM_ROUND; round++) {
                 int random = BigIntegerUtils.randomPositive(BigInteger.valueOf(bound), SECURE_RANDOM).intValue();

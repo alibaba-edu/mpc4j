@@ -84,8 +84,8 @@ public class OpBoostMainUtils {
      */
     public static StructType setSchema(Properties properties, Formula formula) {
         LOGGER.info("-----set whole schema-----");
-        String[] columnTypes = PropertiesUtils.readStringArray(properties, "column_types");
-        String[] columnNames = PropertiesUtils.readStringArray(properties, "column_names");
+        String[] columnTypes = PropertiesUtils.readTrimStringArray(properties, "column_types");
+        String[] columnNames = PropertiesUtils.readTrimStringArray(properties, "column_names");
             Preconditions.checkArgument(
             Arrays.stream(columnNames).collect(Collectors.toSet()).size() == columnNames.length,
             "column_names contains duplicated names"
@@ -115,7 +115,7 @@ public class OpBoostMainUtils {
                         return new StructField(columnName, DataTypes.DoubleType);
                     case "C":
                         // 分类任务的标签类型
-                        String[] classTypes = PropertiesUtils.readStringArray(properties, "class_types");
+                        String[] classTypes = PropertiesUtils.readTrimStringArray(properties, "class_types");
                         return new StructField(columnName, DataTypes.ByteType, new NominalScale(classTypes));
                     default:
                         throw new IllegalArgumentException("Invalid columnType: " + columnType);

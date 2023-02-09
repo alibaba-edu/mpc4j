@@ -9,8 +9,6 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -18,11 +16,11 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.KdfOtReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.core.AbstractCoreLotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lot.core.CoreLotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -43,13 +41,9 @@ public class Oos17CoreLotSender extends AbstractCoreLotSender {
      */
     private final CoreCotReceiver coreCotReceiver;
     /**
-     * 抗关联哈希函数
+     * KDF-OT协议接收方输出
      */
-    private final Crhf crhf;
-    /**
-     * COT协议接收方输出
-     */
-    private CotReceiverOutput cotReceiverOutput;
+    private KdfOtReceiverOutput kdfOtReceiverOutput;
     /**
      * 随机预言机密钥
      */
@@ -71,7 +65,6 @@ public class Oos17CoreLotSender extends AbstractCoreLotSender {
         super(Oos17CoreLotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(senderRpc, receiverParty, config.getCoreCotConfig());
         coreCotReceiver.addLogLevel();
-        crhf = CrhfFactory.createInstance(envType, CrhfFactory.CrhfType.MMO_SIGMA);
     }
 
     @Override
@@ -109,7 +102,7 @@ public class Oos17CoreLotSender extends AbstractCoreLotSender {
 
         stopWatch.start();
         coreCotReceiver.init(outputBitLength);
-        cotReceiverOutput = coreCotReceiver.receive(deltaBinary);
+        kdfOtReceiverOutput = new KdfOtReceiverOutput(envType, coreCotReceiver.receive(deltaBinary));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -180,7 +173,7 @@ public class Oos17CoreLotSender extends AbstractCoreLotSender {
         IntStream qMatrixIntStream = IntStream.range(0, outputBitLength);
         qMatrixIntStream = parallel ? qMatrixIntStream.parallel() : qMatrixIntStream;
         qMatrixIntStream.forEach(columnIndex -> {
-            byte[] columnBytes = prg.extendToBytes(crhf.hash(cotReceiverOutput.getRb(columnIndex)));
+            byte[] columnBytes = prg.extendToBytes(kdfOtReceiverOutput.getKb(columnIndex, extraInfo));
             BytesUtils.reduceByteArray(columnBytes, extendNum);
             if (deltaBinary[columnIndex]) {
                 BytesUtils.xori(columnBytes, uArray[columnIndex]);

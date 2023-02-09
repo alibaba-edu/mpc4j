@@ -199,7 +199,7 @@ public class DoubleUtilsTest {
         int m = 128;
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        BigIntegerUtils.combinatorial(n, m);
+        BigIntegerUtils.binomial(n, m);
         stopWatch.stop();
         LOGGER.info("BigInteger计算C({}, {})时间 = {}us", n, m, stopWatch.getTime(TimeUnit.MICROSECONDS));
         stopWatch.reset();

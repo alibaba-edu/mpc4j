@@ -34,9 +34,9 @@ public class Zp64CoreMtgTest {
     /**
      * 较大数量
      */
-    private static final int LARGE_NUM = 8192*8;
+    private static final int LARGE_NUM = 8192 * 8;
     /**
-     *
+     * 默认Zp比特模数
      */
     private static final int MODULUS_BIT_LENGTH = 20;
     /**
@@ -55,15 +55,10 @@ public class Zp64CoreMtgTest {
     }
 
     @Test
-    public void testRandom() {
-        System.out.println(SECURE_RANDOM.nextLong());
-    }
-
-    @Test
     public void testDefaultNum() {
         try {
             Zp64CoreMtgConfig config = new Rss19Zp64CoreMtgConfig.Builder()
-                .setPlainModulusSize(MODULUS_BIT_LENGTH)
+                .setPrimeBitLength(MODULUS_BIT_LENGTH)
                 .build();
             LOGGER.info("----- config build succeed -----");
             Zp64CoreMtgParty sender = Zp64CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
@@ -78,7 +73,7 @@ public class Zp64CoreMtgTest {
     public void testLargeNum() {
         try {
             Zp64CoreMtgConfig config = new Rss19Zp64CoreMtgConfig.Builder()
-                .setPlainModulusSize(MODULUS_BIT_LENGTH)
+                .setPrimeBitLength(MODULUS_BIT_LENGTH)
                 .build();
             LOGGER.info("----- config build succeed -----");
             Zp64CoreMtgParty sender = Zp64CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
@@ -86,22 +81,6 @@ public class Zp64CoreMtgTest {
             testPto(sender, receiver, LARGE_NUM);
         } catch (Exception e) {
             LOGGER.info("----- config build failed : " + e);
-        }
-    }
-
-    @Test
-    public void testConfigSetPlainModulusSize() {
-        for (int size = 1; size < Long.SIZE - 1; size++) {
-            try {
-                Rss19Zp64CoreMtgConfig config = new Rss19Zp64CoreMtgConfig.Builder()
-                    .setPlainModulusSize(size)
-                    .build();
-                long prime = config.getZp();
-                long primeBitLength = LongUtils.ceilLog2(prime);
-                LOGGER.info("config build success for plain bit length {}, prime = {} ({})", size, prime, primeBitLength);
-            } catch (Exception e) {
-                LOGGER.info("config build  failed for plain bit length {}: ", size);
-            }
         }
     }
 

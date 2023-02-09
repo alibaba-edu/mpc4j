@@ -6,18 +6,22 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.util.Precision;
 
 /**
- * 应用Apache的采样工具实现的伯努利采样。
+ * Bernoulli sampler with p ∈ [0, 1] using the Apache API, where
+ * <p><ul>
+ * <li> Pr[f(x|p) = 1] = p. </li>
+ * <li> Pr[f(x|p) = 0] = 1 - p. </li>
+ * </ul></p>
  *
  * @author Weiran Liu
  * @date 2021/03/02
  */
 public class ApacheBernoulliSampler implements BernoulliSampler {
     /**
-     * 随机数生成器
+     * the random state
      */
     private final RandomGenerator randomGenerator;
     /**
-     * 取值为1的概率
+     * the success probability p
      */
     private final double p;
 
@@ -26,7 +30,7 @@ public class ApacheBernoulliSampler implements BernoulliSampler {
     }
 
     public ApacheBernoulliSampler(RandomGenerator randomGenerator, double p) {
-        assert p >= 0 && p <= 1 : "p must be in range [0, 1]";
+        assert p >= 0 && p <= 1 : "p must be in range [0, 1]: " + p;
         this.p = p;
         this.randomGenerator = randomGenerator;
     }

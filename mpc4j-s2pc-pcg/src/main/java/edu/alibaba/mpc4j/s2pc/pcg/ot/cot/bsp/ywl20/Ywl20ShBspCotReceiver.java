@@ -164,7 +164,7 @@ public class Ywl20ShBspCotReceiver extends AbstractBspCotReceiver {
         batchIndexIntStream = parallel ? batchIndexIntStream.parallel() : batchIndexIntStream;
         SspCotReceiverOutput[] sspCotReceiverOutputs = batchIndexIntStream
             .mapToObj(batchIndex -> {
-                byte[][] rbArray = dpprfReceiverOutput.getPprfOutputArray(batchIndex);
+                byte[][] rbArray = dpprfReceiverOutput.getPprfs(batchIndex);
                 // computes w[α]
                 for (int i = 0; i < num; i++) {
                     if (i != alphaArray[batchIndex]) {

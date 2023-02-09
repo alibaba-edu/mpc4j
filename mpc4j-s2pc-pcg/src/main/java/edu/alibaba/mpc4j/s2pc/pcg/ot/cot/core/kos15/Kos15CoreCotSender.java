@@ -9,8 +9,6 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
-import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -19,9 +17,9 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.KdfOtReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.AbstractCoreCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.kos15.Kos15CoreCotPtoDesc.PtoStep;
@@ -45,17 +43,13 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
      */
     private final BaseOtReceiver baseOtReceiver;
     /**
-     * 密钥派生函数
-     */
-    private final Kdf kdf;
-    /**
      * GF(2^128)运算接口
      */
     private final Gf2k gf2k;
     /**
-     * 基础OT协议输出
+     * KDF-OT协议输出
      */
-    private BaseOtReceiverOutput baseOtReceiverOutput;
+    private KdfOtReceiverOutput kdfOtReceiverOutput;
     /**
      * 随机预言机
      */
@@ -77,7 +71,6 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
         super(Kos15CoreCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         baseOtReceiver = BaseOtFactory.createReceiver(senderRpc, receiverParty, config.getBaseOtConfig());
         baseOtReceiver.addLogLevel();
-        kdf = KdfFactory.createInstance(envType);
         gf2k = Gf2kFactory.createInstance(envType);
     }
 
@@ -106,7 +99,7 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
 
         stopWatch.start();
         baseOtReceiver.init();
-        baseOtReceiverOutput = baseOtReceiver.receive(deltaBinary);
+        kdfOtReceiverOutput = new KdfOtReceiverOutput(envType, baseOtReceiver.receive(deltaBinary));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -182,11 +175,7 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
         IntStream qMatrixIntStream = IntStream.range(0, CommonConstants.BLOCK_BIT_LENGTH);
         qMatrixIntStream = parallel ? qMatrixIntStream.parallel() : qMatrixIntStream;
         qMatrixIntStream.forEach(columnIndex -> {
-            byte[] rbSeed = ByteBuffer.allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                .putLong(extraInfo).put(baseOtReceiverOutput.getRb(columnIndex))
-                .array();
-            rbSeed = kdf.deriveKey(rbSeed);
-            byte[] columnBytes = prg.extendToBytes(rbSeed);
+            byte[] columnBytes = prg.extendToBytes(kdfOtReceiverOutput.getKb(columnIndex, extraInfo));
             BytesUtils.reduceByteArray(columnBytes, extendNum);
             if (deltaBinary[columnIndex]) {
                 BytesUtils.xori(columnBytes, uArray[columnIndex]);

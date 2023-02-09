@@ -14,9 +14,9 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfSender;
-import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.AbstractBspCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.SspCotSenderOutput;
@@ -142,7 +142,7 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
             .mapToObj(batchIndex -> {
                 correlateByteArrays[batchIndex] = BytesUtils.clone(delta);
                 // S sets v = (s_0^h,...,s_{n - 1}^h)
-                byte[][] vs = dpprfSenderOutput.getPrfOutputArray(batchIndex);
+                byte[][] vs = dpprfSenderOutput.getPrfs(batchIndex);
                 // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
                 for (int i = 0; i < num; i++) {
                     BytesUtils.xori(correlateByteArrays[batchIndex], vs[i]);

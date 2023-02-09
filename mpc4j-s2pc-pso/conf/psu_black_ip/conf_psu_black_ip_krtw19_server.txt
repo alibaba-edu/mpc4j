@@ -18,5 +18,5 @@ pto_type = PSU_BLACK_IP
 psu_pto_name = KRTW19_OPT
 
 # 数据
-psu_black_ip_server_input = ../blackip.txt
-psu_black_ip_client_input = ../oldip.txt
+psu_black_ip_server_input = black_ip/blackip.txt
+psu_black_ip_client_input = black_ip/oldip.txt

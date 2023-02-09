@@ -6,57 +6,38 @@ import org.junit.Test;
 import java.security.SecureRandom;
 
 /**
- * 整数工具类测试。
+ * Integer utilities test.
  *
  * @author Weiran Liu
  * @date 2021/12/09
  */
 public class IntUtilsTest {
     /**
-     * 最大迭代次数
+     * maximal number of iterations
      */
     private static final int MAX_ITERATIONS = 100;
     /**
-     * 随机状态
+     * the random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Test
     public void testInvalidIntByteArray() {
-        try {
-            // 尝试转换长度为0的字节数组
-            IntUtils.byteArrayToInt(new byte[0]);
-            throw new IllegalStateException("ERROR: successfully convert byte array with length 0 to int");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试转换Integer.BYTES - 1长的字节数组
-            IntUtils.byteArrayToInt(new byte[Integer.BYTES - 1]);
-            throw new IllegalStateException(
-                "ERROR: successfully convert byte array with length Integer.BYTES - 1 to int"
-            );
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试转换Integer.BYTES + 1的字节数组
-            IntUtils.byteArrayToInt(new byte[Integer.BYTES + 1]);
-            throw new IllegalStateException(
-                "ERROR: successfully convert byte array with length Integer.BYTES + 1 to int"
-            );
-        } catch (AssertionError ignored) {
-
-        }
+        // convert byte[] with length = 0
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.byteArrayToInt(new byte[0]));
+        // convert byte[] with length = Integer.BYTES - 1
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.byteArrayToInt(new byte[Integer.BYTES - 1]));
+        // convert byte[] with length = Integer.BYTES + 1
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.byteArrayToInt(new byte[Integer.BYTES + 1]));
     }
 
     @Test
     public void testIntByteArray() {
-        testIntByteArray(0, new byte[] { (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, });
-        testIntByteArray(1, new byte[] { (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01, });
-        testIntByteArray(-1, new byte[] { (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, });
-        testIntByteArray(Integer.MAX_VALUE, new byte[] { (byte)0x7F, (byte)0xFF, (byte)0xFF, (byte)0xFF, });
-        testIntByteArray(Integer.MIN_VALUE, new byte[] { (byte)0x80, (byte)0x00, (byte)0x00, (byte)0x00, });
+        testIntByteArray(0, new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,});
+        testIntByteArray(1, new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01,});
+        testIntByteArray(-1, new byte[]{(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,});
+        testIntByteArray(Integer.MAX_VALUE, new byte[]{(byte) 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,});
+        testIntByteArray(Integer.MIN_VALUE, new byte[]{(byte) 0x80, (byte) 0x00, (byte) 0x00, (byte) 0x00,});
     }
 
     private void testIntByteArray(int value, byte[] byteArray) {
@@ -68,60 +49,119 @@ public class IntUtilsTest {
 
     @Test
     public void testInvalidBoundedIntByteArray() {
-        try {
-            // 尝试转换负数
-            IntUtils.boundedIntToByteArray(-1, Byte.MAX_VALUE);
-            throw new IllegalStateException("ERROR: successfully convert negative bounded int to byte array");
-        } catch (AssertionError ignored) {
+        // convert negative int
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.boundedNonNegIntToByteArray(-1, Byte.MAX_VALUE));
+        // convert an int value that is greater than Byte.MAX_VALUE to a byte array with upper bound Byte.MAX_VALUE
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.boundedNonNegIntToByteArray(Byte.MAX_VALUE + 1, Byte.MAX_VALUE)
+        );
+        // convert an int value that is greater than Short.MAX_VALUE to a byte array with upper bound Short.MAX_VALUE
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.boundedNonNegIntToByteArray(Short.MAX_VALUE + 1, Short.MAX_VALUE)
+        );
+        // convert a byte array for negative Byte to an int
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.byteArrayToBoundedNonNegInt(new byte[]{(byte) 0xFF}, Byte.MAX_VALUE)
+        );
+        // convert a byte array for negative Short to an int
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.byteArrayToBoundedNonNegInt(new byte[]{(byte) 0xF0, (byte) 0x00}, Short.MAX_VALUE)
+        );
+        // convert an int to a byte array that is greater than the bound
+        // for Byte
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.boundedNonNegIntToByteArray(Byte.MAX_VALUE, Byte.MAX_VALUE - 1)
+        );
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.boundedNonNegIntToByteArray(Byte.MAX_VALUE - 1, Byte.MAX_VALUE - 2)
+        );
+        // for Short
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.boundedNonNegIntToByteArray(Short.MAX_VALUE, Short.MAX_VALUE - 1)
+        );
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.boundedNonNegIntToByteArray(Short.MAX_VALUE - 1, Short.MAX_VALUE - 2)
+        );
+        // for Integer
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.boundedNonNegIntToByteArray(Integer.MAX_VALUE, Integer.MAX_VALUE - 1)
+        );
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.boundedNonNegIntToByteArray(Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2)
+        );
+        // convert a byte array to an int that is greater than the bound
+        // for Bytes
+        Assert.assertThrows(AssertionError.class, () -> {
+            byte[] byteArray = IntUtils.boundedNonNegIntToByteArray(Byte.MAX_VALUE, Byte.MAX_VALUE);
+            IntUtils.byteArrayToBoundedNonNegInt(byteArray, Byte.MAX_VALUE - 1);
+        });
+        Assert.assertThrows(AssertionError.class, () -> {
+            byte[] byteArray = IntUtils.boundedNonNegIntToByteArray(Byte.MAX_VALUE - 1, Byte.MAX_VALUE);
+            IntUtils.byteArrayToBoundedNonNegInt(byteArray, Byte.MAX_VALUE - 2);
+        });
+        // for Short
+        Assert.assertThrows(AssertionError.class, () -> {
+            byte[] byteArray = IntUtils.boundedNonNegIntToByteArray(Short.MAX_VALUE, Short.MAX_VALUE);
+            IntUtils.byteArrayToBoundedNonNegInt(byteArray, Short.MAX_VALUE - 1);
+        });
+        Assert.assertThrows(AssertionError.class, () -> {
+            byte[] byteArray = IntUtils.boundedNonNegIntToByteArray(Short.MAX_VALUE - 1, Short.MAX_VALUE);
+            IntUtils.byteArrayToBoundedNonNegInt(byteArray, Short.MAX_VALUE - 2);
+        });
+        // for Integer
+        Assert.assertThrows(AssertionError.class, () -> {
+            byte[] byteArray = IntUtils.boundedNonNegIntToByteArray(Integer.MAX_VALUE, Integer.MAX_VALUE);
+            IntUtils.byteArrayToBoundedNonNegInt(byteArray, Integer.MAX_VALUE - 1);
+        });
+        Assert.assertThrows(AssertionError.class, () -> {
+            byte[] byteArray = IntUtils.boundedNonNegIntToByteArray(Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
+            IntUtils.byteArrayToBoundedNonNegInt(byteArray, Integer.MAX_VALUE - 2);
+        });
+    }
 
-        }
-        try {
-            // 尝试将比Byte.MAX_VALUE大的整数转换至Byte.MAX_VALUE
-            IntUtils.boundedIntToByteArray(Byte.MAX_VALUE + 1, Byte.MAX_VALUE);
-            throw new IllegalStateException(
-                "ERROR: successfully convert Byte.MAX_VALUE + 1 with bound Byte.MAX_VALUE to byte array"
-            );
-        } catch (AssertionError ignored) {
+    @Test
+    public void testConstantBoundedIntByteArray() {
+        // convert a byte array that is equal to 0, or equal to the bound
+        // for Byte
+        testConstantBoundedIntByteArray(0, Byte.MAX_VALUE - 1);
+        testConstantBoundedIntByteArray(Byte.MAX_VALUE - 1, Byte.MAX_VALUE - 1);
+        testConstantBoundedIntByteArray(0, Byte.MAX_VALUE);
+        testConstantBoundedIntByteArray(Byte.MAX_VALUE, Byte.MAX_VALUE);
+        // for Short
+        testConstantBoundedIntByteArray(0, Short.MAX_VALUE - 1);
+        testConstantBoundedIntByteArray(Short.MAX_VALUE - 1, Short.MAX_VALUE - 1);
+        testConstantBoundedIntByteArray(0, Short.MAX_VALUE);
+        testConstantBoundedIntByteArray(Short.MAX_VALUE, Short.MAX_VALUE);
+        // for Integer
+        testConstantBoundedIntByteArray(0, Integer.MAX_VALUE - 1);
+        testConstantBoundedIntByteArray(Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 1);
+        testConstantBoundedIntByteArray(0, Integer.MAX_VALUE);
+        testConstantBoundedIntByteArray(Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
 
-        }
-        try {
-            // 尝试将比Short.MAX_VALUE大的整数转换至Short.MAX_VALUE
-            IntUtils.boundedIntToByteArray(Short.MAX_VALUE + 1, Short.MAX_VALUE);
-            throw new IllegalStateException(
-                "ERROR: successfully convert Short.MAX_VALUE + 1 with bound Short.MAX_VALUE to byte array"
-            );
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试将表示负数的字节数组转换为有界int
-            IntUtils.byteArrayToBoundedInt(new byte[] { (byte)0xFF }, Byte.MAX_VALUE);
-            throw new IllegalStateException(
-                "ERROR: successfully convert byte array for negative int to bounded int"
-            );
-        } catch (AssertionError ignored) {
-
-        }
+    private void testConstantBoundedIntByteArray(int boundInt, int bound) {
+        byte[] boundIntByteArray = IntUtils.boundedNonNegIntToByteArray(boundInt, bound);
+        Assert.assertEquals(boundInt, IntUtils.byteArrayToBoundedNonNegInt(boundIntByteArray, bound));
     }
 
     @Test
     public void testBoundedIntByteArray() {
         for (int i = 0; i < MAX_ITERATIONS; i++) {
-            // Byte.MAX_VALUE附近转换
+            // convert around Byte.MAX_VALUE
             int smallByteValue = SECURE_RANDOM.nextInt(Byte.MAX_VALUE / 2 + 1);
             testBoundedIntByteArray(smallByteValue, Byte.MAX_VALUE / 2 + 1);
             int byteValue = SECURE_RANDOM.nextInt(Byte.MAX_VALUE);
             testBoundedIntByteArray(byteValue, Byte.MAX_VALUE);
             int largeByteValue = SECURE_RANDOM.nextInt(Byte.MAX_VALUE * 2 - 1);
             testBoundedIntByteArray(largeByteValue, Byte.MAX_VALUE * 2 - 1);
-            // Short.MAX_VALUE附近转换
+            // convert around Short.MAX_VALUE
             int smallShortValue = SECURE_RANDOM.nextInt(Short.MAX_VALUE / 2 + 1);
             testBoundedIntByteArray(smallShortValue, Short.MAX_VALUE / 2 + 1);
             int shortValue = SECURE_RANDOM.nextInt(Short.MAX_VALUE);
             testBoundedIntByteArray(shortValue, Short.MAX_VALUE);
             int largeShortValue = SECURE_RANDOM.nextInt(Short.MAX_VALUE * 2 - 1);
             testBoundedIntByteArray(largeShortValue, Short.MAX_VALUE * 2 - 1);
-            // Integer.MAX_VALUE附近转换
+            // convert around Integer.MAX_VALUE
             int smallIntValue = SECURE_RANDOM.nextInt(Integer.MAX_VALUE / 2 + 1);
             testBoundedIntByteArray(smallIntValue, Integer.MAX_VALUE / 2 + 1);
             int intValue = SECURE_RANDOM.nextInt(Integer.MAX_VALUE);
@@ -130,8 +170,8 @@ public class IntUtilsTest {
     }
 
     private void testBoundedIntByteArray(int value, int bound) {
-        byte[] convertByteArray = IntUtils.boundedIntToByteArray(value, bound);
-        // 验证长度
+        byte[] convertByteArray = IntUtils.boundedNonNegIntToByteArray(value, bound);
+        // verify the byte length
         if (bound <= Byte.MAX_VALUE) {
             Assert.assertEquals(convertByteArray.length, Byte.BYTES);
         } else if (bound <= Short.MAX_VALUE) {
@@ -139,66 +179,42 @@ public class IntUtilsTest {
         } else {
             Assert.assertEquals(convertByteArray.length, Integer.BYTES);
         }
-        int convertValue = IntUtils.byteArrayToBoundedInt(convertByteArray, bound);
+        int convertValue = IntUtils.byteArrayToBoundedNonNegInt(convertByteArray, bound);
         Assert.assertEquals(value, convertValue);
-
     }
 
     @Test
     public void testInvalidIntFixedByteArray() {
-        try {
-            // 尝试将int转换成长度为0的字节数组
-            IntUtils.nonNegIntToFixedByteArray(0, 0);
-            throw new IllegalStateException("ERROR: successfully convert int to byte array with length 0");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试将负数转换成固定长度字节数组
-            IntUtils.nonNegIntToFixedByteArray(-1, Integer.BYTES);
-            throw new IllegalStateException("ERROR: successfully convert negative int to byte array");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 验证截断转换越界处理
-            IntUtils.nonNegIntToFixedByteArray(256, 1);
-            throw new IllegalStateException("ERROR: successfully convert 128 to byte array with byte length 1");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试将长度为0的字节数组转换为int
-            IntUtils.fixedByteArrayToNonNegInt(new byte[0]);
-            throw new IllegalStateException("ERROR: successfully convert byte array with length 0 to int");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试将代表负数的字节数组转换为int
-            IntUtils.fixedByteArrayToNonNegInt(new byte[] { (byte)0x80, (byte)0x00, (byte)0x00, (byte)0x00});
-            throw new IllegalStateException("ERROR: successfully convert byte array to negative int");
-        } catch (AssertionError ignored) {
-
-        }
+        // convert an int to a byte array with length = 0
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.nonNegIntToFixedByteArray(0, 0));
+        // convert a negative int to a byte array
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.nonNegIntToFixedByteArray(-1, Integer.BYTES));
+        // convert an int that is larger than the assigned byte length
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.nonNegIntToFixedByteArray(256, 1));
+        // convert a byte array with length = 0 to an int
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.fixedByteArrayToNonNegInt(new byte[0]));
+        // convert a byte array with negative int to an non-negative int
+        Assert.assertThrows(AssertionError.class, () ->
+            IntUtils.fixedByteArrayToNonNegInt(new byte[]{(byte) 0x80, (byte) 0x00, (byte) 0x00, (byte) 0x00})
+        );
     }
 
     @Test
     public void testIntFixedByteArray() {
-        // 0的转换
-        testIntFixedByteArray(0, new byte[] { 0x00, 0x00, 0x00, 0x00, });
-        testIntFixedByteArray(0, new byte[] { 0x00, });
-        testIntFixedByteArray(0, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, });
-        // 正数转换
-        testIntFixedByteArray(1, new byte[] { 0x00, 0x00, 0x00, 0x01, });
-        testIntFixedByteArray(1, new byte[] { 0x01, });
-        testIntFixedByteArray(1, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x01, });
-        // 最大值转换
-        testIntFixedByteArray((1 << Byte.SIZE) - 1, new byte[] { (byte) 0xFF, });
-        testIntFixedByteArray((1 << 2 * Byte.SIZE) - 1, new byte[] { (byte) 0xFF, (byte) 0xFF, });
-        testIntFixedByteArray((1 << 3 * Byte.SIZE) - 1, new byte[] { (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, });
-        testIntFixedByteArray(Integer.MAX_VALUE, new byte[] { (byte)0x7F, (byte)0xFF, (byte)0xFF, (byte)0xFF, });
-        testIntFixedByteArray(Integer.MAX_VALUE, new byte[] { 0x00, (byte)0x7F, (byte)0xFF, (byte)0xFF, (byte)0xFF, });
+        // convert 0
+        testIntFixedByteArray(0, new byte[]{0x00, 0x00, 0x00, 0x00,});
+        testIntFixedByteArray(0, new byte[]{0x00,});
+        testIntFixedByteArray(0, new byte[]{0x00, 0x00, 0x00, 0x00, 0x00,});
+        // convert positive
+        testIntFixedByteArray(1, new byte[]{0x00, 0x00, 0x00, 0x01,});
+        testIntFixedByteArray(1, new byte[]{0x01,});
+        testIntFixedByteArray(1, new byte[]{0x00, 0x00, 0x00, 0x00, 0x01,});
+        // convert max value
+        testIntFixedByteArray((1 << Byte.SIZE) - 1, new byte[]{(byte) 0xFF,});
+        testIntFixedByteArray((1 << 2 * Byte.SIZE) - 1, new byte[]{(byte) 0xFF, (byte) 0xFF,});
+        testIntFixedByteArray((1 << 3 * Byte.SIZE) - 1, new byte[]{(byte) 0xFF, (byte) 0xFF, (byte) 0xFF,});
+        testIntFixedByteArray(Integer.MAX_VALUE, new byte[]{(byte) 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,});
+        testIntFixedByteArray(Integer.MAX_VALUE, new byte[]{0x00, (byte) 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,});
     }
 
     private void testIntFixedByteArray(int value, byte[] byteArray) {
@@ -210,69 +226,31 @@ public class IntUtilsTest {
 
     @Test
     public void testInvalidIntArrayByteArray() {
-        try {
-            // 尝试将长度为0的int数组转换成字节数组
-            IntUtils.intArrayToByteArray(new int[0]);
-            throw new IllegalStateException("ERROR: successfully convert int[] with length 0 to byte array");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试将长度为0的字节数组转换成int数组
-            IntUtils.byteArrayToIntArray(new byte[0]);
-            throw new IllegalStateException("ERROR: successfully convert byte[] with length 0 to int array");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试将长度为Integer.BYTES - 1的字节数组转换成int数组
-            IntUtils.byteArrayToIntArray(new byte[Integer.BYTES - 1]);
-            throw new IllegalStateException(
-                "ERROR: successfully convert byte[] with length Integer.BYTES - 1 to int array"
-            );
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试将长度为Integer.BYTES + 1的字节数组转换成int数组
-            IntUtils.byteArrayToIntArray(new byte[Integer.BYTES + 1]);
-            throw new IllegalStateException(
-                "ERROR: successfully convert byte[] with length Integer.BYTES + 1 to int array"
-            );
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试将长度为2 * Integer.BYTES - 1的字节数组转换成int数组
-            IntUtils.byteArrayToIntArray(new byte[2 * Integer.BYTES - 1]);
-            throw new IllegalStateException(
-                "ERROR: successfully convert byte[] with length 2 * Integer.BYTES - 1 to int array"
-            );
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 尝试将长度为2 * Integer.BYTES + 1的字节数组转换成int数组
-            IntUtils.byteArrayToIntArray(new byte[2 * Integer.BYTES + 1]);
-            throw new IllegalStateException(
-                "ERROR: successfully convert byte[] with length 2 * Integer.BYTES + 1 to int array"
-            );
-        } catch (AssertionError ignored) {
-
-        }
+        // convert an int array with length = 0 to a byte array
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.intArrayToByteArray(new int[0]));
+        // convert a byte array with length = 0 to an int array
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.byteArrayToIntArray(new byte[0]));
+        // convert a byte array with length = Integer.BYTES - 1 to an int array
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.byteArrayToIntArray(new byte[Integer.BYTES - 1]));
+        // convert a byte array with length = Integer.BYTES + 1 to an int array
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.byteArrayToIntArray(new byte[Integer.BYTES + 1]));
+        // convert a byte array with length = 2 * Integer.BYTES - 1 to an int array
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.byteArrayToIntArray(new byte[2 * Integer.BYTES - 1]));
+        // convert a byte array with length = 2 * Integer.BYTES + 1 to an int array
+        Assert.assertThrows(AssertionError.class, () -> IntUtils.byteArrayToIntArray(new byte[2 * Integer.BYTES + 1]));
     }
 
     @Test
     public void testIntArrayByteArray() {
-        testIntArrayByteArray(new int[] { 0x00 }, new byte[] {0x00, 0x00, 0x00, 0x00, });
+        testIntArrayByteArray(new int[]{0x00}, new byte[]{0x00, 0x00, 0x00, 0x00,});
         testIntArrayByteArray(
-            new int[] { Integer.MIN_VALUE, 0, -1, 1, Integer.MAX_VALUE },
-            new byte[] {
-                (byte)0x80, (byte)0x00, (byte)0x00, (byte)0x00,
-                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-                (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF,
-                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01,
-                (byte)0x7F, (byte)0xFF, (byte)0xFF, (byte)0xFF,
+            new int[]{Integer.MIN_VALUE, 0, -1, 1, Integer.MAX_VALUE},
+            new byte[]{
+                (byte) 0x80, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+                (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
+                (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01,
+                (byte) 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
             }
         );
     }
@@ -282,5 +260,26 @@ public class IntUtilsTest {
         Assert.assertArrayEquals(byteArray, convertByteArray);
         int[] convertIntArray = IntUtils.byteArrayToIntArray(byteArray);
         Assert.assertArrayEquals(intArray, convertIntArray);
+    }
+
+    @Test
+    public void testGetLittleEndianBoolean() {
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 0));
+        Assert.assertTrue(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 1));
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 2));
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 3));
+        Assert.assertTrue(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 4));
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 5));
+        Assert.assertTrue(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 6));
+        Assert.assertTrue(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 7));
+
+        Assert.assertTrue(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 31));
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 30));
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 29));
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 28));
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 27));
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 26));
+        Assert.assertFalse(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 25));
+        Assert.assertTrue(IntUtils.getLittleEndianBoolean(0b10000001_01111111_01001011_11010010, 24));
     }
 }
