@@ -125,7 +125,7 @@ public class AppleHcmsFoLdpServer extends AbstractFoLdpServer {
                     double aggregate = 0.0;
                     // Σ_{l = 1}^k (M[l][h_l(d)])
                     for (int l = 0; l < k; l++) {
-                        int hl = (Math.abs(intHash.hash(itemIndexBytes, hashSeeds[l])) % (m - 1)) + 1;
+                        int hl = Math.abs(intHash.hash(itemIndexBytes, hashSeeds[l]) % (m - 1)) + 1;
                         aggregate += sketch[l][hl];
                     }
                     // (m / (m - 1)) * (1 / k * Σ_{l = 1}^k (M[l][h_l(d)]) - n / m).

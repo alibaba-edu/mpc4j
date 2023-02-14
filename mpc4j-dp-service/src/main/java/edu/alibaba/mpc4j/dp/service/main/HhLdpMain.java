@@ -210,7 +210,7 @@ public class HhLdpMain {
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         // write tab
-        String tab = "type\tε_w\tα\tNDCG\tPrecision\tABE\tRE\tMemory(B)";
+        String tab = "type\tε_w\tα\ts_time(s)\tc_time(s)\tcomm.(B)\tmem.(B)\tMemory(B)\tndcg\tprecision\tabe\tre";
         printWriter.println(tab);
         LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", "                name", "         ε", "         α",
             "           s_time(s)", "           c_time(s)",

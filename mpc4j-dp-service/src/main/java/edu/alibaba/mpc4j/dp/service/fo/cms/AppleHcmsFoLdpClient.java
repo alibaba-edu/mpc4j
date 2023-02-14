@@ -82,7 +82,7 @@ public class AppleHcmsFoLdpClient extends AbstractFoLdpClient {
         int j = random.nextInt(k);
         // h_j(d)
         byte[] itemIndexBytes = IntUtils.intToByteArray(domain.getItemIndex(item));
-        int hj = (Math.abs(intHash.hash(itemIndexBytes, hashSeeds[j])) % (m - 1)) + 1;
+        int hj = Math.abs(intHash.hash(itemIndexBytes, hashSeeds[j]) % (m - 1)) + 1;
         // Initialize a vector \vec v = (0, 0, ..., 0) ∈ Z^m, set v_{h_j(d)} = 1, transform \vec w = H_m · \vec v,
         // sample l uniformly at random from [m], and get w_l.
         // The above procedures can be seen as sample l uniformly at random from [m], and w_l = H[hj][l].
