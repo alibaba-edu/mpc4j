@@ -24,7 +24,9 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20.Ywl20UniMspCotConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -103,82 +105,72 @@ public class MspCotTest {
 
     public MspCotTest(String name, MspCotConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         senderRpc = rpcManager.getRpc(0);
         receiverRpc = rpcManager.getRpc(1);
         this.config = config;
     }
 
-    @Test
-    public void testPtoType() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        Assert.assertEquals(config.getPtoType(), sender.getPtoType());
-        Assert.assertEquals(config.getPtoType(), receiver.getPtoType());
+    @Before
+    public void connect() {
+        senderRpc.connect();
+        receiverRpc.connect();
+    }
+
+    @After
+    public void disconnect() {
+        senderRpc.disconnect();
+        receiverRpc.disconnect();
     }
 
     @Test
     public void testDefaultNum1T() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 1, DEFAULT_NUM);
+        testPto(1, DEFAULT_NUM, false);
     }
 
     @Test
     public void testDefaultNum2T() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 2, DEFAULT_NUM);
+        testPto(2, DEFAULT_NUM, false);
     }
 
     @Test
     public void test1Num1T() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 1, 1);
+        testPto(1, 1, false);
     }
 
     @Test
     public void test2Num2T() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 2, 2);
+        testPto(2, 2, false);
     }
 
     @Test
     public void testDefaultNumDefaultT() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_T, DEFAULT_NUM);
+        testPto(DEFAULT_T, DEFAULT_NUM, false);
     }
 
     @Test
     public void testParallelDefaultNumDefaultT() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, DEFAULT_T, DEFAULT_NUM);
+        testPto(DEFAULT_T, DEFAULT_NUM, true);
     }
 
     @Test
     public void testLargeNumLargeT() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, LARGE_T, LARGE_NUM);
+        testPto(LARGE_T, LARGE_NUM, false);
     }
 
     @Test
     public void testParallelLargeNumLargeT() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, LARGE_T, LARGE_NUM);
+        testPto(LARGE_T, LARGE_NUM, true);
     }
 
-    private void testPto(MspCotSender sender, MspCotReceiver receiver, int t, int num) {
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+    private void testPto(int t, int num, boolean parallel) {
+        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
+        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        sender.setParallel(parallel);
+        receiver.setParallel(parallel);
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {
@@ -212,13 +204,15 @@ public class MspCotTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        sender.destroy();
+        receiver.destroy();
     }
 
     @Test
     public void testPrecomputeLargeNumLargeT() {
         MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {
@@ -258,13 +252,15 @@ public class MspCotTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        sender.destroy();
+        receiver.destroy();
     }
 
     @Test
     public void testResetDelta() {
         MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
         MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {
@@ -326,6 +322,8 @@ public class MspCotTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        sender.destroy();
+        receiver.destroy();
     }
 
     private void assertOutput(int num, MspCotSenderOutput senderOutput, MspCotReceiverOutput receiverOutput) {

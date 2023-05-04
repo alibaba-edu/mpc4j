@@ -15,7 +15,6 @@
 package edu.alibaba.mpc4j.crypto.phe.params;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.Packable;
 import edu.alibaba.mpc4j.common.tool.utils.BigDecimalUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
@@ -50,7 +49,7 @@ import java.util.List;
  * @author Dongyao Wu, mpnd, Weiran Liu
  * @date 2017/09/21
  */
-public class PhePlaintextEncoder implements Packable {
+public class PhePlaintextEncoder implements PheParams {
     private static final Logger LOGGER = LoggerFactory.getLogger(PhePlaintextEncoder.class);
     /**
      * BigDecimal的编码精度。BigDecimal编码精度永远小于10^-BIG_DECIMAL_ENCODING_PRECISION

@@ -1,40 +1,37 @@
 package edu.alibaba.mpc4j.s2pc.pir.index;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
 
 /**
- * 索引PIR协议服务端接口。
+ * Index PIR server.
  *
  * @author Liqiang Peng
  * @date 2022/8/10
  */
-public interface IndexPirServer extends TwoPartyPto, SecurePto {
+public interface IndexPirServer extends TwoPartyPto {
     /**
-     * 返回协议类型。
+     * Server initializes the protocol.
      *
-     * @return 协议类型。
+     * @param indexPirParams index PIR parameters.
+     * @param database       database.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    @Override
-    IndexPirFactory.IndexPirType getPtoType();
+    void init(IndexPirParams indexPirParams, NaiveDatabase database) throws MpcAbortException;
 
     /**
-     * 初始化协议。
+     * Server initializes the protocol.
      *
-     * @param indexPirParams    索引PIR协议参数。
-     * @param elementArrayList  元素列表。
-     * @param elementByteLength 元素字节长度。
+     * @param database database。
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(AbstractIndexPirParams indexPirParams, ArrayList<ByteBuffer> elementArrayList, int elementByteLength);
+    void init(NaiveDatabase database) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Server executes the protocol.
      *
-     * @throws MpcAbortException 如果协议异常中止。
+     * @throws MpcAbortException the protocol failure aborts.
      */
     void pir() throws MpcAbortException;
 }

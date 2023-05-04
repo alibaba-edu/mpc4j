@@ -1,12 +1,13 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.bea95;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
@@ -17,7 +18,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.AbstractPreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.bea95.Bea95PreCotPtoDesc.PtoStep;
 
 /**
- * Bea95-预计算COT协议接收方。
+ * Bea95 pre-compute COT receiver.
  *
  * @author Weiran Liu
  * @date 2022/01/14
@@ -31,15 +32,14 @@ public class Bea95PreCotReceiver extends AbstractPreCotReceiver {
     @Override
     public void init() throws MpcAbortException {
         setInitInput();
-        info("{}{} Recv. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
-        initialized = true;
-        info("{}{} Recv. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public CotReceiverOutput receive(CotReceiverOutput preReceiverOutput, boolean[] choices) {
-        info("{}{} Recv. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
         setPtoInput(preReceiverOutput, choices);
 
         stopWatch.start();
@@ -49,17 +49,21 @@ public class Bea95PreCotReceiver extends AbstractPreCotReceiver {
         List<byte[]> xorPayload = new LinkedList<>();
         xorPayload.add(xors);
         DataPacketHeader xorHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_XOR.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_XOR.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(xorHeader, xorPayload));
+        byte[][] rbArray = IntStream.range(0, num)
+            .mapToObj(preReceiverOutput::getRb)
+            .map(BytesUtils::clone)
+            .toArray(byte[][]::new);
+        CotReceiverOutput receiverOutput = CotReceiverOutput.create(choices, rbArray);
         stopWatch.stop();
         long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), time);
+        logStepInfo(PtoState.PTO_STEP, 1, 1, time);
 
-        info("{}{} Recv. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
-        byte[][] rbArray = Arrays.copyOf(preReceiverOutput.getRbArray(), preReceiverOutput.getRbArray().length);
-        return CotReceiverOutput.create(choices, rbArray);
+        logPhaseInfo(PtoState.PTO_END);
+        return receiverOutput;
     }
 }

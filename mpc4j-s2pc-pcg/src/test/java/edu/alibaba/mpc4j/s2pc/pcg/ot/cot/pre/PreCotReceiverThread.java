@@ -4,26 +4,26 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 /**
- * 预计算COT协议接收方线程。
+ * pre-compute 1-out-of-n (with n = 2^l) receiver thread.
  *
  * @author Weiran Liu
  * @date 2022/01/14
  */
 class PreCotReceiverThread extends Thread {
     /**
-     * 接收方
+     * the receiver
      */
     private final PreCotReceiver receiver;
     /**
-     * 预计算输出
+     * pre-compute receiver output
      */
     private final CotReceiverOutput preReceiverOutput;
     /**
-     * 选择比特
+     * the choices
      */
     private final boolean[] choices;
     /**
-     * 输出
+     * the output
      */
     private CotReceiverOutput receiverOutput;
 
@@ -40,13 +40,10 @@ class PreCotReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.getRpc().connect();
             receiver.init();
             receiverOutput = receiver.receive(preReceiverOutput, choices);
-            receiver.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }
-
     }
 }

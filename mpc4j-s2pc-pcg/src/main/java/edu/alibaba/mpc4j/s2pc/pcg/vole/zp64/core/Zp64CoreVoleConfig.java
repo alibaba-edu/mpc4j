@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp64.core;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 
 /**
  * ZP64-核VOLE协议配置项。
@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
  * @author Hanwen Feng
  * @date 2022/06/15
  */
-public interface Zp64CoreVoleConfig extends SecurePtoConfig {
+public interface Zp64CoreVoleConfig extends MultiPartyPtoConfig {
     /**
      * 返回协议类型。
      *

@@ -3,7 +3,8 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 /**
@@ -12,7 +13,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
  * @author Weiran Liu
  * @date 2022/01/22
  */
-public abstract class AbstractMspCotReceiver extends AbstractSecureTwoPartyPto implements MspCotReceiver {
+public abstract class AbstractMspCotReceiver extends AbstractTwoPartyPto implements MspCotReceiver {
     /**
      * 配置项
      */
@@ -39,32 +40,28 @@ public abstract class AbstractMspCotReceiver extends AbstractSecureTwoPartyPto i
         this.config = config;
     }
 
-    @Override
-    public MspCotFactory.MspCotType getPtoType() {
-        return config.getPtoType();
-    }
-
     protected void setInitInput(int maxT, int maxNum) {
-        assert maxNum > 0 : "maxNum must be greater than 0: " + maxNum;
+        MathPreconditions.checkPositive("maxNum", maxNum);
         this.maxNum = maxNum;
-        assert maxT > 0 && maxT <= maxNum : "maxT must be in range (0, " + maxNum + "]: " + maxT;
+        MathPreconditions.checkPositiveInRangeClosed("maxT", maxT, maxNum);
         this.maxT = maxT;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(int t, int num) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init...");
-        }
-        assert num > 0 && num <= maxNum : "num must be in range (0, " + maxNum + "]: " + num;
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
         this.num = num;
-        assert t > 0 && t <= num && t <= maxT : "t must be in range (0, " + maxT + "]: " + t;
+        MathPreconditions.checkPositiveInRangeClosed("t", t, num);
+        MathPreconditions.checkPositiveInRangeClosed("t", t, maxT);
         this.t = t;
         extraInfo++;
     }
 
     protected void setPtoInput(int t, int num, CotReceiverOutput preReceiverOutput) {
         setPtoInput(t, num);
-        assert preReceiverOutput.getNum() >= MspCotFactory.getPrecomputeNum(config, t, num);
+        MathPreconditions.checkGreaterOrEqual(
+            "preCotNum", preReceiverOutput.getNum(), MspCotFactory.getPrecomputeNum(config, t, num)
+        );
     }
 }

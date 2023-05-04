@@ -1,10 +1,12 @@
 package edu.alibaba.mpc4j.s2pc.pir.keyword;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 
 import java.nio.ByteBuffer;
@@ -17,11 +19,7 @@ import java.util.stream.Collectors;
  * @author Liqiang Peng
  * @date 2022/6/20
  */
-public abstract class AbstractKwPirClient<T> extends AbstractSecureTwoPartyPto implements KwPirClient<T> {
-    /**
-     * 配置项
-     */
-    private final KwPirConfig config;
+public abstract class AbstractKwPirClient<T> extends AbstractTwoPartyPto implements KwPirClient<T> {
     /**
      * 客户端单次查询最大查询关键词数目
      */
@@ -49,39 +47,28 @@ public abstract class AbstractKwPirClient<T> extends AbstractSecureTwoPartyPto i
 
     protected AbstractKwPirClient(PtoDesc ptoDesc, Rpc clientRpc, Party serverParty, KwPirConfig config) {
         super(ptoDesc, clientRpc, serverParty, config);
-        this.config = config;
     }
 
-    @Override
-    public KwPirFactory.KwPirType getPtoType() {
-        return config.getProType();
-    }
-
-    protected void setInitInput(KwPirParams kwPirParams, int labelByteLength) {
-        assert labelByteLength >= 1;
+    protected void setInitInput(int maxRetrievalSize, int labelByteLength) {
+        MathPreconditions.checkPositive("labelByteLength", labelByteLength);
         this.labelByteLength = labelByteLength;
-        maxRetrievalSize = kwPirParams.maxRetrievalSize();
+        MathPreconditions.checkPositive("maxRetrievalSize", maxRetrievalSize);
+        this.maxRetrievalSize = maxRetrievalSize;
         // 设置特殊空元素
         byte[] botElementByteArray = new byte[CommonConstants.STATS_BYTE_LENGTH];
         Arrays.fill(botElementByteArray, (byte)0xFF);
         botElementByteBuffer = ByteBuffer.wrap(botElementByteArray);
-        extraInfo++;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(Set<T> clientKeywordSet) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init...");
-        }
+        checkInitialized();
         retrievalSize = clientKeywordSet.size();
-        assert retrievalSize > 0 && retrievalSize <= maxRetrievalSize
-            : "ClientKeywordSize must be in range (0, " + maxRetrievalSize + "]: " + retrievalSize;
+        MathPreconditions.checkPositiveInRangeClosed("retrievalSize", retrievalSize, maxRetrievalSize);
         retrievalArrayList = clientKeywordSet.stream()
             .map(ObjectUtils::objectToByteArray)
             .map(ByteBuffer::wrap)
-            .peek(clientElement -> {
-                assert !clientElement.equals(botElementByteBuffer) : "input equals ⊥";
-            })
+            .peek(yi -> Preconditions.checkArgument(!yi.equals(botElementByteBuffer), "yi must not equal ⊥"))
             .collect(Collectors.toCollection(ArrayList::new));
         byteArrayObjectMap = new HashMap<>(retrievalSize);
         clientKeywordSet.forEach(clientElementObject ->

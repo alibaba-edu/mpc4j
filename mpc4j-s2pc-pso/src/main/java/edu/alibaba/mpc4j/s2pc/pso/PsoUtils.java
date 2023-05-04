@@ -186,7 +186,7 @@ public class PsoUtils {
             });
         }
         if (clientSize > minSize) {
-            IntStream.range(minSize, serverSize).forEach(index -> {
+            IntStream.range(minSize, clientSize).forEach(index -> {
                 ByteBuffer clientByteBuffer = ByteBuffer.allocate(elementByteLength);
                 clientByteBuffer.putInt(elementByteLength - Integer.BYTES * 2, 2);
                 clientByteBuffer.putInt(elementByteLength - Integer.BYTES, index);

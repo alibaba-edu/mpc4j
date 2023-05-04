@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -9,63 +8,63 @@ import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
 /**
- * COT输出测试。
+ * COT output tests.
  *
  * @author Weiran Liu
  * @date 2022/4/11
  */
 public class CotOutputTest {
     /**
-     * 最小数量
+     * minimal num
      */
     private static final int MIN_NUM = 1;
     /**
-     * 最大数量
+     * maximal num
      */
-    private static final int MAX_NUM = 128;
+    private static final int MAX_NUM = 64;
     /**
-     * 随机状态
+     * the random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    /**
-     * 默认全0关联值Δ
-     */
-    private static final byte[] ALL_ZERO_DELTA = new byte[]{
-        (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-        (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-    };
-    /**
-     * 默认全1关联值Δ
-     */
-    private static final byte[] ALL_ONE_DELTA = new byte[]{
-        (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
-        (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
-    };
 
     @Test
-    public void testIllegalInputs() {
-        // 创建长度为0的发送方输出
-        Assert.assertThrows(AssertionError.class, () -> CotSenderOutput.create(ALL_ONE_DELTA, new byte[0][]));
-        // 创建Δ长度过小的发送方输出
+    public void testIllegalSenderInputs() {
+        // create a sender output with num = 0
+        Assert.assertThrows(AssertionError.class, () -> {
+            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            SECURE_RANDOM.nextBytes(delta);
+            CotSenderOutput.create(delta, new byte[0][]);
+        });
+        // create a sender output with short length Δ
         Assert.assertThrows(AssertionError.class, () -> {
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH - 1];
             SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> IntUtils.nonNegIntToFixedByteArray(index, CommonConstants.BLOCK_BYTE_LENGTH))
+                .mapToObj(index -> {
+                    byte[] r0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    SECURE_RANDOM.nextBytes(r0);
+                    return r0;
+                })
                 .toArray(byte[][]::new);
             CotSenderOutput.create(delta, r0Array);
         });
-        // 创建Δ长度过大的发送方输出
+        // create a sender output with long length Δ
         Assert.assertThrows(AssertionError.class, () -> {
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH + 1];
             SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> IntUtils.nonNegIntToFixedByteArray(index, CommonConstants.BLOCK_BYTE_LENGTH))
+                .mapToObj(index -> {
+                    byte[] r0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    SECURE_RANDOM.nextBytes(r0);
+                    return r0;
+                })
                 .toArray(byte[][]::new);
             CotSenderOutput.create(delta, r0Array);
         });
-        // 创建R0长度过小的发送方输出
+        // create a sender output with short length r0
         Assert.assertThrows(AssertionError.class, () -> {
+            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
                 .mapToObj(index -> {
                     byte[] r0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH - 1];
@@ -73,10 +72,12 @@ public class CotOutputTest {
                     return r0;
                 })
                 .toArray(byte[][]::new);
-            CotSenderOutput.create(ALL_ONE_DELTA, r0Array);
+            CotSenderOutput.create(delta, r0Array);
         });
-        // 创建R0长度过大的发送方输出
+        // create a sender output with long length r0
         Assert.assertThrows(AssertionError.class, () -> {
+            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
                 .mapToObj(index -> {
                     byte[] r0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH + 1];
@@ -84,34 +85,52 @@ public class CotOutputTest {
                     return r0;
                 })
                 .toArray(byte[][]::new);
-            CotSenderOutput.create(ALL_ONE_DELTA, r0Array);
+            CotSenderOutput.create(delta, r0Array);
         });
-        // 合并两个Δ不相等的发送方输出
+        // merge two sender outputs with different Δ
         Assert.assertThrows(AssertionError.class, () -> {
-            // 合并两个Δ不相等的发送方输出
-            byte[][] r0Array = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> IntUtils.nonNegIntToFixedByteArray(index, CommonConstants.BLOCK_BYTE_LENGTH))
+            byte[] delta0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            SECURE_RANDOM.nextBytes(delta0);
+            byte[][] r0Array0 = IntStream.range(0, MAX_NUM)
+                .mapToObj(index -> {
+                    byte[] r0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    SECURE_RANDOM.nextBytes(r0);
+                    return r0;
+                })
                 .toArray(byte[][]::new);
-            CotSenderOutput senderOutput0 = CotSenderOutput.create(ALL_ONE_DELTA, r0Array);
-            CotSenderOutput senderOutput1 = CotSenderOutput.create(ALL_ZERO_DELTA, r0Array);
+            CotSenderOutput senderOutput0 = CotSenderOutput.create(delta0, r0Array0);
+            byte[] delta1 = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            SECURE_RANDOM.nextBytes(delta1);
+            byte[][] r0Array1 = IntStream.range(0, MAX_NUM)
+                .mapToObj(index -> {
+                    byte[] r0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    SECURE_RANDOM.nextBytes(r0);
+                    return r0;
+                })
+                .toArray(byte[][]::new);
+            CotSenderOutput senderOutput1 = CotSenderOutput.create(delta1, r0Array1);
             senderOutput0.merge(senderOutput1);
         });
-        // 创建长度为0的接收方输出
+    }
+
+    @Test
+    public void testIllegalReceiverOutputs() {
+        // create a receiver output with num = 0
         Assert.assertThrows(AssertionError.class, () -> CotReceiverOutput.create(new boolean[0], new byte[0][]));
-        // 创建选择比特和Rb长度不匹配的接收方输出
+        // create a receiver output with mismatched num
         Assert.assertThrows(AssertionError.class, () -> {
             boolean[] choices = new boolean[MIN_NUM];
             IntStream.range(0, choices.length).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
             byte[][] rbArray = IntStream.range(0, MAX_NUM)
                 .mapToObj(index -> {
-                    byte[] rb = new byte[CommonConstants.BLOCK_BYTE_LENGTH - 1];
+                    byte[] rb = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
                     SECURE_RANDOM.nextBytes(rb);
                     return rb;
                 })
                 .toArray(byte[][]::new);
             CotReceiverOutput.create(choices, rbArray);
         });
-        // 创建Rb长度过小的接收方输出
+        // create a receiver output with short length rb
         Assert.assertThrows(AssertionError.class, () -> {
             boolean[] choices = new boolean[MAX_NUM];
             IntStream.range(0, choices.length).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
@@ -124,7 +143,7 @@ public class CotOutputTest {
                 .toArray(byte[][]::new);
             CotReceiverOutput.create(choices, rbArray);
         });
-        // 创建Rb长度过大的接收方输出
+        // create a receiver output with long length rb
         Assert.assertThrows(AssertionError.class, () -> {
             boolean[] choices = new boolean[MAX_NUM];
             IntStream.range(0, choices.length).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
@@ -149,26 +168,26 @@ public class CotOutputTest {
     private void testReduce(int num) {
         byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         SECURE_RANDOM.nextBytes(delta);
-        // 减小到1
+        // reduce 1
         CotSenderOutput senderOutput1 = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
         CotReceiverOutput receiverOutput1 = CotTestUtils.genReceiverOutput(senderOutput1, SECURE_RANDOM);
         senderOutput1.reduce(1);
         receiverOutput1.reduce(1);
         CotTestUtils.assertOutput(1, senderOutput1, receiverOutput1);
-        // 减小到相同长度
+        // reduce all
         CotSenderOutput senderOutputAll = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
         CotReceiverOutput receiverOutputAll = CotTestUtils.genReceiverOutput(senderOutputAll, SECURE_RANDOM);
         senderOutputAll.reduce(num);
         receiverOutputAll.reduce(num);
         CotTestUtils.assertOutput(num, senderOutputAll, receiverOutputAll);
         if (num > 1) {
-            // 减小n - 1
+            // reduce num - 1
             CotSenderOutput senderOutputNum = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
             CotReceiverOutput receiverOutputNum = CotTestUtils.genReceiverOutput(senderOutputNum, SECURE_RANDOM);
             senderOutputNum.reduce(num - 1);
             receiverOutputNum.reduce(num - 1);
             CotTestUtils.assertOutput(num - 1, senderOutputNum, receiverOutputNum);
-            // 减小到一半
+            // reduce half
             CotSenderOutput senderOutputHalf = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
             CotReceiverOutput receiverOutputHalf = CotTestUtils.genReceiverOutput(senderOutputHalf, SECURE_RANDOM);
             senderOutputHalf.reduce(num / 2);
@@ -185,10 +204,10 @@ public class CotOutputTest {
         CotSenderOutput mergeSenderOutput = CotSenderOutput.createEmpty(delta);
         CotReceiverOutput receiverOutput = CotReceiverOutput.createEmpty();
         CotReceiverOutput mergeReceiverOutput = CotReceiverOutput.createEmpty();
-        // 合并
+        // merge
         senderOutput.merge(mergeSenderOutput);
         receiverOutput.merge(mergeReceiverOutput);
-        // 验证结果
+        // verify
         CotTestUtils.assertOutput(0, senderOutput, receiverOutput);
     }
 
@@ -206,10 +225,10 @@ public class CotOutputTest {
         CotSenderOutput mergeSenderOutput = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
         CotReceiverOutput receiverOutput = CotReceiverOutput.createEmpty();
         CotReceiverOutput mergeReceiverOutput = CotTestUtils.genReceiverOutput(mergeSenderOutput, SECURE_RANDOM);
-        // 合并
+        // merge
         senderOutput.merge(mergeSenderOutput);
         receiverOutput.merge(mergeReceiverOutput);
-        // 验证结果
+        // verify
         CotTestUtils.assertOutput(num, senderOutput, receiverOutput);
     }
 
@@ -227,10 +246,10 @@ public class CotOutputTest {
         CotSenderOutput mergeSenderOutput = CotSenderOutput.createEmpty(delta);
         CotReceiverOutput receiverOutput = CotTestUtils.genReceiverOutput(senderOutput, SECURE_RANDOM);
         CotReceiverOutput mergeReceiverOutput = CotReceiverOutput.createEmpty();
-        // 合并
+        // merge
         senderOutput.merge(mergeSenderOutput);
         receiverOutput.merge(mergeReceiverOutput);
-        // 验证结果
+        // verify
         CotTestUtils.assertOutput(num, senderOutput, receiverOutput);
     }
 
@@ -250,10 +269,10 @@ public class CotOutputTest {
         CotSenderOutput mergeSenderOutput = CotTestUtils.genSenderOutput(num2, delta, SECURE_RANDOM);
         CotReceiverOutput receiverOutput = CotTestUtils.genReceiverOutput(senderOutput, SECURE_RANDOM);
         CotReceiverOutput mergeReceiverOutput = CotTestUtils.genReceiverOutput(mergeSenderOutput, SECURE_RANDOM);
-        // 合并
+        // merge
         senderOutput.merge(mergeSenderOutput);
         receiverOutput.merge(mergeReceiverOutput);
-        // 验证结果
+        // verify
         CotTestUtils.assertOutput(num1 + num2, senderOutput, receiverOutput);
     }
 
@@ -267,14 +286,14 @@ public class CotOutputTest {
     private void testSplit(int num) {
         byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         SECURE_RANDOM.nextBytes(delta);
-        // 切分1比特
+        // split 1
         CotSenderOutput senderOutput1 = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
         CotReceiverOutput receiverOutput1 = CotTestUtils.genReceiverOutput(senderOutput1, SECURE_RANDOM);
         CotSenderOutput splitSenderOutput1 = senderOutput1.split(1);
         CotReceiverOutput splitReceiverOutput1 = receiverOutput1.split(1);
         CotTestUtils.assertOutput(num - 1, senderOutput1, receiverOutput1);
         CotTestUtils.assertOutput(1, splitSenderOutput1, splitReceiverOutput1);
-        // 切分全部比特
+        // split all
         CotSenderOutput senderOutputAll = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
         CotReceiverOutput receiverOutputAll = CotTestUtils.genReceiverOutput(senderOutputAll, SECURE_RANDOM);
         CotSenderOutput splitSenderOutputAll = senderOutputAll.split(num);
@@ -282,14 +301,14 @@ public class CotOutputTest {
         CotTestUtils.assertOutput(0, senderOutputAll, receiverOutputAll);
         CotTestUtils.assertOutput(num, splitSenderOutputAll, splitReceiverOutputAll);
         if (num > 1) {
-            // 切分n - 1比特
+            // split num - 1
             CotSenderOutput senderOutputNum = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
             CotReceiverOutput receiverOutputNum = CotTestUtils.genReceiverOutput(senderOutputNum, SECURE_RANDOM);
             CotSenderOutput splitSenderOutputNum = senderOutputNum.split(num - 1);
             CotReceiverOutput splitReceiverOutputNum = receiverOutputNum.split(num - 1);
             CotTestUtils.assertOutput(1, senderOutputNum, receiverOutputNum);
             CotTestUtils.assertOutput(num - 1, splitSenderOutputNum, splitReceiverOutputNum);
-            // 切分一半比特
+            // split half
             CotSenderOutput senderOutputHalf = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
             CotReceiverOutput receiverOutputHalf = CotTestUtils.genReceiverOutput(senderOutputHalf, SECURE_RANDOM);
             CotSenderOutput splitSenderOutputHalf = senderOutputHalf.split(num / 2);

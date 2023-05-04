@@ -9,7 +9,7 @@ import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidFactory.PmidType;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22.Zcl22MpPmidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22.Zcl22SloppyPmidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 
 import java.util.Properties;
 

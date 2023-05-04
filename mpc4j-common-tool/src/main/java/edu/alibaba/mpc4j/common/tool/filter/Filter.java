@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.filter;
 
-import edu.alibaba.mpc4j.common.tool.Packable;
+import java.util.List;
 
 /**
  * 过滤器提供了一个近似检测某个元素是否在集合中的数据结构，且具有单边错误率：
@@ -15,7 +15,7 @@ import edu.alibaba.mpc4j.common.tool.Packable;
  * @author Weiran Liu
  * @date 2020/06/30
  */
-public interface Filter<T> extends Packable {
+public interface Filter<T> {
     /**
      * 返回过滤器类型。
      *
@@ -59,4 +59,11 @@ public interface Filter<T> extends Packable {
      * @return 过滤器的数据压缩率。
      */
     double ratio();
+
+    /**
+     * Packets the filter into {@code List<byte[]>}.
+     *
+     * @return the packet result.
+     */
+    List<byte[]> toByteArrayList();
 }

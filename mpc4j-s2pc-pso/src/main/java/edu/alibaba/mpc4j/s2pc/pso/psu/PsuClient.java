@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
 
@@ -14,15 +13,7 @@ import java.util.Set;
  * @author Weiran Liu
  * @date 2022/02/15
  */
-public interface PsuClient extends TwoPartyPto, SecurePto {
-    /**
-     * 返回PSU协议类型。
-     *
-     * @return PSU协议类型。
-     */
-    @Override
-    PsuType getPtoType();
-
+public interface PsuClient extends TwoPartyPto {
     /**
      * 初始化协议。
      *

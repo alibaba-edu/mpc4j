@@ -1,14 +1,10 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.lpn.llc.LocalLinearCoder;
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
@@ -70,39 +66,16 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
     public Ywl20NcCotSender(Rpc senderRpc, Party receiverParty, Ywl20NcCotConfig config) {
         super(Ywl20NcCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
-        coreCotSender.addLogLevel();
+        addSubPtos(coreCotSender);
         mspCotConfig = config.getMspCotConfig();
         mspCotSender = MspCotFactory.createSender(senderRpc, receiverParty, config.getMspCotConfig());
-        mspCotSender.addLogLevel();
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        // COT协议和MSPCOT协议需要使用不同的taskID
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        coreCotSender.setTaskId(taskIdPrf.getLong(0, taskIdBytes, Long.MAX_VALUE));
-        mspCotSender.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        coreCotSender.setParallel(parallel);
-        mspCotSender.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        coreCotSender.addLogLevel();
-        mspCotSender.addLogLevel();
+        addSubPtos(mspCotSender);
     }
 
     @Override
     public void init(byte[] delta, int num) throws MpcAbortException {
         setInitInput(delta, num);
-        info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         LpnParams setupLpnParams = Ywl20NcCotPtoDesc.getSetupLpnParams(mspCotConfig, num);
@@ -119,7 +92,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 5, initTime);
 
         stopWatch.start();
         // 得到初始化阶段的k个COT
@@ -127,12 +100,12 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long kInitCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), kInitCotTime);
+        logStepInfo(PtoState.INIT_STEP, 2, 5, kInitCotTime);
 
         stopWatch.start();
         // 得到初始化矩阵A的种子
         DataPacketHeader matrixInitKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_SETUP_KEY.ordinal(),
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_SETUP_KEY.ordinal(),
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> matrixInitKeyPayload = rpc.receive(matrixInitKeyHeader).getPayload();
@@ -142,7 +115,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long keyInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyInitTime);
+        logStepInfo(PtoState.INIT_STEP, 3, 5, keyInitTime);
 
         stopWatch.start();
         // 执行MSPCOT
@@ -150,7 +123,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long sInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), sInitTime);
+        logStepInfo(PtoState.INIT_STEP, 4, 5, sInitTime);
 
         stopWatch.start();
         // y = v * A + s
@@ -165,21 +138,20 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long extendInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), extendInitTime);
+        logStepInfo(PtoState.INIT_STEP, 5, 5, extendInitTime);
 
-        initialized = true;
-        info("{}{} Send. Init end", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public CotSenderOutput send() throws MpcAbortException {
         setPtoInput();
-        info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         // 得到迭代矩阵A的种子
         DataPacketHeader matrixKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_ITERATION_LEY.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_ITERATION_LEY.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> matrixKeyPayload = rpc.receive(matrixKeyHeader).getPayload();
@@ -189,7 +161,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Iter. Step 1/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 3, keyTime);
 
         stopWatch.start();
         // 执行MSPCOT
@@ -197,7 +169,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long sTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Iter. Step 2/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), sTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 3, sTime);
 
         stopWatch.start();
         // y = v * A + s
@@ -213,9 +185,9 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long extendTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Iter. Step 3/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(),extendTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 3, extendTime);
 
-        info("{}{} Send. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return senderOutput;
     }
 }

@@ -12,7 +12,9 @@ import edu.alibaba.mpc4j.sml.opboost.OpBoostSlaveThread;
 import edu.alibaba.mpc4j.sml.opboost.OpBoostTestUtils;
 import edu.alibaba.mpc4j.sml.smile.regression.GradientTreeBoost;
 import edu.alibaba.mpc4j.common.data.regression.*;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -103,6 +105,26 @@ public class OpGbdtRegMultiSlaveTest {
         rightSlave = new OpBoostSlave(rightSlaveRpc, hostRpc.ownParty());
     }
 
+    @Before
+    public void connect() {
+        host.getRpc().connect();
+        leftSlave.getRpc().connect();
+        rightSlave.getRpc().connect();
+        host.init();
+        leftSlave.init();
+        rightSlave.init();
+    }
+
+    @After
+    public void disconnect() {
+        host.destroy();
+        leftSlave.destroy();
+        rightSlave.destroy();
+        host.getRpc().disconnect();
+        leftSlave.getRpc().disconnect();
+        rightSlave.getRpc().disconnect();
+    }
+
     @Test
     public void testLargeEpsilonLdpTraining() {
         testLdpTraining(OpBoostTestUtils.LARGE_EPSILON);
@@ -191,7 +213,7 @@ public class OpGbdtRegMultiSlaveTest {
                                                DataFrame hostDataFrame, RegOpGradBoostHostConfig hostConfig,
                                                DataFrame leftSlaveDataFrame, OpBoostSlaveConfig leftSlaveConfig,
                                                DataFrame rightSlaveDataFrame, OpBoostSlaveConfig rightSlaveConfig) {
-        long randomTaskId = Math.abs(OpBoostTestUtils.SECURE_RANDOM.nextLong());
+        int randomTaskId = Math.abs(OpBoostTestUtils.SECURE_RANDOM.nextInt());
         host.setTaskId(randomTaskId);
         leftSlave.setTaskId(randomTaskId);
         rightSlave.setTaskId(randomTaskId);

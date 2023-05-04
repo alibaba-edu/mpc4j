@@ -25,7 +25,7 @@ public class SecP256k1MclEcc extends AbstractMclEcc {
     }
 
     @Override
-    public ECPoint hashToCurve(byte[] message) {
-        return hashToCurve(message, hash);
+    public ECPoint hashToCurve(byte[] data) {
+        return hashToCurve(data, hash);
     }
 }

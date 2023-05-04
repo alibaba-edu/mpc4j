@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu.jsz22;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
@@ -14,14 +11,15 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfSender;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnFactory;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnPartyOutput;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnReceiver;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnSender;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSender;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSenderOutput;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnPartyOutput;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnReceiver;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnSender;
 import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractPsuClient;
+import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfsPsuPtoDesc.PtoStep;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -92,44 +90,19 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
     public Jsz22SfsPsuClient(Rpc clientRpc, Party serverParty, Jsz22SfsPsuConfig config) {
         super(Jsz22SfsPsuPtoDesc.getInstance(), clientRpc, serverParty, config);
         firstOsnReceiver = OsnFactory.createReceiver(clientRpc, serverParty, config.getOsnConfig());
-        firstOsnReceiver.addLogLevel();
+        addSubPtos(firstOsnReceiver);
         oprfSender = OprfFactory.createOprfSender(clientRpc, serverParty, config.getOprfConfig());
-        oprfSender.addLogLevel();
+        addSubPtos(oprfSender);
         secondOsnSender = OsnFactory.createSender(clientRpc, serverParty, config.getOsnConfig());
-        secondOsnSender.addLogLevel();
+        addSubPtos(secondOsnSender);
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }
 
     @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        firstOsnReceiver.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-        oprfSender.setTaskId(taskIdPrf.getLong(2, taskIdBytes, Long.MAX_VALUE));
-        secondOsnSender.setTaskId(taskIdPrf.getLong(3, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        firstOsnReceiver.setParallel(parallel);
-        oprfSender.setParallel(parallel);
-        secondOsnSender.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        firstOsnReceiver.addLogLevel();
-        oprfSender.addLogLevel();
-        secondOsnSender.addLogLevel();
-    }
-
-    @Override
     public void init(int maxClientElementSize, int maxServerElementSize) throws MpcAbortException {
         setInitInput(maxClientElementSize, maxServerElementSize);
-        info("{}{} Client Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         int maxBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxServerElementSize);
@@ -140,17 +113,16 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Client Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public Set<ByteBuffer> psu(Set<ByteBuffer> clientElementSet, int serverElementSize, int elementByteLength)
         throws MpcAbortException {
         setPtoInput(clientElementSet, serverElementSize, elementByteLength);
-        info("{}{} Client begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         // 初始化OPRF哈希
@@ -166,7 +138,7 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
         firstPi = firstPiList.stream().mapToInt(permutation -> permutation).toArray();
         // 设置布谷鸟哈希
         DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Jsz22SfsPsuPtoDesc.PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> cuckooHashKeyPayload = rpc.receive(cuckooHashKeyHeader).getPayload();
@@ -174,7 +146,7 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long cuckooHashTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 1/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), cuckooHashTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 6, cuckooHashTime);
 
         stopWatch.start();
         // S and R invoke the ideal functionality F_{PS}.
@@ -186,7 +158,7 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long osnTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), osnTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 6, osnTime);
 
         stopWatch.start();
         // S and R invoke the ideal functionality F_{mpOPRF}
@@ -195,20 +167,20 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 3/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 6, oprfTime);
 
         stopWatch.start();
         // For i ∈ [b], S yj ∈ Y_B[π(i)], R computes F(k, y_j ⊕ a′_i)
         List<byte[]> clientOprfPayload = generateClientOprfPayload();
         DataPacketHeader clientOprfHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Jsz22SfsPsuPtoDesc.PtoStep.CLIENT_SEND_OPRFS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OPRFS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(clientOprfHeader, clientOprfPayload));
         stopWatch.stop();
         long checkTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 4/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), checkTime);
+        logStepInfo(PtoState.PTO_STEP, 4, 6, checkTime);
 
         stopWatch.start();
         // S and R invoke the ideal functionality F_{PS}.
@@ -222,11 +194,11 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long secondOsnTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 5/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), secondOsnTime);
+        logStepInfo(PtoState.PTO_STEP, 5, 6, secondOsnTime);
 
         stopWatch.start();
         DataPacketHeader zsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Jsz22SfsPsuPtoDesc.PtoStep.SERVER_SEND_ZS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ZS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> zsPayload = rpc.receive(zsHeader).getPayload();
@@ -245,9 +217,9 @@ public class Jsz22SfsPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long unionTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 6/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
+        logStepInfo(PtoState.PTO_STEP, 6, 6, unionTime);
 
-        info("{}{} Client end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return union;
     }
 

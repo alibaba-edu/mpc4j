@@ -1,22 +1,22 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
+import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
- * Zp-VOLE协议发送方输出。发送方得到(x, t)，满足t = q + Δ · x（Δ和q由接收方持有）。
+ * Zp-VOLE sender output. The sender gets (x, t) with t = q + Δ·x, where Δ and q are owned by the receiver.
  *
  * @author Hanwen Feng
  * @date 2022/06/07
  */
-public class ZpVoleSenderOutput {
+public class ZpVoleSenderOutput implements MergedPcgPartyOutput {
     /**
-     * 素数域
+     * the Zp instance
      */
-    private BigInteger prime;
+    private Zp zp;
     /**
      * x_i
      */
@@ -27,121 +27,104 @@ public class ZpVoleSenderOutput {
     private BigInteger[] t;
 
     /**
-     * 创建发送方输出。
+     * Creates a sender output.
      *
-     * @param prime 素数域。
-     * @param x     x。
-     * @param t     t。
-     * @return 发送方输出。
+     * @param zp the Zp instance.
+     * @param x  x.
+     * @param t  t.
+     * @return a sender output.
      */
-    public static ZpVoleSenderOutput create(BigInteger prime, BigInteger[] x, BigInteger[] t) {
+    public static ZpVoleSenderOutput create(Zp zp, BigInteger[] x, BigInteger[] t) {
         ZpVoleSenderOutput senderOutput = new ZpVoleSenderOutput();
-        assert x.length > 0;
-        assert x.length == t.length;
-        assert prime.isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "input prime is not a prime: " + prime;
-        senderOutput.prime = prime;
+        assert x.length > 0 : "# of x must be greater than 0: " + x.length;
+        assert x.length == t.length : "# of x must be equal to # of t (" + x.length + " : " + t.length + ")";
+        senderOutput.zp = zp;
         senderOutput.x = Arrays.stream(x)
             .peek(xi -> {
-                assert BigIntegerUtils.greaterOrEqual(xi, BigInteger.ZERO) && BigIntegerUtils.less(xi, prime)
-                    : "xi must be in range [0, " + prime + "): " + xi;
+                assert zp.validateElement(xi) : "xi must be in range [0, " + zp.getPrime() + "): " + xi;
             })
             .toArray(BigInteger[]::new);
         senderOutput.t = Arrays.stream(t)
             .peek(ti -> {
-                assert BigIntegerUtils.greaterOrEqual(ti, BigInteger.ZERO) && BigIntegerUtils.less(ti, prime)
-                    : "ti must be in range [0, " + prime + "): " + ti;
+                assert zp.validateElement(ti) : "ti must be in range [0, " + zp.getPrime() + "): " + ti;
             })
             .toArray(BigInteger[]::new);
         return senderOutput;
     }
 
     /**
-     * 创建长度为0的发送方输出。
+     * Creates an empty sender output.
      *
-     * @param prime 素数域。
-     * @return 长度为0的发送方输出。
+     * @param zp the Zp instance.
+     * @return an empty sender output.
      */
-    public static ZpVoleSenderOutput createEmpty(BigInteger prime) {
+    public static ZpVoleSenderOutput createEmpty(Zp zp) {
         ZpVoleSenderOutput senderOutput = new ZpVoleSenderOutput();
-        assert prime.isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "input prime is not a prime: " + prime;
-        senderOutput.prime = prime;
+        senderOutput.zp = zp;
         senderOutput.x = new BigInteger[0];
         senderOutput.t = new BigInteger[0];
         return senderOutput;
     }
 
     /**
-     * 私有构造函数。
+     * private constructor.
      */
     private ZpVoleSenderOutput() {
         // empty
     }
 
-    /**
-     * 返回素数域。
-     *
-     * @return 素数域。
-     */
-    public BigInteger getPrime() {
-        return prime;
+    @Override
+    public int getNum() {
+        return x.length;
     }
 
-    /**
-     * 从当前输出结果切分出一部分输出结果。
-     *
-     * @param length 切分输出结果数量。
-     * @return 切分输出结果。
-     */
-    public ZpVoleSenderOutput split(int length) {
+    @Override
+    public ZpVoleSenderOutput split(int splitNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]";
-        // 拆分x
-        BigInteger[] subX = new BigInteger[length];
-        BigInteger[] remainX = new BigInteger[num - length];
-        System.arraycopy(x, 0, subX, 0, length);
-        System.arraycopy(x, length, remainX, 0, num - length);
+        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]: " + splitNum;
+        // split x
+        BigInteger[] subX = new BigInteger[splitNum];
+        BigInteger[] remainX = new BigInteger[num - splitNum];
+        System.arraycopy(x, 0, subX, 0, splitNum);
+        System.arraycopy(x, splitNum, remainX, 0, num - splitNum);
         x = remainX;
-        // 拆分t
-        BigInteger[] subT = new BigInteger[length];
-        BigInteger[] remainT = new BigInteger[num - length];
-        System.arraycopy(t, 0, subT, 0, length);
-        System.arraycopy(t, length, remainT, 0, num - length);
+        // split t
+        BigInteger[] subT = new BigInteger[splitNum];
+        BigInteger[] remainT = new BigInteger[num - splitNum];
+        System.arraycopy(t, 0, subT, 0, splitNum);
+        System.arraycopy(t, splitNum, remainT, 0, num - splitNum);
         t = remainT;
 
-        return ZpVoleSenderOutput.create(prime, subX, subT);
+        return ZpVoleSenderOutput.create(zp, subX, subT);
     }
 
-    /**
-     * 将当前输出结果数量减少至给定的数量。
-     *
-     * @param length 给定的数量。
-     */
-    public void reduce(int length) {
+    @Override
+    public void reduce(int reduceNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "reduce length = " + length + " must be in range (0, " + num + "]";
-        if (length < num) {
-            // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
-            BigInteger[] remainX = new BigInteger[length];
-            System.arraycopy(x, 0, remainX, 0, length);
+        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        if (reduceNum < num) {
+            // if the reduced num is less than num, do split. If not, keep the current state.
+            BigInteger[] remainX = new BigInteger[reduceNum];
+            System.arraycopy(x, 0, remainX, 0, reduceNum);
             x = remainX;
-            BigInteger[] remainT = new BigInteger[length];
-            System.arraycopy(t, 0, remainT, 0, length);
+            BigInteger[] remainT = new BigInteger[reduceNum];
+            System.arraycopy(t, 0, remainT, 0, reduceNum);
             t = remainT;
         }
     }
 
-    /**
-     * 合并两个输出。
-     *
-     * @param that 另一个输出。
-     */
-    public void merge(ZpVoleSenderOutput that) {
-        // 拷贝x
+    @Override
+    public void merge(MergedPcgPartyOutput other) {
+        ZpVoleSenderOutput that = (ZpVoleSenderOutput) other;
+        assert this.zp.equals(that.zp) : "merged " + this.getClass().getSimpleName()
+            + " must have the same " + zp.getClass().getSimpleName() + " instance:"
+            + " (" + this.zp + " : " + that.zp + ")";
+        // merge x
         BigInteger[] mergeX = new BigInteger[this.x.length + that.x.length];
         System.arraycopy(this.x, 0, mergeX, 0, this.x.length);
         System.arraycopy(that.x, 0, mergeX, this.x.length, that.x.length);
         x = mergeX;
-        // 拷贝t
+        // merge t
         BigInteger[] mergeT = new BigInteger[this.t.length + that.t.length];
         System.arraycopy(this.t, 0, mergeT, 0, this.t.length);
         System.arraycopy(that.t, 0, mergeT, this.t.length, that.t.length);
@@ -149,49 +132,49 @@ public class ZpVoleSenderOutput {
     }
 
     /**
-     * 返回x_i。
+     * Gets the Zp instance.
      *
-     * @param index 索引值。
-     * @return x_i。
+     * @return the Zp instance.
+     */
+    public Zp getZp() {
+        return zp;
+    }
+
+    /**
+     * Gets x_i.
+     *
+     * @param index the index.
+     * @return x_i.
      */
     public BigInteger getX(int index) {
         return x[index];
     }
 
     /**
-     * 返回x。
+     * Gets x.
      *
-     * @return x。
+     * @return x.
      */
     public BigInteger[] getX() {
         return x;
     }
 
     /**
-     * 返回t_i。
+     * Gets t_i.
      *
-     * @param index 索引值。
-     * @return t_i。
+     * @param index the index.
+     * @return t_i.
      */
     public BigInteger getT(int index) {
         return t[index];
     }
 
     /**
-     * 返回t。
+     * Gets t.
      *
-     * @return t。
+     * @return t.
      */
     public BigInteger[] getT() {
         return t;
-    }
-
-    /**
-     * 返回数量。
-     *
-     * @return 数量。
-     */
-    public int getNum() {
-        return x.length;
     }
 }

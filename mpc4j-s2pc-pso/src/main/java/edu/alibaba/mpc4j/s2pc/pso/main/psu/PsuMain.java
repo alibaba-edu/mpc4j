@@ -170,6 +170,7 @@ public class PsuMain {
         psuServer.psu(serverElementSet, WARMUP_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
         psuServer.getRpc().synchronize();
         psuServer.getRpc().reset();
+        psuServer.destroy();
         LOGGER.info("(warmup) {} finish", psuServer.ownParty().getPartyName());
     }
 
@@ -221,6 +222,7 @@ public class PsuMain {
         // 同步
         psuServer.getRpc().synchronize();
         psuServer.getRpc().reset();
+        psuServer.destroy();
         LOGGER.info("{} finish", psuServer.ownParty().getPartyName());
     }
 
@@ -325,6 +327,7 @@ public class PsuMain {
         // 同步并等待5秒钟，保证对方执行完毕
         psuClient.getRpc().synchronize();
         psuClient.getRpc().reset();
+        psuClient.destroy();
         LOGGER.info("(warmup) {} finish", psuClient.ownParty().getPartyName());
     }
 
@@ -375,6 +378,7 @@ public class PsuMain {
         printWriter.println(info);
         psuClient.getRpc().synchronize();
         psuClient.getRpc().reset();
+        psuClient.destroy();
         LOGGER.info("{} finish", psuClient.ownParty().getPartyName());
     }
 }

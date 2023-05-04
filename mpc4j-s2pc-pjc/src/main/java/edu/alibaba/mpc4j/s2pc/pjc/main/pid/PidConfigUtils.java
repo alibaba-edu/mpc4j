@@ -9,7 +9,7 @@ import edu.alibaba.mpc4j.s2pc.pjc.pid.bkms20.Bkms20EccPidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21.Gmr21MpPidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21.Gmr21SloppyPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidFactory;
 
 import java.util.Properties;

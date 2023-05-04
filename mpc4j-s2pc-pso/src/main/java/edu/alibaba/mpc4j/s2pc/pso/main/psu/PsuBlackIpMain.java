@@ -157,6 +157,7 @@ public class PsuBlackIpMain {
         // 同步
         psuServer.getRpc().synchronize();
         psuServer.getRpc().reset();
+        psuServer.destroy();
         LOGGER.info("{} finish", psuServer.ownParty().getPartyName());
         // 断开连接
         serverRpc.disconnect();
@@ -232,6 +233,7 @@ public class PsuBlackIpMain {
         printWriter.println(info);
         psuClient.getRpc().synchronize();
         psuClient.getRpc().reset();
+        psuClient.destroy();
         LOGGER.info("{} finish", psuClient.ownParty().getPartyName());
         // 断开连接
         clientRpc.disconnect();

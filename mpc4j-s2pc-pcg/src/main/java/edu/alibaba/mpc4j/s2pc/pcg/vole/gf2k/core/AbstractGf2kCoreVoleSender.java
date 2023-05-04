@@ -1,84 +1,70 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kGadget;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 
 /**
- * GF2K-核VOLE协议发送方抽象类。
+ * Abstract GF2K-core VOLE sender.
  *
  * @author Weiran Liu
  * @date 2022/9/22
  */
-public abstract class AbstractGf2kCoreVoleSender extends AbstractSecureTwoPartyPto implements Gf2kCoreVoleSender {
+public abstract class AbstractGf2kCoreVoleSender extends AbstractTwoPartyPto implements Gf2kCoreVoleSender {
     /**
-     * 配置项
+     * the GF2K instance
      */
-    private final Gf2kCoreVoleConfig config;
+    protected Gf2k gf2k;
     /**
-     * GF2K算法
+     * l
      */
-    protected final Gf2k gf2k;
+    protected int l;
     /**
-     * 元素比特长度
+     * byteL
      */
-    protected final int l;
+    protected int byteL;
     /**
-     * 元素字节长度
-     */
-    protected final int byteL;
-    /**
-     * GF2K小工具
-     */
-    protected final Gf2kGadget gf2kGadget;
-    /**
-     * 最大数量
+     * max num
      */
     private int maxNum;
     /**
      * x
      */
-    protected byte[][] x;
+    protected byte[][] xs;
     /**
-     * 数量
+     * num
      */
     protected int num;
 
     protected AbstractGf2kCoreVoleSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, Gf2kCoreVoleConfig config) {
         super(ptoDesc, senderRpc, receiverParty, config);
-        this.config = config;
-        gf2k = Gf2kFactory.createInstance(envType);
-        l = gf2k.getL();
-        byteL = gf2k.getByteL();
-        gf2kGadget = new Gf2kGadget(gf2k);
-    }
-
-    @Override
-    public Gf2kCoreVoleFactory.Gf2kCoreVoleType getPtoType() {
-        return config.getPtoType();
     }
 
     protected void setInitInput(int maxNum) {
+        gf2k = Gf2kFactory.createInstance(envType);
+        l = gf2k.getL();
+        byteL = gf2k.getByteL();
+        MathPreconditions.checkPositive("maxNum", maxNum);
         this.maxNum = maxNum;
-        initialized = false;
+        initState();
     }
 
-    protected void setPtoInput(byte[][] x) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init ...");
-        }
-        assert x.length > 0 & x.length <= maxNum : "num must be in range [0, " + maxNum + "): " + x.length;
-        num = x.length;
-        this.x = Arrays.stream(x)
-            .peek(xi -> {
-                assert xi.length == byteL;
-            })
+    protected void setPtoInput(byte[][] xs) {
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("num", xs.length, maxNum);
+        num = xs.length;
+        this.xs = Arrays.stream(xs)
+            .peek(xi -> Preconditions.checkArgument(
+                gf2k.validateElement(xi), "xi must be in range [0, 2^%s): %s", l, Hex.toHexString(xi)
+            ))
             .toArray(byte[][]::new);
         extraInfo++;
     }

@@ -4,47 +4,51 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * OnionPIR协议信息。论文来源：
+ * OnionPIR protocol description. The protocol comes from the following paper:
  * <p>
- * Muhammad Haris Mughees, Hao Chen, and Ling Ren. XPIR : OnionPIR: Response Efficient Single-Server PIR.
+ * Muhammad Haris Mughees, Hao Chen, and Ling Ren. OnionPIR: Response Efficient Single-Server PIR.
  * 2021 ACM SIGSAC Conference on Computer and Communications Security. 2021, 15–19
  * </p>
- * 原始方案使用SEAL和NFLlib实现，这里应用SEAL实现。
+ * The original scheme was implemented using NFLlib and SEAL, here the SEAL implementation is applied.
  *
  * @author Liqiang Peng
  * @date 2022/11/14
  */
 public class Mcr21IndexPirPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 1557128141245400138L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "ONION_PIR";
 
     /**
-     * 协议步骤
+     * the protocol step
      */
     enum PtoStep {
         /**
-         * 客户端发送加密查询
+         * client send public keys
+         */
+        CLIENT_SEND_PUBLIC_KEYS,
+        /**
+         * client send query
          */
         CLIENT_SEND_QUERY,
         /**
-         * 服务端回复密文
+         * server send response
          */
         SERVER_SEND_RESPONSE,
     }
 
     /**
-     * 单例模式
+     * the singleton mode
      */
     private static final Mcr21IndexPirPtoDesc INSTANCE = new Mcr21IndexPirPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private Mcr21IndexPirPtoDesc() {
         // empty

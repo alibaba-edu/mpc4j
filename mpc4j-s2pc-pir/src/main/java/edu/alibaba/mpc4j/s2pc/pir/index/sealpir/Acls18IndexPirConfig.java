@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.s2pc.pir.index.IndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.IndexPirFactory;
 
 /**
- * SEAL PIR协议配置项。
+ * SEAL PIR config.
  *
  * @author Liqiang Peng
  * @date 2023/1/17

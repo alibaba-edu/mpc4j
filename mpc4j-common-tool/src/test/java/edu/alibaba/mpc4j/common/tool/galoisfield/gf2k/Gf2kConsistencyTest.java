@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -56,8 +57,8 @@ public class Gf2kConsistencyTest {
 
     public Gf2kConsistencyTest(String name, Gf2kType thisType, Gf2kType thatType) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        thisGf2k = Gf2kFactory.createInstance(thisType);
-        thatGf2k = Gf2kFactory.createInstance(thatType);
+        thisGf2k = Gf2kFactory.createInstance(EnvType.STANDARD, thisType);
+        thatGf2k = Gf2kFactory.createInstance(EnvType.STANDARD, thatType);
     }
 
     @Test

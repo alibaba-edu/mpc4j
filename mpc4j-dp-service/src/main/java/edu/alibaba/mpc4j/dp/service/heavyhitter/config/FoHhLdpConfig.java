@@ -13,7 +13,7 @@ import java.util.Set;
  * @author Weiran Liu
  * @date 2023/1/16
  */
-public class FoHhLdpConfig extends BasicHhLdpConfig {
+public class FoHhLdpConfig extends BaseHhLdpConfig {
     /**
      * Frequency Oracle LDP config
      */
@@ -38,21 +38,21 @@ public class FoHhLdpConfig extends BasicHhLdpConfig {
         return foLdpConfig;
     }
 
-    public static class Builder extends BasicHhLdpConfig.Builder {
+    public static class Builder extends BaseHhLdpConfig.Builder {
         /**
          * Frequency Oracle LDP config
          */
         private final FoLdpConfig foLdpConfig;
 
-        public Builder(HhLdpFactory.HhLdpType type, Set<String> domainSet, int k, double windowEpsilon) {
-            super(type, domainSet, k, windowEpsilon);
+        public Builder(Set<String> domainSet, int k, double windowEpsilon, int windowSize) {
+            super(HhLdpFactory.HhLdpType.FO, domainSet, k, windowEpsilon, windowSize);
             foLdpConfig = new BasicFoLdpConfig
                 .Builder(FoLdpFactory.FoLdpType.DE_INDEX, domainSet, windowEpsilon)
                 .build();
         }
 
-        public Builder(FoLdpConfig foLdpConfig, int k) {
-            super(HhLdpFactory.HhLdpType.FO, foLdpConfig.getDomainSet(), k, foLdpConfig.getEpsilon());
+        public Builder(FoLdpConfig foLdpConfig, int k, int windowSize) {
+            super(HhLdpFactory.HhLdpType.FO, foLdpConfig.getDomainSet(), k, foLdpConfig.getEpsilon(), windowSize);
             this.foLdpConfig = foLdpConfig;
         }
 

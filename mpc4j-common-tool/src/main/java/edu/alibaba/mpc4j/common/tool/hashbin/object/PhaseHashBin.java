@@ -128,6 +128,18 @@ public class PhaseHashBin implements HashBin<BigInteger> {
     }
 
     @Override
+    public int getHashNum() {
+        return 1;
+    }
+
+    @Override
+    public byte[][] getHashKeys() {
+        byte[][] hashKeys = new byte[1][];
+        hashKeys[0] = hash.getKey();
+        return hashKeys;
+    }
+
+    @Override
     public int maxItemSize() {
         return maxItemSize;
     }

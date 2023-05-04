@@ -1,23 +1,28 @@
 package edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+
+import java.security.SecureRandom;
+import java.util.Collection;
 
 /**
- * 布谷鸟哈希桶工厂。
+ * cuckoo hash bin factory.
  *
  * @author Weiran Liu
  * @date 2021/03/30
  */
 public class CuckooHashBinFactory {
     /**
-     * 私有构造函数
+     * private constructor
      */
     private CuckooHashBinFactory() {
         // empty
     }
 
     /**
-     * 布谷鸟哈希类型
+     * cuckoo hash bin type
      */
     public enum CuckooHashBinType {
         /**
@@ -72,14 +77,14 @@ public class CuckooHashBinFactory {
     static final int DEFAULT_MAX_TOTAL_TRIES = 1 << 10;
 
     /**
-     * 构建布谷鸟哈希。
+     * Creates a cuckoo hash bin.
      *
-     * @param envType     环境类型。
-     * @param type        布谷鸟哈希类型。
-     * @param maxItemSize 插入的元素数量。
-     * @param keys        密钥。
-     * @param <T>         布谷鸟哈希中存储元素的类型。
-     * @return 布谷鸟哈希。
+     * @param envType     environment.
+     * @param type        type.
+     * @param maxItemSize max item size.
+     * @param keys        keys.
+     * @param <T>         type of data that will be inserted into the cuckoo hash bin.
+     * @return a cuckoo hash bin.
      */
     public static <T> CuckooHashBin<T> createCuckooHashBin(EnvType envType, CuckooHashBinType type,
                                                            int maxItemSize, byte[][] keys) {
@@ -100,20 +105,88 @@ public class CuckooHashBinFactory {
             case NO_STASH_PSZ18_5_HASH:
                 return new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, keys);
             default:
-                throw new IllegalArgumentException("Invalid CuckooHashBinType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
         }
     }
 
     /**
-     * 构建布谷鸟哈希。
+     * Creates a cuckoo hash bin.
      *
-     * @param envType     环境类型。
-     * @param type        布谷鸟哈希类型。
-     * @param maxItemSize 插入的元素数量。
-     * @param binNum      指定桶数量。
-     * @param keys        密钥。
-     * @param <T>         布谷鸟哈希中存储元素的类型。
-     * @return 布谷鸟哈希。
+     * @param envType      environment.
+     * @param type         type.
+     * @param maxItemSize  max item size.
+     * @param items        items.
+     * @param secureRandom the random state to generate keys.
+     * @param <T>          type of data that will be inserted into the cuckoo hash bin.
+     * @return a cuckoo hash bin.
+     */
+    public static <T> CuckooHashBin<T> createCuckooHashBin(EnvType envType, CuckooHashBinType type,
+                                                           int maxItemSize, Collection<T> items,
+                                                           SecureRandom secureRandom) {
+        boolean success = false;
+        int hashNum = getHashNum(type);
+        byte[][] hashKeys;
+        CuckooHashBin<T> cuckooHashBin = null;
+        while (!success) {
+            try {
+                // construct the cuckoo hash bin iteratively and test if the stash is empty
+                hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
+                cuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(envType, type, maxItemSize, hashKeys);
+                cuckooHashBin.insertItems(items);
+                success = true;
+            } catch (ArithmeticException ignored) {
+                // retry if failed
+            }
+        }
+        Preconditions.checkNotNull(cuckooHashBin);
+        return cuckooHashBin;
+    }
+
+    /**
+     * Creates a cuckoo hash bin that enforce empty stash.
+     *
+     * @param envType      environment.
+     * @param type         type.
+     * @param maxItemSize  max item size.
+     * @param items        items.
+     * @param secureRandom the random state to generate keys.
+     * @param <T>          type of data that will be inserted into the cuckoo hash bin.
+     * @return a cuckoo hash bin.
+     */
+    public static <T> CuckooHashBin<T> createEnforceNoStashCuckooHashBin(EnvType envType, CuckooHashBinType type,
+                                                                         int maxItemSize, Collection<T> items,
+                                                                         SecureRandom secureRandom) {
+        boolean success = false;
+        int hashNum = getHashNum(type);
+        byte[][] hashKeys;
+        CuckooHashBin<T> cuckooHashBin = null;
+        while (!success) {
+            try {
+                // construct the cuckoo hash bin iteratively and test if the stash is empty
+                hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
+                cuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(envType, type, maxItemSize, hashKeys);
+                cuckooHashBin.insertItems(items);
+                if (cuckooHashBin.itemNumInStash() == 0) {
+                    success = true;
+                }
+            } catch (ArithmeticException ignored) {
+                // retry if failed
+            }
+        }
+        Preconditions.checkNotNull(cuckooHashBin);
+        return cuckooHashBin;
+    }
+
+    /**
+     * Creates a cuckoo hash bin.
+     *
+     * @param envType     environment.
+     * @param type        type.
+     * @param maxItemSize max item size.
+     * @param binNum      bin num.
+     * @param keys        keys.
+     * @param <T>         type of data that will be inserted into the cuckoo hash bin.
+     * @return a cuckoo hash bin.
      */
     public static <T> CuckooHashBin<T> createCuckooHashBin(EnvType envType, CuckooHashBinType type,
                                                            int maxItemSize, int binNum, byte[][] keys) {
@@ -135,7 +208,92 @@ public class CuckooHashBinFactory {
             case NO_STASH_PSZ18_5_HASH:
                 return new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, binNum, keys);
             default:
-                throw new IllegalArgumentException("Invalid CuckooHashBinType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Checks if the given type is no-stash cuckoo hash bin type.
+     *
+     * @param type type.
+     * @return true if the given type is no-stash cuckoo hash bin type.
+     */
+    public static boolean isNoStashType(CuckooHashBinType type) {
+        switch (type) {
+            case NO_STASH_ONE_HASH:
+            case NO_STASH_NAIVE:
+            case NO_STASH_DRRT18:
+            case NO_STASH_PSZ18_3_HASH:
+            case NO_STASH_PSZ18_4_HASH:
+            case NO_STASH_PSZ18_5_HASH:
+                return true;
+            case NAIVE_2_HASH:
+            case NAIVE_3_HASH:
+            case NAIVE_4_HASH:
+            case NAIVE_5_HASH:
+                return false;
+            default:
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a no-stash cuckoo hash bin.
+     *
+     * @param envType     environment.
+     * @param type        type.
+     * @param maxItemSize max item size.
+     * @param keys        keys.
+     * @param <T>         type of data that will be inserted into the cuckoo hash bin.
+     * @return a no-stash cuckoo hash bin.
+     */
+    public static <T> NoStashCuckooHashBin<T> createNoStashCuckooHashBin(EnvType envType, CuckooHashBinType type,
+                                                                         int maxItemSize, byte[][] keys) {
+        Preconditions.checkArgument(isNoStashType(type));
+        checkInputs(type, maxItemSize, keys);
+        // 单哈希布谷鸟哈希必须要指定桶大小，因此不允许通过此函数构建单哈希布谷鸟哈希。
+        switch (type) {
+            case NO_STASH_NAIVE:
+                return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, keys);
+            case NO_STASH_DRRT18:
+                return new Drrt18NoStashCuckooHashBin<>(envType, maxItemSize, keys);
+            case NO_STASH_PSZ18_3_HASH:
+            case NO_STASH_PSZ18_4_HASH:
+            case NO_STASH_PSZ18_5_HASH:
+                return new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, keys);
+            default:
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a no-stash cuckoo hash bin.
+     *
+     * @param envType     environment.
+     * @param type        type.
+     * @param maxItemSize max item size.
+     * @param binNum      bin num.
+     * @param keys        keys.
+     * @param <T>         type of data that will be inserted into the cuckoo hash bin.
+     * @return a no-stash cuckoo hash bin.
+     */
+    public static <T> NoStashCuckooHashBin<T> createNoStashCuckooHashBin(EnvType envType, CuckooHashBinType type,
+                                                                         int maxItemSize, int binNum, byte[][] keys) {
+        Preconditions.checkArgument(isNoStashType(type));
+        checkInputs(type, maxItemSize, binNum, keys);
+        switch (type) {
+            case NO_STASH_ONE_HASH:
+                return new OneHashCuckooHashBin<>(envType, binNum, keys);
+            case NO_STASH_NAIVE:
+                return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
+            case NO_STASH_DRRT18:
+                return new Drrt18NoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
+            case NO_STASH_PSZ18_3_HASH:
+            case NO_STASH_PSZ18_4_HASH:
+            case NO_STASH_PSZ18_5_HASH:
+                return new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, binNum, keys);
+            default:
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -226,8 +384,8 @@ public class CuckooHashBinFactory {
     /**
      * 返回布谷鸟哈希插入元素的最大数量。
      *
-     * @param type        布谷鸟哈希类型。
-     * @param binNum      哈希桶数量。
+     * @param type   布谷鸟哈希类型。
+     * @param binNum 哈希桶数量。
      * @return 插入元素的最大数量。
      */
     public static int getMaxItemSize(CuckooHashBinType type, int binNum) {

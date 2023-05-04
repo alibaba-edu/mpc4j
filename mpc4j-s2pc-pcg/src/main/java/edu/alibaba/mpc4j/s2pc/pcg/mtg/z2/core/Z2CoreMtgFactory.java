@@ -7,9 +7,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13.Alsz13Z2CoreMtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13.Alsz13Z2CoreMtgReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13.Alsz13Z2CoreMtgSender;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.ideal.IdealZ2CoreMtgConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.ideal.IdealZ2CoreMtgReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.ideal.IdealZ2CoreMtgSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotFactory;
 
 /**
  * 核布尔三元组生成协议工厂。
@@ -30,10 +28,6 @@ public class Z2CoreMtgFactory implements PtoFactory {
      */
     public enum Z2CoreMtgType {
         /**
-         * 理想协议
-         */
-        IDEAL,
-        /**
          * ALSZ13协议
          */
         ALSZ13,
@@ -49,9 +43,8 @@ public class Z2CoreMtgFactory implements PtoFactory {
      */
     public static Z2CoreMtgParty createSender(Rpc senderRpc, Party receiverParty, Z2CoreMtgConfig config) {
         Z2CoreMtgType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
-            case IDEAL:
-                return new IdealZ2CoreMtgSender(senderRpc, receiverParty, (IdealZ2CoreMtgConfig) config);
             case ALSZ13:
                 return new Alsz13Z2CoreMtgSender(senderRpc, receiverParty, (Alsz13Z2CoreMtgConfig) config);
             default:
@@ -69,9 +62,8 @@ public class Z2CoreMtgFactory implements PtoFactory {
      */
     public static Z2CoreMtgParty createReceiver(Rpc receiverRpc, Party senderParty, Z2CoreMtgConfig config) {
         Z2CoreMtgType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
-            case IDEAL:
-                return new IdealZ2CoreMtgReceiver(receiverRpc, senderParty, (IdealZ2CoreMtgConfig) config);
             case ALSZ13:
                 return new Alsz13Z2CoreMtgReceiver(receiverRpc, senderParty, (Alsz13Z2CoreMtgConfig) config);
             default:
@@ -80,21 +72,15 @@ public class Z2CoreMtgFactory implements PtoFactory {
     }
 
     /**
-     * 创建默认配置项。
+     * Creates a default config.
      *
-     * @param securityModel 安全模型。
-     * @return 默认配置项。
+     * @param securityModel the security model.
+     * @param silent if using a silent protocol.
+     * @return a default config.
      */
-    public static Z2CoreMtgConfig createDefaultConfig(SecurityModel securityModel) {
-        switch (securityModel) {
-            case IDEAL:
-                return new IdealZ2CoreMtgConfig.Builder().build();
-            case SEMI_HONEST:
-                return new Alsz13Z2CoreMtgConfig.Builder().build();
-            case COVERT:
-            case MALICIOUS:
-            default:
-                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
-        }
+    public static Z2CoreMtgConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
+        return new Alsz13Z2CoreMtgConfig.Builder()
+            .setNcCotConfig(NcCotFactory.createDefaultConfig(securityModel, silent))
+            .build();
     }
 }

@@ -2,150 +2,140 @@ package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 
 /**
- * GF2K-VOLE协议接收方输出。接收方得到(Δ, q)，满足t = q + Δ · x（x和t由发送方持有）。
+ * GF2K-VOLE receiver output. The receiver gets (Δ, q) with t = q + Δ · x, where x and t are owned by the sender.
  *
  * @author Weiran Liu
- * @date 2022/6/9
+ * @date 2023/3/16
  */
-public class Gf2kVoleReceiverOutput {
+public class Gf2kVoleReceiverOutput implements MergedPcgPartyOutput {
     /**
-     * 关联值Δ
+     * Δ
      */
     private byte[] delta;
     /**
-     * q_i
+     * q array
      */
-    private byte[][] q;
+    private byte[][] qs;
 
     /**
-     * 创建接收方输出。
+     * Creates a receiver output.
      *
-     * @param delta 关联值Δ。
-     * @param q     q_i。
-     * @return 接收方输出。
+     * @param delta Δ.
+     * @param qs    q_i.
+     * @return the receiver output.
      */
-    public static Gf2kVoleReceiverOutput create(byte[] delta, byte[][] q) {
+    public static Gf2kVoleReceiverOutput create(byte[] delta, byte[][] qs) {
         Gf2kVoleReceiverOutput receiverOutput = new Gf2kVoleReceiverOutput();
-        assert delta.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert delta.length == CommonConstants.BLOCK_BYTE_LENGTH
+            : "Δ must be in range [0, 2^" + CommonConstants.BLOCK_BIT_LENGTH + "): " + Hex.toHexString(delta);
         receiverOutput.delta = BytesUtils.clone(delta);
-        assert q.length > 0 : "# of t must be greater than 0";
-        receiverOutput.q = Arrays.stream(q)
-            .peek(qi -> {
-                assert qi.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert qs.length > 0 : "# of q must be greater than 0: " + qs.length;
+        receiverOutput.qs = Arrays.stream(qs)
+            .peek(q -> {
+                assert q.length == CommonConstants.BLOCK_BYTE_LENGTH
+                    : "q must be in range [0, 2^" + CommonConstants.BLOCK_BIT_LENGTH + "): " + Hex.toHexString(q);
             })
-            .map(BytesUtils::clone)
             .toArray(byte[][]::new);
 
         return receiverOutput;
     }
 
     /**
-     * 创建长度为0的接收方输出。
+     * Creates an empty receiver output.
      *
-     * @param delta 关联值Δ。
-     * @return 长度为0的接收方输出。
+     * @param delta Δ.
+     * @return an empty receiver output.
      */
     public static Gf2kVoleReceiverOutput createEmpty(byte[] delta) {
         Gf2kVoleReceiverOutput receiverOutput = new Gf2kVoleReceiverOutput();
-        assert delta.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert delta.length == CommonConstants.BLOCK_BYTE_LENGTH
+            : "Δ must be in range [0, 2^" + CommonConstants.BLOCK_BIT_LENGTH + "): " + Hex.toHexString(delta);
         receiverOutput.delta = BytesUtils.clone(delta);
-        receiverOutput.q = new byte[0][];
+        receiverOutput.qs = new byte[0][];
 
         return receiverOutput;
     }
 
     /**
-     * 私有构造函数。
+     * private constructor.
      */
     private Gf2kVoleReceiverOutput() {
         // empty
     }
 
-    /**
-     * 从当前输出结果切分出一部分输出结果。
-     *
-     * @param length 切分输出结果数量。
-     * @return 切分输出结果。
-     */
-    public Gf2kVoleReceiverOutput split(int length) {
+    @Override
+    public int getNum() {
+        return qs.length;
+    }
+
+    @Override
+    public Gf2kVoleReceiverOutput split(int splitNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]";
-        byte[][] subQ = new byte[length][];
-        byte[][] remainQ = new byte[num - length][];
-        System.arraycopy(q, 0, subQ, 0, length);
-        System.arraycopy(q, length, remainQ, 0, num - length);
-        q = remainQ;
+        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]";
+        // split q
+        byte[][] subQ = new byte[splitNum][];
+        byte[][] remainQ = new byte[num - splitNum][];
+        System.arraycopy(qs, 0, subQ, 0, splitNum);
+        System.arraycopy(qs, splitNum, remainQ, 0, num - splitNum);
+        qs = remainQ;
 
         return Gf2kVoleReceiverOutput.create(delta, subQ);
     }
 
-    /**
-     * 将当前输出结果数量减少至给定的数量。
-     *
-     * @param length 给定的数量。
-     */
-    public void reduce(int length) {
+    @Override
+    public void reduce(int reduceNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "reduce length = " + length + " must be in range (0, " + num + "]";
-        if (length < num) {
-            // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
-            byte[][] remainQ = new byte[length][];
-            System.arraycopy(q, 0, remainQ, 0, length);
-            q = remainQ;
+        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]";
+        if (reduceNum < num) {
+            // if the reduced num is less than num, do split. If not, keep the current state.
+            byte[][] remainQ = new byte[reduceNum][];
+            System.arraycopy(qs, 0, remainQ, 0, reduceNum);
+            qs = remainQ;
         }
     }
 
-    /**
-     * 合并两个发送方输出。
-     *
-     * @param that 另一个发送方输出。
-     */
-    public void merge(Gf2kVoleReceiverOutput that) {
+    @Override
+    public void merge(MergedPcgPartyOutput other) {
+        Gf2kVoleReceiverOutput that = (Gf2kVoleReceiverOutput) other;
         assert Arrays.equals(this.delta, that.delta) : "merged outputs must have the same Δ";
-        byte[][] mergeQ = new byte[this.q.length + that.q.length][];
-        System.arraycopy(this.q, 0, mergeQ, 0, this.q.length);
-        System.arraycopy(that.q, 0, mergeQ, this.q.length, that.q.length);
-        q = mergeQ;
+        // merge q
+        byte[][] mergeQ = new byte[this.qs.length + that.qs.length][];
+        System.arraycopy(this.qs, 0, mergeQ, 0, this.qs.length);
+        System.arraycopy(that.qs, 0, mergeQ, this.qs.length, that.qs.length);
+        qs = mergeQ;
     }
 
     /**
-     * 返回关联值Δ。
+     * Gets Δ.
      *
-     * @return 关联值Δ。
+     * @return Δ.
      */
     public byte[] getDelta() {
         return delta;
     }
 
     /**
-     * 返回q_i。
+     * Gets q_i.
      *
-     * @param index 索引值。
-     * @return q_i。
+     * @param index the index.
+     * @return q_i.
      */
     public byte[] getQ(int index) {
-        return q[index];
+        return qs[index];
     }
 
     /**
-     * 返回q。
+     * Gets q.
      *
-     * @return q。
+     * @return q.
      */
     public byte[][] getQ() {
-        return q;
-    }
-
-    /**
-     * 返回数量。
-     *
-     * @return 数量。
-     */
-    public int getNum() {
-        return q.length;
+        return qs;
     }
 }

@@ -4,17 +4,17 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.fastpir.Ayaa21IndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.fastpir.Ayaa21IndexPirParams;
 import edu.alibaba.mpc4j.s2pc.pir.index.onionpir.Mcr21IndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.onionpir.Mcr21IndexPirParams;
 import edu.alibaba.mpc4j.s2pc.pir.index.sealpir.Acls18IndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.sealpir.Acls18IndexPirParams;
+import edu.alibaba.mpc4j.s2pc.pir.index.vectorizedpir.Mr23IndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.xpir.Mbfk16IndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.xpir.Mbfk16IndexPirParams;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -35,199 +35,105 @@ import java.util.Collection;
 public class IndexPirTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(IndexPirTest.class);
     /**
-     * 重复检索次数
+     * 默认元素字节长度
      */
-    private static final int REPEAT_TIME = 1;
-    /**
-     * 默认标签字节长度
-     */
-    private static final int DEFAULT_ELEMENT_BYTE_LENGTH = 64;
+    private static final int DEFAULT_ELEMENT_BYTE_LENGTH = Byte.SIZE;
     /**
      * 服务端元素数量
      */
-    private static final int SERVER_ELEMENT_SIZE = 1 << 20;
+    private static final int SERVER_ELEMENT_SIZE = 1 << 16;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
-
         // XPIR
-        Mbfk16IndexPirConfig xpirConfig = new Mbfk16IndexPirConfig();
-        // XPIR (1-dimension)
-        configurations.add(new Object[] {
-            IndexPirFactory.IndexPirType.XPIR.name() + " (1-dimension)",
-            xpirConfig,
-            new Mbfk16IndexPirParams(
-                SERVER_ELEMENT_SIZE,
-                DEFAULT_ELEMENT_BYTE_LENGTH,
-                4096,
-                20,
-                1
-            )
-        });
-        // XPIR (2-dimension)
-        configurations.add(new Object[] {
-            IndexPirFactory.IndexPirType.XPIR.name() + " (2-dimension)",
-            xpirConfig,
-            new Mbfk16IndexPirParams(
-                SERVER_ELEMENT_SIZE,
-                DEFAULT_ELEMENT_BYTE_LENGTH,
-                4096,
-                20,
-                2
-            )
-        });
-
+        configurations.add(new Object[]{IndexPirFactory.IndexPirType.XPIR.name(), new Mbfk16IndexPirConfig()});
         // SEAL PIR
-        Acls18IndexPirConfig sealpirConfig = new Acls18IndexPirConfig();
-        // SEAL PIR (1-dimension)
-        configurations.add(new Object[] {
-            IndexPirFactory.IndexPirType.SEAL_PIR.name() + " (1-dimension)",
-            sealpirConfig,
-            new Acls18IndexPirParams(
-                SERVER_ELEMENT_SIZE,
-                DEFAULT_ELEMENT_BYTE_LENGTH,
-                4096,
-                20,
-                1
-            )
-        });
-        // SEAL PIR (2-dimension)
-        configurations.add(new Object[] {
-            IndexPirFactory.IndexPirType.SEAL_PIR.name() + " (2-dimension)",
-            sealpirConfig,
-            new Acls18IndexPirParams(
-                SERVER_ELEMENT_SIZE,
-                DEFAULT_ELEMENT_BYTE_LENGTH,
-                4096,
-                20,
-                2
-            )
-        });
-
+        configurations.add(new Object[]{IndexPirFactory.IndexPirType.SEAL_PIR.name(), new Acls18IndexPirConfig()});
         // OnionPIR
-        Mcr21IndexPirConfig onionpirConfig = new Mcr21IndexPirConfig();
-        // first dimension is 32
-        configurations.add(new Object[] {
-            IndexPirFactory.IndexPirType.ONION_PIR.name() + " (first dimension 32)",
-            onionpirConfig,
-            new Mcr21IndexPirParams(
-                SERVER_ELEMENT_SIZE,
-                DEFAULT_ELEMENT_BYTE_LENGTH,
-                32
-            )
-        });
-        // first dimension is 128
-        configurations.add(new Object[] {
-            IndexPirFactory.IndexPirType.ONION_PIR.name() + " (first dimension 128)",
-            onionpirConfig,
-            new Mcr21IndexPirParams(
-                SERVER_ELEMENT_SIZE,
-                DEFAULT_ELEMENT_BYTE_LENGTH,
-                128
-            )
-        });
-        // first dimension is 256
-        configurations.add(new Object[] {
-            IndexPirFactory.IndexPirType.ONION_PIR.name() + " (first dimension 256)",
-            onionpirConfig,
-            new Mcr21IndexPirParams(
-                SERVER_ELEMENT_SIZE,
-                DEFAULT_ELEMENT_BYTE_LENGTH,
-                256
-            )
-        });
-
+        configurations.add(new Object[]{IndexPirFactory.IndexPirType.ONION_PIR.name(), new Mcr21IndexPirConfig()});
         // FastPIR
-        Ayaa21IndexPirConfig fastpirConfig = new Ayaa21IndexPirConfig();
-        configurations.add(new Object[] {
-            IndexPirFactory.IndexPirType.FAST_PIR.name(),
-            fastpirConfig,
-            new Ayaa21IndexPirParams(
-                SERVER_ELEMENT_SIZE,
-                DEFAULT_ELEMENT_BYTE_LENGTH,
-                4096,
-                1073153L,
-                new long[]{1152921504606830593L, 562949953216513L}
-            )
-        });
-
+        configurations.add(new Object[]{IndexPirFactory.IndexPirType.FAST_PIR.name(), new Ayaa21IndexPirConfig()});
+        // Vectorized PIR
+        configurations.add(new Object[]{IndexPirFactory.IndexPirType.VECTORIZED_PIR.name(), new Mr23IndexPirConfig()});
         return configurations;
     }
 
     /**
-     * 服务端
+     * server rpc
      */
     private final Rpc serverRpc;
     /**
-     * 客户端
+     * client rpc
      */
     private final Rpc clientRpc;
     /**
-     * 索引PIR配置项
+     * index PIR config
      */
     private final IndexPirConfig indexPirConfig;
-    /**
-     * 索引PIR参数
-     */
-    private final AbstractIndexPirParams indexPirParams;
 
-    public IndexPirTest(String name, IndexPirConfig indexPirConfig, AbstractIndexPirParams indexPirParams) {
+    public IndexPirTest(String name, IndexPirConfig indexPirConfig) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         serverRpc = rpcManager.getRpc(0);
         clientRpc = rpcManager.getRpc(1);
         this.indexPirConfig = indexPirConfig;
-        this.indexPirParams = indexPirParams;
+    }
+
+    @Before
+    public void connect() {
+        serverRpc.connect();
+        clientRpc.connect();
+    }
+
+    @After
+    public void disconnect() {
+        serverRpc.disconnect();
+        clientRpc.disconnect();
+    }
+
+    @Test
+    public void testParallelIndexPir() {
+        testIndexPir(indexPirConfig, DEFAULT_ELEMENT_BYTE_LENGTH, SERVER_ELEMENT_SIZE, true);
     }
 
     @Test
     public void testIndexPir() {
-        testIndexPir(indexPirConfig, indexPirParams, DEFAULT_ELEMENT_BYTE_LENGTH, false);
-    }
-    
-    @Test
-    public void testParallelIndexPir() {
-        testIndexPir(indexPirConfig, indexPirParams, DEFAULT_ELEMENT_BYTE_LENGTH, true);
+        testIndexPir(indexPirConfig, DEFAULT_ELEMENT_BYTE_LENGTH, SERVER_ELEMENT_SIZE, false);
     }
 
-    public void testIndexPir(IndexPirConfig config, AbstractIndexPirParams indexPirParams, int elementByteLength, boolean parallel) {
-        ArrayList<Integer> retrievalIndexList = PirUtils.generateRetrievalIndexList(SERVER_ELEMENT_SIZE, REPEAT_TIME);
-        // 生成元素数组
-        ArrayList<ByteBuffer> elementList = PirUtils.generateElementArrayList(SERVER_ELEMENT_SIZE, elementByteLength);
-        // 创建参与方实例
+    public void testIndexPir(IndexPirConfig config, int elementByteLength, int serverElementSize, boolean parallel) {
+        int retrievalIndex = PirUtils.generateRetrievalIndex(SERVER_ELEMENT_SIZE);
+        NaiveDatabase database = PirUtils.generateDataBase(SERVER_ELEMENT_SIZE, elementByteLength * Byte.SIZE);
         IndexPirServer server = IndexPirFactory.createServer(serverRpc, clientRpc.ownParty(), config);
         IndexPirClient client = IndexPirFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        // 设置并发
         server.setParallel(parallel);
         client.setParallel(parallel);
-        IndexPirServerThread serverThread = new IndexPirServerThread(
-            server, indexPirParams, elementList, elementByteLength, REPEAT_TIME
-        );
+        IndexPirServerThread serverThread = new IndexPirServerThread(server, database);
         IndexPirClientThread clientThread = new IndexPirClientThread(
-            client, indexPirParams, retrievalIndexList, SERVER_ELEMENT_SIZE, elementByteLength, REPEAT_TIME
+            client, retrievalIndex, serverElementSize, elementByteLength
         );
         try {
-            // 开始执行协议
             serverThread.start();
             clientThread.start();
-            // 等待线程停止
             serverThread.join();
             clientThread.join();
+            LOGGER.info("Server: The Communication costs {}MB", serverRpc.getSendByteLength() * 1.0 / (1024 * 1024));
+            serverRpc.reset();
+            LOGGER.info("Client: The Communication costs {}MB", clientRpc.getSendByteLength() * 1.0 / (1024 * 1024));
+            clientRpc.reset();
+            // verify result
+            ByteBuffer result = clientThread.getRetrievalResult();
+            Assert.assertEquals(
+                result, ByteBuffer.wrap(database.getBytesData(retrievalIndex))
+            );
+            LOGGER.info("Client: The Retrieval Result is Correct");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        LOGGER.info("Server: The Communication costs {}MB", serverRpc.getSendByteLength() * 1.0 / (1024 * 1024));
-        serverRpc.reset();
-        LOGGER.info("Client: The Communication costs {}MB", clientRpc.getSendByteLength() * 1.0 / (1024 * 1024));
-        clientRpc.reset();
-        LOGGER.info("Parameters: \n {}", indexPirParams.toString());
-        // 验证结果
-        ArrayList<ByteBuffer> result = clientThread.getRetrievalResult();
-        for (int index = 0; index < REPEAT_TIME; index++) {
-            ByteBuffer retrievalElement = result.get(index);
-            Assert.assertEquals(retrievalElement, elementList.get(retrievalIndexList.get(index)));
-        }
-        LOGGER.info("Client: The Retrieval Set Size is {}", result.size());
+        server.destroy();
+        client.destroy();
     }
 }

@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp;
 import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
 
 /**
  * BSP-COT协议发送方输出。
@@ -10,7 +11,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
  * @author Weiran Liu
  * @date 2022/01/22
  */
-public class BspCotSenderOutput {
+public class BspCotSenderOutput implements PcgPartyOutput {
     /**
      * SSPCOT协议发送方输出数组
      */
@@ -22,7 +23,7 @@ public class BspCotSenderOutput {
     /**
      * 每个SSPCOT协议发送方输出的数量
      */
-    private int num;
+    private int eachNum;
 
     /**
      * 创建发送方输出。
@@ -35,13 +36,13 @@ public class BspCotSenderOutput {
         assert sspCotSenderOutputs.length > 0;
         // 取第一个输出的参数
         senderOutput.delta = BytesUtils.clone(sspCotSenderOutputs[0].getDelta());
-        senderOutput.num = sspCotSenderOutputs[0].getNum();
+        senderOutput.eachNum = sspCotSenderOutputs[0].getNum();
         // 设置其余输出
         senderOutput.senderOutputs = Arrays.stream(sspCotSenderOutputs)
             // 验证所有Δ相等，且数量均为num
             .peek(sspcotSenderOutput -> {
                 assert BytesUtils.equals(senderOutput.delta, sspcotSenderOutput.getDelta());
-                assert sspcotSenderOutput.getNum() == senderOutput.num;
+                assert sspcotSenderOutput.getNum() == senderOutput.eachNum;
             })
             .toArray(SspCotSenderOutput[]::new);
         return senderOutput;
@@ -78,16 +79,12 @@ public class BspCotSenderOutput {
      *
      * @return 数量。
      */
-    public int getNum() {
-        return num;
+    public int getEachNum() {
+        return eachNum;
     }
 
-    /**
-     * 返回批处理数量。
-     *
-     * @return 批处理数量。
-     */
-    public int getBatch() {
+    @Override
+    public int getNum() {
         return senderOutputs.length;
     }
 }

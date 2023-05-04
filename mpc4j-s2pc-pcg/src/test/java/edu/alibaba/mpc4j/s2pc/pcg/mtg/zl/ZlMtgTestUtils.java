@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zl;
 
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import org.junit.Assert;
 
 import java.math.BigInteger;
@@ -18,7 +19,7 @@ public class ZlMtgTestUtils {
         // empty
     }
 
-    public static void assertOutput(int l, int num, ZlTriple senderOutput, ZlTriple receiverOutput) {
+    public static void assertOutput(Zl zl, int num, ZlTriple senderOutput, ZlTriple receiverOutput) {
         Assert.assertEquals(num, senderOutput.getNum());
         Assert.assertEquals(num, receiverOutput.getNum());
         if (num == 0) {
@@ -31,7 +32,6 @@ public class ZlMtgTestUtils {
             Assert.assertArrayEquals(new BigInteger[0], receiverOutput.getB());
             Assert.assertArrayEquals(new BigInteger[0], receiverOutput.getC());
         } else {
-            BigInteger modulus = BigInteger.ONE.shiftLeft(l);
             for (int index = 0; index < num; index++) {
                 BigInteger a0 = senderOutput.getA(index);
                 BigInteger b0 = senderOutput.getB(index);
@@ -40,10 +40,10 @@ public class ZlMtgTestUtils {
                 BigInteger b1 = receiverOutput.getB(index);
                 BigInteger c1 = receiverOutput.getC(index);
                 // 分别计算a、b、c
-                BigInteger a = a0.add(a1).mod(modulus);
-                BigInteger b = b0.add(b1).mod(modulus);
-                BigInteger c = c0.add(c1).mod(modulus);
-                Assert.assertEquals(c, a.multiply(b).mod(modulus));
+                BigInteger a = zl.add(a0, a1);
+                BigInteger b = zl.add(b0, b1);
+                BigInteger c = zl.add(c0, c1);
+                Assert.assertEquals(c, zl.mul(a, b));
             }
         }
     }

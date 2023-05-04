@@ -51,11 +51,9 @@ class BspCotReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.getRpc().connect();
             receiver.init(alphaArray.length, num);
             receiverOutput = preReceiverOutput == null ?
                 receiver.receive(alphaArray, num) : receiver.receive(alphaArray, num, preReceiverOutput);
-            receiver.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

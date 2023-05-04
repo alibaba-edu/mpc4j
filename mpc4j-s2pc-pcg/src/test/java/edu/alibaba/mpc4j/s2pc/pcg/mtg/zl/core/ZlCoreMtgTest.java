@@ -4,13 +4,20 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
+import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlMtgTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlTriple;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15.Dsz15ZlCoreMtgConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ideal.IdealZlCoreMtgConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15.Dsz15HeZlCoreMtgConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15.Dsz15OtZlCoreMtgConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ZlCoreMtgFactory.ZlCoreMtgType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -47,31 +54,25 @@ public class ZlCoreMtgTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
-        // IDEAL (l = 1)
-        configurations.add(new Object[]{
-            ZlCoreMtgFactory.ZlCoreMtgType.IDEAL.name() + " (l = 1)", new IdealZlCoreMtgConfig.Builder(1).build(),
-        });
-        // IDEAL (l = 63)
-        configurations.add(new Object[]{
-            ZlCoreMtgFactory.ZlCoreMtgType.IDEAL.name() + " (l = 9)", new IdealZlCoreMtgConfig.Builder(63).build(),
-        });
-        // IDEAL (l = 128)
-        configurations.add(new Object[]{
-            ZlCoreMtgFactory.ZlCoreMtgType.IDEAL.name() + " (l = 32)", new IdealZlCoreMtgConfig.Builder(128).build(),
-        });
 
-        // DSZ15 (l = 1)
-        configurations.add(new Object[]{
-            ZlCoreMtgFactory.ZlCoreMtgType.DSZ15.name() + " (l = 1)", new Dsz15ZlCoreMtgConfig.Builder(1).build(),
-        });
-        // DSZ15 (l = 63)
-        configurations.add(new Object[]{
-            ZlCoreMtgFactory.ZlCoreMtgType.DSZ15.name() + " (l = 9)", new Dsz15ZlCoreMtgConfig.Builder(63).build(),
-        });
-        // DSZ15 (l = 128)
-        configurations.add(new Object[]{
-            ZlCoreMtgFactory.ZlCoreMtgType.DSZ15.name() + " (l = 32)", new Dsz15ZlCoreMtgConfig.Builder(128).build(),
-        });
+        Zl[] zls = new Zl[] {
+            ZlFactory.createInstance(EnvType.STANDARD, 1),
+            ZlFactory.createInstance(EnvType.STANDARD, LongUtils.MAX_L - 1),
+            ZlFactory.createInstance(EnvType.STANDARD, LongUtils.MAX_L),
+            ZlFactory.createInstance(EnvType.STANDARD, LongUtils.MAX_L + 1),
+            ZlFactory.createInstance(EnvType.STANDARD, CommonConstants.BLOCK_BIT_LENGTH),
+        };
+        for (Zl zl : zls) {
+            int l = zl.getL();
+            // DSZ15_HE
+            configurations.add(new Object[]{
+                ZlCoreMtgType.DSZ15_HE.name() + " (l = " + l + ")", new Dsz15HeZlCoreMtgConfig.Builder(zl).build(),
+            });
+            // DSZ15_OT
+            configurations.add(new Object[]{
+                ZlCoreMtgType.DSZ15_OT.name() + " (l = " + l + ")", new Dsz15OtZlCoreMtgConfig.Builder(zl).build(),
+            });
+        }
 
         return configurations;
     }
@@ -91,68 +92,62 @@ public class ZlCoreMtgTest {
 
     public ZlCoreMtgTest(String name, ZlCoreMtgConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         senderRpc = rpcManager.getRpc(0);
         receiverRpc = rpcManager.getRpc(1);
         this.config = config;
     }
 
-    @Test
-    public void testPtoType() {
-        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        Assert.assertEquals(config.getPtoType(), sender.getPtoType());
-        Assert.assertEquals(config.getPtoType(), receiver.getPtoType());
+    @Before
+    public void connect() {
+        senderRpc.connect();
+        receiverRpc.connect();
+    }
+
+    @After
+    public void disconnect() {
+        senderRpc.disconnect();
+        receiverRpc.disconnect();
     }
 
     @Test
     public void test1Num() {
-        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 1);
+        testPto(1, false);
     }
 
     @Test
     public void test2Num() {
-        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 2);
+        testPto(2, false);
     }
 
     @Test
     public void testDefault() {
-        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_NUM);
+        testPto(DEFAULT_NUM, false);
     }
 
     @Test
     public void testParallelDefault() {
-        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, DEFAULT_NUM);
+        testPto(DEFAULT_NUM, true);
     }
 
     @Test
     public void testLargeNum() {
-        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, LARGE_NUM);
+        testPto(LARGE_NUM, false);
     }
 
     @Test
     public void testParallelLargeNum() {
-        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, LARGE_NUM);
+        testPto(LARGE_NUM, true);
     }
 
-    private void testPto(ZlCoreMtgParty sender, ZlCoreMtgParty receiver, int num) {
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+    private void testPto(int num, boolean parallel) {
+        ZlCoreMtgParty sender = ZlCoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
+        ZlCoreMtgParty receiver = ZlCoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        sender.setParallel(parallel);
+        receiver.setParallel(parallel);
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {
@@ -176,7 +171,7 @@ public class ZlCoreMtgTest {
             ZlTriple senderOutput = senderThread.getOutput();
             ZlTriple receiverOutput = receiverThread.getOutput();
             // 验证结果
-            ZlMtgTestUtils.assertOutput(config.getL(), num, senderOutput, receiverOutput);
+            ZlMtgTestUtils.assertOutput(config.getZl(), num, senderOutput, receiverOutput);
             LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
                 senderByteLength, receiverByteLength, time
             );

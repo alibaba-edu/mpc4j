@@ -12,9 +12,7 @@
 using namespace seal;
 using namespace std;
 
-// #define DEBUG
-
-JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils_generateSealContext(
+JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils_generateEncryptionParams(
         JNIEnv *env, jclass, jint poly_modulus_degree, jlong plain_modulus) {
     EncryptionParameters parms = generate_encryption_parameters(scheme_type::bfv, poly_modulus_degree, plain_modulus,
                                                                 CoeffModulus::BFVDefault(poly_modulus_degree,
@@ -28,8 +26,7 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16Index
     SEALContext context(parms);
     KeyGenerator key_gen(context);
     const SecretKey& secret_key = key_gen.secret_key();
-    PublicKey public_key;
-    key_gen.create_public_key(public_key);
+    Serializable<PublicKey> public_key = key_gen.create_public_key();
     jclass list_jcs = env->FindClass("java/util/ArrayList");
     jmethodID list_init = env->GetMethodID(list_jcs, "<init>", "()V");
     jobject list_obj = env->NewObject(list_jcs, list_init, "");
@@ -46,7 +43,8 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16Index
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
     SEALContext context(parms);
     Evaluator evaluator(context);
-    vector<Plaintext> plaintexts = deserialize_plaintexts_from_coeff_without_batch_encode(env, plaintext_list, context);
+    vector<Plaintext> plaintexts = deserialize_plaintexts_from_coeff_without_batch_encode(
+            env, plaintext_list, context);
     for (auto & plaintext : plaintexts) {
         evaluator.transform_to_ntt_inplace(plaintext, context.first_parms_id());
     }
@@ -71,12 +69,7 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16Index
     if (size != dimension) {
         env->ThrowNew(exception, "size is incorrect!");
     }
-    uint32_t query_size = 0;
-    for (uint32_t i = 0; i < dimension; i++) {
-        query_size += nvec[i];
-    }
-    vector<Ciphertext> ciphertexts;
-    ciphertexts.reserve(query_size);
+    vector<Serializable<Ciphertext>> query;
     uint32_t coeff_count = parms.poly_modulus_degree();
     for (uint32_t i = 0; i < dimension; i++) {
         for (uint32_t j = 0; j < nvec[i]; j++) {
@@ -85,12 +78,10 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16Index
             if (indices[i] == j) {
                 pt[0] = 1;
             }
-            Ciphertext dest;
-            encryptor.encrypt_symmetric(pt, dest);
-            ciphertexts.push_back(dest);
+            query.push_back(encryptor.encrypt_symmetric(pt));
         }
     }
-    return serialize_ciphertexts(env, ciphertexts);
+    return serialize_ciphertexts(env, query);
 }
 
 JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16IndexPirNativeUtils_generateReply(
@@ -121,10 +112,6 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16Index
     vector<Plaintext> intermediate_plain;
     uint32_t expansion_ratio = compute_expansion_ratio(parms);
     for (uint32_t i = 0; i < nvec.size(); i++) {
-#ifdef DEBUG
-        cout << "Server: " << i + 1 << "-th recursion level started " << endl;
-        cout << "Server: n_i = " << nvec[i] << endl;
-#endif
         if (query_list[i].size() != nvec[i]) {
             env->ThrowNew(exception, "size mismatch!");
         }
@@ -164,9 +151,6 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16Index
             }
             product = intermediate_plain.size();
         }
-#ifdef DEBUG
-        cout << "Server: " << i + 1 << "-th recursion level finished " << endl;
-#endif
     }
     // This should never get here
     env->ThrowNew(exception, "generate response failed!");
@@ -187,20 +171,12 @@ JNIEXPORT jlongArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_xpir_Mbfk16In
     vector<Ciphertext> temp = deserialize_ciphertexts(env, response_list, context);
     uint32_t ciphertext_size = temp[0].size();
     for (uint32_t i = 0; i < recursion_level; i++) {
-#ifdef DEBUG
-        cout << "Client: " << i + 1 << "/ " << recursion_level << "-th decryption layer started." << endl;
-#endif
         vector<Ciphertext> newtemp;
         vector<Plaintext> tempplain;
         for (uint32_t j = 0; j < temp.size(); j++) {
             Plaintext ptxt;
             decryptor.decrypt(temp[j], ptxt);
             tempplain.push_back(ptxt);
-#ifdef DEBUG
-            cout << "Client: reply noise budget = " << decryptor.invariant_noise_budget(temp[j]) << endl;
-            cout << "decoded (and scaled) plaintext = " << ptxt.to_string() << endl;
-            cout << "recursion level : " << i << " noise budget : " << decryptor.invariant_noise_budget(temp[j]) << endl;
-#endif
             if ((j + 1) % (exp_ratio * ciphertext_size) == 0 && j > 0) {
                 // Combine into one ciphertext.
                 Ciphertext combined(context, parms_id);

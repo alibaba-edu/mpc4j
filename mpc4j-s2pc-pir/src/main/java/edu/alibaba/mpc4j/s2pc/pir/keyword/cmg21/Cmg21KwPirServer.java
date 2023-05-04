@@ -1,12 +1,10 @@
 package edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
@@ -52,7 +50,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
      */
     private final boolean compressEncode;
     /**
-     * 关键词索引PIR方案参数
+     * CMG21关键词索引PIR参数
      */
     private Cmg21KwPirParams params;
     /**
@@ -93,7 +91,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
     @Override
     public void init(KwPirParams kwPirParams, Map<T, ByteBuffer> serverKeywordLabelMap, int labelByteLength) {
         setInitInput(serverKeywordLabelMap, labelByteLength);
-        info("{}{} Server Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         assert (kwPirParams instanceof Cmg21KwPirParams);
@@ -101,7 +99,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         // 服务端生成并发送哈希密钥
         hashKeys = CommonUtils.generateRandomKeys(params.getCuckooHashKeyNum(), secureRandom);
         DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         List<byte[]> cuckooHashKeyPayload = Arrays.stream(hashKeys).collect(Collectors.toList());
@@ -109,7 +107,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         stopWatch.stop();
         long cuckooHashKeyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 1/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), cuckooHashKeyTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 4, cuckooHashKeyTime, "Server generates cuckoo hash keys");
 
         stopWatch.start();
         // 计算PRF
@@ -124,7 +122,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 2/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
+        logStepInfo(PtoState.INIT_STEP, 2, 4, oprfTime, "Server computes PRFs");
 
         stopWatch.start();
         // 计算完全哈希分桶
@@ -132,7 +130,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         stopWatch.stop();
         long hashTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 3/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), hashTime);
+        logStepInfo(PtoState.INIT_STEP, 3, 4, hashTime, "Server bin-hashes key");
 
         stopWatch.start();
         // 计算多项式系数
@@ -140,38 +138,97 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         stopWatch.stop();
         long encodeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 4/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), encodeTime);
+        logStepInfo(PtoState.INIT_STEP, 4, 4, encodeTime, "Server encodes label");
 
-        initialized = true;
-        info("{}{} Server Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
+    }
+
+    @Override
+    public void init(Map<T, ByteBuffer> serverKeywordLabelMap, int maxRetrievalSize, int labelByteLength)
+        throws MpcAbortException {
+        MathPreconditions.checkPositive("maxRetrievalSize", maxRetrievalSize);
+        if (maxRetrievalSize > 1) {
+            params = Cmg21KwPirParams.SERVER_1M_CLIENT_MAX_4096;
+        } else {
+            params = Cmg21KwPirParams.SERVER_1M_CLIENT_MAX_1;
+        }
+        setInitInput(serverKeywordLabelMap, labelByteLength);
+        logPhaseInfo(PtoState.INIT_BEGIN);
+
+        stopWatch.start();
+        // 服务端生成并发送哈希密钥
+        hashKeys = CommonUtils.generateRandomKeys(params.getCuckooHashKeyNum(), secureRandom);
+        DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            rpc.ownParty().getPartyId(), otherParty().getPartyId()
+        );
+        List<byte[]> cuckooHashKeyPayload = Arrays.stream(hashKeys).collect(Collectors.toList());
+        rpc.send(DataPacket.fromByteArrayList(cuckooHashKeyHeader, cuckooHashKeyPayload));
+        stopWatch.stop();
+        long cuckooHashKeyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.INIT_STEP, 1, 4, cuckooHashKeyTime, "Server generates cuckoo hash keys");
+
+        stopWatch.start();
+        // 计算PRF
+        ArrayList<ByteBuffer> keywordPrfs = computeKeywordPrf();
+        Map<ByteBuffer, ByteBuffer> prfLabelMap = IntStream.range(0, keywordSize)
+            .boxed()
+            .collect(Collectors.toMap(
+                keywordPrfs::get,
+                i -> serverKeywordLabelMap.get(byteArrayObjectMap.get(keywordArrayList.get(i))),
+                (a, b) -> b)
+            );
+        stopWatch.stop();
+        long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.INIT_STEP, 2, 4, oprfTime, "Server computes PRFs");
+
+        stopWatch.start();
+        // 计算完全哈希分桶
+        hashBins = generateCompleteHashBin(keywordPrfs, params.getBinNum());
+        stopWatch.stop();
+        long hashTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.INIT_STEP, 3, 4, hashTime, "Server bin-hashes key");
+
+        stopWatch.start();
+        // 计算多项式系数
+        encodeDatabase(prfLabelMap);
+        stopWatch.stop();
+        long encodeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.INIT_STEP, 4, 4, encodeTime, "Server encodes label");
+
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public void pir() throws MpcAbortException {
         setPtoInput();
-        info("{}{} Server begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         // 服务端执行OPRF协议
         DataPacketHeader blindHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_BLIND.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_BLIND.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> blindPayload = rpc.receive(blindHeader).getPayload();
         List<byte[]> blindPrfPayload = handleBlindPayload(blindPayload);
         DataPacketHeader blindPrfHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), PtoStep.SERVER_SEND_BLIND_PRF.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SERVER_SEND_BLIND_PRF.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(blindPrfHeader, blindPrfPayload));
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, oprfTime, "Server runs OPRFs");
 
         // 接收客户端布谷鸟哈希分桶结果
         DataPacketHeader cuckooHashResultHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_RESULT.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_RESULT.ordinal(), extraInfo,
             otherParty().getPartyId(), rpc.ownParty().getPartyId()
         );
         List<byte[]> cuckooHashResultPayload = rpc.receive(cuckooHashResultHeader).getPayload();
@@ -179,7 +236,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
 
         // 接收客户端的加密密钥
         DataPacketHeader fheParamsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_FHE_PARAMS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_FHE_PARAMS.ordinal(), extraInfo,
             otherParty().getPartyId(), rpc.ownParty().getPartyId()
         );
         List<byte[]> fheParamsPayload = rpc.receive(fheParamsHeader).getPayload();
@@ -189,7 +246,7 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
 
         // 接收客户端的加密查询信息
         DataPacketHeader queryHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
             otherParty().getPartyId(), rpc.ownParty().getPartyId()
         );
         ArrayList<byte[]> queryPayload = new ArrayList<>(rpc.receive(queryHeader).getPayload());
@@ -203,21 +260,21 @@ public class Cmg21KwPirServer<T> extends AbstractKwPirServer<T> {
         // 密文多项式运算
         computeResponse(queryPayload, fheParamsPayload);
         DataPacketHeader keywordResponseHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ITEM_RESPONSE.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ITEM_RESPONSE.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(keywordResponseHeader, keywordResponsePayload));
         DataPacketHeader labelResponseHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_LABEL_RESPONSE.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_LABEL_RESPONSE.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(labelResponseHeader, labelResponsePayload));
         stopWatch.stop();
         long replyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), replyTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, replyTime, "Server generates reply");
 
-        info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
     }
 
     /**

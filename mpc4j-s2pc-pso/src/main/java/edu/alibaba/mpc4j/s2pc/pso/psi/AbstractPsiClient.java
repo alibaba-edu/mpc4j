@@ -3,7 +3,8 @@ package edu.alibaba.mpc4j.s2pc.pso.psi;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -14,11 +15,7 @@ import java.util.Set;
  * @author Weiran Liu
  * @date 2022/9/19
  */
-public abstract class AbstractPsiClient<T> extends AbstractSecureTwoPartyPto implements PsiClient<T> {
-    /**
-     * 配置项
-     */
-    private final PsiConfig config;
+public abstract class AbstractPsiClient<T> extends AbstractTwoPartyPto implements PsiClient<T> {
     /**
      * 客户端最大元素数量
      */
@@ -42,33 +39,22 @@ public abstract class AbstractPsiClient<T> extends AbstractSecureTwoPartyPto imp
 
     protected AbstractPsiClient(PtoDesc ptoDesc, Rpc clientRpc, Party serverParty, PsiConfig config) {
         super(ptoDesc, clientRpc, serverParty, config);
-        this.config = config;
-    }
-
-    @Override
-    public PsiFactory.PsiType getPtoType() {
-        return config.getPtoType();
     }
 
     protected void setInitInput(int maxClientElementSize, int maxServerElementSize) {
-        assert maxClientElementSize > 0 : "max client element size must be greater than 0: " + maxClientElementSize;
+        MathPreconditions.checkPositive("maxClientElementSize", maxClientElementSize);
         this.maxClientElementSize = maxClientElementSize;
-        assert maxServerElementSize > 0 : "max server element size must be greater than 0: " + maxServerElementSize;
+        MathPreconditions.checkPositive("maxServerElementSize", maxServerElementSize);
         this.maxServerElementSize = maxServerElementSize;
-        extraInfo++;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(Set<T> clientElementSet, int serverElementSize) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init...");
-        }
-        assert clientElementSet.size() > 0 && clientElementSet.size() <= maxClientElementSize
-            : "client element size must be in range (0, " + maxServerElementSize + "]: " + clientElementSet.size();
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("clientElementSize", clientElementSet.size(), maxClientElementSize);
         clientElementSize = clientElementSet.size();
         clientElementArrayList = new ArrayList<>(clientElementSet);
-        assert serverElementSize > 0 && serverElementSize <= maxServerElementSize
-            : "server element size must be in range (0, " + maxServerElementSize + "]: " + serverElementSize;
+        MathPreconditions.checkPositiveInRangeClosed("serverElementSize", serverElementSize, maxServerElementSize);
         this.serverElementSize = serverElementSize;
         extraInfo++;
     }

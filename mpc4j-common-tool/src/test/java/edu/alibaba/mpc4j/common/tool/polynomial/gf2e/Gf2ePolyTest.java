@@ -93,10 +93,10 @@ public class Gf2ePolyTest {
         // 尝试对给定的元素数量少于实际元素数量插值
         try {
             byte[][] xArray = IntStream.range(0, DEFAULT_NUM)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             byte[][] yArray = IntStream.range(0, DEFAULT_NUM)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             gf2ePoly.interpolate(DEFAULT_NUM / 2, xArray, yArray);
             throw new IllegalStateException("ERROR: successfully dummy interpolate with DEFAULT_NUM < actual pairs");
@@ -108,10 +108,10 @@ public class Gf2ePolyTest {
             int largeL = l + 1;
             int largeByteL = CommonUtils.getByteLength(largeL);
             byte[][] xArray = IntStream.range(0, DEFAULT_NUM)
-                .mapToObj(index -> BytesUtils.randomByteArray(largeL, largeByteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(largeByteL, largeL, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             byte[][] yArray = IntStream.range(0, DEFAULT_NUM)
-                .mapToObj(index -> BytesUtils.randomByteArray(largeL, largeByteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(largeByteL, largeL, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             gf2ePoly.interpolate(DEFAULT_NUM, xArray, yArray);
             throw new IllegalStateException("ERROR: successfully dummy interpolate large values");
@@ -121,10 +121,10 @@ public class Gf2ePolyTest {
         // 尝试对不相等的数据插值
         try {
             byte[][] xArray = IntStream.range(0, DEFAULT_NUM)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             byte[][] yArray = IntStream.range(0, DEFAULT_NUM / 2)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             gf2ePoly.interpolate(DEFAULT_NUM, xArray, yArray);
             throw new IllegalStateException("ERROR: successfully dummy interpolate points with unequal size");
@@ -149,10 +149,10 @@ public class Gf2ePolyTest {
         int l = gf2ePoly.getL();
         int byteL = gf2ePoly.getByteL();
         byte[][] xArray = IntStream.range(0, 1)
-            .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+            .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
             .toArray(byte[][]::new);
         byte[][] yArray = IntStream.range(0, 1)
-            .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+            .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
             .toArray(byte[][]::new);
         // 只有1组插值点
         byte[][] coefficients = gf2ePoly.interpolate(1, xArray, yArray);
@@ -206,10 +206,10 @@ public class Gf2ePolyTest {
         Gf2ePoly gf2ePoly = Gf2ePolyFactory.createInstance(type, l);
         int byteL = gf2ePoly.getByteL();
         byte[][] xArray = IntStream.range(0, DEFAULT_NUM / 2)
-            .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+            .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
             .toArray(byte[][]::new);
         byte[][] yArray = IntStream.range(0, DEFAULT_NUM / 2)
-            .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+            .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
             .toArray(byte[][]::new);
         // 插值一半的点
         byte[][] coefficients = gf2ePoly.interpolate(DEFAULT_NUM / 2, xArray, yArray);
@@ -230,10 +230,10 @@ public class Gf2ePolyTest {
         ArrayList<byte[][]> yArrayList = new ArrayList<>();
         IntStream.range(0, MAX_PARALLEL).forEach(parallelIndex -> {
             byte[][] xArray = IntStream.range(0, DEFAULT_NUM / 2)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             byte[][] yArray = IntStream.range(0, DEFAULT_NUM / 2)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             xArrayList.add(xArray);
             yArrayList.add(yArray);
@@ -273,7 +273,7 @@ public class Gf2ePolyTest {
         int l = gf2ePoly.getL();
         int byteL = gf2ePoly.getByteL();
         byte[][] xArray = new byte[0][];
-        byte[] y = BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM);
+        byte[] y = BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM);
         // 没有插值点，但要补充随机点
         byte[][] coefficients = gf2ePoly.rootInterpolate(DEFAULT_NUM, xArray, y);
         assertRootCoefficients(gf2ePoly, DEFAULT_NUM, coefficients);
@@ -286,9 +286,9 @@ public class Gf2ePolyTest {
         int byteL = gf2ePoly.getByteL();
         // 只存在一组插值点，也应该可以构建多项式
         byte[][] xArray = IntStream.range(0, 1)
-            .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+            .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
             .toArray(byte[][]::new);
-        byte[] y = BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM);
+        byte[] y = BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM);
         // 只有1组插值点
         byte[][] coefficients = gf2ePoly.rootInterpolate(1, xArray, y);
         assertRootCoefficients(gf2ePoly, 1, coefficients);
@@ -312,9 +312,9 @@ public class Gf2ePolyTest {
         Gf2ePoly gf2ePoly = Gf2ePolyFactory.createInstance(type, l);
         int byteL = gf2ePoly.getByteL();
         byte[][] xArray = IntStream.range(0, DEFAULT_NUM / 2)
-            .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+            .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
             .toArray(byte[][]::new);
-        byte[] y = BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM);
+        byte[] y = BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM);
         // 插值一半的点
         byte[][] coefficients = gf2ePoly.rootInterpolate(DEFAULT_NUM / 2, xArray, y);
         assertRootCoefficients(gf2ePoly, DEFAULT_NUM / 2, coefficients);
@@ -334,9 +334,9 @@ public class Gf2ePolyTest {
         ArrayList<byte[]> yList = new ArrayList<>();
         IntStream.range(0, MAX_PARALLEL).forEach(parallelIndex -> {
             byte[][] xArray = IntStream.range(0, DEFAULT_NUM / 2)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
-            byte[] y = BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM);
+            byte[] y = BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM);
             xArrayList.add(xArray);
             yList.add(y);
         });

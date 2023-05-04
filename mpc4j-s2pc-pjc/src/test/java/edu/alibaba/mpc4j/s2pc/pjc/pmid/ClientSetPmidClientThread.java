@@ -2,7 +2,6 @@ package edu.alibaba.mpc4j.s2pc.pjc.pmid;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -15,7 +14,7 @@ public class ClientSetPmidClientThread extends Thread {
     /**
      * PMID客户端
      */
-    private final PmidClient<String> pmidClient;
+    private final PmidClient<String> client;
     /**
      * 客户端集合
      */
@@ -37,9 +36,9 @@ public class ClientSetPmidClientThread extends Thread {
      */
     private PmidPartyOutput<String> clientOutput;
 
-    ClientSetPmidClientThread(PmidClient<String> pmidClient,
+    ClientSetPmidClientThread(PmidClient<String> client,
                               Set<String> clientElementSet, int serverSetSize, int maxServerU, int serverU) {
-        this.pmidClient = pmidClient;
+        this.client = client;
         this.clientElementSet = clientElementSet;
         this.serverSetSize = serverSetSize;
         this.maxServerU = maxServerU;
@@ -53,10 +52,8 @@ public class ClientSetPmidClientThread extends Thread {
     @Override
     public void run() {
         try {
-            pmidClient.getRpc().connect();
-            pmidClient.init(clientElementSet.size(), 1, serverSetSize, maxServerU);
-            clientOutput = pmidClient.pmid(clientElementSet, serverSetSize, serverU);
-            pmidClient.getRpc().disconnect();
+            client.init(clientElementSet.size(), 1, serverSetSize, maxServerU);
+            clientOutput = client.pmid(clientElementSet, serverSetSize, serverU);
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

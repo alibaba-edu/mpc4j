@@ -2,8 +2,8 @@ package edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.MpOprfConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;

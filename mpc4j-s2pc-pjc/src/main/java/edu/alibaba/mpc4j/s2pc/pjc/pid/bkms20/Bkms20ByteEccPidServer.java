@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pid.bkms20;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory;
@@ -82,9 +79,9 @@ public class Bkms20ByteEccPidServer<T> extends AbstractPidParty<T> {
     }
 
     @Override
-    public void init(int maxServerSetSize, int maxClientSetSize) {
-        setInitInput(maxServerSetSize, maxClientSetSize);
-        info("{}{} Server Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+    public void init(int maxOwnElementSetSize, int maxOtherElementSetSize) {
+        setInitInput(maxOwnElementSetSize, maxOtherElementSetSize);
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // Let k_c, r_c ←_R Z_q
@@ -93,16 +90,15 @@ public class Bkms20ByteEccPidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Server Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
-    public PidPartyOutput<T> pid(Set<T> serverElementSet, int clientSetSize) throws MpcAbortException {
-        setPtoInput(serverElementSet, clientSetSize);
-        info("{}{} Server begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+    public PidPartyOutput<T> pid(Set<T> ownElementSet, int otherElementSetSize) throws MpcAbortException {
+        setPtoInput(ownElementSet, otherElementSetSize);
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         int pidByteLength = PidUtils.GLOBAL_PID_BYTE_LENGTH;
@@ -110,37 +106,37 @@ public class Bkms20ByteEccPidServer<T> extends AbstractPidParty<T> {
         // 生成置乱映射，计算并发送U_c
         List<byte[]> ucPayload = generateUcPayload();
         DataPacketHeader ucHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_UC.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_UC.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(ucHeader, ucPayload));
         stopWatch.stop();
         long ucGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), ucGenTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 5, ucGenTime);
 
         stopWatch.start();
         // 接收U_p，根据U_p计算E_p和V_p，存储E_p并发送V_p
         DataPacketHeader upHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_UP.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_UP.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> upPayload = rpc.receive(upHeader).getPayload();
         List<byte[]> vpPayload = handleUpPayload(upPayload);
         DataPacketHeader vpHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_VP.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_VP.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(vpHeader, vpPayload));
         stopWatch.stop();
         long vpGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), vpGenTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 5, vpGenTime);
 
         stopWatch.start();
         // 接收V_c，计算自己ID对应的PID
         DataPacketHeader vcHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_VC.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_VC.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> vcPayload = rpc.receive(vcHeader).getPayload();
@@ -148,37 +144,37 @@ public class Bkms20ByteEccPidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long idMapGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), idMapGenTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 5, idMapGenTime);
 
         stopWatch.start();
         // 接收E_c，先计算S_p、S_c并发送S_p
         DataPacketHeader ecHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_EC.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_EC.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> ecPayload = rpc.receive(ecHeader).getPayload();
         List<byte[]> spPayload = handleEcPayload(ecPayload);
         DataPacketHeader spHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_SP.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_SP.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(spHeader, spPayload));
         // 再计算并发送S_c'
         List<byte[]> scpPayload = generateScpPayload();
         DataPacketHeader scpHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_SCP.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_SCP.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(scpHeader, scpPayload));
         stopWatch.stop();
         long scpGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), scpGenTime);
+        logStepInfo(PtoState.PTO_STEP, 4, 5, scpGenTime);
 
         stopWatch.start();
         // 接收S_p'，得到非自己ID对应的PID
         DataPacketHeader sppHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_SPP.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_SPP.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> sppPayload = rpc.receive(sppHeader).getPayload();
@@ -186,9 +182,9 @@ public class Bkms20ByteEccPidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long sppHandleTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), sppHandleTime);
+        logStepInfo(PtoState.PTO_STEP, 5, 5, sppHandleTime);
 
-        info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return new PidPartyOutput<>(pidByteLength, new HashSet<>(serverPidSet), new HashMap<>(serverPidMap));
     }
 
@@ -201,17 +197,17 @@ public class Bkms20ByteEccPidServer<T> extends AbstractPidParty<T> {
             .map(ci -> byteMulEcc.mul(ci, kc))
             .toArray(byte[][]::new);
         // Randomly shuffle the elements in U_c using a permutation π_c
-        ArrayList<Integer> shuffleMap = IntStream.range(0, ownSetSize)
+        ArrayList<Integer> shuffleMap = IntStream.range(0, ownElementSetSize)
             .boxed()
             .collect(Collectors.toCollection(ArrayList::new));
         Collections.shuffle(shuffleMap, secureRandom);
-        byte[][] shuffleUc = new byte[ownSetSize][];
+        byte[][] shuffleUc = new byte[ownElementSetSize][];
         // For example, shuffleMap = [2, 0, 1, 3], input = [a_0, a_1, a_2, a_3], output = [a_2, a_0, a_1. a_3]
-        for (int i = 0; i < ownSetSize; i++) {
+        for (int i = 0; i < ownElementSetSize; i++) {
             shuffleUc[i] = uc[shuffleMap.get(i)];
         }
         // Given shuffleMap = [2, 0, 1, 3], reShuffleMap = [2 -> 0, 0 -> 1, 1 -> 2, 3 -> 3]
-        reShuffleMap = IntStream.range(0, ownSetSize)
+        reShuffleMap = IntStream.range(0, ownElementSetSize)
             .boxed()
             .collect(Collectors.toMap(shuffleMap::get, Function.identity()));
         // send to P
@@ -219,7 +215,7 @@ public class Bkms20ByteEccPidServer<T> extends AbstractPidParty<T> {
     }
 
     private List<byte[]> handleUpPayload(List<byte[]> upPayload) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(upPayload.size() == otherSetSize);
+        MpcAbortPreconditions.checkArgument(upPayload.size() == otherElementSetSize);
         // For each u_p^i ∈ U_p, Compute e_p^i = (u_p^i)^{k_c}
         Stream<byte[]> upStream = upPayload.stream();
         upStream = parallel ? upStream.parallel() : upStream;
@@ -240,11 +236,11 @@ public class Bkms20ByteEccPidServer<T> extends AbstractPidParty<T> {
     }
 
     private void handleVcPayload(List<byte[]> vcPayload) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(vcPayload.size() == ownSetSize);
+        MpcAbortPreconditions.checkArgument(vcPayload.size() == ownElementSetSize);
         // Shuffle back the elements of V_c using π^{−1}_c.
         byte[][] shuffleVc = vcPayload.toArray(new byte[0][]);
-        byte[][] vc = new byte[ownSetSize][];
-        for (int i = 0; i < ownSetSize; i++) {
+        byte[][] vc = new byte[ownElementSetSize][];
+        for (int i = 0; i < ownElementSetSize; i++) {
             vc[i] = shuffleVc[reShuffleMap.get(i)];
         }
         reShuffleMap = null;
@@ -256,7 +252,7 @@ public class Bkms20ByteEccPidServer<T> extends AbstractPidParty<T> {
             .map(pidMap::digestToBytes)
             .map(ByteBuffer::wrap)
             .toArray(ByteBuffer[]::new);
-        serverPidMap = IntStream.range(0, ownSetSize)
+        serverPidMap = IntStream.range(0, ownElementSetSize)
             .boxed()
             .collect(Collectors.toMap(index -> wc[index], index -> ownElementArrayList.get(index)));
         serverPidSet = Arrays.stream(wc).collect(Collectors.toSet());

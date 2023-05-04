@@ -24,6 +24,14 @@ public class HhLdpMetrics {
      */
     private long memoryBytes;
     /**
+     * warmup NDCG
+     */
+    private double warmupNdcg;
+    /**
+     * warmup precision
+     */
+    private double warmupPrecision;
+    /**
      * NDCG
      */
     private double ndcg;
@@ -70,6 +78,22 @@ public class HhLdpMetrics {
 
     public void setMemoryBytes(long memoryBytes) {
         this.memoryBytes = memoryBytes;
+    }
+
+    public double getWarmupNdcg() {
+        return warmupNdcg;
+    }
+
+    public void setWarmupNdcg(double warmupNdcg) {
+        this.warmupNdcg = warmupNdcg;
+    }
+
+    public double getWarmupPrecision() {
+        return warmupPrecision;
+    }
+
+    public void setWarmupPrecision(double warmupPrecision) {
+        this.warmupPrecision = warmupPrecision;
     }
 
     public double getNdcg() {

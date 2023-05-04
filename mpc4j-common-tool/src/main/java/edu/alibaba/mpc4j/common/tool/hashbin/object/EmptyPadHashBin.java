@@ -120,13 +120,16 @@ public class EmptyPadHashBin<T> implements HashBin<T> {
         insertedPaddingItems = false;
     }
 
-    /**
-     * 返回哈希数量。
-     *
-     * @return 哈希数量。
-     */
+    @Override
     public int getHashNum() {
         return hashes.length;
+    }
+
+    @Override
+    public byte[][] getHashKeys() {
+        return Arrays.stream(hashes)
+            .map(Prf::getKey)
+            .toArray(byte[][]::new);
     }
 
     @Override

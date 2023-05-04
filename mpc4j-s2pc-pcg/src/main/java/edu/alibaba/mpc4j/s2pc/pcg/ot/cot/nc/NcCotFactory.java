@@ -15,44 +15,44 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20.Ywl20NcCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20.Ywl20NcCotSender;
 
 /**
- * NC-COT协议工厂。
+ * no-choice COT factory.
  *
  * @author Weiran Liu
  * @date 2022/01/26
  */
 public class NcCotFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private NcCotFactory() {
         // empty
     }
 
     /**
-     * 协议类型
+     * the type.
      */
     public enum NcCotType {
         /**
-         * 直接协议
+         * directly invoke core COT
          */
         DIRECT,
         /**
-         * YWL20协议
+         * YWL20
          */
         YWL20,
         /**
-         * CRR21协议
+         * CRR21
          */
         CRR21,
     }
 
     /**
-     * 构建发送方。
+     * Creates a sender.
      *
-     * @param senderRpc     发送方通信接口。
-     * @param receiverParty 接收方信息。
-     * @param config        配置项。
-     * @return 发送方。
+     * @param senderRpc     the sender RPC.
+     * @param receiverParty the receiver party.
+     * @param config        the config.
+     * @return a sender.
      */
     public static NcCotSender createSender(Rpc senderRpc, Party receiverParty, NcCotConfig config) {
         NcCotType type = config.getPtoType();
@@ -69,12 +69,12 @@ public class NcCotFactory implements PtoFactory {
     }
 
     /**
-     * 构建接收方。
+     * Creates a receiver.
      *
-     * @param receiverRpc 接收方通信接口。
-     * @param senderParty 发送方信息。
-     * @param config      配置项。
-     * @return 接收方。
+     * @param receiverRpc the receiver RPC.
+     * @param senderParty the sender party.
+     * @param config      the config.
+     * @return a receiver.
      */
     public static NcCotReceiver createReceiver(Rpc receiverRpc, Party senderParty, NcCotConfig config) {
         NcCotType type = config.getPtoType();
@@ -91,21 +91,17 @@ public class NcCotFactory implements PtoFactory {
     }
 
     /**
-     * 创建默认协议配置项。
+     * Creates a default config.
      *
-     * @param securityModel 安全模型。
-     * @return 默认协议配置项。
+     * @param securityModel the security model.
+     * @param silent if using a silent protocol.
+     * @return a default config.
      */
-    public static NcCotConfig createDefaultConfig(SecurityModel securityModel) {
-        switch (securityModel) {
-            case IDEAL:
-            case SEMI_HONEST:
-                return new Ywl20NcCotConfig.Builder(SecurityModel.SEMI_HONEST).build();
-            case COVERT:
-            case MALICIOUS:
-                return new Ywl20NcCotConfig.Builder(SecurityModel.MALICIOUS).build();
-            default:
-                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
+    public static NcCotConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
+        if (silent) {
+            return new Ywl20NcCotConfig.Builder(securityModel).build();
+        } else {
+            return new DirectNcCotConfig.Builder(securityModel).build();
         }
     }
 }

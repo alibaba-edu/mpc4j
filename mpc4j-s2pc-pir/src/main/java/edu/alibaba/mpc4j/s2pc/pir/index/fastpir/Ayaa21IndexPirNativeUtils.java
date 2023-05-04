@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pir.index.fastpir;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * FastPIR协议本地算法库工具类。
@@ -34,7 +34,7 @@ public class Ayaa21IndexPirNativeUtils {
      * @param steps       Galois密钥参数。
      * @return 公私钥对。
      */
-    static native ArrayList<byte[]> keyGen(byte[] sealContext, int[] steps);
+    static native List<byte[]> keyGen(byte[] sealContext, int[] steps);
 
     /**
      * NTT转换。
@@ -43,7 +43,7 @@ public class Ayaa21IndexPirNativeUtils {
      * @param plaintext   系数表示的多项式。
      * @return 点值表示的多项式。
      */
-    static native ArrayList<byte[]> nttTransform(byte[] sealContext, long[][] plaintext);
+    static native List<byte[]> nttTransform(byte[] sealContext, long[][] plaintext);
 
     /**
      * 客户端生成问询密文。
@@ -55,8 +55,8 @@ public class Ayaa21IndexPirNativeUtils {
      * @param querySize   问询密文数目。
      * @return 问询密文。
      */
-    static native ArrayList<byte[]> generateQuery(byte[] sealContext, byte[] publicKey, byte[] secretKey, int index,
-                                                  int querySize);
+    static native List<byte[]> generateQuery(byte[] sealContext, byte[] publicKey, byte[] secretKey, int index,
+                                             int querySize);
 
     /**
      * 服务端生成回复密文。
@@ -68,8 +68,8 @@ public class Ayaa21IndexPirNativeUtils {
      * @param elementColNum 元素列数目。
      * @return 检索结果密文。
      */
-    static native byte[] generateResponse(byte[] sealContext, byte[] galoisKeys, ArrayList<byte[]> query,
-                                          ArrayList<byte[]> database, int elementColNum);
+    static native byte[] generateResponse(byte[] sealContext, byte[] galoisKeys, List<byte[]> query,
+                                          List<byte[]> database, int elementColNum);
 
     /**
      * 解密回复密文。

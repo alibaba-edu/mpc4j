@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.np01;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
@@ -54,32 +51,31 @@ public class Np01BaseNotSender extends AbstractBaseNotSender {
     @Override
     public void init(int maxChoice) throws MpcAbortException {
         setInitInput(maxChoice);
-        info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
-        initialized = true;
-        info("{}{} Send. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public BaseNotSenderOutput send(int num) throws MpcAbortException {
         setPtoInput(num);
-        info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         List<byte[]> initPayload = generateInitPayload();
         DataPacketHeader initHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_INIT.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_INIT.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(initHeader, initPayload));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, initTime);
 
         stopWatch.start();
         DataPacketHeader publicKeyHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_PK.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_PK.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> publicKeyPayload = rpc.receive(publicKeyHeader).getPayload();
@@ -87,9 +83,9 @@ public class Np01BaseNotSender extends AbstractBaseNotSender {
         stopWatch.stop();
         long pkTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pkTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, pkTime);
 
-        info("{}{} Send. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return senderOutput;
     }
 

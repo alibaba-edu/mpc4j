@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pid;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidFactory.PidType;
 
 /**
@@ -9,7 +9,7 @@ import edu.alibaba.mpc4j.s2pc.pjc.pid.PidFactory.PidType;
  * @author Weiran Liu
  * @date 2022/01/19
  */
-public interface PidConfig extends SecurePtoConfig {
+public interface PidConfig extends MultiPartyPtoConfig {
     /**
      * 返回协议类型。
      *

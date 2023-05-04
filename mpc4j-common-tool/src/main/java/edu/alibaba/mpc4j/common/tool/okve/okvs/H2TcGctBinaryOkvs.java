@@ -25,11 +25,15 @@ import java.util.stream.Collectors;
  * @author Weiran Liu
  * @date 2021/09/05
  */
-public class H2TcGctBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
+public class H2TcGctBinaryOkvs<T> extends AbstractBinaryOkvs<T> implements SparseOkvs<T> {
+    /**
+     * 2 sparse hashes
+     */
+    private static final int SPARSE_HASH_NUM = 2;
     /**
      * 2哈希-两核乱码布谷鸟表需要3个哈希函数：2个布谷鸟哈希的哈希函数，1个右侧哈希函数
      */
-    static final int HASH_NUM = 3;
+    static final int HASH_NUM = SPARSE_HASH_NUM + 1;
     /**
      * 2哈希-两核乱码布谷鸟表对应的ε = 0.4
      */
@@ -86,29 +90,52 @@ public class H2TcGctBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
     }
 
     @Override
+    public int[] sparsePosition(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        int[] sparsePositions = new int[SPARSE_HASH_NUM];
+        sparsePositions[0] = h1.getInteger(0, keyBytes, lm);
+        // h1 and h2 are distinct
+        int h2Index = 0;
+        do {
+            sparsePositions[1] = h2.getInteger(h2Index, keyBytes, lm);
+            h2Index++;
+        } while (sparsePositions[1] == sparsePositions[0]);
+        return sparsePositions;
+    }
+
+    @Override
+    public int sparsePositionNum() {
+        return SPARSE_HASH_NUM;
+    }
+
+    @Override
+    public boolean[] densePositions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        return BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes));
+    }
+
+    @Override
+    public int maxDensePositionNum() {
+        return rm;
+    }
+
+    @Override
     public byte[] decode(byte[][] storage, T key) {
         // 这里不能验证storage每一行的长度，否则整体算法复杂度会变为O(n^2)
         assert storage.length == getM();
-        // 不直接使用mapToRow映射，而是人工计算，这样效率更高
-        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        int h1Value = h1.getInteger(keyBytes, lm);
-        int h2Value = h2.getInteger(keyBytes, lm);
-        byte[] rxBytes = hr.getBytes(keyBytes);
-        boolean[] rxBinary = BinaryUtils.byteArrayToBinary(rxBytes);
-        byte[] valueBytes = new byte[lByteLength];
-        if (h1Value != h2Value) {
-            BytesUtils.xori(valueBytes, storage[h1Value]);
-            BytesUtils.xori(valueBytes, storage[h2Value]);
-        } else {
-            // 如果两个哈希结果相同，则只计算一次异或
-            BytesUtils.xori(valueBytes, storage[h1Value]);
-        }
+        int[] sparsePositions = sparsePosition(key);
+        boolean[] rxBinary = densePositions(key);
+        byte[] value = new byte[byteL];
+        // h1 and h2 must be distinct
+        BytesUtils.xori(value, storage[sparsePositions[0]]);
+        BytesUtils.xori(value, storage[sparsePositions[1]]);
         for (int rmIndex = 0; rmIndex < rm; rmIndex++) {
             if (rxBinary[rmIndex]) {
-                BytesUtils.xori(valueBytes, storage[lm + rmIndex]);
+                BytesUtils.xori(value, storage[lm + rmIndex]);
             }
         }
-        return valueBytes;
+        assert BytesUtils.isFixedReduceByteArray(value, byteL, l);
+        return value;
     }
 
     @Override
@@ -125,16 +152,20 @@ public class H2TcGctBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
     @Override
     public byte[][] encode(Map<T, byte[]> keyValueMap) throws ArithmeticException {
         assert keyValueMap.size() <= n;
+        keyValueMap.values().forEach(x -> {
+            assert BytesUtils.isFixedReduceByteArray(x, byteL, l);
+        });
         // 构造数据到哈希值的查找表
         Set<T> keySet = keyValueMap.keySet();
         dataH1Map = new HashMap<>(keySet.size());
         dataH2Map = new HashMap<>(keySet.size());
         dataHrMap = new HashMap<>(keySet.size());
         for (T key : keySet) {
-            byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-            dataH1Map.put(key, h1.getInteger(keyBytes, lm));
-            dataH2Map.put(key, h2.getInteger(keyBytes, lm));
-            dataHrMap.put(key, BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes)));
+            int[] sparsePositions = sparsePosition(key);
+            boolean[] densePositions = densePositions(key);
+            dataH1Map.put(key, sparsePositions[0]);
+            dataH2Map.put(key, sparsePositions[1]);
+            dataHrMap.put(key, densePositions);
         }
         // 生成2哈希-布谷鸟图
         H2CuckooTable<T> h2CuckooTable = generateCuckooTable(keyValueMap);
@@ -162,7 +193,7 @@ public class H2TcGctBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
             int source = removedDataVertices[0];
             int target = removedDataVertices[1];
             boolean[] rx = dataHrMap.get(removedData);
-            byte[] innerProduct = BytesUtils.innerProduct(rightStorage, lByteLength, rx);
+            byte[] innerProduct = BytesUtils.innerProduct(rightStorage, byteL, rx);
             byte[] valueBytes = keyValueMap.get(removedData);
             BytesUtils.xori(innerProduct, valueBytes);
             if (source == target) {
@@ -177,8 +208,7 @@ public class H2TcGctBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
                 // 起点和终点不一致，有4种情况
                 if (leftStorage[source] == null && leftStorage[target] == null) {
                     // 情况1：左右都为空
-                    leftStorage[source] = new byte[lByteLength];
-                    secureRandom.nextBytes(leftStorage[source]);
+                    leftStorage[source] = BytesUtils.randomByteArray(byteL, l, secureRandom);
                     BytesUtils.xori(innerProduct, leftStorage[source]);
                     leftStorage[target] = innerProduct;
                 } else if (leftStorage[source] == null) {
@@ -198,8 +228,7 @@ public class H2TcGctBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
         // 左侧矩阵补充随机数
         for (int vertex = 0; vertex < lm; vertex++) {
             if (leftStorage[vertex] == null) {
-                leftStorage[vertex] = new byte[lByteLength];
-                secureRandom.nextBytes(leftStorage[vertex]);
+                leftStorage[vertex] = BytesUtils.randomByteArray(byteL, l, secureRandom);
             }
         }
         // 更新矩阵

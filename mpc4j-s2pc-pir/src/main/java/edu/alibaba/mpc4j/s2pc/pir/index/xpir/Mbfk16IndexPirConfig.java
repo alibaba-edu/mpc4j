@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.s2pc.pir.index.IndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.IndexPirFactory;
 
 /**
- * XPIR协议配置项。
+ * XPIR config.
  *
  * @author Liqiang Peng
  * @date 2022/8/25

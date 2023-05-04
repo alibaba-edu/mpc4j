@@ -1,85 +1,77 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp64;
 
-import cc.redberry.rings.IntegersZp64;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
 import org.junit.Assert;
 
-import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
 /**
- * Zp64-VOLE测试工具类。
+ * Zp64-VOLE test utilities.
  *
  * @author Hanwen Feng
  * @date 2022/6/15
  */
 public class Zp64VoleTestUtils {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private Zp64VoleTestUtils() {
         // empty
     }
 
     /**
-     * 生成接收方输出。
+     * Generates a receiver output.
      *
-     * @param prime        素数域。
-     * @param num          数量。
-     * @param delta        关联值Δ。
-     * @param secureRandom 随机状态。
-     * @return 接收方输出。
+     * @param zp64 the Zp64 instance.
+     * @param num          num.
+     * @param delta        Δ.
+     * @param secureRandom the random state.
+     * @return a receiver output.
      */
-    public static Zp64VoleReceiverOutput genReceiverOutput(long prime, int num, long delta,
-                                                           SecureRandom secureRandom) {
-        assert BigInteger.valueOf(prime).isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "input prime is not a prime: " + prime;
-        assert delta >= 0 && LongUtils.ceilLog2(delta) <= LongUtils.ceilLog2(prime) - 1
-                : "Δ must be in range [0, " + (1L << (LongUtils.ceilLog2(prime) - 1)) + "): " + delta;
-        assert num >= 0 : "num must be greater or equal than 0";
-        if (num == 0) {
-            return Zp64VoleReceiverOutput.createEmpty(prime, delta);
-        }
+    public static Zp64VoleReceiverOutput genReceiverOutput(Zp64 zp64, int num, long delta, SecureRandom secureRandom) {
+        assert zp64.validateRangeElement(delta);
+        assert num > 0 : "num must be greater than 0: " + num;
         long[] q = IntStream.range(0, num)
-                .mapToLong(index -> LongUtils.randomNonNegative(prime, secureRandom))
+                .mapToLong(index -> zp64.createRandom(secureRandom))
                 .toArray();
-        return Zp64VoleReceiverOutput.create(prime, delta, q);
+        return Zp64VoleReceiverOutput.create(zp64, delta, q);
     }
 
     /**
-     * 生成发送方输出。
+     * Generates a sender output.
      *
-     * @param receiverOutput 接收方输出。
-     * @param secureRandom   随机状态。
-     * @return 发送方输出。
+     * @param receiverOutput the receiver output.
+     * @param secureRandom   the random state.
+     * @return a sender output.
      */
     public static Zp64VoleSenderOutput genSenderOutput(Zp64VoleReceiverOutput receiverOutput, SecureRandom secureRandom) {
         int num = receiverOutput.getNum();
-        long prime = receiverOutput.getPrime();
-        if (num == 0) {
-            return Zp64VoleSenderOutput.createEmpty(prime);
-        }
+        assert num > 0 : "num must be greater than 0";
+        Zp64 zp64 = receiverOutput.getZp64();
         long delta = receiverOutput.getDelta();
-        IntegersZp64 zp64 = new IntegersZp64(prime);
         long[] x = IntStream.range(0, num)
-                .mapToLong(i -> LongUtils.randomNonNegative(prime, secureRandom))
+                .mapToLong(i -> zp64.createRandom(secureRandom))
                 .toArray();
         long[] t = IntStream.range(0, num)
-                .mapToLong(i -> zp64.add(zp64.multiply(x[i], delta), receiverOutput.getQ(i)))
+                .mapToLong(i -> {
+                    long ti = zp64.mul(x[i], delta);
+                    ti = zp64.add(ti, receiverOutput.getQ(i));
+                    return ti;
+                })
                 .toArray();
-        return Zp64VoleSenderOutput.create(prime, x, t);
+        return Zp64VoleSenderOutput.create(zp64, x, t);
     }
 
     /**
-     * 验证输出结果。
+     * Verifies the output pair.
      *
-     * @param num            数量。
-     * @param senderOutput   发送方输出。
-     * @param receiverOutput 接收方输出。
+     * @param num            num.
+     * @param senderOutput   the sender output.
+     * @param receiverOutput the receiver output.
      */
     public static void assertOutput(int num, Zp64VoleSenderOutput senderOutput, Zp64VoleReceiverOutput receiverOutput) {
-        Assert.assertEquals(senderOutput.getPrime(), receiverOutput.getPrime());
+        Assert.assertEquals(senderOutput.getZp64(), receiverOutput.getZp64());
         if (num == 0) {
             Assert.assertEquals(0, senderOutput.getNum());
             Assert.assertEquals(0, senderOutput.getX().length);
@@ -89,12 +81,10 @@ public class Zp64VoleTestUtils {
         } else {
             Assert.assertEquals(num, senderOutput.getNum());
             Assert.assertEquals(num, receiverOutput.getNum());
-            long prime = senderOutput.getPrime();
-            IntegersZp64 zp64 = new IntegersZp64(prime);
+            Zp64 zp64 = senderOutput.getZp64();
             IntStream.range(0, num).forEach(i -> {
-                long actualT = zp64.add(
-                    zp64.multiply(senderOutput.getX(i), receiverOutput.getDelta()), receiverOutput.getQ(i)
-                );
+                long actualT = zp64.mul(senderOutput.getX(i), receiverOutput.getDelta());
+                actualT = zp64.add(actualT, receiverOutput.getQ(i));
                 Assert.assertEquals(senderOutput.getT(i), actualT);
             });
         }

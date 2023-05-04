@@ -23,11 +23,15 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2021/10/02
  */
-class H3TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
+class H3TcGctZpOvdm<T> extends AbstractZpOvdm<T> implements SparseZpOvdm<T> {
+    /**
+     * 3 sparse hashes
+     */
+    private static final int SPARSE_HASH_NUM = 3;
     /**
      * 3哈希-两核乱码布谷鸟表需要4个哈希函数：3个布谷鸟哈希的哈希函数，1个右侧哈希函数
      */
-    static final int HASH_NUM = 4;
+    static final int HASH_NUM = SPARSE_HASH_NUM + 1;
     /**
      * 3哈希-两核乱码布谷鸟表左侧编码放大系数
      */
@@ -91,44 +95,55 @@ class H3TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
         hr.setKey(keys[3]);
     }
 
-    /**
-     * 返回不同的哈希值。
-     *
-     * @param message 消息。
-     * @return 不同的哈希值。
-     */
-    private int[] hashDistinctValues(byte[] message) {
-        int[] hValues = new int[3];
-        hValues[0] = h1.getInteger(0, message, lm);
-        // 得到与h1Value取值不同的h2Value
+    @Override
+    public int[] sparsePositions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        int[] sparsePositions = new int[SPARSE_HASH_NUM];
+        sparsePositions[0] = h1.getInteger(0, keyBytes, lm);
+        // h1 and h2 are distinct
         int h2Index = 0;
         do {
-            hValues[1] = h2.getInteger(h2Index, message, lm);
+            sparsePositions[1] = h2.getInteger(h2Index, keyBytes, lm);
             h2Index++;
-        } while (hValues[1] == hValues[0]);
-        // 得到与h1Value和h2Value取值不同的h3Value
+        } while (sparsePositions[1] == sparsePositions[0]);
+        // h3 and h1 / h2 are distinct
         int h3Index = 0;
         do {
-            hValues[2] = h3.getInteger(h3Index, message, lm);
+            sparsePositions[2] = h3.getInteger(h3Index, keyBytes, lm);
             h3Index++;
-        } while (hValues[2] == hValues[0] || hValues[2] == hValues[1]);
+        } while (sparsePositions[2] == sparsePositions[0] || sparsePositions[2] == sparsePositions[1]);
 
-        return hValues;
+        return sparsePositions;
+    }
+
+    @Override
+    public int sparsePositionNum() {
+        return SPARSE_HASH_NUM;
+    }
+
+    @Override
+    public boolean[] densePositions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        return BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes));
+    }
+
+    @Override
+    public int maxDensePositionNum() {
+        return rm;
     }
 
     @Override
     public BigInteger decode(BigInteger[] storage, T key) {
         assert storage.length == getM();
-        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        int[] hValues = hashDistinctValues(keyBytes);
-        boolean[] rxBinary = BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes));
+        int[] sparsePositions = sparsePositions(key);
+        boolean[] densePositions = densePositions(key);
         BigInteger value = BigInteger.ZERO;
         // 三个哈希结果一定不同，计算3次求和
-        value = zp.add(value, storage[hValues[0]]);
-        value = zp.add(value, storage[hValues[1]]);
-        value = zp.add(value, storage[hValues[2]]);
+        value = zp.add(value, storage[sparsePositions[0]]);
+        value = zp.add(value, storage[sparsePositions[1]]);
+        value = zp.add(value, storage[sparsePositions[2]]);
         for (int rmIndex = 0; rmIndex < rm; rmIndex++) {
-            if (rxBinary[rmIndex]) {
+            if (densePositions[rmIndex]) {
                 value = zp.add(value, storage[lm + rmIndex]);
             }
         }
@@ -150,12 +165,12 @@ class H3TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
         dataH3Map = new HashMap<>(keySet.size());
         dataHrMap = new HashMap<>(keySet.size());
         for (T key : keySet) {
-            byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-            int[] hValues = hashDistinctValues(keyBytes);
-            dataH1Map.put(key, hValues[0]);
-            dataH2Map.put(key, hValues[1]);
-            dataH3Map.put(key, hValues[2]);
-            dataHrMap.put(key, BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes)));
+            int[] sparsePositions = sparsePositions(key);
+            boolean[] densePositions = densePositions(key);
+            dataH1Map.put(key, sparsePositions[0]);
+            dataH2Map.put(key, sparsePositions[1]);
+            dataH3Map.put(key, sparsePositions[2]);
+            dataHrMap.put(key, densePositions);
         }
         // 生成3哈希-布谷鸟图
         H3CuckooTable<T> h3CuckooTable = generateCuckooTable(keyValueMap);

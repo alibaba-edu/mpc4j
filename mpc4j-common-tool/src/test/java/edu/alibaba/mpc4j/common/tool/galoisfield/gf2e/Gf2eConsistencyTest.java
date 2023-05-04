@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2e;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -60,8 +61,8 @@ public class Gf2eConsistencyTest {
 
     public Gf2eConsistencyTest(String name, Gf2eType thisType, Gf2eType thatType, int l) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        thisGf2e = Gf2eFactory.createInstance(thisType, l);
-        thatGf2e = Gf2eFactory.createInstance(thatType, l);
+        thisGf2e = Gf2eFactory.createInstance(EnvType.STANDARD, thisType, l);
+        thatGf2e = Gf2eFactory.createInstance(EnvType.STANDARD, thatType, l);
         Assert.assertEquals(thisGf2e.getL(), thatGf2e.getL());
         Assert.assertEquals(thisGf2e.getByteL(), thatGf2e.getByteL());
     }

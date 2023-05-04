@@ -1,12 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu.jsz22;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.MaxBinSizeUtils;
@@ -14,13 +10,13 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfReceiver;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnFactory;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnPartyOutput;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnReceiver;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnSender;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfReceiver;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnPartyOutput;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnReceiver;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnSender;
 import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractPsuServer;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfsPsuPtoDesc.PtoStep;
 
@@ -53,10 +49,6 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
      * 布谷鸟哈希类型
      */
     private final CuckooHashBinType cuckooHashBinType;
-    /**
-     * 布谷鸟哈希函数数量
-     */
-    private final int cuckooHashNum;
     /**
      * 布谷鸟哈希
      */
@@ -97,44 +89,18 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
     public Jsz22SfsPsuServer(Rpc serverRpc, Party clientParty, Jsz22SfsPsuConfig config) {
         super(Jsz22SfsPsuPtoDesc.getInstance(), serverRpc, clientParty, config);
         firstOsnSender = OsnFactory.createSender(serverRpc, clientParty, config.getOsnConfig());
-        firstOsnSender.addLogLevel();
+        addSubPtos(firstOsnSender);
         oprfReceiver = OprfFactory.createOprfReceiver(serverRpc, clientParty, config.getOprfConfig());
-        oprfReceiver.addLogLevel();
+        addSubPtos(oprfReceiver);
         secondOsnReceiver = OsnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
-        secondOsnReceiver.addLogLevel();
+        addSubPtos(secondOsnReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
-        cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        firstOsnSender.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-        oprfReceiver.setTaskId(taskIdPrf.getLong(2, taskIdBytes, Long.MAX_VALUE));
-        secondOsnReceiver.setTaskId(taskIdPrf.getLong(3, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        firstOsnSender.setParallel(parallel);
-        oprfReceiver.setParallel(parallel);
-        secondOsnReceiver.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        firstOsnSender.addLogLevel();
-        oprfReceiver.addLogLevel();
-        secondOsnReceiver.addLogLevel();
     }
 
     @Override
     public void init(int maxServerElementSize, int maxClientElementSize) throws MpcAbortException {
         setInitInput(maxServerElementSize, maxClientElementSize);
-        info("{}{} Server Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         int maxBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxServerElementSize);
@@ -145,17 +111,16 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Server Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public void psu(Set<ByteBuffer> serverElementSet, int clientElementSize, int elementByteLength)
         throws MpcAbortException {
         setPtoInput(serverElementSet, clientElementSize, elementByteLength);
-        info("{}{} Server begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
@@ -166,7 +131,7 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         // S inserts set X into the Cuckoo hash table, and fills empty bins with the dummy item d
         List<byte[]> cuckooHashKeyPayload = generateCuckooHashKeyPayload();
         DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(cuckooHashKeyHeader, cuckooHashKeyPayload));
@@ -179,7 +144,7 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long cuckooHashTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 1/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), cuckooHashTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 6, cuckooHashTime);
 
         stopWatch.start();
         // 构建服务端元素向量(x_1, ..., x_m)
@@ -196,7 +161,7 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long firstOsnTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), firstOsnTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 6, firstOsnTime);
 
         stopWatch.start();
         // S and R invoke the ideal functionality F_{mpOPRF}
@@ -212,12 +177,12 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 3/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 6, oprfTime);
 
         stopWatch.start();
         // S checks if F(k, a_i) is in I_i, if not, S sets U[i] = 1, otherwise, sets U[i] = 0;
         DataPacketHeader clientOprfHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OPRFS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OPRFS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> clientOprfPayload = rpc.receive(clientOprfHeader).getPayload();
@@ -225,7 +190,7 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long checkTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 4/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), checkTime);
+        logStepInfo(PtoState.PTO_STEP, 4, 6, checkTime);
 
         stopWatch.start();
         // S and R invoke the ideal functionality F_{PS}.
@@ -234,52 +199,30 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long secondOsnTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 5/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), secondOsnTime);
+        logStepInfo(PtoState.PTO_STEP, 5, 6, secondOsnTime);
 
         stopWatch.start();
         // For i ∈ [b]: If U[π′(i)] = 1, S sets z_i = a_{π′(i)} ⊕ s^1_i , otherwise, sets z_i = ⊥, then sends z_i to R;
         List<byte[]> zsPayload = generateZsPayload();
         DataPacketHeader zsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ZS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ZS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(zsHeader, zsPayload));
         stopWatch.stop();
         long zsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 6/6 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), zsTime);
+        logStepInfo(PtoState.PTO_STEP, 6, 6, zsTime);
 
-        info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
     }
 
     private List<byte[]> generateCuckooHashKeyPayload() {
-        // 设置布谷鸟哈希，如果发现不能构造成功，则可以重复构造
-        boolean success = false;
-        byte[][] cuckooHashKeys = null;
-        while (!success) {
-            try {
-                cuckooHashKeys = IntStream.range(0, cuckooHashNum)
-                    .mapToObj(hashIndex -> {
-                        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                        secureRandom.nextBytes(key);
-                        return key;
-                    })
-                    .toArray(byte[][]::new);
-                cuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(
-                    envType, cuckooHashBinType, serverElementSize, cuckooHashKeys
-                );
-                // 将客户端消息插入到CuckooHash中
-                cuckooHashBin.insertItems(serverElementArrayList);
-                if (cuckooHashBin.itemNumInStash() == 0) {
-                    success = true;
-                }
-            } catch (ArithmeticException ignored) {
-                // 如果插入不成功，就重新插入
-            }
-        }
-        // 如果成功，则向布谷鸟哈希的空余位置插入空元素
+        cuckooHashBin = CuckooHashBinFactory.createEnforceNoStashCuckooHashBin(
+            envType, cuckooHashBinType, serverElementSize, serverElementArrayList, secureRandom
+        );
         cuckooHashBin.insertPaddingItems(botElementByteBuffer);
-        return Arrays.stream(cuckooHashKeys).collect(Collectors.toList());
+        return Arrays.stream(cuckooHashBin.getHashKeys()).collect(Collectors.toList());
     }
 
     private void handleClientOprfPayload(List<byte[]> clientOprfPayload) throws MpcAbortException {

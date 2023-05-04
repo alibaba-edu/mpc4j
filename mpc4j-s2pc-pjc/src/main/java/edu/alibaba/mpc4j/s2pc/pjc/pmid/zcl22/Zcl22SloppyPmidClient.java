@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
@@ -18,6 +15,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.
 import edu.alibaba.mpc4j.common.tool.okve.okvs.Okvs;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.AbstractPmidClient;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidPartyOutput;
@@ -26,7 +24,6 @@ import edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22.Zcl22SloppyPmidPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuClient;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
 import edu.alibaba.mpc4j.common.tool.utils.*;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.*;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -160,11 +157,11 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
     public Zcl22SloppyPmidClient(Rpc clientRpc, Party serverParty, Zcl22SloppyPmidConfig config) {
         super(Zcl22SloppyPmidPtoDesc.getInstance(), clientRpc, serverParty, config);
         oprfSender = OprfFactory.createOprfSender(clientRpc, serverParty, config.getOprfConfig());
-        oprfSender.addLogLevel();
+        addSubPtos(oprfSender);
         oprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getOprfConfig());
-        oprfReceiver.addLogLevel();
+        addSubPtos(oprfReceiver);
         psuClient = PsuFactory.createClient(clientRpc, serverParty, config.getPsuConfig());
-        psuClient.addLogLevel();
+        addSubPtos(psuClient);
         sloppyOkvsType = config.getSloppyOkvsType();
         sigmaOkvsType = config.getSigmaOkvsType();
         cuckooHashBinType = config.getCuckooHashBinType();
@@ -172,34 +169,9 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
     }
 
     @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        oprfSender.setTaskId(taskIdPrf.getLong(0, taskIdBytes, Long.MAX_VALUE));
-        oprfReceiver.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-        psuClient.setTaskId(taskIdPrf.getLong(2, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        oprfSender.setParallel(parallel);
-        oprfReceiver.setParallel(parallel);
-        psuClient.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        oprfSender.addLogLevel();
-        oprfReceiver.addLogLevel();
-        psuClient.addLogLevel();
-    }
-
-    @Override
     public void init(int maxClientSetSize, int maxClientU, int maxServerSetSize, int maxServerU) throws MpcAbortException {
         setInitInput(maxClientSetSize, maxClientU, maxServerSetSize, maxServerU);
-        info("{}{} Client Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         int maxServerBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxServerSetSize);
@@ -210,7 +182,7 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 1/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 3, initTime);
 
         stopWatch.start();
         // s^B
@@ -238,24 +210,24 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
             })
             .toArray(byte[][]::new);
         DataPacketHeader clientKeysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_KEYS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(clientKeysHeader, clientKeysPayload));
         stopWatch.stop();
         long clientKeyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 2/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), clientKeyTime);
+        logStepInfo(PtoState.INIT_STEP, 2, 3, clientKeyTime);
 
         stopWatch.start();
         // 接收服务端密钥
         DataPacketHeader serverKeysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverKeysPayload = rpc.receive(serverKeysHeader).getPayload();
         // 服务端PID的OKVS密钥、服务端σ的OKVS密钥
-        MpcAbortPreconditions.checkArgument(serverKeysPayload.size() == sloppyOkvsHashKeyNum +sigmaOkvsHashKeyNum);
+        MpcAbortPreconditions.checkArgument(serverKeysPayload.size() == sloppyOkvsHashKeyNum + sigmaOkvsHashKeyNum);
         serverSloppyOkvsHashKeys = IntStream.range(0, sloppyOkvsHashKeyNum)
             .mapToObj(hashIndex -> serverKeysPayload.remove(0))
             .toArray(byte[][]::new);
@@ -263,10 +235,9 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
         stopWatch.stop();
         long serverKeyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 3/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), serverKeyTime);
+        logStepInfo(PtoState.INIT_STEP, 3, 3, serverKeyTime);
 
-        initialized = true;
-        info("{}{} Client Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
@@ -294,21 +265,21 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
     }
 
     private PmidPartyOutput<T> pmid() throws MpcAbortException {
-        info("{}{} Client begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         initVariables();
         stopWatch.stop();
         long initVariableTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initVariableTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 5, initVariableTime);
 
         stopWatch.start();
         generateClientPidMap();
         stopWatch.stop();
         long clientPidMapTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), clientPidMapTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 5, clientPidMapTime);
 
         stopWatch.start();
         if (serverU == 1 && clientU == 1) {
@@ -327,7 +298,7 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
         }
         long sigmaOkvsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), sigmaOkvsTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 5, sigmaOkvsTime);
 
         stopWatch.start();
         // Bob computes id(y_i)
@@ -335,15 +306,16 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
         stopWatch.stop();
         long pmidMapTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pmidMapTime);
+        logStepInfo(PtoState.PTO_STEP, 4, 5, pmidMapTime);
 
         stopWatch.start();
         Set<ByteBuffer> pmidSet = union(clientPmidMap);
         stopWatch.stop();
         long unionTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
+        logStepInfo(PtoState.PTO_STEP, 5, 5, unionTime);
 
+        logPhaseInfo(PtoState.PTO_END);
         return new PmidPartyOutput<>(pmidByteLength, pmidSet, clientPmidMap);
     }
 
@@ -363,13 +335,13 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
         // Bob insert items into cuckoo hash
         List<byte[]> clientCuckooHashKeyPayload = generateClientCuckooHashKeyPayload();
         DataPacketHeader clientCuckooHashKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(clientCuckooHashKeyHeader, clientCuckooHashKeyPayload));
         // Alice inserts items into cuckoo hash
         DataPacketHeader serverCuckooHashKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverCuckooHashKeyPayload = rpc.receive(serverCuckooHashKeyHeader).getPayload();
@@ -387,33 +359,11 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
 
     private List<byte[]> generateClientCuckooHashKeyPayload() {
         clientBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, clientSetSize);
-        // 设置布谷鸟哈希，如果发现不能构造成功，则可以重复构造
-        boolean success = false;
-        byte[][] clientCuckooHashKeys = null;
-        while (!success) {
-            try {
-                clientCuckooHashKeys = IntStream.range(0, cuckooHashNum)
-                    .mapToObj(hashIndex -> {
-                        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                        secureRandom.nextBytes(key);
-                        return key;
-                    })
-                    .toArray(byte[][]::new);
-                clientCuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(
-                    envType, cuckooHashBinType, clientSetSize, clientCuckooHashKeys
-                );
-                // 将客户端消息插入到CuckooHash中
-                clientCuckooHashBin.insertItems(clientElementArrayList);
-                if (clientCuckooHashBin.itemNumInStash() == 0) {
-                    success = true;
-                }
-            } catch (ArithmeticException ignored) {
-                // 如果插入不成功，就重新插入
-            }
-        }
-        // 如果成功，则向布谷鸟哈希的空余位置插入随机元素
+        clientCuckooHashBin = CuckooHashBinFactory.createEnforceNoStashCuckooHashBin(
+            envType, cuckooHashBinType, clientSetSize, clientElementArrayList, secureRandom
+        );
         clientCuckooHashBin.insertPaddingItems(secureRandom);
-        return Arrays.stream(clientCuckooHashKeys).collect(Collectors.toList());
+        return Arrays.stream(clientCuckooHashBin.getHashKeys()).collect(Collectors.toList());
     }
 
     private void generateClientPidMap() throws MpcAbortException {
@@ -436,13 +386,13 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
         // Bob sends PID OKVS
         List<byte[]> clientPidOkvsPayload = generateClientPidOkvsPayload();
         DataPacketHeader clientPidOkvsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PID_OKVS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PID_OKVS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(clientPidOkvsHeader, clientPidOkvsPayload));
         // Bob receives PID OKVS
         DataPacketHeader serverPidOkvsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PID_OKVS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PID_OKVS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverOkvsPayload = rpc.receive(serverPidOkvsHeader).getPayload();
@@ -607,7 +557,7 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
         byte[][] clientSigmaOkvsStorage = clientSigmaOkvs.encode(clientSigmaKeyValueMap);
         List<byte[]> clientSigmaOkvsPayload = Arrays.stream(clientSigmaOkvsStorage).collect(Collectors.toList());
         DataPacketHeader clientSigmaOkvsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_SIGMA_OKVS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_SIGMA_OKVS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(clientSigmaOkvsHeader, clientSigmaOkvsPayload));
@@ -624,7 +574,7 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
     private void serverSigmaOkvs() throws MpcAbortException {
         // Bob receives σ-OKVS^A
         DataPacketHeader serverSigmaOkvsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_SIGMA_OKVS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_SIGMA_OKVS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverSigmaOkvsPayload = rpc.receive(serverSigmaOkvsHeader).getPayload();
@@ -687,13 +637,13 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
         List<byte[]> clientPsuSetSizePayload = new LinkedList<>();
         clientPsuSetSizePayload.add(IntUtils.intToByteArray(clientPmidMap.size()));
         DataPacketHeader clientPsuSetSizeHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PSU_SET_SIZE.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PSU_SET_SIZE.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(clientPsuSetSizeHeader, clientPsuSetSizePayload));
 
         DataPacketHeader serverPsuSetSizeHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PSU_SET_SIZE.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PSU_SET_SIZE.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverPsuSetSizePayload = rpc.receive(serverPsuSetSizeHeader).getPayload();
@@ -704,7 +654,7 @@ public class Zcl22SloppyPmidClient<T> extends AbstractPmidClient<T> {
         // Bob sends union
         List<byte[]> unionPayload = pmidSet.stream().map(ByteBuffer::array).collect(Collectors.toList());
         DataPacketHeader unionHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Zcl22SloppyPmidPtoDesc.PtoStep.CLIENT_SEND_UNION.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), Zcl22SloppyPmidPtoDesc.PtoStep.CLIENT_SEND_UNION.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(unionHeader, unionPayload));

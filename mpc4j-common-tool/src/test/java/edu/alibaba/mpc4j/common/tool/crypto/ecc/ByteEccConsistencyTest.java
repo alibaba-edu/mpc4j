@@ -34,6 +34,7 @@ public class ByteEccConsistencyTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurationParams = new ArrayList<>();
+
         // X25519
         configurationParams.add(new Object[] {"X25519 (BC v.s. Sodium)", ByteEccType.X25519_BC, ByteEccType.X25519_SODIUM});
         // ED25519

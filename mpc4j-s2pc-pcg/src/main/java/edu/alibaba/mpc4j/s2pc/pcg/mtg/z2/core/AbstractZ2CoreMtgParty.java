@@ -3,7 +3,8 @@ package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
 /**
@@ -12,7 +13,7 @@ import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
  * @author Weiran Liu
  * @date 2022/7/13
  */
-public abstract class AbstractZ2CoreMtgParty extends AbstractSecureTwoPartyPto implements Z2CoreMtgParty {
+public abstract class AbstractZ2CoreMtgParty extends AbstractTwoPartyPto implements Z2CoreMtgParty {
     /**
      * 配置项
      */
@@ -35,23 +36,15 @@ public abstract class AbstractZ2CoreMtgParty extends AbstractSecureTwoPartyPto i
         this.config = config;
     }
 
-    @Override
-    public Z2CoreMtgFactory.Z2CoreMtgType getPtoType() {
-        return config.getPtoType();
-    }
-
     protected void setInitInput(int maxNum) {
-        assert maxNum > 0 && maxNum <= config.maxAllowNum()
-            : "maxNum must be in range (0, " + config.maxAllowNum() + "]: " + maxNum;
+        MathPreconditions.checkPositiveInRangeClosed("maxNum", maxNum, config.maxNum());
         this.maxNum = maxNum;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(int num) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init...");
-        }
-        assert num > 0 && num <= maxNum : "num must be in range (0, " + maxNum + "]: " + num;
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
         this.num = num;
         byteNum = CommonUtils.getByteLength(num);
         extraInfo++;

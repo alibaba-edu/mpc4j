@@ -3,9 +3,9 @@ package edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ShZpCoreVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ShZpCoreVoleSender;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ShZpCoreVoleReceiver;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ZpCoreVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ZpCoreVoleSender;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ZpCoreVoleReceiver;
 
 /**
  * Zp-核VOLE协议工厂类。
@@ -26,13 +26,13 @@ public class ZpCoreVoleFactory implements PtoFactory {
      */
     public enum ZpCoreVoleType {
         /**
-         * KOS16半诚实安全协议
+         * KOS16 (semi-honest)
          */
-        KOS16_SEMI_HONEST,
+        KOS16,
         /**
-         * KOS16恶意安全协议
+         * WYKW21 (malicious)
          */
-        KOS16_MALICIOUS,
+        WYKW21,
     }
 
     /**
@@ -46,9 +46,9 @@ public class ZpCoreVoleFactory implements PtoFactory {
     public static ZpCoreVoleSender createSender(Rpc senderRpc, Party receiverParty, ZpCoreVoleConfig config) {
         ZpCoreVoleType type = config.getPtoType();
         switch (type) {
-            case KOS16_SEMI_HONEST:
-                return new Kos16ShZpCoreVoleSender(senderRpc, receiverParty, (Kos16ShZpCoreVoleConfig) config);
-            case KOS16_MALICIOUS:
+            case KOS16:
+                return new Kos16ZpCoreVoleSender(senderRpc, receiverParty, (Kos16ZpCoreVoleConfig) config);
+            case WYKW21:
             default:
                 throw new IllegalArgumentException("Invalid " + ZpCoreVoleType.class.getSimpleName() + ": " + type.name());
         }
@@ -65,9 +65,9 @@ public class ZpCoreVoleFactory implements PtoFactory {
     public static ZpCoreVoleReceiver createReceiver(Rpc receiverRpc, Party senderParty, ZpCoreVoleConfig config) {
         ZpCoreVoleType type = config.getPtoType();
         switch (type) {
-            case KOS16_SEMI_HONEST:
-                return new Kos16ShZpCoreVoleReceiver(receiverRpc, senderParty, (Kos16ShZpCoreVoleConfig) config);
-            case KOS16_MALICIOUS:
+            case KOS16:
+                return new Kos16ZpCoreVoleReceiver(receiverRpc, senderParty, (Kos16ZpCoreVoleConfig) config);
+            case WYKW21:
             default:
                 throw new IllegalArgumentException("Invalid " + ZpCoreVoleType.class.getSimpleName() + ": " + type.name());
         }

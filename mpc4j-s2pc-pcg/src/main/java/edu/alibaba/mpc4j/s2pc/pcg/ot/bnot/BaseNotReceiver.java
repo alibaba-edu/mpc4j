@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.bnot;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.BaseNotFactory.BaseNotType;
 
@@ -11,15 +10,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.BaseNotFactory.BaseNotType;
  * @author Hanwen Feng
  * @date 2022/02/03
  */
-public interface BaseNotReceiver extends TwoPartyPto, SecurePto {
-    /**
-     * 返回基础n选1-OT协议类型。
-     *
-     * @return 基础n选1-OT协议类型。
-     */
-    @Override
-    BaseNotType getPtoType();
-
+public interface BaseNotReceiver extends TwoPartyPto {
     /**
      * 初始化协议。
      *

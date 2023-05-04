@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.np99;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
@@ -36,31 +37,13 @@ public class Np99BaseNotReceiver extends AbstractBaseNotReceiver {
     public Np99BaseNotReceiver(Rpc receiverRpc, Party senderParty, Np99BaseNotConfig config) {
         super(Np99BaseNotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtReceiver = BaseOtFactory.createReceiver(receiverRpc, senderParty, config.getBaseOtConfig());
-        baseOtReceiver.addLogLevel();
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        baseOtReceiver.setTaskId(taskId);
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        baseOtReceiver.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        baseOtReceiver.addLogLevel();
+        addSubPtos(baseOtReceiver);
     }
 
     @Override
     public void init(int maxChoice) throws MpcAbortException {
         setInitInput(maxChoice);
-        info("{}{} Recv. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         maxChoiceBitLength = LongUtils.ceilLog2(maxChoice);
@@ -68,27 +51,31 @@ public class Np99BaseNotReceiver extends AbstractBaseNotReceiver {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Recv. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public BaseNotReceiverOutput receive(int[] choices) throws MpcAbortException {
         setPtoInput(choices);
-        info("{}{} Recv. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         BaseOtReceiverOutput baseOtReceiverOutput = baseOtReceiver.receive(generateBinaryChoices(choices));
+        stopWatch.stop();
+        long otTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 1, 2, otTime);
+
+        stopWatch.start();
         BaseNotReceiverOutput receiverOutput = generateReceiverOutput(baseOtReceiverOutput);
         stopWatch.stop();
         long sTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), sTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, sTime);
 
-        info("{}{} Recv. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
-
+        logPhaseInfo(PtoState.PTO_END);
         return receiverOutput;
     }
 
@@ -97,8 +84,8 @@ public class Np99BaseNotReceiver extends AbstractBaseNotReceiver {
         IntStream stream = IntStream.range(0, choices.length);
         stream = parallel ? stream.parallel() : stream;
         stream.forEach(index -> {
-            boolean[] binaryChoice = BinaryUtils.byteArrayToBinary(IntUtils.intToByteArray(choices[index]), maxChoiceBitLength);
-            System.arraycopy(binaryChoice, 0, binaryChoices, index * maxChoiceBitLength, maxChoiceBitLength);
+                boolean[] binaryChoice = BinaryUtils.byteArrayToBinary(IntUtils.intToByteArray(choices[index]), maxChoiceBitLength);
+                System.arraycopy(binaryChoice, 0, binaryChoices, index * maxChoiceBitLength, maxChoiceBitLength);
             }
         );
         return binaryChoices;
@@ -109,13 +96,13 @@ public class Np99BaseNotReceiver extends AbstractBaseNotReceiver {
         outputStream = parallel ? outputStream.parallel() : outputStream;
         byte[][] rbArray = new byte[choices.length][];
         outputStream.forEach(index -> {
-                    int startIndex = index * maxChoiceBitLength;
-                    ByteBuffer buffer = ByteBuffer.allocate(maxChoiceBitLength * CommonConstants.BLOCK_BYTE_LENGTH);
-                    for (int i = 0; i < maxChoiceBitLength; i++) {
-                        buffer.put(baseOtReceiverOutput.getRb(startIndex + i));
-                    }
-                    rbArray[index] = kdf.deriveKey(buffer.array());
+                int startIndex = index * maxChoiceBitLength;
+                ByteBuffer buffer = ByteBuffer.allocate(maxChoiceBitLength * CommonConstants.BLOCK_BYTE_LENGTH);
+                for (int i = 0; i < maxChoiceBitLength; i++) {
+                    buffer.put(baseOtReceiverOutput.getRb(startIndex + i));
                 }
+                rbArray[index] = kdf.deriveKey(buffer.array());
+            }
         );
         return new BaseNotReceiverOutput(maxChoice, choices, rbArray);
     }

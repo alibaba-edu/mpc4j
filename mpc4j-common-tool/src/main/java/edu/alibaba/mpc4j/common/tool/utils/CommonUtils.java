@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.utils;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
@@ -85,5 +86,19 @@ public class CommonUtils {
         return IntStream.range(0, keyNum)
             .mapToObj(index -> generateRandomKey(secureRandom))
             .toArray(byte[][]::new);
+    }
+
+    /**
+     * Creates a secureRandom that allows to set seed. Note that if we directly create a new SecureRandom(), we cannot
+     * handle the output even though we call setSeed().
+     *
+     * @return a secureRandom that allows to set seed.
+     */
+    public static SecureRandom createSeedSecureRandom() {
+        try {
+            return SecureRandom.getInstance("SHA1PRNG");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Impossible if create an JDK Secure instance with invalid algorithm name.");
+        }
     }
 }

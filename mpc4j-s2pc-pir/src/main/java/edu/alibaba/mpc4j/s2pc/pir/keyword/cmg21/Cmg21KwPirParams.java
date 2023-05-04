@@ -153,17 +153,6 @@ public class Cmg21KwPirParams implements KwPirParams {
     );
 
     /**
-     * 服务端50W，客户端最大检索数量11041
-     */
-    public static final Cmg21KwPirParams SERVER_1M_CLIENT_MAX_11041 = Cmg21KwPirParams.uncheckCreate(
-        CuckooHashBinType.NAIVE_3_HASH, 16384*2, 18,
-        4,
-        8, new int[]{1, 3, 4, 9},
-        1785857, 8192, new int[]{56, 56, 24, 24},
-        500000, 11041*2
-    );
-
-    /**
      * 服务端100W，客户端最大检索数量1
      */
     public static final Cmg21KwPirParams SERVER_1M_CLIENT_MAX_1 = Cmg21KwPirParams.uncheckCreate(
@@ -172,17 +161,6 @@ public class Cmg21KwPirParams implements KwPirParams {
         0, new int[]{1, 3, 8, 19, 33, 39, 92, 102},
         65537L, 8192, new int[]{56, 48, 48},
         1000000, 1
-    );
-
-    /**
-     * 服务端100K，客户端最大元素数量1
-     */
-    public static final Cmg21KwPirParams SERVER_100K_CLIENT_MAX_1 = Cmg21KwPirParams.uncheckCreate(
-        CuckooHashBinType.NO_STASH_ONE_HASH, 512, 20,
-        8,
-        0, new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
-        40961, 4096, new int[]{24, 24, 24},
-        100000, 1
     );
 
     /**

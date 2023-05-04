@@ -3,10 +3,10 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.bnot;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.BaseNotFactory.BaseNotType;
 
 import java.util.Arrays;
 
@@ -16,11 +16,7 @@ import java.util.Arrays;
  * @author Hanwen Feng, Weiran Liu
  * @date 2022/07/20
  */
-public abstract class AbstractBaseNotReceiver extends AbstractSecureTwoPartyPto implements BaseNotReceiver {
-    /**
-     * 配置项
-     */
-    private final BaseNotConfig config;
+public abstract class AbstractBaseNotReceiver extends AbstractTwoPartyPto implements BaseNotReceiver {
     /**
      * 密钥派生函数
      */
@@ -40,31 +36,21 @@ public abstract class AbstractBaseNotReceiver extends AbstractSecureTwoPartyPto 
 
     protected AbstractBaseNotReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, BaseNotConfig config) {
         super(ptoDesc, receiverRpc, senderParty, config);
-        this.config = config;
         kdf = KdfFactory.createInstance(envType);
     }
 
-    @Override
-    public BaseNotType getPtoType() {
-        return config.getPtoType();
-    }
-
     protected void setInitInput(int maxChoice) {
-        assert maxChoice > 1 : "n must be greater than 1: " + maxChoice;
+        MathPreconditions.checkGreater("n (max candidate choices)", maxChoice, 1);
         this.maxChoice = maxChoice;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(int[] choices) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init ...");
-        }
-        assert choices.length > 0 : "num must be greater than 0: " + choices.length;
+        checkInitialized();
+        MathPreconditions.checkPositive("num", choices.length);
         num = choices.length;
         this.choices = Arrays.stream(choices)
-            .peek(choice -> {
-                assert choice >= 0 && choice < maxChoice : "choice must be in range [0, " + maxChoice + "): " + choice;
-            })
+            .peek(choice -> MathPreconditions.checkNonNegativeInRange("choice", choice, maxChoice))
             .toArray();
         extraInfo++;
     }

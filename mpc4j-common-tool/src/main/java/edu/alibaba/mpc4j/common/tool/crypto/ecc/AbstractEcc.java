@@ -10,13 +10,14 @@ import org.bouncycastle.math.ec.*;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Bouncy Castle椭圆曲线抽象类。其中，HashToPoint采用Google的private-join-and-compute方法实现，参见：
+ * <p>
  * https://github.com/google/private-join-and-compute/blob/master/private_join_and_compute/crypto/ec_group.cc
+ * </p>
  *
  * @author Weiran Liu
  * @date 2021/05/30
@@ -39,12 +40,6 @@ public abstract class AbstractEcc implements Ecc {
      */
     private final Map<ECPoint, WindowMethod> windowMethodMap;
 
-    /**
-     * 构造Bouncy Castle椭圆曲线。
-     *
-     * @param eccType     椭圆曲线类型。
-     * @param bcCurveName Bouncy Castle下椭圆曲线的名字。
-     */
     public AbstractEcc(EccFactory.EccType eccType, String bcCurveName) {
         X9ECParameters ecParameters = CustomNamedCurves.getByName(bcCurveName);
         ECParameterSpec ecParameterSpec = new ECParameterSpec(
@@ -85,16 +80,9 @@ public abstract class AbstractEcc implements Ecc {
         }
     }
 
-    /**
-     * 根据给定的哈希函数计算数据映射到椭圆曲线的结果。
-     *
-     * @param message 数据。
-     * @param hash    哈希函数。
-     * @return 数据映射到椭圆曲线的结果。
-     */
-    protected ECPoint hashToCurve(byte[] message, Hash hash) {
+    protected ECPoint hashToCurve(byte[] data, Hash hash) {
         // 计算输入消息的哈希值，尝试构建坐标x和坐标y，如果失败，则继续哈希
-        byte[] messageHashBytes = hash.digestToBytes(message);
+        byte[] messageHashBytes = hash.digestToBytes(data);
         while (true) {
             ECFieldElement x, y;
             // 哈希结果不需要模n，交给ECFieldElement判断结果是否合法
@@ -127,40 +115,28 @@ public abstract class AbstractEcc implements Ecc {
     }
 
     @Override
-    public void precompute(ECPoint ecPoint) {
-        if (!windowMethodMap.containsKey(ecPoint)) {
+    public void precompute(ECPoint p) {
+        if (!windowMethodMap.containsKey(p)) {
             // 先判断给定点是否已经进行了预计算，如果没有，再执行预计算操作
-            WindowMethod windowMethod = new WindowMethod(this, ecPoint, WINDOW_SIZE);
+            WindowMethod windowMethod = new WindowMethod(this, p, WINDOW_SIZE);
             windowMethod.init();
-            windowMethodMap.put(ecPoint, windowMethod);
+            windowMethodMap.put(p, windowMethod);
         }
     }
 
     @Override
-    public void destroyPrecompute(ECPoint point) {
-        windowMethodMap.remove(point);
+    public void destroyPrecompute(ECPoint p) {
+        windowMethodMap.remove(p);
     }
 
     @Override
-    public ECPoint multiply(ECPoint ecPoint, BigInteger r) {
-        if (windowMethodMap.containsKey(ecPoint)) {
+    public ECPoint multiply(ECPoint p, BigInteger r) {
+        if (windowMethodMap.containsKey(p)) {
             // 先判断给定点是否已经进行了预计算，如果进行过预计算，则用预计算乘法处理
-            WindowMethod windowMethod = windowMethodMap.get(ecPoint);
+            WindowMethod windowMethod = windowMethodMap.get(p);
             return windowMethod.multiply(r);
         } else {
-            return ecPoint.multiply(r);
-        }
-    }
-
-    @Override
-    public ECPoint[] multiply(ECPoint ecPoint, BigInteger[] rs) {
-        assert rs.length > 0;
-        if (windowMethodMap.containsKey(ecPoint)) {
-            // 先判断给定点是否已经进行了预计算，如果进行过预计算，则用预计算乘法处理
-            WindowMethod windowMethod = windowMethodMap.get(ecPoint);
-            return Arrays.stream(rs).map(windowMethod::multiply).toArray(ECPoint[]::new);
-        } else {
-            return Arrays.stream(rs).map(ecPoint::multiply).toArray(ECPoint[]::new);
+            return p.multiply(r);
         }
     }
 

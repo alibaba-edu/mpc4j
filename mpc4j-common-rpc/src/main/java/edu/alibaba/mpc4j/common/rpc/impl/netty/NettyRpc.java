@@ -36,6 +36,10 @@ public class NettyRpc implements Rpc {
      */
     private final NettyParty ownParty;
     /**
+     * Own party's ID
+     */
+    private final int ownPartyId;
+    /**
      * 数据接收缓存区
      */
     private final DataPacketBuffer dataPacketBuffer;
@@ -75,6 +79,7 @@ public class NettyRpc implements Rpc {
         // 参与方自身必须在所有参与方之中
         Preconditions.checkArgument(partySet.contains(ownParty), "Party set must contain own party");
         this.ownParty = ownParty;
+        ownPartyId = ownParty.getPartyId();
         // 按照参与方索引值，将参与方信息插入到ID映射中
         partyIdHashMap = new HashMap<>();
         partySet.forEach(party -> partyIdHashMap.put(party.getPartyId(), party));
@@ -110,7 +115,6 @@ public class NettyRpc implements Rpc {
         dataReceiveThread.start();
         // 再开启数据发送服务
         dataSendManager = new DataSendManager();
-        int ownPartyId = ownParty.getPartyId();
         partyIdHashMap.keySet().stream().sorted().forEach(otherPartyId -> {
             if (otherPartyId < ownPartyId) {
                 // 如果对方排序比自己小，则自己是client，先给对方发送连接信息
@@ -163,8 +167,7 @@ public class NettyRpc implements Rpc {
     public void send(DataPacket dataPacket) {
         DataPacketHeader header = dataPacket.getHeader();
         Preconditions.checkArgument(
-            ownParty.getPartyId() == header.getSenderId(),
-            "Sender ID must be %s", ownParty.getPartyId()
+            ownPartyId == header.getSenderId(), "Sender ID must be %s", ownPartyId
         );
         Preconditions.checkArgument(
             partyIdHashMap.containsKey(header.getReceiverId()),
@@ -173,7 +176,7 @@ public class NettyRpc implements Rpc {
         // 打包数据包head
         NettyRpcProtobuf.DataPacketProto.HeaderProto headerProto = NettyRpcProtobuf.DataPacketProto.HeaderProto
             .newBuilder()
-            .setTaskId(header.getTaskId())
+            .setTaskId(header.getEncodeTaskId())
             .setPtoId(header.getPtoId())
             .setStepId(header.getStepId())
             .setExtraInfo(header.getExtraInfo())
@@ -203,8 +206,7 @@ public class NettyRpc implements Rpc {
     @Override
     public DataPacket receive(DataPacketHeader header) {
         Preconditions.checkArgument(
-            ownParty.getPartyId() == header.getReceiverId(),
-            "Receiver ID must be %s", ownParty.getPartyId()
+            ownPartyId == header.getReceiverId(), "Receiver ID must be %s", ownPartyId
         );
         Preconditions.checkArgument(
             partyIdHashMap.containsKey(header.getSenderId()),
@@ -213,6 +215,17 @@ public class NettyRpc implements Rpc {
         try {
             // 尝试从缓存区中读取数据
             return dataPacketBuffer.take(header);
+        } catch (InterruptedException e) {
+            // 线程中断，不需要等待，直接返回空
+            return null;
+        }
+    }
+
+    @Override
+    public DataPacket receiveAny() {
+        try {
+            // 尝试从缓存区中读取数据
+            return dataPacketBuffer.takeAny(ownPartyId);
         } catch (InterruptedException e) {
             // 线程中断，不需要等待，直接返回空
             return null;
@@ -244,7 +257,6 @@ public class NettyRpc implements Rpc {
     @Override
     public void synchronize() {
         // 对参与方进行排序，所有在自己之前的自己作为client、所有在自己之后的自己作为server
-        int ownPartyId = ownParty.getPartyId();
         partyIdHashMap.keySet().stream().sorted().forEach(otherPartyId -> {
             if (otherPartyId < ownPartyId) {
                 // 如果对方排序比自己小，则自己是client，需要给对方发送同步信息
@@ -279,7 +291,6 @@ public class NettyRpc implements Rpc {
     @Override
     public void disconnect() {
         // 对参与方进行排序，所有在自己之前的自己作为client、所有在自己之后的自己作为server
-        int ownPartyId = ownParty.getPartyId();
         partyIdHashMap.keySet().stream().sorted().forEach(otherPartyId -> {
             if (otherPartyId < ownPartyId) {
                 // 如果对方排序比自己小，则自己是client，需要给对方发送连接信息

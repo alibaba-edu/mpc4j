@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.bc.*;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.mcl.SecP256k1MclEcc;
-import edu.alibaba.mpc4j.common.tool.crypto.ecc.mcl.SecP256r1MclEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.openssl.SecP256k1OpensslEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.openssl.SecP256r1OpensslEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.openssl.Sm2P256v1OpensslEcc;
@@ -28,7 +27,7 @@ public class EccFactory {
      */
     public enum EccType {
         /**
-         * MCL实现的SecP256k1曲线
+         * MCL实现的SecP256k1
          */
         SEC_P256_K1_MCL,
         /**
@@ -40,11 +39,7 @@ public class EccFactory {
          */
         SEC_P256_K1_BC,
         /**
-         * MCL实现的SecP256r1曲线
-         */
-        SEC_P256_R1_MCL,
-        /**
-         * OpenSSL实现的SecP256r1曲线
+         * OpenSSL实现的SecP256r1
          */
         SEC_P256_R1_OPENSSL,
         /**
@@ -83,8 +78,6 @@ public class EccFactory {
                 return new SecP256k1OpensslEcc();
             case SEC_P256_K1_BC:
                 return new SecP256k1BcEcc();
-            case SEC_P256_R1_MCL:
-                return new SecP256r1MclEcc();
             case SEC_P256_R1_OPENSSL:
                 return new SecP256r1OpensslEcc();
             case SEC_P256_R1_BC:

@@ -144,6 +144,18 @@ class AbstractNoStashCuckooHashBin<T> implements NoStashCuckooHashBin<T> {
     }
 
     @Override
+    public int getHashNum() {
+        return hashes.length;
+    }
+
+    @Override
+    public byte[][] getHashKeys() {
+        return Arrays.stream(hashes)
+            .map(Prf::getKey)
+            .toArray(byte[][]::new);
+    }
+
+    @Override
     public int maxItemSize() {
         return maxItemSize;
     }

@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu.krtw19;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
@@ -15,10 +12,10 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.EmptyPadHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePoly;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePolyFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractPsuServer;
 import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19OptPsuPtoDesc.PtoStep;
 
@@ -94,43 +91,18 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
     public Krtw19OptPsuServer(Rpc serverRpc, Party clientParty, Krtw19OptPsuConfig config) {
         super(Krtw19OptPsuPtoDesc.getInstance(), serverRpc, clientParty, config);
         rpmtOprfReceiver = OprfFactory.createOprfReceiver(serverRpc, clientParty, config.getRpmtOprfConfig());
-        rpmtOprfReceiver.addLogLevel();
+        addSubPtos(rpmtOprfReceiver);
         peqtOprfSender = OprfFactory.createOprfSender(serverRpc, clientParty, config.getPeqtOprfConfig());
-        peqtOprfSender.addLogLevel();
+        addSubPtos(peqtOprfSender);
         coreCotSender = CoreCotFactory.createSender(serverRpc, clientParty, config.getCoreCotConfig());
-        coreCotSender.addLogLevel();
+        addSubPtos(coreCotSender);
         pipeSize = config.getPipeSize();
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        rpmtOprfReceiver.setTaskId(taskIdPrf.getLong(0, taskIdBytes, Long.MAX_VALUE));
-        peqtOprfSender.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-        coreCotSender.setTaskId(taskIdPrf.getLong(2, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        rpmtOprfReceiver.setParallel(parallel);
-        peqtOprfSender.setParallel(parallel);
-        coreCotSender.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        rpmtOprfReceiver.addLogLevel();
-        peqtOprfSender.addLogLevel();
-        coreCotSender.addLogLevel();
     }
 
     @Override
     public void init(int maxServerElementSize, int maxClientElementSize) throws MpcAbortException {
         setInitInput(maxServerElementSize, maxClientElementSize);
-        info("{}{} Server Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // 初始化各个子协议
@@ -142,7 +114,7 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 2, initTime);
 
         stopWatch.start();
         List<byte[]> keysPayload = new LinkedList<>();
@@ -151,43 +123,36 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         secureRandom.nextBytes(hashBinKeys[0]);
         keysPayload.add(hashBinKeys[0]);
         DataPacketHeader keysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(keysHeader, keysPayload));
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyTime);
+        logStepInfo(PtoState.INIT_STEP, 2, 2, keyTime);
 
-        initialized = true;
-        info("{}{} Server Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public void psu(Set<ByteBuffer> serverElementSet, int clientElementSize, int elementByteLength)
         throws MpcAbortException {
         setPtoInput(serverElementSet, clientElementSize, elementByteLength);
-        info("{}{} Server begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         initParams();
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, initTime);
 
         for (int binColumnIndex = 0; binColumnIndex < maxBinSize; binColumnIndex++) {
-            info("{}{} Server Step 2/2 ({}/{}) begin", ptoStepLogPrefix, getPtoDesc().getPtoName(),
-                (binColumnIndex + 1), maxBinSize
-            );
             handleBinColumn(binColumnIndex);
-            info("{}{} Server Step 2/2 ({}/{}) end", ptoStepLogPrefix, getPtoDesc().getPtoName(),
-                (binColumnIndex + 1), maxBinSize
-            );
         }
 
-        info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
     }
 
     private void initParams() {
@@ -235,7 +200,7 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long qTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2.1/2.4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), qTime);
+        logSubStepInfo(PtoState.PTO_STEP, 2, 1 + (binColumnIndex * 4), maxBinSize * 4, qTime);
 
         stopWatch.start();
         // 初始化s*的空间
@@ -245,7 +210,7 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         int round;
         for (round = 0; round < pipelineTime; round++) {
             DataPacketHeader polyHeader = new DataPacketHeader(
-                taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_POLYS.ordinal(), extraInfo,
+                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_POLYS.ordinal(), extraInfo,
                 otherParty().getPartyId(), ownParty().getPartyId()
             );
             List<byte[]> polyPayload = rpc.receive(polyHeader).getPayload();
@@ -255,7 +220,7 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         int remain = binNum - round * pipeSize;
         if (remain > 0) {
             DataPacketHeader polyHeader = new DataPacketHeader(
-                taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_POLYS.ordinal(), extraInfo,
+                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_POLYS.ordinal(), extraInfo,
                 otherParty().getPartyId(), ownParty().getPartyId()
             );
             List<byte[]> polyPayload = rpc.receive(polyHeader).getPayload();
@@ -265,7 +230,7 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
         stopWatch.stop();
         long polyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2.2/2.4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), polyTime);
+        logSubStepInfo(PtoState.PTO_STEP, 2, 2 + (binColumnIndex * 4), maxBinSize * 4, polyTime);
 
         stopWatch.start();
         // 调用并发送sStarsOprf
@@ -277,14 +242,14 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
             .map(peqtHash::digestToBytes)
             .collect(Collectors.toList());
         DataPacketHeader sStarHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_S_STAR_OPRFS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_S_STAR_OPRFS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(sStarHeader, sStarPayload));
         stopWatch.stop();
         long peqtTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2.3/2.4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), peqtTime);
+        logSubStepInfo(PtoState.PTO_STEP, 2, 3 + (binColumnIndex * 4), maxBinSize * 4, peqtTime);
 
         stopWatch.start();
         CotSenderOutput cotSenderOutput = coreCotSender.send(binNum);
@@ -299,16 +264,15 @@ public class Krtw19OptPsuServer extends AbstractPsuServer {
                 return ciphertext;
             })
             .collect(Collectors.toList());
-        stopWatch.stop();
-        long encTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        info("{}{} Server Step 2.4/2.4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), encTime);
-
         DataPacketHeader encHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ENC_ELEMENTS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ENC_ELEMENTS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(encHeader, encPayload));
+        stopWatch.stop();
+        long encTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logSubStepInfo(PtoState.PTO_STEP, 2, 4 + (binColumnIndex * 4), maxBinSize * 4, encTime);
     }
 
     private void handlePoly(byte[][] ss, byte[][] qs, List<byte[]> polyPayload, int start, int end)

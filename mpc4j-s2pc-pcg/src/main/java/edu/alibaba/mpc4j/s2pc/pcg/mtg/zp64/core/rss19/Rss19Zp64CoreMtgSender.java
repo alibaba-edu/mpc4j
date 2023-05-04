@@ -1,15 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.core.rss19;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.core.AbstractZp64CoreMtgParty;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.core.rss19.Rss19Zp64CoreMtgPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.Zp64Triple;
 
 import java.util.ArrayList;
@@ -44,13 +40,9 @@ public class Rss19Zp64CoreMtgSender extends AbstractZp64CoreMtgParty {
      */
     private final int polyModulusDegree;
     /**
-     * 明文模数
+     * the prime
      */
     private final long p;
-    /**
-     * zp64
-     */
-    private Zp64 zp64;
     /**
      * 缓存区
      */
@@ -58,39 +50,37 @@ public class Rss19Zp64CoreMtgSender extends AbstractZp64CoreMtgParty {
 
     public Rss19Zp64CoreMtgSender(Rpc senderRpc, Party receiverParty, Rss19Zp64CoreMtgConfig config) {
         super(Rss19Zp64CoreMtgPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        this.polyModulusDegree = config.getPolyModulusDegree();
-        this.p = config.getZp();
+        polyModulusDegree = config.getPolyModulusDegree();
+        p = zp64.getPrime();
     }
 
     @Override
     public void init(int maxNum) throws MpcAbortException {
         setInitInput(maxNum);
-        info("{}{} Sender Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         // 生成密钥
         stopWatch.start();
         ArrayList<byte[]> fheParams = Rss19Zp64CoreMtgNativeUtils.keyGen(polyModulusDegree, p);
         handleFheParams(fheParams);
-        zp64 = Zp64Factory.createInstance(envType, p);
-        zp64TripleBuffer = Zp64Triple.createEmpty(p);
+        zp64TripleBuffer = Zp64Triple.createEmpty(zp64);
         DataPacketHeader fheParamsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Rss19Zp64CoreMtgPtoDesc.PtoStep.SENDER_SEND_ENCRYPTION_PARAMS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_ENCRYPTION_PARAMS.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(fheParamsHeader, Collections.singletonList(encryptionParams)));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Sender Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Sender Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public Zp64Triple generate(int num) throws MpcAbortException {
         setPtoInput(num);
-        info("{}{} Sender begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         int bigRoundIndex = num / polyModulusDegree;
@@ -109,17 +99,17 @@ public class Rss19Zp64CoreMtgSender extends AbstractZp64CoreMtgParty {
             ciphertextPayload.addAll(ct);
         });
         DataPacketHeader ciphertextHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Rss19Zp64CoreMtgPtoDesc.PtoStep.SENDER_SEND_CT_A_CT_B.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_CT_A_CT_B.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(ciphertextHeader, ciphertextPayload));
         stopWatch.stop();
         long encTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Sender Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), encTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, encTime, "encrypt query");
 
         DataPacketHeader responseHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Rss19Zp64CoreMtgPtoDesc.PtoStep.RECEIVER_SEND_CT_D.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_CT_D.ordinal(), extraInfo,
             otherParty().getPartyId(), rpc.ownParty().getPartyId()
         );
         ArrayList<byte[]> response = (ArrayList<byte[]>) rpc.receive(responseHeader).getPayload();
@@ -132,14 +122,14 @@ public class Rss19Zp64CoreMtgSender extends AbstractZp64CoreMtgParty {
             c0[round] = IntStream.range(0, updateRoundNum)
                 .mapToLong(i -> zp64.add(zp64.mul(a0[round][i], b0[round][i]), d[i]))
                 .toArray();
-            zp64TripleBuffer.merge(Zp64Triple.create(p, updateRoundNum, a0[round], b0[round], c0[round]));
+            zp64TripleBuffer.merge(Zp64Triple.create(zp64, updateRoundNum, a0[round], b0[round], c0[round]));
         });
         stopWatch.stop();
         long decTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Sender Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), decTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, decTime, "decrypt response");
 
-        info("{}{} Sender end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return zp64TripleBuffer;
     }
 

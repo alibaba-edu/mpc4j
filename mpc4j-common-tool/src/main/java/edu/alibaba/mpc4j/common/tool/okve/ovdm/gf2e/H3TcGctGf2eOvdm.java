@@ -19,11 +19,15 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2021/09/27
  */
-class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
+class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> implements SparseGf2eOvdm<T> {
+    /**
+     * 3 sparse hashes
+     */
+    private static final int SPARSE_HASH_NUM = 3;
     /**
      * 3哈希-两核乱码布谷鸟表需要4个哈希函数：3个布谷鸟哈希的哈希函数，1个右侧哈希函数
      */
-    static final int HASH_NUM = 4;
+    static final int HASH_NUM = SPARSE_HASH_NUM + 1;
     /**
      * 3哈希-两核乱码布谷鸟表左侧编码放大系数
      */
@@ -87,48 +91,59 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
         this.hr.setKey(prfKeys[3]);
     }
 
-    /**
-     * 返回不同的哈希值。
-     *
-     * @param message 消息。
-     * @return 不同的哈希值。
-     */
-    private int[] hashDistinctValues(byte[] message) {
-        int[] hValues = new int[3];
-        hValues[0] = h1.getInteger(0, message, lm);
-        // 得到与h1Value取值不同的h2Value
+    @Override
+    public int[] sparsePositions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        int[] sparsePositions = new int[SPARSE_HASH_NUM];
+        sparsePositions[0] = h1.getInteger(0, keyBytes, lm);
+        // h1 and h2 are distinct
         int h2Index = 0;
         do {
-            hValues[1] = h2.getInteger(h2Index, message, lm);
+            sparsePositions[1] = h2.getInteger(h2Index, keyBytes, lm);
             h2Index++;
-        } while (hValues[1] == hValues[0]);
-        // 得到与h1Value和h2Value取值不同的h3Value
+        } while (sparsePositions[1] == sparsePositions[0]);
+        // h3 and h1 / h2 are distinct
         int h3Index = 0;
         do {
-            hValues[2] = h3.getInteger(h3Index, message, lm);
+            sparsePositions[2] = h3.getInteger(h3Index, keyBytes, lm);
             h3Index++;
-        } while (hValues[2] == hValues[0] || hValues[2] == hValues[1]);
+        } while (sparsePositions[2] == sparsePositions[0] || sparsePositions[2] == sparsePositions[1]);
 
-        return hValues;
+        return sparsePositions;
+    }
+
+    @Override
+    public int sparsePositionNum() {
+        return SPARSE_HASH_NUM;
+    }
+
+    @Override
+    public boolean[] densePositions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        return BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes));
+    }
+
+    @Override
+    public int maxDensePositionNum() {
+        return rm;
     }
 
     @Override
     public byte[] decode(byte[][] storage, T key) {
         assert storage.length == getM();
-        // 不直接使用mapToRow映射，而是人工计算，这样效率更高
-        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        int[] hValues = hashDistinctValues(keyBytes);
-        boolean[] rxBinary = BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes));
-        byte[] value = new byte[lByteLength];
+        int[] sparsePositions = sparsePositions(key);
+        boolean[] densePositions = densePositions(key);
+        byte[] value = new byte[byteL];
         // 三个哈希结果一定不同，计算3次求和
-        BytesUtils.xori(value, storage[hValues[0]]);
-        BytesUtils.xori(value, storage[hValues[1]]);
-        BytesUtils.xori(value, storage[hValues[2]]);
+        BytesUtils.xori(value, storage[sparsePositions[0]]);
+        BytesUtils.xori(value, storage[sparsePositions[1]]);
+        BytesUtils.xori(value, storage[sparsePositions[2]]);
         for (int rmIndex = 0; rmIndex < rm; rmIndex++) {
-            if (rxBinary[rmIndex]) {
+            if (densePositions[rmIndex]) {
                 BytesUtils.xori(value, storage[lm + rmIndex]);
             }
         }
+        assert BytesUtils.isFixedReduceByteArray(value, byteL, l);
         return value;
     }
 
@@ -140,6 +155,9 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
     @Override
     public byte[][] encode(Map<T, byte[]> keyValueMap) throws ArithmeticException {
         assert keyValueMap.size() <= n : "insert value num = " + keyValueMap.size() + ", exceeds n = " + n;
+        keyValueMap.values().forEach(x -> {
+            assert BytesUtils.isFixedReduceByteArray(x, byteL, l);
+        });
         // 构造数据到哈希值的查找表
         Set<T> keySet = keyValueMap.keySet();
         dataH1Map = new HashMap<>(keySet.size());
@@ -147,12 +165,12 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
         dataH3Map = new HashMap<>(keySet.size());
         dataHrMap = new HashMap<>(keySet.size());
         for (T key : keySet) {
-            byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-            int[] hValues = hashDistinctValues(keyBytes);
-            dataH1Map.put(key, hValues[0]);
-            dataH2Map.put(key, hValues[1]);
-            dataH3Map.put(key, hValues[2]);
-            dataHrMap.put(key, BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes)));
+            int[] sparsePositions = sparsePositions(key);
+            boolean[] densePositions = densePositions(key);
+            dataH1Map.put(key, sparsePositions[0]);
+            dataH2Map.put(key, sparsePositions[1]);
+            dataH3Map.put(key, sparsePositions[2]);
+            dataHrMap.put(key, densePositions);
         }
         // 生成3哈希-布谷鸟图
         H3CuckooTable<T> h3CuckooTable = generateCuckooTable(keyValueMap);
@@ -178,7 +196,7 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
             int vertex1 = removedDataVertices[1];
             int vertex2 = removedDataVertices[2];
             boolean[] rx = dataHrMap.get(removedData);
-            byte[] innerProduct = BytesUtils.innerProduct(rightStorage, lByteLength, rx);
+            byte[] innerProduct = BytesUtils.innerProduct(rightStorage, byteL, rx);
             byte[] value = keyValueMap.get(removedData);
             BytesUtils.xori(innerProduct, value);
             // 三个顶点一定不相同
@@ -187,7 +205,7 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
         // 左侧矩阵补充随机数
         for (int vertex = 0; vertex < lm; vertex++) {
             if (leftStorage[vertex] == null) {
-                leftStorage[vertex] = new byte[lByteLength];
+                leftStorage[vertex] = new byte[byteL];
             }
         }
         // 更新矩阵
@@ -204,31 +222,26 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
                                       int vertex0, int vertex1, int vertex2, T data) {
         if (leftMatrix[vertex0] == null && leftMatrix[vertex1] == null && leftMatrix[vertex2] == null) {
             // 0、1、2都为空
-            leftMatrix[vertex0] = new byte[lByteLength];
-            secureRandom.nextBytes(leftMatrix[vertex0]);
-            leftMatrix[vertex1] = new byte[lByteLength];
-            secureRandom.nextBytes(leftMatrix[vertex1]);
+            leftMatrix[vertex0] = BytesUtils.randomByteArray(byteL, l, secureRandom);
+            leftMatrix[vertex1] = BytesUtils.randomByteArray(byteL, l, secureRandom);
             BytesUtils.xori(innerProduct, leftMatrix[vertex0]);
             BytesUtils.xori(innerProduct, leftMatrix[vertex1]);
             leftMatrix[vertex2] = innerProduct;
         } else if (leftMatrix[vertex0] == null && leftMatrix[vertex1] == null) {
             // 0、1为空
-            leftMatrix[vertex0] = new byte[lByteLength];
-            secureRandom.nextBytes(leftMatrix[vertex0]);
+            leftMatrix[vertex0] = BytesUtils.randomByteArray(byteL, l, secureRandom);
             BytesUtils.xori(innerProduct, leftMatrix[vertex0]);
             BytesUtils.xori(innerProduct, leftMatrix[vertex2]);
             leftMatrix[vertex1] = innerProduct;
         } else if (leftMatrix[vertex0] == null && leftMatrix[vertex2] == null) {
             // 0、2为空
-            leftMatrix[vertex0] = new byte[lByteLength];
-            secureRandom.nextBytes(leftMatrix[vertex0]);
+            leftMatrix[vertex0] = BytesUtils.randomByteArray(byteL, l, secureRandom);
             BytesUtils.xori(innerProduct, leftMatrix[vertex0]);
             BytesUtils.xori(innerProduct, leftMatrix[vertex1]);
             leftMatrix[vertex2] = innerProduct;
         } else if (leftMatrix[vertex1] == null && leftMatrix[vertex2] == null) {
             // 1、2为空
-            leftMatrix[vertex1] = new byte[lByteLength];
-            secureRandom.nextBytes(leftMatrix[vertex1]);
+            leftMatrix[vertex1] = BytesUtils.randomByteArray(byteL, l, secureRandom);
             BytesUtils.xori(innerProduct, leftMatrix[vertex0]);
             BytesUtils.xori(innerProduct, leftMatrix[vertex1]);
             leftMatrix[vertex2] = innerProduct;
@@ -260,10 +273,9 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
         int dTilde = coreDataSet.size();
         // 如果没有2-core边，则补充的边都设置为随机数
         if (dTilde == 0) {
-            IntStream.range(lm, lm + rm).forEach(index -> {
-                storage[index] = new byte[lByteLength];
-                secureRandom.nextBytes(storage[index]);
-            });
+            IntStream.range(lm, lm + rm).forEach(index ->
+                storage[index] = BytesUtils.randomByteArray(byteL, l, secureRandom)
+            );
             return storage;
         }
         if (dTilde > rm) {
@@ -309,8 +321,7 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
         }
         // For i ∈ C' assign P_i ∈ G
         for (Integer primeIndexC : setPrimeC) {
-            storage[primeIndexC] = new byte[lByteLength];
-            secureRandom.nextBytes(storage[primeIndexC]);
+            storage[primeIndexC] = BytesUtils.randomByteArray(byteL, l, secureRandom);
         }
         // For i ∈ R, define v'_i = v_i - (MP), where P_i is assigned to be zero if unassigned.
         byte[][] vectorY = new byte[dTilde][];
@@ -320,15 +331,15 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
             int h2Value = dataH2Map.get(data);
             int h3Value = dataH3Map.get(data);
             boolean[] rx = dataHrMap.get(data);
-            byte[] mp = new byte[this.lByteLength];
+            byte[] mp = new byte[this.byteL];
             if (storage[h1Value] == null) {
-                storage[h1Value] = new byte[lByteLength];
+                storage[h1Value] = new byte[byteL];
             }
             if (storage[h2Value] == null) {
-                storage[h2Value] = new byte[lByteLength];
+                storage[h2Value] = new byte[byteL];
             }
             if (storage[h3Value] == null) {
-                storage[h3Value] = new byte[lByteLength];
+                storage[h3Value] = new byte[byteL];
             }
             // 3个哈希函数一定互不相同
             BytesUtils.xori(mp, storage[h1Value]);
@@ -337,7 +348,7 @@ class H3TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
             for (int rxIndex = 0; rxIndex < rx.length; rxIndex++) {
                 if (rx[rxIndex]) {
                     if (storage[lm + rxIndex] == null) {
-                        storage[lm + rxIndex] = new byte[lByteLength];
+                        storage[lm + rxIndex] = new byte[byteL];
                     }
                     BytesUtils.xori(mp, storage[lm + rxIndex]);
                 }

@@ -1,133 +1,115 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp64;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
+import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
- * Zp64-VOLE协议接收方输出。接收方得到(Δ, q)，满足t = q + Δ · x（x和t由发送方持有）。
+ * Zp64-VOLE receiver output. The receiver gets (Δ, q) with t = q + Δ · x, where x and t are owned by the sender.
  *
  * @author Hanwen Feng
  * @date 2022/06/15
  */
-public class Zp64VoleReceiverOutput {
+public class Zp64VoleReceiverOutput implements MergedPcgPartyOutput {
     /**
-     * 素数域
+     * the Zp64 instance
      */
-    private long prime;
+    private Zp64 zp64;
     /**
-     * 关联值Δ
+     * Δ
      */
     private long delta;
     /**
-     * Q数组
+     * q_i
      */
     private long[] q;
 
     /**
-     * 构建接收方输出。
+     * Creates a receiver output.
      *
-     * @param prime 素数域。
-     * @param delta 关联值Δ。
-     * @param q     q。
-     * @return 接收方输出。
+     * @param zp64  the Zp64 instance.
+     * @param delta Δ.
+     * @param q     q.
+     * @return a receiver output.
      */
-    public static Zp64VoleReceiverOutput create(long prime, long delta, long[] q) {
+    public static Zp64VoleReceiverOutput create(Zp64 zp64, long delta, long[] q) {
         Zp64VoleReceiverOutput receiverOutput = new Zp64VoleReceiverOutput();
-        assert q.length > 0;
-        assert BigInteger.valueOf(prime).isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "input prime is not a prime: " + prime;
-        assert delta >= 0 && LongUtils.ceilLog2(delta) <= LongUtils.ceilLog2(prime) - 1
-                : "Δ must be in range [0, " + (1L << (LongUtils.ceilLog2(prime) - 1)) + "): " + delta;
+        receiverOutput.zp64 = zp64;
+        assert zp64.validateRangeElement(delta) : "Δ must be in range [0, " + zp64.getRangeBound() + "): " + delta;
         receiverOutput.delta = delta;
-        receiverOutput.prime = prime;
+        assert q.length > 0 : "# of q must be greater than 0: " + q.length;
         receiverOutput.q = Arrays.stream(q)
-                .peek(qi -> {
-                    assert qi >= 0 && qi < prime
-                            : "qi must be in range [0, " + prime + "): " + qi;
-                })
-                .toArray();
+            .peek(qi -> {
+                assert zp64.validateElement(qi) : "qi must be in range [0, " + zp64.getPrime() + "): " + qi;
+            })
+            .toArray();
         return receiverOutput;
     }
 
     /**
-     * 创建长度为0的接收方输出。
+     * Creates an empty receiver output.
      *
-     * @param prime 素数域。
-     * @param delta 关联值Δ。
-     * @return 接收方输出。
+     * @param zp64  the Zp64 instance.
+     * @param delta Δ.
+     * @return an empty receiver output.
      */
-    public static Zp64VoleReceiverOutput createEmpty(long prime, long delta) {
+    public static Zp64VoleReceiverOutput createEmpty(Zp64 zp64, long delta) {
         Zp64VoleReceiverOutput receiverOutput = new Zp64VoleReceiverOutput();
-        assert BigInteger.valueOf(prime).isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "input prime is not a prime: " + prime;
-        assert delta >= 0 && LongUtils.ceilLog2(delta) <= LongUtils.ceilLog2(prime) - 1
-                : "Δ must be in range [0, " + (1L << (LongUtils.ceilLog2(prime) - 1)) + "): " + delta;
+        receiverOutput.zp64 = zp64;
+        assert zp64.validateRangeElement(delta) : "Δ must be in range [0, " + zp64.getRangeBound() + "): " + delta;
         receiverOutput.delta = delta;
-        receiverOutput.prime = prime;
         receiverOutput.q = new long[0];
 
         return receiverOutput;
     }
 
     /**
-     * 私有构造函数。
+     * private constructor.
      */
     private Zp64VoleReceiverOutput() {
         // empty
     }
 
-    /**
-     * 返回素数域。
-     *
-     * @return 素数域。
-     */
-    public long getPrime() {
-        return prime;
+    @Override
+    public int getNum() {
+        return q.length;
     }
 
-    /**
-     * 从当前输出结果切分出一部分输出结果。
-     *
-     * @param length 切分输出结果数量。
-     * @return 切分输出结果。
-     */
-    public Zp64VoleReceiverOutput split(int length) {
+    @Override
+    public Zp64VoleReceiverOutput split(int splitNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]";
-        long[] subQ = new long[length];
-        long[] remainQ = new long[num - length];
-        System.arraycopy(q, 0, subQ, 0, length);
-        System.arraycopy(q, length, remainQ, 0, num - length);
+        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]: " + splitNum;
+        // split q
+        long[] subQ = new long[splitNum];
+        long[] remainQ = new long[num - splitNum];
+        System.arraycopy(q, 0, subQ, 0, splitNum);
+        System.arraycopy(q, splitNum, remainQ, 0, num - splitNum);
         q = remainQ;
 
-        return Zp64VoleReceiverOutput.create(prime, delta, subQ);
+        return Zp64VoleReceiverOutput.create(zp64, delta, subQ);
     }
 
-    /**
-     * 将当前输出结果数量减少至给定的数量。
-     *
-     * @param length 给定的数量。
-     */
-    public void reduce(int length) {
+    @Override
+    public void reduce(int reduceNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "reduce length = " + length + " must be in range (0, " + num + "]";
-        if (length < num) {
-            // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
-            long[] remainQ = new long[length];
-            System.arraycopy(q, 0, remainQ, 0, length);
+        assert reduceNum > 0 && reduceNum <= num : "reduceNum  must be in range (0, " + num + "]: " + reduceNum;
+        if (reduceNum < num) {
+            // if the reduced num is less than num, do split. If not, keep the current state.
+            long[] remainQ = new long[reduceNum];
+            System.arraycopy(q, 0, remainQ, 0, reduceNum);
             q = remainQ;
         }
     }
 
-    /**
-     * 合并两个接收方输出。
-     *
-     * @param that 另一个接收方输出。
-     */
-    public void merge(Zp64VoleReceiverOutput that) {
-        assert this.prime == that.prime : "merged outputs must have the same prime";
-        assert this.delta == that.delta : "merged outputs must have the same Δ";
+    @Override
+    public void merge(MergedPcgPartyOutput other) {
+        Zp64VoleReceiverOutput that = (Zp64VoleReceiverOutput) other;
+        assert this.zp64.equals(that.zp64) : "merged " + this.getClass().getSimpleName()
+            + " must have the same " + zp64.getClass().getSimpleName() + " instance:"
+            + " (" + this.zp64 + " : " + that.zp64 + ")";
+        assert this.delta == that.delta : "merged outputs must have the same Δ (" + this.delta + " : " + that.delta + ")";
+        // merge q
         long[] mergeQ = new long[this.q.length + that.q.length];
         System.arraycopy(this.q, 0, mergeQ, 0, this.q.length);
         System.arraycopy(that.q, 0, mergeQ, this.q.length, that.q.length);
@@ -135,7 +117,16 @@ public class Zp64VoleReceiverOutput {
     }
 
     /**
-     * 返回关联值Δ。
+     * Gets the Zp64 instance.
+     *
+     * @return the Zp64 instance.
+     */
+    public Zp64 getZp64() {
+        return zp64;
+    }
+
+    /**
+     * Gets Δ.
      *
      * @return 关联值Δ。
      */
@@ -144,30 +135,21 @@ public class Zp64VoleReceiverOutput {
     }
 
     /**
-     * 返回q_i。
+     * Gets q_i.
      *
-     * @param index 索引值。
-     * @return q_i。
+     * @param index the index.
+     * @return q_i.
      */
     public long getQ(int index) {
         return q[index];
     }
 
     /**
-     * 返回q。
+     * Gets q.
      *
-     * @return q。
+     * @return q.
      */
     public long[] getQ() {
         return q;
-    }
-
-    /**
-     * 返回数量。
-     *
-     * @return 数量。
-     */
-    public int getNum() {
-        return q.length;
     }
 }

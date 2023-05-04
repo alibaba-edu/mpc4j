@@ -7,6 +7,7 @@ import biz.k11i.xgboost.tree.AbstractRegTreeNode;
 import biz.k11i.xgboost.tree.RegTree;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.sml.opboost.AbstractOpBoostHost;
 import ml.dmlc.xgboost4j.java.Booster;
@@ -49,35 +50,35 @@ public class OpXgBoostHost extends AbstractOpBoostHost {
         throws MpcAbortException {
         setPtoInput(formula, hostDataFrame, hostConfig);
         this.hostConfig = hostConfig;
-        info("{}{} Host. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         slaveSchemaStep();
         stopWatch.stop();
         long slaveSchemaTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Host. Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), slaveSchemaTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 5, slaveSchemaTime);
 
         stopWatch.start();
         ldpDataFrameStep();
         stopWatch.stop();
         long ldpTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Host. Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), ldpTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 5, ldpTime);
 
         stopWatch.start();
         slaveDataStep();
         stopWatch.stop();
         long slaveDataTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Host. Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), slaveDataTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 5, slaveDataTime);
 
         stopWatch.start();
         trainModel();
         stopWatch.stop();
         long trainTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Host. Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), trainTime);
+        logStepInfo(PtoState.PTO_STEP, 4, 5, trainTime);
 
         stopWatch.start();
         // 遍历所有的切分点
@@ -88,8 +89,9 @@ public class OpXgBoostHost extends AbstractOpBoostHost {
         stopWatch.stop();
         long splitNodeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Host. Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), splitNodeTime);
+        logStepInfo(PtoState.PTO_STEP, 5, 5, splitNodeTime);
 
+        logPhaseInfo(PtoState.PTO_END);
         return predictor;
     }
 
@@ -103,7 +105,7 @@ public class OpXgBoostHost extends AbstractOpBoostHost {
             int treeNum = xgBoostParams.getTreeNum();
             // 训练并存储模型
             Booster booster = XGBoost.train(trainDataMatrix, params, treeNum, new HashMap<>(0), null, null);
-            String modelName = taskId + "_" + extraInfo + ".deprecated";
+            String modelName = encodeTaskId + "_" + extraInfo + ".deprecated";
             booster.saveModel(modelName);
             File modelFile = new File(modelName);
             FileInputStream fileInputStream = new FileInputStream(modelFile);

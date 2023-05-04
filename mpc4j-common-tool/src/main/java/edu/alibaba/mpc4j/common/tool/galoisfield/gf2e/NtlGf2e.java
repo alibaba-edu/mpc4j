@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2e;
 
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -23,8 +24,8 @@ public class NtlGf2e extends AbstractGf2e {
      */
     private final byte[] minBytes;
 
-    NtlGf2e(int l) {
-        super(l);
+    NtlGf2e(EnvType envType, int l) {
+        super(envType, l);
         // 设置不可约多项式，系数个数为l + 1
         int minNum = l + 1;
         int minByteNum = CommonUtils.getByteLength(minNum);
@@ -45,13 +46,21 @@ public class NtlGf2e extends AbstractGf2e {
     @Override
     public byte[] mul(byte[] a, byte[] b) {
         assert validateElement(a) && validateElement(b);
-        return NtlNativeGf2e.nativeMul(minBytes, byteL, a, b);
+        if (l == CommonConstants.BLOCK_BIT_LENGTH) {
+            return gf2k.mul(a, b);
+        } else {
+            return NtlNativeGf2e.nativeMul(minBytes, byteL, a, b);
+        }
     }
 
     @Override
     public void muli(byte[] a, byte[] b) {
         assert validateElement(a) && validateElement(b);
-        NtlNativeGf2e.nativeMuli(minBytes, byteL, a, b);
+        if (l == CommonConstants.BLOCK_BIT_LENGTH) {
+            gf2k.muli(a, b);
+        } else {
+            NtlNativeGf2e.nativeMuli(minBytes, byteL, a, b);
+        }
     }
 
     @Override

@@ -1,15 +1,13 @@
 package edu.alibaba.mpc4j.sml.opboost;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPto;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.utils.RankUtils;
 import edu.alibaba.mpc4j.common.tool.utils.*;
+import edu.alibaba.mpc4j.sml.opboost.OpBoostPtoDesc.PtoStep;
 import smile.data.DataFrame;
 import smile.data.measure.NominalScale;
 import smile.data.type.DataTypes;
@@ -54,71 +52,79 @@ public class OpBoostSlave extends AbstractMultiPartyPto {
     private Map<String, Map<Integer, Double>> slaveSplitValueMap;
 
     public OpBoostSlave(Rpc slaveRpc, Party hostParty) {
-        super(OpBoostPtoDesc.getInstance(), slaveRpc, hostParty);
+        super(OpBoostPtoDesc.getInstance(), new OpBoostPtoConfig(), slaveRpc, hostParty);
+    }
+
+    /**
+     * init the protocol.
+     */
+    public void init() {
+        super.initState();
     }
 
     public void fit(DataFrame slaveDataFrame, OpBoostSlaveConfig slaveConfig) throws MpcAbortException {
         setPtoInput(slaveDataFrame, slaveConfig);
-        info("{}{} Slave {} begin", ptoBeginLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         List<byte[]> slaveSchemaPayload = generateSlaveSchemaPayload();
         DataPacketHeader slaveSchemaHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), OpBoostPtoDesc.PtoStep.SLAVE_SEND_SCHEMA.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), OpBoostPtoDesc.PtoStep.SLAVE_SEND_SCHEMA.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParties()[0].getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(slaveSchemaHeader, slaveSchemaPayload));
         stopWatch.stop();
         long slaveSchemaTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Slave {} Step 1/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName(), slaveSchemaTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 5, slaveSchemaTime);
 
         stopWatch.start();
         slaveLdpDataFrame = OpBoostUtils.ldpDataFrame(slaveDataFrame, slaveConfig.getLdpConfigMap());
         stopWatch.stop();
         long ldpTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Slave {} Step 2/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName(), ldpTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 5, ldpTime);
 
         stopWatch.start();
         List<byte[]> slaveDataPayload = generateSlaveDataPayload();
         DataPacketHeader slaveDataHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), OpBoostPtoDesc.PtoStep.SLAVE_SEND_ORDER_DATA_FRAME.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SLAVE_SEND_ORDER_DATA_FRAME.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParties()[0].getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(slaveDataHeader, slaveDataPayload));
         stopWatch.stop();
         long slaveDataTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Slave {} Step 3/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName(), slaveDataTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 5, slaveDataTime);
 
         stopWatch.start();
         DataPacketHeader slaveOrderSplitsHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), OpBoostPtoDesc.PtoStep.HOST_SEND_ORDER_SPLIT_NODE.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.HOST_SEND_ORDER_SPLIT_NODE.ordinal(), extraInfo,
             otherParties()[0].getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> slaveOrderSplitsPayload = rpc.receive(slaveOrderSplitsHeader).getPayload();
         stopWatch.stop();
         long orderSplitsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Slave {} Step 4/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName(), orderSplitsTime);
+        logStepInfo(PtoState.PTO_STEP, 4, 5, orderSplitsTime);
 
         stopWatch.start();
         List<byte[]> slaveSplitsPayload = generateSplitsNodes(slaveOrderSplitsPayload);
         DataPacketHeader slaveSplitsHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), OpBoostPtoDesc.PtoStep.SLAVE_SEND_SPLIT_NODE.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SLAVE_SEND_SPLIT_NODE.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParties()[0].getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(slaveSplitsHeader, slaveSplitsPayload));
         stopWatch.stop();
         long splitNodeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Slave {} Step 5/5 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName(), splitNodeTime);
+        logStepInfo(PtoState.PTO_STEP, 5, 5, splitNodeTime);
 
-        info("{}{} Slave {} end", ptoEndLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName());
+        logPhaseInfo(PtoState.PTO_END);
     }
 
     private void setPtoInput(DataFrame slaveDataFrame, OpBoostSlaveConfig slaveConfig) {
+        checkInitialized();
         // 验证DataFrame与配置参数中的schema相同
         assert slaveDataFrame.schema().equals(slaveConfig.getSchema());
         this.slaveDataFrame = slaveDataFrame;

@@ -1,15 +1,12 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.*;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.AbstractPidParty;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidPartyOutput;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidUtils;
@@ -64,77 +61,51 @@ public class Gmr21MpPidServer<T> extends AbstractPidParty<T> {
     public Gmr21MpPidServer(Rpc serverRpc, Party clientParty, Gmr21MpPidConfig config) {
         super(Gmr21MpPidPtoDesc.getInstance(), serverRpc, clientParty, config);
         mpOprfSender = OprfFactory.createMpOprfSender(serverRpc, clientParty, config.getMpOprfConfig());
-        mpOprfSender.addLogLevel();
+        addSubPtos(mpOprfSender);
         mpOprfReceiver = OprfFactory.createMpOprfReceiver(serverRpc, clientParty, config.getMpOprfConfig());
-        mpOprfReceiver.addLogLevel();
+        addSubPtos(mpOprfReceiver);
         psuServer = PsuFactory.createServer(serverRpc, clientParty, config.getPsuConfig());
-        psuServer.addLogLevel();
+        addSubPtos(psuServer);
     }
 
     @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        mpOprfSender.setTaskId(taskIdPrf.getLong(0, taskIdBytes, Long.MAX_VALUE));
-        mpOprfReceiver.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-        psuServer.setTaskId(taskIdPrf.getLong(2, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        mpOprfSender.setParallel(parallel);
-        mpOprfReceiver.setParallel(parallel);
-        psuServer.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        mpOprfSender.addLogLevel();
-        mpOprfReceiver.addLogLevel();
-        psuServer.addLogLevel();
-    }
-
-    @Override
-    public void init(int maxServerElementSize, int maxClientElementSize) throws MpcAbortException {
-        setInitInput(maxServerElementSize, maxClientElementSize);
-        info("{}{} Server Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+    public void init(int maxOwnElementSetSize, int maxOtherElementSetSize) throws MpcAbortException {
+        setInitInput(maxOwnElementSetSize, maxOtherElementSetSize);
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        mpOprfSender.init(maxClientElementSize);
-        mpOprfReceiver.init(maxServerElementSize);
-        psuServer.init(maxServerElementSize, maxClientElementSize);
+        mpOprfSender.init(maxOtherElementSetSize);
+        mpOprfReceiver.init(maxOwnElementSetSize);
+        psuServer.init(maxOwnElementSetSize, maxOtherElementSetSize);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Server Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
-    public PidPartyOutput<T> pid(Set<T> serverElementSet, int clientElementSize) throws MpcAbortException {
-        setPtoInput(serverElementSet, clientElementSize);
-        info("{}{} Server begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+    public PidPartyOutput<T> pid(Set<T> ownElementSet, int otherElementSetSize) throws MpcAbortException {
+        setPtoInput(ownElementSet, otherElementSetSize);
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        int pidByteLength = PidUtils.getPidByteLength(ownSetSize, otherSetSize);
+        int pidByteLength = PidUtils.getPidByteLength(ownElementSetSize, this.otherElementSetSize);
         pidMap = HashFactory.createInstance(envType, pidByteLength);
         serverElementByteArrays = ownElementArrayList.stream()
             .map(ObjectUtils::objectToByteArray)
             .toArray(byte[][]::new);
         // Alice and Bob invoke the OPRF functionality F_{oprf}.
         // Alice acts as sender and receives a PRF key k_A
-        kaOprfKey = mpOprfSender.oprf(clientElementSize);
+        kaOprfKey = mpOprfSender.oprf(otherElementSetSize);
         // Alice and Bob invoke another OPRF functionality F_{oprf}.
         // Alice acts as receiver with input X and receives {F_{k_B}(x) | x ∈ X}.
         kbOprfOutput = mpOprfReceiver.oprf(serverElementByteArrays);
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 1/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 4, oprfTime);
 
         stopWatch.start();
         // Alice computes Pid(x_i)
@@ -142,38 +113,38 @@ public class Gmr21MpPidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long pidMapTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pidMapTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 4, pidMapTime);
 
         stopWatch.start();
         // The parties invoke F_{psu}, with inputs {R_A(x) | x ∈ X} for Alice
-        psuServer.psu(serverPidMap.keySet(), clientElementSize, pidByteLength);
+        psuServer.psu(serverPidMap.keySet(), otherElementSetSize, pidByteLength);
         stopWatch.stop();
         long psuTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 3/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), psuTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 4, psuTime);
 
         stopWatch.start();
         // Alice receives union
         DataPacketHeader unionHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_UNION.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_UNION.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> unionPayload = rpc.receive(unionHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(unionPayload.size() >= ownSetSize);
+        MpcAbortPreconditions.checkArgument(unionPayload.size() >= ownElementSetSize);
         Set<ByteBuffer> pidSet = unionPayload.stream()
             .map(ByteBuffer::wrap)
             .collect(Collectors.toSet());
         stopWatch.stop();
         long unionTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 4/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
+        logStepInfo(PtoState.PTO_STEP, 4, 4, unionTime);
 
-        info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return new PidPartyOutput<>(pidByteLength, pidSet, serverPidMap);
     }
 
     private Map<ByteBuffer, T> generateServerPidMap() {
-        IntStream serverElementIndexStream = IntStream.range(0, ownSetSize);
+        IntStream serverElementIndexStream = IntStream.range(0, ownElementSetSize);
         serverElementIndexStream = parallel ? serverElementIndexStream.parallel() : serverElementIndexStream;
         return serverElementIndexStream
             .boxed()

@@ -30,8 +30,6 @@ public interface HhLdpServer {
 
     /**
      * Stops warming up.
-     *
-     * @throws IllegalStateException If warming up is not enough.
      */
     void stopWarmup();
 
@@ -79,6 +77,13 @@ public interface HhLdpServer {
      * @return the privacy parameter ε / w.
      */
     double getWindowEpsilon();
+
+    /**
+     * Gets the window size (w).
+     *
+     * @return the window size (w).
+     */
+    int getWindowSize();
 
     /**
      * Gets the domain size d, i.e., |Ω|.

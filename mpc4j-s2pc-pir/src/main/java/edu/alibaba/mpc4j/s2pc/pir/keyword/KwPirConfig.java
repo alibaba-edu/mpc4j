@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pir.keyword;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 
 /**
  * 关键词索引协议配置项。
@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
  * @author Liqiang Peng
  * @date 2022/6/20
  */
-public interface KwPirConfig extends SecurePtoConfig {
+public interface KwPirConfig extends MultiPartyPtoConfig {
     /**
      * 返回协议类型。
      *

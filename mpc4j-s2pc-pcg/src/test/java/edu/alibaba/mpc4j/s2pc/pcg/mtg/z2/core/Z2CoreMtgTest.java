@@ -7,10 +7,8 @@ import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2Triple;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13.Alsz13Z2CoreMtgConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.ideal.IdealZ2CoreMtgConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -48,10 +46,6 @@ public class Z2CoreMtgTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // IDEAL
-        configurations.add(new Object[]{
-            Z2CoreMtgFactory.Z2CoreMtgType.IDEAL.name(), new IdealZ2CoreMtgConfig.Builder().build(),
-        });
         // ALSZ13
         configurations.add(new Object[]{
             Z2CoreMtgFactory.Z2CoreMtgType.ALSZ13.name(), new Alsz13Z2CoreMtgConfig.Builder().build(),
@@ -75,6 +69,8 @@ public class Z2CoreMtgTest {
 
     public Z2CoreMtgTest(String name, Z2CoreMtgConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         senderRpc = rpcManager.getRpc(0);
         receiverRpc = rpcManager.getRpc(1);
@@ -82,61 +78,41 @@ public class Z2CoreMtgTest {
     }
 
     @Test
-    public void testPtoType() {
-        Z2CoreMtgParty sender = Z2CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2CoreMtgParty receiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        Assert.assertEquals(config.getPtoType(), sender.getPtoType());
-        Assert.assertEquals(config.getPtoType(), receiver.getPtoType());
-    }
-
-    @Test
     public void test1Num() {
-        Z2CoreMtgParty sender = Z2CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2CoreMtgParty receiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 1);
+        testPto(1, false);
     }
 
     @Test
     public void test2Num() {
-        Z2CoreMtgParty sender = Z2CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2CoreMtgParty receiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 2);
+        testPto(2, false);
     }
 
     @Test
     public void testDefault() {
-        Z2CoreMtgParty sender = Z2CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2CoreMtgParty receiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_NUM);
+        testPto(DEFAULT_NUM, false);
     }
 
     @Test
     public void testParallelDefault() {
-        Z2CoreMtgParty sender = Z2CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2CoreMtgParty receiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, DEFAULT_NUM);
+        testPto(DEFAULT_NUM, true);
     }
 
     @Test
     public void testLargeNum() {
-        Z2CoreMtgParty sender = Z2CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2CoreMtgParty receiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, LARGE_NUM);
+        testPto(LARGE_NUM, false);
     }
 
     @Test
     public void testParallelLargeNum() {
-        Z2CoreMtgParty sender = Z2CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2CoreMtgParty receiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, LARGE_NUM);
+        testPto(LARGE_NUM, true);
     }
 
-    private void testPto(Z2CoreMtgParty sender, Z2CoreMtgParty receiver, int num) {
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+    private void testPto(int num, boolean parallel) {
+        Z2CoreMtgParty sender = Z2CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
+        Z2CoreMtgParty receiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        sender.setParallel(parallel);
+        receiver.setParallel(parallel);
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {

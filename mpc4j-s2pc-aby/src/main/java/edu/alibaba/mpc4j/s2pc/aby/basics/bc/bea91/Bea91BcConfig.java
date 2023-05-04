@@ -8,14 +8,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory;
 
 /**
- * Beaver91-BC协议配置项。
+ * Bea91 Boolean circuit config.
  *
  * @author Weiran Liu
  * @date 2022/02/14
  */
 public class Bea91BcConfig implements BcConfig {
     /**
-     * 布尔三元组生成协议
+     * Boolean triple generation config
      */
     private final Z2MtgConfig z2MtgConfig;
 
@@ -29,12 +29,7 @@ public class Bea91BcConfig implements BcConfig {
 
     @Override
     public BcFactory.BcType getPtoType() {
-        return BcFactory.BcType.BEA91;
-    }
-
-    @Override
-    public int maxBaseNum() {
-        return z2MtgConfig.maxBaseNum();
+        return BcFactory.BcType.Bea91;
     }
 
     @Override
@@ -58,12 +53,12 @@ public class Bea91BcConfig implements BcConfig {
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Bea91BcConfig> {
         /**
-         * 布尔三元组生成协议配置项
+         * Boolean triple generation config
          */
         private Z2MtgConfig z2MtgConfig;
 
         public Builder() {
-            z2MtgConfig = Z2MtgFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
+            z2MtgConfig = Z2MtgFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
         }
 
         public Builder setZ2MtgConfig(Z2MtgConfig z2MtgConfig) {

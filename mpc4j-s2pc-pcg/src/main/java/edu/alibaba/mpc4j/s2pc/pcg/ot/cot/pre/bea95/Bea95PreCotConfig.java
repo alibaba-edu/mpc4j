@@ -6,14 +6,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.PreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.PreCotFactory;
 
 /**
- * Bea95-预计算COT协议配置项。
+ * Bea95 pre-compute COT config.
  *
  * @author Weiran Liu
  * @date 2022/01/14
  */
 public class Bea95PreCotConfig implements PreCotConfig {
     /**
-     * 环境类型
+     * the environment
      */
     private EnvType envType;
 
@@ -44,7 +44,7 @@ public class Bea95PreCotConfig implements PreCotConfig {
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Bea95PreCotConfig> {
 
         public Builder() {
-
+            // empty
         }
 
         @Override

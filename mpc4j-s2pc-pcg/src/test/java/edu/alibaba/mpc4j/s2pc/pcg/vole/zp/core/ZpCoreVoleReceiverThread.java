@@ -1,41 +1,42 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleReceiverOutput;
 
 import java.math.BigInteger;
 
 /**
- * ZP-核VOLE协议发送方线程。
+ * ZP-core VOLE receiver thread.
  *
  * @author Hanwen Feng
  * @date 2022/06/10
  */
 class ZpCoreVoleReceiverThread extends Thread {
     /**
-     * 接收方
+     * the receiver
      */
     private final ZpCoreVoleReceiver receiver;
     /**
-     * 素数域
+     * the Zp instance
      */
-    private final BigInteger prime;
+    private final Zp zp;
     /**
-     * 关联值Δ
+     * Δ
      */
     private final BigInteger delta;
     /**
-     * 数量
+     * num
      */
     private final int num;
     /**
-     * 接收方输出
+     * the receiver output
      */
     private ZpVoleReceiverOutput receiverOutput;
 
-    ZpCoreVoleReceiverThread(ZpCoreVoleReceiver receiver, BigInteger prime, BigInteger delta, int num) {
+    ZpCoreVoleReceiverThread(ZpCoreVoleReceiver receiver, Zp zp, BigInteger delta, int num) {
         this.receiver = receiver;
-        this.prime = prime;
+        this.zp = zp;
         this.delta = delta;
         this.num = num;
     }
@@ -47,10 +48,8 @@ class ZpCoreVoleReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.getRpc().connect();
-            receiver.init(prime, delta, num);
+            receiver.init(zp, delta, num);
             receiverOutput = receiver.receive(num);
-            receiver.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

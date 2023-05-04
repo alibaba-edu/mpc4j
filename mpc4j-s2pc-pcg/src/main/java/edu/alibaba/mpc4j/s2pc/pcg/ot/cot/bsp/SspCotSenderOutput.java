@@ -4,14 +4,15 @@ import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
 
 /**
- * SSP-COT协议发送方输出。
+ * Single single-point COT sender output.
  *
  * @author Weiran Liu
  * @date 2022/01/14
  */
-public class SspCotSenderOutput {
+public class SspCotSenderOutput implements PcgPartyOutput {
     /**
      * 关联值Δ
      */
@@ -37,7 +38,6 @@ public class SspCotSenderOutput {
             .peek(r0 -> {
                 assert r0.length == CommonConstants.BLOCK_BYTE_LENGTH;
             })
-            .map(BytesUtils::clone)
             .toArray(byte[][]::new);
         return senderOutput;
     }
@@ -78,11 +78,7 @@ public class SspCotSenderOutput {
         return BytesUtils.xor(delta, getR0(index));
     }
 
-    /**
-     * 返回数量。
-     *
-     * @return 数量。
-     */
+    @Override
     public int getNum() {
         return r0Array.length;
     }

@@ -64,20 +64,20 @@ public class Ed25519BcEcc extends AbstractEcc {
     }
 
     @Override
-    public ECPoint hashToCurve(byte[] message) {
-        return hashToCurve(message, hash);
+    public ECPoint hashToCurve(byte[] data) {
+        return hashToCurve(data, hash);
     }
 
     @Override
-    public byte[] encode(ECPoint ecPoint, boolean compressed) {
+    public byte[] encode(ECPoint p, boolean compressed) {
         // 转换成ed25519曲线上的点
-        ECPoint normalizedPoint = ecPoint.normalize();
+        ECPoint normalizedPoint = p.normalize();
         ECFieldElement[] t1 = weierstrassToMontgomery(normalizedPoint.getAffineXCoord(), normalizedPoint.getAffineYCoord());
         ECFieldElement[] t2 = montgomeryToEdwards(t1[0], t1[1]);
         byte[] encodeY = BigIntegerUtils.nonNegBigIntegerToByteArray(t2[1].toBigInteger(), POINT_BYTES);
         if (compressed) {
             // 压缩表示，将编码结果修正为y坐标
-            byte[] encoded = ecPoint.getEncoded(true);
+            byte[] encoded = p.getEncoded(true);
             // 将尾数修改为Edwards形式
             System.arraycopy(encodeY, 0, encoded, 1, POINT_BYTES);
             return encoded;

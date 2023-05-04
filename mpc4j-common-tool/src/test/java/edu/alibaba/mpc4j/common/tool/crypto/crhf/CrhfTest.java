@@ -46,13 +46,14 @@ public class CrhfTest {
 
     @Parameterized.Parameters(name="{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // MMO_SIGMA
-        configurationParams.add(new Object[] {CrhfType.MMO_SIGMA.name(), CrhfType.MMO_SIGMA, });
-        // MMO
-        configurationParams.add(new Object[] {CrhfType.MMO.name(), CrhfType.MMO, });
+        Collection<Object[]> configurations = new ArrayList<>();
 
-        return configurationParams;
+        // MMO_SIGMA
+        configurations.add(new Object[] {CrhfType.MMO_SIGMA.name(), CrhfType.MMO_SIGMA, });
+        // MMO
+        configurations.add(new Object[] {CrhfType.MMO.name(), CrhfType.MMO, });
+
+        return configurations;
     }
 
     /**

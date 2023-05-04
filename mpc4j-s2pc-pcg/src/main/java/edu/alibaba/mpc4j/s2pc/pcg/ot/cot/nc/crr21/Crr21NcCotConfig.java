@@ -41,7 +41,7 @@ public class Crr21NcCotConfig implements NcCotConfig {
     }
 
     @Override
-    public int maxAllowNum() {
+    public int maxNum() {
         return 1 << Crr21NcCotPtoDesc.MAX_LOG_N;
     }
 

@@ -197,4 +197,36 @@ public class BitVectorFactory {
                 throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
         }
     }
+
+    /**
+     * merges bit vectors.
+     *
+     * @param bitVectors bit vectors.
+     * @return the merged bit vector.
+     */
+    public static BitVector merge(BitVector[] bitVectors) {
+        assert bitVectors.length > 0 : "merged vector length must be greater than 0";
+        BitVector mergeBitVector = BitVectorFactory.createEmpty();
+        for (BitVector bitVector : bitVectors) {
+            assert bitVector.bitNum() > 0 : "the number of bits must be greater than 0";
+            mergeBitVector.merge(bitVector);
+        }
+        return mergeBitVector;
+    }
+
+    /**
+     * splits the bit vector.
+     *
+     * @param mergeBitVector the merged bit vector.
+     * @param bitNums        bits for each of the split vector.
+     * @return the split bit vectors.
+     */
+    public static BitVector[] split(BitVector mergeBitVector, int[] bitNums) {
+        BitVector[] bitVectors = new BitVector[bitNums.length];
+        for (int index = 0; index < bitNums.length; index++) {
+            bitVectors[index] = mergeBitVector.split(bitNums[index]);
+        }
+        assert mergeBitVector.bitNum() == 0 : "merged vector must remain 0 bits: " + mergeBitVector.bitNum();
+        return bitVectors;
+    }
 }

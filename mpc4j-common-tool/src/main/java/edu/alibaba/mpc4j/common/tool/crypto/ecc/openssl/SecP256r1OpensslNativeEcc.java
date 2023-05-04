@@ -20,7 +20,7 @@ public class SecP256r1OpensslNativeEcc implements NativeEcc {
      * 单例模式
      */
     private SecP256r1OpensslNativeEcc() {
-        // empty
+        init();
     }
 
     public static SecP256r1OpensslNativeEcc getInstance() {
@@ -28,26 +28,20 @@ public class SecP256r1OpensslNativeEcc implements NativeEcc {
     }
 
     @Override
-    public synchronized native void init();
+    public native void init();
 
     @Override
-    public synchronized native ByteBuffer precompute(String pointString);
+    public native ByteBuffer precompute(String pointString);
 
     @Override
-    public synchronized native void destroyPrecompute(ByteBuffer windowHandler);
+    public native void destroyPrecompute(ByteBuffer windowHandler);
 
     @Override
-    public native String singleFixedPointMultiply(ByteBuffer windowHandler, String rString);
+    public native String precomputeMultiply(ByteBuffer windowHandler, String rString);
 
     @Override
-    public native String[] fixedPointMultiply(ByteBuffer windowHandler, String[] rStrings);
+    public native String multiply(String pointString, String rString);
 
     @Override
-    public native String singleMultiply(String pointString, String rString);
-
-    @Override
-    public native String[] multiply(String pointString, String[] rStrings);
-
-    @Override
-    public synchronized native void reset();
+    public native void reset();
 }

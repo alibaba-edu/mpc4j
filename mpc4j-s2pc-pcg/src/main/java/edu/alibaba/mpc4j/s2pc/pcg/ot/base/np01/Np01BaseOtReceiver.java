@@ -7,10 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
@@ -57,20 +54,19 @@ public class Np01BaseOtReceiver extends AbstractBaseOtReceiver {
     @Override
     public void init() throws MpcAbortException {
         setInitInput();
-        info("{}{} Recv. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
-
-        initialized = true;
-        info("{}{} Recv. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
+        // empty init step
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public BaseOtReceiverOutput receive(boolean[] choices) throws MpcAbortException {
         setPtoInput(choices);
-        info("{}{} Recv. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         DataPacketHeader initHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_INIT.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_INIT.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> initPayload = rpc.receive(initHeader).getPayload();
@@ -78,12 +74,12 @@ public class Np01BaseOtReceiver extends AbstractBaseOtReceiver {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, initTime);
 
         stopWatch.start();
         List<byte[]> pkPayload = generatePkPayload();
         DataPacketHeader pkHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_PK.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_PK.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(pkHeader, pkPayload));
@@ -92,9 +88,9 @@ public class Np01BaseOtReceiver extends AbstractBaseOtReceiver {
         stopWatch.stop();
         long pkTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), pkTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, pkTime);
 
-        info("{}{} Recv. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return receiverOutput;
     }
 
@@ -117,7 +113,7 @@ public class Np01BaseOtReceiver extends AbstractBaseOtReceiver {
                 // The receiver sets public keys PK_{\sigma} = g^k
                 ECPoint pkSigma = ecc.multiply(ecc.getG(), k);
                 // and PK_{1 - \sigma} = C / PK_{\sigma}
-                ECPoint pkOneMinusSigma = c.add(pkSigma.negate());
+                ECPoint pkOneMinusSigma = ecc.add(c, ecc.negate(pkSigma));
                 // 存储OT的密钥key=H(index,g^rk)
                 byte[] kInputByteArray = ecc.encode(ecc.multiply(g2r, k), false);
                 rbArray[index] = kdf.deriveKey(ByteBuffer

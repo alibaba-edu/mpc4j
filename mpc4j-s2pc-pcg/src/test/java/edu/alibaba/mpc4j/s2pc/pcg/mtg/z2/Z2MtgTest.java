@@ -11,11 +11,11 @@ import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory.Z2MtgType;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.impl.file.FileZ2MtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.impl.offline.OfflineZ2MtgConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -47,30 +47,11 @@ public class Z2MtgTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
-        // FILE (Ideal)
-        configurations.add(new Object[]{
-            Z2MtgType.FILE.name() + " (" + SecurityModel.IDEAL + ")",
-            new FileZ2MtgConfig.Builder(SecurityModel.IDEAL).build(),
-        });
-        // FILE (Semi-honest)
-        configurations.add(new Object[]{
-            Z2MtgType.FILE.name() + " (" + SecurityModel.SEMI_HONEST + ")",
-            new FileZ2MtgConfig.Builder(SecurityModel.SEMI_HONEST).build(),
-        });
-        // OFFLINE (Ideal)
-        configurations.add(new Object[]{
-            Z2MtgType.OFFLINE.name() + " (" + SecurityModel.IDEAL + ")",
-            new OfflineZ2MtgConfig.Builder(SecurityModel.IDEAL).build(),
-        });
+
         // OFFLINE (Semi-honest)
         configurations.add(new Object[]{
             Z2MtgType.OFFLINE.name() + " (" + SecurityModel.SEMI_HONEST + ")",
             new OfflineZ2MtgConfig.Builder(SecurityModel.SEMI_HONEST).build(),
-        });
-        // CACHE (Ideal)
-        configurations.add(new Object[]{
-            Z2MtgType.CACHE.name() + " (" + SecurityModel.IDEAL + ")",
-            new OfflineZ2MtgConfig.Builder(SecurityModel.IDEAL).build(),
         });
         // CACHE (Semi-honest)
         configurations.add(new Object[]{
@@ -96,68 +77,62 @@ public class Z2MtgTest {
 
     public Z2MtgTest(String name, Z2MtgConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         senderRpc = rpcManager.getRpc(0);
         receiverRpc = rpcManager.getRpc(1);
         this.config = config;
     }
 
-    @Test
-    public void testPtoType() {
-        Z2MtgParty sender = Z2MtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2MtgParty receiver = Z2MtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        Assert.assertEquals(config.getPtoType(), sender.getPtoType());
-        Assert.assertEquals(config.getPtoType(), receiver.getPtoType());
+    @Before
+    public void connect() {
+        senderRpc.connect();
+        receiverRpc.connect();
+    }
+
+    @After
+    public void disconnect() {
+        senderRpc.disconnect();
+        receiverRpc.disconnect();
     }
 
     @Test
     public void test1Num() {
-        Z2MtgParty sender = Z2MtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2MtgParty receiver = Z2MtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 1);
+        testPto(1, false);
     }
 
     @Test
     public void test2Num() {
-        Z2MtgParty sender = Z2MtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2MtgParty receiver = Z2MtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 2);
+        testPto(2, false);
     }
 
     @Test
     public void testDefault() {
-        Z2MtgParty sender = Z2MtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2MtgParty receiver = Z2MtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_NUM);
+        testPto(DEFAULT_NUM, false);
     }
 
     @Test
     public void testParallelDefault() {
-        Z2MtgParty sender = Z2MtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2MtgParty receiver = Z2MtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, DEFAULT_NUM);
+        testPto(DEFAULT_NUM, true);
     }
 
     @Test
     public void testLargeNum() {
-        Z2MtgParty sender = Z2MtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2MtgParty receiver = Z2MtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, LARGE_NUM);
+        testPto(LARGE_NUM, false);
     }
 
     @Test
     public void testParallelLargeNum() {
-        Z2MtgParty sender = Z2MtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Z2MtgParty receiver = Z2MtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, LARGE_NUM);
+        testPto(LARGE_NUM, true);
     }
 
-    private void testPto(Z2MtgParty sender, Z2MtgParty receiver, int num) {
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+    private void testPto(int num, boolean parallel) {
+        Z2MtgParty sender = Z2MtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
+        Z2MtgParty receiver = Z2MtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        sender.setParallel(parallel);
+        receiver.setParallel(parallel);
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {
@@ -189,5 +164,7 @@ public class Z2MtgTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        sender.destroy();
+        receiver.destroy();
     }
 }

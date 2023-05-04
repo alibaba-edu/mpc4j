@@ -26,15 +26,19 @@ public class Ayaa21IndexPirPtoDesc implements PtoDesc {
     private static final String PTO_NAME = "FAST_PIR";
 
     /**
-     * 协议步骤
+     * the protocol step
      */
     enum PtoStep {
         /**
-         * 客户端发送加密查询
+         * client sends public keys
+         */
+        CLIENT_SEND_PUBLIC_KEYS,
+        /**
+         * client send query
          */
         CLIENT_SEND_QUERY,
         /**
-         * 服务端回复密文
+         * server send response
          */
         SERVER_SEND_RESPONSE,
     }

@@ -1,9 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.aby.hamming;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareSbitVector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
 
 /**
  * 汉明距离协议服务端接口。
@@ -11,16 +10,7 @@ import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareSbitVector;
  * @author Weiran Liu
  * @date 2022/11/22
  */
-public interface HammingParty extends TwoPartyPto, SecurePto {
-
-    /**
-     * 返回协议类型。
-     *
-     * @return 协议类型。
-     */
-    @Override
-    HammingFactory.HammingType getPtoType();
-
+public interface HammingParty extends TwoPartyPto {
     /**
      * 初始化协议。
      *
@@ -35,7 +25,7 @@ public interface HammingParty extends TwoPartyPto, SecurePto {
      * @param xi xi，服务端为x0，客户端为x1。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    void sendHammingDistance(SquareSbitVector xi) throws MpcAbortException;
+    void sendHammingDistance(SquareZ2Vector xi) throws MpcAbortException;
 
     /**
      * 计算x0和x1的汉明距离，并接收结果。
@@ -44,5 +34,5 @@ public interface HammingParty extends TwoPartyPto, SecurePto {
      * @return x0和x1的汉明距离。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    int receiveHammingDistance(SquareSbitVector xi) throws MpcAbortException;
+    int receiveHammingDistance(SquareZ2Vector xi) throws MpcAbortException;
 }

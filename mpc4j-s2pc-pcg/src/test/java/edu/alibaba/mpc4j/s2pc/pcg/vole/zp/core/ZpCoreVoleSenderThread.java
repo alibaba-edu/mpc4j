@@ -1,37 +1,38 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleSenderOutput;
 
 import java.math.BigInteger;
 
 /**
- * ZP-核VOLE协议发送方线程。
+ * ZP-core VOLE sender thread.
  *
  * @author Hanwen Feng
  * @date 2022/06/10
  */
 class ZpCoreVoleSenderThread extends Thread {
     /**
-     * 发送方
+     * the sender
      */
     private final ZpCoreVoleSender sender;
     /**
-     * 素数p
+     * the Zp instance
      */
-    private final BigInteger prime;
+    private final Zp zp;
     /**
      * x
      */
     private final BigInteger[] x;
     /**
-     * 接收方输出
+     * the sender output
      */
     private ZpVoleSenderOutput senderOutput;
 
-    ZpCoreVoleSenderThread(ZpCoreVoleSender sender, BigInteger prime, BigInteger[] x) {
+    ZpCoreVoleSenderThread(ZpCoreVoleSender sender, Zp zp, BigInteger[] x) {
         this.sender = sender;
-        this.prime = prime;
+        this.zp = zp;
         this.x = x;
     }
 
@@ -42,10 +43,8 @@ class ZpCoreVoleSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.getRpc().connect();
-            sender.init(prime, x.length);
+            sender.init(zp, x.length);
             senderOutput = sender.send(x);
-            sender.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

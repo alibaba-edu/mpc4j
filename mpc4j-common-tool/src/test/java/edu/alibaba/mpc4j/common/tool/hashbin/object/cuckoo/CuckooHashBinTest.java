@@ -41,6 +41,7 @@ public class CuckooHashBinTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
+
         // NO_STASH_PSZ18_5_HASH
         configurations.add(new Object[] {
             CuckooHashBinType.NO_STASH_PSZ18_5_HASH.name(), CuckooHashBinType.NO_STASH_PSZ18_5_HASH

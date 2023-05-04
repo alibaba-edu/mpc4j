@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtReceiverOutput;
 
 /**
@@ -13,7 +13,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.OtReceiverOutput;
  * @author Weiran Liu
  * @date 2021/12/26
  */
-public class CotReceiverOutput implements OtReceiverOutput {
+public class CotReceiverOutput implements OtReceiverOutput, MergedPcgPartyOutput {
     /**
      * 选择比特
      */
@@ -41,7 +41,6 @@ public class CotReceiverOutput implements OtReceiverOutput {
                 assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH
                     : "rb byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + rb.length;
             })
-            .map(BytesUtils::clone)
             .toArray(byte[][]::new);
 
         return receiverOutput;
@@ -67,56 +66,44 @@ public class CotReceiverOutput implements OtReceiverOutput {
         // empty
     }
 
-    /**
-     * 从当前输出结果切分出一部分输出结果。
-     *
-     * @param length 切分输出结果数量。
-     * @return 切分输出结果。
-     */
-    public CotReceiverOutput split(int length) {
+    @Override
+    public CotReceiverOutput split(int splitNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]: " + length;
+        assert splitNum > 0 && splitNum <= num : "split length must be in range (0, " + num + "]: " + splitNum;
         // 拆分选择比特
-        boolean[] subChoices = new boolean[length];
-        boolean[] remainChoices = new boolean[num - length];
-        System.arraycopy(choices, 0, subChoices, 0, length);
-        System.arraycopy(choices, length, remainChoices, 0, num - length);
+        boolean[] subChoices = new boolean[splitNum];
+        boolean[] remainChoices = new boolean[num - splitNum];
+        System.arraycopy(choices, 0, subChoices, 0, splitNum);
+        System.arraycopy(choices, splitNum, remainChoices, 0, num - splitNum);
         choices = remainChoices;
         // 拆分选择密钥
-        byte[][] rbSubArray = new byte[length][];
-        byte[][] rbRemainArray = new byte[num - length][];
-        System.arraycopy(rbArray, 0, rbSubArray, 0, length);
-        System.arraycopy(rbArray, length, rbRemainArray, 0, num - length);
+        byte[][] rbSubArray = new byte[splitNum][];
+        byte[][] rbRemainArray = new byte[num - splitNum][];
+        System.arraycopy(rbArray, 0, rbSubArray, 0, splitNum);
+        System.arraycopy(rbArray, splitNum, rbRemainArray, 0, num - splitNum);
         rbArray = rbRemainArray;
 
         return CotReceiverOutput.create(subChoices, rbSubArray);
     }
 
-    /**
-     * 将当前输出结果数量减少至给定的数量。
-     *
-     * @param length 给定的数量。
-     */
-    public void reduce(int length) {
+    @Override
+    public void reduce(int reduceNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "reduce length = " + length + " must be in range (0, " + num + "]";
-        if (length < num) {
+        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        if (reduceNum < num) {
             // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
-            boolean[] remainChoices = new boolean[length];
-            System.arraycopy(choices, 0, remainChoices, 0, length);
+            boolean[] remainChoices = new boolean[reduceNum];
+            System.arraycopy(choices, 0, remainChoices, 0, reduceNum);
             choices = remainChoices;
-            byte[][] rbRemainArray = new byte[length][];
-            System.arraycopy(rbArray, 0, rbRemainArray, 0, length);
+            byte[][] rbRemainArray = new byte[reduceNum][];
+            System.arraycopy(rbArray, 0, rbRemainArray, 0, reduceNum);
             rbArray = rbRemainArray;
         }
     }
 
-    /**
-     * 合并两个接收方输出。
-     *
-     * @param that 另一个接收方输出。
-     */
-    public void merge(CotReceiverOutput that) {
+    @Override
+    public void merge(MergedPcgPartyOutput other) {
+        CotReceiverOutput that = (CotReceiverOutput) other;
         // 拷贝选择比特数组
         boolean[] mergeChoices = new boolean[this.choices.length + that.choices.length];
         System.arraycopy(this.choices, 0, mergeChoices, 0, this.choices.length);

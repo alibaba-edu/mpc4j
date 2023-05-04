@@ -8,6 +8,22 @@ package edu.alibaba.mpc4j.dp.service.main;
  */
 public class HhLdpAggMetrics {
     /**
+     * the type string
+     */
+    private final String typeString;
+    /**
+     * ε_w
+     */
+    private final Double windowEpsilon;
+    /**
+     * α
+     */
+    private final Double alpha;
+    /**
+     * γ_h
+     */
+    private final Double gammaH;
+    /**
      * round
      */
     private int round;
@@ -28,6 +44,14 @@ public class HhLdpAggMetrics {
      */
     private long memoryBytes;
     /**
+     * warmup NDCG
+     */
+    private double warmupNdcg;
+    /**
+     * warmup precision
+     */
+    private double warmupPrecision;
+    /**
      * NDCG
      */
     private double ndcg;
@@ -44,18 +68,42 @@ public class HhLdpAggMetrics {
      */
     private double re;
 
+    public HhLdpAggMetrics(String typeString, Double windowEpsilon, Double alpha, Double gammaH) {
+        this.typeString = typeString;
+        this.windowEpsilon = windowEpsilon;
+        this.alpha = alpha;
+        this.gammaH = gammaH;
+    }
+
     public void addMetrics(HhLdpMetrics metrics) {
         round++;
         serverTimeMs += metrics.getServerTimeMs();
         clientTimeMs += metrics.getClientTimeMs();
         payloadBytes += metrics.getPayloadBytes();
         memoryBytes += metrics.getMemoryBytes();
+        warmupNdcg += metrics.getWarmupNdcg();
+        warmupPrecision += metrics.getWarmupPrecision();
         ndcg += metrics.getNdcg();
         precision += metrics.getPrecision();
         abe += metrics.getAbe();
         re += metrics.getRe();
     }
 
+    public String getTypeString() {
+        return typeString;
+    }
+
+    public String getWindowEpsilonString() {
+        return windowEpsilon == null ? "-" : String.valueOf(windowEpsilon);
+    }
+
+    public String getAlphaString() {
+        return alpha == null ? "-" : String.valueOf(alpha);
+    }
+
+    public String getGammaString() {
+        return gammaH == null ? "-" : HhLdpMain.DOUBLE_DECIMAL_FORMAT.format(gammaH);
+    }
 
     public double getServerTimeSecond() {
         double averageTimeMs = Math.round(serverTimeMs / round);
@@ -73,6 +121,14 @@ public class HhLdpAggMetrics {
 
     public long getMemoryBytes() {
         return memoryBytes / round;
+    }
+
+    public double getWarmupNdcg() {
+        return (double) Math.round(warmupNdcg / round * 10000) / 10000;
+    }
+
+    public double getWarmupPrecision() {
+        return (double) Math.round(warmupPrecision / round * 10000) / 10000;
     }
 
     public double getNdcg() {

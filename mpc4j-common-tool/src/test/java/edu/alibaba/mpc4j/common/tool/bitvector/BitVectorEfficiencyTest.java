@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 public class BitVectorEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BitVectorEfficiencyTest.class);
     /**
-     * random state
+     * the random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
@@ -31,27 +31,19 @@ public class BitVectorEfficiencyTest {
      */
     private static final int LOG_N = 6;
     /**
-     * 输出字节长度输出格式
+     * time format
      */
-    private static final DecimalFormat BIT_NUM_DECIMAL_FORMAT = new DecimalFormat("000");
-    /**
-     * 次数输出格式
-     */
-    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("00");
-    /**
-     * 时间输出格式
-     */
-    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("00.0000");
+    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.0000");
     /**
      * number of merge operations
      */
     private static final int MERGE_NUM = 100;
     /**
-     * 秒表
+     * the stop watch
      */
     private static final StopWatch STOP_WATCH = new StopWatch();
     /**
-     * 测试类型
+     * types
      */
     private static final BitVectorType[] TYPES = new BitVectorType[] {
         BitVectorType.BYTES_BIT_VECTOR,
@@ -61,16 +53,15 @@ public class BitVectorEfficiencyTest {
     @Test
     public void testEfficiency() {
         LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            "                     name", "    log(n)", "   bit_num",
-            "create(us)", "   xor(us)", "   and(us)", " merge(us)"
+            "                     name", "   bit_num",
+            "create(us)", "   xor(us)", "   and(us)", "   set(us)", " merge(us)"
         );
         testEfficiency(1);
-        testEfficiency(1 << 3);
-        testEfficiency(1 << 6);
-        testEfficiency(1 << 9);
+        testEfficiency(1 << 4);
+        testEfficiency(1 << 8);
         testEfficiency(1 << 12);
-        testEfficiency(1 << 15);
-        testEfficiency(1 << 18);
+        testEfficiency(1 << 16);
+        testEfficiency(1 << 20);
     }
 
     private void testEfficiency(int bitNum) {
@@ -87,7 +78,8 @@ public class BitVectorEfficiencyTest {
 
             BitVector bitVector1 = BitVectorFactory.createRandom(type, bitNum, SECURE_RANDOM);
             BitVector bitVector2 = BitVectorFactory.createRandom(type, bitNum, SECURE_RANDOM);
-            // operate and get bytes
+            BitVector setBitVector = BitVectorFactory.createRandom(type, bitNum, SECURE_RANDOM);
+            // operate
             STOP_WATCH.start();
             IntStream.range(0, n).forEach(index -> bitVector1.xor(bitVector2).getBytes());
             STOP_WATCH.stop();
@@ -98,9 +90,19 @@ public class BitVectorEfficiencyTest {
             STOP_WATCH.stop();
             double andTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
             STOP_WATCH.reset();
-            // merge time
+            // set random position
             STOP_WATCH.start();
             IntStream.range(0, n).forEach(index -> {
+                int position = SECURE_RANDOM.nextInt(bitNum);
+                boolean value = SECURE_RANDOM.nextBoolean();
+                setBitVector.set(position, value);
+            });
+            STOP_WATCH.stop();
+            double setTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
+            STOP_WATCH.reset();
+            // merge time
+            STOP_WATCH.start();
+            IntStream.range(0, n / 8).forEach(index -> {
                 BitVector mergeBitVector = BitVectorFactory.createEmpty(type);
                 IntStream.range(0, MERGE_NUM).forEach(mergeIndex -> mergeBitVector.merge(bitVector1));
             });
@@ -109,11 +111,11 @@ public class BitVectorEfficiencyTest {
             STOP_WATCH.reset();
             LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 25),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
-                StringUtils.leftPad(BIT_NUM_DECIMAL_FORMAT.format(bitNum), 10),
+                StringUtils.leftPad(String.valueOf(bitNum), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(createRandomTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(xorTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(andTime), 10),
+                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(setTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(mergeTime), 10)
             );
         }

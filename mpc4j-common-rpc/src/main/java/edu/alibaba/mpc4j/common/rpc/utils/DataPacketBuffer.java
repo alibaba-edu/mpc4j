@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.rpc.utils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -17,7 +18,7 @@ public class DataPacketBuffer {
     /**
      * 数据包缓存区
      */
-    private final ConcurrentHashMap<DataPacketHeader, List<byte[]>> dataPacketBuffer;
+    private final Map<DataPacketHeader, List<byte[]>> dataPacketBuffer;
 
     public DataPacketBuffer() {
         dataPacketBuffer = new ConcurrentHashMap<>(DEFAULT_BUFFER_SIZE);
@@ -48,5 +49,28 @@ public class DataPacketBuffer {
             wait();
         }
         return DataPacket.fromByteArrayList(header, dataPacketBuffer.remove(header));
+    }
+
+    /**
+     * Takes any data packet that matches the receiver ID.
+     *
+     * @param receiverId the receiver ID.
+     * @return the data packet.
+     */
+    public synchronized DataPacket takeAny(int receiverId) throws InterruptedException {
+        DataPacketHeader targetHeader = null;
+        while (targetHeader == null) {
+            // we first try to find a candidate header
+            for (DataPacketHeader dataPacketHeader : dataPacketBuffer.keySet()) {
+                if (dataPacketHeader.getReceiverId() == receiverId) {
+                    targetHeader = dataPacketHeader;
+                }
+            }
+            if (targetHeader == null) {
+                // if we cannot find any candidate, wait for new data packets.
+                wait();
+            }
+        }
+        return DataPacket.fromByteArrayList(targetHeader, dataPacketBuffer.remove(targetHeader));
     }
 }

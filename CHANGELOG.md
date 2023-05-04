@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[1.0.7\]
+
+### Added
+
+- `mpc4j-common-circuit`
+  - We add a new module `mpc4j-common-circuit` to write all circuits in a unified manner.
+  - We add some basic integer circuits: add, sub, increase one, equality (eq), less than or equal to (leq).
+- `mpc4j-crypto-matrix`
+  - We add a new module `mpc4j-crypto-matrix` to put functionalities related to cryptographic matrix operations.
+  - We add some database / vector implementations.
+- `mpc4j-common-rpc`
+  - We add `receiveAny()` in Rpc.
+  - We update the way of generating taskId. Now all sub-protocols have the same taskId with the root protocol. We distinguish sub-protocols using encodeTaskId. See `AbstractMultiPartyPto` for more details.
+- `mpc4j-common-tool`
+  - We add algebra operation interfaces in `galoisfiled`, including zl (Z mod (1 << l)), zl64 (Z mod (1 << l) where l < 64), zn (Z mod n), zn64 (Z mod n where n < (1 << 64)), zp (Z mod p where p is a prime), zp64 (Z mod p where p is a prime and p < (1 << 64)). 
+  - We introduce FourQ ECC.
+- `mpc4j-dp-service`
+  - Now main supports more configurations: (1) Allow running without plain case; (2) Allow no/empty settings for α, ε_w, fo_types, hg_types.
+  - Add necessary test cases for HhLdpMain.
+- `mpc4j-s2pc-pcg`
+  - We add HE-based and OT-based multiplication triple generation protocols introduced in the DSZ15 paper.
+  - We add FHE-based multiplication triple generation protocol introduced in the RSS19 paper.
+  - We implement pre-computed 1-out-of-n OTs based on the silent OT.
+- `mpc4j-s2pc-aby`
+  - We refine many implementations for Boolean circuits.
+  - We implement mux operations introduced in RRK+20 and RRG+21 papers.
+  - We implement Boolean circuit based PEQT protocol and the optimized PEQT protocol introduced in the CGS22 paper.
+- `mpc4j-s2pc-pir`
+  - We implement vector PIR introduced in the MR23 paper.
+- `mpc4j-s2pc-opf`
+  - We create a new module `mpc4j-s2pc-opf` for oblivious pseudo-random functions.
+  - We implement programmable OPRFs based on OKVS introduced in the PSTY19 paper.
+  - We implement related-batch programmable OPRFs introduced in the CGS22 paper.
+  - We implement single-query OPRF introduced in the RA17 paper.
+- `mpc4j-s2pc-pso`
+  - We implement two circuit PSI protocols (without associated payload) introduced in the PRTY19 and CGS22 paper.
+
+### Fixed
+
+- `mpc4j-common-tool`
+  - Fix a bug when switching the elliptic curve. In [Missing docs for c++ interface? #72](https://github.com/herumi/mcl/issues/72), the MCL author said "The current version does not support multi parameters. At first, I had developed the features, but I gave up it because a class dependency was very complicated." It brings some problems when we want to switch from an elliptic curve to another one that both use MCL. Now, we only allow users to use SEC_P256_K1 with MCL. 
+- `mpc4j-dp-service`
+  - Fix a bug for AppleHcmsFoLdp, we note that in Java, a % b (for b > 0) can have negative value. Therefore, we need to write Math.abs(a % b) instead of directly a % b to ensure a % b must be in \[0, b). Thank Xiaochen Li for the report.
+  - Fix a bug for OLH and FLH, we note that $g$ in OLH and FLH must be an integer. Therefore, we cannot directly use the optimized frequency estimation formula to estimate the count. Instead, we use the original formula.
+- `mpc4j-s2pc-pcg`
+  - We slightly reduce the communication cost for distributed oblivious puncturable OPRF.
+- `mpc4j-s2pc-aby`
+  - Now we allow large BitNums per operations in the Boolean circuit.
+
 ## \[1.0.6\]
 
 ### Added

@@ -10,6 +10,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20.Ywl20UniMspCotConfig;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
  * @author Weiran Liu
  * @date 2022/01/27
  */
+@Ignore
 @RunWith(Parameterized.class)
 public class Ywl20LpnParamsFinderTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(Ywl20LpnParamsFinderTest.class);

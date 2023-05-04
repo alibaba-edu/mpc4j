@@ -13,7 +13,9 @@ import edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21.Gmr21SloppyPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -114,68 +116,62 @@ public class PidTest {
 
     public PidTest(String name, PidConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         serverRpc = rpcManager.getRpc(0);
         clientRpc = rpcManager.getRpc(1);
         this.config = config;
     }
 
-    @Test
-    public void testPtoType() {
-        PidParty<String> server = PidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PidParty<String> client = PidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        Assert.assertEquals(config.getPtoType(), server.getPtoType());
-        Assert.assertEquals(config.getPtoType(), client.getPtoType());
+    @Before
+    public void connect() {
+        serverRpc.connect();
+        clientRpc.connect();
+    }
+
+    @After
+    public void disconnect() {
+        serverRpc.disconnect();
+        clientRpc.disconnect();
     }
 
     @Test
     public void test2() {
-        PidParty<String> server = PidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PidParty<String> client = PidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPid(server, client, 2);
+        testPid(2, false);
     }
 
     @Test
     public void test10() {
-        PidParty<String> server = PidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PidParty<String> client = PidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPid(server, client, 10);
+        testPid(10, false);
     }
 
     @Test
     public void testDefault() {
-        PidParty<String> server = PidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PidParty<String> client = PidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPid(server, client, DEFAULT_SIZE);
+        testPid(DEFAULT_SIZE, false);
     }
 
     @Test
     public void testParallelDefault() {
-        PidParty<String> server = PidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PidParty<String> client = PidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        server.setParallel(true);
-        client.setParallel(true);
-        testPid(server, client, DEFAULT_SIZE);
+        testPid(DEFAULT_SIZE, true);
     }
 
     @Test
     public void testLarge() {
-        PidParty<String> server = PidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PidParty<String> client = PidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPid(server, client, LARGE_SIZE);
+        testPid(LARGE_SIZE, false);
     }
 
     @Test
     public void testParallelLarge() {
-        PidParty<String> server = PidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PidParty<String> client = PidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        server.setParallel(true);
-        client.setParallel(true);
-        testPid(server, client, LARGE_SIZE);
+        testPid(LARGE_SIZE, true);
     }
 
-    private void testPid(PidParty<String> server, PidParty<String> client, int size) {
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+    private void testPid(int size, boolean parallel) {
+        PidParty<String> server = PidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
+        PidParty<String> client = PidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
+        server.setParallel(parallel);
+        client.setParallel(parallel);
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         server.setTaskId(randomTaskId);
         client.setTaskId(randomTaskId);
         try {

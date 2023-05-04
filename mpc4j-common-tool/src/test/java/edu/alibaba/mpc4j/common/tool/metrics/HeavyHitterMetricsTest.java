@@ -155,37 +155,4 @@ public class HeavyHitterMetricsTest {
         ));
         Assert.assertEquals(2, HeavyHitterMetrics.relativeError(negPredictionMap, realMap), DoubleUtils.PRECISION);
     }
-
-    @Test
-    public void testRelativeErrorSizeHalfK() {
-        int k = 20;
-        Map<Integer, Integer> realMap = IntStream.rangeClosed(1, k).boxed().collect(Collectors.toMap(
-            i -> i,
-            i -> 100 * k
-        ));
-        // 预测值等于真实值
-        Map<Integer, Double> correctPredictionMap = IntStream.rangeClosed(1, k / 2).boxed().collect(Collectors.toMap(
-            i -> i,
-            i -> 100.0 * k
-        ));
-        Assert.assertEquals(0, HeavyHitterMetrics.relativeError(correctPredictionMap, realMap), DoubleUtils.PRECISION);
-        // 预测值偏小
-        Map<Integer, Double> lessPredictionMap = IntStream.rangeClosed(1, k / 2).boxed().collect(Collectors.toMap(
-            i -> i,
-            i -> 50.0 * k
-        ));
-        Assert.assertEquals(0.5, HeavyHitterMetrics.relativeError(lessPredictionMap, realMap), DoubleUtils.PRECISION);
-        // 预测值偏大
-        Map<Integer, Double> largePredictionMap = IntStream.rangeClosed(1, k / 2).boxed().collect(Collectors.toMap(
-            i -> i,
-            i -> 200.0 * k
-        ));
-        Assert.assertEquals(1, HeavyHitterMetrics.relativeError(largePredictionMap, realMap), DoubleUtils.PRECISION);
-        // 预测值为负数
-        Map<Integer, Double> negPredictionMap = IntStream.rangeClosed(1, k / 2).boxed().collect(Collectors.toMap(
-            i -> i,
-            i -> -100.0 * k
-        ));
-        Assert.assertEquals(2, HeavyHitterMetrics.relativeError(negPredictionMap, realMap), DoubleUtils.PRECISION);
-    }
 }

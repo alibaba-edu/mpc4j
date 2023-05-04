@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 /**
  * CMG21关键词索引PIR协议信息。论文来源：
  * <p>
- * Cong, Kelong, Radames Cruz Moreno, Mariana Botelho da Gama, Wei Dai, Ilia Iliashenko, Kim Laine, and Michael
+ * Kelong Cong, Radames Cruz Moreno, Mariana Botelho da Gama, Wei Dai, Ilia Iliashenko, Kim Laine, and Michael
  * Rosenberg. Labeled psi from homomorphic encryption with reduced computation and communication. ACM CCS 2021, pp.
  * 1135-1150. 2021.
  * </p>

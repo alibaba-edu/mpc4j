@@ -32,7 +32,7 @@ public class BytesUtils {
         for (int i = 0; i < Byte.SIZE; i++, copyByteValue >>= 1) {
             reverseByteValue = reverseByteValue << 1 | (copyByteValue & 1);
         }
-        return (byte)reverseByteValue;
+        return (byte) reverseByteValue;
     }
 
     /**
@@ -111,7 +111,7 @@ public class BytesUtils {
      */
     private static final int[] BYTE_BIT_COUNT_TABLE = IntStream.range(0, 1 << Byte.SIZE)
         .map(byteValue -> {
-            boolean[] binaryValue = BinaryUtils.byteToBinary((byte)(byteValue & 0xFF));
+            boolean[] binaryValue = BinaryUtils.byteToBinary((byte) (byteValue & 0xFF));
             int bitCount = 0;
             for (boolean b : binaryValue) {
                 bitCount = b ? bitCount + 1 : bitCount;
@@ -181,8 +181,21 @@ public class BytesUtils {
      * The bits are represented in Big-endian format.
      *
      * @param byteArray the given {@code byte[]}.
-     * @param byteLength the expected byte length.
      * @param bitLength the expected bit length.
+     * @return true the given {@code byte[]} has the fixed size and contains at most {@code bitLength} valid bits.
+     */
+    public static boolean isFixedReduceByteArray(byte[] byteArray, final int bitLength) {
+        int byteLength = CommonUtils.getByteLength(bitLength);
+        return isFixedReduceByteArray(byteArray, byteLength, bitLength);
+    }
+
+    /**
+     * Verify that the given {@code byte[]} has the fixed size and contains at most {@code bitLength} valid bits.
+     * The bits are represented in Big-endian format.
+     *
+     * @param byteArray  the given {@code byte[]}.
+     * @param byteLength the expected byte length.
+     * @param bitLength  the expected bit length.
      * @return true the given {@code byte[]} has the fixed size and contains at most {@code bitLength} valid bits.
      */
     public static boolean isFixedReduceByteArray(byte[] byteArray, final int byteLength, final int bitLength) {
@@ -201,14 +214,14 @@ public class BytesUtils {
     }
 
     /**
-     * 生成指定比特长度的字节数组。
+     * Generates a random byte array.
      *
-     * @param bitLength 比特长度。
-     * @param byteLength 字节长度。
-     * @param secureRandom 随机状态。
-     * @return 指定比特长度的字节数组。
+     * @param byteLength   the byte length.
+     * @param bitLength    the bit length.
+     * @param secureRandom the random state.
+     * @return a random byte array.
      */
-    public static byte[] randomByteArray(final int bitLength, final int byteLength, SecureRandom secureRandom) {
+    public static byte[] randomByteArray(final int byteLength, final int bitLength, SecureRandom secureRandom) {
         assert byteLength * Byte.SIZE >= bitLength
             : "bitLength = " + bitLength + ", byteLength does not have enough room: " + byteLength;
         byte[] byteArray = new byte[byteLength];
@@ -221,7 +234,7 @@ public class BytesUtils {
      * 在给定{@code byte[]}前填充0x00到指定的长度。如果指定长度等于给定{@code byte[]}的长度，则直接返回结果，否则将进行复制。
      *
      * @param byteArray 给定的{@code byte[]}。
-     * @param length 目标长度。
+     * @param length    目标长度。
      * @return 填充到指定长度的{@code byte[]}。
      */
     public static byte[] paddingByteArray(byte[] byteArray, int length) {
@@ -311,7 +324,7 @@ public class BytesUtils {
         assert x1.length == x2.length;
         byte[] out = new byte[x1.length];
         for (int i = x1.length - 1; i >= 0; i--) {
-            out[i] = (byte)(x1[i] ^ x2[i]);
+            out[i] = (byte) (x1[i] ^ x2[i]);
         }
 
         return out;
@@ -326,7 +339,7 @@ public class BytesUtils {
     public static void xori(byte[] x1, final byte[] x2) {
         assert x1.length == x2.length : "x1.length = " + x1.length + " must be equal to x2.length = " + x2.length;
         for (int i = x1.length - 1; i >= 0; i--) {
-            x1[i] = (byte)(x1[i] ^ x2[i]);
+            x1[i] = (byte) (x1[i] ^ x2[i]);
         }
     }
 
@@ -341,7 +354,7 @@ public class BytesUtils {
         assert x1.length == x2.length;
         byte[] out = new byte[x1.length];
         for (int i = x1.length - 1; i >= 0; i--) {
-            out[i] = (byte)(x1[i] & x2[i]);
+            out[i] = (byte) (x1[i] & x2[i]);
         }
 
         return out;
@@ -356,7 +369,7 @@ public class BytesUtils {
     public static void andi(byte[] x1, final byte[] x2) {
         assert x1.length == x2.length;
         for (int i = x1.length - 1; i >= 0; i--) {
-            x1[i] = (byte)(x1[i] & x2[i]);
+            x1[i] = (byte) (x1[i] & x2[i]);
         }
     }
 
@@ -371,7 +384,7 @@ public class BytesUtils {
         assert x1.length == x2.length;
         byte[] out = new byte[x1.length];
         for (int i = x1.length - 1; i >= 0; i--) {
-            out[i] = (byte)(x1[i] | x2[i]);
+            out[i] = (byte) (x1[i] | x2[i]);
         }
 
         return out;
@@ -386,21 +399,21 @@ public class BytesUtils {
     public static void ori(byte[] x1, final byte[] x2) {
         assert x1.length == x2.length;
         for (int i = x1.length - 1; i >= 0; i--) {
-            x1[i] = (byte)(x1[i] | x2[i]);
+            x1[i] = (byte) (x1[i] | x2[i]);
         }
     }
 
     /**
      * 计算节数组的NOT结果。
      *
-     * @param x 字节数组。
+     * @param x         字节数组。
      * @param bitLength 比特长度。
      * @return NOT x。
      */
     public static byte[] not(final byte[] x, final int bitLength) {
         assert bitLength >= 0 && bitLength <= x.length * Byte.SIZE;
         byte[] ones = new byte[x.length];
-        Arrays.fill(ones, (byte)0xff);
+        Arrays.fill(ones, (byte) 0xff);
         reduceByteArray(ones, bitLength);
 
         return BytesUtils.xor(x, ones);
@@ -410,12 +423,12 @@ public class BytesUtils {
     /**
      * 计算节数组的NOT结果，并把结果更新在字节数组上。要求{@code bitLength <= x.length * Byte.SIZE}但不会验证。
      *
-     * @param x 字节数组。
+     * @param x         字节数组。
      * @param bitLength 比特长度。
      */
     public static void noti(byte[] x, final int bitLength) {
         byte[] ones = new byte[x.length];
-        Arrays.fill(ones, (byte)0xff);
+        Arrays.fill(ones, (byte) 0xff);
         reduceByteArray(ones, bitLength);
         xori(x, ones);
     }
@@ -424,7 +437,7 @@ public class BytesUtils {
      * 利用{@code byte[]}实现右移。
      *
      * @param byteArray 字节数组。
-     * @param x 移动的比特长度。
+     * @param x         移动的比特长度。
      * @return 右移结果。
      */
     public static byte[] shiftRight(final byte[] byteArray, final int x) {
@@ -456,7 +469,7 @@ public class BytesUtils {
      * 利用{@code byte[]}实现右移，并将右移结果放置在{@code byte[]}中。
      *
      * @param byteArray 字节数组。
-     * @param x 移动的比特数。
+     * @param x         移动的比特数。
      */
     public static void shiftRighti(byte[] byteArray, final int x) {
         assert x >= 0;
@@ -466,7 +479,7 @@ public class BytesUtils {
         }
         // 如果右移的位数超过了字节数组的比特长度，则返回全0字节数组
         if (x >= byteArray.length * Byte.SIZE) {
-            Arrays.fill(byteArray, (byte)0x00);
+            Arrays.fill(byteArray, (byte) 0x00);
         }
         // 移动的比特数
         int binaryMove = x % Byte.SIZE;
@@ -484,7 +497,7 @@ public class BytesUtils {
      * 二进制右移。
      *
      * @param byteArray 字节数组。
-     * @param x 移动的比特数，要求0 <= {@code x} < {@code Byte.SIZE}。
+     * @param x         移动的比特数，要求0 <= {@code x} < {@code Byte.SIZE}。
      */
     private static void binaryShiftRight(byte[] byteArray, final int x) {
         for (int i = byteArray.length - 1; i > 0; i--) {
@@ -495,14 +508,14 @@ public class BytesUtils {
             byteArray[i] = (byte) (currentByte | suppleByte);
         }
         // 处理最后一个字节
-        byteArray[0]=(byte)((byteArray[0] & 0xFF) >>> x);
+        byteArray[0] = (byte) ((byteArray[0] & 0xFF) >>> x);
     }
 
     /**
      * 利用{@code byte[]}实现左移。
      *
      * @param byteArray 字节数组。
-     * @param x 移动的比特数。
+     * @param x         移动的比特数。
      * @return 左移结果。
      */
     public static byte[] shiftLeft(final byte[] byteArray, final int x) {
@@ -534,7 +547,7 @@ public class BytesUtils {
      * 利用{@code byte[]}实现左移，并将左移结果放置在{@code byte[]}中。
      *
      * @param byteArray 字节数组。
-     * @param x 移动的比特数。
+     * @param x         移动的比特数。
      */
     public static void shiftLefti(byte[] byteArray, final int x) {
         assert x >= 0;
@@ -544,7 +557,7 @@ public class BytesUtils {
         }
         // 如果左移的位数超过了字节数组的比特长度，则返回全0字节数组
         if (x >= byteArray.length * Byte.SIZE) {
-            Arrays.fill(byteArray, (byte)0x00);
+            Arrays.fill(byteArray, (byte) 0x00);
         }
         // 移动的比特数
         int binaryMove = x % Byte.SIZE;
@@ -562,7 +575,7 @@ public class BytesUtils {
      * 二进制左移。
      *
      * @param byteArray 字节数组。
-     * @param x 移动的比特数，要求0 <= {@code x} < {@code Byte.SIZE}。
+     * @param x         移动的比特数，要求0 <= {@code x} < {@code Byte.SIZE}。
      */
     private static void binaryShiftLeft(byte[] byteArray, final int x) {
         for (int i = 0; i < byteArray.length - 1; i++) {
@@ -574,15 +587,15 @@ public class BytesUtils {
             byteArray[i] = (byte) (currentByte | suppleByte);
         }
         // 处理最后一个字节
-        byteArray[byteArray.length - 1] = (byte)((byteArray[byteArray.length - 1] & 0xFF) << x);
+        byteArray[byteArray.length - 1] = (byte) ((byteArray[byteArray.length - 1] & 0xFF) << x);
     }
 
     /**
      * 求x和y的内积。
      *
-     * @param x 用{@code byte[][]}表示的x。
+     * @param x           用{@code byte[][]}表示的x。
      * @param xByteLength x中每个元素的字节长度。
-     * @param y 用{@code boolean[]}表示的y。
+     * @param y           用{@code boolean[]}表示的y。
      * @return x和y的内积。
      */
     public static byte[] innerProduct(byte[][] x, int xByteLength, boolean[] y) {

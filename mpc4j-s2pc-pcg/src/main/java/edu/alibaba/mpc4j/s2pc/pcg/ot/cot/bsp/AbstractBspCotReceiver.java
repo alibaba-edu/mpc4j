@@ -5,7 +5,8 @@ import java.util.Arrays;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 /**
@@ -14,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
  * @author Weiran Liu
  * @date 2022/01/22
  */
-public abstract class AbstractBspCotReceiver extends AbstractSecureTwoPartyPto implements BspCotReceiver {
+public abstract class AbstractBspCotReceiver extends AbstractTwoPartyPto implements BspCotReceiver {
     /**
      * 配置项
      */
@@ -45,37 +46,30 @@ public abstract class AbstractBspCotReceiver extends AbstractSecureTwoPartyPto i
         this.config = config;
     }
 
-    @Override
-    public BspCotFactory.BspCotType getPtoType() {
-        return config.getPtoType();
-    }
-
     protected void setInitInput(int maxBatchNum, int maxNum) {
-        assert maxNum > 0 : "maxNum must be greater than 0: " + maxNum;
+        MathPreconditions.checkPositive("maxNum", maxNum);
         this.maxNum = maxNum;
-        assert maxBatchNum > 0 : "maxBatchNum must be greater than 0:" + maxBatchNum;
+        MathPreconditions.checkPositive("maxBatchNum", maxBatchNum);
         this.maxBatchNum = maxBatchNum;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(int[] alphaArray, int num) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init...");
-        }
-        assert num > 0 && num <= maxNum : "num must be in range (0, " + maxNum + "]: " + num;
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
         this.num = num;
         batchNum = alphaArray.length;
-        assert batchNum > 0 && batchNum <= maxBatchNum : "batch must be in range (0, " + maxBatchNum + "]: " + batchNum;
+        MathPreconditions.checkPositiveInRangeClosed("batchNum", batchNum, maxBatchNum);
         this.alphaArray = Arrays.stream(alphaArray)
-            .peek(alpha -> {
-                assert alpha >= 0 && alpha < num : "α must be in range [0, " + num + "): " + alpha;
-            })
+            .peek(alpha -> MathPreconditions.checkNonNegativeInRange("α", alpha, num))
             .toArray();
         extraInfo++;
     }
 
     protected void setPtoInput(int[] alphaArray, int num, CotReceiverOutput preReceiverOutput) {
         setPtoInput(alphaArray, num);
-        assert preReceiverOutput.getNum() >= BspCotFactory.getPrecomputeNum(config, alphaArray.length, num);
+        MathPreconditions.checkGreaterOrEqual(
+            "preCotNum", preReceiverOutput.getNum(), BspCotFactory.getPrecomputeNum(config, batchNum, num)
+        );
     }
 }

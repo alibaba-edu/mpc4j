@@ -13,7 +13,7 @@ class OfflineZ2MtgPtoDesc implements PtoDesc {
     /**
      * 协议ID
      */
-    private static final int PTO_ID = Math.abs((int)4637156677746717932L);
+    private static final int PTO_ID = Math.abs((int) 4637156677746717932L);
     /**
      * 协议名称
      */

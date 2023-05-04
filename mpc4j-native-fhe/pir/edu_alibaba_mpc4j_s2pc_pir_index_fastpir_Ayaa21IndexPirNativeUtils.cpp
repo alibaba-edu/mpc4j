@@ -96,7 +96,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_fastpir_Ayaa2
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
     SEALContext context(parms);
     Evaluator evaluator(context);
-    GaloisKeys galois_keys = deserialize_galois_keys(env, galois_bytes, context);
+    GaloisKeys* galois_keys = deserialize_galois_keys(env, galois_bytes, context);
     vector<Ciphertext> query = deserialize_ciphertexts(env, query_bytes, context);
     for (auto & i : query) {
         evaluator.transform_to_ntt_inplace(i);
@@ -104,10 +104,12 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_fastpir_Ayaa2
     vector<Plaintext> database = deserialize_plaintexts(env, database_bytes, context);
     auto time_start = std::chrono::high_resolution_clock::now();
     Ciphertext response = get_sum(
-            query, evaluator, galois_keys, database, 0, num_columns_per_obj - 1);
+            query, evaluator, *galois_keys, database, 0, num_columns_per_obj - 1);
     auto time_end = std::chrono::high_resolution_clock::now();
     auto db_preprocess_time = (std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start)).count();
+#ifdef DEBUG
     cout << db_preprocess_time << "us" << endl;
+#endif
     return serialize_ciphertext(env, response);
 }
 

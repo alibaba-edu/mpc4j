@@ -122,6 +122,19 @@ public class TwoChoiceHashBin<T> implements HashBin<T> {
     }
 
     @Override
+    public int getHashNum() {
+        return 2;
+    }
+
+    @Override
+    public byte[][] getHashKeys() {
+        byte[][] hashKeys = new byte[2][];
+        hashKeys[0] = h0.getKey();
+        hashKeys[1] = h1.getKey();
+        return hashKeys;
+    }
+
+    @Override
     public int maxItemSize() {
         return maxItemSize;
     }

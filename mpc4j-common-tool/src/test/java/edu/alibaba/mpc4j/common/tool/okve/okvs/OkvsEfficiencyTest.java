@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.okve.okvs;
 
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -11,12 +12,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 /**
- * OKVS性能测试。
+ * OKVS efficiency test.
  *
  * @author Weiran Liu
  * @date 2022/4/19
@@ -25,22 +29,30 @@ import java.util.concurrent.TimeUnit;
 public class OkvsEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(OkvsEfficiencyTest.class);
     /**
-     * 最大元素数量对数输出格式
+     * default L
      */
-    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("00");
+    private static final int DEFAULT_L = CommonConstants.STATS_BIT_LENGTH;
     /**
-     * 时间输出格式
+     * default byte L
+     */
+    private static final int DEFAULT_BYTE_L = CommonUtils.getByteLength(DEFAULT_L);
+    /**
+     * the random state
+     */
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    /**
+     * time decimal format
      */
     private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.000");
     /**
-     * 秒表
+     * the stop watch
      */
     private static final StopWatch STOP_WATCH = new StopWatch();
     /**
-     * 测试类型
+     * types
      */
     private static final OkvsType[] TYPES = new OkvsType[]{
-        // 多项式OKVS性能过差，不测试
+        // ignore polynomial OKVS because it is too inefficient
         OkvsType.GBF,
         OkvsType.MEGA_BIN,
         OkvsType.H2_TWO_CORE_GCT,
@@ -52,34 +64,28 @@ public class OkvsEfficiencyTest {
     @Test
     public void testEfficiency() {
         LOGGER.info("{}\t{}\t{}\t{}", "                name", "      logN", " encode(s)", " decode(s)");
-        // 2^8个元素
         testEfficiency(8);
-        // 2^10个元素
         testEfficiency(10);
-        // 2^12个元素
         testEfficiency(12);
-        // 2^14个元素
         testEfficiency(14);
-        // 2^16个元素
         testEfficiency(16);
-        // 2^18个元素
         testEfficiency(18);
     }
 
     private void testEfficiency(int logN) {
         int n = 1 << logN;
         for (OkvsType type : TYPES) {
-            byte[][] keys = CommonUtils.generateRandomKeys(OkvsFactory.getHashNum(type), OkvsTestUtils.SECURE_RANDOM);
-            // 创建OKVS实例
-            Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(EnvType.STANDARD, type, n, OkvsTestUtils.DEFAULT_L, keys);
-            // 生成随机键值对
-            Map<ByteBuffer, byte[]> keyValueMap = OkvsTestUtils.randomKeyValueMap(n);
+            int hashNum = OkvsFactory.getHashNum(type);
+            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(EnvType.STANDARD, type, n, DEFAULT_L, keys);
+            Map<ByteBuffer, byte[]> keyValueMap = randomKeyValueMap(n);
+            // encode
             STOP_WATCH.start();
             byte[][] storage = okvs.encode(keyValueMap);
             STOP_WATCH.stop();
             double encodeTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / 1000;
             STOP_WATCH.reset();
-            // 解码
+            // decode
             STOP_WATCH.start();
             keyValueMap.keySet().forEach(key -> okvs.decode(storage, key));
             STOP_WATCH.stop();
@@ -88,11 +94,23 @@ public class OkvsEfficiencyTest {
             LOGGER.info(
                 "{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(logN), 10),
+                StringUtils.leftPad(String.valueOf(logN), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(encodeTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(decodeTime), 10)
             );
         }
         LOGGER.info(StringUtils.rightPad("", 60, '-'));
+    }
+
+    private Map<ByteBuffer, byte[]> randomKeyValueMap(int size) {
+        Map<ByteBuffer, byte[]> keyValueMap = new HashMap<>();
+        IntStream.range(0, size).forEach(index -> {
+            byte[] keyBytes = new byte[DEFAULT_BYTE_L];
+            SECURE_RANDOM.nextBytes(keyBytes);
+            byte[] valueBytes = new byte[DEFAULT_BYTE_L];
+            SECURE_RANDOM.nextBytes(valueBytes);
+            keyValueMap.put(ByteBuffer.wrap(keyBytes), valueBytes);
+        });
+        return keyValueMap;
     }
 }

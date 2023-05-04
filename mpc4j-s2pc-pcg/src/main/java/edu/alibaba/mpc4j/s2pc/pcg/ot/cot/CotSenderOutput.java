@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtSenderOutput;
 
 /**
@@ -12,7 +13,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.OtSenderOutput;
  * @author Weiran Liu
  * @date 2021/12/26
  */
-public class CotSenderOutput implements OtSenderOutput {
+public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
     /**
      * 关联值Δ
      */
@@ -40,7 +41,6 @@ public class CotSenderOutput implements OtSenderOutput {
                 assert r0.length == CommonConstants.BLOCK_BYTE_LENGTH
                     : "r0 byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + r0.length;
             })
-            .map(BytesUtils::clone)
             .toArray(byte[][]::new);
 
         return senderOutput;
@@ -68,46 +68,34 @@ public class CotSenderOutput implements OtSenderOutput {
         // empty
     }
 
-    /**
-     * 从当前输出结果切分出一部分输出结果。
-     *
-     * @param length 切分输出结果数量。
-     * @return 切分输出结果。
-     */
-    public CotSenderOutput split(int length) {
+    @Override
+    public CotSenderOutput split(int splitNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]";
-        byte[][] r0SubArray = new byte[length][];
-        byte[][] r0RemainArray = new byte[num - length][];
-        System.arraycopy(r0Array, 0, r0SubArray, 0, length);
-        System.arraycopy(r0Array, length, r0RemainArray, 0, num - length);
+        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]: " + splitNum;
+        byte[][] r0SubArray = new byte[splitNum][];
+        byte[][] r0RemainArray = new byte[num - splitNum][];
+        System.arraycopy(r0Array, 0, r0SubArray, 0, splitNum);
+        System.arraycopy(r0Array, splitNum, r0RemainArray, 0, num - splitNum);
         r0Array = r0RemainArray;
 
         return CotSenderOutput.create(delta, r0SubArray);
     }
 
-    /**
-     * 将当前输出结果数量减少至给定的数量。
-     *
-     * @param length 给定的数量。
-     */
-    public void reduce(int length) {
+    @Override
+    public void reduce(int reduceNum) {
         int num = getNum();
-        assert length > 0 && length <= num : "reduce length = " + length + " must be in range (0, " + num + "]";
-        if (length < num) {
+        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        if (reduceNum < num) {
             // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
-            byte[][] r0RemainArray = new byte[length][];
-            System.arraycopy(r0Array, 0, r0RemainArray, 0, length);
+            byte[][] r0RemainArray = new byte[reduceNum][];
+            System.arraycopy(r0Array, 0, r0RemainArray, 0, reduceNum);
             r0Array = r0RemainArray;
         }
     }
 
-    /**
-     * 合并两个发送方输出。
-     *
-     * @param that 另一个发送方输出。
-     */
-    public void merge(CotSenderOutput that) {
+    @Override
+    public void merge(MergedPcgPartyOutput other) {
+        CotSenderOutput that = (CotSenderOutput) other;
         assert Arrays.equals(this.delta, that.delta) : "merged outputs must have the same Δ";
         byte[][] mergeR0Array = new byte[this.r0Array.length + that.r0Array.length][];
         System.arraycopy(this.r0Array, 0, mergeR0Array, 0, this.r0Array.length);

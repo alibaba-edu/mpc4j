@@ -13,7 +13,7 @@ using namespace std;
 
 // #define DEBUG
 
-JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_sealpir_Acls18IndexPirNativeUtils_generateSealContext(
+JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_sealpir_Acls18IndexPirNativeUtils_generateEncryptionParams(
         JNIEnv *env, jclass, jint poly_modulus_degree, jlong plain_modulus) {
     EncryptionParameters parms = generate_encryption_parameters(scheme_type::bfv, poly_modulus_degree, plain_modulus,
                                                                 CoeffModulus::BFVDefault(poly_modulus_degree,
@@ -113,7 +113,7 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_sealpir_Acls18In
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
     SEALContext context(parms);
     Evaluator evaluator(context);
-    GaloisKeys galois_keys = deserialize_galois_keys(env, galois_keys_bytes, context);
+    GaloisKeys* galois_keys = deserialize_galois_keys(env, galois_keys_bytes, context);
     auto exception = env->FindClass("java/lang/Exception");
     vector<Plaintext> database = deserialize_plaintexts(env, plaintexts_list, context);
     vector<Ciphertext> query_list = deserialize_ciphertexts(env, ciphertexts_list, context);
@@ -153,8 +153,7 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_sealpir_Acls18In
 #ifdef DEBUG
             cout << "-- expanding one query ctxt into " << total << " ctxts " << endl;
 #endif
-            vector<Ciphertext> expanded_query_part = expand_query(parms, query[i][j], galois_keys, total);
-            // poc_rlwe_expand(query[i][j], context, galois_keys, total);
+            vector<Ciphertext> expanded_query_part = expand_query(parms, query[i][j], *galois_keys, total);
             expanded_query.insert(
                     expanded_query.end(),
                     std::make_move_iterator(expanded_query_part.begin()),

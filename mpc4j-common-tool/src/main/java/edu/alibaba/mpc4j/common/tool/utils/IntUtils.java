@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.utils;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
 /**
@@ -11,6 +12,10 @@ import java.util.stream.IntStream;
  * @date 2021/12/09
  */
 public class IntUtils {
+    /**
+     * max l
+     */
+    public static final int MAX_L = Integer.SIZE - 2;
     /**
      * private constructor.
      */
@@ -204,5 +209,35 @@ public class IntUtils {
         assert position >= 0 && position < Integer.SIZE
             : "position must be in range [0, " + Integer.SIZE + "): " + intValue;
         return (intValue & (1 << position)) != 0;
+    }
+
+
+    /**
+     * Generates a random int in range (0, n).
+     *
+     * @param n            the bound.
+     * @param secureRandom the random state.
+     * @return the random int.
+     */
+    public static int randomPositive(final int n, SecureRandom secureRandom) {
+        assert n > 1 : "n must be greater than 1: " + n;
+        while (true) {
+            int random = secureRandom.nextInt(n);
+            if (random > 0) {
+                return random;
+            }
+        }
+    }
+
+    /**
+     * Generates a random int in range [0, n).
+     *
+     * @param n            the bound.
+     * @param secureRandom the random state.
+     * @return a random int.
+     */
+    public static int randomNonNegative(final int n, SecureRandom secureRandom) {
+        assert n > 0 : "n must be greater than 0: " + n;
+        return secureRandom.nextInt(n);
     }
 }

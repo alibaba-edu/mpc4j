@@ -1,77 +1,85 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
+import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 
-import java.math.BigInteger;
-import java.util.stream.IntStream;
+import java.util.Arrays;
 
 /**
- * zp64三元组。
+ * Zp64 triple.
  *
  * @author Liqiang Peng
  * @date 2022/9/5
  */
-public class Zp64Triple {
+public class Zp64Triple implements MergedPcgPartyOutput {
     /**
-     * 三元组数量
+     * the Zp64 instance
+     */
+    private Zp64 zp64;
+    /**
+     * num
      */
     private int num;
     /**
-     * 模数
-     */
-    private long p;
-    /**
-     * 随机分量a
+     * a
      */
     private long[] as;
     /**
-     * 随机分量b
+     * b
      */
     private long[] bs;
     /**
-     * 随机分量c
+     * c
      */
     private long[] cs;
 
     /**
-     * 创建zp64乘法三元组。
+     * Creates a triple.
      *
-     * @param p   模数。
-     * @param num 乘法三元组数量。
-     * @param as  随机分量a。
-     * @param bs  随机分量b。
-     * @param cs  随机分量c。
+     * @param zp64 the Zp64 instance.
+     * @param num  num.
+     * @param as   a.
+     * @param bs   b.
+     * @param cs   c.
+     * @return a triple.
      */
-    public static Zp64Triple create(long p, int num, long[] as, long[] bs, long[] cs) {
-        assert num > 0 : "num must be greater than 0";
-        assert p >= 2 && BigInteger.valueOf(p).isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "p must be a prime: " + p;
-        assert as.length == num && bs.length == num && cs.length == num;
-        IntStream.range(0, num).forEach(i -> {
-            assert as[i] >= 0 && as[i] < p;
-            assert bs[i] >= 0 && bs[i] < p;
-            assert cs[i] >= 0 && cs[i] < p;
-        });
+    public static Zp64Triple create(Zp64 zp64, int num, long[] as, long[] bs, long[] cs) {
+        assert num > 0 : "num must be greater than 0: " + num;
+        assert as.length == num : "a.length must be equal to num = " + num + ": " + as.length;
+        assert bs.length == num : "b.length must be equal to num = " + num + ": " + bs.length;
+        assert cs.length == num : "c.length must be equal to num = " + num + ": " + cs.length;
+        Zp64Triple triple = new Zp64Triple();
+        triple.zp64 = zp64;
+        triple.num = num;
+        triple.as = Arrays.stream(as)
+            .peek(a -> {
+                assert triple.zp64.validateElement(a);
+            })
+            .toArray();
+        triple.bs = Arrays.stream(bs)
+            .peek(b -> {
+                assert triple.zp64.validateElement(b);
+            })
+            .toArray();
+        triple.cs = Arrays.stream(cs)
+            .peek(c -> {
+                assert triple.zp64.validateElement(c);
+            })
+            .toArray();
 
-        Zp64Triple zpTriple = new Zp64Triple();
-        zpTriple.num = num;
-        zpTriple.p = p;
-        zpTriple.as = as;
-        zpTriple.bs = bs;
-        zpTriple.cs = cs;
-
-        return zpTriple;
+        return triple;
     }
 
     /**
-     * 创建长度为0的zp64三元组随机分量。
+     * Creates an empty triple.
      *
-     * @return 长度为0的zp64三元组随机分量。
+     * @param zp64 the Zp64 instance.
+     * @return an empty triple.
      */
-    public static Zp64Triple createEmpty(long p) {
-        assert p >= 2 && BigInteger.valueOf(p).isProbablePrime(CommonConstants.STATS_BIT_LENGTH) : "p must be a prime: " + p;
+    public static Zp64Triple createEmpty(Zp64 zp64) {
         Zp64Triple emptyTriple = new Zp64Triple();
+        emptyTriple.zp64 = zp64;
         emptyTriple.num = 0;
-        emptyTriple.p = p;
         emptyTriple.as = new long[0];
         emptyTriple.bs = new long[0];
         emptyTriple.cs = new long[0];
@@ -80,167 +88,154 @@ public class Zp64Triple {
     }
 
     /**
-     * 私有构造函数。
+     * private constructor.
      */
     private Zp64Triple() {
         // empty
     }
 
-    /**
-     * 返回zp64乘法三元组数量。
-     *
-     * @return 乘法三元组数量。
-     */
+    @Override
     public int getNum() {
         return num;
     }
 
-    /**
-     * 返回zp64乘法三元组模数。
-     *
-     * @return 乘法三元组模数。
-     */
-    public long getP() {
-        return p;
+    @Override
+    public Zp64Triple split(int splitNum) {
+        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]: " + splitNum;
+        // split a
+        long[] aSubs = new long[splitNum];
+        long[] aRemains = new long[num - splitNum];
+        System.arraycopy(as, 0, aSubs, 0, splitNum);
+        System.arraycopy(as, splitNum, aRemains, 0, num - splitNum);
+        as = aRemains;
+        // split b
+        long[] bSubs = new long[splitNum];
+        long[] bRemains = new long[num - splitNum];
+        System.arraycopy(bs, 0, bSubs, 0, splitNum);
+        System.arraycopy(bs, splitNum, bRemains, 0, num - splitNum);
+        bs = bRemains;
+        // split c
+        long[] cSubs = new long[splitNum];
+        long[] cRemains = new long[num - splitNum];
+        System.arraycopy(cs, 0, cSubs, 0, splitNum);
+        System.arraycopy(cs, splitNum, cRemains, 0, num - splitNum);
+        cs = cRemains;
+        // update num
+        num = num - splitNum;
+
+        return Zp64Triple.create(zp64, splitNum, aSubs, bSubs, cSubs);
+    }
+
+    @Override
+    public void reduce(int reduceNum) {
+        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        // if the reduced num is less than num, split the triple. If not, keep the current state.
+        if (reduceNum < num) {
+            // reduce a
+            long[] aRemains = new long[reduceNum];
+            System.arraycopy(as, 0, aRemains, 0, reduceNum);
+            as = aRemains;
+            // reduce b
+            long[] bRemains = new long[reduceNum];
+            System.arraycopy(bs, 0, bRemains, 0, reduceNum);
+            bs = bRemains;
+            // reduce c
+            long[] cRemains = new long[reduceNum];
+            System.arraycopy(cs, 0, cRemains, 0, reduceNum);
+            cs = cRemains;
+            // reduce num
+            num = reduceNum;
+        }
+    }
+
+    @Override
+    public void merge(MergedPcgPartyOutput other) {
+        Zp64Triple that = (Zp64Triple) other;
+        assert this.zp64.equals(that.zp64) : "merged " + this.getClass().getSimpleName()
+            + " must have the same " + zp64.getClass().getSimpleName() + " instance:"
+            + " (" + this.zp64 + " : " + that.zp64 + ")";
+        // merge a
+        long[] mergeAs = new long[this.as.length + that.as.length];
+        System.arraycopy(this.as, 0, mergeAs, 0, this.as.length);
+        System.arraycopy(that.as, 0, mergeAs, this.as.length, that.as.length);
+        as = mergeAs;
+        // merge b
+        long[] mergeBs = new long[this.bs.length + that.bs.length];
+        System.arraycopy(this.bs, 0, mergeBs, 0, this.bs.length);
+        System.arraycopy(that.bs, 0, mergeBs, this.bs.length, that.bs.length);
+        bs = mergeBs;
+        // merge c
+        long[] mergeCs = new long[this.cs.length + that.cs.length];
+        System.arraycopy(this.cs, 0, mergeCs, 0, this.cs.length);
+        System.arraycopy(that.cs, 0, mergeCs, this.cs.length, that.cs.length);
+        cs = mergeCs;
+        // update num
+        num += that.num;
     }
 
     /**
-     * 返回随机分量a。
+     * Gets the Zp64 instance.
      *
-     * @param index 索引值。
-     * @return 随机分量a。
+     * @return the Zp64 instance.
+     */
+    public Zp64 getZp64() {
+        return zp64;
+    }
+
+    /**
+     * Gets a[i]。
+     *
+     * @param index the index.
+     * @return a[i].
      */
     public long getA(int index) {
         return as[index];
     }
 
     /**
-     * 返回所有随机分量a。
+     * Gets a.
      *
-     * @return 所有随机分量a。
+     * @return a.
      */
     public long[] getA() {
         return as;
     }
 
     /**
-     * 返回随机分量b。
+     * Gets b[i]。
      *
-     * @param index 索引值。
-     * @return 随机分量b。
+     * @param index the index.
+     * @return b[i].
      */
     public long getB(int index) {
         return bs[index];
     }
 
     /**
-     * 返回所有随机分量b。
+     * Gets b.
      *
-     * @return 所有随机分量b。
+     * @return b.
      */
     public long[] getB() {
         return bs;
     }
 
     /**
-     * 返回随机分量c。
+     * Gets c[i]。
      *
-     * @param index 索引值。
-     * @return 随机分量c。
+     * @param index the index.
+     * @return c[i].
      */
     public long getC(int index) {
         return cs[index];
     }
 
     /**
-     * 返回所有随机分量c。
+     * Gets c.
      *
-     * @return 所有随机分量c。
+     * @return c.
      */
     public long[] getC() {
         return cs;
-    }
-
-    /**
-     * 从zp64乘法三元组中切分出指定长度的子zp64乘法三元组。
-     *
-     * @param length 指定切分长度。
-     */
-    public Zp64Triple split(int length) {
-        assert length > 0 && length <= num : "split length must be in range (0, " + num + "]";
-        // 切分a
-        long[] aSubs = new long[length];
-        long[] aRemains = new long[num - length];
-        System.arraycopy(as, 0, aSubs, 0, length);
-        System.arraycopy(as, length, aRemains, 0, num - length);
-        as = aRemains;
-        // 切分b
-        long[] bSubs = new long[length];
-        long[] bRemains = new long[num - length];
-        System.arraycopy(bs, 0, bSubs, 0, length);
-        System.arraycopy(bs, length, bRemains, 0, num - length);
-        bs = bRemains;
-        // 切分c
-        long[] cSubs = new long[length];
-        long[] cRemains = new long[num - length];
-        System.arraycopy(cs, 0, cSubs, 0, length);
-        System.arraycopy(cs, length, cRemains, 0, num - length);
-        cs = cRemains;
-        // 更新长度
-        num = num - length;
-
-        return Zp64Triple.create(p, length, aSubs, bSubs, cSubs);
-    }
-
-    /**
-     * 将zp64乘法三元组长度缩减为指定长度。
-     *
-     * @param length 指定缩减长度。
-     */
-    public void reduce(int length) {
-        assert length > 0 && length <= num : "reduce length = " + length + " must be in range (0, " + num + "]";
-        // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
-        if (length < num) {
-            // 减小a
-            long[] aRemains = new long[length];
-            System.arraycopy(as, 0, aRemains, 0, length);
-            as = aRemains;
-            // 减小b
-            long[] bRemains = new long[length];
-            System.arraycopy(bs, 0, bRemains, 0, length);
-            bs = bRemains;
-            // 减小c
-            long[] cRemains = new long[length];
-            System.arraycopy(cs, 0, cRemains, 0, length);
-            cs = cRemains;
-            // 减小长度
-            num = length;
-        }
-    }
-
-    /**
-     * 合并两个zp64乘法三元组。
-     *
-     * @param that 另一个乘法三元组。
-     */
-    public void merge(Zp64Triple that) {
-        assert this.p == that.p : "merged " + Zp64Triple.class.getSimpleName() + " must have the same l";
-        // 合并a
-        long[] mergeAs = new long[this.as.length + that.as.length];
-        System.arraycopy(this.as, 0, mergeAs, 0, this.as.length);
-        System.arraycopy(that.as, 0, mergeAs, this.as.length, that.as.length);
-        as = mergeAs;
-        // 合并b
-        long[] mergeBs = new long[this.bs.length + that.bs.length];
-        System.arraycopy(this.bs, 0, mergeBs, 0, this.bs.length);
-        System.arraycopy(that.bs, 0, mergeBs, this.bs.length, that.bs.length);
-        bs = mergeBs;
-        // 合并c
-        long[] mergeCs = new long[this.cs.length + that.cs.length];
-        System.arraycopy(this.cs, 0, mergeCs, 0, this.cs.length);
-        System.arraycopy(that.cs, 0, mergeCs, this.cs.length, that.cs.length);
-        cs = mergeCs;
-        // 更新长度
-        num += that.num;
     }
 }

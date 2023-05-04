@@ -47,9 +47,7 @@ public class OpXgBoostHostThread extends Thread {
     @Override
     public void run() {
         try {
-            host.getRpc().connect();
             model = host.fit(formula, hostDataFrame, hostConfig);
-            host.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
             System.exit(-1);

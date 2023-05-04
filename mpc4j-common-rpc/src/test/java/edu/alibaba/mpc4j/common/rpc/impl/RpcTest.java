@@ -1,13 +1,16 @@
 package edu.alibaba.mpc4j.common.rpc.impl;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyRpcManager;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -51,16 +54,35 @@ public class RpcTest {
         this.rpcManager = rpcManager;
     }
 
+    @Before
+    public void connect() throws InterruptedException {
+        int partyNum = rpcManager.getPartyNum();
+        for (int partyId = 0; partyId < partyNum; partyId++) {
+            Rpc partyRpc = rpcManager.getRpc(partyId);
+            new Thread(partyRpc::connect).start();
+            Thread.sleep(100);
+        }
+    }
+
+    @After
+    public void disconnect() {
+        int partyNum = rpcManager.getPartyNum();
+        for (int partyId = 0; partyId < partyNum; partyId++) {
+            Rpc partyRpc = rpcManager.getRpc(partyId);
+            new Thread(partyRpc::disconnect).start();
+        }
+    }
+
     @Test
     public void testData() throws InterruptedException {
         int partyNum = rpcManager.getPartyNum();
-        // 随机选取一个taskID
-        long taskId = Math.abs(SECURE_RANDOM.nextLong());
+        // a random task ID
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         // 构建通信线程
         RpcDataThread[] threads = new RpcDataThread[partyNum];
         // 初始化并启动每个RPC线程
         for (int partyId = 0; partyId < partyNum; partyId++) {
-            threads[partyId] = new RpcDataThread(taskId, rpcManager.getRpc(partyId));
+            threads[partyId] = new RpcDataThread(randomTaskId, rpcManager.getRpc(partyId));
             threads[partyId].start();
         }
         // 等待线程停止
@@ -103,5 +125,14 @@ public class RpcTest {
         }
         Assert.assertTrue(extraInfoSendDataPacketSet.containsAll(extraInfoReceivedDataPacketSet));
         Assert.assertTrue(extraInfoReceivedDataPacketSet.containsAll(extraInfoSendDataPacketSet));
+        // take any data packet verification
+        Set<DataPacket> takeAnySendDataPacketSet = new HashSet<>();
+        Set<DataPacket> takeAnyReceivedDataPacketSet = new HashSet<>();
+        for (RpcDataThread thread : threads) {
+            takeAnySendDataPacketSet.addAll(thread.getTakeAnySendDataPacketSet());
+            takeAnyReceivedDataPacketSet.addAll(thread.getTakeAnyReceivedDataPacketSet());
+        }
+        Assert.assertTrue(takeAnySendDataPacketSet.containsAll(takeAnyReceivedDataPacketSet));
+        Assert.assertTrue(takeAnyReceivedDataPacketSet.containsAll(takeAnySendDataPacketSet));
     }
 }

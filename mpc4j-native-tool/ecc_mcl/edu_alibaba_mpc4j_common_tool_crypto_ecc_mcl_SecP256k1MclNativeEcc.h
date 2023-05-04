@@ -36,32 +36,16 @@ JNIEXPORT void JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256
  * Method:    singleFixedPointMultiply
  * Signature: (Ljava/nio/ByteBuffer;Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_singleFixedPointMultiply
+JNIEXPORT jstring JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_precomputeMultiply
   (JNIEnv *, jobject, jobject, jstring);
-
-/*
- * Class:     edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc
- * Method:    fixedPointMultiply
- * Signature: (Ljava/nio/ByteBuffer;[Ljava/lang/String;)[Ljava/lang/String;
- */
-JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_fixedPointMultiply
-  (JNIEnv *, jobject, jobject, jobjectArray);
 
 /*
  * Class:     edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc
  * Method:    singleMultiply
  * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_singleMultiply
+JNIEXPORT jstring JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_multiply
   (JNIEnv *, jobject, jstring, jstring);
-
-/*
- * Class:     edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc
- * Method:    multiply
- * Signature: (Ljava/lang/String;[Ljava/lang/String;)[Ljava/lang/String;
- */
-JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_multiply
-  (JNIEnv *, jobject, jstring, jobjectArray);
 
 /*
  * Class:     edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc

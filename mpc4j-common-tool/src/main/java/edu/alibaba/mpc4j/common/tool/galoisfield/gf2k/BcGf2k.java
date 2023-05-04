@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.bouncycastle.crypto.modes.gcm.GCMUtil;
@@ -11,10 +12,10 @@ import org.bouncycastle.crypto.modes.gcm.GCMUtil;
  * @author Weiran Liu
  * @date 2022/01/15
  */
-class BcGf2k implements Gf2k {
+class BcGf2k extends AbstractGf2k {
 
-    BcGf2k() {
-        // empty
+    BcGf2k(EnvType envType) {
+        super(envType);
     }
 
     @Override
@@ -36,8 +37,11 @@ class BcGf2k implements Gf2k {
     public void muli(byte[] a, byte[] b) {
         assert a.length == CommonConstants.BLOCK_BYTE_LENGTH;
         assert b.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        // here we must copy b, since we need to support muli(a, a).
+        byte[] copyB = BytesUtils.clone(b);
         BytesUtils.innerReverseBitArray(a);
-        GCMUtil.multiply(a, BytesUtils.reverseBitArray(b));
+        BytesUtils.innerReverseBitArray(copyB);
+        GCMUtil.multiply(a, copyB);
         BytesUtils.innerReverseBitArray(a);
     }
 }

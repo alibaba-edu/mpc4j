@@ -63,7 +63,7 @@ public class PrgFactory {
             case BC_SM4_ECB:
                 return new BcSm4EcbPrg(outputByteLength);
             default:
-                throw new IllegalArgumentException("Invalid PrgType: " + prgType.name());
+                throw new IllegalArgumentException("Invalid " + PrgType.class.getSimpleName() + ": " + prgType.name());
         }
     }
 
@@ -84,7 +84,7 @@ public class PrgFactory {
             case INLAND_JDK:
                 return new BcSm4EcbPrg(outputByteLength);
             default:
-                throw new IllegalArgumentException("Invalid EnvType: " + envType.name());
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }
     }
 }

@@ -45,4 +45,6 @@ uint32_t get_number_of_bits(uint64_t number);
 Ciphertext get_sum(vector<Ciphertext> &query, Evaluator& evaluator, GaloisKeys &gal_keys, vector<Plaintext> &encoded_db,
                    uint32_t start, uint32_t end);
 
+vector<uint64_t> rotate_plain(vector<uint64_t> original, int32_t index);
+
 #endif //MPC4J_NATIVE_FHE_INDEX_PIR_H

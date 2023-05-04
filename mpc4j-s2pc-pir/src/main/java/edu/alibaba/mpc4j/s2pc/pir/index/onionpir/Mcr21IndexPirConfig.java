@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.s2pc.pir.index.IndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.IndexPirFactory;
 
 /**
- * OnionPIR协议配置项。
+ * OnionPIR config.
  *
  * @author Liqiang Peng
  * @date 2022/11/11

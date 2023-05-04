@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.rpc;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyParty;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyRpc;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 
 import java.util.*;
@@ -26,9 +27,7 @@ public class RpcPropertiesUtils {
      * @return 通信接口。
      */
     public static Rpc readNettyRpc(Properties properties, String... partyPrefix) {
-        Preconditions.checkArgument(
-            partyPrefix.length >= 2, "# parties must be greater than or equal to 2: " + partyPrefix.length
-        );
+        MathPreconditions.checkGreater("# of parties", partyPrefix.length, 1);
         int partyNum = partyPrefix.length;
         // 构建参与方信息
         Set<NettyParty> nettyPartySet = new HashSet<>(partyNum);

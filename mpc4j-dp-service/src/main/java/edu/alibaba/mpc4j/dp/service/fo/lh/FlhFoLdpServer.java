@@ -35,10 +35,6 @@ import java.util.stream.IntStream;
  */
 public class FlhFoLdpServer extends AbstractFoLdpServer {
     /**
-     * p* = 1/2
-     */
-    private static final double P_STAR = 1.0 / 2;
-    /**
      * g = e^ε + 1
      */
     private final int g;
@@ -63,7 +59,11 @@ public class FlhFoLdpServer extends AbstractFoLdpServer {
      */
     private final int[] budget;
     /**
-     * q* = 1 / (e^ε + 1)
+     * p* = e^ε / (e^ε + g - 1)
+     */
+    private final double pStar;
+    /**
+     * q* = 1 / g
      */
     private final double qStar;
 
@@ -89,8 +89,9 @@ public class FlhFoLdpServer extends AbstractFoLdpServer {
                 hashMap[i][j] = Math.abs(intHash.hash(itemIndexBytesArray[j], hashSeeds[i]) % g);
             }
         }
-        // p = e^ε / (e^ε + 1)
-        qStar = 1 / (expEpsilon + 1);
+        pStar = expEpsilon / (expEpsilon + g - 1);
+        // q^* = 1 / g
+        qStar = 1.0 / g;
         // init budget
         budget = new int[d];
     }
@@ -124,7 +125,7 @@ public class FlhFoLdpServer extends AbstractFoLdpServer {
             .boxed()
             .collect(Collectors.toMap(
                 domain::getIndexItem,
-                itemIndex -> (budget[itemIndex] - num * qStar) / (P_STAR - qStar)
+                itemIndex -> (budget[itemIndex] - num * qStar) / (pStar - qStar)
             ));
     }
 }

@@ -338,11 +338,20 @@ uint32_t get_number_of_bits(uint64_t number) {
     return count;
 }
 
-uint32_t get_next_power_of_two(uint32_t number)
-{
+uint32_t get_next_power_of_two(uint32_t number) {
     if (!(number & (number - 1))) {
         return number;
     }
     uint32_t number_of_bits = get_number_of_bits(number);
     return (1 << number_of_bits);
+}
+
+vector<uint64_t> rotate_plain(vector<uint64_t> original, int32_t index) {
+    int32_t row_count = (int32_t) original.size() / 2;
+    std::vector<uint64_t> result(original.size(), 0ULL);
+    for (int32_t i = 0; i < row_count; i++)
+    {
+        result[i] = original[(row_count - index + i) % row_count];
+    }
+    return result;
 }

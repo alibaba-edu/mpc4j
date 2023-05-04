@@ -17,13 +17,13 @@ public class KwPirServerThread<T> extends Thread {
      */
     private final KwPirServer<T> server;
     /**
-     * 关键字PIR配置项
-     */
-    private final KwPirParams kwPirParams;
-    /**
      * 关键词标签映射
      */
     private final Map<T, ByteBuffer> keywordLabelMap;
+    /**
+     * 客户端检索数量
+     */
+    private final int retrievalSize;
     /**
      * 标签字节长度
      */
@@ -33,11 +33,10 @@ public class KwPirServerThread<T> extends Thread {
      */
     private final int repeatTime;
 
-    KwPirServerThread(KwPirServer<T> server, KwPirParams kwPirParams,
-                      Map<T, ByteBuffer> keywordLabelMap, int labelByteLength, int repeatTime) {
+    KwPirServerThread(KwPirServer<T> server, Map<T, ByteBuffer> keywordLabelMap, int retrievalSize, int labelByteLength, int repeatTime) {
         this.server = server;
-        this.kwPirParams = kwPirParams;
         this.keywordLabelMap = keywordLabelMap;
+        this.retrievalSize = retrievalSize;
         this.labelByteLength = labelByteLength;
         this.repeatTime = repeatTime;
     }
@@ -45,13 +44,11 @@ public class KwPirServerThread<T> extends Thread {
     @Override
     public void run() {
         try {
-            server.getRpc().connect();
-            server.init(kwPirParams, keywordLabelMap, labelByteLength);
+            server.init(keywordLabelMap, retrievalSize, labelByteLength);
             server.getRpc().synchronize();
             for (int i = 0; i < repeatTime; i++) {
                 server.pir();
             }
-            server.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

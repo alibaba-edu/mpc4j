@@ -29,6 +29,7 @@ public class Zp64Factory {
     /**
      * 创建Zp64运算实例。
      *
+     * @param envType the environment.
      * @param type 类型。
      * @param l    l比特长度。
      * @return Zp64运算实例。
@@ -46,6 +47,7 @@ public class Zp64Factory {
     /**
      * 创建Zo64运算实例。
      *
+     * @param envType the environment.
      * @param type  类型。
      * @param prime 素数。
      * @return Zp64运算实例。
@@ -63,7 +65,7 @@ public class Zp64Factory {
     /**
      * 创建Zp64运算实例。
      *
-     * @param envType 环境类型。
+     * @param envType the environment.
      * @param l       l比特长度。
      * @return Zp64运算实例。
      */

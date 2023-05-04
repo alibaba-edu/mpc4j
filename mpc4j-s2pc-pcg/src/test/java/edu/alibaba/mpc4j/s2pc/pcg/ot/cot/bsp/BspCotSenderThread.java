@@ -56,10 +56,8 @@ class BspCotSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.getRpc().connect();
             sender.init(delta, batch, num);
             senderOutput = preSenderOutput == null ? sender.send(batch, num) : sender.send(batch, num, preSenderOutput);
-            sender.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

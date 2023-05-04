@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.okve.ovdm.gf2e;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
@@ -25,11 +26,11 @@ class Gf2eOvdmTestUtils {
     /**
      * 默认有限域比特长度
      */
-    static final int DEFAULT_L = CommonConstants.STATS_BIT_LENGTH;
+    static final int DEFAULT_L = 64;
     /**
      * 默认L字节长度
      */
-    static final int DEFAULT_L_BYTE_LENGTH = CommonConstants.STATS_BYTE_LENGTH;
+    static final int DEFAULT_L_BYTE_LENGTH = CommonUtils.getByteLength(DEFAULT_L);
     /**
      * 随机状态
      */

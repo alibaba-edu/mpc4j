@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
@@ -17,7 +18,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotSender;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -56,37 +56,15 @@ public class Alsz13Z2CoreMtgSender extends AbstractZ2CoreMtgParty {
     public Alsz13Z2CoreMtgSender(Rpc senderRpc, Party receiverParty, Alsz13Z2CoreMtgConfig config) {
         super(Alsz13Z2CoreMtgPtoDesc.getInstance(), senderRpc, receiverParty, config);
         ncCotSender = NcCotFactory.createSender(senderRpc, receiverParty, config.getNcCotConfig());
-        ncCotSender.addLogLevel();
+        addSubPtos(ncCotSender);
         ncCotReceiver = NcCotFactory.createReceiver(senderRpc, receiverParty, config.getNcCotConfig());
-        ncCotReceiver.addLogLevel();
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        ncCotSender.setTaskId(taskIdPrf.getLong(0, taskIdBytes, Long.MAX_VALUE));
-        ncCotReceiver.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        ncCotSender.setParallel(parallel);
-        ncCotReceiver.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        ncCotSender.addLogLevel();
-        ncCotReceiver.addLogLevel();
+        addSubPtos(ncCotReceiver);
     }
 
     @Override
     public void init(int maxNum) throws MpcAbortException {
         setInitInput(maxNum);
-        info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // 初始化COT发送方
@@ -98,37 +76,36 @@ public class Alsz13Z2CoreMtgSender extends AbstractZ2CoreMtgParty {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Send. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public Z2Triple generate(int num) throws MpcAbortException {
         setPtoInput(num);
-        info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         initParam();
         stopWatch.stop();
         long initParamTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 1/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initParamTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 4, initParamTime);
 
         stopWatch.start();
         firstRound();
         stopWatch.stop();
         long firstRoundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 2/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), firstRoundTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 4, firstRoundTime);
 
         stopWatch.start();
         secondRound();
         stopWatch.stop();
         long secondRoundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 3/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), secondRoundTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 4, secondRoundTime);
 
         stopWatch.start();
         // Finally, each Pi sets ci = (ai ⊙ bi) ⊕ ui ⊕ vi. This is the remaining part.
@@ -137,9 +114,9 @@ public class Alsz13Z2CoreMtgSender extends AbstractZ2CoreMtgParty {
         stopWatch.stop();
         long generateTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 4/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), generateTime);
+        logStepInfo(PtoState.PTO_STEP, 4, 4, generateTime);
 
-        info("{}{} Send. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return Z2Triple.create(num, a0, b0, c0);
     }
 

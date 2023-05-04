@@ -1,10 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory.BspCotType;
 
 /**
  * BSP-COT接收方接口。
@@ -12,15 +10,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory.BspCotType;
  * @author Weiran Liu
  * @date 2022/02/03
  */
-public interface BspCotReceiver extends TwoPartyPto, SecurePto {
-    /**
-     * 返回协议类型。
-     *
-     * @return 协议类型。
-     */
-    @Override
-    BspCotType getPtoType();
-
+public interface BspCotReceiver extends TwoPartyPto {
     /**
      * 初始化协议。
      *

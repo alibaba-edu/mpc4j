@@ -33,11 +33,6 @@ public class OfflineZ2MtgConfig implements Z2MtgConfig {
     }
 
     @Override
-    public int maxBaseNum() {
-        return z2CoreMtgConfig.maxAllowNum();
-    }
-
-    @Override
     public void setEnvType(EnvType envType) {
         z2CoreMtgConfig.setEnvType(envType);
     }
@@ -59,7 +54,7 @@ public class OfflineZ2MtgConfig implements Z2MtgConfig {
         private Z2CoreMtgConfig z2CoreMtgConfig;
 
         public Builder(SecurityModel securityModel) {
-            z2CoreMtgConfig = Z2CoreMtgFactory.createDefaultConfig(securityModel);
+            z2CoreMtgConfig = Z2CoreMtgFactory.createDefaultConfig(securityModel, true);
         }
 
         public Builder setZ2CoreMtgConfig(Z2CoreMtgConfig z2CoreMtgConfig) {

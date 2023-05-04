@@ -1,206 +1,190 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp64;
 
-import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
 /**
- * Zp64-VOLE输出测试。
+ * Zp64-VOLE tests.
  *
- * @author Hanwen Feng
+ * @author Hanwen Feng, Weiran Liu
  * @date 2022/6/15
  */
 public class Zp64VoleOutputTest {
     /**
-     * 最小数量
+     * min num
      */
     private static final int MIN_NUM = 1;
     /**
-     * 最大数量
+     * max num
      */
-    private static final int MAX_NUM = 128;
+    private static final int MAX_NUM = 64;
     /**
-     * 随机状态
+     * the random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
-     * 默认素数域
+     * the default Zp64 instance
      */
-    private static final long PRIME = ZpManager.getPrime(62).longValue();
+    private static final Zp64 DEFAULT_ZP64 = Zp64Factory.createInstance(EnvType.STANDARD, 62);
     /**
-     * 另一个素数域
+     * the other Zp64 instance
      */
-    private static final long AN_PRIME = ZpManager.getPrime(32).longValue();
-    /**
-     * 关联值Δ = 0
-     */
-    private static final long ZERO_DELTA = 0L;
-    /**
-     * 关联值Δ = 2^k - 1
-     */
-    private static final long ONE_DELTA = 1L << (LongUtils.ceilLog2(PRIME) - 1);
+    private static final Zp64 OTHER_ZP64 = Zp64Factory.createInstance(EnvType.STANDARD, 32);
 
     @Test
-    public void testIllegalInputs() {
-        try {
-            // 创建长度为0的接收方输出
-            Zp64VoleReceiverOutput.create(PRIME, ONE_DELTA, new long[0]);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with n = 0");
-        } catch (AssertionError ignored) {
+    public void testSenderIllegalOutputs() {
+        // create a sender output with length 0
+        Assert.assertThrows(AssertionError.class, () ->
+            Zp64VoleSenderOutput.create(DEFAULT_ZP64, new long[0], new long[0])
+        );
+        // create a sender output with mismatched length
+        Assert.assertThrows(AssertionError.class, () -> {
+            long[] x = IntStream.range(0, MIN_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            long[] t = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleSenderOutput.create(DEFAULT_ZP64, x, t);
+        });
+        // create a sender output with negative x
+        Assert.assertThrows(AssertionError.class, () -> {
+            long[] x = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> -DEFAULT_ZP64.createNonZeroRandom(SECURE_RANDOM))
+                .toArray();
+            long[] t = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleSenderOutput.create(DEFAULT_ZP64, x, t);
+        });
+        // create a sender output with large x
+        Assert.assertThrows(AssertionError.class, () -> {
+            long[] x = IntStream.range(0, MIN_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.getPrime() + 1L)
+                .toArray();
+            long[] t = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleSenderOutput.create(DEFAULT_ZP64, x, t);
+        });
+        // create a sender output with negative t
+        Assert.assertThrows(AssertionError.class, () -> {
+            long[] x = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            long[] t = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> -DEFAULT_ZP64.createNonZeroRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleSenderOutput.create(DEFAULT_ZP64, x, t);
+        });
+        // create a sender output with large t
+        Assert.assertThrows(AssertionError.class, () -> {
+            long[] x = IntStream.range(0, MIN_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            long[] t = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.getPrime() + 1L)
+                .toArray();
+            Zp64VoleSenderOutput.create(DEFAULT_ZP64, x, t);
+        });
+        // merge two sender outputs with different p
+        Assert.assertThrows(AssertionError.class, () -> {
+            long[] x0 = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            long[] t0 = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleSenderOutput senderOutput0 = Zp64VoleSenderOutput.create(DEFAULT_ZP64, x0, t0);
+            long[] x1 = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> OTHER_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            long[] t1 = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> OTHER_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleSenderOutput senderOutput1 = Zp64VoleSenderOutput.create(OTHER_ZP64, x1, t1);
+            senderOutput0.merge(senderOutput1);
+        });
+    }
 
-        }
-        try {
-            // 创建Δ为负数的接收方输出
+    @Test
+    public void testReceiverIllegalInputs() {
+        // create a receiver output with length = 0
+        Assert.assertThrows(AssertionError.class, () -> {
+            long delta = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
+            Zp64VoleReceiverOutput.create(DEFAULT_ZP64, delta, new long[0]);
+        });
+        // create a receiver output with a negative Δ
+        Assert.assertThrows(AssertionError.class, () -> {
             long delta = -1L;
             long[] q = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            Zp64VoleReceiverOutput.create(PRIME, delta, q);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with negative Δ");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建Δ不合法的接收方输出
-            long delta = PRIME - 1L;
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleReceiverOutput.create(DEFAULT_ZP64, delta, q);
+        });
+        // create a receiver output with invalid Δ
+        Assert.assertThrows(AssertionError.class, () -> {
+            long delta = DEFAULT_ZP64.getPrime() - 1L;
             long[] q = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            Zp64VoleReceiverOutput.create(PRIME, delta, q);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with illegal Δ");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建Δ过大的接收方输出
-            long delta = PRIME + 1L;
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleReceiverOutput.create(DEFAULT_ZP64, delta, q);
+        });
+        // create a receiver output with large Δ
+        Assert.assertThrows(AssertionError.class, () -> {
+            long delta = DEFAULT_ZP64.getPrime() + 1L;
             long[] q = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            Zp64VoleReceiverOutput.create(PRIME, delta, q);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with large Δ");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建q为负数的接收方输出
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleReceiverOutput.create(DEFAULT_ZP64, delta, q);
+        });
+        // create a receiver output with negative q
+        Assert.assertThrows(AssertionError.class, () -> {
+            long delta = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
             long[] q = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> -LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            Zp64VoleReceiverOutput.create(PRIME, ONE_DELTA, q);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with negative q");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建q过大的接收方输出
+                .mapToLong(index -> -DEFAULT_ZP64.createNonZeroRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleReceiverOutput.create(DEFAULT_ZP64, delta, q);
+        });
+        // create a receiver output with large q
+        Assert.assertThrows(AssertionError.class, () -> {
+            long delta = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
             long[] q = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> PRIME + 1L)
-                    .toArray();
-            Zp64VoleReceiverOutput.create(PRIME, ONE_DELTA, q);
-            throw new IllegalStateException("ERROR: successfully create ReceiverOutput with large q");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 合并两个Δ不相等的接收方输出
+                .mapToLong(index -> DEFAULT_ZP64.getPrime() + 1L)
+                .toArray();
+            Zp64VoleReceiverOutput.create(DEFAULT_ZP64, delta, q);
+        });
+        // merge two receiver outputs with different Δ
+        Assert.assertThrows(AssertionError.class, () -> {
+            long delta0 = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
+            long delta1 = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
             long[] q = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            Zp64VoleReceiverOutput receiverOutput0 = Zp64VoleReceiverOutput.create(PRIME, ONE_DELTA, q);
-            Zp64VoleReceiverOutput receiverOutput1 = Zp64VoleReceiverOutput.create(PRIME, ZERO_DELTA, q);
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleReceiverOutput receiverOutput0 = Zp64VoleReceiverOutput.create(DEFAULT_ZP64, delta0, q);
+            Zp64VoleReceiverOutput receiverOutput1 = Zp64VoleReceiverOutput.create(DEFAULT_ZP64, delta1, q);
             receiverOutput0.merge(receiverOutput1);
-            throw new IllegalStateException("ERROR: successfully merge ReceiverOutput with different Δ");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 合并两个素数域不相等的接收方输出
-            long[] q = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            Zp64VoleReceiverOutput receiverOutput0 = Zp64VoleReceiverOutput.create(PRIME, ONE_DELTA, q);
-            Zp64VoleReceiverOutput receiverOutput1 = Zp64VoleReceiverOutput.create(AN_PRIME, ONE_DELTA, q);
+        });
+        // merge two receiver outputs with different Zp
+        Assert.assertThrows(AssertionError.class, () -> {
+            long delta0 = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
+            long[] q0 = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> DEFAULT_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleReceiverOutput receiverOutput0 = Zp64VoleReceiverOutput.create(DEFAULT_ZP64, delta0, q0);
+            long delta1 = OTHER_ZP64.createRangeRandom(SECURE_RANDOM);
+            long[] q1 = IntStream.range(0, MAX_NUM)
+                .mapToLong(index -> OTHER_ZP64.createRandom(SECURE_RANDOM))
+                .toArray();
+            Zp64VoleReceiverOutput receiverOutput1 = Zp64VoleReceiverOutput.create(OTHER_ZP64, delta1, q1);
             receiverOutput0.merge(receiverOutput1);
-            throw new IllegalStateException("ERROR: successfully merge ReceiverOutput with different prime");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建长度为0的发送方输出
-            Zp64VoleSenderOutput.create(PRIME, new long[0], new long[0]);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with n = 0");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建x和t大小不匹配的发送方输出
-            long[] x = IntStream.range(0, MIN_NUM)
-                    .mapToLong(index -> Math.floorMod(SECURE_RANDOM.nextLong(), PRIME))
-                    .toArray();
-            long[] t = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> Math.floorMod(SECURE_RANDOM.nextLong(), PRIME))
-                    .toArray();
-            Zp64VoleSenderOutput.create(PRIME, x, t);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with different array length");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建x为负数的发送方输出
-            long[] x = IntStream.range(0, MIN_NUM)
-                    .mapToLong(index -> -Math.floorMod(SECURE_RANDOM.nextLong(), PRIME))
-                    .toArray();
-            long[] t = IntStream.range(0, MIN_NUM)
-                    .mapToLong(index -> Math.floorMod(SECURE_RANDOM.nextLong(), PRIME))
-                    .toArray();
-            Zp64VoleSenderOutput.create(PRIME, x, t);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with negative x");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建x过大的发送方输出
-            long[] x = IntStream.range(0, MIN_NUM)
-                    .mapToLong(index -> PRIME + 1L)
-                    .toArray();
-            long[] t = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            Zp64VoleSenderOutput.create(PRIME, x, t);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with large x");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建t为负数的发送方输出
-            long[] x = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            long[] t = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> -LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            Zp64VoleSenderOutput.create(PRIME, x, t);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with negative t");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建x过大的发送方输出
-            long[] x = IntStream.range(0, MIN_NUM)
-                    .mapToLong(index -> LongUtils.randomNonNegative(PRIME, SECURE_RANDOM))
-                    .toArray();
-            long[] t = IntStream.range(0, MAX_NUM)
-                    .mapToLong(index -> PRIME + 1L)
-                    .toArray();
-            Zp64VoleSenderOutput.create(PRIME, x, t);
-            throw new IllegalStateException("ERROR: successfully create SenderOutput with large t");
-        } catch (AssertionError ignored) {
-
-        }
+        });
     }
 
     @Test
@@ -211,28 +195,28 @@ public class Zp64VoleOutputTest {
     }
 
     private void testReduce(int num) {
-        long delta = LongUtils.randomNonNegative(1L << (LongUtils.ceilLog2(PRIME) - 1), SECURE_RANDOM);
-        // 减小到1
-        Zp64VoleReceiverOutput receiverOutput1 = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
+        long delta = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
+        // reduce 1
+        Zp64VoleReceiverOutput receiverOutput1 = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
         Zp64VoleSenderOutput senderOutput1 = Zp64VoleTestUtils.genSenderOutput(receiverOutput1, SECURE_RANDOM);
         senderOutput1.reduce(1);
         receiverOutput1.reduce(1);
         Zp64VoleTestUtils.assertOutput(1, senderOutput1, receiverOutput1);
-        // 减小到相同长度
-        Zp64VoleReceiverOutput receiverOutputAll = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
+        // reduce all
+        Zp64VoleReceiverOutput receiverOutputAll = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
         Zp64VoleSenderOutput senderOutputAll = Zp64VoleTestUtils.genSenderOutput(receiverOutputAll, SECURE_RANDOM);
         senderOutputAll.reduce(num);
         receiverOutputAll.reduce(num);
         Zp64VoleTestUtils.assertOutput(num, senderOutputAll, receiverOutputAll);
         if (num > 1) {
-            // 减小num - 1
-            Zp64VoleReceiverOutput receiverOutputNum = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
+            // reduce num - 1
+            Zp64VoleReceiverOutput receiverOutputNum = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
             Zp64VoleSenderOutput senderOutputNum = Zp64VoleTestUtils.genSenderOutput(receiverOutputNum, SECURE_RANDOM);
             senderOutputNum.reduce(num - 1);
             receiverOutputNum.reduce(num - 1);
             Zp64VoleTestUtils.assertOutput(num - 1, senderOutputNum, receiverOutputNum);
-            // 减小到一半
-            Zp64VoleReceiverOutput receiverOutputHalf = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
+            // reduce half
+            Zp64VoleReceiverOutput receiverOutputHalf = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
             Zp64VoleSenderOutput senderOutputHalf = Zp64VoleTestUtils.genSenderOutput(receiverOutputHalf, SECURE_RANDOM);
             senderOutputHalf.reduce(num / 2);
             receiverOutputHalf.reduce(num / 2);
@@ -242,15 +226,15 @@ public class Zp64VoleOutputTest {
 
     @Test
     public void testAllEmptyMerge() {
-        long delta = LongUtils.randomNonNegative(1L << (LongUtils.ceilLog2(PRIME) - 1), SECURE_RANDOM);
-        Zp64VoleSenderOutput senderOutput = Zp64VoleSenderOutput.createEmpty(PRIME);
-        Zp64VoleSenderOutput mergeSenderOutput = Zp64VoleSenderOutput.createEmpty(PRIME);
-        Zp64VoleReceiverOutput receiverOutput = Zp64VoleReceiverOutput.createEmpty(PRIME, delta);
-        Zp64VoleReceiverOutput mergeReceiverOutput = Zp64VoleReceiverOutput.createEmpty(PRIME, delta);
-        // 合并
+        long delta = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
+        Zp64VoleSenderOutput senderOutput = Zp64VoleSenderOutput.createEmpty(DEFAULT_ZP64);
+        Zp64VoleSenderOutput mergeSenderOutput = Zp64VoleSenderOutput.createEmpty(DEFAULT_ZP64);
+        Zp64VoleReceiverOutput receiverOutput = Zp64VoleReceiverOutput.createEmpty(DEFAULT_ZP64, delta);
+        Zp64VoleReceiverOutput mergeReceiverOutput = Zp64VoleReceiverOutput.createEmpty(DEFAULT_ZP64, delta);
+        // merge
         senderOutput.merge(mergeSenderOutput);
         receiverOutput.merge(mergeReceiverOutput);
-        // 验证结果
+        // verify
         Zp64VoleTestUtils.assertOutput(0, senderOutput, receiverOutput);
     }
 
@@ -262,15 +246,15 @@ public class Zp64VoleOutputTest {
     }
 
     private void testLeftEmptyMerge(int num) {
-        long delta = LongUtils.randomNonNegative(1L << (LongUtils.ceilLog2(PRIME) - 1), SECURE_RANDOM);
-        Zp64VoleReceiverOutput receiverOutput = Zp64VoleReceiverOutput.createEmpty(PRIME, delta);
-        Zp64VoleReceiverOutput mergeReceiverOutput = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
-        Zp64VoleSenderOutput senderOutput = Zp64VoleSenderOutput.createEmpty(PRIME);
+        long delta = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
+        Zp64VoleReceiverOutput receiverOutput = Zp64VoleReceiverOutput.createEmpty(DEFAULT_ZP64, delta);
+        Zp64VoleReceiverOutput mergeReceiverOutput = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
+        Zp64VoleSenderOutput senderOutput = Zp64VoleSenderOutput.createEmpty(DEFAULT_ZP64);
         Zp64VoleSenderOutput mergeSenderOutput = Zp64VoleTestUtils.genSenderOutput(mergeReceiverOutput, SECURE_RANDOM);
-        // 合并
+        // merge
         senderOutput.merge(mergeSenderOutput);
         receiverOutput.merge(mergeReceiverOutput);
-        // 验证结果
+        // verify
         Zp64VoleTestUtils.assertOutput(num, senderOutput, receiverOutput);
     }
 
@@ -282,15 +266,15 @@ public class Zp64VoleOutputTest {
     }
 
     private void testRightEmptyMerge(int num) {
-        long delta = LongUtils.randomNonNegative(1L << (LongUtils.ceilLog2(PRIME) - 1), SECURE_RANDOM);
-        Zp64VoleReceiverOutput receiverOutput = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
-        Zp64VoleReceiverOutput mergeReceiverOutput = Zp64VoleReceiverOutput.createEmpty(PRIME, delta);
+        long delta = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
+        Zp64VoleReceiverOutput receiverOutput = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
+        Zp64VoleReceiverOutput mergeReceiverOutput = Zp64VoleReceiverOutput.createEmpty(DEFAULT_ZP64, delta);
         Zp64VoleSenderOutput senderOutput = Zp64VoleTestUtils.genSenderOutput(receiverOutput, SECURE_RANDOM);
-        Zp64VoleSenderOutput mergeSenderOutput = Zp64VoleSenderOutput.createEmpty(PRIME);
-        // 合并
+        Zp64VoleSenderOutput mergeSenderOutput = Zp64VoleSenderOutput.createEmpty(DEFAULT_ZP64);
+        // merge
         senderOutput.merge(mergeSenderOutput);
         receiverOutput.merge(mergeReceiverOutput);
-        // 验证结果
+        // verify
         Zp64VoleTestUtils.assertOutput(num, senderOutput, receiverOutput);
     }
 
@@ -304,15 +288,15 @@ public class Zp64VoleOutputTest {
     }
 
     private void testMerge(int num1, int num2) {
-        long delta = LongUtils.randomNonNegative(1L << (LongUtils.ceilLog2(PRIME) - 1), SECURE_RANDOM);
-        Zp64VoleReceiverOutput receiverOutput = Zp64VoleTestUtils.genReceiverOutput(PRIME, num1, delta, SECURE_RANDOM);
-        Zp64VoleReceiverOutput mergeReceiverOutput = Zp64VoleTestUtils.genReceiverOutput(PRIME, num2, delta, SECURE_RANDOM);
+        long delta = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
+        Zp64VoleReceiverOutput receiverOutput = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num1, delta, SECURE_RANDOM);
+        Zp64VoleReceiverOutput mergeReceiverOutput = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num2, delta, SECURE_RANDOM);
         Zp64VoleSenderOutput senderOutput = Zp64VoleTestUtils.genSenderOutput(receiverOutput, SECURE_RANDOM);
         Zp64VoleSenderOutput mergeSenderOutput = Zp64VoleTestUtils.genSenderOutput(mergeReceiverOutput, SECURE_RANDOM);
-        // 合并
+        // merge
         senderOutput.merge(mergeSenderOutput);
         receiverOutput.merge(mergeReceiverOutput);
-        // 验证结果
+        // verify
         Zp64VoleTestUtils.assertOutput(num1 + num2, senderOutput, receiverOutput);
     }
 
@@ -324,31 +308,31 @@ public class Zp64VoleOutputTest {
     }
 
     private void testSplit(int num) {
-        long delta = LongUtils.randomNonNegative(1L << (LongUtils.ceilLog2(PRIME) - 1), SECURE_RANDOM);
-        // 切分1比特
-        Zp64VoleReceiverOutput receiverOutput1 = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
+        long delta = DEFAULT_ZP64.createRangeRandom(SECURE_RANDOM);
+        // split 1
+        Zp64VoleReceiverOutput receiverOutput1 = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
         Zp64VoleSenderOutput senderOutput1 = Zp64VoleTestUtils.genSenderOutput(receiverOutput1, SECURE_RANDOM);
         Zp64VoleSenderOutput splitSenderOutput1 = senderOutput1.split(1);
         Zp64VoleReceiverOutput splitReceiverOutput1 = receiverOutput1.split(1);
         Zp64VoleTestUtils.assertOutput(num - 1, senderOutput1, receiverOutput1);
         Zp64VoleTestUtils.assertOutput(1, splitSenderOutput1, splitReceiverOutput1);
-        // 切分全部比特
-        Zp64VoleReceiverOutput receiverOutputAll = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
+        // split all
+        Zp64VoleReceiverOutput receiverOutputAll = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
         Zp64VoleSenderOutput senderOutputAll = Zp64VoleTestUtils.genSenderOutput(receiverOutputAll, SECURE_RANDOM);
         Zp64VoleSenderOutput splitSenderOutputAll = senderOutputAll.split(num);
         Zp64VoleReceiverOutput splitReceiverOutputAll = receiverOutputAll.split(num);
         Zp64VoleTestUtils.assertOutput(0, senderOutputAll, receiverOutputAll);
         Zp64VoleTestUtils.assertOutput(num, splitSenderOutputAll, splitReceiverOutputAll);
         if (num > 1) {
-            // 切分n - 1比特
-            Zp64VoleReceiverOutput receiverOutputNum = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
+            // split num - 1
+            Zp64VoleReceiverOutput receiverOutputNum = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
             Zp64VoleSenderOutput senderOutputNum = Zp64VoleTestUtils.genSenderOutput(receiverOutputNum, SECURE_RANDOM);
             Zp64VoleSenderOutput splitSenderOutputNum = senderOutputNum.split(num - 1);
             Zp64VoleReceiverOutput splitReceiverOutputN = receiverOutputNum.split(num - 1);
             Zp64VoleTestUtils.assertOutput(1, senderOutputNum, receiverOutputNum);
             Zp64VoleTestUtils.assertOutput(num - 1, splitSenderOutputNum, splitReceiverOutputN);
-            // 切分一半比特
-            Zp64VoleReceiverOutput receiverOutputHalf = Zp64VoleTestUtils.genReceiverOutput(PRIME, num, delta, SECURE_RANDOM);
+            // split half
+            Zp64VoleReceiverOutput receiverOutputHalf = Zp64VoleTestUtils.genReceiverOutput(DEFAULT_ZP64, num, delta, SECURE_RANDOM);
             Zp64VoleSenderOutput senderOutputHalf = Zp64VoleTestUtils.genSenderOutput(receiverOutputHalf, SECURE_RANDOM);
             Zp64VoleSenderOutput splitSenderOutputHalf = senderOutputHalf.split(num / 2);
             Zp64VoleReceiverOutput splitReceiverOutputHalf = receiverOutputHalf.split(num / 2);

@@ -12,6 +12,9 @@ import edu.alibaba.mpc4j.s2pc.pir.index.onionpir.Mcr21IndexPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.index.sealpir.Acls18IndexPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.index.sealpir.Acls18IndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.sealpir.Acls18IndexPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.index.vectorizedpir.Mr23IndexPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.index.vectorizedpir.Mr23IndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.vectorizedpir.Mr23IndexPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.index.xpir.Mbfk16IndexPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.index.xpir.Mbfk16IndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.xpir.Mbfk16IndexPirServer;
@@ -50,6 +53,10 @@ public class IndexPirFactory implements PtoFactory {
          * FastPIR
          */
         FAST_PIR,
+        /**
+         * Vectorized PIR
+         */
+        VECTORIZED_PIR,
     }
 
     /**
@@ -71,6 +78,8 @@ public class IndexPirFactory implements PtoFactory {
                 return new Mcr21IndexPirServer(serverRpc, clientParty, (Mcr21IndexPirConfig) config);
             case FAST_PIR:
                 return new Ayaa21IndexPirServer(serverRpc, clientParty, (Ayaa21IndexPirConfig) config);
+            case VECTORIZED_PIR:
+                return new Mr23IndexPirServer(serverRpc, clientParty, (Mr23IndexPirConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + IndexPirType.class.getSimpleName() + ": " + type.name());
         }
@@ -95,6 +104,8 @@ public class IndexPirFactory implements PtoFactory {
                 return new Mcr21IndexPirClient(clientRpc, serverParty, (Mcr21IndexPirConfig) config);
             case FAST_PIR:
                 return new Ayaa21IndexPirClient(clientRpc, serverParty, (Ayaa21IndexPirConfig) config);
+            case VECTORIZED_PIR:
+                return new Mr23IndexPirClient(clientRpc, serverParty, (Mr23IndexPirConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + IndexPirType.class.getSimpleName() + ": " + type.name());
         }

@@ -12,7 +12,7 @@ class BaseOtReceiverThread extends Thread {
     /**
      * 接收方
      */
-    private final BaseOtReceiver baseOtReceiver;
+    private final BaseOtReceiver receiver;
     /**
      * 选择比特
      */
@@ -22,8 +22,8 @@ class BaseOtReceiverThread extends Thread {
      */
     private BaseOtReceiverOutput receiverOutput;
 
-    BaseOtReceiverThread(BaseOtReceiver baseOtReceiver, boolean[] choices) {
-        this.baseOtReceiver = baseOtReceiver;
+    BaseOtReceiverThread(BaseOtReceiver receiver, boolean[] choices) {
+        this.receiver = receiver;
         this.choices = choices;
     }
 
@@ -34,10 +34,8 @@ class BaseOtReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            baseOtReceiver.getRpc().connect();
-            baseOtReceiver.init();
-            receiverOutput = baseOtReceiver.receive(choices);
-            baseOtReceiver.getRpc().disconnect();
+            receiver.init();
+            receiverOutput = receiver.receive(choices);
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

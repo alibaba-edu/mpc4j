@@ -160,8 +160,8 @@ public class LocalLinearCoderTest {
         SECURE_RANDOM.nextBytes(seed);
         localLinearCoder = new LocalLinearCoder(k, n, seed, parallel);
         anOutputs = localLinearCoder.z2Encode(inputs);
-        Assert.assertEquals(byteN, outputs.length);
-        Assert.assertTrue(BytesUtils.isReduceByteArray(outputs, n));
+        Assert.assertEquals(byteN, anOutputs.length);
+        Assert.assertTrue(BytesUtils.isReduceByteArray(anOutputs, n));
         // 两次编码结果应该不一致
         Assert.assertNotEquals(ByteBuffer.wrap(outputs), ByteBuffer.wrap(anOutputs));
     }

@@ -46,7 +46,7 @@ public class Ywl20NcCotConfig implements NcCotConfig {
     }
 
     @Override
-    public int maxAllowNum() {
+    public int maxNum() {
         return 1 << Ywl20NcCotPtoDesc.MAX_LOG_N;
     }
 

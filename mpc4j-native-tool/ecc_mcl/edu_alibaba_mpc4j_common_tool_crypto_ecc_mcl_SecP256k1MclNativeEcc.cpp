@@ -20,24 +20,14 @@ JNIEXPORT void JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256
     mcl_destroy_precompute(env, jWindowHandler);
 }
 
-JNIEXPORT jstring JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_singleFixedPointMultiply
+JNIEXPORT jstring JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_precomputeMultiply
     (JNIEnv *env, jobject context, jobject jWindowHandler, jstring jZnString) {
-    return mcl_single_fixed_point_multiply(env, jWindowHandler, jZnString);
+    return mcl_precompute_multiply(env, jWindowHandler, jZnString);
 }
 
-JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_fixedPointMultiply
-    (JNIEnv *env, jobject context, jobject jWindowHandler, jobjectArray jZnStringArray) {
-    return mcl_fixed_point_multiply(env, jWindowHandler, jZnStringArray);
-}
-
-JNIEXPORT jstring JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_singleMultiply
+JNIEXPORT jstring JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_multiply
     (JNIEnv *env, jobject context, jstring jEcString, jstring jZnString) {
-    return mcl_single_multiply(env, jEcString, jZnString);
-}
-
-JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_multiply
-    (JNIEnv *env, jobject context, jstring jEcString, jobjectArray jZnStringArray) {
-    return mcl_multiply(env, jEcString, jZnStringArray);
+    return mcl_multiply(env, jEcString, jZnString);
 }
 
 JNIEXPORT void JNICALL Java_edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc_reset

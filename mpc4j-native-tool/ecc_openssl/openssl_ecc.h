@@ -18,28 +18,28 @@ const size_t OPENSSL_WIN_SIZE = 16;
 /**
  * 群元素
  */
-static EC_GROUP *openssl_ec_group;
+static EC_GROUP *openssl_ec_group[] = {
+    EC_GROUP_new_by_curve_name(NID_secp256k1),
+    EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1),
+    EC_GROUP_new_by_curve_name(NID_sm2),
+};
 /**
  * 椭圆曲线比特长度
  */
-static int openssl_point_bit_length;
+static int openssl_point_bit_length[] = {
+    EC_GROUP_order_bits(openssl_ec_group[0]),
+    EC_GROUP_order_bits(openssl_ec_group[1]),
+    EC_GROUP_order_bits(openssl_ec_group[2]),
+};
 
 void CRYPTO_CHECK(bool condition);
 
-void openssl_init(int curve_id);
-
-jobject openssl_precompute(JNIEnv *env, jstring jPointString);
+jobject openssl_precompute(JNIEnv *env, int curveIndex, jstring jPointString);
 
 void openssl_destroy_precompute(JNIEnv *env, jobject jWindowHandler);
 
-jstring openssl_single_fixed_point_multiply(JNIEnv *env, jobject jWindowHandler, jstring jBnString);
+jstring openssl_precompute_multiply(JNIEnv *env, int curveIndex, jobject jWindowHandler, jstring jBnString);
 
-jobjectArray openssl_fixed_point_multiply(JNIEnv *env, jobject jWindowHandler, jobjectArray jBnStringArray);
-
-jstring openssl_single_multiply(JNIEnv *env, jstring jPointString, jstring jBnString);
-
-jobjectArray openssl_multiply(JNIEnv *env, jstring jBnString, jobjectArray jBnStringArray);
-
-void openssl_reset();
+jstring openssl_multiply(JNIEnv *env, int curveIndex, jstring jPointString, jstring jBnString);
 
 #endif //MPC4J_NATIVE_TOOL_OPENSSL_ECC_H

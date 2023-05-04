@@ -3,8 +3,6 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.base;
 import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtReceiverOutput;
 
 /**
@@ -27,13 +25,12 @@ public class BaseOtReceiverOutput implements OtReceiverOutput {
         assert choices.length > 0 : "num must be greater than 0: " + choices.length;
         int num = choices.length;
         assert rbArray.length == num : "# of Rb must be equal to " + num + ": " + rbArray.length;
-        this.choices = BinaryUtils.clone(choices);
+        this.choices = choices;
         this.rbArray = Arrays.stream(rbArray)
             .peek(rb -> {
                 assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH
                     : "rb byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + rb.length;
             })
-            .map(BytesUtils::clone)
             .toArray(byte[][]::new);
     }
 

@@ -5,7 +5,8 @@ import java.util.Arrays;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 /**
  * 核COT协议接收方。
@@ -13,11 +14,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
  * @author Weiran Liu
  * @date 2021/12/26
  */
-public abstract class AbstractCoreCotReceiver extends AbstractSecureTwoPartyPto implements CoreCotReceiver {
-    /**
-     * 配置项
-     */
-    private final CoreCotConfig config;
+public abstract class AbstractCoreCotReceiver extends AbstractTwoPartyPto implements CoreCotReceiver {
     /**
      * 最大数量
      */
@@ -33,25 +30,17 @@ public abstract class AbstractCoreCotReceiver extends AbstractSecureTwoPartyPto 
 
     protected AbstractCoreCotReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, CoreCotConfig config) {
         super(ptoDesc, receiverRpc, senderParty, config);
-        this.config = config;
-    }
-
-    @Override
-    public CoreCotFactory.CoreCotType getPtoType() {
-        return config.getPtoType();
     }
 
     protected void setInitInput(int maxNum) {
-        assert maxNum > 0 : "max num must be greater than 0: " + maxNum;
+        MathPreconditions.checkPositive("maxNum", maxNum);
         this.maxNum = maxNum;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(boolean[] choices) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init...");
-        }
-        assert choices.length > 0 && choices.length <= maxNum : "num must be in range (0, " + maxNum + "]: " + choices.length;
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("num", choices.length, maxNum);
         // 拷贝一份
         this.choices = Arrays.copyOf(choices, choices.length);
         num = choices.length;

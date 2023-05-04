@@ -1,90 +1,86 @@
 package edu.alibaba.mpc4j.s2pc.pir.index.xpir;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * XPIR协议本地算法库工具类。
+ * XPIR native utils.
  *
  * @author Liqiang Peng
  * @date 2022/8/24
  */
 class Mbfk16IndexPirNativeUtils {
 
-    /**
-     * 单例模式
-     */
     private Mbfk16IndexPirNativeUtils() {
         // empty
     }
 
     /**
-     * 生成SEAL上下文参数。
+     * generate encryption params.
      *
-     * @param modulusDegree 多项式阶。
-     * @param plainModulus  明文模数。
-     * @return SEAL上下文参数。
+     * @param modulusDegree poly modulus degree.
+     * @param plainModulus  plain modulus.
+     * @return encryption params.
      */
-    static native byte[] generateSealContext(int modulusDegree, long plainModulus);
+    static native byte[] generateEncryptionParams(int modulusDegree, long plainModulus);
 
     /**
-     * 生成全同态加密公私钥对。
+     * generate key pair.
      *
-     * @param sealContext SEAL上下文参数。
-     * @return 公私钥对。
+     * @param encryptionParams SEAL encryption params.
+     * @return key pair.
      */
-    static native List<byte[]> keyGen(byte[] sealContext);
+    static native List<byte[]> keyGen(byte[] encryptionParams);
 
     /**
-     * NTT转换。
+     * NTT transformation.
      *
-     * @param sealContext SEAL上下文参数。
-     * @param plaintext   系数表示的多项式。
-     * @return 点值表示的多项式。
+     * @param encryptionParams SEAL encryption params.
+     * @param plaintextList    BFV plaintexts not in NTT form.
+     * @return BFV plaintexts in NTT form.
      */
-    static native ArrayList<byte[]> nttTransform(byte[] sealContext, List<long[]> plaintext);
+    static native List<byte[]> nttTransform(byte[] encryptionParams, List<long[]> plaintextList);
 
     /**
-     * 生成问询密文。
+     * generate query.
      *
-     * @param sealContext SEAL上下文参数。
-     * @param publicKey   公钥。
-     * @param secretKey   私钥。
-     * @param indices     明文检索值。
-     * @param nvec        各维度向量长度。
-     * @return 问询密文。
+     * @param encryptionParams SEAL encryption params.
+     * @param publicKey        public key.
+     * @param secretKey        secret key.
+     * @param indices          indices.
+     * @param nvec             dimension size.
+     * @return query ciphertexts.
      */
-    static native ArrayList<byte[]> generateQuery(byte[] sealContext, byte[] publicKey, byte[] secretKey, int[] indices,
-                                                  int[] nvec);
+    static native List<byte[]> generateQuery(byte[] encryptionParams, byte[] publicKey, byte[] secretKey, int[] indices,
+                                             int[] nvec);
 
     /**
-     * 生成回复密文。
+     * generate response.
      *
-     * @param sealContext  SEAL上下文参数。
-     * @param queryList    检索值密文。
-     * @param dbPlaintexts 数据库明文。
-     * @param nvec         各维度长度。
-     * @return 检索结果密文。
+     * @param encryptionParams SEAL encryption params.
+     * @param queryList        query ciphertexts.
+     * @param database         database.
+     * @param nvec             dimension size.
+     * @return response ciphertexts。
      */
-    static native ArrayList<byte[]> generateReply(byte[] sealContext, List<byte[]> queryList, List<byte[]> dbPlaintexts,
-                                                  int[] nvec);
+    static native List<byte[]> generateReply(byte[] encryptionParams, List<byte[]> queryList, List<byte[]> database,
+                                             int[] nvec);
 
     /**
-     * 解密回复密文。
+     * decode response.
      *
-     * @param sealContext SEAL上下文参数。
-     * @param secretKey   私钥。
-     * @param response    回复密文。
-     * @param dimension   维度。
-     * @return 查询结果。
+     * @param encryptionParams SEAL encryption params.
+     * @param secretKey        secret key.
+     * @param response         response ciphertext.
+     * @param dimension        dimension.
+     * @return BFV plaintext.
      */
-    static native long[] decryptReply(byte[] sealContext, byte[] secretKey, List<byte[]> response, int dimension);
+    static native long[] decryptReply(byte[] encryptionParams, byte[] secretKey, List<byte[]> response, int dimension);
 
     /**
-     * 返回密文和明文的比例。
+     * compute size ratio between a ciphertext and the largest plaintext that can be encrypted.
      *
-     * @param sealContext SEAL上下文参数。
-     * @return 密文和明文的比例。
+     * @param encryptionParams SEAL encryption params.
+     * @return expansion ratio.
      */
-    static native int expansionRatio(byte[] sealContext);
+    static native int expansionRatio(byte[] encryptionParams);
 }

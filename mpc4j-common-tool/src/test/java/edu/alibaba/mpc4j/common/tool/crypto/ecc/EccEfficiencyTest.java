@@ -54,7 +54,6 @@ public class EccEfficiencyTest {
         EccType.SEC_P256_K1_MCL,
         EccType.SEC_P256_K1_OPENSSL,
         EccType.SEC_P256_K1_BC,
-        EccType.SEC_P256_R1_MCL,
         EccType.SEC_P256_R1_OPENSSL,
         EccType.SEC_P256_R1_BC,
         EccType.SM2_P256_V1_OPENSSL,
@@ -71,13 +70,14 @@ public class EccEfficiencyTest {
         ByteEccFactory.ByteEccType.X25519_BC,
         ByteEccFactory.ByteEccType.ED25519_SODIUM,
         ByteEccFactory.ByteEccType.ED25519_BC,
+        ByteEccFactory.ByteEccType.FOUR_Q,
     };
 
     @Test
     public void testEfficiency() {
         LOGGER.info(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", "                name", "    log(n)",
-            "  Hash(ms)", "RndPt.(ms)", " sMul.(ms)", " bMul.(ms)", "sPMul.(ms)", "bPMul.(ms)"
+            "{}\t{}\t{}\t{}\t{}\t{}",
+            "                name", "    log(n)", "  Hash(ms)", "RndPt.(ms)", " Mul.(ms)", "PMul.(ms)"
         );
         int n = 1 << LOG_N;
         for (EccType type : ECC_TYPES) {
@@ -116,13 +116,7 @@ public class EccEfficiencyTest {
             STOP_WATCH.start();
             Arrays.stream(rs).forEach(r -> ecc.multiply(h, r));
             STOP_WATCH.stop();
-            double singleMultiplyTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
-            STOP_WATCH.reset();
-            // 批量幂运算
-            STOP_WATCH.start();
-            ecc.multiply(h, rs);
-            STOP_WATCH.stop();
-            double batchMultiplyTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
+            double multiplyTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
             STOP_WATCH.reset();
 
             // 预计算
@@ -131,26 +125,19 @@ public class EccEfficiencyTest {
             STOP_WATCH.start();
             Arrays.stream(rs).forEach(r -> ecc.multiply(h, r));
             STOP_WATCH.stop();
-            double singlePrecomputeMulTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
+            double precomputeMultiplyTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
             STOP_WATCH.reset();
-            // 预计算批量幂运算
-            STOP_WATCH.start();
-            ecc.multiply(h, rs);
-            STOP_WATCH.stop();
-            double batchPrecomputeMulTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
             STOP_WATCH.reset();
             // 销毁预计算
             ecc.destroyPrecompute(h);
             LOGGER.info(
-                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
                 StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(hashToCurveTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(randomPointTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(singleMultiplyTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(batchMultiplyTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(singlePrecomputeMulTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(batchPrecomputeMulTime), 10)
+                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(multiplyTime), 10),
+                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(precomputeMultiplyTime), 10)
             );
         }
         for (ByteEccFactory.ByteEccType type : BYTE_MUL_ECC_TYPES) {
@@ -192,14 +179,12 @@ public class EccEfficiencyTest {
             double mulTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
             STOP_WATCH.reset();
             LOGGER.info(
-                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad("(B) " + type.name(), 20),
                 StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(hashToCurveTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(randomPointTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(mulTime), 10),
-                StringUtils.leftPad("    --    ", 10),
-                StringUtils.leftPad("    --    ", 10),
                 StringUtils.leftPad("    --    ", 10)
             );
         }

@@ -45,20 +45,33 @@ public class GbfBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
     }
 
     @Override
+    public int[] positions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        return Arrays.stream(prfs)
+            .mapToInt(prf -> prf.getInteger(keyBytes, m))
+            .distinct()
+            .toArray();
+    }
+
+    @Override
+    public int maxPositionNum() {
+        return HASH_NUM;
+    }
+
+    @Override
     public byte[][] encode(Map<T, byte[]> keyValueMap) throws ArithmeticException {
         // 键值对的总数量小于等于n，之所以不写为等于n，是因为后续PSI方案中两边的数量可能不相等。不验证映射值的长度，提高性能。
         assert keyValueMap.size() <= n;
+        keyValueMap.values().forEach(x -> {
+            assert BytesUtils.isFixedReduceByteArray(x, byteL, l);
+        });
         Set<T> keySet = keyValueMap.keySet();
         // 依次计算每个键值的映射结果，并根据计算结果将真实值秘密分享给存储器
         byte[][] storage = new byte[m][];
         for (T key : keySet) {
             byte[] finalShare = BytesUtils.clone(keyValueMap.get(key));
-            assert finalShare.length == lByteLength;
-            byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-            int[] positions = Arrays.stream(prfs)
-                .mapToInt(prf -> prf.getInteger(keyBytes, m))
-                .distinct()
-                .toArray();
+            assert finalShare.length == byteL;
+            int[] positions = positions(key);
             int emptySlot = -1;
             for (int position : positions) {
                 if (storage[position] == null && emptySlot == -1) {
@@ -66,8 +79,7 @@ public class GbfBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
                     emptySlot = position;
                 } else if (storage[position] == null) {
                     // 如果当前位置为空，则随机选择一个分享值（generate a new share）
-                    storage[position] = new byte[lByteLength];
-                    secureRandom.nextBytes(storage[position]);
+                    storage[position] = BytesUtils.randomByteArray(byteL, l, secureRandom);
                     BytesUtils.xori(finalShare, storage[position]);
                 } else {
                     // 如果当前位置已经有分享值，则更新最终分享值（reuse a share）
@@ -83,8 +95,7 @@ public class GbfBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
         // 把剩余的空位置都填充上随机元素
         for (int i = 0; i < m; i++) {
             if (storage[i] == null) {
-                storage[i] = new byte[lByteLength];
-                secureRandom.nextBytes(storage[i]);
+                storage[i] = BytesUtils.randomByteArray(byteL, l, secureRandom);
             }
         }
 
@@ -95,17 +106,13 @@ public class GbfBinaryOkvs<T> extends AbstractBinaryOkvs<T> {
     public byte[] decode(byte[][] storage, T key) {
         // 这里不能验证storage每一行的长度，否则整体算法复杂度会变为O(n^2)
         assert storage.length == getM();
-        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        // 先计算所有可能的位置，位置可能有重复，因此要去重
-        int[] positions = Arrays.stream(prfs)
-            .mapToInt(prf -> prf.getInteger(keyBytes, m))
-            .distinct()
-            .toArray();
+        int[] positions = positions(key);
         // 计算输出值
-        byte[] value = new byte[lByteLength];
+        byte[] value = new byte[byteL];
         for (int position : positions) {
             BytesUtils.xori(value, storage[position]);
         }
+        assert BytesUtils.isFixedReduceByteArray(value, byteL, l);
         return value;
     }
 

@@ -4,28 +4,27 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * 缓存COT协议信息。
+ * cache COT protocol description.
  *
  * @author Weiran Liu
  * @date 2022/7/13
  */
 class CacheCotPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 6300464192699515574L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "CACHE_COT";
-
     /**
-     * 单例模式
+     * singleton mode
      */
     private static final CacheCotPtoDesc INSTANCE = new CacheCotPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private CacheCotPtoDesc() {
         // empty

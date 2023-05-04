@@ -5,9 +5,7 @@ import edu.alibaba.mpc4j.dp.service.LdpTestDataUtils;
 import edu.alibaba.mpc4j.dp.service.fo.FoLdpFactory;
 import edu.alibaba.mpc4j.dp.service.fo.FoLdpFactory.FoLdpType;
 import edu.alibaba.mpc4j.dp.service.fo.config.FoLdpConfig;
-import edu.alibaba.mpc4j.dp.service.heavyhitter.config.FoHhLdpConfig;
-import edu.alibaba.mpc4j.dp.service.heavyhitter.config.HgHhLdpConfig;
-import edu.alibaba.mpc4j.dp.service.heavyhitter.config.HhLdpConfig;
+import edu.alibaba.mpc4j.dp.service.heavyhitter.config.*;
 import edu.alibaba.mpc4j.dp.service.tool.StreamDataUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -59,6 +57,10 @@ public class HhLdpEfficiencyTest {
      */
     private static final DecimalFormat INTEGER_DECIMAL_FORMAT = new DecimalFormat("0");
     /**
+     * default window size (w)
+     */
+    private static final int DEFAULT_WINDOW_SIZE = 5;
+    /**
      * ε array
      */
     private static final double[] EPSILONS = new double[]{1, 2, 4, 8, 16};
@@ -74,78 +76,84 @@ public class HhLdpEfficiencyTest {
             FoLdpConfig appleHcmsFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.APPLE_HCMS, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(appleHcmsFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(appleHcmsFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Apple Count Mean Sketch
             FoLdpConfig appleCmsFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.APPLE_CMS, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(appleCmsFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(appleCmsFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Hadamard Mechanism
             FoLdpConfig hmFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.HM, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(hmFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(hmFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Hadamard Response with high ε
             FoLdpConfig hrHighEpsilonFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.HR_HIGH_EPSILON, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(hrHighEpsilonFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(hrHighEpsilonFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Hadamard Response
             FoLdpConfig hrFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.HR, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(hrFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(hrFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Optimal Local Hash
             FoLdpConfig olhFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.OLH, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(olhFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(olhFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Binary Local Hash
             FoLdpConfig blhFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.BLH, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(blhFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(blhFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // RAPPOR
             FoLdpConfig rapporFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.RAPPOR, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(rapporFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(rapporFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Optimized Unary Encoding
             FoLdpConfig oueFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.OUE, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(oueFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(oueFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Symmetric Unary Encoding
             FoLdpConfig sueFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.SUE, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(sueFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(sueFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Direct Encoding via Index Encoding
             FoLdpConfig deIndexFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.DE_INDEX, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(deIndexFoLdpConfig, DEFAULT_K).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(deIndexFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
             // Direct Encoding via String Encoding
             FoLdpConfig deStringFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.DE_STRING, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(deStringFoLdpConfig, DEFAULT_K).build());
-            // relaxed heavy guardian
+            CONFIGS.add(new FoHhLdpConfig.Builder(deStringFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            // BGR
             CONFIGS.add(
-                new HgHhLdpConfig
-                    .Builder(HhLdpFactory.HhLdpType.RELAX, LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon)
+                new BgrHgHhLdpConfig
+                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon, DEFAULT_WINDOW_SIZE)
                     .build()
             );
-            // advanced heavy guardian
+            // DSR
             CONFIGS.add(
-                new HgHhLdpConfig
-                    .Builder(HhLdpFactory.HhLdpType.ADV, LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon)
+                new DsrHgHhLdpConfig
+                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon, DEFAULT_WINDOW_SIZE)
                     .build()
             );
-            // basic heavy guardian
+            // BDR
             CONFIGS.add(
-                new HgHhLdpConfig
-                    .Builder(HhLdpFactory.HhLdpType.BASIC, LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon)
+                new BdrHhgHhLdpConfig
+                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon, DEFAULT_WINDOW_SIZE)
+                    .build()
+            );
+            // CNR
+            CONFIGS.add(
+                new CnrHhgHhLdpConfig
+                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon, DEFAULT_WINDOW_SIZE)
                     .build()
             );
         }
@@ -206,11 +214,11 @@ public class HhLdpEfficiencyTest {
             long memory = GraphLayout.parseInstance(server).totalSize();
             // result
             int k = config.getK();
-            List<String> expectHeavyHitter = LdpTestDataUtils.CORRECT_CONNECT_COUNT_ORDER_LIST
+            Map<String, Integer> expectHeavyHitterMap = LdpTestDataUtils.CORRECT_CONNECT_COUNT_ORDER_LIST
                 .subList(0, k)
                 .stream()
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            List<String> expectHeavyHitter = new ArrayList<>(expectHeavyHitterMap.keySet());
             Map<String, Double> actualHeavyHitterMap = server.heavyHitters();
             List<String> actualHeavyHitter = server.orderedHeavyHitters()
                 .stream()
@@ -218,8 +226,8 @@ public class HhLdpEfficiencyTest {
                 .collect(Collectors.toList());
             double ndcg = HeavyHitterMetrics.ndcg(actualHeavyHitter, expectHeavyHitter);
             double precision = HeavyHitterMetrics.precision(actualHeavyHitter, expectHeavyHitter);
-            double abe = HeavyHitterMetrics.absoluteError(actualHeavyHitterMap, LdpTestDataUtils.CORRECT_CONNECT_COUNT_MAP);
-            double re = HeavyHitterMetrics.relativeError(actualHeavyHitterMap, LdpTestDataUtils.CORRECT_CONNECT_COUNT_MAP);
+            double abe = HeavyHitterMetrics.absoluteError(actualHeavyHitterMap, expectHeavyHitterMap);
+            double re = HeavyHitterMetrics.relativeError(actualHeavyHitterMap, expectHeavyHitterMap);
             LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(name, 20),
                 StringUtils.leftPad(DOUBLE_DECIMAL_FORMAT.format(config.getWindowEpsilon()), 10),

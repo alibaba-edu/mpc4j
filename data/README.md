@@ -1,14 +1,16 @@
 # Datasets
 
-We run our scheme on several public datasets to verify the correctness and effectiveness of our work. This document provides detailed information for these datasets.
+We run our schemes on several public datasets to verify the correctness and effectiveness of our works. This document provides detailed information for these datasets.
 
-## Dataset for Correctness
+## Datasets for OpBoost
+
+### Dataset for Correctness
 
 All datasets used for correctness are from testcases used in [Smile (Statistical Machine Intelligence and Learning Engine)](https://haifengl.github.io/). Smile is a fast and comprehensive machine learning, NLP, linear algebra, graph, interpolation, and visualization system in Java and Scala. Please visit the official website and the [GitHub](https://github.com/haifengl/smile) of Simle for more information.
 
 We thank the sufficient unit tests for Gradient descent Boosting Decision Tree (GBDT) provided in Smile. These unit tests demonstrate many special cases in GBDT training, helping us finding many bugs and problems to make our implementation more robust.
 
-### Preprocess
+#### Preprocess
 
 We preprocess all datasets for correctness verifications with the following principles:
 
@@ -57,7 +59,7 @@ sex_F,sex_M,sex_I,length,diameter,height,whole weight,shucked weight,viscera wei
 ......
 ```
 
-### Regression: CPU
+#### Regression: CPU
 
 **This dataset is very small, and all features are numeric. This dataset is the Basic Verification Test (BVT) case.** 
 
@@ -75,7 +77,7 @@ The schema is as follows, in which the label is `class`.
 [MYCT: float, MMIN: float, MMAX: float, CACH: float, CHMIN: float, CHMAX: float, class: float]
 ```
 
-### Regression: Abalone
+#### Regression: Abalone
 
 **This dataset contains both numeric and nominal columns.** 
 
@@ -85,7 +87,7 @@ The train and the test datasets are downloaded respectively from [abalone-train.
 [sex: byte nominal[F, M, I], length: double, diameter: double, height: double, whole weight: double, shucked weight: double, viscera weight: double, shell weight: double, rings: double]
 ```
 
-### Regression: AutoMPG 
+#### Regression: AutoMPG 
 
 **This dataset contains both numeric and nominal columns and with missing values represented by `?`.** 
 
@@ -157,7 +159,7 @@ The schema is as follows, in which the label is `class`.
 [cylinders: byte nominal[8, 4, 6, 3, 5], displacement: float, horsepower: float, weight: float, acceleration: float, model: byte nominal[70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82], origin: byte nominal[1, 3, 2], class: float]
 ```
 
-### Regression: BostonHousing
+#### Regression: BostonHousing
 
 **This dataset contains both numeric and nominal columns. The nominal column `CHAS` only contains two nominal values (0 and 1).**
 
@@ -221,7 +223,7 @@ The schema is as follows, in which the label is `class`.
 [CRIM: float, ZN: float, INDUS: float, CHAS: byte nominal[0, 1], NOX: float, RM: float, AGE: float, DIS: float, RAD: float, TAX: float, PTRATIO: float, B: float, LSTAT: float, class: float]
 ```
 
-### Regression: Kin8nm
+#### Regression: Kin8nm
 
 **The dataset is relatively large (around 8,000 rows). The dataset only contains numeric columns, but some values are negative.**
 
@@ -245,7 +247,7 @@ The schema is as follows, in which the label is `y`.
 [theta1: double, theta2: double, theta3: double, theta4: double, theta5: double, theta6: double, theta7: double, theta8: double, y: double]
 ```
 
-### Binary Classification: Weather
+#### Binary Classification: Weather
 
 **This is a small dataset with only 14 rows and all columns are nominal.**
 
@@ -255,7 +257,7 @@ The dataset is downloaded from [weather.nominal.arff](https://github.com/haifeng
 [outlook: byte nominal[sunny, overcast, rainy], temperature: byte nominal[hot, mild, cool], humidity: byte nominal[high, normal], windy: byte nominal[TRUE, FALSE], play: byte nominal[yes, no]]
 ```
 
-### 3-Class Classification: Iris
+#### 3-Class Classification: Iris
 
 **This dataset only contains numeric columns. The dataset is for 3-class classification.**
 
@@ -331,7 +333,7 @@ The schema is as follows, in which the label is `class`.
 ```text
 [sepallength: float, sepalwidth: float, petallength: float, petalwidth: float, class: byte nominal[Iris-setosa, Iris-versicolor, Iris-virginica]]
 ```
-### Multi-class Classification: Pendigits
+#### Multi-class Classification: Pendigits
 
 **This dataset only contains numeric columns. The dataset is for multi-class classification.** The dataset is downloaded from [pendigits.txt](https://github.com/haifengl/smile/blob/master/shell/src/universal/data/classification/pendigits.txt). 
 
@@ -341,7 +343,7 @@ The schema is as follows, in which the label is `class`.
 [V1: double, V2: double, V3: double, V4: double, V5: double, V6: double, V7: double, V8: double, V9: double, V10: double, V11: double, V12: double, V13: double, V14: double, V15: double, V16: double, class: byte nominal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]
 ```
 
-### Binary Classification: BreastCancer
+#### Binary Classification: BreastCancer
 
 **This is a relatively large dataset that only contains numeric columns. The dataset is for binary classification, where the label is not the last column.** The dataset is downloaded from [breastcancer.csv](https://github.com/haifengl/smile/blob/master/shell/src/universal/data/classification/breastcancer.csv). 
 
@@ -351,11 +353,11 @@ The schema is as follows, in which the label is `diagnosis`.
 [diagnosis: byte nominal[M, B], radius_mean: double, texture_mean: double, perimeter_mean: double, area_mean: double, smoothness_mean: double, compactness_mean: double, concavity_mean: double, concave points_mean: double, symmetry_mean: double, fractal_dimension_mean: double, radius_se: double, texture_se: double, perimeter_se: double, area_se: double, smoothness_se: double, compactness_se: double, concavity_se: double, concave points_se: double, symmetry_se: double, fractal_dimension_se: double, radius_worst: double, texture_worst: double, perimeter_worst: double, area_worst: double, smoothness_worst: double, compactness_worst: double, concavity_worst: double, concave points_worst: double, symmetry_worst: double, fractal_dimension_worst: double]
 ```
 
-# Datasets for Effectiveness
+### Datasets for Effectiveness
 
 We introduce 4 datasets from [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets.php) for the effectiveness tests. We further introduce a dataset from a real scenario for the large-scale experiment.
 
-## Preprocess
+#### Preprocess
 
 We also follow the principles shown below to preprocess all datasets for effectiveness:
 
@@ -365,14 +367,14 @@ We also follow the principles shown below to preprocess all datasets for effecti
 
 In addition, we preprocess all numerical features with different ranges into discrete values in the range of \[0, 10\] to facilitate setting privacy parameters.
 
-## Datasets from UCL Machine Learning Repository
+#### Datasets from UCL Machine Learning Repository
 
 - CASP (regression): [Physicochemical Properties of Protein Tertiary Structure Dataset](https://archive.ics.uci.edu/ml/datasets/Physicochemical+Properties+of+Protein+Tertiary+Structure).
 - PowerPlant (regression): [Combined Cycle Power Plant Data Set](https://archive.ics.uci.edu/ml/datasets/combined+cycle+power+plant).
 - Adult (binary classification): [Adult Data Set](https://archive.ics.uci.edu/ml/datasets/Adult).
 - PenDigits (Multi-class classification): [Pen-Based Recognition of Handwritten Digits Data Set](https://archive.ics.uci.edu/ml/datasets/Pen-Based+Recognition+of+Handwritten+Digits).
 
-## Dataset from Real Scenario
+#### Dataset from Real Scenario
 
 We are sorry that we cannot release the dataset from the real scenario. Here we provide some basic information. 
 
@@ -380,3 +382,73 @@ We are sorry that we cannot release the dataset from the real scenario. Here we 
 - Features: 38 nominal features and 262 numerical features.
 - Training: 234903 rows.
 - Testing: 58727 rows.
+
+## Datasets for PSU: Black IP
+
+### Introduction
+
+Private set union (PSU) enables two parties, each holding a  private set of elements, to compute the union of the two sets while revealing nothing more than the union itself. One important application of PSU is blacklist and vulnerability data aggregation. Consider that there are two organizations (i.e. the maintainers of the IP blacklists) who want to compute their IP blacklist joint list, which will help minimize vulnerabilities in their infrastructure. 
+
+We run PSU experiments on a black IP dataset to demonstrate this PSU application. The black IP dataset is available at **[BlackIP](https://github.com/maravento/blackip)**. In our experiment, we assume the PSU sender maintains `blackip.txt` (with 3,176,636 distinct IPs), and the PSU client maintains `oldip.txt` (with 2,514,551 distinct IPs). The union result contains 3,178,512 IPs. All IPs in `blackip.txt` and `oldip.txt` are IPv4 addresses. Each IP is a 32-bit number, written in decimal digits and formatted as four 8-bit fields separated by periods. In our experiments, we uniquely represent each of these IPs by a 32-bit binary string. The dataset is located at `black_ip/blackip.txt` / `black_ip/oldip.txt`. The correlated configuration files are in `conf/psu_black_ip`.
+
+### About BlackIP
+
+The descriptions below are from [READMD.md](https://github.com/maravento/blackip.README.md) in the root of the BlackIP project.
+
+**BlackIP** is a project that collects and unifies public blocklists of IP addresses, to make them compatible with [Squid](http://www.squid-cache.org/) and [IPSET](http://ipset.netfilter.org/) ([Iptables](http://www.netfilter.org/documentation/HOWTO/es/packet-filtering-HOWTO-7.html) [Netfilter](http://www.netfilter.org/))
+
+**BlackIP** es un proyecto que recopila y unifica listas públicas de bloqueo de direcciones IPs, para hacerlas compatibles con [Squid](http://www.squid-cache.org/) e [IPSET](http://ipset.netfilter.org/) ([Iptables](http://www.netfilter.org/documentation/HOWTO/es/packet-filtering-HOWTO-7.html) [Netfilter](http://www.netfilter.org/))
+
+
+#### DATA SHEET
+
+|     ACL     | Blocked IP | File Size |
+| :---------: | :--------: | :-------: |
+| blackip.txt |  3176744   |  45,4 Mb  |
+
+#### GIT CLONE
+
+```bash
+git clone https://github.com/maravento/blackip.git
+```
+
+#### CONTRIBUTIONS
+
+We thank all those who contributed to this project. Those interested may contribute sending us new "Blocklist" links to be included in this project / Agradecemos a todos aquellos que han contribuido a este proyecto. Los interesados pueden contribuir, enviándonos enlaces de nuevas "Blocklist", para ser incluidas en este proyecto
+
+Special thanks to: [Jhonatan Sneider](https://github.com/sney2002)
+
+#### DONATE
+
+BTC: 3M84UKpz8AwwPADiYGQjT9spPKCvbqm4Bc
+
+#### BUILD
+
+[![CreativeCommons](https://licensebuttons.net/l/by-sa/4.0/88x31.png)](http://creativecommons.org/licenses/by-sa/4.0/)
+[maravento.com](http://www.maravento.com) is licensed under a [Creative Commons Reconocimiento-CompartirIgual 4.0 Internacional License](http://creativecommons.org/licenses/by-sa/4.0/).
+
+#### OBJECTION
+
+Due to recent arbitrary changes in computer terminology, it is necessary to clarify the meaning and connotation of the term **blacklist**, associated with this project: *In computing, a blacklist, denylist or blocklist is a basic access control mechanism that allows through all elements (email addresses, users, passwords, URLs, IP addresses, domain names, file hashes, etc.), except those explicitly mentioned. Those items on the list are denied access. The opposite is a whitelist, which means only items on the list are let through whatever gate is being used.*
+
+Debido a los recientes cambios arbitrarios en la terminología informática, es necesario aclarar el significado y connotación del término **blacklist**, asociado a este proyecto: *En informática, una lista negra, lista de denegación o lista de bloqueo es un mecanismo básico de control de acceso que permite a través de todos los elementos (direcciones de correo electrónico, usuarios, contraseñas, URL, direcciones IP, nombres de dominio, hashes de archivos, etc.), excepto los mencionados explícitamente. Esos elementos en la lista tienen acceso denegado. Lo opuesto es una lista blanca, lo que significa que solo los elementos de la lista pueden pasar por cualquier puerta que se esté utilizando.*
+
+Source [Wikipedia](https://en.wikipedia.org/wiki/Blacklist_(computing))
+
+Therefore / Por tanto
+
+**blacklist**, **blocklist**, **blackweb**, **blackip**, **whitelist**, **etc.**
+
+are terms that have nothing to do with racial discrimination / son términos que no tienen ninguna relación con la discriminación racial
+
+#### DISCLAIMER
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Datasets for Streaming
+
+We use the following three datasets for our streaming tasks:
+
+- Synthetic dataset. This dataset is generated by randomly sampling data from a normal distribution with variance $\sigma=5$. There are $n=100,000$ values with the domain size of $d=1,000$. The dataset is located at `stream/synthetic_data.dat`.
+- Retail dataset. This dataset contains the retail market basket data from an anonymous Belgian retail store with around $0.9$ million values and $16$ thousand distinct items. You can directly download the dataset from [Frequent Itemset Mining Dataset Repository](http://fimi.uantwerpen.be/data/).
+- Kosarak dataset \cite{kosarak}. This dataset contains the click streams on a Hungarian website. There are around $8$ million values and $42$ thousand URLs. You can directly download the dataset from [Frequent Itemset Mining Dataset Repository](http://fimi.uantwerpen.be/data/).

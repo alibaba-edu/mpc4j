@@ -1,12 +1,16 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
+
+import java.util.Arrays;
 
 /**
  * BSP-COT协议发送方。
@@ -14,7 +18,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
  * @author Weiran Liu
  * @date 2022/01/22
  */
-public abstract class AbstractBspCotSender extends AbstractSecureTwoPartyPto implements BspCotSender {
+public abstract class AbstractBspCotSender extends AbstractTwoPartyPto implements BspCotSender {
     /**
      * 配置项
      */
@@ -45,35 +49,31 @@ public abstract class AbstractBspCotSender extends AbstractSecureTwoPartyPto imp
         this.config = config;
     }
 
-    @Override
-    public BspCotFactory.BspCotType getPtoType() {
-        return config.getPtoType();
-    }
-
     protected void setInitInput(byte[] delta, int maxBatchNum, int maxNum) {
-        assert delta.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        MathPreconditions.checkEqual("Δ.length", "λ(B)", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
         // 拷贝一份
         this.delta = BytesUtils.clone(delta);
-        assert maxNum > 0 : "maxNum must be greater than 0: " + maxNum;
+        MathPreconditions.checkPositive("maxNum", maxNum);
         this.maxNum = maxNum;
-        assert maxBatchNum > 0 : "maxBatchNum must be greater than 0:" + maxBatchNum;
+        MathPreconditions.checkPositive("maxBatchNum", maxBatchNum);
         this.maxBatchNum = maxBatchNum;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(int batchNum, int num) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init...");
-        }
-        assert num > 0 && num <= maxNum : "num must be in range (0, " + maxNum + "]: " + num;
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
         this.num = num;
-        assert batchNum > 0 && batchNum <= maxBatchNum : "batchNum must be in range (0, " + maxBatchNum + "]: " + batchNum;
+        MathPreconditions.checkPositiveInRangeClosed("batchNum", batchNum, maxBatchNum);
         this.batchNum = batchNum;
         extraInfo++;
     }
 
     protected void setPtoInput(int batchNum, int num, CotSenderOutput preSenderOutput) {
         setPtoInput(batchNum, num);
-        assert preSenderOutput.getNum() >= BspCotFactory.getPrecomputeNum(config, batchNum, num);
+        Preconditions.checkArgument(Arrays.equals(delta, preSenderOutput.getDelta()));
+        MathPreconditions.checkGreaterOrEqual(
+            "preCotNum", preSenderOutput.getNum(), BspCotFactory.getPrecomputeNum(config, batchNum, num)
+        );
     }
 }

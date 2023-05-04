@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi.hfh99;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
@@ -59,7 +56,7 @@ public class Hfh99EccPsiClient<T> extends AbstractPsiClient<T> {
     @Override
     public void init(int maxClientElementSize, int maxServerElementSize) throws MpcAbortException {
         setInitInput(maxClientElementSize, maxServerElementSize);
-        info("{}{} Client Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // 生成β
@@ -67,16 +64,15 @@ public class Hfh99EccPsiClient<T> extends AbstractPsiClient<T> {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Client Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public Set<T> psi(Set<T> clientElementSet, int serverElementSize) throws MpcAbortException {
         setPtoInput(clientElementSet, serverElementSize);
-        info("{}{} Client begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         int peqtByteLength = PsiUtils.getSemiHonestPeqtByteLength(serverElementSize, clientElementSize);
@@ -84,27 +80,28 @@ public class Hfh99EccPsiClient<T> extends AbstractPsiClient<T> {
         // 客户端计算并发送H(y)^β
         List<byte[]> hyBetaPayload = generateHyBetaPayload();
         DataPacketHeader hyBetaHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_HY_BETA.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_HY_BETA.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(hyBetaHeader, hyBetaPayload));
         stopWatch.stop();
         long hyBetaTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), hyBetaTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, hyBetaTime);
 
-        stopWatch.start();
         // 客户端接收H(x)^α
         DataPacketHeader hxAlphaHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_HX_ALPHA.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_HX_ALPHA.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> hxAlphaPayload = rpc.receive(hxAlphaHeader).getPayload();
+
+        stopWatch.start();
         // 客户端计算H(H(x)^αβ)
         Set<ByteBuffer> peqtSet = handleHxAlphaPayload(hxAlphaPayload);
         // 客户端接收H(H(y)^βα)
         DataPacketHeader peqtHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_HY_BETA_ALPHA.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_HY_BETA_ALPHA.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> peqtPayload = rpc.receive(peqtHeader).getPayload();
@@ -112,9 +109,9 @@ public class Hfh99EccPsiClient<T> extends AbstractPsiClient<T> {
         stopWatch.stop();
         long peqtTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), peqtTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, peqtTime);
 
-        info("{}{} Client end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return intersection;
     }
 

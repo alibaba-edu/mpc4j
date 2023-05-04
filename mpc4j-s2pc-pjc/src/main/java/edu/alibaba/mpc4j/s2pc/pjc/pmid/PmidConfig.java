@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pmid;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidFactory.PmidType;
 
 /**
@@ -9,7 +9,7 @@ import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidFactory.PmidType;
  * @author Weiran Liu
  * @date 2022/5/6
  */
-public interface PmidConfig extends SecurePtoConfig {
+public interface PmidConfig extends MultiPartyPtoConfig {
     /**
      * 返回协议类型。
      *

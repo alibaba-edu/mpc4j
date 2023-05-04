@@ -3,10 +3,10 @@ package edu.alibaba.mpc4j.s2pc.pso.psu.jsz22;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnConfig;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnConfig;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
 
@@ -94,7 +94,7 @@ public class Jsz22SfsPsuConfig implements PsuConfig {
 
         public Builder() {
             oprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
-            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
+            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
             // 论文建议平衡场景下使用PSZ18的3哈希协议，非平衡场景下使用PSZ18的4哈希协议
             cuckooHashBinType = CuckooHashBinType.NAIVE_3_HASH;
         }

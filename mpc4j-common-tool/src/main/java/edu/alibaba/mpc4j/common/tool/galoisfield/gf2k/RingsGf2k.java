@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eManager;
 import edu.alibaba.mpc4j.common.tool.utils.RingsUtils;
 
@@ -12,14 +13,14 @@ import edu.alibaba.mpc4j.common.tool.utils.RingsUtils;
  * @author Weiran Liu
  * @date 2022/01/15
  */
-class RingsGf2k implements Gf2k {
+class RingsGf2k extends AbstractGf2k {
     /**
      * GF(2^128)默认有限域
      */
     private static final FiniteField<UnivariatePolynomialZp64> GF2K = Gf2eManager.getFiniteField(128);
 
-    RingsGf2k() {
-        // empty
+    RingsGf2k(EnvType envType) {
+        super(envType);
     }
 
     @Override

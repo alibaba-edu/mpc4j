@@ -3,22 +3,22 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotFactory.NcCotType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 /**
- * NC-COT协议接收方。
+ * abstract no-choice COT receiver.
  *
  * @author Weiran Liu
  * @date 2022/01/26
  */
-public abstract class AbstractNcCotReceiver extends AbstractSecureTwoPartyPto implements NcCotReceiver {
+public abstract class AbstractNcCotReceiver extends AbstractTwoPartyPto implements NcCotReceiver {
     /**
-     * 配置项
+     * config
      */
     private final NcCotConfig config;
     /**
-     * 数量
+     * num
      */
     protected int num;
 
@@ -27,22 +27,14 @@ public abstract class AbstractNcCotReceiver extends AbstractSecureTwoPartyPto im
         this.config = config;
     }
 
-    @Override
-    public NcCotType getPtoType() {
-        return config.getPtoType();
-    }
-
     protected void setInitInput(int num) {
-        assert num > 0 && num <= config.maxAllowNum()
-            : "num must be in range: (0, " + config.maxAllowNum() + "]: " + num;
+        MathPreconditions.checkPositiveInRangeClosed("num", num, config.maxNum());
         this.num = num;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput() {
-        if (!initialized) {
-            throw new IllegalStateException("Need init...");
-        }
+        checkInitialized();
         extraInfo++;
     }
 }

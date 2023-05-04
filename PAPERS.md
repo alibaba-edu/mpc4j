@@ -26,6 +26,10 @@ We implement some cryptographic tools in `mpc4j-common-tool`. We believe these t
 
 - Rosulek, Mike, and Ni Trieu. Compact and Malicious Private Set Intersection for Small Sets. CCS 2021, ACM, pp. 1166-1181.
 
+**FourQ**: A high-security, high-performance elliptic curve that targets the 128-bit security level. Based on the open-source library [FourQlib](https://github.com/microsoft/FourQlib), we rewrite `MakeFile` so that now FourQ can run on MacBook. 
+
+- Costello, Craig, and Patrick Longa. FourQ: Four-dimensional Decompositions on A-curve over the Mersenne Prime. ASIACRYPT 2015, Part I, Springer Berlin Heidelberg, pp. 214-235.
+
 **Benes Network**: An instance of permutation network, which is a key tool for Oblivious Switching, see:
 
 - Garimella, Gayathri, Payman Mohassel, Mike Rosulek, Saeed Sadeghian, and Jaspal Singh. Private Set Operations from Oblivious Switching. PKC 2021, Cham: Springer International Publishing, pp. 591-617.
@@ -114,6 +118,7 @@ We re-implement FastPIR, OnionPIR, SealPIR, and XPIR in `mpc4j-s2pc-pir`. We not
 - Mughees, Muhammad Haris, Hao Chen, and Ling Ren. OnionPIR: Response Efficient Single-server PIR. CCS 2021, ACM, pp. 2292-2306.
 - Angel, Sebastian, Hao Chen, Kim Laine, and Srinath Setty. PIR with Compressed Queries and Amortized Query Processing. S\&P 2018, IEEE, pp. 962-979.
 - Melchor, Carlos Aguilar, Joris Barrier, Laurent Fousse, and Marc-Olivier Killijian. XPIR: Private Information Retrieval for Everyone. PETS 2016, pp. 155-174.
+- Mughees, Muhammad Haris, and Ling Ren. Vectorized Batch Private Information Retrieval. S\&P 2023, IEEE.
 
 ### Keyword PIR and Unbalanced PSI
 
@@ -134,6 +139,11 @@ We implement Private Set Operations in `mpc4j-s2pc-pso` and `mpc4j-s2pc-pjc`.
 - Albrecht, Martin R., Christian Rechberger, Thomas Schneider, Tyge Tiessen, and Michael Zohner. Ciphers for MPC and FHE. EUROCRYPT 2015, Part I, Springer Berlin Heidelberg, pp. 430-454.
 - Kolesnikov, Vladimir, Ranjit Kumaresan, Mike Rosulek, and Ni Trieu. Efficient Batched Oblivious PRF with Applications to Private Set Intersection. CCS 2016, ACM, pp. 818-829.
 - Huberman, Bernardo A., Matt Franklin, and Tad Hogg. Enhancing Privacy and Trust in Electronic Communities. EC 1999, ACM, pp. 78-86.
+
+### Circuit PSI
+
+- Pinkas, Benny, Thomas Schneider, Oleksandr Tkachenko, and Avishay Yanai. Efficient Circuit-Based PSI with Linear Communication. EUROCRYPT 2019, Part III, Springer International Publishing, pp. 122-153.
+- Chandran, Nishanth, Divya Gupta, and Akash Shah. Circuit-PSI with Linear Complexity via Relaxed Batch OPPRF. PETS 2022, no. 1, pp. 353-372.
 
 ### Private Set Union and Private ID
 

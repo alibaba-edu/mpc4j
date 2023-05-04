@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.bnot;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 
 import java.util.Arrays;
 
@@ -39,7 +38,6 @@ public class BaseNotReceiverOutput {
             .peek(rb -> {
                 assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH;
             })
-            .map(BytesUtils::clone)
             .toArray(byte[][]::new);
     }
 

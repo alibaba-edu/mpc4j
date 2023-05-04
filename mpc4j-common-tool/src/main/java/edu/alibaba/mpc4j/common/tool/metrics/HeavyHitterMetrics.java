@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.metrics;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
 import org.apache.commons.math3.util.Precision;
 
@@ -54,11 +55,7 @@ public class HeavyHitterMetrics {
      * @return the NDCG.
      */
     public static <T> double ndcg(List<T> predictionList, List<T> realList) {
-        Preconditions.checkArgument(
-            predictionList.size() == realList.size(),
-            "prediction list size = %s, real list size = %s, must be equal.",
-            predictionList.size(), realList.size()
-        );
+        MathPreconditions.checkEqual("prediction list", "real list", predictionList.size(), realList.size());
         int k = predictionList.size();
         double idcg = idcg(k);
         // k = 0时，idcg = 0
@@ -127,6 +124,8 @@ public class HeavyHitterMetrics {
      * the absolute error is computed by the sum of the absolute error abe(t) for each item t, where
      * abe(t) = |the prediction value for t - the real item value for t|.
      * </p>
+     * Note that we traverse items t in the real item map. If we cannot find t in the prediction map, then
+     * abe(t) = |the real item value for t|.
      *
      * @param predictionMap the prediction map.
      * @param realMap       the real map.
@@ -134,19 +133,19 @@ public class HeavyHitterMetrics {
      * @return the absolute error.
      */
     public static <T> double absoluteError(Map<T, Double> predictionMap, Map<T, Integer> realMap) {
-        int predictionSize = predictionMap.size();
-        if (predictionSize == 0) {
+        MathPreconditions.checkEqual("prediction size", "real size", predictionMap.size(), realMap.size());
+        int size = predictionMap.size();
+        if (size == 0) {
             return 0;
         }
         double absoluteError = 0;
-        for (Map.Entry<T, Double> itemEntry : predictionMap.entrySet()) {
+        for (Map.Entry<T, Integer> itemEntry : realMap.entrySet()) {
             T item = itemEntry.getKey();
-            int real = realMap.getOrDefault(item, 0);
-            assert real >= 0 : "real value must be greater than or equal to 0: " + real;
-            double prediction = itemEntry.getValue();
+            double prediction = predictionMap.getOrDefault(item, 0.0);
+            int real = itemEntry.getValue();
             absoluteError += Math.abs(prediction - real);
         }
-        return absoluteError / predictionSize;
+        return absoluteError / size;
     }
 
     /**
@@ -155,9 +154,9 @@ public class HeavyHitterMetrics {
      * the relative error is computed by the sum of the relative error re(t) for each item t, where
      * rt(t) = |the prediction value for t - the real item value for t| / the real item value for t.
      * </p>
-     * Some special cases:
+     * Note that we traverse items t in the real item map. Some special cases:
      * <ul>
-     *     <li> If there is no t in the real map, then we set re(t) = 1. </li>
+     *     <li> If there is no t in the prediction map, then we set re(t) = 1. </li>
      *     <li> If the real item value for t equals 0, then we set re(t) = 1. </li>
      *     <li> The prediction item value for t can be negative. </li>
      * </ul>
@@ -168,26 +167,24 @@ public class HeavyHitterMetrics {
      * @return the relative error.
      */
     public static <T> double relativeError(Map<T, Double> predictionMap, Map<T, Integer> realMap) {
-        int predictionSize = predictionMap.size();
-        if (predictionSize == 0) {
+        MathPreconditions.checkEqual("prediction size", "real size", predictionMap.size(), realMap.size());
+        int size = predictionMap.size();
+        if (size == 0) {
             return 0;
         }
         double relativeError = 0;
-        for (Map.Entry<T, Double> itemEntry : predictionMap.entrySet()) {
+        for (Map.Entry<T, Integer> itemEntry : realMap.entrySet()) {
             T item = itemEntry.getKey();
-            double prediction = itemEntry.getValue();
-            if (!realMap.containsKey(item)) {
+            int real = itemEntry.getValue();
+            // the real value must be positive.
+            MathPreconditions.checkPositive("real value", real);
+            if (!predictionMap.containsKey(item)) {
                 relativeError += 1;
             } else {
-                int real = realMap.get(item);
-                assert real >= 0 : "real value must be greater than or equal to 0: " + real;
-                if (real == 0) {
-                    relativeError += 1;
-                } else {
-                    relativeError += Math.abs(prediction - real) / real;
-                }
+                double prediction = predictionMap.get(item);
+                relativeError += Math.abs(prediction - real) / real;
             }
         }
-        return relativeError / predictionSize;
+        return relativeError / size;
     }
 }

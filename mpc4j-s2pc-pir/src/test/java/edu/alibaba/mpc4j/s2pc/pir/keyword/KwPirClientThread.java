@@ -19,10 +19,6 @@ public class KwPirClientThread<T> extends Thread {
      */
     private final KwPirClient<T> client;
     /**
-     * 关键字PIR参数
-     */
-    private final KwPirParams kwPirParams;
-    /**
      * 标签字节长度
      */
     private final int labelByteLength;
@@ -30,6 +26,10 @@ public class KwPirClientThread<T> extends Thread {
      * 检索集合
      */
     private final ArrayList<Set<T>> retrievalSets;
+    /**
+     * 客户端检索数量
+     */
+    private final int retrievalSize;
     /**
      * 检索次数
      */
@@ -39,10 +39,10 @@ public class KwPirClientThread<T> extends Thread {
      */
     private final ArrayList<Map<T, ByteBuffer>> retrievalResults;
 
-    KwPirClientThread(KwPirClient<T> client, KwPirParams kwPirParams, ArrayList<Set<T>> retrievalSets, int labelByteLength) {
+    KwPirClientThread(KwPirClient<T> client, ArrayList<Set<T>> retrievalSets, int retrievalSize, int labelByteLength) {
         this.client = client;
-        this.kwPirParams = kwPirParams;
         this.retrievalSets = retrievalSets;
+        this.retrievalSize = retrievalSize;
         this.labelByteLength = labelByteLength;
         repeatTime = retrievalSets.size();
         retrievalResults = new ArrayList<>(repeatTime);
@@ -55,14 +55,11 @@ public class KwPirClientThread<T> extends Thread {
     @Override
     public void run() {
         try {
-            // 随机选取
-            client.getRpc().connect();
-            client.init(kwPirParams, labelByteLength);
+            client.init(retrievalSize, labelByteLength);
             client.getRpc().synchronize();
             for (int i = 0; i < repeatTime; i++) {
                 retrievalResults.add(client.pir(retrievalSets.get(i)));
             }
-            client.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

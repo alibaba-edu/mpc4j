@@ -4,22 +4,22 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
 /**
- * 预计算COT协议发送方线程。
+ * pre-compute COT sender thread.
  *
  * @author Weiran Liu
  * @date 2022/01/14
  */
 class PreCotSenderThread extends Thread {
     /**
-     * 发送方
+     * the sender
      */
     private final PreCotSender sender;
     /**
-     * 预计算输出
+     * pre-compute sender output
      */
     private final CotSenderOutput preSenderOutput;
     /**
-     * 输出
+     * the output
      */
     private CotSenderOutput senderOutput;
 
@@ -35,10 +35,8 @@ class PreCotSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.getRpc().connect();
             sender.init();
             senderOutput = sender.send(preSenderOutput);
-            sender.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

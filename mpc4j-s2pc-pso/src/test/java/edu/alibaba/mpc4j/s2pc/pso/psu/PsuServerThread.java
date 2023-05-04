@@ -15,7 +15,7 @@ class PsuServerThread extends Thread {
     /**
      * PSU服务端
      */
-    private final PsuServer psuServer;
+    private final PsuServer server;
     /**
      * 服务端集合
      */
@@ -29,9 +29,9 @@ class PsuServerThread extends Thread {
      */
     private final int elementByteLength;
 
-    PsuServerThread(PsuServer psuServer, Set<ByteBuffer> serverElementSet, int clientElementSize,
-        int elementByteLength) {
-        this.psuServer = psuServer;
+    PsuServerThread(PsuServer server, Set<ByteBuffer> serverElementSet, int clientElementSize,
+                    int elementByteLength) {
+        this.server = server;
         this.serverElementSet = serverElementSet;
         this.clientElementSize = clientElementSize;
         this.elementByteLength = elementByteLength;
@@ -40,10 +40,11 @@ class PsuServerThread extends Thread {
     @Override
     public void run() {
         try {
-            psuServer.getRpc().connect();
-            psuServer.init(serverElementSet.size(), clientElementSize);
-            psuServer.psu(serverElementSet, clientElementSize, elementByteLength);
-            psuServer.getRpc().disconnect();
+            server.getRpc().connect();
+            server.init(serverElementSet.size(), clientElementSize);
+            server.psu(serverElementSet, clientElementSize, elementByteLength);
+            server.destroy();
+            server.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

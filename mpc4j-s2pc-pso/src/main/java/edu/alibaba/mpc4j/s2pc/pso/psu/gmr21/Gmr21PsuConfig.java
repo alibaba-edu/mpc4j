@@ -6,10 +6,10 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnConfig;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnConfig;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
 
@@ -146,7 +146,7 @@ public class Gmr21PsuConfig implements PsuConfig {
         public Builder() {
             cuckooHashOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
             peqtOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
-            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
+            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
             coreCotConfig = CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
             okvsType = OkvsType.MEGA_BIN;
             // GMR21源代码使用普通布谷鸟哈希实现无贮存区布谷鸟哈希的功能，这样通信量可以更小一点

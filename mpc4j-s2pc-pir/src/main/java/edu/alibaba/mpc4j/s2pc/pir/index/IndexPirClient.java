@@ -1,39 +1,38 @@
 package edu.alibaba.mpc4j.s2pc.pir.index;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 
 /**
- * 索引PIR协议客户端接口。
+ * Index PIR client.
  *
  * @author Liqiang Peng
  * @date 2022/8/10
  */
-public interface IndexPirClient extends TwoPartyPto, SecurePto {
+public interface IndexPirClient extends TwoPartyPto {
     /**
-     * 返回协议类型。
+     * Client initializes the protocol.
      *
-     * @return 协议类型。
+     * @param indexPirParams    index PIR params.
+     * @param serverElementSize database size.
+     * @param elementByteLength element byte length.
      */
-    @Override
-    IndexPirFactory.IndexPirType getPtoType();
+    void init(IndexPirParams indexPirParams, int serverElementSize, int elementByteLength);
 
     /**
-     * 初始化协议。
+     * Client initializes the protocol.
      *
-     * @param indexPirParams    索引PIR协议参数。
-     * @param serverElementSize 服务端元素数量。
-     * @param elementByteLength 元素字节长度。
+     * @param serverElementSize database size.
+     * @param elementByteLength element byte length.
      */
-    void init(AbstractIndexPirParams indexPirParams, int serverElementSize, int elementByteLength);
+    void init(int serverElementSize, int elementByteLength);
 
     /**
-     * 执行协议。
+     * Client executes the protocol.
      *
-     * @param index 检索值。
-     * @return 检索结果。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param index index value.
+     * @return retrieval result.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     byte[] pir(int index) throws MpcAbortException;
 }

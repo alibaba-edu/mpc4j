@@ -34,10 +34,8 @@ class Z2MtgPartyThread extends Thread {
     @Override
     public void run() {
         try {
-            party.getRpc().connect();
             party.init(num, num);
             output = party.generate(num);
-            party.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

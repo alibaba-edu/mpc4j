@@ -42,18 +42,25 @@ public interface HhLdpConfig {
     int getD();
 
     /**
-     * Get the number of Heavy Hitters k.
+     * Gets the number of Heavy Hitters k.
      *
      * @return the number of Heavy Hitters.
      */
     int getK();
 
     /**
-     * Return the privacy parameter ε / w.
+     * Gets the privacy parameter ε / w.
      *
      * @return the privacy parameter ε / w.
      */
     double getWindowEpsilon();
+
+    /**
+     * Gets the window size (w).
+     *
+     * @return the window size (w).
+     */
+    int getWindowSize();
 
     /**
      * Returns whether the mechanism obtain accurate estimation for extremely large ε.

@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
@@ -20,7 +17,7 @@ import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.*;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.AbstractPidParty;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidPartyOutput;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidUtils;
@@ -118,56 +115,31 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
     public Gmr21SloppyPidServer(Rpc serverRpc, Party clientParty, Gmr21SloppyPidConfig config) {
         super(Gmr21SloppyPidPtoDesc.getInstance(), serverRpc, clientParty, config);
         oprfReceiver = OprfFactory.createOprfReceiver(serverRpc, clientParty, config.getOprfConfig());
-        oprfReceiver.addLogLevel();
+        addSubPtos(oprfReceiver);
         oprfSender = OprfFactory.createOprfSender(serverRpc, clientParty, config.getOprfConfig());
-        oprfSender.addLogLevel();
+        addSubPtos(oprfSender);
         psuServer = PsuFactory.createServer(serverRpc, clientParty, config.getPsuConfig());
-        psuServer.addLogLevel();
+        addSubPtos(psuServer);
         sloppyOkvsType = config.getSloppyOkvsType();
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }
 
     @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        oprfReceiver.setTaskId(taskIdPrf.getLong(0, taskIdBytes, Long.MAX_VALUE));
-        oprfSender.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-        psuServer.setTaskId(taskIdPrf.getLong(2, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        oprfReceiver.setParallel(parallel);
-        oprfSender.setParallel(parallel);
-        psuServer.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        oprfReceiver.addLogLevel();
-        oprfSender.addLogLevel();
-        psuServer.addLogLevel();
-    }
-
-    @Override
-    public void init(int maxServerElementSize, int maxClientElementSize) throws MpcAbortException {
-        setInitInput(maxServerElementSize, maxClientElementSize);
-        info("{}{} Server Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+    public void init(int maxOwnElementSetSize, int maxOtherElementSetSize) throws MpcAbortException {
+        setInitInput(maxOwnElementSetSize, maxOtherElementSetSize);
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxServerBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxServerElementSize);
+        int maxServerBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxOwnElementSetSize);
         oprfReceiver.init(maxServerBinNum);
-        int maxClientBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxClientElementSize);
+        int maxClientBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxOtherElementSetSize);
         oprfSender.init(maxClientBinNum);
-        psuServer.init(maxServerElementSize, maxClientElementSize);
+        psuServer.init(maxOwnElementSetSize, maxOtherElementSetSize);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 2, initTime);
 
         stopWatch.start();
         // s^A
@@ -185,13 +157,13 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
             })
             .toArray(byte[][]::new);
         DataPacketHeader serverKeysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(serverKeysHeader, serverKeysPayload));
         // 接收客户端密钥
         DataPacketHeader clientKeysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> clientKeysPayload = rpc.receive(clientKeysHeader).getPayload();
@@ -201,23 +173,22 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyTime);
+        logStepInfo(PtoState.INIT_STEP, 2, 2, keyTime);
 
-        initialized = true;
-        info("{}{} Server Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
-    public PidPartyOutput<T> pid(Set<T> serverElementSet, int clientElementSize) throws MpcAbortException {
-        setPtoInput(serverElementSet, clientElementSize);
-        info("{}{} Server begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+    public PidPartyOutput<T> pid(Set<T> ownElementSet, int otherElementSetSize) throws MpcAbortException {
+        setPtoInput(ownElementSet, otherElementSetSize);
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         initVariable();
         stopWatch.stop();
         long initVariableTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 1/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initVariableTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 4, initVariableTime);
 
         stopWatch.start();
         // The parties call F_{bOPRF}, where Alice is receiver with input A.
@@ -239,13 +210,13 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
         // Alice sends OKVS
         List<byte[]> serverOkvsPayload = generateServerOkvsPayload();
         DataPacketHeader serverOkvsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_OKVS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_OKVS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(serverOkvsHeader, serverOkvsPayload));
         // Alice receives OKVS
         DataPacketHeader clientOkvsHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OKVS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OKVS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> clientOkvsPayload = rpc.receive(clientOkvsHeader).getPayload();
@@ -253,52 +224,52 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
         stopWatch.stop();
         long serverPidMapTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), serverPidMapTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 4, serverPidMapTime);
 
         stopWatch.start();
         // The parties invoke F_{psu}, with inputs {R_A(x) | x ∈ X} for Alice
-        psuServer.psu(serverPidMap.keySet(), clientElementSize, pidByteLength);
+        psuServer.psu(serverPidMap.keySet(), otherElementSetSize, pidByteLength);
         stopWatch.stop();
         long psuTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 3/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), psuTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 4, psuTime);
 
         stopWatch.start();
         // Alice receives union
         DataPacketHeader unionHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_UNION.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_UNION.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> unionPayload = rpc.receive(unionHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(unionPayload.size() >= ownSetSize);
+        MpcAbortPreconditions.checkArgument(unionPayload.size() >= ownElementSetSize);
         Set<ByteBuffer> pidSet = unionPayload.stream()
             .map(ByteBuffer::wrap)
             .collect(Collectors.toSet());
         stopWatch.stop();
         long unionTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 4/4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
+        logStepInfo(PtoState.PTO_STEP, 4, 4, unionTime);
 
-        info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return new PidPartyOutput<>(pidByteLength, pidSet, serverPidMap);
     }
 
     private void initVariable() throws MpcAbortException {
         // PID字节长度等于λ + log(n) + log(m) = λ + log(m * n)
-        pidByteLength = PidUtils.getPidByteLength(ownSetSize, otherSetSize);
+        pidByteLength = PidUtils.getPidByteLength(ownElementSetSize, otherElementSetSize);
         pidMap = HashFactory.createInstance(envType, pidByteLength);
         serverPidPrf = PrfFactory.createInstance(envType, pidByteLength);
         serverPidPrf.setKey(serverPidPrfKey);
         // Alice inserts items into cuckoo hash
         List<byte[]> serverCuckooHashKeyPayload = generateServerCuckooHashKeyPayload();
         DataPacketHeader serverCuckooHashKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(serverCuckooHashKeyHeader, serverCuckooHashKeyPayload));
         // Bob inserts items into cuckoo hash
         DataPacketHeader clientCuckooHashKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> clientCuckooHashKeyPayload = rpc.receive(clientCuckooHashKeyHeader).getPayload();
@@ -306,42 +277,20 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
     }
 
     private List<byte[]> generateServerCuckooHashKeyPayload() {
-        serverBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, ownSetSize);
-        // 设置布谷鸟哈希，如果发现不能构造成功，则可以重复构造
-        boolean success = false;
-        byte[][] serverCuckooHashKeys = null;
-        while (!success) {
-            try {
-                serverCuckooHashKeys = IntStream.range(0, cuckooHashNum)
-                    .mapToObj(hashIndex -> {
-                        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                        secureRandom.nextBytes(key);
-                        return key;
-                    })
-                    .toArray(byte[][]::new);
-                serverCuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(
-                    envType, cuckooHashBinType, ownSetSize, serverCuckooHashKeys
-                );
-                // 将服务端消息插入到CuckooHash中
-                serverCuckooHashBin.insertItems(ownElementArrayList);
-                if (serverCuckooHashBin.itemNumInStash() == 0) {
-                    success = true;
-                }
-            } catch (ArithmeticException ignored) {
-                // 如果插入不成功，就重新插入
-            }
-        }
-        // 如果成功，则向布谷鸟哈希的空余位置插入随机元素
+        serverBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, ownElementSetSize);
+        serverCuckooHashBin = CuckooHashBinFactory.createEnforceNoStashCuckooHashBin(
+            envType, cuckooHashBinType, ownElementSetSize, ownElementArrayList, secureRandom
+        );
         serverCuckooHashBin.insertPaddingItems(secureRandom);
-        return Arrays.stream(serverCuckooHashKeys).collect(Collectors.toList());
+        return Arrays.stream(serverCuckooHashBin.getHashKeys()).collect(Collectors.toList());
     }
 
     private Map<ByteBuffer, T> handleClientOkvsPayload(List<byte[]> clientOkvsPayload) throws MpcAbortException {
-        int clientOkvsM = OkvsFactory.getM(sloppyOkvsType, otherSetSize * cuckooHashNum);
+        int clientOkvsM = OkvsFactory.getM(sloppyOkvsType, otherElementSetSize * cuckooHashNum);
         MpcAbortPreconditions.checkArgument(clientOkvsPayload.size() == clientOkvsM);
         byte[][] clientOkvsStorage = clientOkvsPayload.toArray(new byte[0][]);
         Okvs<ByteBuffer> clientOkvs = OkvsFactory.createInstance(
-            envType, sloppyOkvsType, otherSetSize * cuckooHashNum, pidByteLength * Byte.SIZE, clientOkvsHashKeys
+            envType, sloppyOkvsType, otherElementSetSize * cuckooHashNum, pidByteLength * Byte.SIZE, clientOkvsHashKeys
         );
         IntStream serverBinIndexStream = IntStream.range(0, serverBinNum);
         serverBinIndexStream = parallel ? serverBinIndexStream.parallel() : serverBinIndexStream;
@@ -367,7 +316,7 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
                 return ByteBuffer.wrap(pidBytes);
             })
             .toArray(ByteBuffer[]::new);
-        Map<ByteBuffer, T> serverPidMap = new HashMap<>(ownSetSize);
+        Map<ByteBuffer, T> serverPidMap = new HashMap<>(ownElementSetSize);
         IntStream.range(0, serverBinNum).forEach(serverBinIndex -> {
             if (serverPids[serverBinIndex] != null) {
                 serverPidMap.put(serverPids[serverBinIndex], serverCuckooHashBin.getHashBinEntry(serverBinIndex).getItem());
@@ -380,7 +329,7 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
 
     private void handleClientCuckooHashKeyPayload(List<byte[]> clientCuckooHashKeyPayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(clientCuckooHashKeyPayload.size() == cuckooHashNum);
-        clientBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, otherSetSize);
+        clientBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, otherElementSetSize);
         clientCuckooHashes = IntStream.range(0, cuckooHashNum)
             .mapToObj(hashIndex -> {
                 byte[] key = clientCuckooHashKeyPayload.remove(0);
@@ -427,7 +376,7 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
         byte[][] serverOkvsValueArray = IntStream.range(0, cuckooHashNum)
             .mapToObj(hashIndex -> {
                 // value值涉及密码学操作，并发处理
-                IntStream serverElementIntStream = IntStream.range(0, ownSetSize);
+                IntStream serverElementIntStream = IntStream.range(0, ownElementSetSize);
                 serverElementIntStream = parallel ? serverElementIntStream.parallel() : serverElementIntStream;
                 return serverElementIntStream
                     .mapToObj(index -> {
@@ -443,12 +392,12 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
             })
             .flatMap(Arrays::stream)
             .toArray(byte[][]::new);
-        Map<ByteBuffer, byte[]> serverOkvsKeyValueMap = new HashMap<>(ownSetSize * cuckooHashNum);
-        IntStream.range(0, ownSetSize * cuckooHashNum).forEach(index ->
+        Map<ByteBuffer, byte[]> serverOkvsKeyValueMap = new HashMap<>(ownElementSetSize * cuckooHashNum);
+        IntStream.range(0, ownElementSetSize * cuckooHashNum).forEach(index ->
             serverOkvsKeyValueMap.put(serverOkvsKeyArray[index], serverOkvsValueArray[index])
         );
         Okvs<ByteBuffer> serverOkvs = OkvsFactory.createInstance(
-            envType, sloppyOkvsType, ownSetSize * cuckooHashNum, pidByteLength * Byte.SIZE, serverOkvsHashKeys
+            envType, sloppyOkvsType, ownElementSetSize * cuckooHashNum, pidByteLength * Byte.SIZE, serverOkvsHashKeys
         );
         // 编码可以并行处理
         serverOkvs.setParallelEncode(parallel);

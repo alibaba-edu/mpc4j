@@ -1,10 +1,10 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.crr21;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCoder;
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
@@ -66,33 +66,13 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
         mspCotConfig = config.getMspCotConfig();
         codeType = config.getCodeType();
         mspCotSender = MspCotFactory.createSender(senderRpc, receiverParty, config.getMspCotConfig());
-        mspCotSender.addLogLevel();
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        // COT协议和MSPCOT协议需要使用不同的taskID
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        mspCotSender.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        mspCotSender.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        mspCotSender.addLogLevel();
+        addSubPtos(mspCotSender);
     }
 
     @Override
     public void init(byte[] delta, int num) throws MpcAbortException {
         setInitInput(delta, num);
-        info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
         // 重新初始化时需要清空之前存留的输出
         sCotSenderOutput = null;
 
@@ -106,7 +86,7 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long encoderInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), encoderInitTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 2, encoderInitTime);
         // 初始化MSPCOT协议
         stopWatch.start();
         iterationN = lpnParams.getN();
@@ -116,16 +96,15 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 2, 2, initTime);
 
-        initialized = true;
-        info("{}{} Send. Init end", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public CotSenderOutput send() throws MpcAbortException {
         setPtoInput();
-        info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         // 执行MSPCOT
@@ -135,7 +114,7 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long sTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Iter. Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), sTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, sTime);
 
         stopWatch.start();
         // y = v * G^T。
@@ -147,9 +126,9 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long extendTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Iter. Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), extendTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, extendTime);
 
-        info("{}{} Send. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return senderOutput;
     }
 

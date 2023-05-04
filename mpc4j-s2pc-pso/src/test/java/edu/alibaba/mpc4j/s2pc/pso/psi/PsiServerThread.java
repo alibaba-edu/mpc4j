@@ -15,7 +15,7 @@ class PsiServerThread extends Thread {
     /**
      * PSI服务端
      */
-    private final PsiServer<ByteBuffer> psiServer;
+    private final PsiServer<ByteBuffer> server;
     /**
      * 服务端集合
      */
@@ -25,8 +25,8 @@ class PsiServerThread extends Thread {
      */
     private final int clientElementSize;
 
-    PsiServerThread(PsiServer<ByteBuffer> psiServer, Set<ByteBuffer> serverElementSet, int clientElementSize) {
-        this.psiServer = psiServer;
+    PsiServerThread(PsiServer<ByteBuffer> server, Set<ByteBuffer> serverElementSet, int clientElementSize) {
+        this.server = server;
         this.serverElementSet = serverElementSet;
         this.clientElementSize = clientElementSize;
     }
@@ -34,10 +34,8 @@ class PsiServerThread extends Thread {
     @Override
     public void run() {
         try {
-            psiServer.getRpc().connect();
-            psiServer.init(serverElementSet.size(), clientElementSize);
-            psiServer.psi(serverElementSet, clientElementSize);
-            psiServer.getRpc().disconnect();
+            server.init(serverElementSet.size(), clientElementSize);
+            server.psi(serverElementSet, clientElementSize);
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

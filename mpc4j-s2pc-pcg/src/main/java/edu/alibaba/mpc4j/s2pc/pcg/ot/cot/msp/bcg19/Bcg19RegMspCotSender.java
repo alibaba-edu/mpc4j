@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory;
@@ -38,31 +39,13 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
     public Bcg19RegMspCotSender(Rpc senderRpc, Party receiverParty, Bcg19RegMspCotConfig config) {
         super(Bcg19RegMspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         bspCotSender = BspCotFactory.createSender(senderRpc, receiverParty, config.getBspCotConfig());
-        bspCotSender.addLogLevel();
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        bspCotSender.setTaskId(taskId);
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        bspCotSender.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        bspCotSender.addLogLevel();
+        addSubPtos(bspCotSender);
     }
 
     @Override
     public void init(byte[] delta, int maxT, int maxNum) throws MpcAbortException {
         setInitInput(delta, maxT, maxNum);
-        info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // 原本应该设置为maxN / maxT，但此值不与T成正比，最后考虑直接设置为maxN
@@ -70,10 +53,9 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Send. Init end", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
@@ -90,20 +72,20 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
     }
 
     private MspCotSenderOutput send() throws MpcAbortException {
-        info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         // 执行t次2选1-单点批处理COT，每一个的选择范围是n/t
         if (cotSenderOutput == null) {
-            bspCotSenderOutput = bspCotSender.send(t, (int)Math.ceil((double) num / t));
+            bspCotSenderOutput = bspCotSender.send(t, (int) Math.ceil((double) num / t));
         } else {
-            bspCotSenderOutput = bspCotSender.send(t, (int)Math.ceil((double) num / t), cotSenderOutput);
+            bspCotSenderOutput = bspCotSender.send(t, (int) Math.ceil((double) num / t), cotSenderOutput);
             cotSenderOutput = null;
         }
         stopWatch.stop();
         long bspcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), bspcotTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, bspcotTime);
 
         stopWatch.start();
         // 计算输出结果
@@ -111,9 +93,9 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
         stopWatch.stop();
         long outputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), outputTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, outputTime);
 
-        info("{}{} Send. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return senderOutput;
     }
 
@@ -121,8 +103,8 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
         byte[][] r0Array = IntStream.range(0, t)
             .mapToObj(i -> {
                 // 需要转换为long计算，否则n和t比较大时会溢出
-                int lowerBound = (int)(i * (long) num / t);
-                int upperBound = (int)((i + 1) * (long) num / t);
+                int lowerBound = (int) (i * (long) num / t);
+                int upperBound = (int) ((i + 1) * (long) num / t);
                 SspCotSenderOutput spcotSenderOutput = bspCotSenderOutput.get(i);
                 return IntStream.range(0, upperBound - lowerBound)
                     .mapToObj(spcotSenderOutput::getR0)

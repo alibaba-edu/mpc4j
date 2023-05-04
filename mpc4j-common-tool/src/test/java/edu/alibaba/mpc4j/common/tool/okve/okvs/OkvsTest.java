@@ -4,7 +4,9 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,10 +14,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
- * OKVS测试。
+ * OKVS tests.
  *
  * @author Weiran Liu
  * @date 2022/01/02
@@ -23,115 +27,119 @@ import java.util.*;
 @RunWith(Parameterized.class)
 public class OkvsTest {
     /**
-     * 默认键值对数量
+     * default L
+     */
+    private static final int DEFAULT_L = 64;
+    /**
+     * the random state
+     */
+    static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    /**
+     * default n
      */
     private static final int DEFAULT_N = 10;
     /**
-     * 随机测试轮数
+     * random test round
      */
     private static final int MAX_RANDOM_ROUND = 50;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // H3_SINGLETON_GCT
-        configurationParams.add(new Object[] {OkvsType.H3_SINGLETON_GCT.name(), OkvsType.H3_SINGLETON_GCT });
-        // H2_SINGLETON_GCT
-        configurationParams.add(new Object[] {OkvsType.H2_SINGLETON_GCT.name(), OkvsType.H2_SINGLETON_GCT });
-        // H2_TWO_CORE_GCT
-        configurationParams.add(new Object[] {OkvsType.H2_TWO_CORE_GCT.name(), OkvsType.H2_TWO_CORE_GCT });
-        // H2_DFS_GCT
-        configurationParams.add(new Object[] {OkvsType.H2_DFS_GCT.name(), OkvsType.H2_DFS_GCT });
-        // GBF
-        configurationParams.add(new Object[] {OkvsType.GBF.name(), OkvsType.GBF });
-        // MEGA_BIN
-        configurationParams.add(new Object[] {OkvsType.MEGA_BIN.name(), OkvsType.MEGA_BIN });
-        // POLYNOMIAL
-        configurationParams.add(new Object[] {OkvsType.POLYNOMIAL.name(), OkvsType.POLYNOMIAL });
+        Collection<Object[]> configurations = new ArrayList<>();
 
-        return configurationParams;
+        // H3_SINGLETON_GCT
+        configurations.add(new Object[]{OkvsType.H3_SINGLETON_GCT.name(), OkvsType.H3_SINGLETON_GCT});
+        // H2_SINGLETON_GCT
+        configurations.add(new Object[]{OkvsType.H2_SINGLETON_GCT.name(), OkvsType.H2_SINGLETON_GCT});
+        // H2_TWO_CORE_GCT
+        configurations.add(new Object[]{OkvsType.H2_TWO_CORE_GCT.name(), OkvsType.H2_TWO_CORE_GCT});
+        // H2_DFS_GCT
+        configurations.add(new Object[]{OkvsType.H2_DFS_GCT.name(), OkvsType.H2_DFS_GCT});
+        // GBF
+        configurations.add(new Object[]{OkvsType.GBF.name(), OkvsType.GBF});
+        // MEGA_BIN
+        configurations.add(new Object[]{OkvsType.MEGA_BIN.name(), OkvsType.MEGA_BIN});
+        // POLYNOMIAL
+        configurations.add(new Object[]{OkvsType.POLYNOMIAL.name(), OkvsType.POLYNOMIAL});
+
+        return configurations;
     }
 
     /**
-     * OKVS类型
+     * OKVS type
      */
     private final OkvsType type;
+    /**
+     * hash num
+     */
+    private final int hashNum;
 
     public OkvsTest(String name, OkvsType type) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.type = type;
+        hashNum = OkvsFactory.getHashNum(type);
     }
 
     @Test
     public void testIllegalInputs() {
-        // 尝试设置错误数量的密钥
+        int l = DEFAULT_L;
+        int n = DEFAULT_N;
         if (OkvsFactory.getHashNum(type) > 0) {
-            try {
-                byte[][] lessKeys = CommonUtils.generateRandomKeys(
-                    OkvsFactory.getHashNum(type) + 1, OkvsTestUtils.SECURE_RANDOM
-                );
-                OkvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, OkvsTestUtils.DEFAULT_L, lessKeys);
-                throw new IllegalStateException("ERROR: successfully create OKVS with more keys");
-            } catch (AssertionError ignored) {
-
-            }
-            try {
-                byte[][] moreKeys = CommonUtils.generateRandomKeys(
-                    OkvsFactory.getHashNum(type) - 1, OkvsTestUtils.SECURE_RANDOM
-                );
-                OkvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, OkvsTestUtils.DEFAULT_L, moreKeys);
-                throw new IllegalStateException("ERROR: successfully create OKVS with less keys");
-            } catch (AssertionError ignored) {
-
-            }
+            // creates OKVS with more keys
+            Assert.assertThrows(AssertionError.class, () -> {
+                byte[][] lessKeys = CommonUtils.generateRandomKeys(hashNum + 1, SECURE_RANDOM);
+                OkvsFactory.createInstance(EnvType.STANDARD, type, n, l, lessKeys);
+            });
+            // creates OKVS with fewer keys
+            Assert.assertThrows(AssertionError.class, () -> {
+                byte[][] lessKeys = CommonUtils.generateRandomKeys(hashNum - 1, SECURE_RANDOM);
+                OkvsFactory.createInstance(EnvType.STANDARD, type, n, l, lessKeys);
+            });
         }
-        byte[][] keys = CommonUtils.generateRandomKeys(OkvsFactory.getHashNum(type), OkvsTestUtils.SECURE_RANDOM);
-        // 尝试让l小于统计安全参数
-        try {
-            OkvsFactory.createInstance(
-                EnvType.STANDARD, type, DEFAULT_N, CommonConstants.STATS_BIT_LENGTH - 1, keys
-            );
-            throw new IllegalStateException("ERROR: successfully create OKVS with l less than λ");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试让n = 0
-        try {
-            OkvsFactory.createInstance(EnvType.STANDARD, type, 0, OkvsTestUtils.DEFAULT_L, keys);
-            throw new IllegalStateException("ERROR: successfully create OKVS with n = 0");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试编码更多的元素
-        try {
-            Map<ByteBuffer, byte[]> keyValueMap = OkvsTestUtils.randomKeyValueMap(DEFAULT_N + 1);
-            Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(
-                EnvType.STANDARD, type, DEFAULT_N, OkvsTestUtils.DEFAULT_L, keys
-            );
+        byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+        // creates OKVS with l < σ
+        Assert.assertThrows(AssertionError.class, () ->
+            OkvsFactory.createInstance(EnvType.STANDARD, type, n, CommonConstants.STATS_BIT_LENGTH - 1, keys)
+        );
+        // creates OKVS with n = 0
+        Assert.assertThrows(AssertionError.class, () ->
+            OkvsFactory.createInstance(EnvType.STANDARD, type, 0, l, keys)
+        );
+        // encodes more elements
+        Assert.assertThrows(AssertionError.class, () -> {
+            Map<String, byte[]> keyValueMap = randomKeyValueMap(n + 1, l);
+            Okvs<String> okvs = OkvsFactory.createInstance(EnvType.STANDARD, type, n, l, keys);
             okvs.encode(keyValueMap);
-            throw new IllegalStateException("ERROR: successfully encode key-value map with more elements");
-        } catch (AssertionError ignored) {
-
-        }
+        });
+        Map<String, byte[]> keyValueMap = randomKeyValueMap(n, l);
+        Okvs<String> okvs = OkvsFactory.createInstance(EnvType.STANDARD, type, n, l, keys);
+        byte[][] storage = okvs.encode(keyValueMap);
+        // decodes with small storage
+        Assert.assertThrows(AssertionError.class, () -> {
+            byte[][] smallStorage = Arrays.copyOf(storage, storage.length - 1);
+            keyValueMap.keySet().forEach(key -> okvs.decode(smallStorage, key));
+        });
+        // decodes with large OKVS
+        Assert.assertThrows(AssertionError.class, () -> {
+            byte[][] largeStorage = Arrays.copyOf(storage, storage.length + 1);
+            keyValueMap.keySet().forEach(key -> okvs.decode(largeStorage, key));
+        });
     }
 
     @Test
     public void testType() {
-        byte[][] keys = CommonUtils.generateRandomKeys(OkvsFactory.getHashNum(type), OkvsTestUtils.SECURE_RANDOM);
-        Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(
-            EnvType.STANDARD, type, DEFAULT_N, OkvsTestUtils.DEFAULT_L, keys
-        );
+        byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+        Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, DEFAULT_L, keys);
         Assert.assertEquals(type, okvs.getOkvsType());
     }
 
     @Test
     public void testEmptyOkvs() {
-        byte[][] keys = CommonUtils.generateRandomKeys(OkvsFactory.getHashNum(type), OkvsTestUtils.SECURE_RANDOM);
-        Okvs<ByteBuffer> emptyOkvs = OkvsFactory.createInstance(
-            EnvType.STANDARD, type, DEFAULT_N, OkvsTestUtils.DEFAULT_L, keys
-        );
-        // 创建空的键值对
-        Map<ByteBuffer, byte[]> emptyKeyValueMap = new HashMap<>(0);
+        int l = DEFAULT_L;
+        byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+        Okvs<String> emptyOkvs = OkvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, l, keys);
+        // creates an empty key-value map
+        Map<String, byte[]> emptyKeyValueMap = randomKeyValueMap(0, l);
         byte[][] storage = emptyOkvs.encode(emptyKeyValueMap);
         Assert.assertEquals(emptyOkvs.getM(), storage.length);
         Arrays.stream(storage).forEach(row -> Assert.assertEquals(emptyOkvs.getL(), row.length * Byte.SIZE));
@@ -139,67 +147,71 @@ public class OkvsTest {
 
     @Test
     public void test1n() {
-        testOkvs(1);
+        testOkvs(1, DEFAULT_L);
     }
 
     @Test
     public void test2n() {
-        testOkvs(2);
+        testOkvs(2, DEFAULT_L);
     }
 
     @Test
-    public void test3n() {testOkvs(3);}
+    public void test3n() {
+        testOkvs(3, DEFAULT_L);
+    }
 
     @Test
     public void test40n() {
-        testOkvs(40);
+        testOkvs(40, DEFAULT_L);
     }
 
     @Test
     public void test256n() {
-        testOkvs(256);
+        testOkvs(256, DEFAULT_L);
     }
 
     @Test
     public void test4096n() {
-        testOkvs(4096);
+        // polynomial OKVS is very slow, ignore it
+        if (!type.equals(OkvsType.POLYNOMIAL)) {
+            testOkvs(4096, DEFAULT_L);
+        }
     }
 
-    private void testOkvs(int n) {
-        switch (type) {
-            case POLYNOMIAL:
-            case MEGA_BIN:
-                try {
-                    byte[][] keys = CommonUtils.generateRandomKeys(
-                        OkvsFactory.getHashNum(type), OkvsTestUtils.SECURE_RANDOM
-                    );
-                    OkvsFactory.createInstance(EnvType.STANDARD, type, 1, OkvsTestUtils.DEFAULT_L, keys);
-                    throw new IllegalStateException("ERROR: successfully create OKVS with n = 1");
-                } catch (AssertionError ignored) {
+    @Test
+    public void testSpecialL() {
+        testOkvs(DEFAULT_N, DEFAULT_L + 5);
+    }
 
-                }
-                break;
-            default:
-                for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-                    // 生成密钥
-                    byte[][] keys = CommonUtils.generateRandomKeys(
-                        OkvsFactory.getHashNum(type), OkvsTestUtils.SECURE_RANDOM
-                    );
-                    // 创建OKVS实例
-                    Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(
-                        EnvType.STANDARD, type, n, OkvsTestUtils.DEFAULT_L, keys
-                    );
-                    // 生成随机键值对
-                    Map<ByteBuffer, byte[]> keyValueMap = OkvsTestUtils.randomKeyValueMap(n);
-                    // 编码
-                    byte[][] storage = okvs.encode(keyValueMap);
-                    // 并发解码，验证结果
-                    keyValueMap.keySet().stream().parallel().forEach(key -> {
-                        byte[] valueBytes = keyValueMap.get(key);
-                        byte[] decodeValueBytes = okvs.decode(storage, key);
-                        Assert.assertArrayEquals(valueBytes, decodeValueBytes);
-                    });
-                }
+    @Test
+    public void testLargeL() {
+        testOkvs(DEFAULT_N, DEFAULT_L * 2);
+    }
+
+    private void testOkvs(int n, int l) {
+        for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
+            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            Okvs<String> okvs = OkvsFactory.createInstance(EnvType.STANDARD, type, n, l, keys);
+            Map<String, byte[]> keyValueMap = randomKeyValueMap(n, l);
+            byte[][] storage = okvs.encode(keyValueMap);
+            keyValueMap.keySet().stream()
+                .parallel()
+                .forEach(key -> {
+                    byte[] valueBytes = keyValueMap.get(key);
+                    byte[] decodeValueBytes = okvs.decode(storage, key);
+                    Assert.assertArrayEquals(valueBytes, decodeValueBytes);
+                });
         }
+    }
+
+    private Map<String, byte[]> randomKeyValueMap(int size, int l) {
+        int byteL = CommonUtils.getByteLength(l);
+        Map<String, byte[]> keyValueMap = new HashMap<>();
+        IntStream.range(0, size).forEach(index -> {
+            String key = RandomStringUtils.randomAlphanumeric(l);
+            byte[] valueBytes = BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM);
+            keyValueMap.put(key, valueBytes);
+        });
+        return keyValueMap;
     }
 }

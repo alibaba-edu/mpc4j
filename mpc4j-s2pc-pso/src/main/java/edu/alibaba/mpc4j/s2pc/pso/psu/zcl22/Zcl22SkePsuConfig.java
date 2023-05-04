@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcConfig;
 import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
-import edu.alibaba.mpc4j.s2pc.pso.oprp.OprpConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprp.OprpFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
 
@@ -113,8 +113,8 @@ public class Zcl22SkePsuConfig implements PsuConfig {
         private Gf2eOvdmType gf2eOvdmType;
 
         public Builder() {
-            bcConfig = BcFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            oprpConfig = OprpFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
+            bcConfig = BcFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+            oprpConfig = OprpFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
             coreCotConfig = CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
             gf2eOvdmType = Gf2eOvdmType.H3_SINGLETON_GCT;
         }

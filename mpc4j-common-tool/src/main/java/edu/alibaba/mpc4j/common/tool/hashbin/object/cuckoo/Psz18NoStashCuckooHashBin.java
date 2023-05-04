@@ -21,7 +21,18 @@ class Psz18NoStashCuckooHashBin<T> extends AbstractNoStashCuckooHashBin<T> {
      * @return 桶数量。
      */
     static int getBinNum(CuckooHashBinType type, int maxItemSize) {
-        return (int) Math.ceil(maxItemSize * getEpsilon(type));
+        if (maxItemSize == 2) {
+            // 2个元素时，3个哈希都映射到相同位置会死循环，概率为1 / (b^3)^2 < 1 / 2^40，则b^6 > 2^40，b = 102
+            return 102;
+        } else if (maxItemSize == 3) {
+            // 3个元素时，3个哈希都映射到相同位置会死循环，概率为1 / (b^3)^3 < 1 / 2^40，则b^9 > 2^40，b = 22
+            return 22;
+        } else if (maxItemSize == 4) {
+            // 4个元素时，3个哈希都映射到相同位置会死循环，概率为1 / (b^3)^4 < 1 / 2^40，则b^12 > 2^40，b = 11
+            return 11;
+        } else {
+            return (int) Math.ceil(maxItemSize * getEpsilon(type));
+        }
     }
 
     /**

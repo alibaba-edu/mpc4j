@@ -15,7 +15,6 @@
 package edu.alibaba.mpc4j.crypto.phe.params;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.Packable;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -32,7 +31,7 @@ import java.util.List;
  * @author Brian Thorne, Wilko Henecka, Dongyao Wu, mpnd, Max Ott, Weiran Liu
  * @date 2017/09/21
  */
-public class PhePlaintext implements Packable {
+public class PhePlaintext implements PheParams {
     /**
      * 模数编码方案
      */

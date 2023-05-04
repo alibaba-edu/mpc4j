@@ -15,14 +15,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache.CacheCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.cm20.Cm20MpOprfConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.kkrt16.Kkrt16OptOprfConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprp.OprpConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprp.OprpFactory;
-import edu.alibaba.mpc4j.s2pc.pso.oprp.lowmc.LowMcOprpConfig;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnConfig;
-import edu.alibaba.mpc4j.s2pc.pso.osn.gmr21.Gmr21OsnConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.cm20.Cm20MpOprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.kkrt16.Kkrt16OptOprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.lowmc.LowMcOprpConfig;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnConfig;
+import edu.alibaba.mpc4j.s2pc.opf.osn.gmr21.Gmr21OsnConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
@@ -32,7 +32,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19OptPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19OriPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22PkePsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22SkePsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 
 import java.util.Properties;
 
@@ -129,8 +129,8 @@ public class PsuConfigUtils {
         } else {
             return new Zcl22SkePsuConfig.Builder()
                 .setCoreCotConfig(CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST))
-                .setOprpConfig(OprpFactory.createDefaultConfig(SecurityModel.SEMI_HONEST))
-                .setBcConfig(BcFactory.createDefaultConfig(SecurityModel.SEMI_HONEST))
+                .setOprpConfig(OprpFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true))
+                .setBcConfig(BcFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true))
                 .setGf2eOvdmType(Gf2eOvdmType.H3_SINGLETON_GCT)
                 .build();
         }

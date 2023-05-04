@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
@@ -16,9 +13,9 @@ import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfSender;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.OprfSenderOutput;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSender;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pso.psi.AbstractPsiServer;
 import edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16.Kkrt16PsiPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiUtils;
@@ -74,52 +71,36 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
     public Kkrt16PsiServer(Rpc serverRpc, Party clientParty, Kkrt16PsiConfig config) {
         super(Kkrt16PsiPtoDesc.getInstance(), serverRpc, clientParty, config);
         oprfSender = OprfFactory.createOprfSender(serverRpc, clientParty, config.getOprfConfig());
-        oprfSender.addLogLevel();
+        addSubPtos(oprfSender);
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
         filterType = config.getFilterType();
     }
 
     @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        oprfSender.setTaskId(taskId);
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        oprfSender.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        oprfSender.addLogLevel();
-    }
-
-    @Override
     public void init(int maxServerElementSize, int maxClientElementSize) throws MpcAbortException {
         setInitInput(maxServerElementSize, maxClientElementSize);
-        info("{}{} Server Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxOprfBatchNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxClientElementSize)
+        // batchSize = n + s
+        int maxBatchSize = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxClientElementSize)
             + CuckooHashBinFactory.getStashSize(cuckooHashBinType, maxClientElementSize);
-        oprfSender.init(maxOprfBatchNum);
+        int maxPrfNum = (CuckooHashBinFactory.getHashNum(cuckooHashBinType)
+            + CuckooHashBinFactory.getStashSize(cuckooHashBinType, maxServerElementSize)) * maxServerElementSize;
+        oprfSender.init(maxBatchSize, maxPrfNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Server Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public void psi(Set<T> serverElementSet, int clientElementSize) throws MpcAbortException {
         setPtoInput(serverElementSet, clientElementSize);
-        info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         int peqtByteLength = PsiUtils.getSemiHonestPeqtByteLength(serverElementSize, clientElementSize);
@@ -128,7 +109,7 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
         int stashSize = CuckooHashBinFactory.getStashSize(cuckooHashBinType, clientElementSize);
         // 接收布谷鸟哈希密钥
         DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> cuckooHashKeyPayload = rpc.receive(cuckooHashKeyHeader).getPayload();
@@ -136,21 +117,21 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 1/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 3, keyTime);
 
         stopWatch.start();
         oprfSenderOutput = oprfSender.oprf(binNum + stashSize);
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 2/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), oprfTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 3, oprfTime);
 
         stopWatch.start();
         // 发送服务端哈希桶PRF过滤器
         for (int hashIndex = 0; hashIndex < cuckooHashNum; hashIndex++) {
             List<byte[]> serverBinPrfPayload = generateBinPrfPayload(hashIndex);
             DataPacketHeader serverBinPrfHeader = new DataPacketHeader(
-                taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_BIN_PRFS.ordinal(), extraInfo,
+                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_BIN_PRFS.ordinal(), extraInfo,
                 ownParty().getPartyId(), otherParty().getPartyId()
             );
             rpc.send(DataPacket.fromByteArrayList(serverBinPrfHeader, serverBinPrfPayload));
@@ -160,7 +141,7 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
         for (int stashIndex = 0; stashIndex < stashSize; stashIndex++) {
             List<byte[]> serverStashPrfPayload = generateStashPrfPayload(stashIndex);
             DataPacketHeader serverStashPrfHeader = new DataPacketHeader(
-                taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_STASH_PRFS.ordinal(), extraInfo,
+                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_STASH_PRFS.ordinal(), extraInfo,
                 ownParty().getPartyId(), otherParty().getPartyId()
             );
             rpc.send(DataPacket.fromByteArrayList(serverStashPrfHeader, serverStashPrfPayload));
@@ -170,9 +151,9 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
         stopWatch.stop();
         long serverPrfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Server Step 3/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), serverPrfTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 3, serverPrfTime);
 
-        info("{}{} Server end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
     }
 
     private void handleCuckooHashKeyPayload(List<byte[]> cuckooHashKeyPayload) throws MpcAbortException {

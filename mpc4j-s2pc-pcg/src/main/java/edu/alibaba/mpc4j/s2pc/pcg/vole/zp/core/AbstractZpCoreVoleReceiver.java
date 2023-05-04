@@ -1,77 +1,63 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.ZpCoreVoleFactory.*;
 
 import java.math.BigInteger;
 
 /**
- * Zp-核VOLE接收方抽象类。
+ * Abstract Zp-core VOLE receiver.
  *
  * @author Hanwen Feng
  * @date 2022/06/13
  */
-public abstract class AbstractZpCoreVoleReceiver extends AbstractSecureTwoPartyPto implements ZpCoreVoleReceiver {
+public abstract class AbstractZpCoreVoleReceiver extends AbstractTwoPartyPto implements ZpCoreVoleReceiver {
     /**
-     * 配置项
-     */
-    private final ZpCoreVoleConfig config;
-    /**
-     * 关联值Δ
+     * Δ
      */
     protected BigInteger delta;
     /**
-     * 素数域Zp
+     * the Zp instance
      */
     protected Zp zp;
     /**
-     * 有限域比特长度
+     * l
      */
     protected int l;
     /**
-     * 质数字节长度
-     */
-    protected int primeByteLength;
-    /**
-     * 最大数量
+     * max num
      */
     private int maxNum;
     /**
-     * 数量
+     * num
      */
     protected int num;
 
     protected AbstractZpCoreVoleReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, ZpCoreVoleConfig config) {
         super(ptoDesc, receiverRpc, senderParty, config);
-        this.config = config;
     }
 
-    @Override
-    public ZpCoreVoleType getPtoType() {
-        return config.getPtoType();
-    }
-
-    protected void setInitInput(BigInteger prime, BigInteger delta, int maxNum) {
-        zp = ZpFactory.createInstance(envType, prime);
+    protected void setInitInput(Zp zp, BigInteger delta, int maxNum) {
+        this.zp = zp;
         l = zp.getL();
-        primeByteLength = zp.getPrimeByteLength();
-        assert zp.validateRangeElement(delta) : "Δ must be in range [0, " + zp.getRangeBound() + "): " + delta;
+        Preconditions.checkArgument(
+            zp.validateRangeElement(delta),
+            "Δ must be in range [0, %s): %s", zp.getRangeBound(), delta
+        );
         this.delta = delta;
-        assert maxNum > 0 : "max num must be greater than 0: " + maxNum;
+        MathPreconditions.checkPositive("maxNum", maxNum);
         this.maxNum = maxNum;
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(int num) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init ...");
-        }
-        assert num > 0 && num <= maxNum : "num must be in range (0, " + maxNum + "]: " + num;
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
         this.num = num;
         extraInfo++;
     }

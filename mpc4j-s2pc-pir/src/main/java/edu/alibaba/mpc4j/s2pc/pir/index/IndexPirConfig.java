@@ -1,18 +1,18 @@
 package edu.alibaba.mpc4j.s2pc.pir.index;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 
 /**
- * 索引PIR协议配置项接口。
+ * Index PIR config interface.
  *
  * @author Liqiang Peng
  * @date 2022/8/24
  */
-public interface IndexPirConfig extends SecurePtoConfig {
+public interface IndexPirConfig extends MultiPartyPtoConfig {
     /**
-     * 返回协议类型。
+     * protocol type.
      *
-     * @return 协议类型。
+     * @return protocol type.
      */
     IndexPirFactory.IndexPirType getProType();
 }

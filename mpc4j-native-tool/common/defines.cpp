@@ -69,6 +69,7 @@ void setTojByteArray(JNIEnv *env, std::vector<uint8_t*> &set, uint64_t byteLengt
         // 释放jCoeff，jCoeffBuffer
         (*env).ReleaseByteArrayElements(jZeroElement, jZeroElementBuffer, 0);
     }
+    (*env).DeleteLocalRef(jByteArrayType);
 }
 
 void jLongArrayToSet(JNIEnv *env, jlongArray jLongArray, std::vector<long> &set) {
@@ -112,4 +113,5 @@ void setTojStringArray(JNIEnv *env, std::vector<std::string> &set, jobjectArray 
         (*env).SetObjectArrayElement(jStringArray, static_cast<jsize>(index), jString);
         (*env).DeleteLocalRef(jString);
     }
+    (*env).DeleteLocalRef(jStringClass);
 }

@@ -4,28 +4,28 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * 直接NC-COT协议信息。
+ * direct no-choice COT protocol description. This protocol directly invoke OT extensions.
  *
  * @author Weiran Liu
  * @date 2022/7/13
  */
 class DirectNcCotPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 6192153866874601909L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "DIRECT_NC_COT";
 
     /**
-     * 单例模式
+     * singleton mode
      */
     private static final DirectNcCotPtoDesc INSTANCE = new DirectNcCotPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor
      */
     private DirectNcCotPtoDesc() {
         // empty

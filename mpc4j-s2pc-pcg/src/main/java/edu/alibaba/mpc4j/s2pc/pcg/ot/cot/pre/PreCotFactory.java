@@ -9,21 +9,21 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.bea95.Bea95PreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.bea95.Bea95PreCotSender;
 
 /**
- * 预计算COT协议工厂。
+ * pre-compute COT factory.
  *
  * @author Weiran Liu
  * @date 2022/01/14
  */
 public class PreCotFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private PreCotFactory() {
         // empty
     }
 
     /**
-     * 协议类型
+     * the type.
      */
     public enum PreCotType {
         /**
@@ -33,12 +33,12 @@ public class PreCotFactory implements PtoFactory {
     }
 
     /**
-     * 构建发送方。
+     * Creates a sender.
      *
-     * @param senderRpc     发送方通信接口。
-     * @param receiverParty 接收方信息。
-     * @param config        配置项。
-     * @return 发送方。
+     * @param senderRpc     the sender RPC.
+     * @param receiverParty the receiver party.
+     * @param config        the config.
+     * @return a sender.
      */
     public static PreCotSender createSender(Rpc senderRpc, Party receiverParty, PreCotConfig config) {
         PreCotType type = config.getPtoType();
@@ -52,12 +52,12 @@ public class PreCotFactory implements PtoFactory {
     }
 
     /**
-     * 构建接收方。
+     * Creates a receiver.
      *
-     * @param receiverRpc 接收方通信接口。
-     * @param senderParty 发送方信息。
-     * @param config      配置项。
-     * @return 接收方。
+     * @param receiverRpc the receiver RPC.
+     * @param senderParty the sender party.
+     * @param config      the config.
+     * @return a receiver.
      */
     public static PreCotReceiver createReceiver(Rpc receiverRpc, Party senderParty, PreCotConfig config) {
         PreCotType type = config.getPtoType();
@@ -71,10 +71,10 @@ public class PreCotFactory implements PtoFactory {
     }
 
     /**
-     * 创建默认协议配置项。
+     * Creates a default config.
      *
-     * @param securityModel 安全模型。
-     * @return 默认协议配置项。
+     * @param securityModel the security model.
+     * @return a default config.
      */
     public static PreCotConfig createDefaultConfig(SecurityModel securityModel) {
         switch (securityModel) {

@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 
 /**
  * PSI协议配置项。
@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
  * @author Weiran Liu
  * @date 2022/9/19
  */
-public interface PsiConfig extends SecurePtoConfig {
+public interface PsiConfig extends MultiPartyPtoConfig {
     /**
      * 返回协议类型。
      *

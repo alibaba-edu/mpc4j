@@ -7,90 +7,100 @@ import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.bc.bea91.Bea91BcConfig;
 import edu.alibaba.mpc4j.s2pc.aby.basics.bc.bea91.Bea91BcReceiver;
 import edu.alibaba.mpc4j.s2pc.aby.basics.bc.bea91.Bea91BcSender;
+import edu.alibaba.mpc4j.s2pc.aby.basics.bc.rrg21.Rrg21BcConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.bc.rrg21.Rrg21BcReceiver;
+import edu.alibaba.mpc4j.s2pc.aby.basics.bc.rrg21.Rrg21BcSender;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotFactory;
 
 /**
- * 布尔电路工厂。
+ * Boolean circuit factory.
  *
  * @author Weiran Liu
  * @date 2022/02/13
  */
 public class BcFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor
      */
     private BcFactory() {
         // empty
     }
 
     /**
-     * 协议类型
+     * the type
      */
     public enum BcType {
         /**
-         * Beaver91协议
+         * Bea91
          */
-        BEA91,
+        Bea91,
         /**
-         * GMW87协议
+         * RRG+21
          */
-        GMW87,
+        RRG21,
     }
 
     /**
-     * 构建发送方。
+     * Creates a sender.
      *
-     * @param senderRpc     发送方通信接口。
-     * @param receiverParty 接收方信息。
-     * @param config        配置项。
-     * @return 发送方。
+     * @param senderRpc     the sender RPC.
+     * @param receiverParty the receiver party.
+     * @param config        the config.
+     * @return a sender.
      */
     public static BcParty createSender(Rpc senderRpc, Party receiverParty, BcConfig config) {
         BcType type = config.getPtoType();
         switch (type) {
-            case BEA91:
-                return new Bea91BcSender(senderRpc, receiverParty, (Bea91BcConfig)config);
-            case GMW87:
+            case Bea91:
+                return new Bea91BcSender(senderRpc, receiverParty, (Bea91BcConfig) config);
+            case RRG21:
+                return new Rrg21BcSender(senderRpc, receiverParty, (Rrg21BcConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + BcType.class.getSimpleName() + ": " + type.name());
         }
     }
 
     /**
-     * 构建接收方。
+     * Creates a receiver.
      *
-     * @param receiverRpc 接收方通信接口。
-     * @param senderParty 发送方信息。
-     * @param config      配置项。
-     * @return 接收方。
+     * @param receiverRpc the receiver RPC.
+     * @param senderParty the sender party.
+     * @param config      the config.
+     * @return a receiver.
      */
     public static BcParty createReceiver(Rpc receiverRpc, Party senderParty, BcConfig config) {
         BcType type = config.getPtoType();
         switch (type) {
-            case BEA91:
-                return new Bea91BcReceiver(receiverRpc, senderParty, (Bea91BcConfig)config);
-            case GMW87:
+            case Bea91:
+                return new Bea91BcReceiver(receiverRpc, senderParty, (Bea91BcConfig) config);
+            case RRG21:
+                return new Rrg21BcReceiver(receiverRpc, senderParty, (Rrg21BcConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + BcType.class.getSimpleName() + ": " + type.name());
         }
     }
 
     /**
-     * 创建默认协议配置项。
+     * Creates a default config.
      *
-     * @param securityModel 安全模型。
-     * @return 默认协议配置项。
+     * @param securityModel the security model.
+     * @param silent if using a silent protocol.
+     * @return a default config.
      */
-    public static BcConfig createDefaultConfig(SecurityModel securityModel) {
+    public static BcConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
         switch (securityModel) {
             case IDEAL:
-                return new Bea91BcConfig.Builder()
-                    .setZ2MtgConfig(Z2MtgFactory.createDefaultConfig(SecurityModel.IDEAL))
-                    .build();
             case SEMI_HONEST:
-                return new Bea91BcConfig.Builder()
-                    .setZ2MtgConfig(Z2MtgFactory.createDefaultConfig(SecurityModel.SEMI_HONEST))
-                    .build();
+                if (silent) {
+                    return new Bea91BcConfig.Builder()
+                        .setZ2MtgConfig(Z2MtgFactory.createDefaultConfig(securityModel, true))
+                        .build();
+                } else {
+                    return new Rrg21BcConfig.Builder()
+                        .setCotConfig(CotFactory.createDefaultConfig(securityModel, false))
+                        .build();
+                }
             case COVERT:
             case MALICIOUS:
             default:

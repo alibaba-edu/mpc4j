@@ -24,7 +24,7 @@ public class Sm2P256v1OpensslEcc extends AbstractOpensslEcc {
     }
 
     @Override
-    public ECPoint hashToCurve(byte[] message) {
-        return hashToCurve(message, hash);
+    public ECPoint hashToCurve(byte[] data) {
+        return hashToCurve(data, hash);
     }
 }

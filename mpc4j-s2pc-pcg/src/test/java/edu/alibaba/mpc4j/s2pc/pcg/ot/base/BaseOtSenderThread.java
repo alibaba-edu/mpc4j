@@ -12,7 +12,7 @@ class BaseOtSenderThread extends Thread {
     /**
      * 发送方
      */
-    private final BaseOtSender baseOtSender;
+    private final BaseOtSender sender;
     /**
      * 密钥数量
      */
@@ -22,8 +22,8 @@ class BaseOtSenderThread extends Thread {
      */
     private BaseOtSenderOutput senderOutput;
 
-    BaseOtSenderThread(BaseOtSender baseOtSender, int num) {
-        this.baseOtSender = baseOtSender;
+    BaseOtSenderThread(BaseOtSender sender, int num) {
+        this.sender = sender;
         this.num = num;
     }
 
@@ -34,10 +34,8 @@ class BaseOtSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            baseOtSender.getRpc().connect();
-            baseOtSender.init();
-            senderOutput = baseOtSender.send(num);
-            baseOtSender.getRpc().disconnect();
+            sender.init();
+            senderOutput = sender.send(num);
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

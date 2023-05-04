@@ -203,7 +203,9 @@ public class ClsOpXgBoost extends AbstractClsOpBoost {
                 host, hostConfig, totalRound, formula, numClass, ownDataFrame,
                 trainFeatureDataFrame, trainTruths, testFeatureDataFrame, testTruths
             );
+            host.init();
             hostRunner.run();
+            host.destroy();
             writeInfo(printWriter, ldpType.name(), epsilon, null, null, hostRunner.getTime(),
                 hostRunner.getTrainMeasure(), hostRunner.getTestMeasure(),
                 hostRunner.getPacketNum(), hostRunner.getPayloadByteLength(), hostRunner.getSendByteLength()
@@ -222,7 +224,9 @@ public class ClsOpXgBoost extends AbstractClsOpBoost {
                     host, hostConfig, totalRound, formula, numClass, ownDataFrame,
                     trainFeatureDataFrame, trainTruths, testFeatureDataFrame, testTruths
                 );
+                host.init();
                 hostRunner.run();
+                host.destroy();
                 writeInfo(printWriter, ldpType.name(), epsilon, theta, null, hostRunner.getTime(),
                     hostRunner.getTrainMeasure(), hostRunner.getTestMeasure(),
                     hostRunner.getPacketNum(), hostRunner.getPayloadByteLength(), hostRunner.getSendByteLength()
@@ -244,7 +248,9 @@ public class ClsOpXgBoost extends AbstractClsOpBoost {
                         host, hostConfig, totalRound, formula, numClass, ownDataFrame,
                         trainFeatureDataFrame, trainTruths, testFeatureDataFrame, testTruths
                     );
+                    host.init();
                     hostRunner.run();
+                    host.destroy();
                     writeInfo(printWriter, ldpType.name(), epsilon, theta, alpha, hostRunner.getTime(),
                         hostRunner.getTrainMeasure(), hostRunner.getTestMeasure(),
                         hostRunner.getPacketNum(), hostRunner.getPayloadByteLength(), hostRunner.getSendByteLength()

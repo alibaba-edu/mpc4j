@@ -15,7 +15,7 @@ class PsiClientThread extends Thread {
     /**
      * PSI客户端
      */
-    private final PsiClient<ByteBuffer> psiClient;
+    private final PsiClient<ByteBuffer> client;
     /**
      * 客户端集合
      */
@@ -29,8 +29,8 @@ class PsiClientThread extends Thread {
      */
     private Set<ByteBuffer> intersectionSet;
 
-    PsiClientThread(PsiClient<ByteBuffer> psiClient, Set<ByteBuffer> clientElementSet, int serverElementSize) {
-        this.psiClient = psiClient;
+    PsiClientThread(PsiClient<ByteBuffer> client, Set<ByteBuffer> clientElementSet, int serverElementSize) {
+        this.client = client;
         this.clientElementSet = clientElementSet;
         this.serverElementSize = serverElementSize;
     }
@@ -42,10 +42,8 @@ class PsiClientThread extends Thread {
     @Override
     public void run() {
         try {
-            psiClient.getRpc().connect();
-            psiClient.init(clientElementSet.size(), serverElementSize);
-            intersectionSet = psiClient.psi(clientElementSet, serverElementSize);
-            psiClient.getRpc().disconnect();
+            client.init(clientElementSet.size(), serverElementSize);
+            intersectionSet = client.psi(clientElementSet, serverElementSize);
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

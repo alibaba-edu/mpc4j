@@ -172,6 +172,6 @@ public class BucketDomain {
      * @return the domain size for the specific bucket.
      */
     public int getD(int bucketIndex) {
-        return universalDomain.getD();
+        return bucketDomains[bucketIndex].getD();
     }
 }

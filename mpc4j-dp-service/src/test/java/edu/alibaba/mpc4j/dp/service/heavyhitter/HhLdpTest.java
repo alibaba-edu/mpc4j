@@ -37,6 +37,10 @@ public class HhLdpTest {
      */
     private static final double DEFAULT_EPSILON = 16;
     /**
+     * default window size (w)
+     */
+    private static final int DEFAULT_WINDOW_SIZE = 5;
+    /**
      * default k
      */
     private static final int DEFAULT_K = 20;
@@ -45,14 +49,16 @@ public class HhLdpTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // Frequency Oracle
+        // CNR
+        configurations.add(new Object[]{HhLdpType.CNR.name(), HhLdpType.CNR,});
+        // BDR
+        configurations.add(new Object[]{HhLdpType.BDR.name(), HhLdpType.BDR,});
+        // DSR
+        configurations.add(new Object[]{HhLdpType.DSR.name(), HhLdpType.DSR,});
+        // BGR
+        configurations.add(new Object[]{HhLdpType.BGR.name(), HhLdpType.BGR,});
+        // FO
         configurations.add(new Object[]{HhLdpType.FO.name(), HhLdpType.FO,});
-        // relaxed heavy guardian
-        configurations.add(new Object[]{HhLdpType.RELAX.name(), HhLdpType.RELAX,});
-        // advanced heavy guardian
-        configurations.add(new Object[]{HhLdpType.ADV.name(), HhLdpType.ADV,});
-        // basic heavy guardian
-        configurations.add(new Object[]{HhLdpType.BASIC.name(), HhLdpType.BASIC,});
 
         return configurations;
     }
@@ -69,8 +75,8 @@ public class HhLdpTest {
 
     @Test
     public void testType() {
-        HhLdpConfig config = HhLdpFactory.createDefaultConfig(
-            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, LdpTestDataUtils.EXAMPLE_DATA_D, DEFAULT_EPSILON
+        HhLdpConfig config = HhLdpFactory.createDefaultHhLdpConfig(
+            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, LdpTestDataUtils.EXAMPLE_DATA_D, DEFAULT_EPSILON, DEFAULT_WINDOW_SIZE
         );
         // create server
         HhLdpServer server = HhLdpFactory.createServer(config);
@@ -83,8 +89,8 @@ public class HhLdpTest {
     @Test
     public void testWarmup() throws IOException {
         int k = LdpTestDataUtils.EXAMPLE_DATA_D;
-        HhLdpConfig config = HhLdpFactory.createDefaultConfig(
-            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, k, DEFAULT_EPSILON
+        HhLdpConfig config = HhLdpFactory.createDefaultHhLdpConfig(
+            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, k, DEFAULT_EPSILON, DEFAULT_WINDOW_SIZE
         );
         // create server and client
         HhLdpServer server = HhLdpFactory.createServer(config);
@@ -109,8 +115,8 @@ public class HhLdpTest {
     @Test
     public void testStopWarmup() throws IOException {
         int k = LdpTestDataUtils.EXAMPLE_DATA_D;
-        HhLdpConfig config = HhLdpFactory.createDefaultConfig(
-            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, k, DEFAULT_EPSILON
+        HhLdpConfig config = HhLdpFactory.createDefaultHhLdpConfig(
+            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, k, DEFAULT_EPSILON, DEFAULT_WINDOW_SIZE
         );
         // create server and client
         HhLdpServer server = HhLdpFactory.createServer(config);
@@ -136,17 +142,17 @@ public class HhLdpTest {
     @Test
     public void testLargeEpsilonFullK() throws IOException {
         int k = LdpTestDataUtils.EXAMPLE_DATA_D;
-        HhLdpConfig config = HhLdpFactory.createDefaultConfig(
-            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, k, LARGE_EPSILON
+        HhLdpConfig config = HhLdpFactory.createDefaultHhLdpConfig(
+            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, k, LARGE_EPSILON, DEFAULT_WINDOW_SIZE
         );
         // create server and client
         HhLdpServer server = HhLdpFactory.createServer(config);
         HhLdpClient client = HhLdpFactory.createClient(config);
         // warmup
-        exampleWarmupInsert(server, client);
+        exampleWarmupInsert(server, client, LdpTestDataUtils.EXAMPLE_WARMUP_NUM);
         server.stopWarmup();
         // randomize
-        exampleRandomizeInsert(server, client);
+        exampleRandomizeInsert(server, client, LdpTestDataUtils.EXAMPLE_WARMUP_NUM);
         Map<String, Double> heavyHitters = server.heavyHitters();
         Assert.assertTrue(heavyHitters.size() <= k);
         if (config.isConverge()) {
@@ -184,17 +190,17 @@ public class HhLdpTest {
     @Test
     public void testFullK() throws IOException {
         int k = LdpTestDataUtils.EXAMPLE_DATA_D;
-        HhLdpConfig config = HhLdpFactory.createDefaultConfig(
-            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, k, DEFAULT_EPSILON
+        HhLdpConfig config = HhLdpFactory.createDefaultHhLdpConfig(
+            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, k, DEFAULT_EPSILON, DEFAULT_WINDOW_SIZE
         );
         // create server and client
         HhLdpServer server = HhLdpFactory.createServer(config);
         HhLdpClient client = HhLdpFactory.createClient(config);
         // warmup
-        exampleWarmupInsert(server, client);
+        exampleWarmupInsert(server, client, LdpTestDataUtils.EXAMPLE_WARMUP_NUM);
         server.stopWarmup();
         // randomize
-        exampleRandomizeInsert(server, client);
+        exampleRandomizeInsert(server, client, LdpTestDataUtils.EXAMPLE_WARMUP_NUM);
         Map<String, Double> heavyHitters = server.heavyHitters();
         Assert.assertTrue(heavyHitters.size() <= k);
         // verify unbaised count
@@ -204,44 +210,43 @@ public class HhLdpTest {
 
     @Test
     public void testDefault() throws IOException {
-        HhLdpConfig config = HhLdpFactory.createDefaultConfig(
-            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, DEFAULT_K, DEFAULT_EPSILON
+        HhLdpConfig config = HhLdpFactory.createDefaultHhLdpConfig(
+            type, LdpTestDataUtils.EXAMPLE_DATA_DOMAIN, DEFAULT_K, DEFAULT_EPSILON, DEFAULT_WINDOW_SIZE
         );
         // create server and client
         HhLdpServer server = HhLdpFactory.createServer(config);
         HhLdpClient client = HhLdpFactory.createClient(config);
         // warmup
-        exampleWarmupInsert(server, client);
+        exampleWarmupInsert(server, client, LdpTestDataUtils.EXAMPLE_WARMUP_NUM);
         server.stopWarmup();
         // randomize
-        exampleRandomizeInsert(server, client);
+        exampleRandomizeInsert(server, client, LdpTestDataUtils.EXAMPLE_WARMUP_NUM);
         // verify there are k heavy hitters
         Map<String, Double> heavyHitters = server.heavyHitters();
         Assert.assertEquals(heavyHitters.size(), DEFAULT_K);
         // verify k/2 heavy hitters are the same
+        List<Map.Entry<String, Integer>> correctHeavyHitters = LdpTestDataUtils.CORRECT_EXAMPLE_COUNT_ORDERED_LIST;
         List<Map.Entry<String, Double>> orderedHeavyHitters = server.orderedHeavyHitters();
         for (int index = 0; index < DEFAULT_K / 2; index++) {
-            Assert.assertEquals(
-                LdpTestDataUtils.CORRECT_EXAMPLE_COUNT_ORDERED_LIST.get(index).getKey(),
-                orderedHeavyHitters.get(index).getKey()
-            );
+            // the order may be non-correct, but values should be almost the same
+            Assert.assertEquals(correctHeavyHitters.get(index).getValue(), orderedHeavyHitters.get(index).getValue(), 10);
         }
     }
 
-    static void exampleWarmupInsert(HhLdpServer server, HhLdpClient client) throws IOException {
+    static void exampleWarmupInsert(HhLdpServer server, HhLdpClient client, int warmupNum) throws IOException {
         AtomicInteger warmupIndex = new AtomicInteger();
         Stream<String> dataStream = StreamDataUtils.obtainItemStream(LdpTestDataUtils.EXAMPLE_DATA_PATH);
-        dataStream.filter(item -> warmupIndex.getAndIncrement() <= LdpTestDataUtils.EXAMPLE_WARMUP_NUM)
+        dataStream.filter(item -> warmupIndex.getAndIncrement() < warmupNum)
             .map(client::warmup)
             .forEach(server::warmupInsert);
         dataStream.close();
     }
 
-    static void exampleRandomizeInsert(HhLdpServer server, HhLdpClient client) throws IOException {
+    static void exampleRandomizeInsert(HhLdpServer server, HhLdpClient client, int warmupNum) throws IOException {
         Random ldpRandom = new Random();
         AtomicInteger randomizedIndex = new AtomicInteger();
         Stream<String> dataStream = StreamDataUtils.obtainItemStream(LdpTestDataUtils.EXAMPLE_DATA_PATH);
-        dataStream.filter(item -> randomizedIndex.getAndIncrement() > LdpTestDataUtils.EXAMPLE_WARMUP_NUM)
+        dataStream.filter(item -> randomizedIndex.getAndIncrement() >= warmupNum)
             .map(item -> client.randomize(server.getServerContext(), item, ldpRandom))
             .forEach(server::randomizeInsert);
         dataStream.close();

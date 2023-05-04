@@ -19,6 +19,9 @@ EncryptionParameters generate_encryption_parameters(scheme_type type, uint32_t p
 
 GaloisKeys generate_galois_keys(const SEALContext& context, KeyGenerator &keygen);
 
+Serializable<GaloisKeys> generate_serialized_galois_keys(const SEALContext& context, KeyGenerator &keygen);
+
 uint64_t invert_mod(uint64_t m, const seal::Modulus &mod);
 
+void try_clear_irrelevant_bits(const EncryptionParameters &parms, Ciphertext &ciphertext);
 #endif //MPC4J_NATIVE_FHE_UTILS_H

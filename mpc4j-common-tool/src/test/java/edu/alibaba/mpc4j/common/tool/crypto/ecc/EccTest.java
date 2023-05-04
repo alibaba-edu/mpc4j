@@ -52,8 +52,6 @@ public class EccTest {
         configurationParams.add(new Object[]{EccType.SEC_P256_K1_OPENSSL.name(), EccType.SEC_P256_K1_OPENSSL,});
         // SEC_P256_K1_BC
         configurationParams.add(new Object[]{EccType.SEC_P256_K1_BC.name(), EccType.SEC_P256_K1_BC,});
-        // SEC_P256_R1_MCL
-        configurationParams.add(new Object[]{EccType.SEC_P256_R1_MCL.name(), EccType.SEC_P256_R1_MCL,});
         // SEC_P256_R1_OPENSSL
         configurationParams.add(new Object[]{EccType.SEC_P256_R1_OPENSSL.name(), EccType.SEC_P256_R1_OPENSSL,});
         // SEC_P256_R1_BC
@@ -83,50 +81,16 @@ public class EccTest {
     @Test
     public void testIllegalInputs() {
         Ecc ecc = EccFactory.createInstance(eccType);
-        // 尝试将长度为0的字节数组映射到椭圆曲线上
-        try {
-            ecc.hashToCurve(new byte[0]);
-            throw new IllegalStateException("ERROR: successfully HashToCurve with 0-byte length message");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试生成0个随机幂指数
-        try {
-            ecc.randomZn(0, SECURE_RANDOM);
-            throw new IllegalStateException("ERROR: successfully generate 0 random exponents");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试乘以0个幂指数
-        try {
-            ecc.multiply(ecc.getG(), new BigInteger[0]);
-            throw new IllegalStateException("ERROR: successfully multiply 0 exponents");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试对0个椭圆曲线相加
-        try {
-            ecc.add(new ECPoint[0]);
-            throw new IllegalStateException("ERROR: successfully add 0 points");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试对0个椭圆曲线求内积
-        try {
-            ecc.innerProduct(new boolean[0], new ECPoint[0]);
-            throw new IllegalStateException("ERROR: successfully inner product 0-length vectors");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试对长度不同的椭圆曲线求内积
-        try {
+        // hash data with length = 0
+        Assert.assertThrows(AssertionError.class, () -> ecc.hashToCurve(new byte[0]));
+        // inner product with 0 element
+        Assert.assertThrows(AssertionError.class, () -> ecc.innerProduct(new boolean[0], new ECPoint[0]));
+        // inner product with different length
+        Assert.assertThrows(AssertionError.class, () -> {
             ECPoint[] points = new ECPoint[]{ecc.getG()};
             boolean[] binary = new boolean[2];
             ecc.innerProduct(binary, points);
-            throw new IllegalStateException("ERROR: successfully inner product different length vectors");
-        } catch (AssertionError ignored) {
-
-        }
+        });
     }
 
     @Test
@@ -192,7 +156,9 @@ public class EccTest {
         ECPoint h = g.multiply(ecc.randomZn(SECURE_RANDOM));
         Assert.assertNotEquals(BigInteger.ONE, h.getZCoords()[0].toBigInteger());
         // 生成r和r^{-1}
-        BigInteger[] rs = ecc.randomZn(MAX_ARRAY_LENGTH, SECURE_RANDOM);
+        BigInteger[] rs = IntStream.range(0, MAX_ARRAY_LENGTH)
+            .mapToObj(index -> ecc.randomZn(SECURE_RANDOM))
+            .toArray(BigInteger[]::new);
         BigInteger[] rsInv = Arrays.stream(rs)
             .map(r -> r.modInverse(ecc.getN()))
             .toArray(BigInteger[]::new);
@@ -200,7 +166,9 @@ public class EccTest {
         ECPoint[] gs = IntStream.range(0, MAX_ARRAY_LENGTH)
             .mapToObj(index -> g)
             .toArray(ECPoint[]::new);
-        ECPoint[] grs = ecc.multiply(g, rs);
+        ECPoint[] grs = Arrays.stream(rs)
+            .map(r -> ecc.multiply(g, r))
+            .toArray(ECPoint[]::new);
         ECPoint[] grsInv = IntStream.range(0, MAX_ARRAY_LENGTH)
             .mapToObj(index -> ecc.multiply(grs[index], rsInv[index]))
             .toArray(ECPoint[]::new);
@@ -209,7 +177,9 @@ public class EccTest {
         ECPoint[] hs = IntStream.range(0, MAX_ARRAY_LENGTH)
             .mapToObj(index -> h)
             .toArray(ECPoint[]::new);
-        ECPoint[] hrs = ecc.multiply(h, rs);
+        ECPoint[] hrs = Arrays.stream(rs)
+            .map(r -> ecc.multiply(h, r))
+            .toArray(ECPoint[]::new);
         ECPoint[] hrsInv = IntStream.range(0, MAX_ARRAY_LENGTH)
             .mapToObj(index -> ecc.multiply(hrs[index], rsInv[index]))
             .toArray(ECPoint[]::new);
@@ -251,8 +221,11 @@ public class EccTest {
     private void testAddition(int num) {
         Ecc ecc = EccFactory.createInstance(eccType);
         ECPoint g = ecc.getG();
-        ECPoint[] gs = IntStream.range(0, num).mapToObj(index -> g).toArray(ECPoint[]::new);
-        Assert.assertEquals(ecc.multiply(g, BigInteger.valueOf(num)), ecc.add(gs));
+        ECPoint gs = IntStream.range(0, num)
+            .mapToObj(index -> g)
+            .reduce(ecc::add)
+            .orElse(ecc.getInfinity());
+        Assert.assertEquals(ecc.multiply(g, BigInteger.valueOf(num)), gs);
     }
 
     @Test

@@ -29,16 +29,21 @@ jbyteArray serialize_public_key(JNIEnv *env, const PublicKey& public_key) {
     return byte_array;
 }
 
+jbyteArray serialize_public_key(JNIEnv *env, const Serializable<PublicKey>& public_key) {
+    std::ostringstream output;
+    public_key.save(output, Serialization::compr_mode_default);
+    jint len = (jint) output.str().size();
+    jbyteArray byte_array = env->NewByteArray(len);
+    env->SetByteArrayRegion(byte_array, 0, len, reinterpret_cast<const jbyte *>(output.str().c_str()));
+    return byte_array;
+}
+
 PublicKey deserialize_public_key(JNIEnv *env, jbyteArray pk_bytes, const SEALContext& context) {
     jbyte* byte_array = env->GetByteArrayElements(pk_bytes, JNI_FALSE);
-    std::string str((char*) byte_array, env->GetArrayLength(pk_bytes));
-    std::istringstream input(str);
-    seal::PublicKey public_key;
+    string str((char*) byte_array, env->GetArrayLength(pk_bytes));
+    istringstream input(str);
+    PublicKey public_key;
     public_key.load(context, input);
-    auto exception = env->FindClass("java/lang/Exception");
-    if (!is_metadata_valid_for(public_key, context)) {
-        env->ThrowNew(exception, "invalid public key for this SEALContext!");
-    }
     // free
     env->ReleaseByteArrayElements(pk_bytes, byte_array, 0);
     return public_key;
@@ -59,10 +64,6 @@ SecretKey deserialize_secret_key(JNIEnv *env, jbyteArray sk_bytes, const SEALCon
     std::istringstream input(str);
     seal::SecretKey secret_key;
     secret_key.load(context, input);
-    auto exception = env->FindClass("java/lang/Exception");
-    if (!is_metadata_valid_for(secret_key, context)) {
-        env->ThrowNew(exception, "invalid secret key for this SEALContext!");
-    }
     // free
     env->ReleaseByteArrayElements(sk_bytes, byte_array, 0);
     return secret_key;
@@ -77,16 +78,21 @@ jbyteArray serialize_relin_keys(JNIEnv *env, const RelinKeys& relin_keys) {
     return byte_array;
 }
 
+jbyteArray serialize_relin_keys(JNIEnv *env, const Serializable<RelinKeys>& relin_keys) {
+    std::ostringstream output;
+    relin_keys.save(output, Serialization::compr_mode_default);
+    jint len = (jint) output.str().size();
+    jbyteArray byte_array = env->NewByteArray(len);
+    env->SetByteArrayRegion(byte_array, 0, len, reinterpret_cast<const jbyte *>(output.str().c_str()));
+    return byte_array;
+}
+
 RelinKeys deserialize_relin_keys(JNIEnv *env, jbyteArray relin_keys_bytes, const SEALContext& context) {
     jbyte* byte_array = env->GetByteArrayElements(relin_keys_bytes, JNI_FALSE);
     string str((char*) byte_array, env->GetArrayLength(relin_keys_bytes));
     istringstream input(str);
     RelinKeys relin_keys;
     relin_keys.load(context, input);
-    auto exception = env->FindClass("java/lang/Exception");
-    if (!is_metadata_valid_for(relin_keys, context)) {
-        env->ThrowNew(exception, "invalid relin keys for this SEALContext!");
-    }
     // free
     env->ReleaseByteArrayElements(relin_keys_bytes, byte_array, 0);
     return relin_keys;
@@ -101,16 +107,21 @@ jbyteArray serialize_galois_keys(JNIEnv *env, const GaloisKeys& galois_keys) {
     return byte_array;
 }
 
-GaloisKeys deserialize_galois_keys(JNIEnv *env, jbyteArray galois_keys_bytes, const SEALContext& context) {
+jbyteArray serialize_galois_keys(JNIEnv *env, const Serializable<GaloisKeys>& galois_keys) {
+    std::ostringstream output;
+    galois_keys.save(output, Serialization::compr_mode_default);
+    jint len = (jint) output.str().size();
+    jbyteArray byte_array = env->NewByteArray(len);
+    env->SetByteArrayRegion(byte_array, 0, len, reinterpret_cast<const jbyte *>(output.str().c_str()));
+    return byte_array;
+}
+
+GaloisKeys* deserialize_galois_keys(JNIEnv *env, jbyteArray galois_keys_bytes, const SEALContext& context) {
     jbyte* byte_array = env->GetByteArrayElements(galois_keys_bytes, JNI_FALSE);
     string str((char*) byte_array, env->GetArrayLength(galois_keys_bytes));
     istringstream input(str);
-    GaloisKeys galois_keys;
-    galois_keys.load(context, input);
-    auto exception = env->FindClass("java/lang/Exception");
-    if (!is_metadata_valid_for(galois_keys, context)) {
-        env->ThrowNew(exception, "invalid Galois keys for this SEALContext!");
-    }
+    auto *galois_keys = new GaloisKeys();
+    galois_keys->load(context, input);
     // free
     env->ReleaseByteArrayElements(galois_keys_bytes, byte_array, 0);
     return galois_keys;
@@ -125,22 +136,42 @@ jbyteArray serialize_ciphertext(JNIEnv *env, const Ciphertext& ciphertext) {
     return byte_array;
 }
 
+jbyteArray serialize_ciphertext(JNIEnv *env, const Serializable<Ciphertext>& ciphertext) {
+    std::ostringstream output;
+    ciphertext.save(output, Serialization::compr_mode_default);
+    jint len = (jint) output.str().size();
+    jbyteArray byte_array = env->NewByteArray(len);
+    env->SetByteArrayRegion(byte_array, 0, len, reinterpret_cast<const jbyte *>(output.str().c_str()));
+    return byte_array;
+}
+
 Ciphertext deserialize_ciphertext(JNIEnv *env, jbyteArray ciphertext_bytes, const SEALContext& context) {
     jbyte* byte_array = env->GetByteArrayElements(ciphertext_bytes, JNI_FALSE);
     std::string str((char*) byte_array, env->GetArrayLength(ciphertext_bytes));
     std::istringstream input(str);
     Ciphertext ciphertext;
     ciphertext.load(context, input);
-    auto exception = env->FindClass("java/lang/Exception");
-    if (!is_metadata_valid_for(ciphertext, context)) {
-        env->ThrowNew(exception, "invalid ciphertext for this SEALContext!");
-    }
     // free
     env->ReleaseByteArrayElements(ciphertext_bytes, byte_array, 0);
     return ciphertext;
 }
 
 jobject serialize_ciphertexts(JNIEnv *env, const vector<Ciphertext>& ciphertexts) {
+    jclass list_jcs = env->FindClass("java/util/ArrayList");
+    jmethodID list_init = env->GetMethodID(list_jcs, "<init>", "()V");
+    jobject list_obj = env->NewObject(list_jcs, list_init, "");
+    jmethodID list_add = env->GetMethodID(list_jcs, "add", "(Ljava/lang/Object;)Z");
+    for (auto & ciphertext : ciphertexts) {
+        jbyteArray byte_array = serialize_ciphertext(env, ciphertext);
+        env->CallBooleanMethod(list_obj, list_add, byte_array);
+        env->DeleteLocalRef(byte_array);
+    }
+    // free
+    env->DeleteLocalRef(list_jcs);
+    return list_obj;
+}
+
+jobject serialize_ciphertexts(JNIEnv *env, const vector<Serializable<Ciphertext>>& ciphertexts) {
     jclass list_jcs = env->FindClass("java/util/ArrayList");
     jmethodID list_init = env->GetMethodID(list_jcs, "<init>", "()V");
     jobject list_obj = env->NewObject(list_jcs, list_init, "");
@@ -186,10 +217,6 @@ Plaintext deserialize_plaintext(JNIEnv *env, jbyteArray bytes, const SEALContext
     std::istringstream input(str);
     seal::Plaintext plaintext;
     plaintext.load(context, input);
-    auto exception = env->FindClass("java/lang/Exception");
-    if (!is_metadata_valid_for(plaintext, context)) {
-        env->ThrowNew(exception, "invalid plaintext for this SEALContext!");
-    }
     // free
     env->ReleaseByteArrayElements(bytes, byte_array, 0);
     return plaintext;
@@ -214,15 +241,11 @@ vector<Plaintext> deserialize_plaintexts(JNIEnv *env, jobjectArray array, const 
     BatchEncoder encoder(context);
     jint size = env->GetArrayLength(array);
     vector<Plaintext> plaintexts(size);
-    auto exception = env->FindClass("java/lang/Exception");
     for (jint i = 0; i < size; i++) {
         auto row = (jlongArray) env->GetObjectArrayElement(array, i);
         jlong* ptr = env->GetLongArrayElements(row, JNI_FALSE);
         vector<uint64_t> temp_vec(ptr, ptr + env->GetArrayLength(row));
         encoder.encode(temp_vec, plaintexts[i]);
-        if (!is_metadata_valid_for(plaintexts[i], context)) {
-            env->ThrowNew(exception, "invalid plaintext for this SEALContext!");
-        }
         env->ReleaseLongArrayElements(row, ptr, 0);
     }
     return plaintexts;
@@ -252,10 +275,6 @@ Plaintext deserialize_plaintext_from_coeff(JNIEnv *env, jlongArray coeffs, const
     vector<uint64_t> enc(ptr, ptr + size);
     Plaintext plaintext(context.first_context_data()->parms().poly_modulus_degree());
     encoder.encode(enc, plaintext);
-    auto exception = env->FindClass("java/lang/Exception");
-    if (!is_metadata_valid_for(plaintext, context)) {
-        env->ThrowNew(exception, "invalid plaintext for this SEALContext!");
-    }
     // free
     env->ReleaseLongArrayElements(coeffs, ptr, 0);
     return plaintext;
@@ -278,7 +297,6 @@ vector<Plaintext> deserialize_plaintexts_from_coeff_without_batch_encode(JNIEnv 
     jmethodID get_method = env->GetMethodID(obj_class, "get", "(I)Ljava/lang/Object;");
     jmethodID size_method = env->GetMethodID(obj_class, "size", "()I");
     jint size = env->CallIntMethod(coeff_list, size_method);
-    auto exception = env->FindClass("java/lang/Exception");
     vector<Plaintext> plaintexts;
     plaintexts.reserve(size);
     for (jint i = 0; i < size; i++) {
@@ -289,9 +307,6 @@ vector<Plaintext> deserialize_plaintexts_from_coeff_without_batch_encode(JNIEnv 
         vector<uint64_t> vec(ptr, ptr + len);
         for (jint j = 0; j < len; j++) {
             plaintext[j] = vec[j];
-        }
-        if (!is_metadata_valid_for(plaintext, context)) {
-            env->ThrowNew(exception, "invalid plaintext for this SEALContext!");
         }
         plaintexts.push_back(plaintext);
         env->DeleteLocalRef(coeffs);

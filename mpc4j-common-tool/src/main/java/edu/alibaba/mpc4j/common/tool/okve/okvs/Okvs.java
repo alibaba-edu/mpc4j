@@ -16,11 +16,17 @@ import java.util.Map;
  */
 public interface Okvs<T> {
     /**
-     * 设置是否并发编码。
+     * Sets using parallel encode.
      *
-     * @param parallelEncode 是否并发编码。
+     * @param parallelEncode parallel encode or not.
      */
     void setParallelEncode(boolean parallelEncode);
+
+    /**
+     * Gets using  parallel encode.
+     * @return parallel encode or not.
+     */
+    boolean getParallelEncode();
 
     /**
      * 编码键值对。
@@ -48,11 +54,18 @@ public interface Okvs<T> {
     int getN();
 
     /**
-     * 返回OKVS映射值的最大比特长度，满足{@code l % Byte.SIZE == 0}。
+     * Gets the value bit length, which must satisfies {@code l % Byte.SIZE == 0}.
      *
-     * @return 映射值的最大比特长度。
+     * @return the value bit length.
      */
     int getL();
+
+    /**
+     * Gets the value byte length.
+     *
+     * @return the value byte length.
+     */
+    int getByteL();
 
     /**
      * 返回OKVS的行数，满足{@code m / Byte.SIZE == 0}。

@@ -1,93 +1,91 @@
 package edu.alibaba.mpc4j.s2pc.pir.index.onionpir;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * OnionPIR协议本地算法库工具类。
+ * OnionPIR native utils.
  *
  * @author Liqiang Peng
  * @date 2022/11/14
  */
 class Mcr21IndexPirNativeUtils {
-    /**
-     * 单例模式
-     */
+
     private Mcr21IndexPirNativeUtils() {
         // empty
     }
 
     /**
-     * 生成SEAL上下文参数。
+     * generate encryption params.
      *
-     * @param modulusDegree          多项式阶。
-     * @param plainModulusBitLength  明文模数比特长度。
-     * @return SEAL上下文参数。
+     * @param modulusDegree    poly modulus degree.
+     * @param plainModulusSize plain modulus size.
+     * @return encryption params.
      */
-    static native byte[] generateSealContext(int modulusDegree, int plainModulusBitLength);
+    static native byte[] generateEncryptionParams(int modulusDegree, int plainModulusSize);
 
     /**
-     * 生成全同态加密密钥对。
+     * generate key pair.
      *
-     * @param sealContext SEAL上下文参数。
-     * @return 公私钥对。
+     * @param encryptionParams SEAL encryption params.
+     * @return key pair.
      */
-    static native ArrayList<byte[]> keyGen(byte[] sealContext);
+    static native List<byte[]> keyGen(byte[] encryptionParams);
 
     /**
-     * 数据库预处理。
+     * preprocess database.
      *
-     * @param sealContext SEAL上下文参数。
-     * @param plaintext   明文。
-     * @return 拆分后的明文多项式。
+     * @param encryptionParams SEAL encryption params.
+     * @param plaintextList    plaintexts.
+     * @return decomposed plaintexts.
      */
-    static native ArrayList<long[]> preprocessDatabase(byte[] sealContext, List<long[]> plaintext);
+    static native List<long[]> preprocessDatabase(byte[] encryptionParams, List<long[]> plaintextList);
 
     /**
-     * 加密私钥。
+     * encrypt secret key.
      *
-     * @param sealContext SEAL上下文参数
-     * @param publicKey   公钥。
-     * @param secretKey   私钥。
-     * @return 私钥密文。
+     * @param encryptionParams SEAL encryption params.
+     * @param publicKey        public key.
+     * @param secretKey        secret key.
+     * @return encrypted secret key.
      */
-    static native ArrayList<byte[]> encryptSecretKey(byte[] sealContext, byte[] publicKey, byte[] secretKey);
+    static native List<byte[]> encryptSecretKey(byte[] encryptionParams, byte[] publicKey, byte[] secretKey);
 
     /**
-     * 生成问询密文。
+     * generate query.
      *
-     * @param sealContext SEAL上下文参数。
-     * @param publicKey   公钥。
-     * @param secretKey   私钥。
-     * @param indices     索引值。
-     * @param nvec        各维度向量长度。
-     * @return 问询密文。
+     * @param encryptionParams SEAL encryption params.
+     * @param publicKey        public key.
+     * @param secretKey        secret key.
+     * @param indices          retrieval indices.
+     * @param nvec             dimension size.
+     * @return query ciphertexts.
      */
-    static native ArrayList<byte[]> generateQuery(byte[] sealContext, byte[] publicKey, byte[] secretKey, int[] indices,
-                                                  int[] nvec);
+    static native List<byte[]> generateQuery(byte[] encryptionParams, byte[] publicKey, byte[] secretKey, int[] indices,
+                                             int[] nvec);
 
     /**
-     * 生成回复密文。
+     * generate response.
      *
-     * @param sealContext  SEAL上下文参数。
-     * @param publicKey    公钥。
-     * @param galoisKey    Galois密钥。
-     * @param encSecretKey 私钥密文。
-     * @param queryList    检索值密文。
-     * @param dbPlaintexts 数据库明文。
-     * @param nvec         各维度向量长度。
+     * @param encryptionParams SEAL encryption params.
+     * @param publicKey        public key.
+     * @param galoisKey        Galois keys.
+     * @param encSecretKey     encrypted secret key.
+     * @param queryList        query ciphertexts.
+     * @param dbPlaintexts     database plaintexts.
+     * @param nvec             dimension size.
      * @return 检索结果密文。
      */
-    static native byte[] generateReply(byte[] sealContext, byte[] publicKey, byte[] galoisKey, List<byte[]> encSecretKey,
-                                       List<byte[]> queryList, List<long[]> dbPlaintexts, int[] nvec);
+    static native byte[] generateReply(byte[] encryptionParams, byte[] publicKey, byte[] galoisKey,
+                                       List<byte[]> encSecretKey, List<byte[]> queryList, List<long[]> dbPlaintexts,
+                                       int[] nvec);
 
     /**
-     * 解密回复密文。
+     * decode response.
      *
-     * @param sealContext SEAL上下文参数。
-     * @param secretKey   私钥。
-     * @param response    回复密文。
-     * @return 查询结果。
+     * @param encryptionParams SEAL encryption params.
+     * @param secretKey        secret key.
+     * @param response         response ciphertext.
+     * @return BFV plaintext.
      */
-    static native long[] decryptReply(byte[] sealContext, byte[] secretKey, byte[] response);
+    static native long[] decryptReply(byte[] encryptionParams, byte[] secretKey, byte[] response);
 }

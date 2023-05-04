@@ -8,14 +8,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 
 /**
- * 直接NC-COT协议配置项。
+ * direct no-choice COT config.
  *
  * @author Weiran Liu
  * @date 2022/7/14
  */
 public class DirectNcCotConfig implements NcCotConfig {
     /**
-     * 核COT协议配置项
+     * core COT config
      */
     private final CoreCotConfig coreCotConfig;
 
@@ -33,8 +33,8 @@ public class DirectNcCotConfig implements NcCotConfig {
     }
 
     @Override
-    public int maxAllowNum() {
-        // 底层协议理论上可以支持任意长度，但我们仍然做出一些限制，防止内存不足
+    public int maxNum() {
+        // In theory, core COT can support arbitrary num. Here we limit the max num in case of memory exception.
         return 1 << 24;
     }
 
@@ -59,7 +59,7 @@ public class DirectNcCotConfig implements NcCotConfig {
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<DirectNcCotConfig> {
         /**
-         * 核COT协议配置项
+         * core COT config
          */
         private CoreCotConfig coreCotConfig;
 

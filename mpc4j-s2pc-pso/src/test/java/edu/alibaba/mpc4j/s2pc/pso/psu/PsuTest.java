@@ -8,8 +8,8 @@ import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotConfig;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
-import edu.alibaba.mpc4j.s2pc.pso.osn.OsnConfig;
-import edu.alibaba.mpc4j.s2pc.pso.osn.gmr21.Gmr21OsnConfig;
+import edu.alibaba.mpc4j.s2pc.opf.osn.OsnConfig;
+import edu.alibaba.mpc4j.s2pc.opf.osn.gmr21.Gmr21OsnConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfsPsuConfig;
@@ -19,7 +19,9 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22PkePsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22SkePsuConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -138,96 +140,82 @@ public class PsuTest {
 
     public PsuTest(String name, PsuConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         serverRpc = rpcManager.getRpc(0);
         clientRpc = rpcManager.getRpc(1);
         this.config = config;
     }
 
-    @Test
-    public void testPtoType() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        Assert.assertEquals(config.getPtoType(), server.getPtoType());
-        Assert.assertEquals(config.getPtoType(), client.getPtoType());
+    @Before
+    public void connect() {
+        serverRpc.connect();
+        clientRpc.connect();
+    }
+
+    @After
+    public void disconnect() {
+        serverRpc.disconnect();
+        clientRpc.disconnect();
     }
 
     @Test
     public void test2() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPto(server, client, 2, 2, DEFAULT_ELEMENT_BYTE_LENGTH);
+        testPto(2, 2, DEFAULT_ELEMENT_BYTE_LENGTH, false);
     }
 
     @Test
     public void test10() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPto(server, client, 10, 10, DEFAULT_ELEMENT_BYTE_LENGTH);
+        testPto(10, 10, DEFAULT_ELEMENT_BYTE_LENGTH, false);
     }
 
     @Test
     public void testLargeServerSize() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPto(server, client, DEFAULT_SIZE, 10, DEFAULT_ELEMENT_BYTE_LENGTH);
+        testPto(DEFAULT_SIZE, 10, DEFAULT_ELEMENT_BYTE_LENGTH, false);
     }
 
     @Test
     public void testLargeClientSize() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPto(server, client, 10, DEFAULT_SIZE, DEFAULT_ELEMENT_BYTE_LENGTH);
+        testPto(10, DEFAULT_SIZE, DEFAULT_ELEMENT_BYTE_LENGTH, false);
     }
 
     @Test
     public void testSmallElementByteLength() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPto(server, client, DEFAULT_SIZE, DEFAULT_SIZE, SMALL_ELEMENT_BYTE_LENGTH);
+        testPto(DEFAULT_SIZE, DEFAULT_SIZE, SMALL_ELEMENT_BYTE_LENGTH, false);
     }
 
     @Test
     public void testLargeElementByteLength() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPto(server, client, DEFAULT_SIZE, DEFAULT_SIZE, LARGE_ELEMENT_BYTE_LENGTH);
+        testPto(DEFAULT_SIZE, DEFAULT_SIZE, LARGE_ELEMENT_BYTE_LENGTH, false);
     }
 
     @Test
     public void testDefault() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPto(server, client, DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_ELEMENT_BYTE_LENGTH);
+        testPto(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_ELEMENT_BYTE_LENGTH, false);
     }
 
     @Test
     public void testParallelDefault() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        server.setParallel(true);
-        client.setParallel(true);
-        testPto(server, client, DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_ELEMENT_BYTE_LENGTH);
+        testPto(DEFAULT_SIZE, DEFAULT_SIZE, DEFAULT_ELEMENT_BYTE_LENGTH, true);
     }
 
     @Test
     public void testLarge() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPto(server, client, LARGE_SIZE, LARGE_SIZE, LARGE_ELEMENT_BYTE_LENGTH);
+        testPto(LARGE_SIZE, LARGE_SIZE, LARGE_ELEMENT_BYTE_LENGTH, false);
     }
 
     @Test
     public void testParallelLarge() {
-        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        server.setParallel(true);
-        client.setParallel(true);
-        testPto(server, client, LARGE_SIZE, LARGE_SIZE, LARGE_ELEMENT_BYTE_LENGTH);
+        testPto(LARGE_SIZE, LARGE_SIZE, LARGE_ELEMENT_BYTE_LENGTH, true);
     }
 
-    private void testPto(PsuServer server, PsuClient client, int serverSize, int clientSize, int elementByteLength) {
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+    private void testPto(int serverSize, int clientSize, int elementByteLength, boolean parallel) {
+        PsuServer server = PsuFactory.createServer(serverRpc, clientRpc.ownParty(), config);
+        PsuClient client = PsuFactory.createClient(clientRpc, serverRpc.ownParty(), config);
+        server.setParallel(parallel);
+        client.setParallel(parallel);
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         server.setTaskId(randomTaskId);
         client.setTaskId(randomTaskId);
         try {

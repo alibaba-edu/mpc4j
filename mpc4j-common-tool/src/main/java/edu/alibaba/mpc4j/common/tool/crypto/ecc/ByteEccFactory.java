@@ -5,6 +5,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.ecc.bc.*;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.cafe.Ed25519CafeByteFullEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.bc.X25519BcByteMulElligatorEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.cafe.RistrettoCafeByteFullEcc;
+import edu.alibaba.mpc4j.common.tool.crypto.ecc.fourq.FourqByteFullEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.sodium.Ed25519SodiumByteFullEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.sodium.X25519SodiumByteMulEcc;
 
@@ -54,6 +55,11 @@ public class ByteEccFactory {
          * Cafe实现的Ristretto
          */
         RISTRETTO_CAFE,
+
+        /**
+         * FourQlib 实现的 FourQ
+         */
+        FOUR_Q,
     }
 
     /**
@@ -72,6 +78,8 @@ public class ByteEccFactory {
                 return new Ed25519CafeByteFullEcc();
             case RISTRETTO_CAFE:
                 return new RistrettoCafeByteFullEcc();
+            case FOUR_Q:
+                return new FourqByteFullEcc();
             default:
                 throw new IllegalArgumentException(
                     "Invalid " + ByteEccType.class.getSimpleName() + ": " + byteEccType.name()
@@ -89,7 +97,7 @@ public class ByteEccFactory {
         switch (envType) {
             case STANDARD:
             case INLAND:
-                return createFullInstance(ByteEccType.ED25519_SODIUM);
+                return createFullInstance(ByteEccType.FOUR_Q);
             case STANDARD_JDK:
             case INLAND_JDK:
                 return createFullInstance(ByteEccType.ED25519_BC);
@@ -118,6 +126,8 @@ public class ByteEccFactory {
                 return new Ed25519CafeByteFullEcc();
             case RISTRETTO_CAFE:
                 return new RistrettoCafeByteFullEcc();
+            case FOUR_Q:
+                return new FourqByteFullEcc();
             default:
                 throw new IllegalArgumentException(
                     "Invalid " + ByteEccType.class.getSimpleName() + ": " + byteEccType.name()

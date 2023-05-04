@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 
 /**
  * 核布尔三元组生成协议信息。
@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
  * @author Weiran Liu
  * @date 2022/7/13
  */
-public interface Z2CoreMtgConfig extends SecurePtoConfig {
+public interface Z2CoreMtgConfig extends MultiPartyPtoConfig {
     /**
      * 返回协议类型。
      *
@@ -21,5 +21,5 @@ public interface Z2CoreMtgConfig extends SecurePtoConfig {
      *
      * @return 最大支持数量。
      */
-    int maxAllowNum();
+    int maxNum();
 }

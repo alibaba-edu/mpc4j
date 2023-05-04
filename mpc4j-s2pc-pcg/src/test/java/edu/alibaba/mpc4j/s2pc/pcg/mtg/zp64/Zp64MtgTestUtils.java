@@ -1,8 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64;
 
-import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
 import org.junit.Assert;
 
 import java.util.stream.IntStream;
@@ -25,8 +23,8 @@ public class Zp64MtgTestUtils {
         Assert.assertTrue(num > 0);
         Assert.assertEquals(num, senderOutput.getNum());
         Assert.assertEquals(num, receiverOutput.getNum());
-        Assert.assertEquals(senderOutput.getP(), receiverOutput.getP());
-        Zp64 zp64 = Zp64Factory.createInstance(EnvType.STANDARD, senderOutput.getP());
+        Assert.assertEquals(senderOutput.getZp64(), receiverOutput.getZp64());
+        Zp64 zp64 = senderOutput.getZp64();
         // 分别计算a、b、c
         IntStream.range(0, num).forEach(index -> {
             long a0 = senderOutput.getA(index);

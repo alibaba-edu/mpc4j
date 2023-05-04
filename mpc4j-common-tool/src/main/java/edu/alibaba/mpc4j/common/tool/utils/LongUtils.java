@@ -15,6 +15,11 @@ import java.util.stream.IntStream;
  */
 public class LongUtils {
     /**
+     * max l
+     */
+    public static final int MAX_L = Long.SIZE - 2;
+
+    /**
      * private constructor
      */
     private LongUtils() {

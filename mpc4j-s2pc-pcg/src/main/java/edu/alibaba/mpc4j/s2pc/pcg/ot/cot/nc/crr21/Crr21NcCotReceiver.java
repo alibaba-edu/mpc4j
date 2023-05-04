@@ -1,12 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.crr21;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCoder;
 import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreator;
@@ -66,34 +65,13 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         mspCotConfig = config.getMspCotConfig();
         codeType = config.getCodeType();
         mspCotReceiver = MspCotFactory.createReceiver(receiverRpc, senderParty, config.getMspCotConfig());
-        mspCotReceiver.addLogLevel();
-        taskIdPrf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        // COT协议和MSPCOT协议需要使用不同的taskID
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        mspCotReceiver.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        mspCotReceiver.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        mspCotReceiver.addLogLevel();
+        addSubPtos(mspCotReceiver);
     }
 
     @Override
     public void init(int num) throws MpcAbortException {
         setInitInput(num);
-        info("{}{} Recv. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
         // 重新初始化时需要清空之前存留的输出
         rCotReceiverOutput = null;
 
@@ -107,7 +85,7 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         stopWatch.stop();
         long encoderInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), encoderInitTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 2, encoderInitTime);
 
         // 初始化MSP-COT协议
         stopWatch.start();
@@ -118,16 +96,15 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 2, 2, initTime);
 
-        initialized = true;
-        info("{}{} Recv. Init end", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public CotReceiverOutput receive() throws MpcAbortException {
         setPtoInput();
-        info("{}{} Recv. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         // 执行MSP-COT
@@ -137,7 +114,7 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         stopWatch.stop();
         long rTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Iter. Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), rTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, rTime);
 
         stopWatch.start();
         // b = b * G^T。
@@ -156,9 +133,9 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         stopWatch.stop();
         long extendTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Iter. Step 2.{}/2.{} ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), extendTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, extendTime);
 
-        info("{}{} Recv. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return receiverOutput;
     }
 }

@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * Bea95-预计算COT协议信息。协议来自下述论文的图3：
+ * Bea95 pre-compute COT protocol description. The protocol comes from Figure 3 of the following paper:
  * <p>
  * Beaver, Donald. Precomputing oblivious transfer. CRYPTO 1995, pp. 97-109. Springer, Berlin, Heidelberg, 1995.
  * </p>

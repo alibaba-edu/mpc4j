@@ -76,7 +76,7 @@ public class NtlGf2ePoly extends AbstractGf2ePoly {
             // 返回随机多项式
             byte[][] coefficients = new byte[num + 1][byteL];
             for (int index = 0; index < num; index++) {
-                coefficients[index] = BytesUtils.randomByteArray(l, byteL, secureRandom);
+                coefficients[index] = BytesUtils.randomByteArray(byteL, l, secureRandom);
             }
             // 将最高位设置为1
             coefficients[num][byteL - 1] = (byte) 0x01;

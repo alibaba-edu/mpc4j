@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.base;
 import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtSenderOutput;
 
 /**
@@ -37,14 +36,12 @@ public class BaseOtSenderOutput implements OtSenderOutput {
                 assert r0.length == CommonConstants.BLOCK_BYTE_LENGTH
                     : "r0 byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + r0.length;
             })
-            .map(BytesUtils::clone)
             .toArray(byte[][]::new);
         this.r1Array = Arrays.stream(r1Array)
             .peek(r1 -> {
                 assert r1.length == CommonConstants.BLOCK_BYTE_LENGTH
                     : "r1 byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + r1.length;
             })
-            .map(BytesUtils::clone)
             .toArray(byte[][]::new);
     }
 

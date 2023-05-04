@@ -3,8 +3,8 @@ package edu.alibaba.mpc4j.s2pc.pjc.pmid;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.pto.AbstractSecureTwoPartyPto;
-import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidFactory.PmidType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -17,11 +17,7 @@ import java.util.stream.Collectors;
  * @author Weiran Liu
  * @date 2022/5/10
  */
-public abstract class AbstractPmidClient<T> extends AbstractSecureTwoPartyPto implements PmidClient<T> {
-    /**
-     * 配置项
-     */
-    private final PmidConfig config;
+public abstract class AbstractPmidClient<T> extends AbstractTwoPartyPto implements PmidClient<T> {
     /**
      * 客户端集合最大数量
      */
@@ -65,25 +61,18 @@ public abstract class AbstractPmidClient<T> extends AbstractSecureTwoPartyPto im
 
     protected AbstractPmidClient(PtoDesc ptoDesc, Rpc ownRpc, Party otherParty, PmidConfig config) {
         super(ptoDesc, ownRpc, otherParty, config);
-        this.config = config;
-    }
-
-    @Override
-    public PmidType getPtoType() {
-        return config.getPtoType();
     }
 
     protected void setInitInput(int maxClientSetSize, int maxClientU, int maxServerSetSize, int maxServerU) {
-        assert maxClientSetSize > 1 : "max(ClientSetSize) must be greater than 1";
+        MathPreconditions.checkGreater("maxClientSetSize", maxClientSetSize, 1);
         this.maxClientSetSize = maxClientSetSize;
-        assert maxClientU >= 1 : "max(ClientU) must be greater than or equal to 1";
+        MathPreconditions.checkPositive("maxClientU", maxClientU);
         this.maxClientU = maxClientU;
-        assert maxServerSetSize > 1 : "max(ServerSetSize) must be greater than 1";
+        MathPreconditions.checkGreater("maxServerSetSize", maxServerSetSize, 1);
         this.maxServerSetSize = maxServerSetSize;
-        assert maxServerU >= 1 : "max(ServerU) must be greater than or equal to 1";
+        MathPreconditions.checkPositive("maxServerU", maxServerU);
         this.maxServerU = maxServerU;
-
-        initialized = false;
+        initState();
     }
 
     protected void setPtoInput(Set<T> clientElementSet, int serverSetSize) {
@@ -111,27 +100,23 @@ public abstract class AbstractPmidClient<T> extends AbstractSecureTwoPartyPto im
     }
 
     protected void setPtoInput(Map<T, Integer> clientElementMap, int serverSetSize, int serverU) {
-        if (!initialized) {
-            throw new IllegalStateException("Need init...");
-        }
+        checkInitialized();
         Set<T> clientElementSet = clientElementMap.keySet();
-        assert clientElementSet.size() > 1 && clientElementSet.size() <= maxClientSetSize :
-            "ClientSetSize must be in range (1, " + maxClientSetSize + "]";
+        MathPreconditions.checkGreater("clientSetSize", clientElementSet.size(), 1);
+        MathPreconditions.checkLessOrEqual("clientSetSize", clientElementSet.size(), maxClientSetSize);
         clientElementArrayList = new ArrayList<>(clientElementSet);
         clientSetSize = clientElementSet.size();
         this.clientElementMap = clientElementMap;
         clientU = clientElementSet.stream()
             .mapToInt(clientElementMap::get)
-            .peek(uy -> {
-                assert uy >= 1 : "uy must be greater than or equal to 1";
-            })
+            .peek(uy -> MathPreconditions.checkPositive("uy", uy))
             .max()
             .orElse(0);
-        assert clientU >= 1 && clientU <= maxClientU : "ClientK must be in range [1, " + maxClientU + "]: " + clientU;
-        assert serverSetSize > 1 && serverSetSize <= maxServerSetSize :
-            "ServerSetSize must be in range (1, " + maxServerSetSize + "]";
+        MathPreconditions.checkPositiveInRangeClosed("clientU", clientU, maxClientU);
+        MathPreconditions.checkGreater("serverSetSize", serverSetSize, 1);
+        MathPreconditions.checkLessOrEqual("serverSetSize", serverSetSize, maxServerSetSize);
         this.serverSetSize = serverSetSize;
-        assert serverU >= 1 && serverU <= maxServerU : "ServerK must be in range [1, " + maxServerU + "]: " + serverU;
+        MathPreconditions.checkPositiveInRangeClosed("serverU", serverU, maxServerU);
         this.serverU = serverU;
         extraInfo++;
     }

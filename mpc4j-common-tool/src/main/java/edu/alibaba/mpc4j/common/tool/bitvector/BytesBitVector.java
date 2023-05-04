@@ -297,8 +297,8 @@ public class BytesBitVector implements BitVector {
     @Override
     public int hashCode() {
         return new HashCodeBuilder()
-            .append(bytes)
-            .append(bitNum)
+            .append(getBytes())
+            .append(bitNum())
             .hashCode();
     }
 
@@ -307,11 +307,11 @@ public class BytesBitVector implements BitVector {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof BytesBitVector) {
-            BytesBitVector that = (BytesBitVector) obj;
+        if (obj instanceof BitVector) {
+            BitVector that = (BitVector) obj;
             return new EqualsBuilder()
-                .append(this.bytes, that.bytes)
-                .append(this.bitNum, that.bitNum)
+                .append(this.getBytes(), that.getBytes())
+                .append(this.bitNum(), that.bitNum())
                 .isEquals();
         }
         return false;

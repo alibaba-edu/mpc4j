@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu.krtw19;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
@@ -16,10 +13,10 @@ import edu.alibaba.mpc4j.common.tool.okve.okvs.Okvs;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pso.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractPsuClient;
 import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19OriPsuPtoDesc.PtoStep;
 
@@ -100,44 +97,19 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
     public Krtw19OriPsuClient(Rpc clientRpc, Party serverParty, Krtw19OriPsuConfig config) {
         super(Krtw19OriPsuPtoDesc.getInstance(), clientRpc, serverParty, config);
         rpmtOprfSender = OprfFactory.createOprfSender(clientRpc, serverParty, config.getRpmtOprfConfig());
-        rpmtOprfSender.addLogLevel();
+        addSubPtos(rpmtOprfSender);
         peqtOprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getPeqtOprfConfig());
-        peqtOprfReceiver.addLogLevel();
+        addSubPtos(peqtOprfReceiver);
         coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
-        coreCotReceiver.addLogLevel();
+        addSubPtos(coreCotReceiver);
         okvsType = config.getOkvsType();
         pipeSize = config.getPipeSize();
     }
 
     @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        rpmtOprfSender.setTaskId(taskIdPrf.getLong(0, taskIdBytes, Long.MAX_VALUE));
-        peqtOprfReceiver.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-        coreCotReceiver.setTaskId(taskIdPrf.getLong(2, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        rpmtOprfSender.setParallel(parallel);
-        peqtOprfReceiver.setParallel(parallel);
-        coreCotReceiver.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        rpmtOprfSender.addLogLevel();
-        peqtOprfReceiver.addLogLevel();
-        coreCotReceiver.addLogLevel();
-    }
-
-    @Override
     public void init(int maxClientElementSize, int maxServerElementSize) throws MpcAbortException {
         setInitInput(maxClientElementSize, maxServerElementSize);
-        info("{}{} Client Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // 初始化各个子协议
@@ -147,11 +119,11 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 2, initTime);
 
         stopWatch.start();
         DataPacketHeader keysHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> keysPayload = rpc.receive(keysHeader).getPayload();
@@ -165,39 +137,31 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), keyTime);
+        logStepInfo(PtoState.INIT_STEP, 2, 2, keyTime);
 
-        initialized = true;
-        info("{}{} Client Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public Set<ByteBuffer> psu(Set<ByteBuffer> clientElementSet, int serverElementSize, int elementByteLength)
         throws MpcAbortException {
         setPtoInput(clientElementSet, serverElementSize, elementByteLength);
-        info("{}{} Client begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         initParams();
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, initTime);
 
         Set<ByteBuffer> union = new HashSet<>(serverElementSize + clientElementSize);
         for (int binColumnIndex = 0; binColumnIndex < maxBinSize; binColumnIndex++) {
-            info("{}{} Client Step 2/2 ({}/{}) begin", ptoStepLogPrefix, getPtoDesc().getPtoName(),
-                (binColumnIndex + 1), maxBinSize
-            );
-            union.addAll(handleBinColumn());
-            info("{}{} Client Step 2/2 ({}/{}) end", ptoStepLogPrefix, getPtoDesc().getPtoName(),
-                (binColumnIndex + 1), maxBinSize
-            );
+            union.addAll(handleBinColumn(binColumnIndex));
         }
         union.addAll(clientElementSet);
         union.remove(botElementByteBuffer);
-
-        info("{}{} Client end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return union;
     }
 
@@ -224,14 +188,14 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
         encPrg = PrgFactory.createInstance(envType, elementByteLength);
     }
 
-    private Set<ByteBuffer> handleBinColumn() throws MpcAbortException {
+    private Set<ByteBuffer> handleBinColumn(int binColumnIndex) throws MpcAbortException {
         stopWatch.start();
         // 调用OPRF得到密钥
         OprfSenderOutput rpmtOprfSenderOutput = rpmtOprfSender.oprf(binNum);
         stopWatch.stop();
         long qTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 2.1/2.4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), qTime);
+        logSubStepInfo(PtoState.PTO_STEP, 2, 1 + (binColumnIndex * 4), maxBinSize * 4, qTime);
 
         stopWatch.start();
         // 初始化s
@@ -253,7 +217,7 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
                 .collect(Collectors.toList());
             // 发送OKVS
             DataPacketHeader okvsHeader = new DataPacketHeader(
-                taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OKVS.ordinal(), extraInfo,
+                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OKVS.ordinal(), extraInfo,
                 ownParty().getPartyId(), otherParty().getPartyId()
             );
             rpc.send(DataPacket.fromByteArrayList(okvsHeader, okvsPayload));
@@ -268,7 +232,7 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
                 .collect(Collectors.toList());
             // 发送OKVS
             DataPacketHeader okvsHeader = new DataPacketHeader(
-                taskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OKVS.ordinal(), extraInfo,
+                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OKVS.ordinal(), extraInfo,
                 ownParty().getPartyId(), otherParty().getPartyId()
             );
             rpc.send(DataPacket.fromByteArrayList(okvsHeader, okvsPayload));
@@ -277,7 +241,7 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long okvsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 2.2/2.4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), okvsTime);
+        logSubStepInfo(PtoState.PTO_STEP, 2, 2 + (binColumnIndex * 4), maxBinSize * 4, okvsTime);
 
         stopWatch.start();
         // 以s为输入调用OPRF
@@ -291,7 +255,7 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
             .toArray(ByteBuffer[]::new);
         // 接收sStarsOprf
         DataPacketHeader sStarOprfHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_S_STAR_OPRFS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_S_STAR_OPRFS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> sStarOprfPayload = rpc.receive(sStarOprfHeader).getPayload();
@@ -307,12 +271,12 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long peqtTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 2.3/2.4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), peqtTime);
+        logSubStepInfo(PtoState.PTO_STEP, 2, 3 + (binColumnIndex * 4), maxBinSize * 4, peqtTime);
 
         stopWatch.start();
         CotReceiverOutput cotReceiverOutput = coreCotReceiver.receive(choiceArray);
         DataPacketHeader encHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ENC_ELEMENTS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ENC_ELEMENTS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> encPayload = rpc.receive(encHeader).getPayload();
@@ -336,7 +300,7 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long unionTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 2.4/2.4 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), unionTime);
+        logSubStepInfo(PtoState.PTO_STEP, 2, 4 + (binColumnIndex * 4), maxBinSize * 4, unionTime);
 
         return binColumnUnion;
     }
@@ -352,8 +316,6 @@ public class Krtw19OriPsuClient extends AbstractPsuClient {
                 .map(HashBinEntry::getItem)
                 .distinct()
                 .map(ByteBuffer::array)
-                // 哈希到有限域中
-                .map(x -> finiteFieldHash.digestToBytes(x))
                 .map(ByteBuffer::wrap)
                 .toArray(ByteBuffer[]::new);
             // s XOR q_i

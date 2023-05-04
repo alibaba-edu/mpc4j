@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.bnot;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 
 import java.util.Arrays;
 
@@ -31,12 +30,11 @@ public class BaseNotSenderOutput {
         assert rMatrix.length > 0 : "num must be greater than 0: " + rMatrix.length;
         this.num = rMatrix.length;
         this.rMatrix = Arrays.stream(rMatrix)
-            .map(rnArray -> {
+            .peek(rnArray -> {
                 assert rnArray.length == maxChoice : "# of Rs must be equal to " + maxChoice + ": " + rnArray.length;
                 for (int i = 0; i < maxChoice; i++) {
                     assert rnArray[i].length == CommonConstants.BLOCK_BYTE_LENGTH;
                 }
-                return BytesUtils.clone(rnArray);
             })
             .toArray(byte[][][]::new);
     }

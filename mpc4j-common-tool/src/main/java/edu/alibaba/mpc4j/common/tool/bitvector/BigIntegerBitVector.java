@@ -272,8 +272,8 @@ public class BigIntegerBitVector implements BitVector {
     @Override
     public int hashCode() {
         return new HashCodeBuilder()
-            .append(bigInteger)
-            .append(bitNum)
+            .append(getBytes())
+            .append(bitNum())
             .hashCode();
     }
 
@@ -282,11 +282,11 @@ public class BigIntegerBitVector implements BitVector {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof BigIntegerBitVector) {
-            BigIntegerBitVector that = (BigIntegerBitVector) obj;
+        if (obj instanceof BitVector) {
+            BitVector that = (BitVector) obj;
             return new EqualsBuilder()
-                .append(this.bigInteger, that.bigInteger)
-                .append(this.bitNum, that.bitNum)
+                .append(this.getBytes(), that.getBytes())
+                .append(this.bitNum(), that.bitNum())
                 .isEquals();
         }
         return false;

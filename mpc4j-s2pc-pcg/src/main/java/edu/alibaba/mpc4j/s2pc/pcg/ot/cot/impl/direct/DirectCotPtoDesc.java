@@ -4,28 +4,27 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * 直接COT（Direct COT）协议信息，直接调用核COT协议实现COT的功能。
+ * direct COT protocol description. This protocol directly invoke core COT.
  *
  * @author Weiran Liu
  * @date 2022/7/13
  */
 class DirectCotPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 9072724171080530799L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "DIRECT_COT";
-
     /**
-     * 单例模式
+     * singleton mode
      */
     private static final DirectCotPtoDesc INSTANCE = new DirectCotPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor
      */
     private DirectCotPtoDesc() {
         // empty

@@ -4,49 +4,52 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
 /**
- * NC-COT协议发送方线程。
+ * no-choice COT sender thread.
  *
  * @author Weiran Liu
  * @date 2021/01/26
  */
 class NcCotSenderThread extends Thread {
     /**
-     * 发送方
+     * sender
      */
     private final NcCotSender sender;
     /**
-     * 关联值Δ
+     * Δ
      */
     private final byte[] delta;
     /**
-     * 数量
+     * num
      */
     private final int num;
     /**
-     * 输出
+     * round
      */
-    private final CotSenderOutput[] senderOutputs;
+    private final int round;
+    /**
+     * the sender output
+     */
+    private final CotSenderOutput senderOutput;
 
     NcCotSenderThread(NcCotSender sender, byte[] delta, int num, int round) {
         this.sender = sender;
         this.delta = delta;
         this.num = num;
-        senderOutputs = new CotSenderOutput[round];
+        this.round = round;
+        senderOutput = CotSenderOutput.createEmpty(delta);
     }
 
-    CotSenderOutput[] getSenderOutputs() {
-        return senderOutputs;
+    CotSenderOutput getSenderOutput() {
+        return senderOutput;
     }
 
     @Override
     public void run() {
         try {
-            sender.getRpc().connect();
             sender.init(delta, num);
-            for (int round = 0; round < senderOutputs.length; round++) {
-                senderOutputs[round] = sender.send();
+            for (int index = 0; index < round; index++) {
+                senderOutput.merge(sender.send());
             }
-            sender.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

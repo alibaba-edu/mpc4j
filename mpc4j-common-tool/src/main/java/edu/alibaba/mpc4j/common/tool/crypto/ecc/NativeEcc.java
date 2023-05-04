@@ -36,16 +36,7 @@ public interface NativeEcc {
      * @param rString       幂指数。
      * @return 用String表示的MCL固定点乘法结果。
      */
-    String singleFixedPointMultiply(ByteBuffer windowHandler, String rString);
-
-    /**
-     * 固定点乘法。
-     *
-     * @param windowHandler 固定点乘法指针。
-     * @param rStrings      幂指数数组。
-     * @return 用String[]表示的MCL固定点乘法结果。
-     */
-    String[] fixedPointMultiply(ByteBuffer windowHandler, String[] rStrings);
+    String precomputeMultiply(ByteBuffer windowHandler, String rString);
 
     /**
      * 椭圆曲线点乘。
@@ -54,16 +45,7 @@ public interface NativeEcc {
      * @param rString     幂指数。
      * @return 用String表示的MCL乘法结果。
      */
-    String singleMultiply(String pointString, String rString);
-
-    /**
-     * 椭圆曲线点乘。
-     *
-     * @param pointString 椭圆曲线点。
-     * @param rStrings    幂指数数组。
-     * @return 用String[]表示的MCL乘法结果。
-     */
-    String[] multiply(String pointString, String[] rStrings);
+    String multiply(String pointString, String rString);
 
     /**
      * 重置。

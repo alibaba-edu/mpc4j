@@ -32,9 +32,7 @@ public class OpBoostSlaveThread extends Thread {
     @Override
     public void run() {
         try {
-            slave.getRpc().connect();
             slave.fit(slaveDataFrame, slaveConfig);
-            slave.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
             System.exit(-1);

@@ -3,61 +3,131 @@ package edu.alibaba.mpc4j.common.rpc.pto;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
+import edu.alibaba.mpc4j.common.tool.EnvType;
+
+import java.security.SecureRandom;
 
 /**
- * 多参与方协议接口。
+ * Multi-party protocol.
  *
  * @author Weiran Liu
  * @date 2021/12/19
  */
 public interface MultiPartyPto {
-
     /**
-     * 设置任务ID。
+     * Sets the task ID.
      *
-     * @param taskId 任务ID。
+     * @param taskId the task ID.
      */
-    void setTaskId(long taskId);
+    void setTaskId(int taskId);
 
     /**
-     * 返回任务ID>
+     * Gets the task ID.
      *
-     * @return 任务ID。
+     * @return the task ID.
      */
-    long getTaskId();
+    int getTaskId();
 
     /**
-     * 返回通信接口。
+     * Sets the encoded task ID.
      *
-     * @return 通信接口。
+     * @param taskId       the task ID.
+     * @param parentTreeId the parent tree ID.
+     */
+    void setEncodeTaskId(int taskId, int parentTreeId);
+
+    /**
+     * Adds the tree level.
+     *
+     * @param rowLevel     row level.
+     * @param taskId       the task ID.
+     * @param parentTreeId the parent tree ID.
+     */
+    void addTreeLevel(int rowLevel, int taskId, int parentTreeId);
+
+    /**
+     * Gets the encoded task ID.
+     *
+     * @return the encoded task ID.
+     */
+    long getEncodeTaskId();
+
+    /**
+     * Gets the invoked rpc instance.
+     *
+     * @return the invoked rpc instance.
      */
     Rpc getRpc();
 
     /**
-     * 返回自己的参与方信息。
+     * Gets its own party information.
      *
-     * @return 自己的参与方信息。
+     * @return its own party information.
      */
     default Party ownParty() {
         return getRpc().ownParty();
     }
 
     /**
-     * 返回协议描述。
+     * Gets the protocol description.
      *
-     * @return 协议描述。
+     * @return the protocol description.
      */
     PtoDesc getPtoDesc();
 
     /**
-     * 增加日志层次。
-     */
-    void addLogLevel();
-
-    /**
-     * 返回其他参与方信息。
+     * Gets other parties' information.
      *
-     * @return 其他参与方信息。
+     * @return other parties' information.
      */
     Party[] otherParties();
+
+    /**
+     * Sets parallel computing.
+     *
+     * @param parallel parallel computing.
+     */
+    void setParallel(boolean parallel);
+
+    /**
+     * Gets parallel computing.
+     *
+     * @return parallel computing.
+     */
+    boolean getParallel();
+
+    /**
+     * Sets the secure random state.
+     *
+     * @param secureRandom the secure random state.
+     */
+    void setSecureRandom(SecureRandom secureRandom);
+
+    /**
+     * Gets the environment.
+     *
+     * @return the environment.
+     */
+    EnvType getEnvType();
+
+    /**
+     * Gets the protocol name.
+     *
+     * @return the protocol name.
+     */
+    String getPtoName();
+
+    /**
+     * Checks if the protocol (and its sub-protocols) is initialized.
+     *
+     * @throws IllegalStateException if the protocol (or its sub-protocols) is not initialized.
+     */
+    void checkInitialized();
+
+    /**
+     * Destroys the protocol.
+     *
+     * @throws IllegalStateException if the protocol (or its sub-protocols) is not in the correct state.
+     */
+    void destroy();
 }

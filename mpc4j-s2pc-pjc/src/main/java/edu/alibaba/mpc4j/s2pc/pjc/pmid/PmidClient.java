@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pmid;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 
 import java.util.Map;
@@ -13,15 +12,7 @@ import java.util.Set;
  * @author Weiran Liu
  * @date 2022/5/6
  */
-public interface PmidClient<T> extends TwoPartyPto, SecurePto {
-    /**
-     * 返回PMID协议类型。
-     *
-     * @return PMID协议类型。
-     */
-    @Override
-    PmidFactory.PmidType getPtoType();
-
+public interface PmidClient<T> extends TwoPartyPto {
     /**
      * 初始化协议。
      *

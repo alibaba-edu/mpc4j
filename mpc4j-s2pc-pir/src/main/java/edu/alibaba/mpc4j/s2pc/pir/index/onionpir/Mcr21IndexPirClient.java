@@ -1,14 +1,16 @@
 package edu.alibaba.mpc4j.s2pc.pir.index.onionpir;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
+import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
+import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.AbstractIndexPirClient;
-import edu.alibaba.mpc4j.s2pc.pir.index.AbstractIndexPirParams;
+import edu.alibaba.mpc4j.s2pc.pir.index.IndexPirParams;
+import edu.alibaba.mpc4j.s2pc.pir.index.onionpir.Mcr21IndexPirPtoDesc.PtoStep;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * OnionPIR协议客户端。
+ * OnionPIR client.
  *
  * @author Liqiang Peng
  * @date 2022/11/11
@@ -28,80 +30,104 @@ public class Mcr21IndexPirClient extends AbstractIndexPirClient {
     }
 
     /**
-     * OnionPIR方案参数
+     * OnionPIR params
      */
     private Mcr21IndexPirParams params;
     /**
-     * 公钥
+     * element size per BFV plaintext
+     */
+    private int elementSizeOfPlaintext;
+    /**
+     * dimension size
+     */
+    private int[] dimensionSize;
+    /**
+     * partition byte length
+     */
+    private int partitionByteLength;
+    /**
+     * public key
      */
     private byte[] publicKey;
     /**
-     * 私钥
+     * private key
      */
     private byte[] secretKey;
     /**
-     * Galois密钥
+     * partition size
      */
-    private byte[] galoisKeys;
-    /**
-     * 私钥密文
-     */
-    private ArrayList<byte[]> encryptedSecretKey = new ArrayList<>();
+    private int partitionSize;
 
     public Mcr21IndexPirClient(Rpc clientRpc, Party serverParty, Mcr21IndexPirConfig config) {
         super(Mcr21IndexPirPtoDesc.getInstance(), clientRpc, serverParty, config);
     }
 
     @Override
-    public void init(AbstractIndexPirParams indexPirParams, int serverElementSize, int elementByteLength) {
-        setInitInput(serverElementSize, elementByteLength);
+    public void init(IndexPirParams indexPirParams, int serverElementSize, int elementByteLength) {
         assert (indexPirParams instanceof Mcr21IndexPirParams);
         params = (Mcr21IndexPirParams) indexPirParams;
-        info("{}{} Client Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 客户端生成密钥对
-        generateKeyPair();
-        // 客户端加密私钥
-        this.encryptedSecretKey = Mcr21IndexPirNativeUtils.encryptSecretKey(
-            params.getEncryptionParams(), publicKey, secretKey
+        setInitInput(serverElementSize, elementByteLength);
+        List<byte[]> publicKeysPayload = clientSetup();
+        // client sends Galois keys
+        DataPacketHeader clientPublicKeysHeader = new DataPacketHeader(
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), extraInfo,
+            rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
+        rpc.send(DataPacket.fromByteArrayList(clientPublicKeysHeader, publicKeysPayload));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Client Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
+    }
+
+    @Override
+    public void init(int serverElementSize, int elementByteLength) {
+        params = Mcr21IndexPirParams.DEFAULT_PARAMS;
+        logPhaseInfo(PtoState.INIT_BEGIN);
+
+        stopWatch.start();
+        setInitInput(serverElementSize, elementByteLength);
+        List<byte[]> publicKeysPayload = clientSetup();
+        // client sends Galois keys
+        DataPacketHeader clientPublicKeysHeader = new DataPacketHeader(
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), extraInfo,
+            rpc.ownParty().getPartyId(), otherParty().getPartyId()
+        );
+        rpc.send(DataPacket.fromByteArrayList(clientPublicKeysHeader, publicKeysPayload));
+        stopWatch.stop();
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
+
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public byte[] pir(int index) throws MpcAbortException {
         setPtoInput(index);
-        info("{}{} Client begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // 客户端生成并发送问询
+        // client generates query
         List<byte[]> clientQueryPayload = generateQuery();
-        // 添加公钥
-        clientQueryPayload.add(publicKey);
-        // 添加Galois密钥
-        clientQueryPayload.add(galoisKeys);
-        // 添加私钥密文
-        clientQueryPayload.addAll(encryptedSecretKey);
         DataPacketHeader clientQueryHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Mcr21IndexPirPtoDesc.PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(clientQueryHeader, clientQueryPayload));
         stopWatch.stop();
         long genQueryTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), genQueryTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, genQueryTime, "Client generates query");
 
-        // 客户端接收并解密回复
+        // receive response
         DataPacketHeader serverResponseHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), Mcr21IndexPirPtoDesc.PtoStep.SERVER_SEND_RESPONSE.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RESPONSE.ordinal(), extraInfo,
             otherParty().getPartyId(), rpc.ownParty().getPartyId()
         );
         List<byte[]> serverResponsePayload = rpc.receive(serverResponseHeader).getPayload();
@@ -110,82 +136,85 @@ public class Mcr21IndexPirClient extends AbstractIndexPirClient {
         stopWatch.stop();
         long responseTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Client Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), responseTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, responseTime, "Server handles reply");
 
-        info("{}{} Client end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return result;
     }
 
     /**
-     * 返回查询密文。
+     * client setup.
      *
-     * @return 查询密文。
+     * @return public keys.
      */
-    public ArrayList<byte[]> generateQuery() {
-        int binNum = params.getBinNum();
-        // 前n-1个分块
-        int[] nvec = params.getDimensionsLength()[0];
-        int indexOfPlaintext = index / params.getElementSizeOfPlaintext()[0];
-        // 计算每个维度的坐标
-        int[] indices = computeIndices(indexOfPlaintext, nvec);
-        IntStream.range(0, indices.length)
-            .forEach(i -> info("Client: index {} / {} = {} / {}", i + 1, indices.length, indices[i], nvec[i]));
-        ArrayList<byte[]> result = new ArrayList<>(
-            Mcr21IndexPirNativeUtils.generateQuery(params.getEncryptionParams(), publicKey, secretKey, indices, nvec)
+    public List<byte[]> clientSetup() {
+        int maxPartitionByteLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength() / Byte.SIZE;
+        partitionByteLength = Math.min(maxPartitionByteLength, elementByteLength);
+        partitionSize = CommonUtils.getUnitNum(elementByteLength, partitionByteLength);
+        elementSizeOfPlaintext = PirUtils.elementSizeOfPlaintext(
+            partitionByteLength, params.getPolyModulusDegree(), params.getPlainModulusBitLength()
         );
-        if ((binNum > 1) && (params.getPlaintextSize()[0] != params.getPlaintextSize()[binNum - 1])) {
-            // 最后一个分块
-            int[] lastNvec = params.getDimensionsLength()[binNum - 1];
-            int lastIndexOfPlaintext = index / params.getElementSizeOfPlaintext()[binNum - 1];
-            // 计算每个维度的坐标
-            int[] lastIndices = computeIndices(lastIndexOfPlaintext, lastNvec);
-            IntStream.range(0, lastIndices.length)
-                .forEach(i -> info("Client: last bin index {} / {} = {} / {}",
-                    i + 1, lastIndices.length, lastIndices[i], lastNvec[i]));
-            // 返回查询密文
-            result.addAll(
-                Mcr21IndexPirNativeUtils.generateQuery(
-                    params.getEncryptionParams(), publicKey, secretKey, lastIndices, lastNvec
-                )
-            );
-        }
-        return result;
+        int plaintextSize = (int) Math.ceil((double) this.num / elementSizeOfPlaintext);
+        dimensionSize = PirUtils.computeDimensionLength(
+            plaintextSize, params.getFirstDimensionSize(), params.SUBSEQUENT_DIMENSION_SIZE
+        );
+        return generateKeyPair();
     }
 
     /**
-     * 解码回复得到检索结果。
+     * client generate query.
      *
-     * @param response 回复。
-     * @return 检索结果。
+     * @return client query.
+     */
+    public List<byte[]> generateQuery() {
+        int indexOfPlaintext = index / elementSizeOfPlaintext;
+        // compute indices for each dimension
+        int[] indices = PirUtils.computeIndices(indexOfPlaintext, dimensionSize);
+        return Mcr21IndexPirNativeUtils.generateQuery(
+            params.getEncryptionParams(), publicKey, secretKey, indices, dimensionSize
+        );
+    }
+
+    /**
+     * client decodes server response.
+     *
+     * @param response server response.
+     * @return retrieval result.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     private byte[] handleServerResponsePayload(List<byte[]> response) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(response.size() == params.getBinNum());
-        byte[] result = new byte[elementByteLength];
-        int binMaxByteLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength() / Byte.SIZE;
-        int lastBinByteLength = elementByteLength % binMaxByteLength == 0 ?
-            binMaxByteLength : elementByteLength % binMaxByteLength;
-        int binNum = params.getBinNum();
-        IntStream intStream = this.parallel ? IntStream.range(0, binNum).parallel() : IntStream.range(0, binNum);
-        intStream.forEach(i -> {
-            int byteLength = i == binNum - 1 ? lastBinByteLength : binMaxByteLength;
+        MpcAbortPreconditions.checkArgument(response.size() == partitionSize);
+        ZlDatabase[] databases = new ZlDatabase[partitionSize];
+        IntStream intStream = IntStream.range(0, partitionSize);
+        intStream = parallel ? intStream.parallel() : intStream;
+        intStream.forEach(partitionIndex -> {
             long[] coeffs = Mcr21IndexPirNativeUtils.decryptReply(
-                params.getEncryptionParams(), secretKey, response.get(i)
+                params.getEncryptionParams(), secretKey, response.get(partitionIndex)
             );
-            byte[] bytes = convertCoeffsToBytes(coeffs, params.getPlainModulusBitLength());
-            int offset = this.index % params.getElementSizeOfPlaintext()[i];
-            System.arraycopy(bytes, offset * byteLength, result, i * binMaxByteLength, byteLength);
+            byte[] bytes = PirUtils.convertCoeffsToBytes(coeffs, params.getPlainModulusBitLength());
+            int offset = index % elementSizeOfPlaintext;
+            byte[] partitionBytes = new byte[partitionByteLength];
+            System.arraycopy(bytes, offset * partitionByteLength, partitionBytes, 0, partitionByteLength);
+            databases[partitionIndex] = ZlDatabase.create(partitionByteLength * Byte.SIZE, new byte[][]{partitionBytes});
         });
-        return result;
+        return NaiveDatabase.createFromZl(elementByteLength * Byte.SIZE, databases).getBytesData(0);
     }
 
     /**
-     * 客户端生成密钥对。
+     * client generates key pair.
+     *
+     * @return public keys.
      */
-    private void generateKeyPair() {
-        ArrayList<byte[]> keyPair = Mcr21IndexPirNativeUtils.keyGen(params.getEncryptionParams());
+    private List<byte[]> generateKeyPair() {
+        List<byte[]> keyPair = Mcr21IndexPirNativeUtils.keyGen(params.getEncryptionParams());
         assert (keyPair.size() == 3);
         this.publicKey = keyPair.remove(0);
         this.secretKey = keyPair.remove(0);
-        this.galoisKeys = keyPair.remove(0);
+        // add Galois keys and public key
+        List<byte[]> publicKeys = new ArrayList<>();
+        publicKeys.add(publicKey);
+        publicKeys.add(keyPair.remove(0));
+        publicKeys.addAll(Mcr21IndexPirNativeUtils.encryptSecretKey(params.getEncryptionParams(), publicKey, secretKey));
+        return publicKeys;
     }
 }

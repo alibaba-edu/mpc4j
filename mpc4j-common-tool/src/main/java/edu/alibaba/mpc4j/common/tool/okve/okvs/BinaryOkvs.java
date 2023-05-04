@@ -7,5 +7,18 @@ package edu.alibaba.mpc4j.common.tool.okve.okvs;
  * @date 2021/09/13
  */
 public interface BinaryOkvs<T> extends Okvs<T> {
+    /**
+     * Gets the binary positions for the given key. All positions are in range [0, m). The positions is distinct.
+     *
+     * @param key the key.
+     * @return the binary positions.
+     */
+    int[] positions(T key);
 
+    /**
+     * Gets the maximal position num.
+     *
+     * @return the maximal position num.
+     */
+    int maxPositionNum();
 }

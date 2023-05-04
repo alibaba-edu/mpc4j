@@ -1,12 +1,14 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot;
 
+import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
+
 /**
  * Oblivious transfer receiver output interface.
  *
  * @author Weiran Liu
  * @date 2022/12/21
  */
-public interface OtReceiverOutput {
+public interface OtReceiverOutput extends PcgPartyOutput {
     /**
      * Get the choice bit at the index.
      *
@@ -36,11 +38,4 @@ public interface OtReceiverOutput {
      * @return the Rb array.
      */
     byte[][] getRbArray();
-
-    /**
-     * Get the number of oblivious transfer output.
-     *
-     * @return the number of oblivious transfer output.
-     */
-    int getNum();
 }

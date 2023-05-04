@@ -1,14 +1,13 @@
 package edu.alibaba.mpc4j.dp.service.heavyhitter;
 
-import edu.alibaba.mpc4j.dp.service.heavyhitter.config.FoHhLdpConfig;
-import edu.alibaba.mpc4j.dp.service.heavyhitter.config.HgHhLdpConfig;
-import edu.alibaba.mpc4j.dp.service.heavyhitter.config.HhLdpConfig;
+import edu.alibaba.mpc4j.dp.service.heavyhitter.config.*;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.fo.FoHhLdpClient;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.fo.FoHhLdpServer;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.hg.*;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -33,40 +32,96 @@ public class HhLdpFactory {
 
     public enum HhLdpType {
         /**
-         * frequency oracle
+         * Frequency Oracle
          */
         FO,
         /**
-         * basic HeavyGuardian
+         * Basic General Randomization
          */
-        BASIC,
+        BGR,
         /**
-         * Advanced HeavyGuardian
+         * Domain-Shrinkage Randomization
          */
-        ADV,
+        DSR,
         /**
-         * Related HeavyGuardian
+         * Budget-Division Randomization
          */
-        RELAX,
+        BDR,
+        /**
+         * BCold-Nomination Randomization
+         */
+        CNR,
     }
 
     /**
      * Creates an default config.
      *
-     * @param type the type.
-     * @param domainSet the domain set.
-     * @param k the k.
+     * @param type          the type.
+     * @param domainSet     the domain set.
+     * @param k             the k.
      * @param windowEpsilon the window epsilon.
+     * @param windowSize    the window size (w).
      * @return an default config.
      */
-    public static HhLdpConfig createDefaultConfig(HhLdpType type, Set<String> domainSet, int k, double windowEpsilon) {
+    public static HhLdpConfig createDefaultHhLdpConfig(HhLdpType type, Set<String> domainSet,
+                                                       int k, double windowEpsilon, int windowSize) {
         switch (type) {
             case FO:
-                return new FoHhLdpConfig.Builder(type, domainSet, k, windowEpsilon).build();
-            case BASIC:
-            case ADV:
-            case RELAX:
-                return new HgHhLdpConfig.Builder(type, domainSet, k, windowEpsilon).build();
+                return new FoHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+            case BGR:
+                return new BgrHgHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+            case DSR:
+                return new DsrHgHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+            case BDR:
+                return new BdrHhgHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+            case CNR:
+                return new CnrHhgHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+            default:
+                throw new IllegalArgumentException("Invalid " + HhLdpType.class.getSimpleName() + ": " + type);
+        }
+    }
+
+    /**
+     * Creates an default config.
+     *
+     * @param type          the type.
+     * @param domainSet     the domain set.
+     * @param k             the k.
+     * @param windowEpsilon the window epsilon.
+     * @param windowSize    the window size (w).
+     * @param w the bucket size.
+     * @param lambdaH  λ_h, i.e., the cell num in each bucket.
+     * @param hgRandom the randomness used in the HeavyGuardian.
+     * @return an default config.
+     */
+    public static HgHhLdpConfig createDefaultHgHhLdpConfig(HhLdpType type, Set<String> domainSet,
+                                                         int k, double windowEpsilon, int windowSize,
+                                                         int w, int lambdaH, Random hgRandom) {
+        switch (type) {
+            case BGR:
+                return new BgrHgHhLdpConfig
+                    .Builder(domainSet, k, windowEpsilon, windowSize)
+                    .setBucketParams(w, lambdaH)
+                    .setHgRandom(hgRandom)
+                    .build();
+            case DSR:
+                return new DsrHgHhLdpConfig
+                    .Builder(domainSet, k, windowEpsilon, windowSize)
+                    .setBucketParams(w, lambdaH)
+                    .setHgRandom(hgRandom)
+                    .build();
+            case BDR:
+                return new BdrHhgHhLdpConfig
+                    .Builder(domainSet, k, windowEpsilon, windowSize)
+                    .setBucketParams(w, lambdaH)
+                    .setHgRandom(hgRandom)
+                    .build();
+            case CNR:
+                return new CnrHhgHhLdpConfig
+                    .Builder(domainSet, k, windowEpsilon, windowSize)
+                    .setBucketParams(w, lambdaH)
+                    .setHgRandom(hgRandom)
+                    .build();
             default:
                 throw new IllegalArgumentException("Invalid " + HhLdpType.class.getSimpleName() + ": " + type);
         }
@@ -82,13 +137,15 @@ public class HhLdpFactory {
         HhLdpType type = config.getType();
         switch (type) {
             case FO:
-                return new FoHhLdpServer(config);
-            case BASIC:
-                return new BasicHgHhLdpServer(config);
-            case ADV:
-                return new AdvHhgHhLdpServer(config);
-            case RELAX:
-                return new RelaxHhgHhLdpServer(config);
+                return new FoHhLdpServer((FoHhLdpConfig) config);
+            case BGR:
+                return new BgrHgHhLdpServer((BgrHgHhLdpConfig) config);
+            case DSR:
+                return new DsrHgHhLdpServer((DsrHgHhLdpConfig) config);
+            case BDR:
+                return new BdrHhgHhLdpServer((BdrHhgHhLdpConfig) config);
+            case CNR:
+                return new CnrHhgHhLdpServer((CnrHhgHhLdpConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + HhLdpType.class.getSimpleName() + ": " + type);
         }
@@ -104,13 +161,15 @@ public class HhLdpFactory {
         HhLdpType type = config.getType();
         switch (type) {
             case FO:
-                return new FoHhLdpClient(config);
-            case BASIC:
-                return new BasicHgHhLdpClient(config);
-            case ADV:
-                return new AdvHhgHhLdpClient(config);
-            case RELAX:
-                return new RelaxHhgHhLdpClient(config);
+                return new FoHhLdpClient((FoHhLdpConfig) config);
+            case BGR:
+                return new BgrHgHhLdpClient((BgrHgHhLdpConfig) config);
+            case DSR:
+                return new DsrHgHhLdpClient((DsrHgHhLdpConfig) config);
+            case BDR:
+                return new BdrHhgHhLdpClient((BdrHhgHhLdpConfig) config);
+            case CNR:
+                return new CnrHhgHhLdpClient((CnrHhgHhLdpConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + HhLdpType.class.getSimpleName() + ": " + type);
         }

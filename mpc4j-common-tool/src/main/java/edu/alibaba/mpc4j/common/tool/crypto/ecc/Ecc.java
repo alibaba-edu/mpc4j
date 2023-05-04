@@ -6,186 +6,182 @@ import org.bouncycastle.math.ec.ECPoint;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.stream.IntStream;
 
 /**
- * 椭圆曲线运算接口。
+ * ECC interface.
  *
  * @author Weiran Liu
  * @date 2021/05/23
  */
 public interface Ecc {
     /**
-     * 返回椭圆曲线群参数。
+     * Returns the EC domain parameters.
      *
-     * @return 椭圆曲线群参数。
+     * @return the EC domain parameters.
      */
     ECDomainParameters getEcDomainParameters();
 
     /**
-     * 返回椭圆曲线的阶。
+     * Returns the scalar order.
      *
-     * @return 椭圆曲线的阶。
+     * @return the scalar order.
      */
     default BigInteger getN() {
         return getEcDomainParameters().getN();
     }
 
     /**
-     * 返回椭圆曲线的辅因子。
+     * Returns the cofactor.
      *
-     * @return 辅因子。
+     * @return the cofactor.
      */
     default BigInteger getCofactor() {
         return getEcDomainParameters().getCurve().getCofactor();
     }
 
     /**
-     * 返回1个随机幂指数。
+     * Returns a random scalar.
      *
-     * @param secureRandom 随机状态。
-     * @return 随机幂指数。
+     * @param secureRandom the random state.
+     * @return a random scalar.
      */
     default BigInteger randomZn(SecureRandom secureRandom) {
         return BigIntegerUtils.randomPositive(getN(), secureRandom);
     }
 
     /**
-     * 返回{@code num}随机幂指数。
+     * Returns the infinity point.
      *
-     * @param num          随机幂指数数量。
-     * @param secureRandom 随机状态。
-     * @return 随机幂指数。
-     */
-    default BigInteger[] randomZn(int num, SecureRandom secureRandom) {
-        assert num > 0;
-        return IntStream.range(0, num).mapToObj(index -> randomZn(secureRandom)).toArray(BigInteger[]::new);
-    }
-
-    /**
-     * 返回椭圆曲线无穷远点。
-     *
-     * @return 无穷远点。
+     * @return the infinity point.
      */
     default ECPoint getInfinity() {
         return getEcDomainParameters().getCurve().getInfinity();
     }
 
     /**
-     * 返回椭圆曲线的生成元。
+     * Returns the generator point.
      *
-     * @return 椭圆曲线的生成元。
+     * @return the generator point.
      */
     default ECPoint getG() {
         return getEcDomainParameters().getG();
     }
 
     /**
-     * 返回1个随机的椭圆曲线点。
+     * Returns a random EC point.
      *
-     * @param secureRandom 随机状态。
-     * @return 随机椭圆曲线点。
+     * @param secureRandom the random state.
+     * @return a random EC point.
      */
     ECPoint randomPoint(SecureRandom secureRandom);
 
     /**
-     * 将{@code byte[]}表示的数据映射到椭圆曲线上。
+     * Hashes the data to the EC point.
      *
-     * @param message 数据。
-     * @return 数据的椭圆曲线哈希结果。
+     * @param data the data.
+     * @return the hashed EC point.
      */
-    ECPoint hashToCurve(byte[] message);
+    ECPoint hashToCurve(byte[] data);
 
     /**
-     * 编码椭圆曲线点。
+     * Encodes the EC point.
      *
-     * @param ecPoint 椭圆曲线点。
-     * @return 编码结果。
+     * @param p          the EC point p.
+     * @param compressed compress encoding or not.
+     * @return the encoded point.
      */
-    default byte[] encode(ECPoint ecPoint, boolean compressed) {
-        return ecPoint.getEncoded(compressed);
+    default byte[] encode(ECPoint p, boolean compressed) {
+        return p.getEncoded(compressed);
     }
 
     /**
-     * 解码椭圆曲线点。
+     * Decodes the EC point.
      *
-     * @param encoded 编码椭圆曲线点。
-     * @return 解码结果。
+     * @param encoded the encoded point.
+     * @return the decoded point.
      */
     default ECPoint decode(byte[] encoded) {
         return getEcDomainParameters().getCurve().decodePoint(encoded);
     }
 
     /**
-     * 预计算椭圆曲线点。
+     * Precomputes the EC point for multiplication.
      *
-     * @param ecPoint 椭圆曲线点。
+     * @param p the EC point p.
      */
-    void precompute(ECPoint ecPoint);
+    void precompute(ECPoint p);
 
     /**
-     * 移除预计算椭圆曲线点。
+     * Destroys the precomputed EC point.
      *
-     * @param ecPoint 椭圆曲线点。
+     * @param p the EC point p.
      */
-    void destroyPrecompute(ECPoint ecPoint);
+    void destroyPrecompute(ECPoint p);
 
     /**
-     * 计算椭圆曲线点乘以幂指数。
+     * Computes r · P.
      *
-     * @param ecPoint 椭圆曲线点。
-     * @param r       幂指数。
-     * @return 乘法结果。
+     * @param p the EC point p.
+     * @param r the scalar r.
+     * @return r · P.
      */
-    ECPoint multiply(ECPoint ecPoint, BigInteger r);
+    ECPoint multiply(ECPoint p, BigInteger r);
 
     /**
-     * 计算一个椭圆曲线点与多个指数相乘。
+     * Adds two EC points, i.e., p + q.
      *
-     * @param ecPoint 椭圆曲线点。
-     * @param rs      幂指数数组。
-     * @return 乘法结果。
+     * @param p the EC point p.
+     * @param q the EC point q.
+     * @return p + q.
      */
-    ECPoint[] multiply(ECPoint ecPoint, BigInteger[] rs);
-
-    /**
-     * 计算输入椭圆曲线点数组的和。
-     *
-     * @param ecPoints 椭圆曲线点数组。
-     * @return 椭圆曲线点数组的和。
-     */
-    default ECPoint add(ECPoint[] ecPoints) {
-        assert ecPoints.length > 0;
-        ECPoint output = getInfinity();
-        for (ECPoint point : ecPoints) {
-            output = output.add(point);
-        }
-        return output;
+    default ECPoint add(ECPoint p, ECPoint q) {
+        return p.add(q);
     }
 
     /**
-     * 计算布尔向量和椭圆曲线点向量的内积。
+     * Gets the negative of the EC point, i.e., -p.
      *
-     * @param binary   布尔向量。
-     * @param ecPoints 椭圆曲线点向量。
-     * @return 内积结果。
+     * @param p the EC point p.
+     * @return -a.
      */
-    default ECPoint innerProduct(boolean[] binary, ECPoint[] ecPoints) {
-        assert binary.length > 0 && ecPoints.length > 0;
-        assert binary.length == ecPoints.length;
+    default ECPoint negate(ECPoint p) {
+        return p.negate();
+    }
+
+    /**
+     * Subtracts two EC points, i.e., p - q.
+     *
+     * @param p the EC point p.
+     * @param q the EC point q.
+     * @return p - q.
+     */
+    default ECPoint subtract(ECPoint p, ECPoint q) {
+        return p.subtract(q);
+    }
+
+    /**
+     * Computes the inner-product of the binary array with the EC point array.
+     *
+     * @param binary the binary array.
+     * @param ps     the EC point array.
+     * @return the inner product result.
+     */
+    default ECPoint innerProduct(boolean[] binary, ECPoint[] ps) {
+        assert binary.length > 0 && ps.length > 0;
+        assert binary.length == ps.length;
         ECPoint innerProduct = getInfinity();
-        for (int index = 0; index < ecPoints.length; index++) {
+        for (int index = 0; index < ps.length; index++) {
             if (binary[index]) {
-                innerProduct = innerProduct.add(ecPoints[index]);
+                innerProduct = innerProduct.add(ps[index]);
             }
         }
         return innerProduct;
     }
 
     /**
-     * 返回椭圆曲线类型。
+     * Gets the EC type.
      *
-     * @return 椭圆曲线类型。
+     * @return the EC type.
      */
     EccFactory.EccType getEccType();
 }

@@ -18,7 +18,9 @@ import ml.dmlc.xgboost4j.java.DMatrix;
 import ml.dmlc.xgboost4j.java.XGBoost;
 import ml.dmlc.xgboost4j.java.XGBoostError;
 import org.apache.commons.math3.util.Precision;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -128,6 +130,26 @@ public class OpXgBoostRegMultiSlaveTest {
         host = new OpXgBoostHost(hostRpc, leftSlaveRpc.ownParty(), rightSlaveRpc.ownParty());
         leftSlave = new OpBoostSlave(leftSlaveRpc, hostRpc.ownParty());
         rightSlave = new OpBoostSlave(rightSlaveRpc, hostRpc.ownParty());
+    }
+
+    @Before
+    public void connect() {
+        host.getRpc().connect();
+        leftSlave.getRpc().connect();
+        rightSlave.getRpc().connect();
+        host.init();
+        leftSlave.init();
+        rightSlave.init();
+    }
+
+    @After
+    public void disconnect() {
+        host.destroy();
+        leftSlave.destroy();
+        rightSlave.destroy();
+        host.getRpc().disconnect();
+        leftSlave.getRpc().disconnect();
+        rightSlave.getRpc().disconnect();
     }
 
     @Test
@@ -262,7 +284,7 @@ public class OpXgBoostRegMultiSlaveTest {
                                        DataFrame leftSlaveDataFrame, OpBoostSlaveConfig leftSlaveConfig,
                                        DataFrame rightSlaveDataFrame, OpBoostSlaveConfig rightSlaveConfig
     ) {
-        long randomTaskId = Math.abs(OpBoostTestUtils.SECURE_RANDOM.nextLong());
+        int randomTaskId = Math.abs(OpBoostTestUtils.SECURE_RANDOM.nextInt());
         host.setTaskId(randomTaskId);
         leftSlave.setTaskId(randomTaskId);
         rightSlave.setTaskId(randomTaskId);

@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.kos15;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
@@ -70,32 +67,14 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
     public Kos15CoreCotSender(Rpc senderRpc, Party receiverParty, Kos15CoreCotConfig config) {
         super(Kos15CoreCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         baseOtReceiver = BaseOtFactory.createReceiver(senderRpc, receiverParty, config.getBaseOtConfig());
-        baseOtReceiver.addLogLevel();
+        addSubPtos(baseOtReceiver);
         gf2k = Gf2kFactory.createInstance(envType);
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        baseOtReceiver.setTaskId(taskId);
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        baseOtReceiver.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        baseOtReceiver.addLogLevel();
     }
 
     @Override
     public void init(byte[] delta, int maxNum) throws MpcAbortException {
         setInitInput(delta, maxNum);
-        info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         baseOtReceiver.init();
@@ -103,7 +82,7 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 2, initTime);
 
         stopWatch.start();
         List<byte[]> randomOracleKeyPayload = new LinkedList<>();
@@ -111,7 +90,7 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
         secureRandom.nextBytes(randomOracleKey);
         randomOracleKeyPayload.add(randomOracleKey);
         DataPacketHeader randomOracleKeyHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_RANDOM_ORACLE_KEY.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_RANDOM_ORACLE_KEY.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(randomOracleKeyHeader, randomOracleKeyPayload));
@@ -121,23 +100,22 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
         stopWatch.stop();
         long randomOracleTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), randomOracleTime);
+        logStepInfo(PtoState.INIT_STEP, 2, 2, randomOracleTime);
 
-        initialized = true;
-        info("{}{} Send. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public CotSenderOutput send(int num) throws MpcAbortException {
         setPtoInput(num);
-        info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         // l' = l + (κ + s)
         extendNum = num + CommonConstants.BLOCK_BIT_LENGTH + CommonConstants.STATS_BIT_LENGTH;
         extendByteNum = CommonUtils.getByteLength(extendNum);
         DataPacketHeader matrixHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_MATRIX.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_MATRIX.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> matrixPayload = rpc.receive(matrixHeader).getPayload();
@@ -145,11 +123,11 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
         stopWatch.stop();
         long matrixTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), matrixTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, matrixTime);
 
         stopWatch.start();
         DataPacketHeader correlateCheckHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_CHECK.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_CHECK.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> correlateCheckPayload = rpc.receive(correlateCheckHeader).getPayload();
@@ -157,9 +135,9 @@ public class Kos15CoreCotSender extends AbstractCoreCotSender {
         stopWatch.stop();
         long checkTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), checkTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, checkTime);
 
-        info("{}{} Send. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return senderOutput;
     }
 

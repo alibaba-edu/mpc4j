@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * PRG性能测试。
+ * PRG efficiency test.
  *
  * @author Weiran Liu
  * @date 2022/4/18
@@ -27,17 +27,9 @@ public class PrgEfficiencyTest {
      */
     private static final int LOG_N = 16;
     /**
-     * 输出字节长度输出格式
-     */
-    private static final DecimalFormat OUTPUT_BYTE_LENGTH_DECIMAL_FORMAT = new DecimalFormat("000");
-    /**
-     * 次数输出格式
-     */
-    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("00");
-    /**
      * 时间输出格式
      */
-    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("00.0000");
+    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.0000");
     /**
      * 全0种子
      */
@@ -83,8 +75,8 @@ public class PrgEfficiencyTest {
             STOP_WATCH.reset();
             LOGGER.info("{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
-                StringUtils.leftPad(OUTPUT_BYTE_LENGTH_DECIMAL_FORMAT.format(outputByteLength), 10),
+                StringUtils.leftPad(String.valueOf(LOG_N), 10),
+                StringUtils.leftPad(String.valueOf(outputByteLength), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(time), 10)
             );
         }

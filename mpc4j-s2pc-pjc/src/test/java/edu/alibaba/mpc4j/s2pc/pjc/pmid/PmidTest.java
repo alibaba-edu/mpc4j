@@ -11,7 +11,9 @@ import edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22.Zcl22SloppyPmidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -115,97 +117,82 @@ public class PmidTest {
 
     public PmidTest(String name, PmidConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         serverRpc = rpcManager.getRpc(0);
         clientRpc = rpcManager.getRpc(1);
         this.config = config;
     }
 
-    @Test
-    public void testPtoType() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        Assert.assertEquals(config.getPtoType(), server.getPtoType());
-        Assert.assertEquals(config.getPtoType(), client.getPtoType());
+    @Before
+    public void connect() {
+        serverRpc.connect();
+        clientRpc.connect();
+    }
+
+    @After
+    public void disconnect() {
+        serverRpc.disconnect();
+        clientRpc.disconnect();
     }
 
     @Test
     public void test2() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPmid(server, client, 2, DEFAULT_MAX_SERVER_U, 2, DEFAULT_MAX_CLIENT_U);
+        testPmid(2, DEFAULT_MAX_SERVER_U, 2, DEFAULT_MAX_CLIENT_U, false);
     }
 
     @Test
     public void test10() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPmid(server, client, 10, DEFAULT_MAX_SERVER_U, 10, DEFAULT_MAX_CLIENT_U);
+        testPmid(10, DEFAULT_MAX_SERVER_U, 10, DEFAULT_MAX_CLIENT_U, false);
     }
 
     @Test
     public void testServerSmallU() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPmid(server, client, DEFAULT_SET_SIZE, SMALL_MAX_SERVER_U, DEFAULT_SET_SIZE, DEFAULT_MAX_CLIENT_U);
+        testPmid(DEFAULT_SET_SIZE, SMALL_MAX_SERVER_U, DEFAULT_SET_SIZE, DEFAULT_MAX_CLIENT_U, false);
     }
 
     @Test
     public void testClientSmallU() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPmid(server, client, DEFAULT_SET_SIZE, DEFAULT_MAX_SERVER_U, DEFAULT_SET_SIZE, SMALL_MAX_CLIENT_U);
+        testPmid(DEFAULT_SET_SIZE, DEFAULT_MAX_SERVER_U, DEFAULT_SET_SIZE, SMALL_MAX_CLIENT_U, false);
     }
 
     @Test
     public void testLargeServerSize() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPmid(server, client, LARGE_SET_SIZE, DEFAULT_MAX_SERVER_U, DEFAULT_SET_SIZE, DEFAULT_MAX_CLIENT_U);
+        testPmid(LARGE_SET_SIZE, DEFAULT_MAX_SERVER_U, DEFAULT_SET_SIZE, DEFAULT_MAX_CLIENT_U, false);
     }
 
     @Test
     public void testLargeClientSize() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPmid(server, client, DEFAULT_SET_SIZE, DEFAULT_MAX_SERVER_U, LARGE_SET_SIZE, DEFAULT_MAX_CLIENT_U);
+        testPmid(DEFAULT_SET_SIZE, DEFAULT_MAX_SERVER_U, LARGE_SET_SIZE, DEFAULT_MAX_CLIENT_U, false);
     }
 
     @Test
     public void testDefault() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPmid(server, client, DEFAULT_SET_SIZE, DEFAULT_MAX_SERVER_U, DEFAULT_SET_SIZE, DEFAULT_MAX_CLIENT_U);
+        testPmid(DEFAULT_SET_SIZE, DEFAULT_MAX_SERVER_U, DEFAULT_SET_SIZE, DEFAULT_MAX_CLIENT_U, false);
     }
 
     @Test
     public void testParallelDefault() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        server.setParallel(true);
-        client.setParallel(true);
-        testPmid(server, client, DEFAULT_SET_SIZE, DEFAULT_MAX_SERVER_U, DEFAULT_SET_SIZE, DEFAULT_MAX_CLIENT_U);
+        testPmid(DEFAULT_SET_SIZE, DEFAULT_MAX_SERVER_U, DEFAULT_SET_SIZE, DEFAULT_MAX_CLIENT_U, true);
     }
 
     @Test
     public void testLarge() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        testPmid(server, client, LARGE_SET_SIZE, DEFAULT_MAX_SERVER_U, LARGE_SET_SIZE, DEFAULT_MAX_CLIENT_U);
+        testPmid(LARGE_SET_SIZE, DEFAULT_MAX_SERVER_U, LARGE_SET_SIZE, DEFAULT_MAX_CLIENT_U, false);
     }
 
     @Test
     public void testParallelLarge() {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        server.setParallel(true);
-        client.setParallel(true);
-        testPmid(server, client, LARGE_SET_SIZE, DEFAULT_MAX_SERVER_U, LARGE_SET_SIZE, DEFAULT_MAX_CLIENT_U);
+        testPmid(LARGE_SET_SIZE, DEFAULT_MAX_SERVER_U, LARGE_SET_SIZE, DEFAULT_MAX_CLIENT_U, true);
     }
 
-    private void testPmid(PmidServer<String> server, PmidClient<String> client,
-                          int serverSetSize, int maxServerU, int clientSetSize, int maxClientU) {
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+    private void testPmid(int serverSetSize, int maxServerU, int clientSetSize, int maxClientU, boolean parallel) {
+        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
+        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
+        server.setParallel(parallel);
+        client.setParallel(parallel);
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         server.setTaskId(randomTaskId);
         client.setTaskId(randomTaskId);
         try {
@@ -255,6 +242,8 @@ public class PmidTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        server.destroy();
+        client.destroy();
     }
 
     private void assertOutput(Map<String, Integer> serverMap, Map<String, Integer> clientMap,

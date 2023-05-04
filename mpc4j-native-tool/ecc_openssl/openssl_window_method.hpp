@@ -18,6 +18,10 @@
 class WindowMethod {
 public:
     /**
+     * curve index
+     */
+    int curveIndex_;
+    /**
      * 总比特大小
      */
     size_t bitSize_;
@@ -30,27 +34,26 @@ public:
      */
     std::vector<EC_POINT *> lookupTable_;
 
-    WindowMethod(const EC_POINT *x, size_t bitSize, size_t winSize) {
-        // base.point_ptr = EC_POINT_new(group);
-        // EC_POINT_copy(base.point_ptr, x.point_ptr);
+    WindowMethod(int curveIndex, const EC_POINT *x, size_t bitSize, size_t winSize) {
+        curveIndex_ = curveIndex;
         bitSize_ = bitSize;
         winSize_ = winSize;
         const size_t tableNum = (bitSize + winSize - 1) / winSize;
         const size_t r = size_t(1) << winSize;
         lookupTable_.resize(tableNum * r);
-        EC_POINT *t = EC_POINT_new(openssl_ec_group);
+        EC_POINT *t = EC_POINT_new(openssl_ec_group[curveIndex_]);
         EC_POINT_copy(t, x);
         for (size_t i = 0; i < tableNum; i++) {
             size_t start_index = i * r;
-            lookupTable_[start_index] = EC_POINT_new(openssl_ec_group);
-            EC_POINT_set_to_infinity(openssl_ec_group, lookupTable_[start_index]);
+            lookupTable_[start_index] = EC_POINT_new(openssl_ec_group[curveIndex_]);
+            EC_POINT_set_to_infinity(openssl_ec_group[curveIndex_], lookupTable_[start_index]);
             for (size_t d = 1; d < r; d *= 2) {
                 for (size_t j = 0; j < d; j++) {
-                    lookupTable_[start_index + j + d] = EC_POINT_new(openssl_ec_group);
-                    CRYPTO_CHECK(EC_POINT_add(openssl_ec_group, lookupTable_[start_index + j + d],
+                    lookupTable_[start_index + j + d] = EC_POINT_new(openssl_ec_group[curveIndex_]);
+                    CRYPTO_CHECK(EC_POINT_add(openssl_ec_group[curveIndex_], lookupTable_[start_index + j + d],
                                               lookupTable_[start_index + j], t, nullptr));
                 }
-                CRYPTO_CHECK(EC_POINT_dbl(openssl_ec_group, t, t, nullptr));
+                CRYPTO_CHECK(EC_POINT_dbl(openssl_ec_group[curveIndex_], t, t, nullptr));
             }
         }
     }
@@ -64,7 +67,7 @@ public:
     }
 
     void multiply(EC_POINT *z, const BIGNUM *y) const {
-        EC_POINT_set_to_infinity(openssl_ec_group, z);
+        EC_POINT_set_to_infinity(openssl_ec_group[curveIndex_], z);
         int bitLength_ = BN_num_bits(y);
         int roundLongByteLength = ((bitLength_ + (1 << 6) - 1) >> 6) << 3;
         unsigned char x[roundLongByteLength];
@@ -78,7 +81,7 @@ public:
             y[i] = __builtin_bswap64(y[i]);
         }
         if (bitLength == 0) {
-            CRYPTO_CHECK(EC_POINT_set_to_infinity(openssl_ec_group, z));
+            CRYPTO_CHECK(EC_POINT_set_to_infinity(openssl_ec_group[curveIndex_], z));
             return true;
         }
         assert(bitLength <= bitSize_);
@@ -90,7 +93,7 @@ public:
         do {
             uint64_t v = ai.getNext(winSize_);
             if (v) {
-                CRYPTO_CHECK(EC_POINT_add(openssl_ec_group, z, z, lookupTable_[(i << winSize_) + v], nullptr));
+                CRYPTO_CHECK(EC_POINT_add(openssl_ec_group[curveIndex_], z, z, lookupTable_[(i << winSize_) + v], nullptr));
             }
             i++;
         } while (ai.hasNext());

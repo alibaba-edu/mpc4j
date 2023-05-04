@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 /**
  * 核l比特三元组生成协议信息。
@@ -8,7 +9,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
  * @author Weiran Liu
  * @date 2022/8/11
  */
-public interface ZlCoreMtgConfig extends SecurePtoConfig {
+public interface ZlCoreMtgConfig extends MultiPartyPtoConfig {
     /**
      * 返回协议类型。
      *
@@ -17,11 +18,11 @@ public interface ZlCoreMtgConfig extends SecurePtoConfig {
     ZlCoreMtgFactory.ZlCoreMtgType getPtoType();
 
     /**
-     * 返回乘法三元组比特长度。
+     * Gets the Zl instance.
      *
-     * @return 乘法三元组比特长度。
+     * @return the Zl instance.
      */
-    int getL();
+    Zl getZl();
 
     /**
      * 返回最大支持数量。

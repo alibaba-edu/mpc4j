@@ -18,7 +18,8 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.PreCotFactory.PreCotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.bea95.Bea95PreCotConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -26,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 预计算COT协议测试。
+ * pre-compute 1-out-of-n (with n = 2^l) test.
  *
  * @author Weiran Liu
  * @date 2022/01/14
@@ -35,100 +36,101 @@ import org.slf4j.LoggerFactory;
 public class PreCotTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreCotTest.class);
     /**
-     * 随机状态
+     * the random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
-     * 默认数量
+     * the default num
      */
     private static final int DEFAULT_NUM = 1000;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // Bea95
-        configurationParams.add(new Object[] {PreCotType.Bea95.name(), new Bea95PreCotConfig.Builder().build(),});
+        Collection<Object[]> configurations = new ArrayList<>();
 
-        return configurationParams;
+        // Bea95
+        configurations.add(new Object[] {PreCotType.Bea95.name(), new Bea95PreCotConfig.Builder().build(),});
+
+        return configurations;
     }
 
     /**
-     * 发送方
+     * the sender RPC
      */
     private final Rpc senderRpc;
     /**
-     * 接收方
+     * the receiver RPC
      */
     private final Rpc receiverRpc;
     /**
-     * 协议类型
+     * the config
      */
     private final PreCotConfig config;
 
     public PreCotTest(String name, PreCotConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         senderRpc = rpcManager.getRpc(0);
         receiverRpc = rpcManager.getRpc(1);
         this.config = config;
     }
 
-    @Test
-    public void testPtoType() {
-        PreCotSender sender = PreCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        PreCotReceiver receiver = PreCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        Assert.assertEquals(config.getPtoType(), sender.getPtoType());
-        Assert.assertEquals(config.getPtoType(), receiver.getPtoType());
+    @Before
+    public void connect() {
+        senderRpc.connect();
+        receiverRpc.connect();
+    }
+
+    @After
+    public void disconnect() {
+        senderRpc.disconnect();
+        receiverRpc.disconnect();
     }
 
     @Test
     public void test1Num() {
-        PreCotSender sender = PreCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        PreCotReceiver receiver = PreCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 1);
+        testPto(1, false);
     }
 
     @Test
     public void test2Num() {
-        PreCotSender sender = PreCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        PreCotReceiver receiver = PreCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, 2);
+        testPto(2, false);
     }
 
     @Test
     public void testDefaultNum() {
-        PreCotSender sender = PreCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        PreCotReceiver receiver = PreCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_NUM);
+        testPto(DEFAULT_NUM, false);
     }
 
     @Test
     public void testParallelDefaultNum() {
-        PreCotSender sender = PreCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        PreCotReceiver receiver = PreCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, DEFAULT_NUM);
+        testPto(DEFAULT_NUM, true);
     }
 
-    private void testPto(PreCotSender sender, PreCotReceiver receiver, int num) {
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+    private void testPto(int num, boolean parallel) {
+        PreCotSender sender = PreCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
+        PreCotReceiver receiver = PreCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        sender.setParallel(parallel);
+        receiver.setParallel(parallel);
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            // 生成输入
+            // pre-compute sender / receiver output
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
             CotSenderOutput preSenderOutput = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
             CotReceiverOutput preReceiverOutput = CotTestUtils.genReceiverOutput(preSenderOutput, SECURE_RANDOM);
-            // 实际选择比特
+            // receiver actual choices
             boolean[] choices = new boolean[num];
             IntStream.range(0, num).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
             PreCotSenderThread senderThread = new PreCotSenderThread(sender, preSenderOutput);
             PreCotReceiverThread receiverThread = new PreCotReceiverThread(receiver, preReceiverOutput, choices);
             StopWatch stopWatch = new StopWatch();
-            // 开始执行协议
+            // execute the protocol
             stopWatch.start();
             senderThread.start();
             receiverThread.start();
@@ -143,7 +145,7 @@ public class PreCotTest {
             receiverRpc.reset();
             CotSenderOutput senderOutput = senderThread.getSenderOutput();
             CotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            // 验证结果
+            // verify
             CotTestUtils.assertOutput(num, senderOutput, receiverOutput);
             LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
                 senderByteLength, receiverByteLength, time
@@ -152,5 +154,7 @@ public class PreCotTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        sender.destroy();
+        receiver.destroy();
     }
 }

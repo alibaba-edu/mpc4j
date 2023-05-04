@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 
 /**
  * 批处理单点关联不经意传输（Batched Single-Point Correlated Oblivious Transfer，BSP-COT）协议配置项。
@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
  * @author Weiran Liu
  * @date 2022/01/22
  */
-public interface BspCotConfig extends SecurePtoConfig {
+public interface BspCotConfig extends MultiPartyPtoConfig {
     /**
      * 返回协议类型。
      *

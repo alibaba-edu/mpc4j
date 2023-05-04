@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory;
@@ -38,31 +39,13 @@ public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
     public Bcg19RegMspCotReceiver(Rpc senderRpc, Party receiverParty, Bcg19RegMspCotConfig config) {
         super(Bcg19RegMspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         bspCotReceiver = BspCotFactory.createReceiver(senderRpc, receiverParty, config.getBspCotConfig());
-        bspCotReceiver.addLogLevel();
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        bspCotReceiver.setTaskId(taskId);
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        bspCotReceiver.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        bspCotReceiver.addLogLevel();
+        addSubPtos(bspCotReceiver);
     }
 
     @Override
     public void init(int maxT, int maxNum) throws MpcAbortException {
         setInitInput(maxT, maxNum);
-        info("{}{} Recv. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // 原本应该设置为maxN / maxT，但此值不与T成正比，最后考虑直接设置为maxN
@@ -70,10 +53,9 @@ public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Recv. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
@@ -90,31 +72,31 @@ public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
     }
 
     private MspCotReceiverOutput receive() throws MpcAbortException {
-        info("{}{} Recv. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         // 生成稀疏数组
         int[] innerTargetArray = IntStream.range(0, t)
             .map(i -> {
                 // 需要转换为long计算，否则n和t比较大时会溢出
-                int lowerBound = (int)(i * (long) num / t);
-                int upperBound = (int)((i + 1) * (long) num / t);
+                int lowerBound = (int) (i * (long) num / t);
+                int upperBound = (int) ((i + 1) * (long) num / t);
                 return secureRandom.nextInt(upperBound - lowerBound);
             })
             .toArray();
         // 执行2选1-单点批处理COT
         if (cotReceiverOutput == null) {
-            bspCotReceiverOutput = bspCotReceiver.receive(innerTargetArray, (int)Math.ceil((double) num / t));
+            bspCotReceiverOutput = bspCotReceiver.receive(innerTargetArray, (int) Math.ceil((double) num / t));
         } else {
             bspCotReceiverOutput = bspCotReceiver.receive(
-                innerTargetArray, (int)Math.ceil((double) num / t), cotReceiverOutput
+                innerTargetArray, (int) Math.ceil((double) num / t), cotReceiverOutput
             );
             cotReceiverOutput = null;
         }
         stopWatch.stop();
-        long toSpbcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long bspcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Step 1/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), toSpbcotTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, bspcotTime);
 
         stopWatch.start();
         // 计算输出结果
@@ -122,9 +104,9 @@ public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
         stopWatch.stop();
         long outputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Recv. Step 2/2 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), outputTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, outputTime);
 
-        info("{}{} Recv. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return receiverOutput;
     }
 
@@ -133,8 +115,8 @@ public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
         byte[][] rbArray = IntStream.range(0, t)
             .mapToObj(i -> {
                 // 需要转换为long计算，否则n和t比较大时会溢出
-                int lowerBound = (int)(i * (long) num / t);
-                int upperBound = (int)((i + 1) * (long) num / t);
+                int lowerBound = (int) (i * (long) num / t);
+                int upperBound = (int) ((i + 1) * (long) num / t);
                 targetArray[i] = innerTargetArray[i] + lowerBound;
                 SspCotReceiverOutput sspcotReceiverOutput = bspCotReceiverOutput.get(i);
                 return IntStream.range(0, upperBound - lowerBound)

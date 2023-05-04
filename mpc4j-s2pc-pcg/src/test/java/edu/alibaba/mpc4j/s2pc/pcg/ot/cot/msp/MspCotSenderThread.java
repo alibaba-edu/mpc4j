@@ -56,10 +56,8 @@ class MspCotSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.getRpc().connect();
             sender.init(delta, t, num);
             senderOutput = preSenderOutput == null ? sender.send(t, num) : sender.send(t, num, preSenderOutput);
-            sender.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

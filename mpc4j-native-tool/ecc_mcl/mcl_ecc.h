@@ -31,12 +31,8 @@ jobject mcl_precompute(JNIEnv *env, jstring jEcString);
 
 void mcl_destroy_precompute(JNIEnv *env, jobject jWindowHandler);
 
-jstring mcl_single_fixed_point_multiply(JNIEnv *env, jobject jWindowHandler, jstring jZnString);
+jstring mcl_precompute_multiply(JNIEnv *env, jobject jWindowHandler, jstring jZnString);
 
-jobjectArray mcl_fixed_point_multiply(JNIEnv *env, jobject jWindowHandler, jobjectArray jZnStringArray);
-
-jstring mcl_single_multiply(JNIEnv *env, jstring jEcString, jstring jZnString);
-
-jobjectArray mcl_multiply(JNIEnv *env, jstring jEcString, jobjectArray jZnStringArray);
+jstring mcl_multiply(JNIEnv *env, jstring jEcString, jstring jZnString);
 
 #endif //MPC4J_NATIVE_TOOL_ECC_MCL_H

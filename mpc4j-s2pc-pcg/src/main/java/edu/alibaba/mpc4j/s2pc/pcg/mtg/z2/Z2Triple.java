@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 
 import java.security.SecureRandom;
 
@@ -12,7 +13,7 @@ import java.security.SecureRandom;
  * @author Sheng Hu, Weiran Liu
  * @date 2022/02/07
  */
-public class Z2Triple {
+public class Z2Triple implements MergedPcgPartyOutput {
     /**
      * triple num
      */
@@ -129,19 +130,52 @@ public class Z2Triple {
     }
 
     /**
-     * 私有构造函数。
+     * private constructor.
      */
     private Z2Triple() {
         // empty
     }
 
-    /**
-     * Get the triple num.
-     *
-     * @return the triple num.
-     */
+    @Override
     public int getNum() {
         return num;
+    }
+
+    @Override
+    public Z2Triple split(int splitNum) {
+        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]: " + splitNum;
+        BitVector splitA = a.split(splitNum);
+        BitVector spiltB = b.split(splitNum);
+        BitVector splitC = c.split(splitNum);
+        num = num - splitNum;
+        byteNum = num == 0 ? 0 : CommonUtils.getByteLength(num);
+
+        return Z2Triple.create(splitNum, splitA, spiltB, splitC);
+    }
+
+    @Override
+    public void reduce(int reduceNum) {
+        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        if (reduceNum < num) {
+            // if the reduced num is less than num, do split. If not, keep the current state.
+            a.reduce(reduceNum);
+            b.reduce(reduceNum);
+            c.reduce(reduceNum);
+            // update num
+            num = reduceNum;
+            byteNum = CommonUtils.getByteLength(reduceNum);
+        }
+    }
+
+    @Override
+    public void merge(MergedPcgPartyOutput other) {
+        Z2Triple that = (Z2Triple) other;
+        a.merge(that.a);
+        b.merge(that.b);
+        c.merge(that.c);
+        // update num
+        num += that.num;
+        byteNum = num == 0 ? 0 : CommonUtils.getByteLength(num);
     }
 
     /**
@@ -205,54 +239,6 @@ public class Z2Triple {
      */
     public String getStringC() {
         return c.toString();
-    }
-
-    /**
-     * Split with the given tripe num. The current one keeps the triples.
-     *
-     * @param num the assigned triple num.
-     * @return the split result.
-     */
-    public Z2Triple split(int num) {
-        assert num > 0 && num <= this.num : "split num must be in range (0, " + this.num + "]: " + num;
-        BitVector splitA = a.split(num);
-        BitVector spiltB = b.split(num);
-        BitVector splitC = c.split(num);
-        this.num = this.num - num;
-        byteNum = this.num == 0 ? 0 : CommonUtils.getByteLength(this.num);
-        // create a new instance
-        return Z2Triple.create(num, splitA, spiltB, splitC);
-    }
-
-    /**
-     * Split to the given tripe num.
-     *
-     * @param num the assigned triple num.
-     */
-    public void reduce(int num) {
-        assert num > 0 && num <= this.num : "reduce num must be in range (0, " + this.num + "]: " + num;
-        if (num < this.num) {
-            a.reduce(num);
-            b.reduce(num);
-            c.reduce(num);
-            // update num
-            this.num = num;
-            byteNum = CommonUtils.getByteLength(num);
-        }
-    }
-
-    /**
-     * Merge the other triple.
-     *
-     * @param that the other triple.
-     */
-    public void merge(Z2Triple that) {
-        a.merge(that.a);
-        b.merge(that.b);
-        c.merge(that.c);
-        // update num
-        num += that.num;
-        byteNum = num == 0 ? 0 : CommonUtils.getByteLength(num);
     }
 
     @Override

@@ -1,35 +1,36 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp64.core;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp64.Zp64VoleSenderOutput;
 
 /**
- * ZP64-VOLE协议发送方线程。
+ * ZP64-core VOLE sender thread.
  *
  * @author Hanwen Feng
  * @date 2022/06/15
  */
 class Zp64CoreVoleSenderThread extends Thread {
     /**
-     * 接收方
+     * the sender
      */
     private final Zp64CoreVoleSender sender;
     /**
-     * 素数p
+     * the Zp64 instance
      */
-    private final long prime;
+    private final Zp64 zp64;
     /**
      * x
      */
     private final long[] x;
     /**
-     * 接收方输出
+     * the sender output
      */
     private Zp64VoleSenderOutput senderOutput;
 
-    Zp64CoreVoleSenderThread(Zp64CoreVoleSender sender, long prime, long[] x) {
+    Zp64CoreVoleSenderThread(Zp64CoreVoleSender sender, Zp64 zp64, long[] x) {
         this.sender = sender;
-        this.prime = prime;
+        this.zp64 = zp64;
         this.x = x;
     }
 
@@ -40,10 +41,8 @@ class Zp64CoreVoleSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.getRpc().connect();
-            sender.init(prime, x.length);
+            sender.init(zp64, x.length);
             senderOutput = sender.send(x);
-            sender.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

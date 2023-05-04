@@ -34,16 +34,17 @@ public class Gf2eFactory {
     /**
      * 创建GF2E运算实例。
      *
-     * @param type 类型。
-     * @param l    l比特长度。
+     * @param envType the environment.
+     * @param type    类型。
+     * @param l       l比特长度。
      * @return GF2E运算实例。
      */
-    public static Gf2e createInstance(Gf2eType type, int l) {
+    public static Gf2e createInstance(EnvType envType, Gf2eType type, int l) {
         switch (type) {
             case RINGS:
-                return new RingsGf2e(l);
+                return new RingsGf2e(envType, l);
             case NTL:
-                return new NtlGf2e(l);
+                return new NtlGf2e(envType, l);
             default:
                 throw new IllegalArgumentException("Invalid " + Gf2eType.class.getSimpleName() + ": " + type.name());
         }
@@ -60,10 +61,10 @@ public class Gf2eFactory {
         switch (envType) {
             case STANDARD:
             case INLAND:
-                return new NtlGf2e(l);
+                return new NtlGf2e(envType, l);
             case STANDARD_JDK:
             case INLAND_JDK:
-                return new RingsGf2e(l);
+                return new RingsGf2e(envType, l);
             default:
                 throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }

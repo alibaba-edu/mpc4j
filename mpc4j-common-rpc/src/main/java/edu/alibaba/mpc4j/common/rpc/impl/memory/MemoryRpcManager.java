@@ -1,10 +1,10 @@
 package edu.alibaba.mpc4j.common.rpc.impl.memory;
 
-import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketBuffer;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,7 @@ public class MemoryRpcManager implements RpcManager {
      * @param partyNum 参与方数量。
      */
     public MemoryRpcManager(int partyNum) {
-        Preconditions.checkArgument(partyNum > 1, "Number of parties must be greater than 1");
+        MathPreconditions.checkGreater("partyNum", partyNum, 1);
         this.partyNum = partyNum;
         // 构建一个统一的数据包缓存区
         DataPacketBuffer dataPacketBuffer = new DataPacketBuffer();
@@ -62,9 +62,7 @@ public class MemoryRpcManager implements RpcManager {
 
     @Override
     public Rpc getRpc(int partyId) {
-        Preconditions.checkArgument(
-            partyId >= 0 && partyId < partyNum, "Party ID must be in range [0, %s)", partyNum
-        );
+        MathPreconditions.checkNonNegativeInRange("partyId", partyId, partyNum);
         return memoryRpcMap.get(partyId);
     }
 

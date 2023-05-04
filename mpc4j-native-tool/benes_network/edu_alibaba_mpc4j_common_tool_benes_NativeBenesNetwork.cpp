@@ -31,5 +31,6 @@ JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_benes_NativeBe
         (*env).DeleteLocalRef(jByteArray);
     }
     reset();
+    (*env).DeleteLocalRef(byteArrayType);
     return jBenesNetwork;
 }

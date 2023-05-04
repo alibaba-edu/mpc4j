@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +32,10 @@ public class MemoryRpc implements Rpc {
      */
     private final MemoryParty ownParty;
     /**
+     * Own party's ID
+     */
+    private final int ownPartyId;
+    /**
      * 缓存区
      */
     private final DataPacketBuffer dataPacketBuffer;
@@ -48,10 +51,6 @@ public class MemoryRpc implements Rpc {
      * 发送字节长度
      */
     private long sendByteLength;
-    /**
-     * 延迟类型
-     */
-    private MemoryDelayType memoryDelayType;
 
     /**
      * 构建内存RPC。
@@ -67,6 +66,7 @@ public class MemoryRpc implements Rpc {
         // 参与方自身必须在所有参与方之中
         Preconditions.checkArgument(partySet.contains(ownParty), "Party set must contain own party");
         this.ownParty = ownParty;
+        ownPartyId = ownParty.getPartyId();
         // 按照参与方索引值，将参与方信息插入到ID映射中
         partyIdHashMap = new HashMap<>();
         partySet.forEach(partySpec -> partyIdHashMap.put(partySpec.getPartyId(), partySpec));
@@ -74,17 +74,6 @@ public class MemoryRpc implements Rpc {
         dataPacketNum = 0;
         payloadByteLength = 0;
         sendByteLength = 0;
-        // 默认为无延时
-        memoryDelayType = MemoryDelayType.NO_DELAY;
-    }
-
-    /**
-     * 设置内存通信延迟时间。
-     *
-     * @param memoryDelayType 内存通信延迟时间。
-     */
-    public void setMemoryDelayType(MemoryDelayType memoryDelayType) {
-        this.memoryDelayType = memoryDelayType;
     }
 
     @Override
@@ -105,7 +94,6 @@ public class MemoryRpc implements Rpc {
 
     @Override
     public void connect() {
-        int ownPartyId = ownParty.getPartyId();
         partyIdHashMap.keySet().stream().sorted().forEach(otherPartyId -> {
             if (otherPartyId != ownPartyId) {
                 LOGGER.debug(
@@ -121,8 +109,7 @@ public class MemoryRpc implements Rpc {
     public void send(DataPacket dataPacket) {
         DataPacketHeader header = dataPacket.getHeader();
         Preconditions.checkArgument(
-            ownParty.getPartyId() == header.getSenderId(),
-            "Sender ID must be %s", ownParty.getPartyId()
+            ownPartyId == header.getSenderId(), "Sender ID must be %s", ownPartyId
         );
         Preconditions.checkArgument(
             partyIdHashMap.containsKey(header.getReceiverId()),
@@ -140,32 +127,26 @@ public class MemoryRpc implements Rpc {
     @Override
     public DataPacket receive(DataPacketHeader header) {
         Preconditions.checkArgument(
-            ownParty.getPartyId() == header.getReceiverId(),
-            "Receiver ID must be %s", ownParty.getPartyId()
+            ownPartyId == header.getReceiverId(), "Receiver ID must be %s", ownPartyId
         );
         Preconditions.checkArgument(
             partyIdHashMap.containsKey(header.getSenderId()),
             "Party set does not contain Sender ID = %s", header.getSenderId()
         );
         try {
-            // 尝试从buffer中取出满足数据头的数据
-            DataPacket dataPacket = dataPacketBuffer.take(header);
-            // 统计数据包大小
-            int dataPacketByteLength = dataPacket.getPayload().stream().mapToInt(data -> data.length).sum();
-            // 网络延迟等待时间，虽然往返时间是来回的时间，但实际中还是要等待完整的RTT时间
-            if (memoryDelayType.getRtt() > 0) {
-                TimeUnit.MICROSECONDS.sleep((long)(memoryDelayType.getRtt() * 1000));
-            }
-            // 网络带宽等待时间，数据包总量按照比特计算，除以带宽（按照Mbps）计算，单位修正后得到的是需要等待的微秒值
-            if (memoryDelayType.getBandWidth() > 0) {
-                // 带宽等待时间为数据包总比特量除以总带宽量，单位为微妙。注意总带宽量要放大1.024^2倍
-                long waitNanoSeconds = (long)((long)dataPacketByteLength * Byte.SIZE * 1000
-                    / (memoryDelayType.getBandWidth() * 1.024 * 1.024));
-                TimeUnit.NANOSECONDS.sleep(waitNanoSeconds);
-            }
-            return dataPacket;
+            return dataPacketBuffer.take(header);
         } catch (InterruptedException e) {
             // 线程终端，不需要等待，直接返回空
+            return null;
+        }
+    }
+
+    @Override
+    public DataPacket receiveAny() {
+        try {
+            return dataPacketBuffer.takeAny(ownPartyId);
+        } catch (InterruptedException e) {
+            // 线程中断，不需要等待，直接返回空
             return null;
         }
     }
@@ -195,7 +176,6 @@ public class MemoryRpc implements Rpc {
     @Override
     public void synchronize() {
         // 对参与方进行排序，所有在自己之前的自己作为client、所有在自己之后的自己作为server
-        int ownPartyId = ownParty.getPartyId();
         partyIdHashMap.keySet().stream().sorted().forEach(otherPartyId -> {
             if (otherPartyId < ownPartyId) {
                 // 如果对方排序比自己小，则自己是client，需要给对方发送同步信息

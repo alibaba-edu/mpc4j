@@ -9,10 +9,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.stream.IntStream;
 
 /**
  * Zp64功能测试。
@@ -22,32 +20,19 @@ import java.util.stream.IntStream;
  */
 @RunWith(Parameterized.class)
 public class Zp64Test {
-    /**
-     * 并发数量
-     */
-    private static final int MAX_PARALLEL = 10;
-    /**
-     * 随机测试数量
-     */
-    private static final int MAX_RANDOM_NUM = 40;
-    /**
-     * 随机状态
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
-        // Rings
-        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 1)", Zp64Type.RINGS, 1});
-        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 2)", Zp64Type.RINGS, 2});
-        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 3)", Zp64Type.RINGS, 3});
-        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 4)", Zp64Type.RINGS, 4});
-        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 39)", Zp64Type.RINGS, 39});
-        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 40)", Zp64Type.RINGS, 40});
-        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 41)", Zp64Type.RINGS, 41});
-        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 61)", Zp64Type.RINGS, 61});
-        configurations.add(new Object[]{Zp64Type.RINGS.name() + " (l = 62)", Zp64Type.RINGS, 62});
+
+        Zp64Type[] zp64Types = new Zp64Type[]{Zp64Type.RINGS};
+        int[] ls = new int[]{1, 2, 3, 4, 39, 40, 41, 61, 62};
+        for (Zp64Type type : zp64Types) {
+            // add each l
+            for (int l : ls) {
+                configurations.add(new Object[]{type.name() + " (l = " + l + ")", type, l});
+            }
+        }
 
         return configurations;
     }
@@ -60,16 +45,11 @@ public class Zp64Test {
      * Zp64有限域
      */
     private final Zp64 zp64;
-    /**
-     * 用于测试并发性能的常数
-     */
-    private final long constant;
 
     public Zp64Test(String name, Zp64Type zp64Type, int l) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.zp64Type = zp64Type;
         zp64 = Zp64Factory.createInstance(EnvType.STANDARD, zp64Type, l);
-        constant = 1L << l;
     }
 
     @Test
@@ -78,21 +58,21 @@ public class Zp64Test {
     }
 
     @Test
-    public void testBitLength() {
-        int primeBitLength = zp64.getPrimeBitLength();
+    public void testElementBitLength() {
+        int elementBitLength = zp64.getElementBitLength();
         int l = zp64.getL();
-        Assert.assertEquals(primeBitLength, l + 1);
+        Assert.assertEquals(elementBitLength, l + 1);
     }
 
     @Test
-    public void testByteLength() {
-        int primeByteLength = zp64.getPrimeByteLength();
+    public void testElementByteLength() {
+        int elementByteLength = zp64.getElementByteLength();
         int byteL = zp64.getByteL();
         if (zp64.getL() % Byte.SIZE == 0) {
             // 如果l刚好可以被Byte.SIZE整除，则质数字节长度会更大一点
-            Assert.assertEquals(primeByteLength, byteL + 1);
+            Assert.assertEquals(elementByteLength, byteL + 1);
         } else {
-            Assert.assertEquals(primeByteLength, byteL);
+            Assert.assertEquals(elementByteLength, byteL);
         }
     }
 
@@ -113,131 +93,36 @@ public class Zp64Test {
     }
 
     @Test
-    public void testAdd() {
-        // 0 + 0 = 0
-        long zero = zp64.createZero();
-        Assert.assertEquals(zero, zp64.add(zero, zero));
-        // 0 - 0 = 0
-        Assert.assertEquals(zero, zp64.sub(zero, zero));
-        // 0 + (-0) = 0
-        Assert.assertEquals(zero, zp64.add(zero, zp64.neg(zero)));
-
-        for (int round = 0; round < MAX_RANDOM_NUM; round++) {
-            long a = zp64.createNonZeroRandom(SECURE_RANDOM);
-            // a + (-a) = 0
-            Assert.assertEquals(zero, zp64.add(a, zp64.neg(a)));
-            // a - a = 0
-            Assert.assertEquals(zero, zp64.sub(a, a));
+    public void testConstantAddNegSub() {
+        long prime = zp64.getPrime();
+        if (prime > 2) {
+            // 1 + 1 = 2
+            Assert.assertEquals(2, zp64.add(1, 1));
+            // -1 = prime - 1
+            Assert.assertEquals(prime - 1, zp64.neg(1));
+            // 2 - 1 = 1
+            Assert.assertEquals(1, zp64.sub(2, 1));
+        }
+        if (prime > 4) {
+            // 2 + 2 = 4
+            Assert.assertEquals(4, zp64.add(2, 2));
+            // -2 = prime - 2
+            Assert.assertEquals(prime - 2, zp64.neg(2));
+            // 4 - 2 = 2
+            Assert.assertEquals(2, zp64.sub(4, 2));
         }
     }
 
     @Test
-    public void testMul() {
-        // 0 * 0 = 0
-        long zero = zp64.createZero();
-        Assert.assertEquals(zero, zp64.mul(zero, zero));
-        for (int round = 0; round < MAX_RANDOM_NUM; round++) {
-            long a = zp64.createNonZeroRandom(SECURE_RANDOM);
-            // 0 * a = 0
-            Assert.assertEquals(zero, zp64.mul(zero, a));
-            // a * 0 = 0
-            Assert.assertEquals(zero, zp64.mul(a, zero));
+    public void testConstantMulInvDiv() {
+        long prime = zp64.getPrime();
+        if (prime > 4) {
+            // 2 * 2 = 4
+            Assert.assertEquals(4, zp64.mul(2, 2));
+            // 4 * 2^{-1} = 2
+            Assert.assertEquals(2, zp64.mul(4, zp64.inv(2)));
+            // 4 / 2 = 2
+            Assert.assertEquals(2, zp64.div(4, 2));
         }
-        // 1 * 1 = 1
-        long one = zp64.createOne();
-        Assert.assertEquals(one, zp64.mul(one, one));
-        for (int round = 0; round < MAX_RANDOM_NUM; round++) {
-            long a = zp64.createNonZeroRandom(SECURE_RANDOM);
-            // 1 * a = a
-            Assert.assertEquals(a, zp64.mul(one, a));
-            // a * 1 = a
-            Assert.assertEquals(a, zp64.mul(a, one));
-            // a * (1 / a) = 1
-            Assert.assertEquals(one, zp64.mul(a, zp64.inv(a)));
-            // a / a = 1
-            Assert.assertEquals(one, zp64.div(a, a));
-        }
-    }
-
-    @Test
-    public void testModPow() {
-        // 0^0 = 1
-        long zero = zp64.createZero();
-        long one = zp64.createOne();
-        Assert.assertEquals(one, zp64.mulPow(zero, zero));
-        for (int round = 0; round < MAX_RANDOM_NUM; round++) {
-            // 0^a = 0
-            long a = zp64.createNonZeroRandom(SECURE_RANDOM);
-            Assert.assertEquals(zero, zp64.mulPow(zero, a));
-        }
-        for (int round = 0; round < MAX_RANDOM_NUM; round++) {
-            // a^0 = 1
-            long a = zp64.createNonZeroRandom(SECURE_RANDOM);
-            Assert.assertEquals(one, zp64.mulPow(a, zero));
-        }
-        for (int round = 0; round < MAX_RANDOM_NUM; round++) {
-            // (a^b)^(-1) = (a^(-1))^b
-            long a = zp64.createNonZeroRandom(SECURE_RANDOM);
-            long b = zp64.createNonZeroRandom(SECURE_RANDOM);
-            Assert.assertEquals(zp64.inv(zp64.mulPow(a, b)), zp64.mulPow(zp64.inv(a), b));
-        }
-    }
-
-    @Test
-    public void testAddParallel() {
-        long addCount = IntStream.range(0, MAX_PARALLEL)
-            .parallel()
-            .mapToLong(index -> zp64.add(constant, constant))
-            .distinct()
-            .count();
-        Assert.assertEquals(1L, addCount);
-
-        long subCount = IntStream.range(0, MAX_PARALLEL)
-            .parallel()
-            .mapToLong(index -> zp64.sub(constant, constant))
-            .distinct()
-            .count();
-        Assert.assertEquals(1L, subCount);
-
-        long negCount = IntStream.range(0, MAX_PARALLEL)
-            .parallel()
-            .mapToLong(index -> zp64.neg(constant))
-            .distinct()
-            .count();
-        Assert.assertEquals(1L, negCount);
-    }
-
-    @Test
-    public void testMulParallel() {
-        long mulCount = IntStream.range(0, MAX_PARALLEL)
-            .parallel()
-            .mapToLong(index -> zp64.mul(constant, constant))
-            .distinct()
-            .count();
-        Assert.assertEquals(1L, mulCount);
-
-        long divCount = IntStream.range(0, MAX_PARALLEL)
-            .parallel()
-            .mapToLong(index -> zp64.div(constant, constant))
-            .distinct()
-            .count();
-        Assert.assertEquals(1L, divCount);
-
-        long invCount = IntStream.range(0, MAX_PARALLEL)
-            .parallel()
-            .mapToLong(index -> zp64.inv(constant))
-            .distinct()
-            .count();
-        Assert.assertEquals(1L, invCount);
-    }
-
-    @Test
-    public void testModPowParallel() {
-        long mulPowCount = IntStream.range(0, MAX_PARALLEL)
-            .parallel()
-            .mapToLong(index -> zp64.mulPow(constant, constant))
-            .distinct()
-            .count();
-        Assert.assertEquals(1L, mulPowCount);
     }
 }

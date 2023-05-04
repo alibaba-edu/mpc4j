@@ -25,11 +25,15 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2021/10/01
  */
-class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
+class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> implements SparseZpOvdm<T> {
+    /**
+     * 2 sparse hashes
+     */
+    private static final int SPARSE_HASH_NUM = 2;
     /**
      * 2哈希-两核椭圆曲线OVDM所需的哈希函数密钥数量。
      */
-    static int HASH_NUM = 3;
+    static int HASH_NUM = SPARSE_HASH_NUM + 1;
     /**
      * 2哈希-两核椭圆曲线OVDM所对应的ε
      */
@@ -86,21 +90,45 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
     }
 
     @Override
+    public int[] sparsePositions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        int[] sparsePositions = new int[SPARSE_HASH_NUM];
+        sparsePositions[0] = h1.getInteger(0, keyBytes, lm);
+        // h1 and h2 are distinct
+        int h2Index = 0;
+        do {
+            sparsePositions[1] = h2.getInteger(h2Index, keyBytes, lm);
+            h2Index++;
+        } while (sparsePositions[1] == sparsePositions[0]);
+        return sparsePositions;
+    }
+
+    @Override
+    public int sparsePositionNum() {
+        return SPARSE_HASH_NUM;
+    }
+
+    @Override
+    public boolean[] densePositions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        return BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes));
+    }
+
+    @Override
+    public int maxDensePositionNum() {
+        return rm;
+    }
+
+    @Override
     public BigInteger decode(BigInteger[] storage, T key) {
         assert storage.length == getM();
-        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        int h1Value = h1.getInteger(keyBytes, lm);
-        int h2Value = h2.getInteger(keyBytes, lm);
-        boolean[] rxBinary = BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes));
+        int[] sparsePositions = sparsePositions(key);
+        boolean[] densePositions = densePositions(key);
         BigInteger value = BigInteger.ZERO;
-        // 如果两个哈希结果相同，则只计算一次加法
-        if (h1Value != h2Value) {
-            value = zp.add(zp.add(value, storage[h1Value]), storage[h2Value]);
-        } else {
-            value = zp.add(value, storage[h1Value]);
-        }
+        // h1 and h2 must be distinct
+        value = zp.add(zp.add(value, storage[sparsePositions[0]]), storage[sparsePositions[1]]);
         for (int rmIndex = 0; rmIndex < rm; rmIndex++) {
-            if (rxBinary[rmIndex]) {
+            if (densePositions[rmIndex]) {
                 value = zp.add(value, storage[lm + rmIndex]);
             }
         }
@@ -132,10 +160,11 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
         dataH2Map = new HashMap<>(keySet.size());
         dataHrMap = new HashMap<>(keySet.size());
         for (T key : keySet) {
-            byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-            dataH1Map.put(key, h1.getInteger(keyBytes, lm));
-            dataH2Map.put(key, h2.getInteger(keyBytes, lm));
-            dataHrMap.put(key, BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes)));
+            int[] sparsePositions = sparsePositions(key);
+            boolean[] densePositions = densePositions(key);
+            dataH1Map.put(key, sparsePositions[0]);
+            dataH2Map.put(key, sparsePositions[1]);
+            dataHrMap.put(key, densePositions);
         }
         // 生成2哈希-布谷鸟图
         H2CuckooTable<T> h2CuckooTable = generateCuckooTable(keyValueMap);
@@ -276,12 +305,9 @@ class H2TcGctZpOvdm<T> extends AbstractZpOvdm<T> {
             if (storage[h2Value] == null) {
                 storage[h2Value] = BigInteger.ZERO;
             }
-            if (h1Value == h2Value) {
-                mp = zp.add(mp, storage[h1Value]);
-            } else {
-                mp = zp.add(mp, storage[h1Value]);
-                mp = zp.add(mp, storage[h2Value]);
-            }
+            // h1 and h2 must be distinct
+            mp = zp.add(mp, storage[h1Value]);
+            mp = zp.add(mp, storage[h2Value]);
             for (int rxIndex = 0; rxIndex < rx.length; rxIndex++) {
                 if (rx[rxIndex]) {
                     if (storage[lm + rxIndex] == null) {

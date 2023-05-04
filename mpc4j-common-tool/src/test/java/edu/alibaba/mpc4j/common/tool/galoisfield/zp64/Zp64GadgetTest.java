@@ -33,9 +33,11 @@ public class Zp64GadgetTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
-        configurations.add(new Object[]{"l = 1", 1});
-        configurations.add(new Object[]{"l = 2", 2});
-        configurations.add(new Object[]{"l = 62", 62});
+
+        int[] ls = new int[]{1, 2, 3, 4, 39, 40, 41, 61, 62};
+        for (int l : ls) {
+            configurations.add(new Object[]{"l = " + l, l});
+        }
 
         return configurations;
     }

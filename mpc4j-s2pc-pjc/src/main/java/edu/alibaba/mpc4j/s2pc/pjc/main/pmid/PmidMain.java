@@ -197,10 +197,11 @@ public class PmidMain {
         // 同步
         pmidServer.getRpc().synchronize();
         pmidServer.getRpc().reset();
+        pmidServer.destroy();
         LOGGER.info("(warmup) {} finish", pmidServer.ownParty().getPartyName());
     }
 
-    private void runServer(Rpc serverRpc, Party clientParty, PmidConfig config, long taskId, boolean parallel,
+    private void runServer(Rpc serverRpc, Party clientParty, PmidConfig config, int taskId, boolean parallel,
                            Map<ByteBuffer, Integer> serverElementMap, int serverU, int clientSetSize, int clientU,
                            PrintWriter printWriter) throws MpcAbortException {
         int serverSetSize = serverElementMap.keySet().size();
@@ -251,6 +252,7 @@ public class PmidMain {
         // 同步
         pmidServer.getRpc().synchronize();
         pmidServer.getRpc().reset();
+        pmidServer.destroy();
         LOGGER.info("{} finish", pmidServer.ownParty().getPartyName());
     }
 
@@ -379,10 +381,11 @@ public class PmidMain {
         // 同步
         pmidClient.getRpc().synchronize();
         pmidClient.getRpc().reset();
+        pmidClient.destroy();
         LOGGER.info("(warmup) {} finish", pmidClient.ownParty().getPartyName());
     }
 
-    private void runClient(Rpc clientRpc, Party serverParty, PmidConfig config, long taskId, boolean parallel,
+    private void runClient(Rpc clientRpc, Party serverParty, PmidConfig config, int taskId, boolean parallel,
                            Map<ByteBuffer, Integer> clientElementMap, int clientU, int serverSetSize, int serverU,
                            PrintWriter printWriter) throws MpcAbortException {
         int clientSetSize = clientElementMap.keySet().size();
@@ -433,6 +436,7 @@ public class PmidMain {
         // 同步
         pmidClient.getRpc().synchronize();
         pmidClient.getRpc().reset();
+        pmidClient.destroy();
         LOGGER.info("{} finish", pmidClient.ownParty().getPartyName());
     }
 }

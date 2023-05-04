@@ -39,6 +39,10 @@ class RpcTestPtoDesc implements PtoDesc {
          * 带额外信息
          */
         EXTRA_INFO,
+        /**
+         * 任取数据包
+         */
+        TAKE_ANY,
     }
 
     /**

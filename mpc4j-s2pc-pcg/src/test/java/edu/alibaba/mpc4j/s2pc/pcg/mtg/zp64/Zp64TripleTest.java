@@ -1,133 +1,93 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
+import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
- * Zp64三元组测试。
+ * Zp64 triple tests.
  *
  * @author Weiran Liu
  * @date 2022/11/5
  */
 public class Zp64TripleTest {
     /**
-     * 较小数量
+     * min num
      */
     private static final int MIN_NUM = 1;
     /**
-     * 较大数量
+     * max num
      */
-    private static final int MAX_NUM = 128;
+    private static final int MAX_NUM = 64;
     /**
-     * 较小的l
+     * default Zp64 instance
      */
-    private static final int SMALL_L = 2;
+    private static final Zp64 DEFAULT_ZP64 = Zp64Factory.createInstance(EnvType.STANDARD, 32);
     /**
-     * 较大的l
+     * Zp64 array
      */
-    private static final int LARGE_L = CommonConstants.STATS_BIT_LENGTH;
+    private static final Zp64[] ZP64S = IntStream.range(1, LongUtils.MAX_L)
+        .mapToObj(l -> Zp64Factory.createInstance(EnvType.STANDARD, l))
+        .toArray(Zp64[]::new);
 
     @Test
     public void testIllegalInputs() {
-        try {
-            // 创建长度为0的三元组
-            Zp64Triple.create(2, 0, new long[0], new long[0], new long[0]);
-            throw new IllegalStateException("ERROR: successfully create " + Zp64Triple.class.getSimpleName() + " with num = 0");
-        } catch (AssertionError ignored) {
-
-        }
+        // create triple with num = 0
+        Assert.assertThrows(AssertionError.class, () ->
+            Zp64Triple.create(DEFAULT_ZP64, 0, new long[0], new long[0], new long[0])
+        );
         int num = 12;
-        try {
-            // 创建p = 0的三元组
-            long[] as = new long[num];
-            long[] bs = new long[num];
-            long[] cs = new long[num];
-            Zp64Triple.create(0, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create " + Zp64Triple.class.getSimpleName() + " with p = 0");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建p = 1的三元组
-            long[] as = new long[num];
-            long[] bs = new long[num];
-            long[] cs = new long[num];
-            Zp64Triple.create(1, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create " + Zp64Triple.class.getSimpleName() + " with p = 1");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建p为非质数的三元组
-            long[] as = new long[num];
-            long[] bs = new long[num];
-            long[] cs = new long[num];
-            Zp64Triple.create(4, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create " + Zp64Triple.class.getSimpleName() + " with p = 4");
-        } catch (AssertionError ignored) {
-
-        }
-        long p = ZpManager.getPrime(CommonConstants.STATS_BIT_LENGTH).longValue();
-        long element = p - 1;
-        try {
-            // 创建数量小的三元组
+        long element = DEFAULT_ZP64.createNonZeroRandom(new SecureRandom());
+        // create triples with less num
+        Assert.assertThrows(AssertionError.class, () -> {
             long[] as = new long[num - 1];
             Arrays.fill(as, element);
             long[] bs = new long[num - 1];
             Arrays.fill(bs, element);
             long[] cs = new long[num - 1];
             Arrays.fill(cs, element);
-            Zp64Triple.create(p, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create " + Zp64Triple.class.getSimpleName() + " with less num");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建数量大的三元组
+            Zp64Triple.create(DEFAULT_ZP64, num, as, bs, cs);
+        });
+        // create triples with large num
+        Assert.assertThrows(AssertionError.class, () -> {
             long[] as = new long[num + 1];
             Arrays.fill(as, element);
             long[] bs = new long[num + 1];
             Arrays.fill(bs, element);
             long[] cs = new long[num + 1];
             Arrays.fill(cs, element);
-            Zp64Triple.create(p, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create " + Zp64Triple.class.getSimpleName() + " with large num");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建数量不一致的三元组
+            Zp64Triple.create(DEFAULT_ZP64, num, as, bs, cs);
+        });
+        // create triples with mis-matched num
+        Assert.assertThrows(AssertionError.class, () -> {
             long[] as = new long[num - 1];
             Arrays.fill(as, element);
             long[] bs = new long[num];
             Arrays.fill(bs, element);
             long[] cs = new long[num + 1];
             Arrays.fill(cs, element);
-            Zp64Triple.create(p, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create " + Zp64Triple.class.getSimpleName() + " with distinct num");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建元素比特长度大于指定长度的三元组
+            Zp64Triple.create(DEFAULT_ZP64, num, as, bs, cs);
+        });
+        // create triples with large element
+        Assert.assertThrows(AssertionError.class, () -> {
+            long p = DEFAULT_ZP64.getPrime();
             long[] as = new long[num];
             Arrays.fill(as, p);
             long[] bs = new long[num];
             Arrays.fill(bs, element);
             long[] cs = new long[num];
             Arrays.fill(cs, element);
-            Zp64Triple.create(p, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create " + Zp64Triple.class.getSimpleName() + " with large element");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            // 创建元素为负数的三元组
+            Zp64Triple.create(DEFAULT_ZP64, num, as, bs, cs);
+        });
+        // create triples with negative element
+        Assert.assertThrows(AssertionError.class, () -> {
             long negativeElement = -1;
             long[] as = new long[num];
             Arrays.fill(as, negativeElement);
@@ -135,47 +95,43 @@ public class Zp64TripleTest {
             Arrays.fill(bs, element);
             long[] cs = new long[num];
             Arrays.fill(cs, element);
-            Zp64Triple.create(p, num, as, bs, cs);
-            throw new IllegalStateException("ERROR: successfully create " + Zp64Triple.class.getSimpleName() + " with negative element");
-        } catch (AssertionError ignored) {
-
-        }
+            Zp64Triple.create(DEFAULT_ZP64, num, as, bs, cs);
+        });
     }
 
     @Test
     public void testReduce() {
-        for (int l = SMALL_L; l < LARGE_L; l++) {
+        for (Zp64 zp64 : ZP64S) {
             for (int num = MIN_NUM; num < MAX_NUM; num++) {
-                testReduce(l, num);
+                testReduce(zp64, num);
             }
         }
     }
 
-    private void testReduce(int l, int num) {
-        long p = ZpManager.getPrime(l).longValue();
-        long element = 1L << l;
-        // 创建三元组
+    private void testReduce(Zp64 zp64, int num) {
+        long element = 1L << zp64.getL();
+        // create triples
         long[] as = new long[num];
         Arrays.fill(as, element);
         long[] bs = new long[num];
         Arrays.fill(bs, element);
         long[] cs = new long[num];
         Arrays.fill(cs, element);
-        // 减小到1
-        Zp64Triple triple1 = Zp64Triple.create(p, num, as, bs, cs);
+        // reduce 1
+        Zp64Triple triple1 = Zp64Triple.create(zp64, num, as, bs, cs);
         triple1.reduce(1);
         assertCorrectness(triple1, 1);
-        // 减小到相同长度
-        Zp64Triple tripleAll = Zp64Triple.create(p, num, as, bs, cs);
+        // reduce all
+        Zp64Triple tripleAll = Zp64Triple.create(zp64, num, as, bs, cs);
         tripleAll.reduce(num);
         assertCorrectness(tripleAll, num);
         if (num > 1) {
-            // 减小n - 1
-            Zp64Triple tripleN = Zp64Triple.create(p, num, as, bs, cs);
+            // reduce num - 1
+            Zp64Triple tripleN = Zp64Triple.create(zp64, num, as, bs, cs);
             tripleN.reduce(num - 1);
             assertCorrectness(tripleN, num - 1);
-            // 减小到一半
-            Zp64Triple tripleHalf = Zp64Triple.create(p, num, as, bs, cs);
+            // reduce half
+            Zp64Triple tripleHalf = Zp64Triple.create(zp64, num, as, bs, cs);
             tripleHalf.reduce(num / 2);
             assertCorrectness(tripleHalf, num / 2);
         }
@@ -183,10 +139,9 @@ public class Zp64TripleTest {
 
     @Test
     public void testAllEmptyMerge() {
-        for (int l = SMALL_L; l < LARGE_L; l++) {
-            long p = ZpManager.getPrime(l).longValue();
-            Zp64Triple triple = Zp64Triple.createEmpty(p);
-            Zp64Triple mergeTriple = Zp64Triple.createEmpty(p);
+        for (Zp64 zp64 : ZP64S) {
+            Zp64Triple triple = Zp64Triple.createEmpty(zp64);
+            Zp64Triple mergeTriple = Zp64Triple.createEmpty(zp64);
             triple.merge(mergeTriple);
             assertCorrectness(triple, 0);
         }
@@ -194,17 +149,16 @@ public class Zp64TripleTest {
 
     @Test
     public void testLeftEmptyMerge() {
-        for (int l = SMALL_L; l < LARGE_L; l++) {
+        for (Zp64 zp64 : ZP64S) {
             for (int num = MIN_NUM; num < MAX_NUM; num++) {
-                testLeftEmptyMerge(l, num);
+                testLeftEmptyMerge(zp64, num);
             }
         }
     }
 
-    private void testLeftEmptyMerge(int l, int num) {
-        long p = ZpManager.getPrime(l).longValue();
-        long element = 1L << l;
-        // 创建三元组
+    private void testLeftEmptyMerge(Zp64 zp64, int num) {
+        long element = 1L << zp64.getL();
+        // create triples
         long[] as = new long[num];
         Arrays.fill(as, element);
         long[] bs = new long[num];
@@ -212,24 +166,23 @@ public class Zp64TripleTest {
         long[] cs = new long[num];
         Arrays.fill(cs, element);
 
-        Zp64Triple triple = Zp64Triple.createEmpty(p);
-        Zp64Triple mergeTriple = Zp64Triple.create(p, num, as, bs, cs);
+        Zp64Triple triple = Zp64Triple.createEmpty(zp64);
+        Zp64Triple mergeTriple = Zp64Triple.create(zp64, num, as, bs, cs);
         triple.merge(mergeTriple);
         assertCorrectness(triple, num);
     }
 
     @Test
     public void testRightEmptyMerge() {
-        for (int l = SMALL_L; l < LARGE_L; l++) {
+        for (Zp64 zp64 : ZP64S) {
             for (int num = MIN_NUM; num < MAX_NUM; num++) {
-                testRightEmptyMerge(l, num);
+                testRightEmptyMerge(zp64, num);
             }
         }
     }
 
-    private void testRightEmptyMerge(int l, int num) {
-        long p = ZpManager.getPrime(l).longValue();
-        long element = 1L << l;
+    private void testRightEmptyMerge(Zp64 zp64, int num) {
+        long element = 1L << zp64.getL();
         // 创建三元组
         long[] as = new long[num];
         Arrays.fill(as, element);
@@ -238,83 +191,81 @@ public class Zp64TripleTest {
         long[] cs = new long[num];
         Arrays.fill(cs, element);
 
-        Zp64Triple triple = Zp64Triple.create(p, num, as, bs, cs);
-        Zp64Triple mergeTriple = Zp64Triple.createEmpty(p);
+        Zp64Triple triple = Zp64Triple.create(zp64, num, as, bs, cs);
+        Zp64Triple mergeTriple = Zp64Triple.createEmpty(zp64);
         triple.merge(mergeTriple);
         assertCorrectness(triple, num);
     }
 
     @Test
     public void testMerge() {
-        for (int l = SMALL_L; l < LARGE_L; l++) {
+        for (Zp64 zp64 : ZP64S) {
             for (int num1 = MIN_NUM; num1 < MAX_NUM; num1++) {
                 for (int num2 = MIN_NUM; num2 < MAX_NUM; num2++) {
-                    testMerge(l, num1, num2);
+                    testMerge(zp64, num1, num2);
                 }
             }
         }
     }
 
-    private void testMerge(int l, int num1, int num2) {
-        long p = ZpManager.getPrime(l).longValue();
-        long element = 1L << l;
-        // 创建第1个三元组
+    private void testMerge(Zp64 zp64, int num1, int num2) {
+        long element = 1L << zp64.getL();
+        // create the 1st triple
         long[] a1s = new long[num1];
         Arrays.fill(a1s, element);
         long[] b1s = new long[num1];
         Arrays.fill(b1s, element);
         long[] c1s = new long[num1];
         Arrays.fill(c1s, element);
-        // 创建第2个三元组
+        // create the 2nd triple
         long[] a2s = new long[num2];
         Arrays.fill(a2s, element);
         long[] b2s = new long[num2];
         Arrays.fill(b2s, element);
         long[] c2s = new long[num2];
         Arrays.fill(c2s, element);
-        // 合并三元组并验证结果
-        Zp64Triple triple = Zp64Triple.create(p, num1, a1s, b1s, c1s);
-        Zp64Triple mergerTriple = Zp64Triple.create(p, num2, a2s, b2s, c2s);
+        // merge and verify
+        Zp64Triple triple = Zp64Triple.create(zp64, num1, a1s, b1s, c1s);
+        Zp64Triple mergerTriple = Zp64Triple.create(zp64, num2, a2s, b2s, c2s);
         triple.merge(mergerTriple);
         assertCorrectness(triple, num1 + num2);
     }
 
     @Test
     public void testSplit() {
-        for (int l = SMALL_L; l < LARGE_L; l++) {
+        for (Zp64 zp64 : ZP64S) {
             for (int num = MIN_NUM; num < MAX_NUM; num++) {
-                testSplit(l, num);
+                testSplit(zp64, num);
             }
         }
     }
 
-    private void testSplit(int l, int num) {
-        long p = ZpManager.getPrime(l).longValue();
-        long element = 1L << l;
+    private void testSplit(Zp64 zp64, int num) {
+        long element = 1L << zp64.getL();
         long[] as = new long[num];
         Arrays.fill(as, element);
         long[] bs = new long[num];
         Arrays.fill(bs, element);
         long[] cs = new long[num];
         Arrays.fill(cs, element);
-        // 切分1比特
-        Zp64Triple triple1 = Zp64Triple.create(p, num, as, bs, cs);
+        // split 1
+        Zp64Triple triple1 = Zp64Triple.create(zp64, num, as, bs, cs);
         Zp64Triple splitTriple1 = triple1.split(1);
         assertCorrectness(triple1, num - 1);
         assertCorrectness(splitTriple1, 1);
-        // 切分全部比特
-        Zp64Triple tripleAll = Zp64Triple.create(p, num, as, bs, cs);
+        // split all
+        Zp64Triple tripleAll = Zp64Triple.create(zp64, num, as, bs, cs);
         Zp64Triple splitTripleAll = tripleAll.split(num);
         assertCorrectness(tripleAll, 0);
         assertCorrectness(splitTripleAll, num);
         if (num > 1) {
-            // 切分num - 1比特
-            Zp64Triple tripleN = Zp64Triple.create(p, num, as, bs, cs);
+            // split num - 1
+            Zp64Triple tripleN = Zp64Triple.create(zp64, num, as, bs, cs);
             Zp64Triple splitTripleN = tripleN.split(num - 1);
             assertCorrectness(tripleN, 1);
             assertCorrectness(splitTripleN, num - 1);
-            // 切分一半比特
-            Zp64Triple tripleHalf = Zp64Triple.create(p, num, as, bs, cs);
+            // split half
+            Zp64Triple tripleHalf = Zp64Triple.create(zp64, num, as, bs, cs);
             Zp64Triple splitTripleHalf = tripleHalf.split(num / 2);
             assertCorrectness(tripleHalf, num - num / 2);
             assertCorrectness(splitTripleHalf, num / 2);
@@ -329,8 +280,7 @@ public class Zp64TripleTest {
             Assert.assertEquals(0, triple.getC().length);
         } else {
             Assert.assertEquals(num, triple.getNum());
-            int l = LongUtils.ceilLog2(triple.getP()) - 1;
-            long element = 1L << l;
+            long element = 1L << triple.getZp64().getL();
             for (int index = 0; index < num; index++) {
                 Assert.assertEquals(element, triple.getA(index));
                 Assert.assertEquals(element, triple.getB(index));

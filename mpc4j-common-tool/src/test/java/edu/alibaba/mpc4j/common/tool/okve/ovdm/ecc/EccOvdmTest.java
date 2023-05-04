@@ -58,46 +58,34 @@ public class EccOvdmTest {
 
     @Test
     public void testIllegalInputs() {
-        // 尝试设置错误数量的密钥
+        // try to set wrong number of keys
         if (EccOvdmFactory.getHashNum(type) > 0) {
-            byte[][] moreKeys = CommonUtils.generateRandomKeys(
-                EccOvdmFactory.getHashNum(type) + 1, EccOvdmTestUtils.SECURE_RANDOM
-            );
-            try {
+            Assert.assertThrows(AssertionError.class, () -> {
+                byte[][] moreKeys = CommonUtils.generateRandomKeys(
+                    EccOvdmFactory.getHashNum(type) + 1, EccOvdmTestUtils.SECURE_RANDOM
+                );
                 EccOvdmFactory.createInstance(EnvType.STANDARD, type, EccOvdmTestUtils.ECC, DEFAULT_N, moreKeys);
-                throw new IllegalStateException("ERROR: successfully create OVDM with more keys");
-            } catch (AssertionError ignored) {
-
-            }
-            byte[][] lessKeys = CommonUtils.generateRandomKeys(
-                EccOvdmFactory.getHashNum(type) - 1, EccOvdmTestUtils.SECURE_RANDOM
-            );
-            try {
+            });
+            Assert.assertThrows(AssertionError.class, () -> {
+                byte[][] lessKeys = CommonUtils.generateRandomKeys(
+                    EccOvdmFactory.getHashNum(type) - 1, EccOvdmTestUtils.SECURE_RANDOM
+                );
                 EccOvdmFactory.createInstance(EnvType.STANDARD, type, EccOvdmTestUtils.ECC, DEFAULT_N, lessKeys);
-                throw new IllegalStateException("ERROR: successfully create OVDM with less keys");
-            } catch (AssertionError ignored) {
-
-            }
+            });
         }
         byte[][] keys = CommonUtils.generateRandomKeys(EccOvdmFactory.getHashNum(type), EccOvdmTestUtils.SECURE_RANDOM);
-        // 尝试让n = 0
-        try {
-            EccOvdmFactory.createInstance(EnvType.STANDARD, type, EccOvdmTestUtils.ECC, 0, keys);
-            throw new IllegalStateException("ERROR: successfully create OVDM with n = 0");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试编码更多的元素
-        Map<ByteBuffer, ECPoint> keyValueMap = EccOvdmTestUtils.randomKeyValueMap(DEFAULT_N + 1);
-        try {
+        // try n = 0
+        Assert.assertThrows(AssertionError.class, () ->
+            EccOvdmFactory.createInstance(EnvType.STANDARD, type, EccOvdmTestUtils.ECC, 0, keys)
+        );
+        // try encoding more elements
+        Assert.assertThrows(AssertionError.class, () -> {
+            Map<ByteBuffer, ECPoint> keyValueMap = EccOvdmTestUtils.randomKeyValueMap(DEFAULT_N + 1);
             EccOvdm<ByteBuffer> ovdm = EccOvdmFactory.createInstance(
                 EnvType.STANDARD, type, EccOvdmTestUtils.ECC, DEFAULT_N, keys
             );
             ovdm.encode(keyValueMap);
-            throw new IllegalStateException("ERROR: successfully encode key-value map with more elements");
-        } catch (AssertionError ignored) {
-
-        }
+        });
     }
 
     @Test

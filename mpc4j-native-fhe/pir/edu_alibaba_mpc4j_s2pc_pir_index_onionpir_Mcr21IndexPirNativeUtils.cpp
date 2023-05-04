@@ -14,7 +14,7 @@
 using namespace seal;
 using namespace std;
 
-JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_onionpir_Mcr21IndexPirNativeUtils_generateSealContext(
+JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_onionpir_Mcr21IndexPirNativeUtils_generateEncryptionParams(
         JNIEnv *env, jclass, jint poly_modulus_degree, jint plain_modulus_size) {
     uint64_t plain_modulus = PlainModulus::Batching(poly_modulus_degree, plain_modulus_size).value();
     vector<Modulus> coeff_modulus = CoeffModulus::Create(poly_modulus_degree, {60, 60, 60});
@@ -204,7 +204,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_onionpir_Mcr2
     SEALContext context(parms, true, sec_level_type::none);
     Evaluator evaluator(context);
     PublicKey public_key = deserialize_public_key(env, pk_bytes, context);
-    GaloisKeys galois_keys = deserialize_galois_keys(env, galois_keys_bytes, context);
+    GaloisKeys* galois_keys = deserialize_galois_keys(env, galois_keys_bytes, context);
     vector<Ciphertext> query = deserialize_ciphertexts(env, query_bytes, context);
     vector<Ciphertext> enc_sk = deserialize_ciphertexts(env, enc_sk_bytes, context);
     vector<Ciphertext> first_query(2);
@@ -234,7 +234,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_onionpir_Mcr2
     vector<vector<Ciphertext>> list_enc;
     list_enc.resize(nvec[0], vector<Ciphertext>(2));
     auto list_enc_ptr = list_enc.begin();
-    poc_expand_flat(list_enc_ptr, first_query, context, nvec[0], galois_keys);
+    poc_expand_flat(list_enc_ptr, first_query, context, nvec[0], *galois_keys);
     auto exception = env->FindClass("java/lang/Exception");
     if (list_enc.size() != nvec[0]) {
         cerr << "size mismatch!" << list_enc.size() << ", " << nvec[0] << endl;
@@ -265,7 +265,7 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_onionpir_Mcr2
         }
         logsize = ceil(log2(new_dimension_size * targetP::l_));
         remaining_queries.resize(1 << logsize, vector<Ciphertext>(2 * targetP::l_));
-        vector<Ciphertext> expanded_ciphers = poc_rlwe_expand(query[2], context, galois_keys, 1 << logsize);
+        vector<Ciphertext> expanded_ciphers = poc_rlwe_expand(query[2], context, *galois_keys, 1 << logsize);
         for (uint32_t i = 0; i < targetP::l_; i++) {
             for (uint32_t j = 0; j < new_dimension_size; j++) {
                 remaining_queries[j][i] = expanded_ciphers[j + i * new_dimension_size];

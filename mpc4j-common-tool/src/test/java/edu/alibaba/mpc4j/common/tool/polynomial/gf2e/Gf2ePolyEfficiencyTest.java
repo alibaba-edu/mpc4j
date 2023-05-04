@@ -77,20 +77,20 @@ public class Gf2ePolyEfficiencyTest {
             int byteL = gf2ePoly.getByteL();
             // 创建全量插值点
             byte[][] xFullArray = IntStream.range(0, pointNum)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             byte[][] yFullArray = IntStream.range(0, pointNum)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
-            byte[] yFull = BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM);
+            byte[] yFull = BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM);
             // 创建半数插值点
             byte[][] xHalfArray = IntStream.range(0, pointNum / 2)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
             byte[][] yHalfArray = IntStream.range(0, pointNum / 2)
-                .mapToObj(index -> BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM))
+                .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM))
                 .toArray(byte[][]::new);
-            byte[] yHalf = BytesUtils.randomByteArray(l, byteL, SECURE_RANDOM);
+            byte[] yHalf = BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM);
             // 全量插值时间
             STOP_WATCH.start();
             IntStream.range(0, n).forEach(index -> gf2ePoly.interpolate(pointNum, xFullArray, yFullArray));

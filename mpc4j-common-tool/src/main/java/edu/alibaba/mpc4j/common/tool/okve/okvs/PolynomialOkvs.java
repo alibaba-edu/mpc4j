@@ -1,80 +1,96 @@
 package edu.alibaba.mpc4j.common.tool.okve.okvs;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
+import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.okve.basic.PolyBasicOkvs;
 import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
-import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePoly;
-import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePolyFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
- * 基于多项式插值的不经意键值对存储器（OKVS）。
- * 与其他OKVS相比，多项式插值OKVS的特点在于，键值（key）和映射值（value）都必须是相同长度的字节数组。
+ * Polynomial OKVS.
  *
  * @author Weiran Liu
  * @date 2021/09/13
  */
-class PolynomialOkvs implements Okvs<ByteBuffer> {
+class PolynomialOkvs<T> implements Okvs<T> {
     /**
-     * 多项式插值服务
+     * polynomial basic OKVS
      */
-    private final Gf2ePoly gf2ePoly;
+    private final PolyBasicOkvs polyBasicOkvs;
     /**
-     * 插值数量
+     * the prf used to hash the input to {0, 1}^l
      */
-    private final int n;
-    /**
-     * 插值对的比特长度，要求是Byte.SIZE的整数倍
-     */
-    private final int l;
+    private final Prf prf;
 
-    PolynomialOkvs(EnvType envType, int n, int l) {
-        // 多项式OKVS要求至少编码2个元素
-        assert n > 1;
-        this.n = n;
-        // 要求l > 统计安全常数，且l可以被Byte.SIZE整除
-        assert l >= CommonConstants.STATS_BIT_LENGTH && l % Byte.SIZE == 0;
-        this.l = l;
-        gf2ePoly = Gf2ePolyFactory.createInstance(envType, l);
+    PolynomialOkvs(EnvType envType, int n, int l, byte[] key) {
+        polyBasicOkvs = new PolyBasicOkvs(envType, n, l);
+        int byteL = polyBasicOkvs.getByteL();
+        prf = PrfFactory.createInstance(envType, byteL);
+        prf.setKey(key);
     }
 
     @Override
     public void setParallelEncode(boolean parallelEncode) {
-        // 多项式编码难以并行
+        polyBasicOkvs.setParallelEncode(parallelEncode);
     }
 
     @Override
-    public byte[][] encode(Map<ByteBuffer, byte[]> keyValueMap) throws ArithmeticException {
-        assert keyValueMap.size() <= n;
-        byte[][] xArray = keyValueMap.keySet().stream().map(ByteBuffer::array).toArray(byte[][]::new);
-        byte[][] yArray = keyValueMap.keySet().stream().map(keyValueMap::get).toArray(byte[][]::new);
-        // 给定的键值对数量可能小于n，此时要用dummy interpolate将插入的点数量补充到n
-        return gf2ePoly.interpolate(n, xArray, yArray);
+    public boolean getParallelEncode() {
+        return polyBasicOkvs.getParallelEncode();
     }
 
     @Override
-    public byte[] decode(byte[][] storage, ByteBuffer key) {
-        // 这里不能验证storage每一行的长度，否则整体算法复杂度会变为O(n^2)
-        assert storage.length == getM();
-        return gf2ePoly.evaluate(storage, key.array());
+    public byte[][] encode(Map<T, byte[]> keyValueMap) throws ArithmeticException {
+        boolean parallelEncode = polyBasicOkvs.getParallelEncode();
+        int l = polyBasicOkvs.getL();
+        Stream<Map.Entry<T, byte[]>> entryStream = keyValueMap.entrySet().stream();
+        entryStream = parallelEncode ? entryStream.parallel() : entryStream;
+        Map<ByteBuffer, byte[]> encodeKeyValueMap = entryStream
+            .collect(Collectors.toMap(
+                entry -> {
+                    T key = entry.getKey();
+                    byte[] mapKey = prf.getBytes(ObjectUtils.objectToByteArray(key));
+                    BytesUtils.reduceByteArray(mapKey, l);
+                    return ByteBuffer.wrap(mapKey);
+                },
+                Map.Entry::getValue
+            ));
+        return polyBasicOkvs.encode(encodeKeyValueMap);
+    }
+
+    @Override
+    public byte[] decode(byte[][] storage, T key) {
+        int l = polyBasicOkvs.getL();
+        byte[] mapKey = prf.getBytes(ObjectUtils.objectToByteArray(key));
+        BytesUtils.reduceByteArray(mapKey, l);
+        return polyBasicOkvs.decode(storage, ByteBuffer.wrap(mapKey));
     }
 
     @Override
     public int getN() {
-        return n;
+        return polyBasicOkvs.getN();
     }
 
     @Override
     public int getL() {
-        return l;
+        return polyBasicOkvs.getL();
+    }
+
+    @Override
+    public int getByteL() {
+        return polyBasicOkvs.getByteL();
     }
 
     @Override
     public int getM() {
-        // 等于多项式插值的系数数量
-        return gf2ePoly.coefficientNum(n);
+        return polyBasicOkvs.getM();
     }
 
     @Override
@@ -84,6 +100,6 @@ class PolynomialOkvs implements Okvs<ByteBuffer> {
 
     @Override
     public int getNegLogFailureProbability() {
-        return Integer.MAX_VALUE;
+        return polyBasicOkvs.getNegLogFailureProbability();
     }
 }

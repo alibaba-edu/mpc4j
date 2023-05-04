@@ -25,7 +25,7 @@ public class Curve25519BcEcc extends AbstractEcc {
     }
 
     @Override
-    public ECPoint hashToCurve(byte[] message) {
-        return hashToCurve(message, hash);
+    public ECPoint hashToCurve(byte[] data) {
+        return hashToCurve(data, hash);
     }
 }

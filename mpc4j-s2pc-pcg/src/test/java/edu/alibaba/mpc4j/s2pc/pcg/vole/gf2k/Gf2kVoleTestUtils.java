@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
@@ -10,35 +9,34 @@ import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
 /**
- * GK2K-VOLE测试工具类。
+ * GK2K-VOLE test utilities.
  *
  * @author Weiran Liu
  * @date 2022/6/9
  */
 public class Gf2kVoleTestUtils {
     /**
-     * GF(2^128)计算工具
+     * the GF2K instance
      */
     private static final Gf2k GF2K = Gf2kFactory.createInstance(EnvType.STANDARD);
-
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private Gf2kVoleTestUtils() {
         // empty
     }
 
     /**
-     * 生成接收方输出。
+     * Generates a receiver output.
      *
-     * @param num          数量。
-     * @param delta        关联值Δ。
-     * @param secureRandom 随机状态。
-     * @return 接收方输出。
+     * @param num          num.
+     * @param delta        Δ.
+     * @param secureRandom the random state.
+     * @return a receiver output.
      */
     public static Gf2kVoleReceiverOutput genReceiverOutput(int num, byte[] delta, SecureRandom secureRandom) {
-        assert delta.length == CommonConstants.BLOCK_BYTE_LENGTH;
-        assert num > 0 : "num must be greater than 0";
+        assert GF2K.validateElement(delta);
+        assert num > 0 : "num must be greater than 0: " + num;
         byte[][] q = IntStream.range(0, num)
             .mapToObj(index -> GF2K.createRandom(secureRandom))
             .toArray(byte[][]::new);
@@ -46,35 +44,35 @@ public class Gf2kVoleTestUtils {
     }
 
     /**
-     * 生成发送方输出。
+     * Generates a sender output.
      *
-     * @param receiverOutput 接收方输出。
-     * @param secureRandom   随机状态。
-     * @return 发送方输出。
+     * @param receiverOutput the receiver output.
+     * @param secureRandom   the random state.
+     * @return a sender output.
      */
     public static Gf2kVoleSenderOutput genSenderOutput(Gf2kVoleReceiverOutput receiverOutput, SecureRandom secureRandom) {
         int num = receiverOutput.getNum();
         assert num > 0 : "num must be greater than 0";
-        byte[][] x = IntStream.range(0, num)
+        byte[][] xs = IntStream.range(0, num)
             .mapToObj(index -> GF2K.createRandom(secureRandom))
             .toArray(byte[][]::new);
         byte[] delta = receiverOutput.getDelta();
-        byte[][] t = IntStream.range(0, num)
+        byte[][] ts = IntStream.range(0, num)
             .mapToObj(index -> {
-                byte[] ti = GF2K.mul(x[index], delta);
+                byte[] ti = GF2K.mul(xs[index], delta);
                 GF2K.addi(ti, receiverOutput.getQ(index));
                 return ti;
             })
             .toArray(byte[][]::new);
-        return Gf2kVoleSenderOutput.create(x, t);
+        return Gf2kVoleSenderOutput.create(xs, ts);
     }
 
     /**
-     * 验证输出结果。
+     * Verifies the output pair.
      *
-     * @param num            数量。
-     * @param senderOutput   发送方输出。
-     * @param receiverOutput 接收方输出。
+     * @param num            num.
+     * @param senderOutput   the sender output.
+     * @param receiverOutput the receiver output.
      */
     public static void assertOutput(int num, Gf2kVoleSenderOutput senderOutput, Gf2kVoleReceiverOutput receiverOutput) {
         if (num == 0) {

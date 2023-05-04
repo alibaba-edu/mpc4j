@@ -98,6 +98,12 @@ scp username@xxx.xxx.xxx.xxx:/home/username/test.jar .
 nohup java -jar test.jar 10 &
 ```
 
+如果想让输出结果重定向到另一个文件（如`log.out`），则在SSH下执行下述命令：
+
+```shell
+nohup java -jar test.jar 10 > log.out 2>&1 &
+```
+
 如果想查看此任务是否已经执行，在`SSH`执行下述命令：
 
 ```shell

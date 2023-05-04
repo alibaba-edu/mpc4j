@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.zp64;
 
 import cc.redberry.rings.IntegersZp64;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
+import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 import java.math.BigInteger;
 
@@ -26,7 +27,7 @@ public class Zp64Manager {
      * @return 有限域Zp。
      */
     public static IntegersZp64 getFiniteField(int l) {
-        assert l > 0 && l < Long.SIZE : "l must be in range (0, " + Long.SIZE + "): " + l;
+        assert l > 0 && l <= LongUtils.MAX_L : "l must be in range (0, " + LongUtils.MAX_L + "]:" + l;
         return new IntegersZp64(getPrime(l));
     }
 
@@ -37,7 +38,7 @@ public class Zp64Manager {
      * @return 有限域质数p。
      */
     public static long getPrime(int l) {
-        assert l > 0 && l < Long.SIZE : "l must be in range (0, " + Long.SIZE + "): " + l;
+        assert l > 0 && l <= LongUtils.MAX_L : "l must be in range (0, " + LongUtils.MAX_L + "]:" + l;
         BigInteger bigIntegerPrime = ZpManager.getPrime(l);
         return bigIntegerPrime.longValue();
     }

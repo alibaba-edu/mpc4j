@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.base;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 
 /**
@@ -10,15 +9,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
  * @author Weiran Liu
  * @date 2022/02/03
  */
-public interface BaseOtSender extends TwoPartyPto, SecurePto {
-    /**
-     * 返回基础OT协议类型。
-     *
-     * @return 基础OT协议类型。
-     */
-    @Override
-    BaseOtFactory.BaseOtType getPtoType();
-
+public interface BaseOtSender extends TwoPartyPto {
     /**
      * 初始化协议。
      *

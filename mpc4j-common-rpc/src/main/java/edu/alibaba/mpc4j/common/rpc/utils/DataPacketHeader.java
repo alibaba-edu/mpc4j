@@ -1,77 +1,79 @@
 package edu.alibaba.mpc4j.common.rpc.utils;
 
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
- * 数据包头，总长度为8 + 4 + 4 + 4 + 4 + 8 = 32字节，包含下述信息：
- * - taskId: 任务ID，long类型（8字节）。
- * - PtoId：协议ID，int类型（4字节），使用协议描述类生成的serialVersionUID模Integer.MAX_VALUE的结果。
- * - StepId: 步骤ID，int类型（4字节），即步骤枚举值所对应的索引值。
- * - SenderId：发送方ID，int类型（4字节）。
- * - ReceiverId：接收方ID，int类型（4字节）。
- * - extraInfo：额外信息，如门电路ID，long类型（8字节）。
+ * The data packet header. The total length is 8 + 4 + 4 + 8 + 4 + 4 = 32 bytes, with the following information:
+ * <li>encodeTaskId (long): the first 32 bits is the position in the protocol tree, the last 32 bits is the task ID.</li>
+ * <li>ptoId (int): the protocol ID.</li>
+ * <li>stepId (int): the step ID.</li>
+ * <li>extraInfo: (long): the extra information, like Lamport clock in distribute systems.</li>
+ * <li>senderId (int): the sender ID.</li>
+ * <li>receiverId (int): the receiver ID.</li>
  *
  * @author Weiran Liu
  * @date 2021/12/08
  */
 public class DataPacketHeader {
     /**
-     * 任务ID
+     * the encoded task ID. The first 32 bits is the position in the protocol tree, the last 32 bits is the task ID.
      */
-    private final long taskId;
+    private final long encodeTaskId;
     /**
-     * 协议ID
+     * the protocol ID.
      */
     private final int ptoId;
     /**
-     * 步骤ID
+     * the step ID.
      */
     private final int stepId;
     /**
-     * 发送方ID
+     * the sender ID.
      */
     private final int senderId;
     /**
-     * 接收方ID
+     * the receiver ID.
      */
     private final int receiverId;
     /**
-     * 补充信息
+     * the extra information.
      */
     private final long extraInfo;
 
     /**
-     * 构造数据包头。
+     * Creates a new data packet header. The extraInfo is set to 0L.
      *
-     * @param taskId     任务ID。
-     * @param ptoId      协议ID。
-     * @param stepId     步骤ID。
-     * @param senderId   发送方ID。
-     * @param receiverId 接收方ID。
+     * @param encodeTaskId the encoded task ID.
+     * @param ptoId        the protocol ID.
+     * @param stepId       the step ID.
+     * @param senderId     the sender ID.
+     * @param receiverId   the receiver ID.
      */
-    public DataPacketHeader(long taskId, int ptoId, int stepId, int senderId, int receiverId) {
-        this(taskId, ptoId, stepId, 0L, senderId, receiverId);
+    public DataPacketHeader(long encodeTaskId, int ptoId, int stepId, int senderId, int receiverId) {
+        this(encodeTaskId, ptoId, stepId, 0L, senderId, receiverId);
     }
 
     /**
-     * 构造数据包头。
+     * Creates a new data packet header.
      *
-     * @param taskId     任务ID。
-     * @param ptoId      协议ID。
-     * @param stepId     步骤ID。
-     * @param senderId   发送方ID。
-     * @param receiverId 接收方ID。
-     * @param extraInfo  补充信息。
+     * @param encodeTaskId the encoded task ID.
+     * @param ptoId        the protocol ID.
+     * @param stepId       the step ID.
+     * @param extraInfo    the extra information, like Lamport clock in distribute systems.
+     * @param senderId     the sender ID.
+     * @param receiverId   the receiver ID.
      */
-    public DataPacketHeader(long taskId, int ptoId, int stepId, long extraInfo, int senderId, int receiverId) {
-        assert taskId >= 0;
-        assert ptoId >= 0;
-        assert stepId >= 0;
-        assert extraInfo >= 0;
-        assert senderId >= 0;
+    public DataPacketHeader(long encodeTaskId, int ptoId, int stepId, long extraInfo, int senderId, int receiverId) {
+        MathPreconditions.checkNonNegative("encodeTaskId", encodeTaskId);
+        MathPreconditions.checkNonNegative("ptoId", ptoId);
+        MathPreconditions.checkNonNegative("stepId", stepId);
+        MathPreconditions.checkNonNegative("extraInfo", extraInfo);
+        MathPreconditions.checkNonNegative("senderId", senderId);
+        MathPreconditions.checkNonNegative("receiverId", receiverId);
         assert receiverId >= 0;
-        this.taskId = taskId;
+        this.encodeTaskId = encodeTaskId;
         this.ptoId = ptoId;
         this.stepId = stepId;
         this.extraInfo = extraInfo;
@@ -80,54 +82,54 @@ public class DataPacketHeader {
     }
 
     /**
-     * 返回任务ID。
+     * Gets the encoded task ID.
      *
-     * @return 任务ID。
+     * @return the encoded task ID.
      */
-    public long getTaskId() {
-        return taskId;
+    public long getEncodeTaskId() {
+        return encodeTaskId;
     }
 
     /**
-     * 返回协议ID。
+     * Gets the protocol ID.
      *
-     * @return 协议ID。
+     * @return the protocol ID.
      */
     public int getPtoId() {
         return ptoId;
     }
 
     /**
-     * 返回步骤ID。
+     * Gets the step ID.
      *
-     * @return 步骤ID。
+     * @return the step ID.
      */
     public int getStepId() {
         return stepId;
     }
 
     /**
-     * 返回额外信息。
+     * Gets the extra information.
      *
-     * @return 额外信息。
+     * @return the extra information.
      */
     public long getExtraInfo() {
         return extraInfo;
     }
 
     /**
-     * 返回发送方ID。
+     * Gets the sender ID.
      *
-     * @return 发送方ID。
+     * @return the sender ID.
      */
     public int getSenderId() {
         return senderId;
     }
 
     /**
-     * 返回接收方ID。
+     * Gets the receiver ID.
      *
-     * @return 接收方ID。
+     * @return the receiver ID.
      */
     public int getReceiverId() {
         return receiverId;
@@ -136,7 +138,7 @@ public class DataPacketHeader {
     @Override
     public int hashCode() {
         return new HashCodeBuilder()
-            .append(taskId)
+            .append(encodeTaskId)
             .append(ptoId)
             .append(stepId)
             .append(extraInfo)
@@ -153,9 +155,9 @@ public class DataPacketHeader {
         if (obj == this) {
             return true;
         }
-        DataPacketHeader that = (DataPacketHeader)obj;
+        DataPacketHeader that = (DataPacketHeader) obj;
         return new EqualsBuilder()
-            .append(this.taskId, that.taskId)
+            .append(this.encodeTaskId, that.encodeTaskId)
             .append(this.ptoId, that.ptoId)
             .append(this.stepId, that.stepId)
             .append(this.extraInfo, that.extraInfo)

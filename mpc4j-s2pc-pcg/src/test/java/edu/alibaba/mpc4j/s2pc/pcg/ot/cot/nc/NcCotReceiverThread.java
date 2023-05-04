@@ -4,44 +4,47 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 /**
- * NC-COT协议接收方线程。
+ * no-choice COT receiver thread.
  *
  * @author Weiran Liu
  * @date 2021/01/26
  */
 class NcCotReceiverThread extends Thread {
     /**
-     * 接收方
+     * receiver
      */
     private final NcCotReceiver receiver;
     /**
-     * 数量
+     * num
      */
     private final int num;
     /**
-     * 输出
+     * round
      */
-    private final CotReceiverOutput[] receiverOutputs;
+    private final int round;
+    /**
+     * the receiver output
+     */
+    private final CotReceiverOutput receiverOutput;
 
     NcCotReceiverThread(NcCotReceiver receiver, int num, int round) {
         this.receiver = receiver;
         this.num = num;
-        receiverOutputs = new CotReceiverOutput[round];
+        this.round = round;
+        receiverOutput = CotReceiverOutput.createEmpty();
     }
 
-    CotReceiverOutput[] getReceiverOutputs() {
-        return receiverOutputs;
+    CotReceiverOutput getReceiverOutput() {
+        return receiverOutput;
     }
 
     @Override
     public void run() {
         try {
-            receiver.getRpc().connect();
             receiver.init(num);
-            for (int round = 0; round < receiverOutputs.length; round++) {
-                receiverOutputs[round] = receiver.receive();
+            for (int index = 0; index < round; index++) {
+                receiverOutput.merge(receiver.receive());
             }
-            receiver.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

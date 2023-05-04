@@ -14,7 +14,7 @@ public class ServerSetPmidClientThread extends Thread {
     /**
      * PMID客户端
      */
-    private final PmidClient<String> pmidClient;
+    private final PmidClient<String> client;
     /**
      * 客户端映射
      */
@@ -32,9 +32,9 @@ public class ServerSetPmidClientThread extends Thread {
      */
     private PmidPartyOutput<String> clientOutput;
 
-    ServerSetPmidClientThread(PmidClient<String> pmidClient,
+    ServerSetPmidClientThread(PmidClient<String> client,
                               Map<String, Integer> clientElementMap, int maxClientU, int serverSetSize) {
-        this.pmidClient = pmidClient;
+        this.client = client;
         this.clientElementMap = clientElementMap;
         this.maxClientU = maxClientU;
         this.serverSetSize = serverSetSize;
@@ -47,10 +47,8 @@ public class ServerSetPmidClientThread extends Thread {
     @Override
     public void run() {
         try {
-            pmidClient.getRpc().connect();
-            pmidClient.init(clientElementMap.keySet().size(), maxClientU, serverSetSize, 1);
-            clientOutput = pmidClient.pmid(clientElementMap, serverSetSize);
-            pmidClient.getRpc().disconnect();
+            client.init(clientElementMap.keySet().size(), maxClientU, serverSetSize, 1);
+            clientOutput = client.pmid(clientElementMap, serverSetSize);
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

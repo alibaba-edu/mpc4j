@@ -68,13 +68,14 @@ public class Zp64CoreMtgFactory implements PtoFactory {
      * 创建默认配置项。
      *
      * @param securityModel 安全模型。
+     * @param l l.
      * @return 默认配置项。
      */
-    public static Zp64CoreMtgConfig createDefaultConfig(SecurityModel securityModel) {
+    public static Zp64CoreMtgConfig createDefaultConfig(SecurityModel securityModel, int l) {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-                return new Rss19Zp64CoreMtgConfig.Builder().build();
+                return new Rss19Zp64CoreMtgConfig.Builder(l).build();
             case COVERT:
             case MALICIOUS:
             default:

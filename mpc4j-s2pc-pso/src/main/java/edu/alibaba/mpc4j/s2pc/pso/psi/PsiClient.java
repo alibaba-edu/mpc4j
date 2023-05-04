@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 
 import java.util.Set;
@@ -12,15 +11,7 @@ import java.util.Set;
  * @author Weiran Liu
  * @date 2022/9/19
  */
-public interface PsiClient<T> extends TwoPartyPto, SecurePto {
-    /**
-     * 返回PSI协议类型。
-     *
-     * @return PSI协议类型。
-     */
-    @Override
-    PsiFactory.PsiType getPtoType();
-
+public interface PsiClient<T> extends TwoPartyPto {
     /**
      * 初始化协议。
      *

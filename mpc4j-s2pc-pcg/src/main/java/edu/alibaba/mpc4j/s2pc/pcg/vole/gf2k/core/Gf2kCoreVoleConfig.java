@@ -1,18 +1,18 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core;
 
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePtoConfig;
+import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 
 /**
- * GF2K-核VOLE协议配置项。
+ * GF2K-core VOLE config.。
  *
  * @author Weiran Liu
- * @date 2022/9/22
+ * @date 2023/3/16
  */
-public interface Gf2kCoreVoleConfig extends SecurePtoConfig {
+public interface Gf2kCoreVoleConfig extends MultiPartyPtoConfig {
     /**
-     * 返回协议类型。
+     * Gets the type.
      *
-     * @return 协议类型。
+     * @return the type.
      */
     Gf2kCoreVoleFactory.Gf2kCoreVoleType getPtoType();
 }

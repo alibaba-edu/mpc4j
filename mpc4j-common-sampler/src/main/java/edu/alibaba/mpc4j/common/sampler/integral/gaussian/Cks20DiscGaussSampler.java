@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.common.sampler.integral.gaussian;
 import edu.alibaba.mpc4j.common.sampler.binary.bernoulli.ExpBernoulliSampler;
 import edu.alibaba.mpc4j.common.sampler.integral.geometric.DiscreteGeometricSampler;
 
-import java.security.SecureRandom;
 import java.util.Random;
 
 /**

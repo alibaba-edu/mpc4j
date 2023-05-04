@@ -156,6 +156,7 @@ public class PidMain {
         pidServer.pid(serverElementSet, WARMUP_SET_SIZE);
         pidServer.getRpc().synchronize();
         pidServer.getRpc().reset();
+        pidServer.destroy();
         LOGGER.info("(warmup) {} finish", pidServer.ownParty().getPartyName());
     }
 
@@ -207,6 +208,7 @@ public class PidMain {
         // 同步
         pidServer.getRpc().synchronize();
         pidServer.getRpc().reset();
+        pidServer.destroy();
         LOGGER.info("{} finish", pidServer.ownParty().getPartyName());
     }
 
@@ -296,6 +298,7 @@ public class PidMain {
         pidClient.pid(clientElementSet, WARMUP_SET_SIZE);
         pidClient.getRpc().synchronize();
         pidClient.getRpc().reset();
+        pidClient.destroy();
         LOGGER.info("(warmup) {} finish", pidClient.ownParty().getPartyName());
     }
 
@@ -347,6 +350,7 @@ public class PidMain {
         // 同步
         pidClient.getRpc().synchronize();
         pidClient.getRpc().reset();
+        pidClient.destroy();
         LOGGER.info("{} finish", pidClient.ownParty().getPartyName());
     }
 }

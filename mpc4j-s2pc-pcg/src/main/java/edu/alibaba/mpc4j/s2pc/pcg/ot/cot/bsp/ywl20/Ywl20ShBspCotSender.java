@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.ywl20;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -9,14 +8,15 @@ import java.util.stream.IntStream;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.dpprf.DpprfSender;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.AbstractBspCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.SspCotSenderOutput;
@@ -35,7 +35,7 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
     /**
      * DPPRF协议配置项
      */
-    private final DpprfConfig dpprfConfig;
+    private final BpDpprfConfig bpDpprfConfig;
     /**
      * 核COT协议发送方
      */
@@ -43,7 +43,7 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
     /**
      * DPPRF协议发送方
      */
-    private final DpprfSender dpprfSender;
+    private final BpDpprfSender bpDpprfSender;
     /**
      * COT协议发送方输出
      */
@@ -52,51 +52,27 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
     public Ywl20ShBspCotSender(Rpc senderRpc, Party receiverParty, Ywl20ShBspCotConfig config) {
         super(Ywl20ShBspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
-        coreCotSender.addLogLevel();
-        dpprfConfig = config.getDpprfConfig();
-        dpprfSender = DpprfFactory.createSender(senderRpc, receiverParty, dpprfConfig);
-        dpprfSender.addLogLevel();
-    }
-
-    @Override
-    public void setTaskId(long taskId) {
-        super.setTaskId(taskId);
-        // COT协议和DPPRF协议需要使用不同的taskID
-        byte[] taskIdBytes = ByteBuffer.allocate(Long.BYTES).putLong(taskId).array();
-        coreCotSender.setTaskId(taskIdPrf.getLong(0, taskIdBytes, Long.MAX_VALUE));
-        dpprfSender.setTaskId(taskIdPrf.getLong(1, taskIdBytes, Long.MAX_VALUE));
-    }
-
-    @Override
-    public void setParallel(boolean parallel) {
-        super.setParallel(parallel);
-        coreCotSender.setParallel(parallel);
-        dpprfSender.setParallel(parallel);
-    }
-
-    @Override
-    public void addLogLevel() {
-        super.addLogLevel();
-        coreCotSender.addLogLevel();
-        dpprfSender.addLogLevel();
+        addSubPtos(coreCotSender);
+        bpDpprfConfig = config.getBpDpprfConfig();
+        bpDpprfSender = BpDpprfFactory.createSender(senderRpc, receiverParty, bpDpprfConfig);
+        addSubPtos(bpDpprfSender);
     }
 
     @Override
     public void init(byte[] delta, int maxBatchNum, int maxNum) throws MpcAbortException {
         setInitInput(delta, maxBatchNum, maxNum);
-        info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxCotNum = DpprfFactory.getPrecomputeNum(dpprfConfig, maxBatchNum, maxNum);
+        int maxCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, maxBatchNum, maxNum);
         coreCotSender.init(delta, maxCotNum);
-        dpprfSender.init(maxBatchNum, maxNum);
+        bpDpprfSender.init(maxBatchNum, maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Init Step 1/1 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), initTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
-        initialized = true;
-        info("{}{} Send. Init end", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
@@ -113,11 +89,11 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
     }
 
     private BspCotSenderOutput send() throws MpcAbortException {
-        info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         // S send (extend, h) to F_COT, which returns q_i ∈ {0,1}^κ to S
-        int cotNum = DpprfFactory.getPrecomputeNum(dpprfConfig, batchNum, num);
+        int cotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, batchNum, num);
         if (cotSenderOutput == null) {
             cotSenderOutput = coreCotSender.send(cotNum);
         } else {
@@ -126,15 +102,15 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
         stopWatch.stop();
         long cotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 1/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), cotTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 3, cotTime);
 
         stopWatch.start();
-        DpprfSenderOutput dpprfSenderOutput = dpprfSender.puncture(batchNum, num, cotSenderOutput);
+        BpDpprfSenderOutput bpDpprfSenderOutput = bpDpprfSender.puncture(batchNum, num, cotSenderOutput);
         cotSenderOutput = null;
         stopWatch.stop();
         long dpprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 2/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), dpprfTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 3, dpprfTime);
 
         stopWatch.start();
         byte[][] correlateByteArrays = new byte[batchNum][];
@@ -142,7 +118,7 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
             .mapToObj(batchIndex -> {
                 correlateByteArrays[batchIndex] = BytesUtils.clone(delta);
                 // S sets v = (s_0^h,...,s_{n - 1}^h)
-                byte[][] vs = dpprfSenderOutput.getPrfs(batchIndex);
+                byte[][] vs = bpDpprfSenderOutput.getSpDpprfSenderOutput(batchIndex).getPrfKeys();
                 // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
                 for (int i = 0; i < num; i++) {
                     BytesUtils.xori(correlateByteArrays[batchIndex], vs[i]);
@@ -152,7 +128,7 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
             .toArray(SspCotSenderOutput[]::new);
         List<byte[]> correlatePayload = Arrays.stream(correlateByteArrays).collect(Collectors.toList());
         DataPacketHeader correlateHeader = new DataPacketHeader(
-            taskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_CORRELATE.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_CORRELATE.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(correlateHeader, correlatePayload));
@@ -160,9 +136,9 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
         stopWatch.stop();
         long outputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 3/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), outputTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 3, outputTime);
 
-        info("{}{} Send. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return senderOutput;
     }
 }

@@ -16,9 +16,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19EccBaseOtSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19KyberBaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19KyberBaseOtReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19KyberBaseOtSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.*;
 
 /**
  * 基础OT协议工厂类。
@@ -38,6 +36,10 @@ public class BaseOtFactory implements PtoFactory {
      * 协议类型
      */
     public enum BaseOtType {
+        /**
+         * NP01字节协议
+         */
+        NP01_BYTE,
         /**
          * NP01协议
          */
@@ -71,6 +73,8 @@ public class BaseOtFactory implements PtoFactory {
     public static BaseOtSender createSender(Rpc senderRpc, Party receiverParty, BaseOtConfig config) {
         BaseOtType type = config.getPtoType();
         switch (type) {
+            case NP01_BYTE:
+                return new Np01ByteBaseOtSender(senderRpc, receiverParty, (Np01ByteBaseOtConfig) config);
             case MR19_ECC:
                 return new Mr19EccBaseOtSender(senderRpc, receiverParty, (Mr19EccBaseOtConfig) config);
             case MR19_KYBER:
@@ -97,6 +101,8 @@ public class BaseOtFactory implements PtoFactory {
     public static BaseOtReceiver createReceiver(Rpc receiverRpc, Party senderParty, BaseOtConfig config) {
         BaseOtType type = config.getPtoType();
         switch (type) {
+            case NP01_BYTE:
+                return new Np01ByteBaseOtReceiver(receiverRpc, senderParty, (Np01ByteBaseOtConfig) config);
             case MR19_ECC:
                 return new Mr19EccBaseOtReceiver(receiverRpc, senderParty, (Mr19EccBaseOtConfig) config);
             case MR19_KYBER:
@@ -124,7 +130,7 @@ public class BaseOtFactory implements PtoFactory {
             case SEMI_HONEST:
             case COVERT:
             case MALICIOUS:
-                return new Co15BaseOtConfig.Builder().build();
+                return new Np01ByteBaseOtConfig.Builder().build();
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }

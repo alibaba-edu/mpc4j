@@ -1,6 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2e;
 
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 import edu.alibaba.mpc4j.common.tool.utils.RingsUtils;
 
@@ -15,8 +17,8 @@ import edu.alibaba.mpc4j.common.tool.utils.RingsUtils;
  */
 class RingsGf2e extends AbstractGf2e {
 
-    RingsGf2e(int l) {
-        super(l);
+    RingsGf2e(EnvType envType, int l) {
+        super(envType, l);
     }
 
     @Override
@@ -27,12 +29,16 @@ class RingsGf2e extends AbstractGf2e {
     @Override
     public synchronized byte[] mul(byte[] a, byte[] b) {
         assert validateElement(a) && validateElement(b);
-        // 为与C层的表示保持一致，需要按照小端表示方法将字节数组转换为多项式，计算乘法后再按照小端表示转换回字节数组
-        UnivariatePolynomialZp64 aPolynomial = RingsUtils.byteArrayToGf2e(a);
-        UnivariatePolynomialZp64 bPolynomial = RingsUtils.byteArrayToGf2e(b);
-        UnivariatePolynomialZp64 cPolynomial = finiteField.multiply(aPolynomial, bPolynomial);
+        if (l == CommonConstants.BLOCK_BIT_LENGTH) {
+            return gf2k.mul(a, b);
+        } else {
+            // 为与C层的表示保持一致，需要按照小端表示方法将字节数组转换为多项式，计算乘法后再按照小端表示转换回字节数组
+            UnivariatePolynomialZp64 aPolynomial = RingsUtils.byteArrayToGf2e(a);
+            UnivariatePolynomialZp64 bPolynomial = RingsUtils.byteArrayToGf2e(b);
+            UnivariatePolynomialZp64 cPolynomial = finiteField.multiply(aPolynomial, bPolynomial);
 
-        return RingsUtils.gf2eToByteArray(cPolynomial, byteL);
+            return RingsUtils.gf2eToByteArray(cPolynomial, byteL);
+        }
     }
 
     @Override

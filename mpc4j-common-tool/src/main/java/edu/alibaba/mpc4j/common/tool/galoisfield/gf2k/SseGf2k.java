@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 
 /**
  * 本地指令集GF(2^128)运算。
@@ -8,14 +9,14 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
  * @author Weiran Liu
  * @date 2022/01/15
  */
-class SseGf2k implements Gf2k {
+class SseGf2k extends AbstractGf2k {
 
     static {
         System.loadLibrary(CommonConstants.MPC4J_NATIVE_TOOL_NAME);
     }
 
-    SseGf2k() {
-        // empty
+    SseGf2k(EnvType envType) {
+        super(envType);
     }
 
     @Override

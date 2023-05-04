@@ -1,36 +1,31 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.pto.SecurePto;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 
 /**
- * COT协议发送方接口。
+ * COT sender.
  *
  * @author Weiran Liu
  * @date 2022/7/13
  */
-public interface CotSender extends TwoPartyPto, SecurePto {
-
-    @Override
-    CotFactory.CotType getPtoType();
-
+public interface CotSender extends TwoPartyPto {
     /**
-     * 初始化协议。
+     * Inits the protocol.
      *
-     * @param delta       关联值Δ。
-     * @param maxRoundNum 最大单轮数量。
-     * @param updateNum   更新数量。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param delta       Δ.
+     * @param maxRoundNum max round num.
+     * @param updateNum   update num.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     void init(byte[] delta, int maxRoundNum, int updateNum) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Executes the protocol.
      *
-     * @param num 数量。
-     * @return 发送方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param num num.
+     * @return the sender output.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     CotSenderOutput send(int num) throws MpcAbortException;
 }

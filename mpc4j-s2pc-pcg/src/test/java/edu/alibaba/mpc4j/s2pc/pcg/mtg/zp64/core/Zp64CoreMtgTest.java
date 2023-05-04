@@ -1,18 +1,25 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.core;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.Zp64MtgTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.Zp64Triple;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.core.rss19.Rss19Zp64CoreMtgConfig;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,6 +28,7 @@ import java.util.concurrent.TimeUnit;
  * @author Liqiang Peng
  * @date 2022/9/7
  */
+@RunWith(Parameterized.class)
 public class Zp64CoreMtgTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(Zp64CoreMtgTest.class);
     /**
@@ -35,10 +43,21 @@ public class Zp64CoreMtgTest {
      * 较大数量
      */
     private static final int LARGE_NUM = 8192 * 8;
-    /**
-     * 默认Zp比特模数
-     */
-    private static final int MODULUS_BIT_LENGTH = 20;
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> configurations() {
+        Collection<Object[]> configurations = new ArrayList<>();
+
+        // RSS19 (l = 19)
+        configurations.add(new Object[] {
+            Zp64CoreMtgFactory.Zp64CoreMtgType.RSS19.name() + " (l = 19)",
+            new Rss19Zp64CoreMtgConfig.Builder(19)
+                .build()
+        });
+
+        return configurations;
+    }
+
     /**
      * 发送方
      */
@@ -47,63 +66,59 @@ public class Zp64CoreMtgTest {
      * 接收方
      */
     private final Rpc receiverRpc;
+    /**
+     * the config
+     */
+    private final Zp64CoreMtgConfig config;
 
-    public Zp64CoreMtgTest() {
+    public Zp64CoreMtgTest(String name, Zp64CoreMtgConfig config) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(name));
+        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
+        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
         RpcManager rpcManager = new MemoryRpcManager(2);
         senderRpc = rpcManager.getRpc(0);
         receiverRpc = rpcManager.getRpc(1);
+        this.config = config;
+    }
+
+    @Before
+    public void connect() {
+        senderRpc.connect();
+        receiverRpc.connect();
+    }
+
+    @After
+    public void disconnect() {
+        senderRpc.disconnect();
+        receiverRpc.disconnect();
     }
 
     @Test
-    public void testDefaultNum() {
-        try {
-            Zp64CoreMtgConfig config = new Rss19Zp64CoreMtgConfig.Builder()
-                .setPrimeBitLength(MODULUS_BIT_LENGTH)
-                .build();
-            LOGGER.info("----- config build succeed -----");
-            Zp64CoreMtgParty sender = Zp64CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-            Zp64CoreMtgParty receiver = Zp64CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-            testPto(sender, receiver, DEFAULT_NUM);
-        } catch (Exception e) {
-            LOGGER.info("----- config build failed : " + e);
-        }
+    public void testDefault() {
+        testPto(config, DEFAULT_NUM, false);
+    }
+
+    @Test
+    public void testParallelDefault() {
+        testPto(config, DEFAULT_NUM, true);
     }
 
     @Test
     public void testLargeNum() {
-        try {
-            Zp64CoreMtgConfig config = new Rss19Zp64CoreMtgConfig.Builder()
-                .setPrimeBitLength(MODULUS_BIT_LENGTH)
-                .build();
-            LOGGER.info("----- config build succeed -----");
-            Zp64CoreMtgParty sender = Zp64CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-            Zp64CoreMtgParty receiver = Zp64CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-            testPto(sender, receiver, LARGE_NUM);
-        } catch (Exception e) {
-            LOGGER.info("----- config build failed : " + e);
-        }
+        testPto(config, LARGE_NUM, false);
     }
 
     @Test
-    public void testConfigSetPolyModulusDegree() {
-        int polyModulusDegree = 2048;
-        for (int size = 1; size < Long.SIZE - 1; size++) {
-            LOGGER.info(String.valueOf(size));
-            try {
-                Rss19Zp64CoreMtgConfig config = new Rss19Zp64CoreMtgConfig.Builder()
-                    .setPolyModulusDegree(polyModulusDegree, size)
-                    .build();
-                long prime = config.getZp();
-                long primeBitLength = LongUtils.ceilLog2(prime);
-                LOGGER.info("config build success for modulus degree {}, prime = {} ({})", size, prime, primeBitLength);
-            } catch (Exception e) {
-                LOGGER.info("config build failed : " + e);
-            }
-        }
+    public void testParallelLargeNum() {
+        testPto(config, LARGE_NUM, true);
     }
 
-    private void testPto(Zp64CoreMtgParty sender, Zp64CoreMtgParty receiver, int num) {
-        long randomTaskId = Math.abs(SECURE_RANDOM.nextLong());
+    private void testPto(Zp64CoreMtgConfig config, int num, boolean parallel) {
+        Zp64CoreMtgParty sender = Zp64CoreMtgFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
+        Zp64CoreMtgParty receiver = Zp64CoreMtgFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        sender.setParallel(parallel);
+        receiver.setParallel(parallel);
+        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {
@@ -135,5 +150,7 @@ public class Zp64CoreMtgTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        sender.destroy();
+        receiver.destroy();
     }
 }

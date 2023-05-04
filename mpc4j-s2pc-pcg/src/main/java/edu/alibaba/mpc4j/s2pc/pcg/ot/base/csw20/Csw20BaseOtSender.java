@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.base.csw20;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
@@ -61,43 +58,42 @@ public class Csw20BaseOtSender extends AbstractBaseOtSender {
     @Override
     public void init() throws MpcAbortException {
         setInitInput();
-        info("{}{} Send. Init begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
-
-        initialized = true;
-        info("{}{} Send. Init end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.INIT_BEGIN);
+        // empty init step
+        logPhaseInfo(PtoState.INIT_END);
     }
 
     @Override
     public BaseOtSenderOutput send(int num) throws MpcAbortException {
         setPtoInput(num);
-        info("{}{} Send. begin", ptoBeginLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         DataPacketHeader rChooseHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_C.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_C.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> rChoosePayload = rpc.receive(rChooseHeader).getPayload();
         stopWatch.stop();
         long rChooseTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        info("{}{} Send. Step 1/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), rChooseTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 3, rChooseTime);
         stopWatch.reset();
 
         stopWatch.start();
         DataPacketHeader sHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_S.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_S.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         List<byte[]> sPayLoad = generateSenderPayload(rChoosePayload);
         rpc.send(DataPacket.fromByteArrayList(sHeader, sPayLoad));
         stopWatch.stop();
         long sTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        info("{}{} Send. Step 2/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), sTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 3, sTime);
         stopWatch.reset();
 
         stopWatch.start();
         DataPacketHeader rHeader = new DataPacketHeader(
-            taskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_R.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_R.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> rPayload = rpc.receive(rHeader).getPayload();
@@ -105,9 +101,9 @@ public class Csw20BaseOtSender extends AbstractBaseOtSender {
         stopWatch.stop();
         long rTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        info("{}{} Send. Step 3/3 ({}ms)", ptoStepLogPrefix, getPtoDesc().getPtoName(), rTime);
+        logStepInfo(PtoState.PTO_STEP, 3, 3, rTime);
 
-        info("{}{} Send. end", ptoEndLogPrefix, getPtoDesc().getPtoName());
+        logPhaseInfo(PtoState.PTO_END);
         return senderOutput;
     }
 

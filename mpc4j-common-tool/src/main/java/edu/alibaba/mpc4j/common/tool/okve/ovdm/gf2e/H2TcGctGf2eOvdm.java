@@ -22,11 +22,15 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2021/09/27
  */
-class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
+class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> implements SparseGf2eOvdm<T> {
+    /**
+     * 2 sparse hashes
+     */
+    private static final int SPARSE_HASH_NUM = 2;
     /**
      * 2哈希-两核椭圆曲线OVDM所需的哈希函数密钥数量。
      */
-    static int HASH_NUM = 3;
+    static int HASH_NUM = SPARSE_HASH_NUM + 1;
     /**
      * 2哈希-两核椭圆曲线OVDM所对应的ε
      */
@@ -83,25 +87,50 @@ class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
     }
 
     @Override
+    public int[] sparsePositions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        int[] sparsePositions = new int[SPARSE_HASH_NUM];
+        sparsePositions[0] = h1.getInteger(0, keyBytes, lm);
+        // h1 and h2 are distinct
+        int h2Index = 0;
+        do {
+            sparsePositions[1] = h2.getInteger(h2Index, keyBytes, lm);
+            h2Index++;
+        } while (sparsePositions[1] == sparsePositions[0]);
+        return sparsePositions;
+    }
+
+    @Override
+    public int sparsePositionNum() {
+        return SPARSE_HASH_NUM;
+    }
+
+    @Override
+    public boolean[] densePositions(T key) {
+        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
+        return BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes));
+    }
+
+    @Override
+    public int maxDensePositionNum() {
+        return rm;
+    }
+
+    @Override
     public byte[] decode(byte[][] storage, T key) {
         assert storage.length == getM();
-        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        int h1Value = h1.getInteger(keyBytes, lm);
-        int h2Value = h2.getInteger(keyBytes, lm);
-        boolean[] rxBinary = BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes));
-        byte[] value = new byte[lByteLength];
-        // 如果两个哈希结果相同，则只计算一次加法
-        if (h1Value != h2Value) {
-            BytesUtils.xori(value, storage[h1Value]);
-            BytesUtils.xori(value, storage[h2Value]);
-        } else {
-            BytesUtils.xori(value, storage[h1Value]);
-        }
+        int[] sparsePositions = sparsePositions(key);
+        boolean[] densePositions = densePositions(key);
+        byte[] value = new byte[byteL];
+        // h1 and h2 must be distinct
+        BytesUtils.xori(value, storage[sparsePositions[0]]);
+        BytesUtils.xori(value, storage[sparsePositions[1]]);
         for (int rmIndex = 0; rmIndex < rm; rmIndex++) {
-            if (rxBinary[rmIndex]) {
+            if (densePositions[rmIndex]) {
                 BytesUtils.xori(value, storage[lm + rmIndex]);
             }
         }
+        assert BytesUtils.isFixedReduceByteArray(value, byteL, l);
         return value;
     }
 
@@ -124,16 +153,20 @@ class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
     @Override
     public byte[][] encode(Map<T, byte[]> keyValueMap) throws ArithmeticException {
         assert keyValueMap.size() <= n;
+        keyValueMap.values().forEach(x -> {
+            assert BytesUtils.isFixedReduceByteArray(x, byteL, l);
+        });
         // 构造数据到哈希值的查找表
         Set<T> keySet = keyValueMap.keySet();
         dataH1Map = new HashMap<>(keySet.size());
         dataH2Map = new HashMap<>(keySet.size());
         dataHrMap = new HashMap<>(keySet.size());
         for (T key : keySet) {
-            byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-            dataH1Map.put(key, h1.getInteger(keyBytes, lm));
-            dataH2Map.put(key, h2.getInteger(keyBytes, lm));
-            dataHrMap.put(key, BinaryUtils.byteArrayToBinary(hr.getBytes(keyBytes)));
+            int[] sparsePositions = sparsePositions(key);
+            boolean[] densePositions = densePositions(key);
+            dataH1Map.put(key, sparsePositions[0]);
+            dataH2Map.put(key, sparsePositions[1]);
+            dataHrMap.put(key, densePositions);
         }
         // 生成2哈希-布谷鸟图
         H2CuckooTable<T> h2CuckooTable = generateCuckooTable(keyValueMap);
@@ -157,7 +190,7 @@ class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
             Integer source = removedDataVertices[0];
             Integer target = removedDataVertices[1];
             boolean[] rx = dataHrMap.get(removedData);
-            byte[] innerProduct = BytesUtils.innerProduct(rightStorage, lByteLength, rx);
+            byte[] innerProduct = BytesUtils.innerProduct(rightStorage, byteL, rx);
             byte[] value = keyValueMap.get(removedData);
             BytesUtils.xori(innerProduct, value);
             if (source.equals(target)) {
@@ -172,8 +205,7 @@ class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
                 // 起点和重点不一致，有4种情况
                 if (leftStorage[source] == null && leftStorage[target] == null) {
                     // 情况1：左右都为空
-                    leftStorage[source] = new byte[lByteLength];
-                    secureRandom.nextBytes(leftStorage[source]);
+                    leftStorage[source] = BytesUtils.randomByteArray(byteL, l, secureRandom);
                     BytesUtils.xori(innerProduct, leftStorage[source]);
                     leftStorage[target] = innerProduct;
                 } else if (leftStorage[source] == null) {
@@ -193,8 +225,7 @@ class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
         // 左侧矩阵补充随机数
         for (int vertex = 0; vertex < lm; vertex++) {
             if (leftStorage[vertex] == null) {
-                leftStorage[vertex] = new byte[lByteLength];
-                secureRandom.nextBytes(leftStorage[vertex]);
+                leftStorage[vertex] = BytesUtils.randomByteArray(byteL, l, secureRandom);
             }
         }
         // 更新矩阵
@@ -214,10 +245,9 @@ class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
         int dTilde = coreDataSet.size();
         // 如果没有2-core边，则补充的边都设置为随机数
         if (dTilde == 0) {
-            IntStream.range(lm, lm + rm).forEach(index -> {
-                storage[index] = new byte[lByteLength];
-                secureRandom.nextBytes(storage[index]);
-            });
+            IntStream.range(lm, lm + rm).forEach(index ->
+                storage[index] = BytesUtils.randomByteArray(byteL, l, secureRandom)
+            );
             return storage;
         }
         if (dTilde > rm) {
@@ -262,8 +292,7 @@ class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
         }
         // For i ∈ C' assign P_i ∈ G
         for (Integer primeIndexC : setPrimeC) {
-            storage[primeIndexC] = new byte[lByteLength];
-            secureRandom.nextBytes(storage[primeIndexC]);
+            storage[primeIndexC] = BytesUtils.randomByteArray(byteL, l, secureRandom);
         }
         // For i ∈ R, define v'_i = v_i - (MP), where P_i is assigned to be zero if unassigned.
         byte[][] vectorY = new byte[dTilde][];
@@ -272,23 +301,20 @@ class H2TcGctGf2eOvdm<T> extends AbstractGf2eOvdm<T> {
             int h1Value = dataH1Map.get(data);
             int h2Value = dataH2Map.get(data);
             boolean[] rx = dataHrMap.get(data);
-            byte[] mp = new byte[lByteLength];
+            byte[] mp = new byte[byteL];
             if (storage[h1Value] == null) {
-                storage[h1Value] = new byte[lByteLength];
+                storage[h1Value] = new byte[byteL];
             }
             if (storage[h2Value] == null) {
-                storage[h2Value] = new byte[lByteLength];
+                storage[h2Value] = new byte[byteL];
             }
-            if (h1Value == h2Value) {
-                BytesUtils.xori(mp, storage[h1Value]);
-            } else {
-                BytesUtils.xori(mp, storage[h1Value]);
-                BytesUtils.xori(mp, storage[h2Value]);
-            }
+            // h1 and h2 must be distinct
+            BytesUtils.xori(mp, storage[h1Value]);
+            BytesUtils.xori(mp, storage[h2Value]);
             for (int rxIndex = 0; rxIndex < rx.length; rxIndex++) {
                 if (rx[rxIndex]) {
                     if (storage[lm + rxIndex] == null) {
-                        storage[lm + rxIndex] = new byte[lByteLength];
+                        storage[lm + rxIndex] = new byte[byteL];
                     }
                     BytesUtils.xori(mp, storage[lm + rxIndex]);
                 }
