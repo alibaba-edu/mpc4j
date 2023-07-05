@@ -50,13 +50,13 @@ public class ScpsiFactory implements PtoFactory {
      * @param config      the config.
      * @return a server.
      */
-    public static ScpsiServer createServer(Rpc serverRpc, Party clientParty, ScpsiConfig config) {
+    public static <X> ScpsiServer<X> createServer(Rpc serverRpc, Party clientParty, ScpsiConfig config) {
         ScpsiType type = config.getPtoType();
         switch (type) {
             case PSTY19:
-                return new Psty19ScpsiServer(serverRpc, clientParty, (Psty19ScpsiConfig) config);
+                return new Psty19ScpsiServer<>(serverRpc, clientParty, (Psty19ScpsiConfig) config);
             case CGS22:
-                return new Cgs22ScpsiServer(serverRpc, clientParty, (Cgs22ScpsiConfig) config);
+                return new Cgs22ScpsiServer<>(serverRpc, clientParty, (Cgs22ScpsiConfig) config);
             case RS21:
             default:
                 throw new IllegalArgumentException("Invalid " + ScpsiType.class.getSimpleName() + ": " + type.name());
@@ -71,13 +71,13 @@ public class ScpsiFactory implements PtoFactory {
      * @param config      the config.
      * @return a client.
      */
-    public static ScpsiClient createClient(Rpc clientRpc, Party serverParty, ScpsiConfig config) {
+    public static <X> ScpsiClient<X> createClient(Rpc clientRpc, Party serverParty, ScpsiConfig config) {
         ScpsiType type = config.getPtoType();
         switch (type) {
             case PSTY19:
-                return new Psty19ScpsiClient(clientRpc, serverParty, (Psty19ScpsiConfig) config);
+                return new Psty19ScpsiClient<>(clientRpc, serverParty, (Psty19ScpsiConfig) config);
             case CGS22:
-                return new Cgs22ScpsiClient(clientRpc, serverParty, (Cgs22ScpsiConfig) config);
+                return new Cgs22ScpsiClient<>(clientRpc, serverParty, (Cgs22ScpsiConfig) config);
             case RS21:
             default:
                 throw new IllegalArgumentException("Invalid " + ScpsiType.class.getSimpleName() + ": " + type.name());

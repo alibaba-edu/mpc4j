@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.alsz13;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
@@ -13,13 +13,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory.CoreCotType;
  * @author Weiran Liu
  * @date 2022/01/13
  */
-public class Alsz13CoreCotConfig implements CoreCotConfig {
+public class Alsz13CoreCotConfig extends AbstractMultiPartyPtoConfig implements CoreCotConfig {
     /**
      * 基础OT协议
      */
     private final BaseOtConfig baseOtConfig;
 
     private Alsz13CoreCotConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST, builder.baseOtConfig);
         baseOtConfig = builder.baseOtConfig;
     }
 
@@ -30,25 +31,6 @@ public class Alsz13CoreCotConfig implements CoreCotConfig {
     @Override
     public CoreCotType getPtoType() {
         return CoreCotType.ALSZ13;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        baseOtConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return baseOtConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (baseOtConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = baseOtConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Alsz13CoreCotConfig> {

@@ -39,7 +39,7 @@ public class SueFoLdpServer extends AbstractFoLdpServer {
 
     @Override
     public void insert(byte[] itemBytes) {
-        BitVector bitVector = BitVectorFactory.create(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, d, itemBytes);
+        BitVector bitVector = BitVectorFactory.create(d, itemBytes);
         num++;
         IntStream.range(0, d).forEach(bitIndex -> {
             if (bitVector.get(bitIndex)) {

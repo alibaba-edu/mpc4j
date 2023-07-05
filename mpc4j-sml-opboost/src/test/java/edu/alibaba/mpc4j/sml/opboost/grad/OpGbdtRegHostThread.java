@@ -50,7 +50,6 @@ public class OpGbdtRegHostThread extends Thread {
             model = host.fit(formula, hostDataFrame, hostConfig);
         } catch (MpcAbortException e) {
             e.printStackTrace();
-            System.exit(-1);
         }
     }
 }

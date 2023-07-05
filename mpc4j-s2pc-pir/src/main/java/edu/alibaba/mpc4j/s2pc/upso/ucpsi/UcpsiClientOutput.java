@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.upso.ucpsi;
 
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 /**
  * Unbalanced Circuit PSI client output.
@@ -11,28 +11,28 @@ import java.nio.ByteBuffer;
  * @author Liqiang Peng
  * @date 2023/4/17
  */
-public class UcpsiClientOutput {
+public class UcpsiClientOutput<T> {
     /**
      * the table
      */
-    private final ByteBuffer[] table;
+    private final ArrayList<T> table;
     /**
      * z1
      */
     private final SquareZ2Vector z1;
 
-    public UcpsiClientOutput(ByteBuffer[] table, SquareZ2Vector z1) {
-        MathPreconditions.checkPositive("β", table.length);
+    public UcpsiClientOutput(ArrayList<T> table, SquareZ2Vector z1) {
+        MathPreconditions.checkPositive("β", table.size());
         this.table = table;
-        MathPreconditions.checkEqual("share bit length", "β", z1.getNum(), table.length);
+        MathPreconditions.checkEqual("share bit length", "β", z1.getNum(), table.size());
         this.z1 = z1;
     }
 
     public int getBeta() {
-        return table.length;
+        return table.size();
     }
 
-    public ByteBuffer[] getTable() {
+    public ArrayList<T> getTable() {
         return table;
     }
 

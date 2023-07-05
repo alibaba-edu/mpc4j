@@ -14,68 +14,63 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 关键词索引PIR协议客户端。
+ * abstract keyword PIR client.
  *
  * @author Liqiang Peng
  * @date 2022/6/20
  */
-public abstract class AbstractKwPirClient<T> extends AbstractTwoPartyPto implements KwPirClient<T> {
+public abstract class AbstractKwPirClient extends AbstractTwoPartyPto implements KwPirClient {
     /**
-     * 客户端单次查询最大查询关键词数目
+     * server element size
+     */
+    protected int serverElementSize;
+    /**
+     * max client retrieval size
      */
     protected int maxRetrievalSize;
     /**
-     * 标签字节长度
+     * value byte length
      */
-    protected int labelByteLength;
+    protected int valueByteLength;
     /**
-     * 特殊空元素字节缓存区
+     * bot element bytebuffer
      */
     protected ByteBuffer botElementByteBuffer;
     /**
-     * 客户端关键词数组
+     * client retrieval key list
      */
-    protected ArrayList<ByteBuffer> retrievalArrayList;
+    protected List<ByteBuffer> retrievalKeyList;
     /**
-     * 关键词字节数组和关键词对象映射
+     * client retrieval size
      */
-    protected Map<ByteBuffer, T> byteArrayObjectMap;
-    /**
-     * 客户端关键词数量
-     */
-    protected int retrievalSize;
+    protected int retrievalKeySize;
 
     protected AbstractKwPirClient(PtoDesc ptoDesc, Rpc clientRpc, Party serverParty, KwPirConfig config) {
         super(ptoDesc, clientRpc, serverParty, config);
     }
 
-    protected void setInitInput(int maxRetrievalSize, int labelByteLength) {
-        MathPreconditions.checkPositive("labelByteLength", labelByteLength);
-        this.labelByteLength = labelByteLength;
+    protected void setInitInput(int maxRetrievalSize, int serverElementSize, int valueByteLength) {
+        MathPreconditions.checkPositive("labelByteLength", valueByteLength);
+        this.serverElementSize = serverElementSize;
+        MathPreconditions.checkPositive("valueByteLength", valueByteLength);
+        this.valueByteLength = valueByteLength;
         MathPreconditions.checkPositive("maxRetrievalSize", maxRetrievalSize);
         this.maxRetrievalSize = maxRetrievalSize;
-        // 设置特殊空元素
         byte[] botElementByteArray = new byte[CommonConstants.STATS_BYTE_LENGTH];
         Arrays.fill(botElementByteArray, (byte)0xFF);
         botElementByteBuffer = ByteBuffer.wrap(botElementByteArray);
         initState();
     }
 
-    protected void setPtoInput(Set<T> clientKeywordSet) {
+    protected void setPtoInput(Set<ByteBuffer> clientKeySet) {
         checkInitialized();
-        retrievalSize = clientKeywordSet.size();
-        MathPreconditions.checkPositiveInRangeClosed("retrievalSize", retrievalSize, maxRetrievalSize);
-        retrievalArrayList = clientKeywordSet.stream()
+        retrievalKeySize = clientKeySet.size();
+        MathPreconditions.checkPositiveInRangeClosed("retrievalSize", retrievalKeySize, maxRetrievalSize);
+        retrievalKeyList = clientKeySet.stream()
             .map(ObjectUtils::objectToByteArray)
             .map(ByteBuffer::wrap)
             .peek(yi -> Preconditions.checkArgument(!yi.equals(botElementByteBuffer), "yi must not equal ⊥"))
             .collect(Collectors.toCollection(ArrayList::new));
-        byteArrayObjectMap = new HashMap<>(retrievalSize);
-        clientKeywordSet.forEach(clientElementObject ->
-            byteArrayObjectMap.put(
-                ByteBuffer.wrap(ObjectUtils.objectToByteArray(clientElementObject)), clientElementObject
-            )
-        );
         extraInfo++;
     }
 }

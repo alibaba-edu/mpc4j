@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp64.core.kos16;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp64.core.Zp64CoreVoleFactory.Zp64CoreVoleType;
@@ -13,13 +13,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.zp64.core.Zp64CoreVoleConfig;
  * @author Hanwen Feng
  * @date 2022/06/15
  */
-public class Kos16Zp64CoreVoleConfig implements Zp64CoreVoleConfig {
+public class Kos16Zp64CoreVoleConfig extends AbstractMultiPartyPtoConfig implements Zp64CoreVoleConfig {
     /**
      * 基础OT协议
      */
     private final BaseOtConfig baseOtConfig;
 
     private Kos16Zp64CoreVoleConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST, builder.baseOtConfig);
         baseOtConfig = builder.baseOtConfig;
     }
 
@@ -30,25 +31,6 @@ public class Kos16Zp64CoreVoleConfig implements Zp64CoreVoleConfig {
     @Override
     public Zp64CoreVoleType getPtoType() {
         return Zp64CoreVoleType.KOS16;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        baseOtConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return baseOtConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (baseOtConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = baseOtConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Kos16Zp64CoreVoleConfig> {

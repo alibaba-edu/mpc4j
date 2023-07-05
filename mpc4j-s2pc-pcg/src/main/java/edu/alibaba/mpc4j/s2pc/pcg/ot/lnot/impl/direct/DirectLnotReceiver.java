@@ -31,6 +31,10 @@ public class DirectLnotReceiver extends AbstractLnotReceiver {
      * key derivation function
      */
     private final Kdf kdf;
+    /**
+     * output bit length
+     */
+    private int outputBitLength;
 
     public DirectLnotReceiver(Rpc receiverRpc, Party senderParty, DirectLnotConfig config) {
         super(DirectLnotPtoDesc.getInstance(), receiverRpc, senderParty, config);
@@ -40,12 +44,12 @@ public class DirectLnotReceiver extends AbstractLnotReceiver {
     }
 
     @Override
-    public void init(int l, int maxRoundNum, int updateNum) throws MpcAbortException {
-        setInitInput(l, maxRoundNum, updateNum);
+    public void init(int l, int updateNum) throws MpcAbortException {
+        setInitInput(l, updateNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        lcotReceiver.init(l, maxRoundNum);
+        outputBitLength = lcotReceiver.init(l, updateNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -61,7 +65,7 @@ public class DirectLnotReceiver extends AbstractLnotReceiver {
 
         stopWatch.start();
         int offset = Integer.BYTES - byteL;
-        byte[][] choiceBytesArray = IntStream.range(0, num)
+        byte[][] choices = IntStream.range(0, num)
             .mapToObj(index -> {
                 byte[] choiceBytes = IntUtils.intToByteArray(choiceArray[index]);
                 byte[] fixedChoiceBytes = new byte[byteL];
@@ -69,7 +73,23 @@ public class DirectLnotReceiver extends AbstractLnotReceiver {
                 return fixedChoiceBytes;
             })
             .toArray(byte[][]::new);
-        LcotReceiverOutput lcotReceiverOutput = lcotReceiver.receive(choiceBytesArray);
+        LcotReceiverOutput lcotReceiverOutput = LcotReceiverOutput.createEmpty(l, outputBitLength);
+        if (num <= updateNum) {
+            // we only need to run single round
+            lcotReceiverOutput.merge(lcotReceiver.receive(choices));
+        } else {
+            // we need to run multiple round
+            int currentNum = lcotReceiverOutput.getNum();
+            int round = 0;
+            while (currentNum < num) {
+                int roundNum = Math.min((num - currentNum), updateNum);
+                byte[][] roundChoices = new byte[roundNum][];
+                System.arraycopy(choices, round * updateNum, roundChoices, 0, roundNum);
+                lcotReceiverOutput.merge(lcotReceiver.receive(roundChoices));
+                round++;
+                currentNum = lcotReceiverOutput.getNum();
+            }
+        }
         stopWatch.stop();
         long lcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

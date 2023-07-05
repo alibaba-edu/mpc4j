@@ -4,6 +4,9 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2e;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -32,7 +35,7 @@ public class BytesFieldEfficiencyTest {
     /**
      * the time decimal format
      */
-    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.0000");
+    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.000");
     /**
      * the random state
      */
@@ -41,19 +44,29 @@ public class BytesFieldEfficiencyTest {
      * the stop watch
      */
     private static final StopWatch STOP_WATCH = new StopWatch();
-    /**
-     * the GF2E test types
-     */
-    private static final Gf2eType[] GF2E_TYPES = new Gf2eType[]{Gf2eType.NTL, Gf2eType.RINGS};
 
     @Test
-    public void testZp64Efficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}",
-            "                type", "         l", "   div(us)", "   inv(us)"
+    public void testGf2kEfficiency() {
+        LOGGER.info("{}\t{}\t{}\t{}\t{}",
+            "                type", "         l", "   mul(us)", "   div(us)", "   inv(us)"
         );
-        int[] ls = new int[]{1, 2, 3, 4, 40, 62};
+        Gf2kType[] gf2kTypes = new Gf2kType[]{Gf2kType.COMBINED, Gf2kType.NTL, Gf2kType.BC, Gf2kType.RINGS};
+        for (Gf2kType type : gf2kTypes) {
+            Gf2k gf2k = Gf2kFactory.createInstance(EnvType.STANDARD, type);
+            testEfficiency(gf2k);
+        }
+        LOGGER.info(StringUtils.rightPad("", 60, '-'));
+    }
+
+    @Test
+    public void testGf2eEfficiency() {
+        LOGGER.info("{}\t{}\t{}\t{}\t{}",
+            "                type", "         l", "   mul(us)", "   div(us)", "   inv(us)"
+        );
+        Gf2eType[] gf2eTypes = new Gf2eType[]{Gf2eType.NTL, Gf2eType.RINGS};
+        int[] ls = new int[]{1, 2, 3, 4, 40, 62, 128};
         for (int l : ls) {
-            for (Gf2eType type : GF2E_TYPES) {
+            for (Gf2eType type : gf2eTypes) {
                 Gf2e gf2e = Gf2eFactory.createInstance(EnvType.STANDARD, type, l);
                 testEfficiency(gf2e);
             }
@@ -75,6 +88,12 @@ public class BytesFieldEfficiencyTest {
             bytesField.div(arrayA[index], arrayB[index]);
             bytesField.inv(arrayA[index]);
         });
+        // mul
+        STOP_WATCH.start();
+        IntStream.range(0, MAX_RANDOM).forEach(index -> bytesField.mul(arrayA[index], arrayB[index]));
+        STOP_WATCH.stop();
+        double mulTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / MAX_RANDOM;
+        STOP_WATCH.reset();
         // div
         STOP_WATCH.start();
         IntStream.range(0, MAX_RANDOM).forEach(index -> bytesField.div(arrayA[index], arrayB[index]));
@@ -89,9 +108,10 @@ public class BytesFieldEfficiencyTest {
         STOP_WATCH.reset();
         // output
         LOGGER.info(
-            "{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}",
             StringUtils.leftPad(bytesField.getName(), 20),
             StringUtils.leftPad(String.valueOf(l), 10),
+            StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(mulTime), 10),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(divTime), 10),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(invTime), 10)
         );

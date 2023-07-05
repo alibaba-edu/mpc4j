@@ -10,7 +10,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.NoStashCuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.opf.psm.PsmFactory;
 import edu.alibaba.mpc4j.s2pc.opf.psm.PsmSender;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.AbstractUcpsiClient;
@@ -21,10 +21,12 @@ import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.UrbopprfFactory;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.UrbopprfReceiver;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -33,7 +35,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2023/4/19
  */
-public class Cgs22UcpsiClient extends AbstractUcpsiClient {
+public class Cgs22UcpsiClient<T> extends AbstractUcpsiClient<T> {
     /**
      * unbalanced related batched OPPRF receiver
      */
@@ -73,7 +75,7 @@ public class Cgs22UcpsiClient extends AbstractUcpsiClient {
     /**
      * cuckoo hash bin
      */
-    private NoStashCuckooHashBin<ByteBuffer> cuckooHashBin;
+    private NoStashCuckooHashBin<T> cuckooHashBin;
 
     public Cgs22UcpsiClient(Rpc serverRpc, Party clientParty, Cgs22UcpsiConfig config) {
         super(Cgs22UcpsiPtoDesc.getInstance(), serverRpc, clientParty, config);
@@ -126,7 +128,7 @@ public class Cgs22UcpsiClient extends AbstractUcpsiClient {
     }
 
     @Override
-    public UcpsiClientOutput psi(Set<ByteBuffer> clientElementSet) throws MpcAbortException {
+    public UcpsiClientOutput<T> psi(Set<T> clientElementSet) throws MpcAbortException {
         setPtoInput(clientElementSet);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
@@ -148,7 +150,7 @@ public class Cgs22UcpsiClient extends AbstractUcpsiClient {
         // unbalanced related batch opprf
         byte[][] inputArray = IntStream.range(0, beta)
             .mapToObj(batchIndex -> {
-                HashBinEntry<ByteBuffer> item = cuckooHashBin.getHashBinEntry(batchIndex);
+                HashBinEntry<T> item = cuckooHashBin.getHashBinEntry(batchIndex);
                 byte[] itemBytes = cuckooHashBin.getHashBinEntry(batchIndex).getItemByteArray();
                 return ByteBuffer.allocate(itemBytes.length + Integer.BYTES)
                     .put(itemBytes)
@@ -177,17 +179,17 @@ public class Cgs22UcpsiClient extends AbstractUcpsiClient {
         // private set membership
         SquareZ2Vector z1 = psmSender.psm(psmL, targetArrays);
         // create the table
-        ByteBuffer[] table = IntStream.range(0, beta)
+        ArrayList<T> table = IntStream.range(0, beta)
             .mapToObj(batchIndex -> {
-                HashBinEntry<ByteBuffer> item = cuckooHashBin.getHashBinEntry(batchIndex);
+                HashBinEntry<T> item = cuckooHashBin.getHashBinEntry(batchIndex);
                 if (item.getHashIndex() == HashBinEntry.DUMMY_ITEM_HASH_INDEX) {
-                    return ByteBuffer.wrap(new byte[0]);
+                    return null;
                 } else {
                     return item.getItem();
                 }
             })
-            .toArray(ByteBuffer[]::new);
-        UcpsiClientOutput clientOutput = new UcpsiClientOutput(table, z1);
+            .collect(Collectors.toCollection(ArrayList::new));
+        UcpsiClientOutput<T> clientOutput = new UcpsiClientOutput<>(table, z1);
         cuckooHashBin = null;
         stopWatch.stop();
         long psmTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

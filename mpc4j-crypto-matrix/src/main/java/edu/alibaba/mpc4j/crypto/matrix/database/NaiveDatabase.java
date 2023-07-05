@@ -172,10 +172,10 @@ public class NaiveDatabase implements ModBitNumDatabase {
         byte[][] byteArrayData = Arrays.stream(data)
             .map(element -> BigIntegerUtils.nonNegBigIntegerToByteArray(element, byteL))
             .toArray(byte[][]::new);
-        DenseBitMatrix byteDenseBitMatrix = ByteDenseBitMatrix.fromDense(l, byteArrayData);
+        DenseBitMatrix byteDenseBitMatrix = ByteDenseBitMatrix.createFromDense(l, byteArrayData);
         DenseBitMatrix transByteDenseBitMatrix = byteDenseBitMatrix.transpose(envType, parallel);
         return IntStream.range(0, l)
-            .mapToObj(index -> BitVectorFactory.create(rows, transByteDenseBitMatrix.getRow(index)))
+            .mapToObj(index -> BitVectorFactory.create(rows, transByteDenseBitMatrix.getByteArrayRow(index)))
             .toArray(BitVector[]::new);
     }
 
@@ -260,7 +260,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
 
     @Override
     public String toString() {
-        String[] stringData = Arrays.stream(Arrays.copyOf(data, MatrixUtils.DISPLAY_NUM))
+        String[] stringData = Arrays.stream(Arrays.copyOf(data, Math.min(data.length, MatrixUtils.DISPLAY_NUM)))
             .map(element -> element.toString(16))
             .map(element -> element.toUpperCase(Locale.ROOT))
             .toArray(String[]::new);

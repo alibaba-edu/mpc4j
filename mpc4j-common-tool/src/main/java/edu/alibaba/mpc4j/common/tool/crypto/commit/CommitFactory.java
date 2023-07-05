@@ -89,10 +89,10 @@ public class CommitFactory {
         switch (envType) {
             case STANDARD:
             case STANDARD_JDK:
-                return new RoBcSm3Commit(secureRandom);
+                return new RoBcSha256Commit(secureRandom);
             case INLAND:
             case INLAND_JDK:
-                return new RoBcSha256Commit(secureRandom);
+                return new RoBcSm3Commit(secureRandom);
             default:
                 throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType);
         }

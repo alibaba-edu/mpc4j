@@ -1,84 +1,99 @@
 package edu.alibaba.mpc4j.common.tool.bitmatrix.sparse;
 
-import java.util.ArrayList;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrix;
 
 /**
- * 稀疏布尔矩阵类。
+ * sparse bit matrix.
  *
- * @author Hanwen Feng
- * @date 2022/09/20
+ * @author Weiran Liu
+ * @date 2023/6/25
  */
-public class SparseBitMatrix extends AbstractSparseBitMatrix {
+public interface SparseBitMatrix {
     /**
-     * 私有构造函数。
-     */
-    private SparseBitMatrix() {
-        // empty
-    }
-
-    /**
-     * 构建器。
+     * Left-multiplies the boolean vector x with each column in M, i.e., computes x·M.
      *
-     * @param colsList 列向量组。
-     * @return 稀疏布尔矩阵。
+     * @param x the boolean vector x.
+     * @return the result.
      */
-    public static SparseBitMatrix creatFromColsList(ArrayList<SparseBitVector> colsList) {
-        SparseBitMatrix sparseBitMatrix = new SparseBitMatrix();
-        sparseBitMatrix.initFromColList(colsList);
-        return sparseBitMatrix;
-    }
+    boolean[] lmul(final boolean[] x);
 
     /**
-     * 构建器，按照循环矩阵初始化。
+     * Left-multiplies the boolean vector x with each column in M, and then xor the result into the other boolean vector,
+     * i.e., computes y = x·M ⊕ y.
      *
-     * @param rows      行数。
-     * @param cols      列数。
-     * @param initArray 初始向量。
-     * @return 稀疏布尔矩阵。
+     * @param x the boolean vector x.
+     * @param y the boolean vector y.
      */
-    public static SparseBitMatrix createCyclicMatrix(int rows, int cols, int[] initArray) {
-        SparseBitMatrix sparseBitMatrix = new SparseBitMatrix();
-        sparseBitMatrix.initAsCyclicMatrix(rows, cols, initArray);
-        return sparseBitMatrix;
-    }
+    void lmulAddi(final boolean[] x, boolean[] y);
 
     /**
-     * 稀疏布尔矩阵加法。
+     * Left-multiplies the GF2L vector with each column in M, i.e., computes x·M by treating each entry in M as 1's
+     * in the GF2L field.
      *
-     * @param that 另一个稀疏布尔矩阵。
-     * @return 加和。
+     * @param x the GF2L vector x.
+     * @return the result.
      */
-    public SparseBitMatrix add(AbstractSparseBitMatrix that) {
-        return creatFromColsList(addToColsList(that));
-    }
+    byte[][] lExtMul(final byte[][] x);
 
     /**
-     * 截取子矩阵。
+     * Left-multiplies the GF2L vector with each column in M, and then xor the result into the other GF2L vector,
+     * i.e., computes y = x·M ⊕ y by treating each entry in M as 1's in the GF2L field.
      *
-     * @param startColIndex 开始截取的列位置。
-     * @param endColIndex   结束截取的列位置。
-     * @param startRowIndex 开始截取的行位置。
-     * @param endRowIndex   结束截取的行位置。
-     * @return 子矩阵。
+     * @param x the GF2L vector x.
+     * @param y the GF2L vector y.
      */
-    public SparseBitMatrix getSubMatrix(int startColIndex, int endColIndex, int startRowIndex, int endRowIndex) {
-        return creatFromColsList(getSubColsList(startColIndex, endColIndex, startRowIndex, endRowIndex));
-    }
+    void lExtMulAddi(final byte[][] x, byte[][] y);
 
     /**
-     * 获取转置矩阵。
+     * Gets the number of rows.
      *
-     * @return 转置矩阵。
+     * @return the number of rows.
      */
-    public SparseBitMatrix transpose() {
-        return creatFromColsList(getRowsList());
-    }
+    int getRows();
 
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof SparseBitMatrix)) {
-            return false;
-        }
-        return super.equals(obj);
-    }
+    /**
+     * Gets the number of columns.
+     *
+     * @return the number of columns.
+     */
+    int getColumns();
+
+    /**
+     * Gets the assigned column.
+     *
+     * @param index the index.
+     * @return the assigned column.
+     */
+    SparseBitVector getColumn(int index);
+
+    /**
+     * Gets the size. Note that only square matrix support this.
+     *
+     * @return size.
+     * @throws IllegalArgumentException if the matrix is not square.
+     */
+    int getSize();
+
+    /**
+     * Gets the entry at (iRow, iColumn).
+     *
+     * @param x row index.
+     * @param y column index.
+     * @return the entry at (iRow, iColumn).
+     */
+    boolean get(int x, int y);
+
+    /**
+     * to dense bit matrix.
+     *
+     * @return dense bit matrix
+     */
+    DenseBitMatrix toDense();
+
+    /**
+     * Transposes a matrix to a dense matrix.
+     *
+     * @return result.
+     */
+    DenseBitMatrix transposeDense();
 }

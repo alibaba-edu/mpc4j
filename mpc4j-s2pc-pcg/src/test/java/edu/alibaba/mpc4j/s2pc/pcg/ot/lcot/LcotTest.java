@@ -1,17 +1,12 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lcot;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.coder.linear.LinearCoder;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.kk13.Kk13OptLcotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.kk13.Kk13OriLcotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.oos17.Oos17LcotConfig;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -33,12 +27,8 @@ import java.util.stream.IntStream;
  * @date 2022/6/8
  */
 @RunWith(Parameterized.class)
-public class LcotTest {
+public class LcotTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(LcotTest.class);
-    /**
-     * 随机状态
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * 默认数量
      */
@@ -63,6 +53,7 @@ public class LcotTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
+
         // OOS17
         configurations.add(new Object[] {
             LcotFactory.LcotType.OOS17.name(), new Oos17LcotConfig.Builder().build(),
@@ -80,87 +71,60 @@ public class LcotTest {
     }
 
     /**
-     * 发送方
-     */
-    private final Rpc senderRpc;
-    /**
-     * 接收方
-     */
-    private final Rpc receiverRpc;
-    /**
      * 协议类型
      */
     private final LcotConfig config;
 
     public LcotTest(String name, LcotConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        senderRpc = rpcManager.getRpc(0);
-        receiverRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
     }
 
     @Test
     public void test1() {
-        LcotSender sender = LcotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        LcotReceiver receiver = LcotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_INPUT_BIT_LENGTH, 1);
+        testPto(DEFAULT_INPUT_BIT_LENGTH, 1, false);
     }
 
     @Test
     public void test2() {
-        LcotSender sender = LcotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        LcotReceiver receiver = LcotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_INPUT_BIT_LENGTH, 2);
+        testPto(DEFAULT_INPUT_BIT_LENGTH, 2, false);
     }
 
     @Test
     public void testDefault() {
-        LcotSender sender = LcotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        LcotReceiver receiver = LcotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_INPUT_BIT_LENGTH, DEFAULT_NUM);
+        testPto(DEFAULT_INPUT_BIT_LENGTH, DEFAULT_NUM, false);
     }
 
     @Test
     public void testParallelDefault() {
-        LcotSender sender = LcotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        LcotReceiver receiver = LcotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, DEFAULT_INPUT_BIT_LENGTH, DEFAULT_NUM);
+        testPto(DEFAULT_INPUT_BIT_LENGTH, DEFAULT_NUM, true);
     }
 
     @Test
     public void testSmallInputBitLength() {
-        LcotSender sender = LcotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        LcotReceiver receiver = LcotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, SMALL_INPUT_BIT_LENGTH, DEFAULT_NUM);
+        testPto(SMALL_INPUT_BIT_LENGTH, DEFAULT_NUM, false);
     }
 
     @Test
     public void testLargeInputBitLength() {
-        LcotSender sender = LcotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        LcotReceiver receiver = LcotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, LARGE_INPUT_BIT_LENGTH, DEFAULT_NUM);
+        testPto(LARGE_INPUT_BIT_LENGTH, DEFAULT_NUM, false);
     }
 
     @Test
     public void testLarge() {
-        LcotSender sender = LcotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        LcotReceiver receiver = LcotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        testPto(sender, receiver, DEFAULT_INPUT_BIT_LENGTH, LARGE_NUM);
+        testPto(DEFAULT_INPUT_BIT_LENGTH, LARGE_NUM, false);
     }
 
     @Test
     public void testParallelLarge() {
-        LcotSender sender = LcotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        LcotReceiver receiver = LcotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
-        sender.setParallel(true);
-        receiver.setParallel(true);
-        testPto(sender, receiver, DEFAULT_INPUT_BIT_LENGTH, LARGE_NUM);
+        testPto(DEFAULT_INPUT_BIT_LENGTH, LARGE_NUM, true);
     }
 
-    private void testPto(LcotSender sender, LcotReceiver receiver, int inputBitLength, int num) {
+    private void testPto(int inputBitLength, int num, boolean parallel) {
+        LcotSender sender = LcotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        LcotReceiver receiver = LcotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
+        sender.setParallel(parallel);
+        receiver.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
@@ -177,30 +141,25 @@ public class LcotTest {
                 .toArray(byte[][]::new);
             LcotSenderThread senderThread = new LcotSenderThread(sender, inputBitLength, num);
             LcotReceiverThread receiverThread = new LcotReceiverThread(receiver, inputBitLength, choices);
-            StopWatch stopWatch = new StopWatch();
-            // 开始执行协议
-            stopWatch.start();
+            STOP_WATCH.start();
+            // start
             senderThread.start();
             receiverThread.start();
+            // stop
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long senderByteLength = senderRpc.getSendByteLength();
-            long receiverByteLength = receiverRpc.getSendByteLength();
-            senderRpc.reset();
-            receiverRpc.reset();
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
+            // verify
             LcotSenderOutput senderOutput = senderThread.getSenderOutput();
             LcotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            // 验证结果
             assertOutput(inputBitLength, num, senderOutput, receiverOutput);
-            LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
-                senderByteLength, receiverByteLength, time
-            );
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
-            sender.destroy();
-            receiver.destroy();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

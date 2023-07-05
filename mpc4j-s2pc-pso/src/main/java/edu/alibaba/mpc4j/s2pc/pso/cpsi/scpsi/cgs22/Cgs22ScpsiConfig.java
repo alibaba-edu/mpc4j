@@ -1,7 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.cgs22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.RbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.RbopprfFactory;
@@ -16,7 +17,7 @@ import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiFactory;
  * @author Weiran Liu
  * @date 2023/4/19
  */
-public class Cgs22ScpsiConfig implements ScpsiConfig {
+public class Cgs22ScpsiConfig extends AbstractMultiPartyPtoConfig implements ScpsiConfig {
     /**
      * related batch OPPRF config
      */
@@ -31,7 +32,7 @@ public class Cgs22ScpsiConfig implements ScpsiConfig {
     private final CuckooHashBinType cuckooHashBinType;
 
     private Cgs22ScpsiConfig(Builder builder) {
-        assert builder.rbopprfConfig.getEnvType().equals(builder.psmConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST, builder.rbopprfConfig, builder.psmConfig);
         rbopprfConfig = builder.rbopprfConfig;
         psmConfig = builder.psmConfig;
         cuckooHashBinType = builder.cuckooHashBinType;
@@ -43,19 +44,8 @@ public class Cgs22ScpsiConfig implements ScpsiConfig {
     }
 
     @Override
-    public void setEnvType(EnvType envType) {
-        rbopprfConfig.setEnvType(envType);
-        psmConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return rbopprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
+    public int getOutputBitNum(int serverElementSize, int clientElementSize) {
+        return CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
     }
 
     public RbopprfConfig getRbopprfConfig() {
@@ -84,9 +74,9 @@ public class Cgs22ScpsiConfig implements ScpsiConfig {
          */
         private CuckooHashBinType cuckooHashBinType;
 
-        public Builder(boolean silent) {
-            rbopprfConfig = RbopprfFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            psmConfig = PsmFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        public Builder(SecurityModel securityModel, boolean silent) {
+            rbopprfConfig = RbopprfFactory.createDefaultConfig();
+            psmConfig = PsmFactory.createDefaultConfig(securityModel, silent);
             cuckooHashBinType = CuckooHashBinType.NO_STASH_PSZ18_3_HASH;
         }
 

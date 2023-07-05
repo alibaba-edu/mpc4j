@@ -30,17 +30,12 @@ public abstract class AbstractHhLdpServer implements HhLdpServer {
      * the private parameter ε / w
      */
     protected final double windowEpsilon;
-    /**
-     * the window size (w)
-     */
-    protected final int windowSize;
 
     public AbstractHhLdpServer(HhLdpConfig hhLdpConfig) {
         type = hhLdpConfig.getType();
         d = hhLdpConfig.getD();
         k = hhLdpConfig.getK();
         windowEpsilon = hhLdpConfig.getWindowEpsilon();
-        windowSize = hhLdpConfig.getWindowSize();
         hhLdpServerState = HhLdpServerState.WARMUP;
     }
 
@@ -56,11 +51,6 @@ public abstract class AbstractHhLdpServer implements HhLdpServer {
     @Override
     public double getWindowEpsilon() {
         return windowEpsilon;
-    }
-
-    @Override
-    public int getWindowSize() {
-        return windowSize;
     }
 
     @Override

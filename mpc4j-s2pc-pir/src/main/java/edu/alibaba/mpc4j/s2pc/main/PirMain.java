@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Properties;
 
 /**
- * PIR mian
+ * PIR main.
  *
  * @author Liqiang Peng
  * @date 2022/04/23
@@ -21,11 +21,12 @@ public class PirMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(PirMain.class);
 
     /**
-     * mian
+     * main.
      *
      * @param args one input: config file name.
      */
     public static void main(String[] args) throws Exception {
+        PropertiesUtils.loadLog4jProperties();
         // read log file
         LOGGER.info("read log config");
         Properties log4jProperties = new Properties();
@@ -34,7 +35,7 @@ public class PirMain {
         // read config file
         LOGGER.info("read PTO config");
         Properties properties = PropertiesUtils.loadProperties(args[0]);
-        // 读取协议类型
+        // read task type
         String taskType = PropertiesUtils.readString(properties, "task_type");
         LOGGER.info("task_type = " + taskType);
         switch (taskType) {

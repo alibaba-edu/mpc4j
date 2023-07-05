@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu.jsz22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
@@ -16,7 +16,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
  * @author Weiran Liu
  * @date 2022/03/18
  */
-public class Jsz22SfsPsuConfig implements PsuConfig {
+public class Jsz22SfsPsuConfig extends AbstractMultiPartyPtoConfig implements PsuConfig {
     /**
      * OPRF协议配置项
      */
@@ -31,8 +31,7 @@ public class Jsz22SfsPsuConfig implements PsuConfig {
     private final CuckooHashBinType cuckooHashBinType;
 
     private Jsz22SfsPsuConfig(Builder builder) {
-        // 协议的环境类型必须相同
-        assert builder.oprfConfig.getEnvType().equals(builder.osnConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST, builder.oprfConfig, builder.osnConfig);
         oprfConfig = builder.oprfConfig;
         osnConfig = builder.osnConfig;
         cuckooHashBinType = builder.cuckooHashBinType;
@@ -55,29 +54,6 @@ public class Jsz22SfsPsuConfig implements PsuConfig {
         return cuckooHashBinType;
     }
 
-    @Override
-    public void setEnvType(EnvType envType) {
-        oprfConfig.setEnvType(envType);
-        osnConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return oprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (oprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = oprfConfig.getSecurityModel();
-        }
-        if (osnConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = osnConfig.getSecurityModel();
-        }
-        return securityModel;
-    }
-
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Jsz22SfsPsuConfig> {
         /**
          * OPRF协议配置项
@@ -92,9 +68,9 @@ public class Jsz22SfsPsuConfig implements PsuConfig {
          */
         private CuckooHashBinType cuckooHashBinType;
 
-        public Builder() {
+        public Builder(boolean silent) {
             oprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
-            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             // 论文建议平衡场景下使用PSZ18的3哈希协议，非平衡场景下使用PSZ18的4哈希协议
             cuckooHashBinType = CuckooHashBinType.NAIVE_3_HASH;
         }

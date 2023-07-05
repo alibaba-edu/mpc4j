@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.PtoState;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
@@ -25,32 +22,47 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiPtoDesc.*;
+
 /**
- * CMG21非平衡PSI协议客户端。
+ * CMG21 UPSI client.
  *
  * @author Liqiang Peng
  * @date 2022/5/25
  */
 public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
+
     static {
         System.loadLibrary(CommonConstants.MPC4J_NATIVE_FHE_NAME);
     }
 
     /**
-     * MP-OPRF协议接收方
+     * MP-OPRF receiver
      */
     private final MpOprfReceiver mpOprfReceiver;
     /**
-     * 非平衡PSI方案参数
+     * UPSI params
      */
-    private Cmg21UpsiParams params;
+    public Cmg21UpsiParams params;
     /**
-     * 无贮存区布谷鸟哈希分桶
+     * cuckoo hash bin
      */
     private CuckooHashBin<ByteBuffer> cuckooHashBin;
+    /**
+     * secret key
+     */
+    public byte[] secretKey;
+    /**
+     * encryption params
+     */
+    public byte[] encryptionParams;
+    /**
+     * public key
+     */
+    public byte[] publicKey;
 
     public Cmg21UpsiClient(Rpc clientRpc, Party serverParty, Cmg21UpsiConfig config) {
-        super(Cmg21UpsiPtoDesc.getInstance(), clientRpc, serverParty, config);
+        super(getInstance(), clientRpc, serverParty, config);
         mpOprfReceiver = OprfFactory.createMpOprfReceiver(clientRpc, serverParty, config.getMpOprfConfig());
         addSubPtos(mpOprfReceiver);
     }
@@ -94,34 +106,21 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // 客户端执行MP-OPRF协议
-        ArrayList<ByteBuffer> oprfOutputs = oprf();
+        // MP-OPRF
+        List<ByteBuffer> oprfOutputs = oprf(clientElementList);
         Map<ByteBuffer, ByteBuffer> oprfMap = IntStream.range(0, clientElementSize)
             .boxed()
-            .collect(Collectors.toMap(oprfOutputs::get, i -> clientElementArrayList.get(i), (a, b) -> b));
+            .collect(Collectors.toMap(oprfOutputs::get, i -> clientElementList.get(i), (a, b) -> b));
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 5, oprfTime, "OPRF");
 
         stopWatch.start();
-        // 客户端布谷鸟哈希分桶，并发送hash函数的key
-        boolean success = false;
-        byte[][] hashKeys;
-        do {
-            hashKeys = CommonUtils.generateRandomKeys(params.getCuckooHashKeyNum(), secureRandom);
-            cuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(
-                envType, params.getCuckooHashBinType(), clientElementSize, params.getBinNum(), hashKeys
-            );
-            cuckooHashBin.insertItems(oprfOutputs);
-            if (cuckooHashBin.itemNumInStash() == 0) {
-                success = true;
-            }
-        } while (!success);
-        // 向布谷鸟哈希的空余位置插入空元素
-        cuckooHashBin.insertPaddingItems(botElementByteBuffer);
+        // generate cuckoo hash bin
+        byte[][] hashKeys = generateCuckooHashBin(oprfOutputs);
         DataPacketHeader hashKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), Cmg21UpsiPtoDesc.PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         List<byte[]> hashKeyPayload = Arrays.stream(hashKeys).collect(Collectors.toList());
@@ -132,32 +131,30 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
         logStepInfo(PtoState.PTO_STEP, 2, 5, cuckooHashKeyTime, "Client generates cuckoo hash keys");
 
         stopWatch.start();
-        // 客户端生成BFV算法密钥
-        List<byte[]> encryptionParams = Cmg21UpsiNativeUtils.genEncryptionParameters(
+        List<byte[]> keyPair = Cmg21UpsiNativeUtils.genEncryptionParameters(
             params.getPolyModulusDegree(), params.getPlainModulus(), params.getCoeffModulusBits()
         );
-        List<byte[]> fheParams = encryptionParams.subList(0, 2);
-        DataPacketHeader fheParamsHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), Cmg21UpsiPtoDesc.PtoStep.CLIENT_SEND_ENCRYPTION_PARAMS.ordinal(), extraInfo,
+        List<byte[]> publicKeysPayload = generateKeyPairPayload(keyPair);
+        DataPacketHeader publicKeysHeader = new DataPacketHeader(
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_ENCRYPTION_PARAMS.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
-        rpc.send(DataPacket.fromByteArrayList(fheParamsHeader, fheParams));
+        rpc.send(DataPacket.fromByteArrayList(publicKeysHeader, publicKeysPayload));
         stopWatch.stop();
         long keyGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 3, 5, keyGenTime, "Client generates FHE keys");
 
         stopWatch.start();
-        // 客户端加密查询信息
-        List<long[][]> encodedQuery = encodeQuery();
+        // generate query
+        List<long[][]> encodedQuery = encodeQuery(cuckooHashBin);
         Stream<long[][]> encodeStream = parallel ? encodedQuery.stream().parallel() : encodedQuery.stream();
         List<byte[]> queryPayload = encodeStream
-            .map(i -> Cmg21UpsiNativeUtils.generateQuery(
-                encryptionParams.get(0), encryptionParams.get(2), encryptionParams.get(3), i))
+            .map(i -> Cmg21UpsiNativeUtils.generateQuery(encryptionParams, publicKey, secretKey, i))
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
         DataPacketHeader queryHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), Cmg21UpsiPtoDesc.PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(queryHeader, queryPayload));
@@ -166,59 +163,111 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 4, 5, genQueryTime, "Client generates query");
 
-        // 客户端接收服务端的计算结果
         DataPacketHeader responseHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), Cmg21UpsiPtoDesc.PtoStep.SERVER_SEND_RESPONSE.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RESPONSE.ordinal(), extraInfo,
             otherParty().getPartyId(), rpc.ownParty().getPartyId()
         );
         List<byte[]> responsePayload = rpc.receive(responseHeader).getPayload();
 
         stopWatch.start();
-        // 客户端解密密文匹配结果
-        Stream<byte[]> responseStream = parallel ? responsePayload.stream().parallel() : responsePayload.stream();
-        ArrayList<long[]> decodedResponse = responseStream
-            .map(i -> Cmg21UpsiNativeUtils.decodeReply(encryptionParams.get(0), encryptionParams.get(3), i))
-            .collect(Collectors.toCollection(ArrayList::new));
-        Set<T> intersectionSet = recoverPsiResult(decodedResponse, oprfMap);
+        // decode reply
+        List<long[]> decodeResponse = decodeResponse(responsePayload);
+        Set<ByteBuffer> intersectionSet = recoverPsiResult(decodeResponse, oprfMap, cuckooHashBin);
+        Set<T> result = intersectionSet.stream()
+            .map(byteBuffer -> byteArrayObjectMap.get(byteBuffer))
+            .collect(Collectors.toSet());
         stopWatch.stop();
         long decodeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 5, 5, decodeTime, "Client decodes response");
 
         logPhaseInfo(PtoState.PTO_END);
-        return intersectionSet;
+        return result;
     }
 
     /**
-     * 客户端（接收方）执行MP-OPRF协议。
+     * client decodes response.
      *
-     * @return MP-OPRF接收方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param responsePayload server response.
+     * @return decoded response.
      */
-    private ArrayList<ByteBuffer> oprf() throws MpcAbortException {
-        byte[][] oprfReceiverInputs = IntStream.range(0, clientElementSize)
-            .mapToObj(i -> clientElementArrayList.get(i).array())
+    public List<long[]> decodeResponse(List<byte[]> responsePayload) {
+        Stream<byte[]> responseStream = parallel ? responsePayload.stream().parallel() : responsePayload.stream();
+        return responseStream
+            .map(i -> Cmg21UpsiNativeUtils.decodeReply(encryptionParams, secretKey, i))
+            .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    /**
+     * client generates key pair.
+     *
+     * @param keyPair key pair.
+     * @return public keys.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    public List<byte[]> generateKeyPairPayload(List<byte[]> keyPair) throws MpcAbortException {
+        MpcAbortPreconditions.checkArgument(keyPair.size() == 4);
+        this.encryptionParams = keyPair.get(0);
+        this.publicKey = keyPair.get(2);
+        this.secretKey = keyPair.get(3);
+        return keyPair.subList(0, 2);
+    }
+
+    /**
+     * client generates no stash cuckoo hash bin.
+     *
+     * @param items item list.
+     * @return hash keys.
+     */
+    private byte[][] generateCuckooHashBin(List<ByteBuffer> items) {
+        boolean success = false;
+        byte[][] hashKeys;
+        do {
+            hashKeys = CommonUtils.generateRandomKeys(params.getCuckooHashNum(), secureRandom);
+            cuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(
+                envType, params.getCuckooHashBinType(), clientElementSize, params.getBinNum(), hashKeys
+            );
+            cuckooHashBin.insertItems(items);
+            if (cuckooHashBin.itemNumInStash() == 0) {
+                success = true;
+            }
+        } while (!success);
+        cuckooHashBin.insertPaddingItems(botElementByteBuffer);
+        return hashKeys;
+    }
+
+    /**
+     * client executes MP-OPRF protocol.
+     *
+     * @param clientElementArrayList client element array list.
+     * @return MP-OPRF output.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    private List<ByteBuffer> oprf(List<ByteBuffer> clientElementArrayList) throws MpcAbortException {
+        byte[][] oprfReceiverInputs = clientElementArrayList.stream()
+            .map(ByteBuffer::array)
             .toArray(byte[][]::new);
         OprfReceiverOutput oprfReceiverOutput = mpOprfReceiver.oprf(oprfReceiverInputs);
-        return IntStream.range(0, clientElementSize)
+        return IntStream.range(0, clientElementArrayList.size())
             .mapToObj(i -> ByteBuffer.wrap(oprfReceiverOutput.getPrf(i)))
             .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
-     * 恢复隐私集合交集。
+     * recover intersection set.
      *
-     * @param decryptedResponse 解密后的服务端回复。
-     * @param oprfMap           OPRF映射。
-     * @return 隐私集合交集。
+     * @param decryptedResponse decrypted response.
+     * @param oprfMap           OPRF map.
+     * @param cuckooHashBin     cuckoo hash bin.
+     * @return intersection set.
      */
-    private Set<T> recoverPsiResult(ArrayList<long[]> decryptedResponse, Map<ByteBuffer, ByteBuffer> oprfMap) {
-        Set<T> intersectionSet = new HashSet<>();
+    public Set<ByteBuffer> recoverPsiResult(List<long[]> decryptedResponse, Map<ByteBuffer, ByteBuffer> oprfMap,
+                                            CuckooHashBin<ByteBuffer> cuckooHashBin) {
+        Set<ByteBuffer> intersectionSet = new HashSet<>();
         int ciphertextNum = params.getBinNum() / (params.getPolyModulusDegree() / params.getItemEncodedSlotSize());
         int itemPerCiphertext = params.getPolyModulusDegree() / params.getItemEncodedSlotSize();
         int partitionCount = decryptedResponse.size() / ciphertextNum;
         for (int i = 0; i < decryptedResponse.size(); i++) {
-            // 找到匹配元素的所在行
             List<Integer> matchedItem = new ArrayList<>();
             for (int j = 0; j < params.getItemEncodedSlotSize() * itemPerCiphertext; j++) {
                 if (decryptedResponse.get(i)[j] == 0) {
@@ -229,9 +278,9 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
                 if (matchedItem.get(j) % params.getItemEncodedSlotSize() == 0) {
                     if (matchedItem.get(j + params.getItemEncodedSlotSize() - 1) - matchedItem.get(j)
                         == params.getItemEncodedSlotSize() - 1) {
-                        int hashBinIndex = (matchedItem.get(j) / params.getItemEncodedSlotSize()) + (i / partitionCount) * itemPerCiphertext;
-                        intersectionSet.add(byteArrayObjectMap.get(
-                            oprfMap.get(cuckooHashBin.getHashBinEntry(hashBinIndex).getItem())));
+                        int hashBinIndex = (matchedItem.get(j) / params.getItemEncodedSlotSize()) +
+                            (i / partitionCount) * itemPerCiphertext;
+                        intersectionSet.add(oprfMap.get(cuckooHashBin.getHashBinEntry(hashBinIndex).getItem()));
                         j = j + params.getItemEncodedSlotSize() - 1;
                     }
                 }
@@ -241,11 +290,12 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
     }
 
     /**
-     * 返回查询信息的编码。
+     * encode query.
      *
-     * @return 查询信息的编码。
+     * @param cuckooHashBin cuckoo hash bin.
+     * @return encoded query.
      */
-    public List<long[][]> encodeQuery() {
+    public List<long[][]> encodeQuery(CuckooHashBin<ByteBuffer> cuckooHashBin) {
         int itemPerCiphertext = params.getPolyModulusDegree() / params.getItemEncodedSlotSize();
         int ciphertextNum = params.getBinNum() / itemPerCiphertext;
         long[][] items = new long[ciphertextNum][params.getPolyModulusDegree()];
@@ -266,10 +316,10 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
     }
 
     /**
-     * 计算幂次方。
+     * compute powers.
      *
-     * @param base 底数。
-     * @return 幂次方。
+     * @param base base.
+     * @return powers.
      */
     private long[][] computePowers(long[] base) {
         Zp64 zp64 = Zp64Factory.createInstance(envType, (long) params.getPlainModulus());

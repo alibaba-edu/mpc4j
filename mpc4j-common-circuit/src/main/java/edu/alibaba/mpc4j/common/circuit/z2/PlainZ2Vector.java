@@ -14,7 +14,33 @@ import java.util.Random;
  */
 public class PlainZ2Vector implements MpcZ2Vector {
     /**
-     * Create a random plain z2 vector.
+     * Creates a plain z2 vector with the assigned bit vector.
+     *
+     * @param bitVector the assigned bit vector.
+     * @return a plain zl vector.
+     */
+    public static PlainZ2Vector create(BitVector bitVector) {
+        PlainZ2Vector plainZ2Vector = new PlainZ2Vector();
+        plainZ2Vector.bitVector = bitVector;
+        return plainZ2Vector;
+    }
+
+    /**
+     * Create a plain z2 vector with the assigned value.
+     *
+     * @param bitNum the bit num.
+     * @param bytes  the assigned bits represented by bytes.
+     * @return a plain z2 vector.
+     */
+    public static PlainZ2Vector create(int bitNum, byte[] bytes) {
+        PlainZ2Vector plainZ2Vector = new PlainZ2Vector();
+        plainZ2Vector.bitVector = BitVectorFactory.create(bitNum, bytes);
+
+        return plainZ2Vector;
+    }
+
+    /**
+     * Creates a random plain z2 vector.
      *
      * @param bitNum the bit num.
      * @param random the random states.
@@ -27,7 +53,7 @@ public class PlainZ2Vector implements MpcZ2Vector {
     }
 
     /**
-     * Create a plain all-one z2 vector.
+     * Creates a plain all-one z2 vector.
      *
      * @param bitNum the bit num.
      * @return a plain z2 vector.
@@ -39,7 +65,7 @@ public class PlainZ2Vector implements MpcZ2Vector {
     }
 
     /**
-     * Create a plain all-zero z2 vector.
+     * Creates a plain all-zero z2 vector.
      *
      * @param bitNum the bit num.
      * @return a plain z2 vector.
@@ -51,7 +77,7 @@ public class PlainZ2Vector implements MpcZ2Vector {
     }
 
     /**
-     * Create an empty plain z2 vector.
+     * Creates an empty plain z2 vector.
      *
      * @return a plain z2 vector.
      */
@@ -59,17 +85,6 @@ public class PlainZ2Vector implements MpcZ2Vector {
         PlainZ2Vector plainZ2Vector = new PlainZ2Vector();
         plainZ2Vector.bitVector = BitVectorFactory.createEmpty();
         return plainZ2Vector;
-    }
-
-    /**
-     * Create a plain z2 vector with all bits equal assigned boolean.
-     *
-     * @param bitNum the bit num.
-     * @param value  assigned value.
-     * @return a plain z2 vector.
-     */
-    public static PlainZ2Vector create(int bitNum, boolean value) {
-        return value ? PlainZ2Vector.createOnes(bitNum) : PlainZ2Vector.createZeros(bitNum);
     }
 
     /**
@@ -85,25 +100,13 @@ public class PlainZ2Vector implements MpcZ2Vector {
     }
 
     @Override
-    public int getByteNum() {
+    public int byteNum() {
         return bitVector.byteNum();
     }
 
     @Override
-    public boolean get(int index) {
-        return bitVector.get(index);
-    }
-
-
-    @Override
     public BitVector getBitVector() {
         return bitVector;
-    }
-
-    public static PlainZ2Vector create(BitVector bitVector) {
-        PlainZ2Vector plainZ2Vector = new PlainZ2Vector();
-        plainZ2Vector.bitVector = bitVector;
-        return plainZ2Vector;
     }
 
     @Override
@@ -126,8 +129,8 @@ public class PlainZ2Vector implements MpcZ2Vector {
 
     @Override
     public PlainZ2Vector split(int splitNum) {
-        BitVector splitBitVector = bitVector.split(splitNum);
-        return PlainZ2Vector.create(splitBitVector);
+        BitVector splitVector = bitVector.split(splitNum);
+        return PlainZ2Vector.create(splitVector);
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.math.DoubleMath;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.utils.*;
@@ -18,53 +19,53 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Cuckoo Filter的实现，原始论文：
+ * Cuckoo Filter. The scheme is described in the following paper:
+ * <p>
  * Fan B, Andersen D G, Kaminsky M, et al. Cuckoo filter: Practically better than bloom. CoNET 2014, pp. 75-88.
- * 与Bloom Filter相比，Cuckoo Filter有如下优势：
- * 1. 支持动态添加和删除元素（Support adding and removing items dynamically.）。
- * 2. 更高效的元素存在性检查（Provide higher lookup performance than traditional Bloom Filters.）。
- * 3. 很多实际场景中存储量低（Use less space than Bloom Filters in many practical applications.）。
+ * </p>
+ * Compared with Bloom Filter, Cuckoo Filter has the following advantages:
+ * <li>Support adding and removing items dynamically.</li>
+ * <li>Provide higher lookup performance than traditional Bloom Filters.</li>
+ * <li>Use less space than Bloom Filters in many practical applications.</li>
  *
- * @author FengQing, Weiran Liu
+ * @author Li Peng, Weiran Liu
  * @date 2020/08/29
  */
 public class CuckooFilter<T> implements Filter<T> {
     /**
-     * 负载率α，即插入期望的所有元素后，哈希桶中包含的元素数量占总元素数量的比例，论文给出的默认比例是95.5%，见Table 2
+     * α, number of elements in buckets / total number of elements. The default value is 95.5%, see Table 2.
      */
     private static final double LOAD_FACTOR = 0.955;
     /**
-     * 每个桶内有多少个元素（entry），这里使用默认值4
+     * number of entries in each bucket. The default value is 4.
      */
     private static final int ENTRIES_PER_BUCKET = 4;
     /**
-     * 每个指纹（fingerprint）的比特长度，计算公式(log_2(1/ε) + log_2(2 * ENTRIES_PER_BUCKET))
-     * 由于ENTRIES_PER_BUCKET = 4，log_2(1/ε) = 40，因此计算结果为40 + 3  = 43，取到Byte.SIZE整除，即48
-     * 参见论文Table 2
+     * bit length for each fingerprint, computed as (log_2(1/ε) + log_2(2 * ENTRIES_PER_BUCKET)).
+     * Since ENTRIES_PER_BUCKET = 4, log_2(1/ε) = 40, the result is 40 + 3 = 43, we round to 48, see Table 2.
      */
     static final int FINGERPRINT_BYTE_LENGTH = CommonUtils.getByteLength(
         DoubleMath.roundToInt((CommonConstants.STATS_BIT_LENGTH + 3), RoundingMode.UP)
     );
     /**
-     * 发生冲突时，踢出元素的最大次数，论文中的设置为500。经测试（插入2^20个元素），该值可能会在正常负载率水平时引起插入失败。
-     * 若踢出次数较小，则插入元素的开销会减小，但会达不到理想的"元素在桶内分布均匀"的状态，从而增加元素插入失败概率，进而使得负载率变低。
-     * 若踢出次数较大，则减小元素插入失败概率，负载率变高，但在负载率达到较大水平后，插入元素时的开销会增加（需踢出更多元素才能找到位置）。
-     * 论文中未讨论该值影响，结合实际测试结果，与布谷鸟哈希设置的最大次数保持一致，为2^10 = 1024。
+     * max number of kicks for collusion. In paper, it is set to be 500.
+     * The test shows when inserting 2^20 elements, there are some non-negligible failure probability.
+     * Here we set 2^10 = 1024, the same as cuckoo hash.
      */
     private static final int MAX_NUM_KICKS = 1 << 10;
     /**
-     * 空的字节缓存区
+     * empty byte buffer
      */
     private static final ByteBuffer ZERO_BYTE_BUFFER = ByteBuffer.wrap(new byte[0]);
     /**
-     * 哈希函数密钥数量
+     * hash num
      */
     static final int HASH_NUM = 2;
 
     /**
-     * 给定布谷鸟过滤器插入的元素数量，返回哈希桶数量，哈希桶数量一定是2^k形式。
+     * Gets the bucket num, must be in format 2^k.
      *
-     * @param maxSize 插入最大元素数量。
+     * @param maxSize number of elements.
      * @return 哈希桶数量。
      */
     private static int getBucketNum(int maxSize) {
@@ -74,48 +75,48 @@ public class CuckooFilter<T> implements Filter<T> {
     }
 
     /**
-     * 期望插入的元素数量
+     * max number of elements.
      */
     private int maxSize;
     /**
-     * 桶（bucket）数量
+     * bucket num
      */
     private int bucketNum;
     /**
-     * 随机状态
+     * the random state
      */
     private SecureRandom secureRandom;
     /**
-     * 布谷鸟过滤器桶
+     * cuckoo filter buckets
      */
     private ArrayList<ArrayList<CuckooFilterEntry>> buckets;
     /**
-     * 用于计算布谷鸟过滤器哈希桶位置的哈希函数
+     * bucket hash
      */
     private Prf bucketHash;
     /**
-     * 用于计算插入元素指纹的哈希函数
+     * fingerprint hash
      */
     private Prf fingerprintHash;
     /**
-     * 已经插入的元素数量
+     * number of inserted elements
      */
     private int size;
     /**
-     * 原始元素的字节长度，用于计算压缩比例
+     * item byte length, used for computing compress radio
      */
     private int itemByteLength;
 
     /**
-     * 创建一个空的布谷鸟过滤器。
+     * Creates an empty filter.
      *
-     * @param envType 环境类型。
-     * @param maxSize 期望插入的元素数量。
-     * @param keys    哈希函数密钥。
-     * @return 空的布谷鸟过滤器。
+     * @param envType environment.
+     * @param maxSize max number of inserted elements.
+     * @param keys    hash keys.
+     * @return an empty filter.
      */
     static <X> CuckooFilter<X> create(EnvType envType, int maxSize, byte[][] keys) {
-        assert maxSize > 0;
+        MathPreconditions.checkPositive("maxSize", maxSize);
         CuckooFilter<X> cuckooFilter = new CuckooFilter<>();
         cuckooFilter.maxSize = maxSize;
         cuckooFilter.bucketNum = getBucketNum(cuckooFilter.maxSize);
@@ -124,7 +125,7 @@ public class CuckooFilter<T> implements Filter<T> {
         cuckooFilter.fingerprintHash.setKey(keys[0]);
         cuckooFilter.bucketHash = PrfFactory.createInstance(envType, Integer.BYTES);
         cuckooFilter.bucketHash.setKey(keys[1]);
-        // 初始化哈希桶
+        // initialize buckets
         cuckooFilter.buckets = IntStream.range(0, cuckooFilter.bucketNum)
             .mapToObj(bucketIndex -> new ArrayList<CuckooFilterEntry>(ENTRIES_PER_BUCKET))
             .collect(Collectors.toCollection(ArrayList::new));
@@ -135,41 +136,45 @@ public class CuckooFilter<T> implements Filter<T> {
     }
 
     /**
-     * 将用{@code List<byte[]>}表示的过滤器转换为布谷鸟过滤器。
+     * Creates the filter based on {@code List<byte[]>}.
      *
-     * @param envType       环境类型。
-     * @param byteArrayList 用{@code BigInteger<List>}表示的过滤器。
-     * @return 布谷鸟过滤器。
+     * @param envType       environment.
+     * @param byteArrayList the filter represented by {@code List<byte[]>}.
+     * @param <X>           the type.
+     * @return the filter.
      */
     static <X> CuckooFilter<X> fromByteArrayList(EnvType envType, List<byte[]> byteArrayList) {
-        Preconditions.checkArgument(byteArrayList.size() >= 6);
+        MathPreconditions.checkGreaterOrEqual("byteArrayList.size", byteArrayList.size(), 6);
         CuckooFilter<X> cuckooFilter = new CuckooFilter<>();
-        // 移除过滤器类型
+        // type
         byteArrayList.remove(0);
-        // 期望插入的元素数量
+        // max size
         cuckooFilter.maxSize = IntUtils.byteArrayToInt(byteArrayList.remove(0));
         cuckooFilter.bucketNum = getBucketNum(cuckooFilter.maxSize);
-        // 已经插入的元素数量
+        // size
         cuckooFilter.size = IntUtils.byteArrayToInt(byteArrayList.remove(0));
-        // 原始数据的字节长度
+        // item byte length
         cuckooFilter.itemByteLength = IntUtils.byteArrayToInt(byteArrayList.remove(0));
-        // 指纹哈希密钥
+        // fingerprint hash key
         byte[] fingerprintHashKey = byteArrayList.remove(0);
         cuckooFilter.fingerprintHash = PrfFactory.createInstance(envType, FINGERPRINT_BYTE_LENGTH);
         cuckooFilter.fingerprintHash.setKey(fingerprintHashKey);
-        // 桶哈希密钥
+        // bucket hash key
         byte[] bucketHashKey = byteArrayList.remove(0);
         cuckooFilter.bucketHash = PrfFactory.createInstance(envType, Integer.BYTES);
         cuckooFilter.bucketHash.setKey(bucketHashKey);
         cuckooFilter.secureRandom = new SecureRandom();
-        // 桶中的元素
-        Preconditions.checkArgument(byteArrayList.size() == cuckooFilter.bucketNum * ENTRIES_PER_BUCKET);
+        // elements
+        MathPreconditions.checkEqual(
+            "element num", "desired num",
+            byteArrayList.size(), cuckooFilter.bucketNum * ENTRIES_PER_BUCKET
+        );
         ByteBuffer[] bucketFlattenedElements = byteArrayList.stream().map(ByteBuffer::wrap).toArray(ByteBuffer[]::new);
         cuckooFilter.buckets = IntStream.range(0, cuckooFilter.bucketNum)
             .mapToObj(bucketIndex -> {
                 ArrayList<CuckooFilterEntry> bucket = new ArrayList<>(ENTRIES_PER_BUCKET);
                 IntStream.range(0, ENTRIES_PER_BUCKET).forEach(index -> {
-                    // 把空标签设置为0
+                    // empty elements are set to 0
                     if (!bucketFlattenedElements[bucketIndex * ENTRIES_PER_BUCKET + index].equals(ZERO_BYTE_BUFFER)) {
                         bucket.add(
                             new CuckooFilterEntry(bucketFlattenedElements[bucketIndex * ENTRIES_PER_BUCKET + index])
@@ -191,21 +196,21 @@ public class CuckooFilter<T> implements Filter<T> {
     @Override
     public List<byte[]> toByteArrayList() {
         List<byte[]> cuckooFilterList = new LinkedList<>();
-        // 过滤器类型
+        // type
         cuckooFilterList.add(IntUtils.intToByteArray(getFilterType().ordinal()));
-        // 期望插入的元素数量
+        // max size
         cuckooFilterList.add(IntUtils.intToByteArray(maxSize));
-        // 已经插入的元素数量
+        // size
         cuckooFilterList.add(IntUtils.intToByteArray(size));
-        // 原始数据的字节长度
+        // item byte length
         cuckooFilterList.add(IntUtils.intToByteArray(itemByteLength));
-        // 指纹哈希密钥
+        // fingerprint hash
         cuckooFilterList.add(BytesUtils.clone(fingerprintHash.getKey()));
-        // 桶哈希密钥
+        // bucket hash
         cuckooFilterList.add(BytesUtils.clone(bucketHash.getKey()));
-        // 桶中的元素
+        // elements
         IntStream.range(0, bucketNum).forEach(bucketIndex -> {
-            // 插入元素内容，空元素用0占位
+            // empty elements are replaced with 0
             List<CuckooFilterEntry> bucket = buckets.get(bucketIndex);
             int remainSize = ENTRIES_PER_BUCKET - bucket.size();
             for (CuckooFilterEntry cuckooFilterEntry : bucket) {
@@ -248,8 +253,8 @@ public class CuckooFilter<T> implements Filter<T> {
     }
 
     @Override
-    public synchronized void put(T data) {
-        assert size < maxSize;
+    public void put(T data) {
+        MathPreconditions.checkLess("size", size, maxSize);
         if (mightContain(data)) {
             throw new IllegalArgumentException("Insert might duplicate item: " + data);
         }
@@ -310,7 +315,7 @@ public class CuckooFilter<T> implements Filter<T> {
         // 当前占用的字节长度等于已插入元素的数量乘以指纹长度，加上空占位符的数量
         int cuckooFilterByteLength = size * FINGERPRINT_BYTE_LENGTH
             + (bucketNum * ENTRIES_PER_BUCKET - size) * CommonUtils.getByteLength(1);
-        return ((double)cuckooFilterByteLength) / itemByteLength;
+        return ((double) cuckooFilterByteLength) / itemByteLength;
     }
 
     @Override
@@ -322,7 +327,7 @@ public class CuckooFilter<T> implements Filter<T> {
             return true;
         }
         //noinspection unchecked
-        CuckooFilter<T> that = (CuckooFilter<T>)obj;
+        CuckooFilter<T> that = (CuckooFilter<T>) obj;
         EqualsBuilder equalsBuilder = new EqualsBuilder();
         equalsBuilder
             .append(this.maxSize, that.maxSize)

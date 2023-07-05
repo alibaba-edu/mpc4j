@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 /**
  * BigIntegerRing interface. Elements in LongRing are represented as BigInteger.
@@ -206,4 +207,17 @@ public interface BigIntegerRing {
      * @return true if the element p is a valid element in range [0, 2^l).
      */
     boolean validateRangeElement(BigInteger p);
+
+    /**
+     * Returns whether the two elements are equal.
+     *
+     * @param p p.
+     * @param q q.
+     * @return true if p == q, false otherwise.
+     */
+    default boolean isEqual(BigInteger p, BigInteger q) {
+        validateElement(p);
+        validateElement(q);
+        return p.equals(q);
+    }
 }

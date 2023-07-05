@@ -29,7 +29,7 @@ public class BitVectorEfficiencyTest {
     /**
      * log(n)
      */
-    private static final int LOG_N = 6;
+    private static final int LOG_N = 8;
     /**
      * time format
      */
@@ -46,15 +46,17 @@ public class BitVectorEfficiencyTest {
      * types
      */
     private static final BitVectorType[] TYPES = new BitVectorType[] {
+        BitVectorType.COMBINED_BIT_VECTOR,
         BitVectorType.BYTES_BIT_VECTOR,
         BitVectorType.BIGINTEGER_BIT_VECTOR,
     };
 
     @Test
     public void testEfficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}",
+        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             "                     name", "   bit_num",
-            "create(us)", "   xor(us)", "   and(us)", "   set(us)", " merge(us)"
+            "create(us)", "   xor(us)", "   xori(us)", "   and(us)", "   andi(us)",
+            "   set(us)", "   get(us)", " merge(us)"
         );
         testEfficiency(1);
         testEfficiency(1 << 4);
@@ -67,8 +69,6 @@ public class BitVectorEfficiencyTest {
     private void testEfficiency(int bitNum) {
         for (BitVectorType type : TYPES) {
             int n = 1 << LOG_N;
-            // warm-up
-            IntStream.range(0, n).forEach(index -> BitVectorFactory.createRandom(type, bitNum, SECURE_RANDOM));
             // create
             STOP_WATCH.start();
             IntStream.range(0, n).forEach(index -> BitVectorFactory.createRandom(type, bitNum, SECURE_RANDOM));
@@ -79,28 +79,50 @@ public class BitVectorEfficiencyTest {
             BitVector bitVector1 = BitVectorFactory.createRandom(type, bitNum, SECURE_RANDOM);
             BitVector bitVector2 = BitVectorFactory.createRandom(type, bitNum, SECURE_RANDOM);
             BitVector setBitVector = BitVectorFactory.createRandom(type, bitNum, SECURE_RANDOM);
-            // operate
+            // xor
             STOP_WATCH.start();
-            IntStream.range(0, n).forEach(index -> bitVector1.xor(bitVector2).getBytes());
+            IntStream.range(0, n).forEach(index -> bitVector1.xor(bitVector2));
             STOP_WATCH.stop();
             double xorTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
             STOP_WATCH.reset();
+            // xori
             STOP_WATCH.start();
-            IntStream.range(0, n).forEach(index -> bitVector1.and(bitVector2).getBytes());
+            IntStream.range(0, n).forEach(index -> bitVector1.xori(bitVector2));
+            STOP_WATCH.stop();
+            double xoriTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
+            STOP_WATCH.reset();
+            // and
+            STOP_WATCH.start();
+            IntStream.range(0, n).forEach(index -> bitVector1.and(bitVector2));
             STOP_WATCH.stop();
             double andTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
             STOP_WATCH.reset();
-            // set random position
+            // andi
             STOP_WATCH.start();
+            IntStream.range(0, n).forEach(index -> bitVector1.andi(bitVector2));
+            STOP_WATCH.stop();
+            double andiTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
+            STOP_WATCH.reset();
+            // generate random positions and random values
+            boolean[] randomBinaries = new boolean[n];
+            int[] randomPositions = new int[n];
             IntStream.range(0, n).forEach(index -> {
-                int position = SECURE_RANDOM.nextInt(bitNum);
-                boolean value = SECURE_RANDOM.nextBoolean();
-                setBitVector.set(position, value);
+                randomPositions[index] = SECURE_RANDOM.nextInt(bitNum);
+                randomBinaries[index] = SECURE_RANDOM.nextBoolean();
             });
+            // set
+            STOP_WATCH.start();
+            IntStream.range(0, n).forEach(index -> setBitVector.set(randomPositions[index], randomBinaries[index]));
             STOP_WATCH.stop();
             double setTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
             STOP_WATCH.reset();
-            // merge time
+            // get
+            STOP_WATCH.start();
+            IntStream.range(0, n).forEach(index -> setBitVector.get(randomPositions[index]));
+            STOP_WATCH.stop();
+            double getTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
+            STOP_WATCH.reset();
+            // merge
             STOP_WATCH.start();
             IntStream.range(0, n / 8).forEach(index -> {
                 BitVector mergeBitVector = BitVectorFactory.createEmpty(type);
@@ -109,13 +131,16 @@ public class BitVectorEfficiencyTest {
             STOP_WATCH.stop();
             double mergeTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
             STOP_WATCH.reset();
-            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 25),
                 StringUtils.leftPad(String.valueOf(bitNum), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(createRandomTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(xorTime), 10),
+                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(xoriTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(andTime), 10),
+                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(andiTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(setTime), 10),
+                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(getTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(mergeTime), 10)
             );
         }

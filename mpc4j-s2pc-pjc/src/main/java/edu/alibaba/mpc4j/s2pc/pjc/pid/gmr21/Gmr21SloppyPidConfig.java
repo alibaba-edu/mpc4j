@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidConfig;
@@ -17,7 +17,7 @@ import edu.alibaba.mpc4j.s2pc.pjc.pid.PidFactory;
  * @author Weiran Liu
  * @date 2022/5/12
  */
-public class Gmr21SloppyPidConfig implements PidConfig {
+public class Gmr21SloppyPidConfig extends AbstractMultiPartyPtoConfig implements PidConfig {
     /**
      * OPRF协议配置项
      */
@@ -36,8 +36,7 @@ public class Gmr21SloppyPidConfig implements PidConfig {
     private final CuckooHashBinType cuckooHashBinType;
 
     private Gmr21SloppyPidConfig(Builder builder) {
-        // 协议的环境类型必须相同
-        assert builder.psuConfig.getEnvType().equals(builder.oprfConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST, builder.psuConfig, builder.oprfConfig);
         psuConfig = builder.psuConfig;
         oprfConfig = builder.oprfConfig;
         sloppyOkvsType = builder.sloppyOkvsType;
@@ -47,17 +46,6 @@ public class Gmr21SloppyPidConfig implements PidConfig {
     @Override
     public PidFactory.PidType getPtoType() {
         return PidFactory.PidType.GMR21_SLOPPY;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        oprfConfig.setEnvType(envType);
-        psuConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return oprfConfig.getEnvType();
     }
 
     public OprfConfig getOprfConfig() {
@@ -74,18 +62,6 @@ public class Gmr21SloppyPidConfig implements PidConfig {
 
     public CuckooHashBinType getCuckooHashBinType() {
         return cuckooHashBinType;
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (oprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = oprfConfig.getSecurityModel();
-        }
-        if (psuConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = psuConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Gmr21SloppyPidConfig> {

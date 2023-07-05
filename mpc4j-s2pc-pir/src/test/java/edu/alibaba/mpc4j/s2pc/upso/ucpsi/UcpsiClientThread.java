@@ -15,7 +15,7 @@ public class UcpsiClientThread extends Thread {
     /**
      * the client
      */
-    private final UcpsiClient client;
+    private final UcpsiClient<ByteBuffer> client;
     /**
      * the client element set
      */
@@ -27,15 +27,15 @@ public class UcpsiClientThread extends Thread {
     /**
      * the client output
      */
-    private UcpsiClientOutput clientOutput;
+    private UcpsiClientOutput<ByteBuffer> clientOutput;
 
-    UcpsiClientThread(UcpsiClient client, Set<ByteBuffer> clientElementSet, int serverElementSize) {
+    UcpsiClientThread(UcpsiClient<ByteBuffer> client, Set<ByteBuffer> clientElementSet, int serverElementSize) {
         this.client = client;
         this.clientElementSet = clientElementSet;
         this.serverElementSize = serverElementSize;
     }
 
-    UcpsiClientOutput getClientOutput() {
+    UcpsiClientOutput<ByteBuffer> getClientOutput() {
         return clientOutput;
     }
 

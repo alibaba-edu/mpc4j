@@ -130,7 +130,7 @@ public class BucketDomain {
      * @return the bucket index for the item.
      */
     public int getItemBucket(String item) {
-        return Math.abs(intHash.hash(ObjectUtils.objectToByteArray(item)) % w);
+        return HeavyGuardianUtils.getItemBucket(intHash, w, item);
     }
 
     /**

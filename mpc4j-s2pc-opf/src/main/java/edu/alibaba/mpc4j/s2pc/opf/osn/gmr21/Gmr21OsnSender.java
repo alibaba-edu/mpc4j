@@ -70,7 +70,7 @@ public class Gmr21OsnSender extends AbstractOsnSender {
         stopWatch.start();
         byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(delta);
-        cotSender.init(delta, maxWidth, maxSwitchNum);
+        cotSender.init(delta, maxSwitchNum);
         stopWatch.stop();
         long cotInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

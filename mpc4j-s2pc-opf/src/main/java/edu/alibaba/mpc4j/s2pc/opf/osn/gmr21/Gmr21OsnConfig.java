@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.opf.osn.gmr21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotFactory;
 import edu.alibaba.mpc4j.s2pc.opf.osn.OsnConfig;
@@ -13,13 +13,14 @@ import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory.OsnType;
  * @author Weiran Liu
  * @date 2022/02/10
  */
-public class Gmr21OsnConfig implements OsnConfig {
+public class Gmr21OsnConfig extends AbstractMultiPartyPtoConfig implements OsnConfig {
     /**
      * COT协议配置项
      */
     private final CotConfig cotConfig;
 
     private Gmr21OsnConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST, builder.cotConfig);
         cotConfig = builder.cotConfig;
     }
 
@@ -32,33 +33,14 @@ public class Gmr21OsnConfig implements OsnConfig {
         return OsnType.GMR21;
     }
 
-    @Override
-    public void setEnvType(EnvType envType) {
-        cotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return cotConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (cotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = cotConfig.getSecurityModel();
-        }
-        return securityModel;
-    }
-
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Gmr21OsnConfig> {
         /**
          * 基础OT协议配置项
          */
         private CotConfig cotConfig;
 
-        public Builder() {
-            cotConfig = CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+        public Builder(boolean silent) {
+            cotConfig = CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
         }
 
         public Builder setCotConfig(CotConfig cotConfig) {

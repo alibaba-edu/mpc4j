@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.dp.service.fo.cms;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
-import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory.BitVectorType;
 import edu.alibaba.mpc4j.common.tool.hash.IntHash;
 import edu.alibaba.mpc4j.common.tool.hash.IntHashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -98,7 +97,7 @@ public class AppleCmsFoLdpServer extends AbstractFoLdpServer {
         // read the vector
         byte[] mBytes = new byte[mByteLength];
         System.arraycopy(itemBytes, kByteLength, mBytes, 0, mBytes.length);
-        BitVector bitVector = BitVectorFactory.create(BitVectorType.BYTES_BIT_VECTOR, m, mBytes);
+        BitVector bitVector = BitVectorFactory.create(m, mBytes);
         // Set \tilde {\vec x}^(i) = k·(c_ε/2 · \tilde{\vec v}^(i) + 1/2*\vec {1})
         double[] vectorX = IntStream.range(0, m)
             .mapToDouble(l -> {

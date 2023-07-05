@@ -4,28 +4,27 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * 离线布尔三元组生成协议信息。
+ * offline Z2 multiplication triple generator protocol description.
  *
  * @author Weiran Liu
  * @date 2022/4/8
  */
 class OfflineZ2MtgPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 4637156677746717932L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "OFFLINE_Z2_MTG";
-
     /**
-     * 单例模式
+     * singleton mode
      */
     private static final OfflineZ2MtgPtoDesc INSTANCE = new OfflineZ2MtgPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private OfflineZ2MtgPtoDesc() {
         // empty

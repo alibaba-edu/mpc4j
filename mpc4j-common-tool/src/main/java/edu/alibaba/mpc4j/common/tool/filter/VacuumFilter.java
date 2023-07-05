@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.math.DoubleMath;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
@@ -121,7 +122,7 @@ public class VacuumFilter<T> implements Filter<T> {
      * @return 空的真空过滤器。
      */
     static <X> VacuumFilter<X> create(EnvType envType, int maxSize, byte[][] keys) {
-        assert maxSize > 0;
+        MathPreconditions.checkPositive("maxSize", maxSize);
         VacuumFilter<X> vacuumFilter = new VacuumFilter<>();
         // 先初始化this.maxSize，再initL()，最后初始化bucketNum
         vacuumFilter.maxSize = maxSize;
@@ -254,7 +255,7 @@ public class VacuumFilter<T> implements Filter<T> {
 
     @Override
     public synchronized void put(Object data) {
-        assert size < maxSize;
+        MathPreconditions.checkLess("size", size, maxSize);
         if (mightContain(data)) {
             throw new IllegalArgumentException("Insert might duplicate item: " + data);
         }

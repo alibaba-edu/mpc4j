@@ -1,19 +1,13 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pmid;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
-import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22.Zcl22MpPmidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22.Zcl22SloppyPmidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -21,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -33,12 +26,8 @@ import java.util.stream.Collectors;
  * @date 2022/5/10
  */
 @RunWith(Parameterized.class)
-public class ServerSetPmidTest {
+public class ServerSetPmidTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerSetPmidTest.class);
-    /**
-     * 随机状态
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * 默认数量
      */
@@ -58,75 +47,50 @@ public class ServerSetPmidTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
+        Collection<Object[]> configurations = new ArrayList<>();
+
         // ZCL22_SLOPPY (MEGA_BIN)
-        configurationParams.add(new Object[] {
+        configurations.add(new Object[] {
             PmidFactory.PmidType.ZCL22_SLOPPY.name() + " (MEGA_BIN)" ,
             new Zcl22SloppyPmidConfig.Builder().setSigmaOkvsType(OkvsType.MEGA_BIN).build(),
         });
         // ZCL22_SLOPPY (H3_SINGLETON_GCT)
-        configurationParams.add(new Object[] {
+        configurations.add(new Object[] {
             PmidFactory.PmidType.ZCL22_SLOPPY.name() + " (H3_SINGLETON_GCT)",
             new Zcl22SloppyPmidConfig.Builder().setSigmaOkvsType(OkvsType.H3_SINGLETON_GCT).build(),
         });
         // ZCL22_SLOPPY (JSZ22_SFC_PSU)
-        configurationParams.add(new Object[] {
+        configurations.add(new Object[] {
             PmidFactory.PmidType.ZCL22_SLOPPY.name() + " (JSZ22_SFC_PSU)",
-            new Zcl22SloppyPmidConfig.Builder().setPsuConfig(new Jsz22SfcPsuConfig.Builder().build()).build(),
+            new Zcl22SloppyPmidConfig.Builder().setPsuConfig(new Jsz22SfcPsuConfig.Builder(false).build()).build(),
         });
-
         // ZCL22_MP (MEGA_BIN)
-        configurationParams.add(new Object[] {
+        configurations.add(new Object[] {
             PmidFactory.PmidType.ZCL22_MP.name() + " (MEGA_BIN)" ,
             new Zcl22MpPmidConfig.Builder().setSigmaOkvsType(OkvsType.MEGA_BIN).build(),
         });
         // ZCL22_MP (H3_SINGLETON_GCT)
-        configurationParams.add(new Object[] {
+        configurations.add(new Object[] {
             PmidFactory.PmidType.ZCL22_MP.name() + " (H3_SINGLETON_GCT)",
             new Zcl22MpPmidConfig.Builder().setSigmaOkvsType(OkvsType.H3_SINGLETON_GCT).build(),
         });
         // ZCL22_MP (JSZ22_SFC_PSU)
-        configurationParams.add(new Object[] {
+        configurations.add(new Object[] {
             PmidFactory.PmidType.ZCL22_MP.name() + " (JSZ22_SFC_PSU)",
-            new Zcl22MpPmidConfig.Builder().setPsuConfig(new Jsz22SfcPsuConfig.Builder().build()).build(),
+            new Zcl22MpPmidConfig.Builder().setPsuConfig(new Jsz22SfcPsuConfig.Builder(false).build()).build(),
         });
 
-        return configurationParams;
+        return configurations;
     }
 
     /**
-     * 服务端
-     */
-    private final Rpc serverRpc;
-    /**
-     * 客户端
-     */
-    private final Rpc clientRpc;
-    /**
-     * 协议类型
+     * config
      */
     private final PmidConfig config;
 
     public ServerSetPmidTest(String name, PmidConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        serverRpc = rpcManager.getRpc(0);
-        clientRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        serverRpc.connect();
-        clientRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        serverRpc.disconnect();
-        clientRpc.disconnect();
     }
 
     @Test
@@ -175,8 +139,8 @@ public class ServerSetPmidTest {
     }
 
     private void testPmid(int serverSetSize, int clientSetSize, int maxClientU, boolean parallel) {
-        PmidServer<String> server = PmidFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PmidClient<String> client = PmidFactory.createClient(clientRpc, serverRpc.ownParty(), config);
+        PmidServer<String> server = PmidFactory.createServer(firstRpc, secondRpc.ownParty(), config);
+        PmidClient<String> client = PmidFactory.createClient(secondRpc, firstRpc.ownParty(), config);
         server.setParallel(parallel);
         client.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -186,7 +150,7 @@ public class ServerSetPmidTest {
             LOGGER.info("-----test {}，server set size = {}, client set size = {}, max(ClientK) = {}-----",
                 server.getPtoDesc().getPtoName(), serverSetSize, clientSetSize, maxClientU
             );
-            // 生成集合和映射
+            // generate sets and map
             ArrayList<Set<String>> sets = PsoUtils.generateStringSets("ID", serverSetSize, clientSetSize);
             Set<String> serverSet = sets.get(0);
             Set<String> clientSet = sets.get(1);
@@ -195,37 +159,28 @@ public class ServerSetPmidTest {
                 element -> SECURE_RANDOM.nextInt(maxClientU) + 1
             ));
             int clientU = clientSet.stream().mapToInt(clientMap::get).max().orElse(0);
-            // 构建线程
             ServerSetPmidServerThread serverThread = new ServerSetPmidServerThread(server, serverSet, clientSet.size(), maxClientU, clientU);
             ServerSetPmidClientThread clientThread = new ServerSetPmidClientThread(client, clientMap, maxClientU, serverSet.size());
             StopWatch stopWatch = new StopWatch();
-            // 开始执行协议
+            // start
             stopWatch.start();
             serverThread.start();
             clientThread.start();
-            // 等待线程停止
+            // stop
             serverThread.join();
             clientThread.join();
             stopWatch.stop();
             long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
-            // 验证结果
+            // verify
             assertOutput(serverSet, clientMap, serverThread.getServerOutput(), clientThread.getClientOutput());
-            LOGGER.info("Server data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                serverRpc.getSendDataPacketNum(), serverRpc.getPayloadByteLength(), serverRpc.getSendByteLength(),
-                time
-            );
-            LOGGER.info("Client data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                clientRpc.getSendDataPacketNum(), clientRpc.getPayloadByteLength(), clientRpc.getSendByteLength(),
-                time
-            );
-            serverRpc.reset();
-            clientRpc.reset();
+            printAndResetRpc(time);
+            // destroy
+            new Thread(server::destroy).start();
+            new Thread(client::destroy).start();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        server.destroy();
-        client.destroy();
     }
 
     private void assertOutput(Set<String> serverSet, Map<String, Integer> clientMap,

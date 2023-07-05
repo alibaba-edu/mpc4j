@@ -6,34 +6,34 @@ import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import java.util.Set;
 
 /**
- * 非平衡PSI协议服务端接口。
+ * UPSI server interface.
  *
  * @author Liqiang Peng
  * @date 2022/6/13
  */
 public interface UpsiServer<T> extends TwoPartyPto {
     /**
-     * 初始化协议。
+     * server initializes the protocol.
      *
-     * @param upsiParams 非平衡PSI协议参数。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param upsiParams UPSI params.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     void init(UpsiParams upsiParams) throws MpcAbortException;
 
     /**
-     * 初始化协议。
+     * server initializes the protocol.
      *
-     * @param maxClientElementSize 客户端最大数量。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param maxClientElementSize max client element size.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     void init(int maxClientElementSize) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * server executes the protocol.
      *
-     * @param serverElementSet  服务端元素集合。
-     * @param clientElementSize 客户端元素数量。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param serverElementSet  server element set.
+     * @param clientElementSize client element size.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     void psi(Set<T> serverElementSet, int clientElementSize) throws MpcAbortException;
 }

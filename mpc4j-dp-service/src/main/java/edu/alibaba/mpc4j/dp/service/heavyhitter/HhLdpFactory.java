@@ -60,22 +60,20 @@ public class HhLdpFactory {
      * @param domainSet     the domain set.
      * @param k             the k.
      * @param windowEpsilon the window epsilon.
-     * @param windowSize    the window size (w).
      * @return an default config.
      */
-    public static HhLdpConfig createDefaultHhLdpConfig(HhLdpType type, Set<String> domainSet,
-                                                       int k, double windowEpsilon, int windowSize) {
+    public static HhLdpConfig createDefaultHhLdpConfig(HhLdpType type, Set<String> domainSet, int k, double windowEpsilon) {
         switch (type) {
             case FO:
-                return new FoHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+                return new FoHhLdpConfig.Builder(domainSet, k, windowEpsilon).build();
             case BGR:
-                return new BgrHgHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+                return new BgrHgHhLdpConfig.Builder(domainSet, k, windowEpsilon).build();
             case DSR:
-                return new DsrHgHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+                return new DsrHgHhLdpConfig.Builder(domainSet, k, windowEpsilon).build();
             case BDR:
-                return new BdrHhgHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+                return new BdrHhgHhLdpConfig.Builder(domainSet, k, windowEpsilon).build();
             case CNR:
-                return new CnrHhgHhLdpConfig.Builder(domainSet, k, windowEpsilon, windowSize).build();
+                return new CnrHhgHhLdpConfig.Builder(domainSet, k, windowEpsilon).build();
             default:
                 throw new IllegalArgumentException("Invalid " + HhLdpType.class.getSimpleName() + ": " + type);
         }
@@ -88,37 +86,36 @@ public class HhLdpFactory {
      * @param domainSet     the domain set.
      * @param k             the k.
      * @param windowEpsilon the window epsilon.
-     * @param windowSize    the window size (w).
      * @param w the bucket size.
      * @param lambdaH  λ_h, i.e., the cell num in each bucket.
      * @param hgRandom the randomness used in the HeavyGuardian.
      * @return an default config.
      */
     public static HgHhLdpConfig createDefaultHgHhLdpConfig(HhLdpType type, Set<String> domainSet,
-                                                         int k, double windowEpsilon, int windowSize,
+                                                         int k, double windowEpsilon,
                                                          int w, int lambdaH, Random hgRandom) {
         switch (type) {
             case BGR:
                 return new BgrHgHhLdpConfig
-                    .Builder(domainSet, k, windowEpsilon, windowSize)
+                    .Builder(domainSet, k, windowEpsilon)
                     .setBucketParams(w, lambdaH)
                     .setHgRandom(hgRandom)
                     .build();
             case DSR:
                 return new DsrHgHhLdpConfig
-                    .Builder(domainSet, k, windowEpsilon, windowSize)
+                    .Builder(domainSet, k, windowEpsilon)
                     .setBucketParams(w, lambdaH)
                     .setHgRandom(hgRandom)
                     .build();
             case BDR:
                 return new BdrHhgHhLdpConfig
-                    .Builder(domainSet, k, windowEpsilon, windowSize)
+                    .Builder(domainSet, k, windowEpsilon)
                     .setBucketParams(w, lambdaH)
                     .setHgRandom(hgRandom)
                     .build();
             case CNR:
                 return new CnrHhgHhLdpConfig
-                    .Builder(domainSet, k, windowEpsilon, windowSize)
+                    .Builder(domainSet, k, windowEpsilon)
                     .setBucketParams(w, lambdaH)
                     .setHgRandom(hgRandom)
                     .build();

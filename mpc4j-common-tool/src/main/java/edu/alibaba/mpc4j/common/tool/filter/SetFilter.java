@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.filter;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
@@ -13,59 +14,60 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 用{@code HashSet<ByteBuffer>}实现的过滤器。
+ * filter implemented by {@code HashSet<ByteBuffer>}.
  *
  * @author Weiran Liu
  * @date 2020/06/30
  */
 public class SetFilter<T> implements MergeFilter<T> {
     /**
-     * 集合过滤器没有用到哈希函数。
+     * no hash num
      */
     static final int HASH_NUM = 0;
     /**
-     * 用于存储数据的集合
+     * set
      */
     private Set<ByteBuffer> set;
     /**
-     * 期望插入的元素数量
+     * max number of elements.
      */
     private int maxSize;
 
     /**
-     * 创建一个空的集合过滤器。
+     * Creates an empty filter.
      *
-     * @param maxSize 期望插入的元素数量。
-     * @return 空的集合过滤器。
+     * @param maxSize max number of inserted elements.
+     * @return an empty filter.
      */
     static <X> SetFilter<X> create(int maxSize) {
-        assert maxSize > 0;
+        MathPreconditions.checkPositive("maxSize", maxSize);
         SetFilter<X> setFilter = new SetFilter<>();
         // 需要用线程安全的集合封装初始化的集合
-        setFilter.set = Collections.synchronizedSet(new HashSet<>(maxSize));
+        setFilter.set = new HashSet<>(maxSize);
         setFilter.maxSize = maxSize;
 
         return setFilter;
     }
 
     /**
-     * 将用{@code List<byte[]>}表示的过滤器转换为集合过滤器。
+     * Creates the filter based on {@code List<byte[]>}.
      *
-     * @param byteArrayList 用{@code List<byte[]>}表示的过滤器。
-     * @param <X>           过滤器存储元素类型。
-     * @return 集合过滤器。
+     * @param byteArrayList the filter represented by {@code List<byte[]>}.
+     * @param <X>           the type.
+     * @return the filter.
      */
     static <X> SetFilter<X> fromByteArrayList(List<byte[]> byteArrayList) {
+        MathPreconditions.checkGreaterOrEqual("byteArrayList.size", byteArrayList.size(), 3);
         Preconditions.checkArgument(byteArrayList.size() >= 3);
         SetFilter<X> setFilter = new SetFilter<>();
-        // 移除过滤器类型
+        // type
         byteArrayList.remove(0);
-        // 预计插入的元素数量
+        // maxSize
         setFilter.maxSize = IntUtils.byteArrayToInt(byteArrayList.remove(0));
-        // 已经插入的元素数量
+        // size
         int size = IntUtils.byteArrayToInt(byteArrayList.remove(0));
-        Preconditions.checkArgument(byteArrayList.size() == size);
-        // 剩余的元素应该都是SetFilter中的元素，插入即可
+        // elements
+        MathPreconditions.checkEqual("element num", "size", byteArrayList.size(), size);
         setFilter.set = byteArrayList.stream().map(ByteBuffer::wrap).collect(Collectors.toSet());
         byteArrayList.clear();
 
@@ -93,16 +95,16 @@ public class SetFilter<T> implements MergeFilter<T> {
 
     @Override
     public boolean mightContain(T data) {
-        byte[] objectBytes = ObjectUtils.objectToByteArray(data);
-        return set.contains(ByteBuffer.wrap(objectBytes));
+        byte[] dataBytes = ObjectUtils.objectToByteArray(data);
+        return set.contains(ByteBuffer.wrap(dataBytes));
     }
 
     @Override
     public void put(T data) {
-        assert size() < maxSize;
-        // 将元素转换为字节数组后插入
-        byte[] objectBytes = ObjectUtils.objectToByteArray(data);
-        if (!set.add(ByteBuffer.wrap(objectBytes))) {
+        MathPreconditions.checkLess("size", size(), maxSize);
+        // insert element in bytes
+        byte[] dataBytes = ObjectUtils.objectToByteArray(data);
+        if (!set.add(ByteBuffer.wrap(dataBytes))) {
             throw new IllegalArgumentException("Insert might duplicate item: " + data);
         }
     }
@@ -110,13 +112,13 @@ public class SetFilter<T> implements MergeFilter<T> {
     @Override
     public List<byte[]> toByteArrayList() {
         List<byte[]> byteArrayList = new LinkedList<>();
-        // 第1个元素为过滤器类型
+        // type
         byteArrayList.add(IntUtils.intToByteArray(getFilterType().ordinal()));
-        // 第2个元素为SetFilter预计插入的元素数量
+        // maxSize
         byteArrayList.add(IntUtils.intToByteArray(maxSize()));
-        // 第3个元素为SetFilter已经插入的元素数量
+        // size
         byteArrayList.add(IntUtils.intToByteArray(size()));
-        // 依次插入元素
+        // elements
         byteArrayList.addAll(set.stream().map(ByteBuffer::array).map(BytesUtils::clone).collect(Collectors.toList()));
 
         return byteArrayList;
@@ -136,7 +138,7 @@ public class SetFilter<T> implements MergeFilter<T> {
             return true;
         }
         //noinspection unchecked
-        SetFilter<T> that = (SetFilter<T>)obj;
+        SetFilter<T> that = (SetFilter<T>) obj;
         return new EqualsBuilder()
             .append(this.getFilterType(), that.getFilterType())
             .append(this.maxSize, that.maxSize)
@@ -155,11 +157,10 @@ public class SetFilter<T> implements MergeFilter<T> {
     }
 
     @Override
-    public void merge(MergeFilter<T> otherFilter) {
-        assert otherFilter instanceof SetFilter;
-        assert maxSize == otherFilter.maxSize();
-        assert maxSize >= size() + otherFilter.size();
-        SetFilter<T> otherSetFilter = (SetFilter<T>)otherFilter;
-        set.addAll(otherSetFilter.set);
+    public void merge(MergeFilter<T> other) {
+        SetFilter<T> that = (SetFilter<T>) other;
+        MathPreconditions.checkEqual("this.maxSize", "that.maxSize", this.maxSize, that.maxSize);
+        MathPreconditions.checkLessOrEqual("merge size", this.size() + that.size(), maxSize);
+        set.addAll(that.set);
     }
 }

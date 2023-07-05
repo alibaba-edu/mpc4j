@@ -10,7 +10,8 @@
 using namespace std;
 using namespace seal;
 
-JNIEXPORT jlong JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_checkCreatePlainModulus(
+[[maybe_unused]] JNIEXPORT
+jlong JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_checkCreatePlainModulus(
     JNIEnv *env, jclass, jint poly_modulus_degree, jint plain_modulus_size) {
     uint64_t plain_modulus;
     jclass exception = env->FindClass("java/lang/Exception");
@@ -19,9 +20,10 @@ JNIEXPORT jlong JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss1
     } catch (...) {
         return env->ThrowNew(exception, "Failed to find enough qualifying primes.");
     }
-    EncryptionParameters parms = generate_encryption_parameters(scheme_type::bfv, poly_modulus_degree, plain_modulus,
-                                                                CoeffModulus::BFVDefault(poly_modulus_degree,
-                                                                                         sec_level_type::tc128));
+    EncryptionParameters parms = EncryptionParameters(scheme_type::bfv);
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_plain_modulus(plain_modulus);
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree,sec_level_type::tc128));
     SEALContext context(parms, true);
     if (!context.parameters_set()) {
         return env->ThrowNew(exception, "SEAL parameters not valid.");
@@ -76,22 +78,23 @@ JNIEXPORT jlong JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss1
     while (ct_d.parms_id() != context.last_parms_id()) {
         evaluator.mod_switch_to_next_inplace(ct_d);
     }
-    if (decryptor.invariant_noise_budget(ct_d) <= 0) {
+    if (decryptor.invariant_noise_budget(ct_d) == 0) {
         return env->ThrowNew(exception, "Noise budget is not enough.");
     }
     return (jlong) plain_modulus;
 }
 
-JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_keyGen(
+[[maybe_unused]] JNIEXPORT
+jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_keyGen(
     JNIEnv *env, jclass, jint poly_modulus_degree, jlong plain_modulus) {
-    EncryptionParameters parms = generate_encryption_parameters(scheme_type::bfv, poly_modulus_degree, plain_modulus,
-                                                                CoeffModulus::BFVDefault(poly_modulus_degree,
-                                                                                         sec_level_type::tc128));
+    EncryptionParameters parms = EncryptionParameters(scheme_type::bfv);
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_plain_modulus(plain_modulus);
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree,sec_level_type::tc128));
     SEALContext context = SEALContext(parms);
     KeyGenerator key_gen = KeyGenerator(context);
     const SecretKey &secret_key = key_gen.secret_key();
-    PublicKey public_key;
-    key_gen.create_public_key(public_key);
+    Serializable<PublicKey> public_key = key_gen.create_public_key();
     jclass list_jcs = env->FindClass("java/util/ArrayList");
     jmethodID list_init = env->GetMethodID(list_jcs, "<init>", "()V");
     jobject list_obj = env->NewObject(list_jcs, list_init, "");
@@ -105,7 +108,8 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rs
     return list_obj;
 }
 
-JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_encryption(
+[[maybe_unused]] JNIEXPORT
+jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_encryption(
         JNIEnv *env, jclass, jbyteArray parms_bytes, jbyteArray pk_bytes, jbyteArray sk_bytes, jlongArray coeff_array0,
         jlongArray coeff_array1) {
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
@@ -136,7 +140,8 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rs
     return serialize_ciphertexts(env, ct);
 }
 
-JNIEXPORT jlongArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_decryption(
+[[maybe_unused]] JNIEXPORT
+jlongArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_decryption(
         JNIEnv *env, jclass, jbyteArray parms_bytes, jbyteArray sk_bytes, jbyteArray ciphertext_bytes) {
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
     SEALContext context(parms);
@@ -159,7 +164,8 @@ JNIEXPORT jlongArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19
     return result;
 }
 
-JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_computeResponse(
+[[maybe_unused]] JNIEXPORT
+jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils_computeResponse(
     JNIEnv *env, jclass, jbyteArray parms_bytes, jbyteArray cipher1_bytes, jbyteArray cipher2_bytes, jlongArray plain1,
     jlongArray plain2, jlongArray r) {
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);

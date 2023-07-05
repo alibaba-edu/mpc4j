@@ -35,31 +35,31 @@ import java.util.stream.Collectors;
 public class CcpsiMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(CcpsiMain.class);
     /**
-     * 任务名称
+     * task name
      */
     public static final String TASK_NAME = "CCPSI_TASK";
     /**
-     * 协议类型名称
+     * protocol name
      */
     public static final String PTO_TYPE_NAME = "CCPSI_PTO";
     /**
-     * 预热元素字节长度
+     * warmup element byte length
      */
     private static final int WARMUP_ELEMENT_BYTE_LENGTH = 16;
     /**
-     * 预热
+     * warmup server set size
      */
     private static final int WARMUP_SERVER_SET_SIZE = 1 << 10;
     /**
-     * 预热
+     * warmup client set size
      */
     private static final int WARMUP_CLIENT_SET_SIZE = 1 << 5;
     /**
-     * 秒表
+     * stop watch
      */
     private final StopWatch stopWatch;
     /**
-     * 配置参数
+     * properties
      */
     private final Properties properties;
 
@@ -80,11 +80,8 @@ public class CcpsiMain {
     }
 
     private void runServer(Rpc serverRpc, Party clientParty) throws Exception {
-        // 读取协议参数
         LOGGER.info("{} read settings", serverRpc.ownParty().getPartyName());
-        // 读取元素字节长度
         int elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
-        // 读取集合大小
         int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
         int[] clientLogSetSizes = PropertiesUtils.readLogIntArray(properties, "client_log_set_size");
         Preconditions.checkArgument(
@@ -95,10 +92,8 @@ public class CcpsiMain {
         int setSizeNum = serverLogSetSizes.length;
         int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
         int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        // 读取特殊参数
         LOGGER.info("{} read PTO config", serverRpc.ownParty().getPartyName());
         CcpsiConfig config = CcpsiConfigUtils.createCcpsiConfig(properties);
-        // 生成输入文件
         LOGGER.info("{} generate warm-up element files", serverRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SERVER_SET_SIZE, WARMUP_CLIENT_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
         LOGGER.info("{} generate element files", serverRpc.ownParty().getPartyName());
@@ -106,29 +101,23 @@ public class CcpsiMain {
             PsoUtils.generateBytesInputFiles(serverSetSizes[setSizeIndex], clientSetSizes[setSizeIndex], elementByteLength);
         }
         LOGGER.info("{} create result file", serverRpc.ownParty().getPartyName());
-        // 创建统计结果文件
         String filePath = PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
             + "_" + elementByteLength * Byte.SIZE
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
-        // 写入统计结果头文件
         String tab = "Party ID\tServer Set Size\tClient Set Size\tIs Parallel\tThread Num\tSilent"
             + "\tInit Time(ms)\tInit DataPacket Num\tInit Payload Bytes(B)\tInit Send Bytes(B)"
             + "\tPto  Time(ms)\tPto  DataPacket Num\tPto  Payload Bytes(B)\tPto  Send Bytes(B)";
         printWriter.println(tab);
         LOGGER.info("{} ready for run", serverRpc.ownParty().getPartyName());
-        // 建立连接
         serverRpc.connect();
-        // 启动测试
         int taskId = 0;
-        // 预热
         warmupServer(serverRpc, clientParty, config, taskId);
         taskId++;
-        // 正式测试
         for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
             int serverSetSize = serverSetSizes[setSizeIndex];
             int clientSetSize = clientSetSizes[setSizeIndex];
@@ -136,7 +125,6 @@ public class CcpsiMain {
             runServer(serverRpc, clientParty, config, taskId, serverElementSet, clientSetSize, printWriter);
             taskId++;
         }
-        // 断开连接
         serverRpc.disconnect();
         printWriter.close();
         fileWriter.close();
@@ -160,15 +148,13 @@ public class CcpsiMain {
 
     private void warmupServer(Rpc serverRpc, Party clientParty, CcpsiConfig config, int taskId) throws Exception {
         Set<ByteBuffer> serverElementSet = readServerElementSet(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
-        CcpsiServer ccpsiServer = CcpsiFactory.createServer(serverRpc, clientParty, config);
+        CcpsiServer<ByteBuffer> ccpsiServer = CcpsiFactory.createServer(serverRpc, clientParty, config);
         ccpsiServer.setTaskId(taskId);
         ccpsiServer.setParallel(false);
         ccpsiServer.getRpc().synchronize();
-        // 初始化协议
         LOGGER.info("(warmup) {} init", ccpsiServer.ownParty().getPartyName());
         ccpsiServer.init(WARMUP_SERVER_SET_SIZE, WARMUP_CLIENT_SET_SIZE);
         ccpsiServer.getRpc().synchronize();
-        // 执行协议
         LOGGER.info("(warmup) {} execute", ccpsiServer.ownParty().getPartyName());
         ccpsiServer.psi(serverElementSet, WARMUP_CLIENT_SET_SIZE);
         ccpsiServer.getRpc().synchronize();
@@ -186,13 +172,11 @@ public class CcpsiMain {
             "{}: serverSetSize = {}, clientSetSize = {}, parallel = {}",
             serverRpc.ownParty().getPartyName(), serverSetSize, clientSetSize, true
         );
-        CcpsiServer ccpsiServer = CcpsiFactory.createServer(serverRpc, clientParty, config);
+        CcpsiServer<ByteBuffer> ccpsiServer = CcpsiFactory.createServer(serverRpc, clientParty, config);
         ccpsiServer.setTaskId(taskId);
         ccpsiServer.setParallel(true);
-        // 启动测试
         ccpsiServer.getRpc().synchronize();
         ccpsiServer.getRpc().reset();
-        // 初始化协议
         LOGGER.info("{} init", ccpsiServer.ownParty().getPartyName());
         stopWatch.start();
         ccpsiServer.init(serverSetSize, clientSetSize);
@@ -204,7 +188,6 @@ public class CcpsiMain {
         long initSendByteLength = ccpsiServer.getRpc().getSendByteLength();
         ccpsiServer.getRpc().synchronize();
         ccpsiServer.getRpc().reset();
-        // 执行协议
         LOGGER.info("{} execute", ccpsiServer.ownParty().getPartyName());
         stopWatch.start();
         ccpsiServer.psi(serverElementSet, clientSetSize);
@@ -214,7 +197,6 @@ public class CcpsiMain {
         long ptoDataPacketNum = ccpsiServer.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = ccpsiServer.getRpc().getPayloadByteLength();
         long ptoSendByteLength = ccpsiServer.getRpc().getSendByteLength();
-        // 写入统计结果
         String info = ccpsiServer.ownParty().getPartyId()
             + "\t" + serverSetSize
             + "\t" + clientSetSize
@@ -224,7 +206,6 @@ public class CcpsiMain {
             + "\t" + initTime + "\t" + initDataPacketNum + "\t" + initPayloadByteLength + "\t" + initSendByteLength
             + "\t" + ptoTime + "\t" + ptoDataPacketNum + "\t" + ptoPayloadByteLength + "\t" + ptoSendByteLength;
         printWriter.println(info);
-        // 同步
         ccpsiServer.getRpc().synchronize();
         ccpsiServer.getRpc().reset();
         ccpsiServer.destroy();
@@ -232,11 +213,8 @@ public class CcpsiMain {
     }
 
     private void runClient(Rpc clientRpc, Party serverParty) throws Exception {
-        // 读取协议参数
         LOGGER.info("{} read settings", clientRpc.ownParty().getPartyName());
-        // 读取元素字节长度
         int elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
-        // 读取集合大小
         int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
         int[] clientLogSetSizes = PropertiesUtils.readLogIntArray(properties, "client_log_set_size");
         Preconditions.checkArgument(
@@ -247,48 +225,39 @@ public class CcpsiMain {
         int setSizeNum = serverLogSetSizes.length;
         int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
         int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        // 读取特殊参数
         LOGGER.info("{} read PTO config", clientRpc.ownParty().getPartyName());
         CcpsiConfig config = CcpsiConfigUtils.createCcpsiConfig(properties);
-        // 生成输入文件
         LOGGER.info("{} generate warm-up element files", clientRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SERVER_SET_SIZE, WARMUP_CLIENT_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
         LOGGER.info("{} generate element files", clientRpc.ownParty().getPartyName());
         for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
             PsoUtils.generateBytesInputFiles(serverSetSizes[setSizeIndex], clientSetSizes[setSizeIndex], elementByteLength);
         }
-        // 创建统计结果文件
         LOGGER.info("{} create result file", clientRpc.ownParty().getPartyName());
         String filePath = PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
             + "_" + elementByteLength * Byte.SIZE
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
-        // 写入统计结果头文件
         String tab = "Party ID\tServer Set Size\tClient Set Size\tIs Parallel\tThread Num\tSilent"
             + "\tInit Time(ms)\tInit DataPacket Num\tInit Payload Bytes(B)\tInit Send Bytes(B)"
             + "\tPto  Time(ms)\tPto  DataPacket Num\tPto  Payload Bytes(B)\tPto  Send Bytes(B)";
         printWriter.println(tab);
         LOGGER.info("{} ready for run", clientRpc.ownParty().getPartyName());
-        // 建立连接
         clientRpc.connect();
-        // 启动测试
         int taskId = 0;
-        // 预热
         warmupClient(clientRpc, serverParty, config, taskId);
         taskId++;
         for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
             int serverSetSize = serverSetSizes[setSizeIndex];
             int clientSetSize = clientSetSizes[setSizeIndex];
-            // 读取输入文件
             Set<ByteBuffer> clientElementSet = readClientElementSet(clientSetSize, elementByteLength);
             runClient(clientRpc, serverParty, config, taskId, clientElementSet, serverSetSize, printWriter);
             taskId++;
         }
-        // 断开连接
         clientRpc.disconnect();
         printWriter.close();
         fileWriter.close();
@@ -312,18 +281,15 @@ public class CcpsiMain {
 
     private void warmupClient(Rpc clientRpc, Party serverParty, CcpsiConfig config, int taskId) throws Exception {
         Set<ByteBuffer> clientElementSet = readClientElementSet(WARMUP_CLIENT_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
-        CcpsiClient ccpsiClient = CcpsiFactory.createClient(clientRpc, serverParty, config);
+        CcpsiClient<ByteBuffer> ccpsiClient = CcpsiFactory.createClient(clientRpc, serverParty, config);
         ccpsiClient.setTaskId(taskId);
         ccpsiClient.setParallel(false);
         ccpsiClient.getRpc().synchronize();
-        // 初始化协议
         LOGGER.info("(warmup) {} init", ccpsiClient.ownParty().getPartyName());
         ccpsiClient.init(WARMUP_CLIENT_SET_SIZE, WARMUP_SERVER_SET_SIZE);
         ccpsiClient.getRpc().synchronize();
-        // 执行协议
         LOGGER.info("(warmup) {} execute", ccpsiClient.ownParty().getPartyName());
         ccpsiClient.psi(clientElementSet, WARMUP_SERVER_SET_SIZE);
-        // 同步并等待5秒钟，保证对方执行完毕
         ccpsiClient.getRpc().synchronize();
         ccpsiClient.getRpc().reset();
         ccpsiClient.destroy();
@@ -339,13 +305,11 @@ public class CcpsiMain {
             "{}: serverSetSize = {}, clientSetSize = {}, parallel = {}",
             clientRpc.ownParty().getPartyName(), serverSetSize, clientSetSize, true
         );
-        CcpsiClient ccpsiClient = CcpsiFactory.createClient(clientRpc, serverParty, config);
+        CcpsiClient<ByteBuffer> ccpsiClient = CcpsiFactory.createClient(clientRpc, serverParty, config);
         ccpsiClient.setTaskId(taskId);
         ccpsiClient.setParallel(true);
-        // 启动测试
         ccpsiClient.getRpc().synchronize();
         ccpsiClient.getRpc().reset();
-        // 初始化协议
         LOGGER.info("{} init", ccpsiClient.ownParty().getPartyName());
         stopWatch.start();
         ccpsiClient.init(clientSetSize, serverSetSize);
@@ -357,7 +321,6 @@ public class CcpsiMain {
         long initSendByteLength = ccpsiClient.getRpc().getSendByteLength();
         ccpsiClient.getRpc().synchronize();
         ccpsiClient.getRpc().reset();
-        // 执行协议
         LOGGER.info("{} execute", ccpsiClient.ownParty().getPartyName());
         stopWatch.start();
         ccpsiClient.psi(clientElementSet, serverSetSize);
@@ -367,7 +330,6 @@ public class CcpsiMain {
         long ptoDataPacketNum = ccpsiClient.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = ccpsiClient.getRpc().getPayloadByteLength();
         long ptoSendByteLength = ccpsiClient.getRpc().getSendByteLength();
-        // 写入统计结果
         String info = ccpsiClient.ownParty().getPartyId()
             + "\t" + clientSetSize
             + "\t" + serverSetSize

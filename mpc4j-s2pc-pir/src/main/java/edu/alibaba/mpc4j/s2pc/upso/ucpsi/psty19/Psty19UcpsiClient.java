@@ -10,9 +10,9 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.NoStashCuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtFactory;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtParty;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtParty;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.AbstractUcpsiClient;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.UcpsiClientOutput;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.UbopprfFactory;
@@ -20,10 +20,12 @@ import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.UbopprfReceiver;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.psty19.Psty19UcpsiPtoDesc.PtoStep;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -32,7 +34,7 @@ import java.util.stream.IntStream;
  * @author Liqiang Peng
  * @date 2023/4/17
  */
-public class Psty19UcpsiClient extends AbstractUcpsiClient {
+public class Psty19UcpsiClient<T> extends AbstractUcpsiClient<T> {
     /**
      * unbalanced batch OPPRF receiver
      */
@@ -68,7 +70,7 @@ public class Psty19UcpsiClient extends AbstractUcpsiClient {
     /**
      * cuckoo hash bin
      */
-    private NoStashCuckooHashBin<ByteBuffer> cuckooHashBin;
+    private NoStashCuckooHashBin<T> cuckooHashBin;
 
     public Psty19UcpsiClient(Rpc clientRpc, Party serverParty, Psty19UcpsiConfig config) {
         super(Psty19UcpsiPtoDesc.getInstance(), clientRpc, serverParty, config);
@@ -119,7 +121,7 @@ public class Psty19UcpsiClient extends AbstractUcpsiClient {
     }
 
     @Override
-    public UcpsiClientOutput psi(Set<ByteBuffer> clientElementSet) throws MpcAbortException {
+    public UcpsiClientOutput<T> psi(Set<T> clientElementSet) throws MpcAbortException {
         setPtoInput(clientElementSet);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
@@ -141,7 +143,7 @@ public class Psty19UcpsiClient extends AbstractUcpsiClient {
         // unbalanced batch opprf
         byte[][] inputArray = IntStream.range(0, beta)
             .mapToObj(batchIndex -> {
-                HashBinEntry<ByteBuffer> item = cuckooHashBin.getHashBinEntry(batchIndex);
+                HashBinEntry<T> item = cuckooHashBin.getHashBinEntry(batchIndex);
                 byte[] itemBytes = cuckooHashBin.getHashBinEntry(batchIndex).getItemByteArray();
                 return ByteBuffer.allocate(itemBytes.length + Integer.BYTES)
                     .put(itemBytes)
@@ -166,18 +168,18 @@ public class Psty19UcpsiClient extends AbstractUcpsiClient {
             .toArray(byte[][]::new);
         // private equality test
         SquareZ2Vector z1 = peqtParty.peqt(peqtL, targetArray);
-        ByteBuffer[] table = IntStream.range(0, beta)
+        ArrayList<T> table = IntStream.range(0, beta)
             .mapToObj(batchIndex -> {
-                HashBinEntry<ByteBuffer> item = cuckooHashBin.getHashBinEntry(batchIndex);
+                HashBinEntry<T> item = cuckooHashBin.getHashBinEntry(batchIndex);
                 if (item.getHashIndex() == HashBinEntry.DUMMY_ITEM_HASH_INDEX) {
-                    return ByteBuffer.wrap(new byte[0]);
+                    return null;
                 } else {
                     return item.getItem();
                 }
             })
-            .toArray(ByteBuffer[]::new);
+            .collect(Collectors.toCollection(ArrayList::new));
         cuckooHashBin = null;
-        UcpsiClientOutput clientOutput = new UcpsiClientOutput(table, z1);
+        UcpsiClientOutput<T> clientOutput = new UcpsiClientOutput<>(table, z1);
         stopWatch.stop();
         long membershipTestTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

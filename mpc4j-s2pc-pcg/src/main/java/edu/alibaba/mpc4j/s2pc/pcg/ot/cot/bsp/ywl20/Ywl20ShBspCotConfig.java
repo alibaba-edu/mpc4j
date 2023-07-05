@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.ywl20;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotConfig;
@@ -15,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
  * @author Weiran Liu
  * @date 2022/01/24
  */
-public class Ywl20ShBspCotConfig implements BspCotConfig {
+public class Ywl20ShBspCotConfig extends AbstractMultiPartyPtoConfig implements BspCotConfig {
     /**
      * 核COT协议配置项
      */
@@ -26,8 +26,7 @@ public class Ywl20ShBspCotConfig implements BspCotConfig {
     private final BpDpprfConfig bpDpprfConfig;
 
     private Ywl20ShBspCotConfig(Builder builder) {
-        // 两个协议的环境配型必须相同
-        assert builder.coreCotConfig.getEnvType().equals(builder.bpDpprfConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST, builder.coreCotConfig, builder.bpDpprfConfig);
         coreCotConfig = builder.coreCotConfig;
         bpDpprfConfig = builder.bpDpprfConfig;
     }
@@ -43,29 +42,6 @@ public class Ywl20ShBspCotConfig implements BspCotConfig {
     @Override
     public BspCotFactory.BspCotType getPtoType() {
         return BspCotFactory.BspCotType.YWL20_SEMI_HONEST;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        coreCotConfig.setEnvType(envType);
-        bpDpprfConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return coreCotConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (coreCotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = coreCotConfig.getSecurityModel();
-        }
-        if (bpDpprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = bpDpprfConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Ywl20ShBspCotConfig> {

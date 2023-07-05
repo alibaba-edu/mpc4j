@@ -1,21 +1,13 @@
 package edu.alibaba.mpc4j.s2pc.opf.osn;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.benes.BenesNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotFactory;
 import edu.alibaba.mpc4j.s2pc.opf.osn.gmr21.Gmr21OsnConfig;
 import edu.alibaba.mpc4j.s2pc.opf.osn.ms13.Ms13OsnConfig;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -23,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -36,12 +27,8 @@ import java.util.stream.IntStream;
  * @date 2022/02/10
  */
 @RunWith(Parameterized.class)
-public class OsnTest {
+public class OsnTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(OsnTest.class);
-    /**
-     * 随机状态
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * 默认批处理数量
      */
@@ -67,71 +54,26 @@ public class OsnTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // GMR21 (silent)
-        configurations.add(new Object[] {
-            OsnFactory.OsnType.GMR21.name() + " (silent)",
-            new Gmr21OsnConfig.Builder()
-                .setCotConfig(CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true))
-                .build(),
+        // GMR21
+        configurations.add(new Object[]{
+            OsnFactory.OsnType.GMR21.name(), new Gmr21OsnConfig.Builder(true).build(),
         });
-        // GMR21 with direct COT
-        configurations.add(new Object[] {
-            OsnFactory.OsnType.GMR21.name() + " (direct)",
-            new Gmr21OsnConfig.Builder()
-                .setCotConfig(CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, false))
-                .build(),
-        });
-        // MS13 with silent COT
-        configurations.add(new Object[] {
-            OsnFactory.OsnType.MS13.name() + " (silent)",
-            new Ms13OsnConfig.Builder()
-                .setCotConfig(CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true))
-                .build(),
-        });
-        // MS13 with direct COT
-        configurations.add(new Object[] {
-            OsnFactory.OsnType.MS13.name() + " (direct)",
-            new Ms13OsnConfig.Builder()
-                .setCotConfig(CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, false))
-                .build(),
+        // MS13
+        configurations.add(new Object[]{
+            OsnFactory.OsnType.MS13.name(), new Ms13OsnConfig.Builder(true).build(),
         });
 
         return configurations;
     }
 
     /**
-     * 发送方
-     */
-    private final Rpc senderRpc;
-    /**
-     * 接收方
-     */
-    private final Rpc receiverRpc;
-    /**
      * 协议类型
      */
     private final OsnConfig config;
 
     public OsnTest(String name, OsnConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        senderRpc = rpcManager.getRpc(0);
-        receiverRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        senderRpc.connect();
-        receiverRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        senderRpc.disconnect();
-        receiverRpc.disconnect();
     }
 
     @Test
@@ -185,8 +127,8 @@ public class OsnTest {
     }
 
     private void testPto(int n, int byteLength, boolean parallel) {
-        OsnSender sender = OsnFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        OsnReceiver receiver = OsnFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        OsnSender sender = OsnFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        OsnReceiver receiver = OsnFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -209,38 +151,31 @@ public class OsnTest {
             OsnSenderThread senderThread = new OsnSenderThread(sender, inputVector, byteLength);
             OsnReceiverThread receiverThread = new OsnReceiverThread(receiver, permutationMap, byteLength);
             StopWatch stopWatch = new StopWatch();
-            // 开始执行协议
+            // start
             stopWatch.start();
             senderThread.start();
             receiverThread.start();
+            // stop
             senderThread.join();
             receiverThread.join();
             stopWatch.stop();
             long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
+            // verify
             OsnPartyOutput senderOutput = senderThread.getSenderOutput();
             OsnPartyOutput receiverOutput = receiverThread.getReceiverOutput();
-            // 验证结果
             assertOutput(inputVector, permutationMap, senderOutput, receiverOutput);
-            LOGGER.info("Sender data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                senderRpc.getSendDataPacketNum(), senderRpc.getPayloadByteLength(), senderRpc.getSendByteLength(),
-                time
-            );
-            LOGGER.info("Receiver data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                receiverRpc.getSendDataPacketNum(), receiverRpc.getPayloadByteLength(), receiverRpc.getSendByteLength(),
-                time
-            );
-            senderRpc.reset();
-            receiverRpc.reset();
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     private void assertOutput(Vector<byte[]> inputVector, int[] permutationMap,
-        OsnPartyOutput senderOutput, OsnPartyOutput receiverOutput) {
+                              OsnPartyOutput senderOutput, OsnPartyOutput receiverOutput) {
         int n = inputVector.size();
         Assert.assertEquals(permutationMap.length, n);
         Assert.assertEquals(senderOutput.getN(), n);

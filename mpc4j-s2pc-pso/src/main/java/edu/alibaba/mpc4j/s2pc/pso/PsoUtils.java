@@ -271,6 +271,6 @@ public class PsoUtils {
     }
 
     public static String getBytesFileName(String prefix, int setSize, int elementByteLength) {
-        return prefix + "_" + (elementByteLength * Byte.SIZE) + "_" + setSize + ".txt";
+        return prefix + "_" + (elementByteLength * Byte.SIZE) + "_" + setSize + ".input";
     }
 }

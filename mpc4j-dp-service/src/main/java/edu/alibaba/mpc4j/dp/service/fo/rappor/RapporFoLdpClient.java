@@ -69,7 +69,7 @@ public class RapporFoLdpClient extends AbstractFoLdpClient {
         checkItemInDomain(item);
         // encode
         int cohortIndex = random.nextInt(cohortNum);
-        BitVector bloomFilter = BitVectorFactory.createZeros(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, m);
+        BitVector bloomFilter = BitVectorFactory.createZeros(m);
         int hashNum = hashSeeds[cohortIndex].length;
         MathPreconditions.checkGreaterOrEqual("m", m, hashNum);
         byte[] itemIndexBytes = IntUtils.intToByteArray(domain.getItemIndex(item));

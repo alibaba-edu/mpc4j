@@ -6,7 +6,6 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -16,7 +15,7 @@ import java.util.Set;
  * @author Liqiang Peng
  * @date 2023/4/17
  */
-public abstract class AbstractUcpsiServer extends AbstractTwoPartyPto implements UcpsiServer {
+public abstract class AbstractUcpsiServer<T> extends AbstractTwoPartyPto implements UcpsiServer<T> {
     /**
      * max client element size
      */
@@ -24,7 +23,7 @@ public abstract class AbstractUcpsiServer extends AbstractTwoPartyPto implements
     /**
      * server element list
      */
-    protected ArrayList<ByteBuffer> serverElementArrayList;
+    protected ArrayList<T> serverElementArrayList;
     /**
      * server element size
      */
@@ -34,7 +33,7 @@ public abstract class AbstractUcpsiServer extends AbstractTwoPartyPto implements
         super(ptoDesc, serverRpc, clientParty, config);
     }
 
-    protected void setInitInput(Set<ByteBuffer> serverElementSet, int maxClientElementSize) {
+    protected void setInitInput(Set<T> serverElementSet, int maxClientElementSize) {
         MathPreconditions.checkPositive("serverElementSize", serverElementSet.size());
         this.serverElementSize = serverElementSet.size();
         serverElementArrayList = new ArrayList<>(serverElementSet);

@@ -45,6 +45,9 @@ public class BitVectorTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configuration = new ArrayList<>();
+
+        // COMBINED_BIT_VECTOR
+        configuration.add(new Object[]{BitVectorType.COMBINED_BIT_VECTOR.name(), BitVectorType.COMBINED_BIT_VECTOR,});
         // BIGINTEGER_BIT_VECTOR
         configuration.add(new Object[]{BitVectorType.BIGINTEGER_BIT_VECTOR.name(), BitVectorType.BIGINTEGER_BIT_VECTOR,});
         // BYTES_BIT_VECTOR

@@ -8,4 +8,8 @@ package edu.alibaba.mpc4j.dp.service.heavyhitter.utils;
  */
 public class EmptyHhLdpServerContext implements HhLdpServerContext {
 
+    @Override
+    public byte[] toClientInfo() {
+        return new byte[0];
+    }
 }

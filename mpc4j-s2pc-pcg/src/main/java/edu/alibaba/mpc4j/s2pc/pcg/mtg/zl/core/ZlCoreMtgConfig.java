@@ -4,30 +4,30 @@ import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 /**
- * 核l比特三元组生成协议信息。
+ * Zl core multiplication config.
  *
  * @author Weiran Liu
  * @date 2022/8/11
  */
 public interface ZlCoreMtgConfig extends MultiPartyPtoConfig {
     /**
-     * 返回协议类型。
+     * Gets protocol type.
      *
-     * @return 协议类型。
+     * @return protocol type.
      */
     ZlCoreMtgFactory.ZlCoreMtgType getPtoType();
 
     /**
-     * Gets the Zl instance.
+     * Gets Zl instance.
      *
-     * @return the Zl instance.
+     * @return Zl instance.
      */
     Zl getZl();
 
     /**
-     * 返回最大支持数量。
+     * Gets max num.
      *
-     * @return 最大支持数量。
+     * @return max num.
      */
-    int maxAllowNum();
+    int maxNum();
 }

@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * GF(2^128)功能测试。
+ * GF(2^128) test.
  *
  * @author Weiran Liu
  * @date 2022/01/15
@@ -27,7 +27,7 @@ public class Gf2kTest {
         Collection<Object[]> configurations = new ArrayList<>();
 
         // GF2K
-        Gf2kType[] gf2kTypes = new Gf2kType[]{Gf2kType.SSE, Gf2kType.NTL, Gf2kType.BC, Gf2kType.RINGS};
+        Gf2kType[] gf2kTypes = new Gf2kType[]{Gf2kType.COMBINED, Gf2kType.NTL, Gf2kType.BC, Gf2kType.RINGS};
         for (Gf2kType type : gf2kTypes) {
             configurations.add(new Object[]{
                 type.name(), type,
@@ -38,11 +38,11 @@ public class Gf2kTest {
     }
 
     /**
-     * the GF(2^λ) type.
+     * GF(2^λ) type
      */
     private final Gf2kType type;
     /**
-     * the GF(2^λ).
+     * GF(2^λ) instance
      */
     private final Gf2k gf2k;
 
@@ -72,7 +72,7 @@ public class Gf2kTest {
     }
 
     @Test
-    public void testConstantMul() {
+    public void testConstantMulDiv() {
         byte[] p;
         byte[] copyP;
         byte[] q;
@@ -99,6 +99,24 @@ public class Gf2kTest {
         // self muli
         gf2k.muli(copyP, copyP);
         Assert.assertArrayEquals(truth, copyP);
+        // x^2 / x = x
+        p = new byte[]{
+            (byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04
+        };
+        q = new byte[]{
+            (byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02
+        };
+        truth = new byte[]{
+            (byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02
+        };
+        // div
+        t = gf2k.div(p, q);
+        Assert.assertArrayEquals(truth, t);
+        // divi
+        copyP = BytesUtils.clone(p);
+        gf2k.divi(copyP, q);
+        Assert.assertArrayEquals(truth, copyP);
+
         // x^2 * x^2 = x^4
         p = new byte[]{
             (byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04
@@ -119,6 +137,23 @@ public class Gf2kTest {
         copyP = BytesUtils.clone(p);
         // self muli
         gf2k.muli(copyP, copyP);
+        Assert.assertArrayEquals(truth, copyP);
+        // x^4 / x^2 = x^2
+        p = new byte[]{
+            (byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10
+        };
+        q = new byte[]{
+            (byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04
+        };
+        truth = new byte[]{
+            (byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04
+        };
+        // div
+        t = gf2k.div(p, q);
+        Assert.assertArrayEquals(truth, t);
+        // divi
+        copyP = BytesUtils.clone(p);
+        gf2k.divi(copyP, q);
         Assert.assertArrayEquals(truth, copyP);
     }
 }

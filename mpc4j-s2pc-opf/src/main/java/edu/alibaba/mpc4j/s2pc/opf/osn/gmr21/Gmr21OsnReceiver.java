@@ -60,7 +60,7 @@ public class Gmr21OsnReceiver extends AbstractOsnReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        cotReceiver.init(maxWidth, maxSwitchNum);
+        cotReceiver.init(maxSwitchNum);
         stopWatch.stop();
         long cotInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

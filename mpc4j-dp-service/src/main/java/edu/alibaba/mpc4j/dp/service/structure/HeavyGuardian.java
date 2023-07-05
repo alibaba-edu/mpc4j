@@ -5,6 +5,8 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.hash.IntHash;
 import edu.alibaba.mpc4j.common.tool.hash.IntHashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
+import edu.alibaba.mpc4j.dp.service.tool.BucketIntegerComparator;
+import edu.alibaba.mpc4j.dp.service.tool.HeavyGuardianUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,6 +27,10 @@ public class HeavyGuardian implements StreamCounter {
      * ln(b)
      */
     private static final double LN_B = Math.log(B);
+    /**
+     * bucket comparator
+     */
+    private final BucketIntegerComparator bucketComparator;
     /**
      * the non-cryptographic 32-bit hash function
      */
@@ -63,6 +69,7 @@ public class HeavyGuardian implements StreamCounter {
     }
 
     public HeavyGuardian(int w, int lambdaH, int lambdaL, Random random) {
+        bucketComparator = new BucketIntegerComparator();
         MathPreconditions.checkPositive("w (# of buckets)", w);
         this.w = w;
         // init heavy part
@@ -87,8 +94,7 @@ public class HeavyGuardian implements StreamCounter {
     public boolean insert(String item) {
         num++;
         // it first computes the hash function h(e) (1 ⩽ h(e) ⩽ w) to map e to bucket A[h(e)].
-        byte[] itemByteArray = ObjectUtils.objectToByteArray(item);
-        int bucketIndex = Math.abs(intHash.hash(itemByteArray) % w);
+        int bucketIndex = HeavyGuardianUtils.getItemBucket(intHash, w, item);
         Map<String, Integer> heavyPartBucket = heavyPart.get(bucketIndex);
         // We first try to insert e into the heavy part. If failed, then we insert it into the light part.
         // Case 1: e is in one cell in the heavy part of A[h(e)] (being a king or a guardian).
@@ -111,9 +117,7 @@ public class HeavyGuardian implements StreamCounter {
         // is the value of the Count field of the weakest guardian.
         assert heavyPartBucket.size() == lambdaH;
         // find the weakest guardian
-        List<Map.Entry<String, Integer>> heavyPartList = new ArrayList<>(heavyPartBucket.entrySet());
-        heavyPartList.sort(Comparator.comparingInt(Map.Entry::getValue));
-        Map.Entry<String, Integer> weakestHeavyPartCell = heavyPartList.get(0);
+        Map.Entry<String, Integer> weakestHeavyPartCell = Collections.min(heavyPartBucket.entrySet(), bucketComparator);
         String weakestHeavyPartItem = weakestHeavyPartCell.getKey();
         int weakestHeavyPartCount = weakestHeavyPartCell.getValue();
         // Sample a boolean value, with probability P = b^{−C}, the boolean value is 1

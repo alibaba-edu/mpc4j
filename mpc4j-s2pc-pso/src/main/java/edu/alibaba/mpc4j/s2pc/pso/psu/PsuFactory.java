@@ -123,7 +123,7 @@ public class PsuFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-                return new Gmr21PsuConfig.Builder().build();
+                return new Gmr21PsuConfig.Builder(false).build();
             case COVERT:
             case MALICIOUS:
             default:

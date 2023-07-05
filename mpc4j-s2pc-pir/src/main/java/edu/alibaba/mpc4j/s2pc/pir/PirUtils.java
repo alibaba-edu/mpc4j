@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pir;
 
 import com.google.common.base.Preconditions;
+import com.google.common.primitives.Bytes;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * PIR协议工具类。
+ * PIR utils.
  *
  * @author Liqiang Peng
  * @date 2022/8/1
@@ -30,54 +31,52 @@ public class PirUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(PirUtils.class);
 
     /**
-     * 随机状态
+     * secure random
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private PirUtils() {
         // empty
     }
 
     /**
-     * 生成参与方的测试集合。
+     * generate random string sets.
      *
-     * @param serverSetSize 服务端集合大小。
-     * @param clientSetSize 客户端集合大小。
-     * @param repeatTime    客户端集合个数。
-     * @return 各个参与方的集合。
+     * @param serverSetSize server set size.
+     * @param clientSetSize client set size.
+     * @param repeatTime    repeat time.
+     * @return string sets.
      */
-    public static ArrayList<Set<String>> generateStringSets(int serverSetSize, int clientSetSize, int repeatTime) {
+    public static List<Set<String>> generateStringSets(int serverSetSize, int clientSetSize, int repeatTime) {
         assert serverSetSize >= 1 : "server must have at least 1 elements";
         assert clientSetSize >= 1 : "client must have at least 1 elements";
         assert repeatTime >= 1 : "repeat time must be greater than or equal to 1: " + repeatTime;
-        // 构建服务端集合
+        // create server set
         Set<String> serverSet = IntStream.range(0, serverSetSize)
             .mapToObj(index -> "ID_" + index)
             .collect(Collectors.toSet());
-        ArrayList<String> serverArrayList = new ArrayList<>(serverSet);
-        // 构建客户端集合
-        ArrayList<Set<String>> clientSets = IntStream.range(0, repeatTime)
+        List<String> serverList = new ArrayList<>(serverSet);
+        // create client set
+        List<Set<String>> clientSets = IntStream.range(0, repeatTime)
             .mapToObj(repeatIndex -> {
                 if (clientSetSize > 1) {
-                    // 如果客户端集合大于1，则随机挑选一些元素放置在集合中
                     int matchedItemSize = clientSetSize / 2;
                     Set<String> clientSet = new HashSet<>(clientSetSize);
                     for (int index = 0; index < matchedItemSize; index++) {
-                        clientSet.add(serverArrayList.get(index));
+                        clientSet.add(serverList.get(index));
                     }
                     for (int index = matchedItemSize; index < clientSetSize; index++) {
                         clientSet.add("ID_" + index + "_DISTINCT");
                     }
                     return clientSet;
                 } else {
-                    // 如果客户端集合小于1，则随机选择是否把元素放置在集合中
                     Set<String> clientSet = new HashSet<>(clientSetSize);
                     int index = SECURE_RANDOM.nextInt(serverSetSize);
                     if (SECURE_RANDOM.nextBoolean()) {
-                        clientSet.add(serverArrayList.get(index));
+                        clientSet.add(serverList.get(index));
                     } else {
                         clientSet.add("ID_" + index + "_DISTINCT");
                     }
@@ -85,19 +84,66 @@ public class PirUtils {
                 }
             })
             .collect(Collectors.toCollection(ArrayList::new));
-        // 构建返回结果
-        ArrayList<Set<String>> results = new ArrayList<>(2);
+        List<Set<String>> results = new ArrayList<>(2);
         results.add(serverSet);
         results.addAll(clientSets);
         return results;
     }
 
     /**
-     * 生成参与方的测试集合。
+     * generate random bytebuffer sets.
      *
-     * @param keywordSet      关键词集合。
-     * @param labelByteLength 标签字节长度。
-     * @return 关键词和标签映射。
+     * @param serverSetSize server set size.
+     * @param clientSetSize client set size.
+     * @param repeatTime    repeat time.
+     * @return string sets.
+     */
+    public static List<Set<ByteBuffer>> generateByteBufferSets(int serverSetSize, int clientSetSize, int repeatTime) {
+        assert serverSetSize >= 1 : "server must have at least 1 elements";
+        assert clientSetSize >= 1 : "client must have at least 1 elements";
+        assert repeatTime >= 1 : "repeat time must be greater than or equal to 1: " + repeatTime;
+        // create server set
+        Set<ByteBuffer> serverSet = IntStream.range(0, serverSetSize)
+            .mapToObj(index -> ByteBuffer.wrap(("ID_" + index).getBytes()))
+            .collect(Collectors.toSet());
+        List<ByteBuffer> serverList = new ArrayList<>(serverSet);
+        // create client set
+        List<Set<ByteBuffer>> clientSets = IntStream.range(0, repeatTime)
+            .mapToObj(repeatIndex -> {
+                if (clientSetSize > 1) {
+                    int matchedItemSize = clientSetSize / 2;
+                    Set<ByteBuffer> clientSet = new HashSet<>(clientSetSize);
+                    for (int index = 0; index < matchedItemSize; index++) {
+                        clientSet.add(serverList.get(index));
+                    }
+                    for (int index = matchedItemSize; index < clientSetSize; index++) {
+                        clientSet.add(ByteBuffer.wrap(("ID_" + index + "_DISTINCT").getBytes()));
+                    }
+                    return clientSet;
+                } else {
+                    Set<ByteBuffer> clientSet = new HashSet<>(clientSetSize);
+                    int index = SECURE_RANDOM.nextInt(serverSetSize);
+                    if (SECURE_RANDOM.nextBoolean()) {
+                        clientSet.add(serverList.get(index));
+                    } else {
+                        clientSet.add(ByteBuffer.wrap(("ID_" + index + "_DISTINCT").getBytes()));
+                    }
+                    return clientSet;
+                }
+            })
+            .collect(Collectors.toCollection(ArrayList::new));
+        List<Set<ByteBuffer>> results = new ArrayList<>(2);
+        results.add(serverSet);
+        results.addAll(clientSets);
+        return results;
+    }
+
+    /**
+     * generate keyword label map.
+     *
+     * @param keywordSet      keyword set.
+     * @param labelByteLength label byte length.
+     * @return keyword label map.
      */
     public static Map<String, ByteBuffer> generateKeywordLabelMap(Set<String> keywordSet, int labelByteLength) {
         return keywordSet.stream()
@@ -112,20 +158,23 @@ public class PirUtils {
     }
 
     /**
-     * 生成随机元素数组。
+     * generate keyword label map.
      *
-     * @param elementSize       元素数量。
-     * @param elementByteLength 元素字节长度。
-     * @return 随机元素数组。
+     * @param keywordSet      keyword set.
+     * @param labelByteLength label byte length.
+     * @return keyword label map.
      */
-    public static ArrayList<ByteBuffer> generateElementArrayList(int elementSize, int elementByteLength) {
-        return IntStream.range(0, elementSize)
-            .mapToObj(i -> {
-                byte[] element = new byte[elementByteLength];
-                SECURE_RANDOM.nextBytes(element);
-                return ByteBuffer.wrap(element);
-            })
-            .collect(Collectors.toCollection(ArrayList::new));
+    public static Map<ByteBuffer, ByteBuffer> generateKeywordByteBufferLabelMap(Set<ByteBuffer> keywordSet,
+                                                                                int labelByteLength) {
+        return keywordSet.stream()
+            .collect(Collectors.toMap(
+                keyword -> keyword,
+                keyword -> {
+                    byte[] label = new byte[labelByteLength];
+                    SECURE_RANDOM.nextBytes(label);
+                    return ByteBuffer.wrap(label);
+                }
+            ));
     }
 
     /**
@@ -140,11 +189,11 @@ public class PirUtils {
     }
 
     /**
-     * 生成随机元素数组。
+     * generate random element array.
      *
-     * @param elementSize      元素数量。
-     * @param elementBitLength 元素比特长度。
-     * @return 随机元素数组。
+     * @param elementSize      element size.
+     * @param elementBitLength element bit length.
+     * @return random element array.
      */
     public static byte[][] generateElementArray(int elementSize, int elementBitLength) {
         int elementByteLength = CommonUtils.getByteLength(elementBitLength);
@@ -154,34 +203,21 @@ public class PirUtils {
     }
 
     /**
-     * 生成索引值列表。
+     * generate a random retrieval index.
      *
-     * @param elementSize 元素数量。
-     * @param setSize     集合数量。
-     * @return 索引值列表。
-     */
-    public static ArrayList<Integer> generateRetrievalIndexList(int elementSize, int setSize) {
-        return IntStream.range(0, setSize)
-            .mapToObj(i -> SECURE_RANDOM.nextInt(elementSize))
-            .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    /**
-     * 生成索引值。
-     *
-     * @param elementSize 元素数量。
-     * @return 索引值。
+     * @param elementSize element size.
+     * @return a random retrieval index.
      */
     public static int generateRetrievalIndex(int elementSize) {
         return SECURE_RANDOM.nextInt(elementSize);
     }
 
     /**
-     * 生成索引值集合。
+     * generate random retrieval index set.
      *
-     * @param elementSize   元素数量。
-     * @param retrievalSize 集合数量。
-     * @return 索引值集合。
+     * @param elementSize   element size.
+     * @param retrievalSize retrieval size.
+     * @return random retrieval index set.
      */
     public static Set<Integer> generateRetrievalIndexSet(int elementSize, int retrievalSize) {
         Set<Integer> indexSet = new HashSet<>();
@@ -193,27 +229,26 @@ public class PirUtils {
     }
 
     /**
-     * 发送方字节文件前缀
+     * server bytes prefix
      */
     public static final String BYTES_SERVER_PREFIX = "BYTES_SERVER";
     /**
-     * 接收方字节文件前缀
+     * client bytes prefix
      */
     public static final String BYTES_CLIENT_PREFIX = "BYTES_CLIENT";
 
     /**
-     * 生成字节数组输入文件。
+     * generate bytes input files.
      *
-     * @param setSize          集合大小。
-     * @param elementBitLength 元素比特长度。
-     * @throws IOException 如果出现IO异常。
+     * @param setSize          set size.
+     * @param elementBitLength element bit length.
+     * @throws IOException create files failed.
      */
     public static void generateBytesInputFiles(int setSize, int elementBitLength)
         throws IOException {
         MathPreconditions.checkPositive("elementBitLength", elementBitLength);
         File serverInputFile = new File(getServerFileName(BYTES_SERVER_PREFIX, setSize, elementBitLength));
         if (serverInputFile.exists()) {
-            // 文件都存在，跳过生成阶段
             return;
         }
         LOGGER.info("Lost some / all files, generate byte[] set files.");
@@ -223,9 +258,7 @@ public class PirUtils {
                 serverInputFile.delete(), "Fail to delete file: %s", serverInputFile.getName()
             );
         }
-        // 生成文件
         byte[][] elementArray = generateElementArray(setSize, elementBitLength);
-        // 写入服务端输入
         FileWriter serverFileWriter = new FileWriter(serverInputFile);
         PrintWriter serverPrintWriter = new PrintWriter(serverFileWriter, true);
         IntStream.range(0, setSize)
@@ -236,17 +269,16 @@ public class PirUtils {
     }
 
     /**
-     * 生成检索值输入文件。
+     * generate retrieval index input files.
      *
-     * @param retrievalSize 检索数目。
-     * @throws IOException 如果出现IO异常。
+     * @param retrievalSize retrieval size.
+     * @throws IOException create files failed.
      */
     public static void generateIndexInputFiles(int elementSize, int retrievalSize)
         throws IOException {
         MathPreconditions.checkPositive("retrievalSize", retrievalSize);
         File clientInputFile = new File(getClientFileName(BYTES_CLIENT_PREFIX, retrievalSize));
         if (clientInputFile.exists()) {
-            // 文件都存在，跳过生成阶段
             return;
         }
         LOGGER.info("Lost some / all files, generate byte[] set files.");
@@ -256,9 +288,7 @@ public class PirUtils {
                 clientInputFile.delete(), "Fail to delete file: %s", clientInputFile.getName()
             );
         }
-        // 生成文件
         Set<Integer> retrievalIndexSet = generateRetrievalIndexSet(elementSize, retrievalSize);
-        // 写入服务端输入
         FileWriter clientFileWriter = new FileWriter(clientInputFile);
         PrintWriter clientPrintWriter = new PrintWriter(clientFileWriter, true);
         retrievalIndexSet.stream()
@@ -269,21 +299,36 @@ public class PirUtils {
         clientPrintWriter.close();
     }
 
+    /**
+     * return server file name.
+     *
+     * @param prefix           prefix.
+     * @param setSize          set size.
+     * @param elementBitLength element bit length.
+     * @return server file name.
+     */
     public static String getServerFileName(String prefix, int setSize, int elementBitLength) {
-        return prefix + "_" + elementBitLength + "_" + setSize + ".txt";
-    }
-
-    public static String getClientFileName(String prefix, int setSize) {
-        return prefix + "_" + setSize + ".txt";
+        return prefix + "_" + elementBitLength + "_" + setSize + ".input";
     }
 
     /**
-     * 返回多项式包含的元素数量。
+     * return client file name.
      *
-     * @param elementByteLength 元素字节长度。
-     * @param polyModulusDegree 多项式阶。
-     * @param coeffBitLength    系数比特长度。
-     * @return 多项式包含的元素数量。
+     * @param prefix           prefix.
+     * @param setSize          set size.
+     * @return client file name.
+     */
+    public static String getClientFileName(String prefix, int setSize) {
+        return prefix + "_" + setSize + ".input";
+    }
+
+    /**
+     * return element size of plaintext.
+     *
+     * @param elementByteLength element byte length.
+     * @param polyModulusDegree poly modulus degree.
+     * @param coeffBitLength    coeff bit length.
+     * @return element size of plaintext.
      */
     public static int elementSizeOfPlaintext(int elementByteLength, int polyModulusDegree, int coeffBitLength) {
         int coeffSizeOfElement = coeffSizeOfElement(elementByteLength, coeffBitLength);
@@ -294,28 +339,27 @@ public class PirUtils {
     }
 
     /**
-     * 返回表示单个元素所需的系数个数。
+     * return coeff size of element.
      *
-     * @param elementByteLength 元素字节长度。
-     * @param coeffBitLength    系数比特长度。
-     * @return 表示单个元素所需的系数个数。
+     * @param elementByteLength element byte length.
+     * @param coeffBitLength    coeff bit length.
+     * @return coeff size of element.
      */
     public static int coeffSizeOfElement(int elementByteLength, int coeffBitLength) {
-        return (int) Math.ceil(Byte.SIZE * elementByteLength / (double) coeffBitLength);
+        return CommonUtils.getUnitNum(Byte.SIZE * elementByteLength, coeffBitLength);
     }
 
     /**
-     * 将字节数组转换为指定比特长度的long型数组。
+     * convert byte array to coeff array.
      *
-     * @param limit     long型数值的比特长度。
-     * @param offset    移位。
-     * @param size      待转换的字节数组长度。
-     * @param byteArray 字节数组。
-     * @return long型数组。
+     * @param limit     coeff bit length.
+     * @param offset    offset.
+     * @param size      size of byte array.
+     * @param byteArray byte array.
+     * @return coeff array.
      */
     public static long[] convertBytesToCoeffs(int limit, int offset, int size, byte[] byteArray) {
-        // 需要使用的系数个数
-        int longArraySize = (int) Math.ceil(Byte.SIZE * size / (double) limit);
+        int longArraySize = CommonUtils.getUnitNum(Byte.SIZE * size, limit);
         long[] longArray = new long[longArraySize];
         int room = limit;
         int flag = 0;
@@ -345,18 +389,18 @@ public class PirUtils {
 
 
     /**
-     * 将long型数组转换为字节数组。
+     * convert coeff array to byte array.
      *
-     * @param longArray long型数组。
-     * @param logt      系数比特长度。
-     * @return 字节数组。
+     * @param coeffArray coeff array.
+     * @param logt       coeff bit length.
+     * @return byte array.
      */
-    public static byte[] convertCoeffsToBytes(long[] longArray, int logt) {
-        int longArrayLength = longArray.length;
-        byte[] byteArray = new byte[longArrayLength * logt / Byte.SIZE];
+    public static byte[] convertCoeffsToBytes(long[] coeffArray, int logt) {
+        int len = CommonUtils.getUnitNum(coeffArray.length * logt, Byte.SIZE);
+        byte[] byteArray = new byte[len];
         int room = Byte.SIZE;
         int j = 0;
-        for (long l : longArray) {
+        for (long l : coeffArray) {
             long src = l;
             int rest = logt;
             while (rest != 0 && j < byteArray.length) {
@@ -376,11 +420,11 @@ public class PirUtils {
     }
 
     /**
-     * 计算各维度的坐标。
+     * compute indices in each dimension.
      *
-     * @param retrievalIndex 索引值。
-     * @param dimensionSize  各维度的长度。
-     * @return 各维度的坐标。
+     * @param retrievalIndex retrieval index.
+     * @param dimensionSize  dimension size.
+     * @return indices in each dimension.
      */
     public static int[] computeIndices(int retrievalIndex, int[] dimensionSize) {
         long product = Arrays.stream(dimensionSize).asLongStream().reduce(1, (a, b) -> a * b);
@@ -394,13 +438,11 @@ public class PirUtils {
         return indices;
     }
 
-
-
     /**
-     * 返回输入数据的比特长度。
+     * return the bit length of the input integer.
      *
-     * @param input 输入数据。
-     * @return 比特长度。
+     * @param input input.
+     * @return bit length.
      */
     public static int getBitLength(int input) {
         int count = 0;
@@ -412,10 +454,10 @@ public class PirUtils {
     }
 
     /**
-     * 返回与输入数据临近的2的次方。
+     * return next power of two of the input integer.
      *
-     * @param input 输入数据。
-     * @return 与输入数据临近的2的次方。
+     * @param input input.
+     * @return next power of two.
      */
     public static int getNextPowerOfTwo(int input) {
         if ((input & (input - 1)) == 0) {
@@ -426,22 +468,22 @@ public class PirUtils {
     }
 
     /**
-     * 明文多项式移位。
+     * plaintexts rotate.
      *
-     * @param coeffs 多项式系数。
-     * @param offset 移位。
-     * @return 移位后的多项式。
+     * @param coeffs coefficients.
+     * @param offset offset.
+     * @return rotated plaintexts.
      */
     public static long[][] plaintextRotate(long[][] coeffs, int offset) {
         return Arrays.stream(coeffs).map(coeff -> plaintextRotate(coeff, offset)).toArray(long[][]::new);
     }
 
     /**
-     * 明文多项式移位。
+     * plaintext rotate.
      *
-     * @param coeffs 多项式系数。
-     * @param offset 移位。
-     * @return 移位后的多项式。
+     * @param coeffs coefficients.
+     * @param offset offset.
+     * @return rotated plaintext.
      */
     public static long[] plaintextRotate(long[] coeffs, int offset) {
         int rowCount = coeffs.length / 2;
@@ -453,10 +495,10 @@ public class PirUtils {
     }
 
     /**
-     * 返回数据库编码后每个维度的长度。
+     * return length of each dimension.
      *
-     * @param elementSize 元素数量。
-     * @return 数据库编码后每个维度的长度。
+     * @param elementSize element size.
+     * @return length of each dimension.
      */
     public static int[] computeDimensionLength(int elementSize, int dimension) {
         int[] dimensionLength = IntStream.range(0, dimension)
@@ -478,13 +520,15 @@ public class PirUtils {
     }
 
     /**
-     * 返回数据库编码后每个维度的长度。
+     * return length of each dimension.
      *
-     * @param elementSize 元素数量。
-     * @return 数据库编码后每个维度的长度。
+     * @param elementSize             element size.
+     * @param firstDimensionSize      first dimension size.
+     * @param subsequentDimensionSize subsequent dimension size.
+     * @return length of each dimension.
      */
     public static int[] computeDimensionLength(int elementSize, int firstDimensionSize, int subsequentDimensionSize) {
-        ArrayList<Integer> dimensionLength = new ArrayList<>();
+        List<Integer> dimensionLength = new ArrayList<>();
         dimensionLength.add(firstDimensionSize);
         int product = firstDimensionSize;
         for (int i = elementSize / firstDimensionSize; i >= subsequentDimensionSize; i /= subsequentDimensionSize) {
@@ -502,5 +546,47 @@ public class PirUtils {
             dimensionArray = new int[] {firstDimensionSize, subsequentDimensionSize};
         }
         return dimensionArray;
+    }
+
+    /**
+     * Find smallest l, m such that l*m >= num * d and d divides l, where d is
+     * the number of Z_p elements per DB entry determined by bit-length and p.
+     *
+     * @param num database size.
+     * @param d   Z_p element num.
+     * @return l and m.
+     */
+    public static int[] approxSquareDatabaseDims(int num, int d) {
+        MathPreconditions.checkPositive("num", num);
+        long rows = (long) Math.max(2, Math.ceil(Math.sqrt(d * num)));
+        long rem = rows % d;
+        if (rem != 0) {
+            rows += d - rem;
+        }
+        long cols = (long) Math.ceil((double) d * num / rows);
+        return new int[]{Math.toIntExact(rows), Math.toIntExact(cols)};
+    }
+
+    /**
+     * Find smallest l, m such that l*m >= N * d and d divides l, where d is
+     * the number of Z_p elements per DB entry determined by bit-length and p, and m >= lower_bound_m.
+     *
+     * @param num         database size.
+     * @param d           Z_p element num.
+     * @param mLowerBound lower bound of m.
+     * @return l and m.
+     */
+    public static int[] approxSquareDatabaseDims(int num, int d, int mLowerBound) {
+        int[] dims = approxSquareDatabaseDims(num, d);
+        if (dims[1] >= mLowerBound) {
+            return dims;
+        }
+        dims[1] = mLowerBound;
+        dims[0] = CommonUtils.getUnitNum(d * num, dims[1]);
+        int rem = dims[0] % d;
+        if (rem != 0) {
+            dims[0] += d - rem;
+        }
+        return dims;
     }
 }

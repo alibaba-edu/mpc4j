@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory.BaseOtType;
 
@@ -11,34 +11,15 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory.BaseOtType;
  * @author Weiran Liu
  * @date 2022/01/13
  */
-public class Np01BaseOtConfig implements BaseOtConfig {
+public class Np01BaseOtConfig extends AbstractMultiPartyPtoConfig implements BaseOtConfig {
     /**
      * 是否使用压缩椭圆曲线编码
      */
     private final boolean compressEncode;
-    /**
-     * 环境类型
-     */
-    private EnvType envType;
 
     private Np01BaseOtConfig(Builder builder) {
+        super(SecurityModel.MALICIOUS);
         compressEncode = builder.compressEncode;
-        envType = EnvType.STANDARD;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        this.envType = envType;
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return envType;
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.MALICIOUS;
     }
 
     @Override

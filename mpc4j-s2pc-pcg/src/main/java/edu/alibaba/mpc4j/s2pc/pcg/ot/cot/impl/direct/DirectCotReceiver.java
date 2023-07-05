@@ -30,12 +30,12 @@ public class DirectCotReceiver extends AbstractCotReceiver {
     }
 
     @Override
-    public void init(int maxRoundNum, int updateNum) throws MpcAbortException {
-        setInitInput(maxRoundNum, updateNum);
+    public void init(int updateNum) throws MpcAbortException {
+        setInitInput(updateNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        coreCotReceiver.init(maxRoundNum);
+        coreCotReceiver.init(updateNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -50,9 +50,21 @@ public class DirectCotReceiver extends AbstractCotReceiver {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // directly invoke core COT
-        CotReceiverOutput receiverOutput = coreCotReceiver.receive(choices);
-        receiverOutput.reduce(num);
+        CotReceiverOutput receiverOutput = CotReceiverOutput.createEmpty();
+        if (num <= updateNum) {
+            receiverOutput.merge(coreCotReceiver.receive(choices));
+        } else {
+            int currentNum = receiverOutput.getNum();
+            int round = 0;
+            while (currentNum < num) {
+                int roundNum = Math.min((num - currentNum), updateNum);
+                boolean[] roundChoices = new boolean[roundNum];
+                System.arraycopy(choices, round * updateNum, roundChoices, 0, roundNum);
+                receiverOutput.merge(coreCotReceiver.receive(roundChoices));
+                round++;
+                currentNum = receiverOutput.getNum();
+            }
+        }
         stopWatch.stop();
         long coreCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

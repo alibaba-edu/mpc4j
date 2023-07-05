@@ -136,7 +136,6 @@ public class MemoryRpc implements Rpc {
         try {
             return dataPacketBuffer.take(header);
         } catch (InterruptedException e) {
-            // 线程终端，不需要等待，直接返回空
             return null;
         }
     }
@@ -144,9 +143,8 @@ public class MemoryRpc implements Rpc {
     @Override
     public DataPacket receiveAny() {
         try {
-            return dataPacketBuffer.takeAny(ownPartyId);
+            return dataPacketBuffer.take(ownPartyId);
         } catch (InterruptedException e) {
-            // 线程中断，不需要等待，直接返回空
             return null;
         }
     }

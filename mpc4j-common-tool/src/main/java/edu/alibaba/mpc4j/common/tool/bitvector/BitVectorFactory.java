@@ -4,9 +4,7 @@ import java.math.BigInteger;
 import java.util.Random;
 
 /**
- * BitVector Factory. The efficiency test shows that one may choose BIGINTEGER_BIT_VECTOR, since it is easy for merge,
- * split and reduce. The operation efficiency is also faster unless the number of bits (bitNum) is very short
- * (less than 2^{12}).
+ * BitVector Factory.
  *
  * @author Weiran Liu
  * @date 2022/12/16
@@ -24,7 +22,16 @@ public class BitVectorFactory {
          * bit vector represented by BigInteger, use this if the bit vector is often used for split / merge / reduce.
          */
         BIGINTEGER_BIT_VECTOR,
+        /**
+         * combined bit vector
+         */
+        COMBINED_BIT_VECTOR,
     }
+
+    /**
+     * default BitVectorType
+     */
+    private static final BitVectorType DEFAULT_BIT_VECTOR_TYPE = BitVectorType.COMBINED_BIT_VECTOR;
 
     /**
      * Create with assigned bits.
@@ -34,7 +41,7 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector create(int bitNum, byte[] bytes) {
-        return create(BitVectorType.BIGINTEGER_BIT_VECTOR, bitNum, bytes);
+        return create(DEFAULT_BIT_VECTOR_TYPE, bitNum, bytes);
     }
 
     /**
@@ -51,6 +58,8 @@ public class BitVectorFactory {
                 return BytesBitVector.create(bitNum, bytes);
             case BIGINTEGER_BIT_VECTOR:
                 return BigIntegerBitVector.create(bitNum, bytes);
+            case COMBINED_BIT_VECTOR:
+                return CombinedBitVector.create(bitNum, bytes);
             default:
                 throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
         }
@@ -64,7 +73,7 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector create(int bitNum, BigInteger bigInteger) {
-        return create(BitVectorType.BIGINTEGER_BIT_VECTOR, bitNum, bigInteger);
+        return create(DEFAULT_BIT_VECTOR_TYPE, bitNum, bigInteger);
     }
 
     /**
@@ -81,6 +90,8 @@ public class BitVectorFactory {
                 return BytesBitVector.create(bitNum, bigInteger);
             case BIGINTEGER_BIT_VECTOR:
                 return BigIntegerBitVector.create(bitNum, bigInteger);
+            case COMBINED_BIT_VECTOR:
+                return CombinedBitVector.create(bitNum, bigInteger);
             default:
                 throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
         }
@@ -94,7 +105,7 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector createRandom(int bitNum, Random random) {
-        return createRandom(BitVectorType.BIGINTEGER_BIT_VECTOR, bitNum, random);
+        return createRandom(DEFAULT_BIT_VECTOR_TYPE, bitNum, random);
     }
 
     /**
@@ -111,6 +122,8 @@ public class BitVectorFactory {
                 return BytesBitVector.createRandom(bitNum, random);
             case BIGINTEGER_BIT_VECTOR:
                 return BigIntegerBitVector.createRandom(bitNum, random);
+            case COMBINED_BIT_VECTOR:
+                return CombinedBitVector.createRandom(bitNum, random);
             default:
                 throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
         }
@@ -123,7 +136,7 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector createOnes(int bitNum) {
-        return createOnes(BitVectorType.BIGINTEGER_BIT_VECTOR, bitNum);
+        return createOnes(DEFAULT_BIT_VECTOR_TYPE, bitNum);
     }
 
     /**
@@ -139,6 +152,8 @@ public class BitVectorFactory {
                 return BytesBitVector.createOnes(bitNum);
             case BIGINTEGER_BIT_VECTOR:
                 return BigIntegerBitVector.createOnes(bitNum);
+            case COMBINED_BIT_VECTOR:
+                return CombinedBitVector.createOnes(bitNum);
             default:
                 throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
         }
@@ -151,7 +166,7 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector createZeros(int bitNum) {
-        return createZeros(BitVectorType.BIGINTEGER_BIT_VECTOR, bitNum);
+        return createZeros(DEFAULT_BIT_VECTOR_TYPE, bitNum);
     }
 
     /**
@@ -167,6 +182,8 @@ public class BitVectorFactory {
                 return BytesBitVector.createZeros(bitNum);
             case BIGINTEGER_BIT_VECTOR:
                 return BigIntegerBitVector.createZeros(bitNum);
+            case COMBINED_BIT_VECTOR:
+                return CombinedBitVector.createZeros(bitNum);
             default:
                 throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
         }
@@ -178,7 +195,7 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector createEmpty() {
-        return createEmpty(BitVectorType.BIGINTEGER_BIT_VECTOR);
+        return createEmpty(DEFAULT_BIT_VECTOR_TYPE);
     }
 
     /**
@@ -193,6 +210,8 @@ public class BitVectorFactory {
                 return BytesBitVector.createEmpty();
             case BIGINTEGER_BIT_VECTOR:
                 return BigIntegerBitVector.createEmpty();
+            case COMBINED_BIT_VECTOR:
+                return CombinedBitVector.createEmpty();
             default:
                 throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
         }

@@ -11,5 +11,10 @@ package edu.alibaba.mpc4j.dp.service.heavyhitter.utils;
  * @date 2022/11/23
  */
 public interface HhLdpServerContext {
-
+    /**
+     * Serialize parts of the context to byte array.
+     *
+     * @return parts of the context to byte array.
+     */
+    byte[] toClientInfo();
 }

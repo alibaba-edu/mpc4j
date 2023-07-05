@@ -25,9 +25,10 @@ public interface LcotSender extends TwoPartyPto {
      *
      * @param inputBitLength 输入比特长度。
      * @param maxNum         最大执行数量。
+     * @return 关联值Δ。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    void init(int inputBitLength, int maxNum) throws MpcAbortException;
+    byte[] init(int inputBitLength, int maxNum) throws MpcAbortException;
 
     /**
      * 执行协议。

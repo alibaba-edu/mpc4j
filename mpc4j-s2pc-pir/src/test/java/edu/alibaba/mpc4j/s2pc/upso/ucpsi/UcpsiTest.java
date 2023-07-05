@@ -1,23 +1,17 @@
 package edu.alibaba.mpc4j.s2pc.upso.ucpsi;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.cgs22.Cgs22UcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.psty19.Psty19UcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.pir.PirUbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.pir.PirUrbopprfConfig;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -25,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -36,12 +29,8 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/4/18
  */
 @RunWith(Parameterized.class)
-public class UcpsiTest {
+public class UcpsiTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(UcpsiTest.class);
-    /**
-     * the random state
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * default server element size
      */
@@ -70,65 +59,44 @@ public class UcpsiTest {
         // CGS22
         configurations.add(new Object[]{
             UcpsiFactory.UcpsiType.CGS22.name() + " (direct + pir)",
-            new Cgs22UcpsiConfig.Builder(false)
+            new Cgs22UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, false)
                 .setUrbopprfConfig(new PirUrbopprfConfig.Builder().build())
                 .build()
         });
         configurations.add(new Object[]{
-            UcpsiFactory.UcpsiType.CGS22.name() + " (silent)", new Cgs22UcpsiConfig.Builder(true).build()
+            UcpsiFactory.UcpsiType.CGS22.name() + " (silent)",
+            new Cgs22UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
         configurations.add(new Object[]{
-            UcpsiFactory.UcpsiType.CGS22.name() + " (direct)", new Cgs22UcpsiConfig.Builder(false).build()
+            UcpsiFactory.UcpsiType.CGS22.name() + " (direct)",
+            new Cgs22UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, false).build()
         });
         // PSTY19
         configurations.add(new Object[]{
             UcpsiFactory.UcpsiType.PSTY19.name() + " (direct + pir)",
-            new Psty19UcpsiConfig.Builder(false)
+            new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, false)
                 .setUbopprfConfig(new PirUbopprfConfig.Builder().build())
                 .build()
         });
         configurations.add(new Object[]{
-            UcpsiFactory.UcpsiType.PSTY19.name() + " (silent)", new Psty19UcpsiConfig.Builder(true).build()
+            UcpsiFactory.UcpsiType.PSTY19.name() + " (silent)",
+            new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
         configurations.add(new Object[]{
-            UcpsiFactory.UcpsiType.PSTY19.name() + " (direct)", new Psty19UcpsiConfig.Builder(false).build()
+            UcpsiFactory.UcpsiType.PSTY19.name() + " (direct)",
+            new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, false).build()
         });
         return configurations;
     }
 
-    /**
-     * server rpc
-     */
-    private final Rpc serverRpc;
-    /**
-     * client rpc
-     */
-    private final Rpc clientRpc;
     /**
      * unbalanced PSI config
      */
     private final UcpsiConfig config;
 
     public UcpsiTest(String name, UcpsiConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        serverRpc = rpcManager.getRpc(0);
-        clientRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        serverRpc.connect();
-        clientRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        serverRpc.disconnect();
-        clientRpc.disconnect();
     }
 
     @Test
@@ -157,8 +125,8 @@ public class UcpsiTest {
     }
 
     private void testPto(int serverSetSize, int clientSetSize, boolean parallel) {
-        UcpsiServer server = UcpsiFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        UcpsiClient client = UcpsiFactory.createClient(clientRpc, serverRpc.ownParty(), config);
+        UcpsiServer<ByteBuffer> server = UcpsiFactory.createServer(firstRpc, secondRpc.ownParty(), config);
+        UcpsiClient<ByteBuffer> client = UcpsiFactory.createClient(secondRpc, firstRpc.ownParty(), config);
         server.setParallel(parallel);
         client.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -169,51 +137,45 @@ public class UcpsiTest {
                 server.getPtoDesc().getPtoName(), serverSetSize, clientSetSize
             );
             // generate the inputs
-            ArrayList<Set<ByteBuffer>> sets = PsoUtils.generateBytesSets(serverSetSize, clientSetSize, ELEMENT_BYTE_LENGTH);
+            List<Set<ByteBuffer>> sets = PsoUtils.generateBytesSets(serverSetSize, clientSetSize, ELEMENT_BYTE_LENGTH);
             Set<ByteBuffer> serverElementSet = sets.get(0);
             Set<ByteBuffer> clientElementSet = sets.get(1);
             UcpsiServerThread serverThread = new UcpsiServerThread(server, serverElementSet, clientSetSize);
             UcpsiClientThread clientThread = new UcpsiClientThread(client, clientElementSet, serverSetSize);
-            StopWatch stopWatch = new StopWatch();
-            // execute the protocol
-            stopWatch.start();
+            // start
+            STOP_WATCH.start();
             serverThread.start();
             clientThread.start();
+            // stop
             serverThread.join();
             clientThread.join();
-            stopWatch.stop();
-            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
             // verify
             SquareZ2Vector serverOutput = serverThread.getServerOutput();
-            UcpsiClientOutput clientOutput = clientThread.getClientOutput();
+            UcpsiClientOutput<ByteBuffer> clientOutput = clientThread.getClientOutput();
             assertOutput(serverElementSet, clientElementSet, serverOutput, clientOutput);
-            LOGGER.info("Server data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                serverRpc.getSendDataPacketNum(), serverRpc.getPayloadByteLength(), serverRpc.getSendByteLength(),
-                time
-            );
-            LOGGER.info("Client data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                clientRpc.getSendDataPacketNum(), clientRpc.getPayloadByteLength(), clientRpc.getSendByteLength(),
-                time
-            );
-            serverRpc.reset();
-            clientRpc.reset();
+            printAndResetRpc(time);
+            // destroy
+            new Thread(server::destroy).start();
+            new Thread(client::destroy).start();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        server.destroy();
-        client.destroy();
     }
 
     private void assertOutput(Set<ByteBuffer> serverElementSet, Set<ByteBuffer> clientElementSet,
-                              SquareZ2Vector serverOutput, UcpsiClientOutput clientOutput) {
+                              SquareZ2Vector serverOutput, UcpsiClientOutput<ByteBuffer> clientOutput) {
         Set<ByteBuffer> expectIntersectionSet = new HashSet<>(serverElementSet);
         expectIntersectionSet.retainAll(clientElementSet);
-        ByteBuffer[] table = clientOutput.getTable();
+        ArrayList<ByteBuffer> table = clientOutput.getTable();
         BitVector z = serverOutput.getBitVector().xor(clientOutput.getZ1().getBitVector());
         int beta = clientOutput.getBeta();
         for (int i = 0; i < beta; i++) {
-            if (expectIntersectionSet.contains(table[i])) {
+            if (table.get(i) == null) {
+                Assert.assertFalse(z.get(i));
+            } else if (expectIntersectionSet.contains(table.get(i))) {
                 Assert.assertTrue(z.get(i));
             } else {
                 Assert.assertFalse(z.get(i));

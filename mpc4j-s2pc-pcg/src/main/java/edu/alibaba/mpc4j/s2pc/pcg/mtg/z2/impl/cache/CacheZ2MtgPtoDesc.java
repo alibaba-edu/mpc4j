@@ -4,28 +4,27 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * 缓存布尔三元组生成协议信息。
+ * cache Z2 multiplication triple generator protocol description.
  *
  * @author Weiran Liu
  * @date 2022/7/13
  */
 class CacheZ2MtgPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 2352412063583480191L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "CACHE_Z2_MTG";
-
     /**
-     * 单例模式
+     * singleton mode
      */
     private static final CacheZ2MtgPtoDesc INSTANCE = new CacheZ2MtgPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor
      */
     private CacheZ2MtgPtoDesc() {
         // empty

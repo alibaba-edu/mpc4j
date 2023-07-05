@@ -56,13 +56,6 @@ public interface HhLdpConfig {
     double getWindowEpsilon();
 
     /**
-     * Gets the window size (w).
-     *
-     * @return the window size (w).
-     */
-    int getWindowSize();
-
-    /**
      * Returns whether the mechanism obtain accurate estimation for extremely large ε.
      *
      * @return whether the mechanism obtain accurate estimation for extremely large ε.

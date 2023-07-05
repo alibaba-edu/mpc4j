@@ -57,10 +57,6 @@ public class HhLdpEfficiencyTest {
      */
     private static final DecimalFormat INTEGER_DECIMAL_FORMAT = new DecimalFormat("0");
     /**
-     * default window size (w)
-     */
-    private static final int DEFAULT_WINDOW_SIZE = 5;
-    /**
      * ε array
      */
     private static final double[] EPSILONS = new double[]{1, 2, 4, 8, 16};
@@ -76,84 +72,84 @@ public class HhLdpEfficiencyTest {
             FoLdpConfig appleHcmsFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.APPLE_HCMS, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(appleHcmsFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(appleHcmsFoLdpConfig, DEFAULT_K).build());
             // Apple Count Mean Sketch
             FoLdpConfig appleCmsFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.APPLE_CMS, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(appleCmsFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(appleCmsFoLdpConfig, DEFAULT_K).build());
             // Hadamard Mechanism
             FoLdpConfig hmFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.HM, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(hmFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(hmFoLdpConfig, DEFAULT_K).build());
             // Hadamard Response with high ε
             FoLdpConfig hrHighEpsilonFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.HR_HIGH_EPSILON, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(hrHighEpsilonFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(hrHighEpsilonFoLdpConfig, DEFAULT_K).build());
             // Hadamard Response
             FoLdpConfig hrFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.HR, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(hrFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(hrFoLdpConfig, DEFAULT_K).build());
             // Optimal Local Hash
             FoLdpConfig olhFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.OLH, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(olhFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(olhFoLdpConfig, DEFAULT_K).build());
             // Binary Local Hash
             FoLdpConfig blhFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.BLH, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(blhFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(blhFoLdpConfig, DEFAULT_K).build());
             // RAPPOR
             FoLdpConfig rapporFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.RAPPOR, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(rapporFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(rapporFoLdpConfig, DEFAULT_K).build());
             // Optimized Unary Encoding
             FoLdpConfig oueFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.OUE, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(oueFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(oueFoLdpConfig, DEFAULT_K).build());
             // Symmetric Unary Encoding
             FoLdpConfig sueFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.SUE, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(sueFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(sueFoLdpConfig, DEFAULT_K).build());
             // Direct Encoding via Index Encoding
             FoLdpConfig deIndexFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.DE_INDEX, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(deIndexFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(deIndexFoLdpConfig, DEFAULT_K).build());
             // Direct Encoding via String Encoding
             FoLdpConfig deStringFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.DE_STRING, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
-            CONFIGS.add(new FoHhLdpConfig.Builder(deStringFoLdpConfig, DEFAULT_K, DEFAULT_WINDOW_SIZE).build());
+            CONFIGS.add(new FoHhLdpConfig.Builder(deStringFoLdpConfig, DEFAULT_K).build());
             // BGR
             CONFIGS.add(
                 new BgrHgHhLdpConfig
-                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon, DEFAULT_WINDOW_SIZE)
+                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon)
                     .build()
             );
             // DSR
             CONFIGS.add(
                 new DsrHgHhLdpConfig
-                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon, DEFAULT_WINDOW_SIZE)
+                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon)
                     .build()
             );
             // BDR
             CONFIGS.add(
                 new BdrHhgHhLdpConfig
-                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon, DEFAULT_WINDOW_SIZE)
+                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon)
                     .build()
             );
             // CNR
             CONFIGS.add(
                 new CnrHhgHhLdpConfig
-                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon, DEFAULT_WINDOW_SIZE)
+                    .Builder(LdpTestDataUtils.CONNECT_DATA_DOMAIN, DEFAULT_K, epsilon)
                     .build()
             );
         }

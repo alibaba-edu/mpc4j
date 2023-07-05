@@ -147,10 +147,10 @@ public class ZlDatabase implements ModBitNumDatabase {
     @Override
     public BitVector[] bitPartition(EnvType envType, boolean parallel) {
         int rows = rows();
-        DenseBitMatrix byteDenseBitMatrix = ByteDenseBitMatrix.fromDense(l, data);
+        DenseBitMatrix byteDenseBitMatrix = ByteDenseBitMatrix.createFromDense(l, data);
         DenseBitMatrix transByteDenseBitMatrix = byteDenseBitMatrix.transpose(envType, parallel);
         return IntStream.range(0, l)
-            .mapToObj(index -> BitVectorFactory.create(rows, transByteDenseBitMatrix.getRow(index)))
+            .mapToObj(index -> BitVectorFactory.create(rows, transByteDenseBitMatrix.getByteArrayRow(index)))
             .toArray(BitVector[]::new);
     }
 
@@ -239,7 +239,7 @@ public class ZlDatabase implements ModBitNumDatabase {
 
     @Override
     public String toString() {
-        String[] stringData = Arrays.stream(Arrays.copyOf(data, MatrixUtils.DISPLAY_NUM))
+        String[] stringData = Arrays.stream(Arrays.copyOf(data, Math.min(data.length, MatrixUtils.DISPLAY_NUM)))
             .map(Hex::toHexString)
             .toArray(String[]::new);
         return this.getClass().getSimpleName() + " (l = " + l + "): " + Arrays.toString(stringData);

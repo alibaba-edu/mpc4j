@@ -14,6 +14,10 @@ import java.util.Set;
  */
 public class CnrHhgHhLdpConfig extends BaseHhLdpConfig implements HhgHhLdpConfig {
     /**
+     * default λ_l
+     */
+    public static final int DEFAULT_LAMBDA_L = 5;
+    /**
      * budget num
      */
     private final int w;
@@ -103,12 +107,12 @@ public class CnrHhgHhLdpConfig extends BaseHhLdpConfig implements HhgHhLdpConfig
          */
         private double gammaH;
 
-        public Builder(Set<String> domainSet, int k, double windowEpsilon, int windowSize) {
-            super(HhLdpFactory.HhLdpType.CNR, domainSet, k, windowEpsilon, windowSize);
+        public Builder(Set<String> domainSet, int k, double windowEpsilon) {
+            super(HhLdpFactory.HhLdpType.CNR, domainSet, k, windowEpsilon);
             // set default values
             w = 1;
             lambdaH = k;
-            lambdaL = windowSize;
+            lambdaL = DEFAULT_LAMBDA_L;
             alpha = 1.0 / 3;
             gammaH = -1;
             hgRandom = new Random();

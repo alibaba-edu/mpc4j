@@ -21,12 +21,10 @@ jbyteArray serialize_secret_key(JNIEnv *env, const SecretKey& secret_key);
 // deserialize secret key
 SecretKey deserialize_secret_key(JNIEnv *env, jbyteArray sk_bytes, const SEALContext& context);
 // serialize relin keys
-jbyteArray serialize_relin_keys(JNIEnv *env, const RelinKeys& relin_keys);
 jbyteArray serialize_relin_keys(JNIEnv *env, const Serializable<RelinKeys>& relin_keys);
 // deserialize relin keys
 RelinKeys deserialize_relin_keys(JNIEnv *env, jbyteArray relin_key_bytes, const SEALContext& context);
 // serialize galois keys
-jbyteArray serialize_galois_keys(JNIEnv *env, const GaloisKeys& galois_keys);
 jbyteArray serialize_galois_keys(JNIEnv *env, const Serializable<GaloisKeys>& galois_keys);
 // deserialize galois keys
 GaloisKeys* deserialize_galois_keys(JNIEnv *env, jbyteArray galois_key_bytes, const SEALContext& context);
@@ -50,6 +48,8 @@ jobject serialize_plaintexts(JNIEnv *env, const vector<Plaintext>& plaintexts);
 vector<Plaintext> deserialize_plaintexts(JNIEnv *env, jobjectArray list, const SEALContext& context);
 // deserialize plaintexts
 vector<Plaintext> deserialize_plaintexts(JNIEnv *env, jobject list, const SEALContext& context);
+// deserialize plaintexts from byte array
+vector<Plaintext> deserialize_plaintexts_array(JNIEnv *env, jobjectArray array, const SEALContext& context);
 // deserialize plaintext from coefficients
 Plaintext deserialize_plaintext_from_coeff(JNIEnv *env, jlongArray coeffs, const SEALContext& context);
 // deserialize plaintexts from coefficients

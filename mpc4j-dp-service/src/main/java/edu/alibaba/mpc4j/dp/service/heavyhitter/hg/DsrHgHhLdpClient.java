@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.AbstractHhLdpClient;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.HhLdpFactory;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.config.DsrHgHhLdpConfig;
+import edu.alibaba.mpc4j.dp.service.tool.BucketDoubleComparator;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.utils.HgHhLdpServerContext;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.utils.HhLdpServerContext;
 import edu.alibaba.mpc4j.dp.service.tool.BucketDomain;
@@ -18,6 +19,10 @@ import java.util.stream.IntStream;
  * @date 2023/3/20
  */
 public class DsrHgHhLdpClient extends AbstractHhLdpClient {
+    /**
+     * bucket comparator
+     */
+    private final BucketDoubleComparator bucketComparator;
     /**
      * the bucket domain
      */
@@ -45,6 +50,7 @@ public class DsrHgHhLdpClient extends AbstractHhLdpClient {
 
     public DsrHgHhLdpClient(DsrHgHhLdpConfig config) {
         super(config);
+        bucketComparator = new BucketDoubleComparator();
         int w = config.getW();
         lambdaH = config.getLambdaH();
         bucketDomain = new BucketDomain(config.getDomainSet(), w, lambdaH);
@@ -74,7 +80,7 @@ public class DsrHgHhLdpClient extends AbstractHhLdpClient {
         checkItemInDomain(item);
         int bucketIndex = bucketDomain.getItemBucket(item);
         assert bucketDomain.getBucketDomainSet(bucketIndex).contains(item);
-        Map<String, Double> currentBucket = hgServerContext.getBudget(bucketIndex);
+        Map<String, Double> currentBucket = hgServerContext.getBucket(bucketIndex);
         assert currentBucket.size() == lambdaH;
         // there must be λ_h elements in the budget, randomize the item
         return mechanism(bucketIndex, currentBucket, item, random).getBytes(HhLdpFactory.DEFAULT_CHARSET);
@@ -82,9 +88,7 @@ public class DsrHgHhLdpClient extends AbstractHhLdpClient {
 
     private String mechanism(int bucketIndex, Map<String, Double> currentBucket, String item, Random random) {
         // find the weakest guardian
-        List<Map.Entry<String, Double>> currentBucketList = new ArrayList<>(currentBucket.entrySet());
-        currentBucketList.sort(Comparator.comparingDouble(Map.Entry::getValue));
-        Map.Entry<String, Double> weakestCell = currentBucketList.get(0);
+        Map.Entry<String, Double> weakestCell = Collections.min(currentBucket.entrySet(), bucketComparator);
         double weakestCount = weakestCell.getValue();
         if (weakestCount <= 1.0) {
             // an item in HG is about to be evicted, use basic mechanism to response

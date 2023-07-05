@@ -69,7 +69,7 @@ public class Oos17LcotReceiver extends AbstractLcotReceiver {
     }
 
     @Override
-    public void init(int inputBitLength, int maxNum) throws MpcAbortException {
+    public int init(int inputBitLength, int maxNum) throws MpcAbortException {
         setInitInput(inputBitLength, maxNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
@@ -97,6 +97,7 @@ public class Oos17LcotReceiver extends AbstractLcotReceiver {
         logStepInfo(PtoState.INIT_STEP, 2, 2, randomOracleTime);
 
         logPhaseInfo(PtoState.INIT_END);
+        return linearCoder.getCodewordBitLength();
     }
 
     @Override

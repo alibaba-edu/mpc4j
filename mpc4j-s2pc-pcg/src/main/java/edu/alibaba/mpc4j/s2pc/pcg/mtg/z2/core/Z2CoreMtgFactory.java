@@ -4,6 +4,8 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.aid.AidZ2CoreMtgConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.aid.AidZ2CoreMtgParty;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13.Alsz13Z2CoreMtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13.Alsz13Z2CoreMtgReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13.Alsz13Z2CoreMtgSender;
@@ -27,6 +29,10 @@ public class Z2CoreMtgFactory implements PtoFactory {
      * 协议类型
      */
     public enum Z2CoreMtgType {
+        /**
+         * aid
+         */
+        AID,
         /**
          * ALSZ13协议
          */
@@ -53,6 +59,26 @@ public class Z2CoreMtgFactory implements PtoFactory {
     }
 
     /**
+     * Creates a sender.
+     *
+     * @param senderRpc     sender RPC.
+     * @param receiverParty receiver party.
+     * @param aiderParty    aider party.
+     * @param config        config.
+     * @return a sender.
+     */
+    public static Z2CoreMtgParty createSender(Rpc senderRpc, Party receiverParty, Party aiderParty, Z2CoreMtgConfig config) {
+        Z2CoreMtgType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (type) {
+            case AID:
+                return new AidZ2CoreMtgParty(senderRpc, receiverParty, aiderParty, (AidZ2CoreMtgConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + Z2CoreMtgType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
      * 构建接收方。
      *
      * @param receiverRpc 接收方通信接口。
@@ -72,15 +98,43 @@ public class Z2CoreMtgFactory implements PtoFactory {
     }
 
     /**
+     * Creates a receiver.
+     *
+     * @param receiverRpc receiver RPC.
+     * @param senderParty sender party.
+     * @param aiderParty  aider party.
+     * @param config      config.
+     * @return a receiver.
+     */
+    public static Z2CoreMtgParty createReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, Z2CoreMtgConfig config) {
+        Z2CoreMtgType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (type) {
+            case AID:
+                return new AidZ2CoreMtgParty(receiverRpc, senderParty, aiderParty, (AidZ2CoreMtgConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + Z2CoreMtgType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
      * Creates a default config.
      *
      * @param securityModel the security model.
-     * @param silent if using a silent protocol.
+     * @param silent        if using a silent protocol.
      * @return a default config.
      */
     public static Z2CoreMtgConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
-        return new Alsz13Z2CoreMtgConfig.Builder()
-            .setNcCotConfig(NcCotFactory.createDefaultConfig(securityModel, silent))
-            .build();
+        switch (securityModel) {
+            case TRUSTED_DEALER:
+                return new AidZ2CoreMtgConfig.Builder().build();
+            case SEMI_HONEST:
+                return new Alsz13Z2CoreMtgConfig.Builder()
+                    .setNcCotConfig(NcCotFactory.createDefaultConfig(securityModel, silent))
+                    .build();
+            default:
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
+        }
+
     }
 }

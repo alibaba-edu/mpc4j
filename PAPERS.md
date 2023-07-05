@@ -79,6 +79,16 @@ We implement some basic tools used in PCG. We learned a lot from [KyberJCE](http
 - Bos, Joppe, Léo Ducas, Eike Kiltz, Tancrède Lepoint, Vadim Lyubashevsky, John M. Schanck, Peter Schwabe, Gregor Seiler, and Damien Stehlé. CRYSTALS-Kyber: A CCA-secure Module-lattice-based KEM. EuroS\&P 2018, IEEE, pp. 353-367.
 - Guo, Chun, Jonathan Katz, Xiao Wang, and Yu Yu. Efficient and Secure Multiparty Computation from Fixed-key Block Ciphers.S\&P 2020, IEEE, pp. 825-841.
 
+### Coin-tossing Protocol
+
+Some protocols (especially protocol with malicious security) needs to invoke a (maliciously secure) coin tossing protocol for unbiased randomness generation. We implement the commonly used coin-tossing protocol that was proposed by Blum in the following paper.
+
+- Blum, Manuel. Coin flipping by phone. In COMPCON, pp. 133-137. 1982.
+
+The security proof is shown in the following paper.
+
+- Lindell, Yehuda. How to simulate it: a tutorial on the simulation proof technique. Tutorials on the Foundations of Cryptography: Dedicated to Oded Goldreich (2017): 277-346.
+
 ### Base OT
 
 There are many research results related to base OT. We adjust some results in instance implementations.
@@ -112,13 +122,16 @@ We implement some Private Information Retrieval (PIR) protocols. We note that th
 
 ### Index PIR
 
-We re-implement FastPIR, OnionPIR, SealPIR, and XPIR in `mpc4j-s2pc-pir`. We note that we learned a lot from their original implementations. See [FastPIR](https://github.com/ishtiyaque/FastPIR), [Onion-PIR](https://github.com/mhmughees/Onion-PIR), [SealPIR](https://github.com/microsoft/SealPIR) and [XPIR](https://github.com/XPIR-team/XPIR) for more details.
+We re-implement many index PIR schemes in `mpc4j-s2pc-pir`. We note that we learned a lot from their original implementations.
 
 - Ahmad, Ishtiyaque, Yuntian Yang, Divyakant Agrawal, Amr El Abbadi, and Trinabh Gupta. Addra: Metadata-private Voice Communication over Fully Untrusted Infrastructure. OSDI 2021.
 - Mughees, Muhammad Haris, Hao Chen, and Ling Ren. OnionPIR: Response Efficient Single-server PIR. CCS 2021, ACM, pp. 2292-2306.
 - Angel, Sebastian, Hao Chen, Kim Laine, and Srinath Setty. PIR with Compressed Queries and Amortized Query Processing. S\&P 2018, IEEE, pp. 962-979.
 - Melchor, Carlos Aguilar, Joris Barrier, Laurent Fousse, and Marc-Olivier Killijian. XPIR: Private Information Retrieval for Everyone. PETS 2016, pp. 155-174.
 - Mughees, Muhammad Haris, and Ling Ren. Vectorized Batch Private Information Retrieval. S\&P 2023, IEEE.
+- Ali, Asra, Tancrede Lepoint, Sarvar Patel, Mariana Raykova, Phillipp Schoppmann, Karn Seth, and Kevin Yeo. Communication–computation Trade-offs in PIR. USENIX Security 2021, pp. 1811-1828.
+- Mahdavi, Rasoul Akhavan, and Florian Kerschbaum. Constant-weight PIR: Single-round Keyword PIR via Constant-weight Equality Operators. USENIX Security 2022, pp. 1723-1740.
+- Henzinger, Alexandra, Matthew M. Hong, Henry Corrigan-Gibbs, Sarah Meiklejohn, and Vinod Vaikuntanathan. One Server for the Price of Two: Simple and Fast Single-server Private Information Retrieval. USENIX Security 2023.
 
 ### Keyword PIR and Unbalanced PSI
 
@@ -127,6 +140,7 @@ We implement Keyword PIR (also known as Labeled PSI) in `mpc4j-s2pc-pir` and unb
 - Cong, Kelong, Radames Cruz Moreno, Mariana Botelho da Gama, Wei Dai, Ilia Iliashenko, Kim Laine, and Michael Rosenberg. Labeled PSI from Homomorphic Encryption with Reduced Computation and Communication. CCS 2021, ACM, pp. 1135-1150.
 - Chen, Hao, Zhicong Huang, Kim Laine, and Peter Rindal. Labeled PSI from Fully Homomorphic Encryption with Malicious Security. CCS 2018, ACM, pp. 1223-1237.
 - Chen, Hao, Kim Laine, and Peter Rindal. Fast Private Set Intersection from Homomorphic Encryption. CCS 2017, ACM, pp. 1243-1255.
+- Ahmad, Ishtiyaque, Divyakant Agrawal, Amr El Abbadi, and Trinabh Gupta. Pantheon: Private Retrieval from Public Key-Value Store. VLDB 2022, pp. 643-656.
 
 ## Private Set Operation
 
@@ -138,7 +152,7 @@ We implement Private Set Operations in `mpc4j-s2pc-pso` and `mpc4j-s2pc-pjc`.
 - Resende, Amanda C. Davi, and Diego F. Aranha. Faster Unbalanced Private Set Intersection. FC 2018, Springer Berlin Heidelberg, pp. 203-221.
 - Albrecht, Martin R., Christian Rechberger, Thomas Schneider, Tyge Tiessen, and Michael Zohner. Ciphers for MPC and FHE. EUROCRYPT 2015, Part I, Springer Berlin Heidelberg, pp. 430-454.
 - Kolesnikov, Vladimir, Ranjit Kumaresan, Mike Rosulek, and Ni Trieu. Efficient Batched Oblivious PRF with Applications to Private Set Intersection. CCS 2016, ACM, pp. 818-829.
-- Huberman, Bernardo A., Matt Franklin, and Tad Hogg. Enhancing Privacy and Trust in Electronic Communities. EC 1999, ACM, pp. 78-86.
+- (PSI version) Huberman, Bernardo A., Matt Franklin, and Tad Hogg. Enhancing Privacy and Trust in Electronic Communities. EC 1999, ACM, pp. 78-86.
 
 ### Circuit PSI
 
@@ -151,3 +165,12 @@ We implement Private Set Operations in `mpc4j-s2pc-pso` and `mpc4j-s2pc-pjc`.
 - Garimella, Gayathri, Payman Mohassel, Mike Rosulek, Saeed Sadeghian, and Jaspal Singh. Private Set Operations from Oblivious Switching. PKC 2021, Cham: Springer International Publishing, pp. 591-617.
 - Kolesnikov, Vladimir, Mike Rosulek, Ni Trieu, and Xiao Wang. Scalable Private Set Union from Symmetric-key Techniques. ASIACRYPT 2019, Part II, Cham: Springer International Publishing, pp. 636-666.
 - Buddhavarapu, Prasad, Andrew Knox, Payman Mohassel, Shubho Sengupta, Erik Taubeneck, and Vlad Vlaskin. Private Matching for Compute. Cryptology ePrint Archive, Paper 2020/599.
+
+### PSI Cardinality
+
+- (PSI Cardinality version) Huberman, Bernardo A., Matt Franklin, and Tad Hogg. Enhancing Privacy and Trust in Electronic Communities. EC 1999, ACM, pp. 78-86.
+- De Cristofaro, Emiliano, Paolo Gasti, and Gene Tsudik. Fast and Private Computation of Cardinality of Set Intersection and Union. CANS 2012, pp. 218-231. Springer Berlin Heidelberg, 2012.
+
+### Other PSO
+
+- Kamara, Seny, Payman Mohassel, Mariana Raykova, and Saeed Sadeghian. Scaling Private Set Intersection to Billion-element Sets. FC 2014, pp. 195-215. Springer Berlin Heidelberg, 2014.

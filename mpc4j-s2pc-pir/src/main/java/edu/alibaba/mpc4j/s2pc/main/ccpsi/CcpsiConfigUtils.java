@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.main.ccpsi;
 
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiFactory;
@@ -28,7 +29,7 @@ public class CcpsiConfigUtils {
      * @return config.
      */
     public static CcpsiConfig createCcpsiConfig(Properties properties) {
-        // 读取协议类型
+        // read protocol type
         String ccpsiTypeString = PropertiesUtils.readString(properties, "pto_name");
         CcpsiFactory.CcpsiType ccpsiType = CcpsiFactory.CcpsiType.valueOf(ccpsiTypeString);
         boolean silent = PropertiesUtils.readBoolean(properties, "silent");
@@ -38,15 +39,17 @@ public class CcpsiConfigUtils {
             case CGS22:
                 return createCgs22CcpsiConfig(silent);
             default:
-                throw new IllegalArgumentException("Invalid " + PsuFactory.PsuType.class.getSimpleName() + ": " + ccpsiType.name());
+                throw new IllegalArgumentException(
+                    "Invalid " + PsuFactory.PsuType.class.getSimpleName() + ": " + ccpsiType.name()
+                );
         }
     }
 
     private static CcpsiConfig createPsty19CcpsiConfig(boolean silent) {
-        return new Psty19CcpsiConfig.Builder(silent).build();
+        return new Psty19CcpsiConfig.Builder(SecurityModel.SEMI_HONEST, silent).build();
     }
 
     private static CcpsiConfig createCgs22CcpsiConfig(boolean silent) {
-        return new Cgs22CcpsiConfig.Builder(silent).build();
+        return new Cgs22CcpsiConfig.Builder(SecurityModel.SEMI_HONEST, silent).build();
     }
 }

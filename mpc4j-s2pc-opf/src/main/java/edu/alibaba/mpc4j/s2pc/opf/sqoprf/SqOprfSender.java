@@ -26,6 +26,7 @@ public interface SqOprfSender extends TwoPartyPto {
      */
     void init(int maxBatchSize, SqOprfKey key) throws MpcAbortException;
 
+
     /**
      * Executes the protocol.
      *

@@ -15,7 +15,7 @@ public class ScpsiServerThread extends Thread {
     /**
      * server
      */
-    private final ScpsiServer server;
+    private final ScpsiServer<ByteBuffer> server;
     /**
      * server element set
      */
@@ -27,15 +27,15 @@ public class ScpsiServerThread extends Thread {
     /**
      * server output
      */
-    private ScpsiServerOutput serverOutput;
+    private ScpsiServerOutput<ByteBuffer> serverOutput;
 
-    ScpsiServerThread(ScpsiServer server, Set<ByteBuffer> serverElementSet, int clientElementSize) {
+    ScpsiServerThread(ScpsiServer<ByteBuffer> server, Set<ByteBuffer> serverElementSet, int clientElementSize) {
         this.server = server;
         this.serverElementSet = serverElementSet;
         this.clientElementSize = clientElementSize;
     }
 
-    ScpsiServerOutput getServerOutput() {
+    ScpsiServerOutput<ByteBuffer> getServerOutput() {
         return serverOutput;
     }
 

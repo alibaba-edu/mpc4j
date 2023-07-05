@@ -225,9 +225,8 @@ public class NettyRpc implements Rpc {
     public DataPacket receiveAny() {
         try {
             // 尝试从缓存区中读取数据
-            return dataPacketBuffer.takeAny(ownPartyId);
+            return dataPacketBuffer.take(ownPartyId);
         } catch (InterruptedException e) {
-            // 线程中断，不需要等待，直接返回空
             return null;
         }
     }

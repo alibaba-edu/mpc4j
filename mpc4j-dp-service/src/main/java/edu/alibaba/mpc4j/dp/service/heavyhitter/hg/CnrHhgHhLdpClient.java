@@ -85,7 +85,7 @@ public class CnrHhgHhLdpClient extends AbstractHhLdpClient {
         checkItemInDomain(item);
         int bucketIndex = bucketDomain.getItemBucket(item);
         assert bucketDomain.getBucketDomainSet(bucketIndex).contains(item);
-        Map<String, Double> currentBucket = hgServerContext.getBudget(bucketIndex);
+        Map<String, Double> currentBucket = hgServerContext.getBucket(bucketIndex);
         assert currentBucket.size() == lambdaH;
         if (bucketDomain.getD(bucketIndex) == lambdaH) {
             // if the domain size equals to λ_h, then there is no cold item, use M2

@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 
-import edu.alibaba.mpc4j.common.tool.galoisfield.BytesRing;
+import edu.alibaba.mpc4j.common.tool.galoisfield.BytesField;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 
 /**
@@ -9,7 +9,7 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
  * @author Weiran Liu
  * @date 2022/01/15
  */
-public interface Gf2k extends BytesRing {
+public interface Gf2k extends BytesField {
     /**
      * Gets Gf2k type.
      *

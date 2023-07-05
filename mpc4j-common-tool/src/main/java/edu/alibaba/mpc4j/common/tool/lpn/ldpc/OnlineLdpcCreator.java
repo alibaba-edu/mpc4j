@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.lpn.ldpc;
 
 import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.ExtremeSparseBitMatrix;
-import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.LowerTriangularSparseBitMatrix;
-import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.SparseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.LowerTriSquareSparseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.NaiveSparseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.SparseBitVector;
 
 
@@ -52,7 +52,7 @@ class OnlineLdpcCreator extends AbstractLdpcCreator {
         // 检验第一列是否regular （预置的种子满足此要求）。
         assert isRegular(firstCol, kValue, kValue - gapValue);
         // 将列向量封装为sparsevector。
-        SparseBitVector currentVector = SparseBitVector.createUnCheck(firstCol, kValue);
+        SparseBitVector currentVector = SparseBitVector.createUncheck(firstCol, kValue);
         // 创建存储矩阵A 列向量和矩阵B列向量的list。
         ArrayList<SparseBitVector> aColsList = new ArrayList<>(kValue - gapValue);
         aColsList.ensureCapacity(kValue - gapValue);
@@ -64,7 +64,7 @@ class OnlineLdpcCreator extends AbstractLdpcCreator {
         // 将首列循环移位kvalue-gapvalue次，得到的矩阵前kvalue-gapvalue行构成A，后gapValue行构成D。
         for (int colIndex = 0; colIndex < kValue - gapValue; colIndex++) {
             // 由于首列是regular的，每次移位后最多只有一个元素超过了kvalue-gapvalue，直接判断最后一个元素。
-            if (currentVector.getLastValue() < kValue - gapValue) {
+            if (currentVector.getLastPosition() < kValue - gapValue) {
                 // 若最后一个元素也没有超过kvalue-gapvalue，将该列复制，加入矩阵A的colsList。
                 SparseBitVector aCol = currentVector.copyOfRange(0, currentVector.getSize(), kValue - gapValue);
                 aColsList.add(aCol);
@@ -74,31 +74,31 @@ class OnlineLdpcCreator extends AbstractLdpcCreator {
                 aColsList.add(aCol);
                 // 当前列的最后一个元素加入矩阵D的非空colsList, 并记录当前索引值。
                 dNonEmptyIndexList.add(colIndex);
-                int dColElement = currentVector.getLastValue() - (kValue - gapValue);
+                int dColElement = currentVector.getLastPosition() - (kValue - gapValue);
                 int[] dCol = {dColElement};
-                dColsList.add(SparseBitVector.createUnCheck(dCol, gapValue));
+                dColsList.add(SparseBitVector.createUncheck(dCol, gapValue));
             }
             // 将当前列循环移位。
-            currentVector = currentVector.cyclicMove();
+            currentVector = currentVector.cyclicShiftRight();
         }
         // 将list转为数组。
         int[] dNonEmptyIndex = dNonEmptyIndexList.stream().mapToInt(k -> k).toArray();
         // 根据计算的colsList创建矩阵A和D。
-        matrixA = SparseBitMatrix.creatFromColsList(aColsList);
-        matrixD = new ExtremeSparseBitMatrix(dColsList, dNonEmptyIndex, gapValue, kValue - gapValue);
+        matrixA = NaiveSparseBitMatrix.createFromColumnList(aColsList);
+        matrixD = ExtremeSparseBitMatrix.createUncheck(gapValue, kValue - gapValue, dNonEmptyIndex, dColsList);
         // 继续循环移位当前列gapValue次，得到矩阵B。
         for (int colIndex = 0; colIndex < gapValue; colIndex++) {
-            if (currentVector.getLastValue() < kValue - gapValue) {
+            if (currentVector.getLastPosition() < kValue - gapValue) {
                 SparseBitVector bCol = currentVector.copyOfRange(0, currentVector.getSize(), kValue - gapValue);
                 bColsList.add(bCol);
             } else {
                 SparseBitVector bCol = currentVector.copyOfRange(0, currentVector.getSize() - 1, kValue - gapValue);
                 bColsList.add(bCol);
             }
-            currentVector = currentVector.cyclicMove();
+            currentVector = currentVector.cyclicShiftRight();
         }
         // 创建矩阵B。
-        matrixB = SparseBitMatrix.creatFromColsList(bColsList);
+        matrixB = NaiveSparseBitMatrix.createFromColumnList(bColsList);
     }
 
     /**
@@ -117,17 +117,17 @@ class OnlineLdpcCreator extends AbstractLdpcCreator {
         IntStream.range(0, kValue - gapValue).parallel()
             .forEach(colIndex -> {
                 int rem = colIndex % gapValue;
-                SparseBitVector fullCol = SparseBitVector.createUnCheck(rightSeed[rem], kValue).shiftConstant(colIndex);
+                SparseBitVector fullCol = SparseBitVector.createUncheck(rightSeed[rem], kValue).shiftRight(colIndex);
                 // 矩阵C的列为左矩阵每列的前 k - gap 项。
-                cColsArray[colIndex] = fullCol.getSubArray(0, kValue - gapValue);
+                cColsArray[colIndex] = fullCol.sub(0, kValue - gapValue);
                 // 矩阵F的列为左矩阵每列的后 gap 项。
-                fColsArray[colIndex] = fullCol.getSubArray(kValue - gapValue, kValue);
+                fColsArray[colIndex] = fullCol.sub(kValue - gapValue, kValue);
             });
         // 将数组转为ArrayList，然后生成对应的稀疏矩阵。
         ArrayList<SparseBitVector> cColsList = Stream.of(cColsArray).collect(Collectors.toCollection(ArrayList::new));
-        matrixC = LowerTriangularSparseBitMatrix.createUnCheck(cColsList);
+        matrixC = LowerTriSquareSparseBitMatrix.createUncheck(cColsList);
         ArrayList<SparseBitVector> fColsList = Stream.of(fColsArray).collect(Collectors.toCollection(ArrayList::new));
-        matrixF = SparseBitMatrix.creatFromColsList(fColsList).toExtremeSparseMatrix();
+        matrixF = NaiveSparseBitMatrix.createFromColumnList(fColsList).toExtremeSparseBitMatrix();
     }
 
     /**

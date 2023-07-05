@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ZlCoreMtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ZlCoreMtgFactory;
@@ -12,19 +12,15 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ZlCoreMtgFactory;
  * @author Li Peng, Weiran Liu
  * @date 2022/2/20
  */
-public class Dsz15HeZlCoreMtgConfig implements ZlCoreMtgConfig {
+public class Dsz15HeZlCoreMtgConfig extends AbstractMultiPartyPtoConfig implements ZlCoreMtgConfig {
     /**
      * the Zl instance
      */
     private final Zl zl;
-    /**
-     * the environment
-     */
-    private EnvType envType;
 
     private Dsz15HeZlCoreMtgConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST);
         zl = builder.zl;
-        envType = EnvType.STANDARD;
     }
 
     @Override
@@ -38,23 +34,8 @@ public class Dsz15HeZlCoreMtgConfig implements ZlCoreMtgConfig {
     }
 
     @Override
-    public int maxAllowNum() {
+    public int maxNum() {
         return 1 << 20;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        this.envType = envType;
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return envType;
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Dsz15HeZlCoreMtgConfig> {

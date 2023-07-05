@@ -47,9 +47,10 @@ public class Kk13OriLcotSender extends AbstractLcotSender {
     }
 
     @Override
-    public void init(int inputBitLength, int maxNum) throws MpcAbortException {
+    public byte[] init(int inputBitLength, int maxNum) throws MpcAbortException {
         setInitInput(inputBitLength, maxNum);
         init();
+        return BytesUtils.clone(delta);
     }
 
     public void init() throws MpcAbortException {

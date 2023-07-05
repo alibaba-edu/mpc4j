@@ -1,7 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu.krtw19;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
@@ -15,7 +16,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
  * @author Weiran Liu
  * @date 2022/02/20
  */
-public class Krtw19OptPsuConfig implements PsuConfig {
+public class Krtw19OptPsuConfig extends AbstractMultiPartyPtoConfig implements PsuConfig {
     /**
      * RPMT所用OPRF配置项
      */
@@ -34,9 +35,7 @@ public class Krtw19OptPsuConfig implements PsuConfig {
     private final int pipeSize;
 
     private Krtw19OptPsuConfig(Builder builder) {
-        // 协议的环境类型必须相同
-        assert builder.rpmtOprfConfig.getEnvType().equals(builder.peqtOprfConfig.getEnvType());
-        assert builder.rpmtOprfConfig.getEnvType().equals(builder.coreCotConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST, builder.rpmtOprfConfig, builder.peqtOprfConfig, builder.coreCotConfig);
         rpmtOprfConfig = builder.rpmtOprfConfig;
         peqtOprfConfig = builder.peqtOprfConfig;
         coreCotConfig = builder.coreCotConfig;
@@ -46,33 +45,6 @@ public class Krtw19OptPsuConfig implements PsuConfig {
     @Override
     public PsuFactory.PsuType getPtoType() {
         return PsuFactory.PsuType.KRTW19_OPT;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        rpmtOprfConfig.setEnvType(envType);
-        peqtOprfConfig.setEnvType(envType);
-        coreCotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return rpmtOprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (rpmtOprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = rpmtOprfConfig.getSecurityModel();
-        }
-        if (peqtOprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = peqtOprfConfig.getSecurityModel();
-        }
-        if (coreCotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = coreCotConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public OprfConfig getRpmtOprfConfig() {
@@ -132,7 +104,7 @@ public class Krtw19OptPsuConfig implements PsuConfig {
         }
 
         public Builder setPipeSize(int pipeSize) {
-            assert pipeSize > 0 : "Pipeline Size must be greater than 0: " + pipeSize;
+            MathPreconditions.checkPositive("pipeSize", pipeSize);
             this.pipeSize = pipeSize;
             return this;
         }

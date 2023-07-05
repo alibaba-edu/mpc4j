@@ -23,11 +23,7 @@ public class OpBoostMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpBoostMain.class);
 
     public static void main(String[] args) throws Exception {
-        // 读取日志配置文件
-        LOGGER.info("read log config");
-        Properties log4jProperties = new Properties();
-        log4jProperties.load(OpBoostMain.class.getResourceAsStream("/log4j.properties"));
-        PropertyConfigurator.configure(log4jProperties);
+        PropertiesUtils.loadLog4jProperties();
         // 读取配置文件
         LOGGER.info("read config file");
         Properties properties = PropertiesUtils.loadProperties(args[0]);

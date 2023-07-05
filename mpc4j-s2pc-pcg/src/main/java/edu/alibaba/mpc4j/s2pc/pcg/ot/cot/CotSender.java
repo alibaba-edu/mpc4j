@@ -13,12 +13,11 @@ public interface CotSender extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
-     * @param delta       Δ.
-     * @param maxRoundNum max round num.
-     * @param updateNum   update num.
+     * @param delta     Δ.
+     * @param updateNum update num.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(byte[] delta, int maxRoundNum, int updateNum) throws MpcAbortException;
+    void init(byte[] delta, int updateNum) throws MpcAbortException;
 
     /**
      * Executes the protocol.

@@ -51,7 +51,7 @@ public class Kk13OptLcotReceiver extends AbstractLcotReceiver {
     }
 
     @Override
-    public void init(int inputBitLength, int maxNum) throws MpcAbortException {
+    public int init(int inputBitLength, int maxNum) throws MpcAbortException {
         setInitInput(inputBitLength, maxNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
@@ -66,6 +66,7 @@ public class Kk13OptLcotReceiver extends AbstractLcotReceiver {
         logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
         logPhaseInfo(PtoState.INIT_END);
+        return linearCoder.getCodewordBitLength();
     }
 
     @Override

@@ -31,6 +31,10 @@ public class DirectLnotSender extends AbstractLnotSender {
      * key derivation function
      */
     private final Kdf kdf;
+    /**
+     * Δ
+     */
+    private byte[] delta;
 
     public DirectLnotSender(Rpc senderRpc, Party receiverParty, DirectLnotConfig config) {
         super(DirectLnotPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -40,12 +44,12 @@ public class DirectLnotSender extends AbstractLnotSender {
     }
 
     @Override
-    public void init(int l, int maxRoundNum, int updateNum) throws MpcAbortException {
-        setInitInput(l, maxRoundNum, updateNum);
+    public void init(int l, int updateNum) throws MpcAbortException {
+        setInitInput(l, updateNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        lcotSender.init(l, maxRoundNum);
+        delta = lcotSender.init(l, updateNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -60,7 +64,17 @@ public class DirectLnotSender extends AbstractLnotSender {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        LcotSenderOutput lcotSenderOutput = lcotSender.send(num);
+        LcotSenderOutput lcotSenderOutput = LcotSenderOutput.createEmpty(l, delta);
+        if (num <= updateNum) {
+            lcotSenderOutput.merge(lcotSender.send(num));
+        } else {
+            int currentNum = lcotSenderOutput.getNum();
+            while (currentNum < num) {
+                int roundNum = Math.min((num - currentNum), updateNum);
+                lcotSenderOutput.merge(lcotSender.send(roundNum));
+                currentNum = lcotSenderOutput.getNum();
+            }
+        }
         stopWatch.stop();
         long lcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

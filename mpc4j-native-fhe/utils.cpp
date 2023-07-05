@@ -12,34 +12,13 @@ parms_id_type get_parms_id_for_chain_idx(const SEALContext& seal_context, uint32
     return parms_id;
 }
 
-EncryptionParameters generate_encryption_parameters(scheme_type type, uint32_t poly_modulus_degree, uint64_t plain_modulus, const vector<Modulus>& coeff_modulus) {
-    EncryptionParameters parms = EncryptionParameters(type);
-    parms.set_poly_modulus_degree(poly_modulus_degree);
-    parms.set_plain_modulus(plain_modulus);
-    parms.set_coeff_modulus(coeff_modulus);
-    return parms;
-}
-
-GaloisKeys generate_galois_keys(const SEALContext& context, KeyGenerator &keygen) {
+Serializable<GaloisKeys> generate_galois_keys(const SEALContext& context, KeyGenerator &keygen) {
     std::vector<uint32_t> galois_elts;
     auto &parms = context.first_context_data()->parms();
     uint32_t degree = parms.poly_modulus_degree();
-    uint32_t logN = seal::util::get_power_of_two(degree);
+    uint32_t logN = util::get_power_of_two(degree);
     for (uint32_t i = 0; i < logN; i++) {
-        galois_elts.push_back((degree + seal::util::exponentiate_uint(2, i)) / seal::util::exponentiate_uint(2, i));
-    }
-    GaloisKeys galois_keys;
-    keygen.create_galois_keys(galois_elts, galois_keys);
-    return galois_keys;
-}
-
-Serializable<GaloisKeys> generate_serialized_galois_keys(const SEALContext& context, KeyGenerator &keygen) {
-    std::vector<uint32_t> galois_elts;
-    auto &parms = context.first_context_data()->parms();
-    uint32_t degree = parms.poly_modulus_degree();
-    uint32_t logN = seal::util::get_power_of_two(degree);
-    for (uint32_t i = 0; i < logN; i++) {
-        galois_elts.push_back((degree + seal::util::exponentiate_uint(2, i)) / seal::util::exponentiate_uint(2, i));
+        galois_elts.push_back((degree + util::exponentiate_uint(2, i)) / util::exponentiate_uint(2, i));
     }
     Serializable<GaloisKeys> galois_keys = keygen.create_galois_keys(galois_elts);
     return galois_keys;

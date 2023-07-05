@@ -1,20 +1,13 @@
 package edu.alibaba.mpc4j.s2pc.upso.uopprf.urb;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.UopprfTestUtils;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.UrbopprfFactory.UrbopprfType;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.cgs22.Cgs22UrbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.pir.PirUrbopprfConfig;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -22,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,12 +28,8 @@ import java.util.stream.IntStream;
  * @date 2023/4/18
  */
 @RunWith(Parameterized.class)
-public class UrbopprfTest {
+public class UrbopprfTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(UrbopprfTest.class);
-    /**
-     * the random state
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * default l
      */
@@ -80,38 +68,13 @@ public class UrbopprfTest {
     }
 
     /**
-     * the sender RPC
-     */
-    private final Rpc senderRpc;
-    /**
-     * the receiver RPC
-     */
-    private final Rpc receiverRpc;
-    /**
      * the config
      */
     private final UrbopprfConfig config;
 
     public UrbopprfTest(String name, UrbopprfConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        senderRpc = rpcManager.getRpc(0);
-        receiverRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        senderRpc.connect();
-        receiverRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        senderRpc.disconnect();
-        receiverRpc.disconnect();
     }
 
     @Test
@@ -161,8 +124,8 @@ public class UrbopprfTest {
 
     private void testPto(int l, int batchNum, int pointNum, boolean parallel, boolean equalTarget) {
         // create the sender and the receiver
-        UrbopprfSender sender = UrbopprfFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        UrbopprfReceiver receiver = UrbopprfFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        UrbopprfSender sender = UrbopprfFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        UrbopprfReceiver receiver = UrbopprfFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -182,34 +145,26 @@ public class UrbopprfTest {
             byte[][] receiverInputArray = UopprfTestUtils.generateReceiverInputArray(l, senderInputArrays, SECURE_RANDOM);
             UrbopprfSenderThread senderThread = new UrbopprfSenderThread(sender, l, senderInputArrays, senderTargetArrays);
             UrbopprfReceiverThread receiverThread = new UrbopprfReceiverThread(receiver, l, receiverInputArray, pointNum);
-            StopWatch stopWatch = new StopWatch();
             // start
-            stopWatch.start();
+            STOP_WATCH.start();
             senderThread.start();
             receiverThread.start();
+            // stop
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
             byte[][][] receiverTargetArray = receiverThread.getTargetArray();
-            // verify the correctness
+            // verify
             assertOutput(l, senderInputArrays, senderTargetArrays, receiverInputArray, receiverTargetArray);
-            LOGGER.info("Sender data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                senderRpc.getSendDataPacketNum(), senderRpc.getPayloadByteLength(), senderRpc.getSendByteLength(),
-                time
-            );
-            LOGGER.info("Receiver data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                receiverRpc.getSendDataPacketNum(), receiverRpc.getPayloadByteLength(), receiverRpc.getSendByteLength(),
-                time
-            );
-            senderRpc.reset();
-            receiverRpc.reset();
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     private void assertOutput(int l, byte[][][] senderInputArrays, byte[][][] senderTargetArrays,

@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -53,6 +55,14 @@ public class BytesFieldTest {
                     Gf2eFactory.createInstance(EnvType.STANDARD, type, l),
                 });
             }
+        }
+        // GF2K
+        Gf2kType[] gf2kTypes = new Gf2kType[]{Gf2kType.COMBINED, Gf2kType.NTL, Gf2kType.BC, Gf2kType.RINGS};
+        for (Gf2kType type : gf2kTypes) {
+            configurations.add(new Object[]{
+                Gf2kType.class.getSimpleName() + " (" + type.name() + ")",
+                Gf2kFactory.createInstance(EnvType.STANDARD, type),
+            });
         }
 
         return configurations;

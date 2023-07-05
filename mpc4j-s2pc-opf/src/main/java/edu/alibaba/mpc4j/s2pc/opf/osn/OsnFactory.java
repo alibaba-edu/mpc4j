@@ -10,7 +10,6 @@ import edu.alibaba.mpc4j.s2pc.opf.osn.ms13.Ms13OsnConfig;
 import edu.alibaba.mpc4j.s2pc.opf.osn.ms13.Ms13OsnReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.osn.ms13.Ms13OsnSender;
 import edu.alibaba.mpc4j.s2pc.opf.osn.gmr21.Gmr21OsnSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotFactory;
 
 /**
  * OSN协议工厂。
@@ -99,9 +98,7 @@ public class OsnFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-                return new Gmr21OsnConfig.Builder()
-                    .setCotConfig(CotFactory.createDefaultConfig(securityModel, silent))
-                    .build();
+                return new Gmr21OsnConfig.Builder(silent).build();
             case COVERT:
             case MALICIOUS:
             default:

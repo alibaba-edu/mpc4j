@@ -12,7 +12,7 @@ import java.util.Set;
  * @author Weiran Liu
  * @date 2023/3/29
  */
-public interface ScpsiServer extends TwoPartyPto {
+public interface ScpsiServer<T> extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
@@ -30,5 +30,5 @@ public interface ScpsiServer extends TwoPartyPto {
      * @return the server output.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    ScpsiServerOutput psi(Set<ByteBuffer> serverElementSet, int clientElementSize) throws MpcAbortException;
+    ScpsiServerOutput<T> psi(Set<T> serverElementSet, int clientElementSize) throws MpcAbortException;
 }

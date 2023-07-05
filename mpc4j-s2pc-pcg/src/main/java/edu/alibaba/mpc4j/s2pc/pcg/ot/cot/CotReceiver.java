@@ -13,11 +13,10 @@ public interface CotReceiver extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
-     * @param maxRoundNum max round num.
-     * @param updateNum   update num.
+     * @param updateNum update num.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(int maxRoundNum, int updateNum) throws MpcAbortException;
+    void init(int updateNum) throws MpcAbortException;
 
     /**
      * Executes the protocol.

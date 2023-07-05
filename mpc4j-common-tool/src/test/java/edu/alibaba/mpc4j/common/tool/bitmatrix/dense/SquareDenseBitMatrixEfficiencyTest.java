@@ -14,9 +14,11 @@ import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.SquareDenseBitMatrixFactory.SquareDenseBitMatrixType;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrixFactory.DenseBitMatrixType;
 
 /**
+ * square dense bit matrix efficient test.
+ *
  * @author Weiran Liu
  * @date 2022/5/19
  */
@@ -24,7 +26,7 @@ import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.SquareDenseBitMatrixFactory
 public class SquareDenseBitMatrixEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(SquareDenseBitMatrixEfficiencyTest.class);
     /**
-     * 可逆分组方阵，来自于LowMc的参数
+     * invertible 128 × 128 matrix (from LowMc)
      */
     private static final byte[][] INVERTIBLE_SQUARE_BLOCK_MATRIX = new byte[][]{
         Hex.decode("de3547d35d7763737b6ec5825f32786d"), Hex.decode("a1bf2597d8732f367e52b8560916d23a"),
@@ -93,42 +95,42 @@ public class SquareDenseBitMatrixEfficiencyTest {
         Hex.decode("7677e3f99bd8b7eabc873bc23c662509"), Hex.decode("f43a4253f3c3fd597cdacbe067e296da"),
     };
     /**
-     * 随机状态
+     * random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
-     * 性能测试轮数
+     * round
      */
-    private static final int EFFICIENCY_ROUND = 100000;
+    private static final int ROUND = 100000;
     /**
-     * 时间输出格式
+     * time format
      */
     private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.0000");
     /**
-     * 秒表
+     * stop watch
      */
     private static final StopWatch STOP_WATCH = new StopWatch();
     /**
-     * 测试类型
+     * type
      */
-    private static final SquareDenseBitMatrixType[] TYPES = new SquareDenseBitMatrixType[]{
-        SquareDenseBitMatrixType.BYTE_MATRIX,
-        SquareDenseBitMatrixType.LONG_MATRIX,
+    private static final DenseBitMatrixType[] TYPES = new DenseBitMatrixType[]{
+        DenseBitMatrixType.BYTE_MATRIX,
+        DenseBitMatrixType.LONG_MATRIX,
     };
 
     @Test
     public void testEfficiency() {
         LOGGER.info("{}\t{}", "                name", "   mul(us)");
-        for (SquareDenseBitMatrixType type : TYPES) {
-            SquareDenseBitMatrix bitMatrix = SquareDenseBitMatrixFactory.fromDense(type, INVERTIBLE_SQUARE_BLOCK_MATRIX);
+        for (DenseBitMatrixType type : TYPES) {
+            DenseBitMatrix bitMatrix = DenseBitMatrixFactory.createFromDense(type, 128, INVERTIBLE_SQUARE_BLOCK_MATRIX);
             byte[] randomInput = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(randomInput);
-            // 预热
-            IntStream.range(0, EFFICIENCY_ROUND).forEach(index -> bitMatrix.lmul(randomInput));
+            // warm-up
+            IntStream.range(0, ROUND).forEach(index -> bitMatrix.leftMultiply(randomInput));
             STOP_WATCH.start();
-            IntStream.range(0, EFFICIENCY_ROUND).forEach(index -> bitMatrix.lmul(randomInput));
+            IntStream.range(0, ROUND).forEach(index -> bitMatrix.leftMultiply(randomInput));
             STOP_WATCH.stop();
-            double mulTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / EFFICIENCY_ROUND;
+            double mulTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / ROUND;
             STOP_WATCH.reset();
             LOGGER.info("{}\t{}",
                 StringUtils.leftPad(type.name(), 20),

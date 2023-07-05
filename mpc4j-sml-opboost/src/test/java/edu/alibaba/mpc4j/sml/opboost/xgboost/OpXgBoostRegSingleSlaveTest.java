@@ -3,9 +3,7 @@ package edu.alibaba.mpc4j.sml.opboost.xgboost;
 import biz.k11i.xgboost.Predictor;
 import edu.alibaba.mpc4j.common.data.DataFrameUtils;
 import edu.alibaba.mpc4j.common.data.DatasetManager;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
 import edu.alibaba.mpc4j.dp.ldp.LdpConfig;
 import edu.alibaba.mpc4j.sml.opboost.OpBoostSlave;
@@ -41,7 +39,7 @@ import java.util.*;
  * @date 2021/10/08
  */
 @RunWith(Parameterized.class)
-public class OpXgBoostRegSingleSlaveTest {
+public class OpXgBoostRegSingleSlaveTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpXgBoostRegSingleSlaveTest.class);
 
     static {
@@ -92,31 +90,29 @@ public class OpXgBoostRegSingleSlaveTest {
     private final OpBoostSlave slave;
 
     public OpXgBoostRegSingleSlaveTest(String name, Formula formula, DataFrame train, DataFrame test) {
+        super(name);
         this.name = name;
         this.formula = formula;
         this.train = train;
         this.test = test;
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        Rpc hostRpc = rpcManager.getRpc(0);
-        Rpc slaveRpc = rpcManager.getRpc(1);
-        host = new OpXgBoostHost(hostRpc, slaveRpc.ownParty());
-        slave = new OpBoostSlave(slaveRpc, hostRpc.ownParty());
+        host = new OpXgBoostHost(firstRpc, secondRpc.ownParty());
+        slave = new OpBoostSlave(secondRpc, firstRpc.ownParty());
     }
 
     @Before
+    @Override
     public void connect() {
-        host.getRpc().connect();
-        slave.getRpc().connect();
+        super.connect();
         host.init();
         slave.init();
     }
 
     @After
+    @Override
     public void disconnect() {
         host.destroy();
         slave.destroy();
-        host.getRpc().disconnect();
-        slave.getRpc().disconnect();
+        super.disconnect();
     }
 
     @Test

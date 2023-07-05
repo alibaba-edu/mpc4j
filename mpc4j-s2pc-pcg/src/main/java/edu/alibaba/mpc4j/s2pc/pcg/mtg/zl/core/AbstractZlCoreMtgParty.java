@@ -10,38 +10,38 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import java.math.BigInteger;
 
 /**
- * 核l比特布三元组生成协议。
+ * abstract Zl core multiplication triple generator.
  *
  * @author Weiran Liu
  * @date 2022/8/11
  */
 public abstract class AbstractZlCoreMtgParty extends AbstractTwoPartyPto implements ZlCoreMtgParty {
     /**
-     * 配置项
+     * config
      */
     protected final ZlCoreMtgConfig config;
     /**
-     * the Zl instance
+     * Zl instance
      */
     protected final Zl zl;
     /**
-     * 比特长度
+     * l
      */
     protected final int l;
     /**
-     * 取模所用的遮掩值
-     */
-    protected BigInteger mask;
-    /**
-     * 字节长度
+     * l in bytes
      */
     protected int byteL;
     /**
-     * 最大数量
+     * mask used for module operation
+     */
+    protected BigInteger mask;
+    /**
+     * max num
      */
     protected int maxNum;
     /**
-     * 数量
+     * num
      */
     protected int num;
 
@@ -55,7 +55,7 @@ public abstract class AbstractZlCoreMtgParty extends AbstractTwoPartyPto impleme
     }
 
     protected void setInitInput(int maxNum) {
-        MathPreconditions.checkPositiveInRangeClosed("maxNum", maxNum, config.maxAllowNum());
+        MathPreconditions.checkPositiveInRangeClosed("maxNum", maxNum, config.maxNum());
         this.maxNum = maxNum;
         initState();
     }

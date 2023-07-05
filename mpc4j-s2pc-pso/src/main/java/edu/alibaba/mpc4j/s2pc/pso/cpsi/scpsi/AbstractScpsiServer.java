@@ -6,7 +6,6 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -16,7 +15,7 @@ import java.util.Set;
  * @author Weiran Liu
  * @date 2023/3/29
  */
-public abstract class AbstractScpsiServer extends AbstractTwoPartyPto implements ScpsiServer {
+public abstract class AbstractScpsiServer<T> extends AbstractTwoPartyPto implements ScpsiServer<T> {
     /**
      * max server element size
      */
@@ -28,7 +27,7 @@ public abstract class AbstractScpsiServer extends AbstractTwoPartyPto implements
     /**
      * server element array list
      */
-    protected ArrayList<ByteBuffer> serverElementArrayList;
+    protected ArrayList<T> serverElementArrayList;
     /**
      * server element size
      */
@@ -50,7 +49,7 @@ public abstract class AbstractScpsiServer extends AbstractTwoPartyPto implements
         initState();
     }
 
-    protected void setPtoInput(Set<ByteBuffer> serverElementSet, int clientElementSize) {
+    protected void setPtoInput(Set<T> serverElementSet, int clientElementSize) {
         checkInitialized();
         MathPreconditions.checkPositiveInRangeClosed("serverElementSize", serverElementSet.size(), maxServerElementSize);
         serverElementSize = serverElementSet.size();

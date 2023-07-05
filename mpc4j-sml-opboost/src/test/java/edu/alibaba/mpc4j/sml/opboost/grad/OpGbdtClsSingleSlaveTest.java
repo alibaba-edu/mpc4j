@@ -6,9 +6,7 @@ import edu.alibaba.mpc4j.common.data.classification.BreastCancer;
 import edu.alibaba.mpc4j.common.data.classification.Iris;
 import edu.alibaba.mpc4j.common.data.classification.PenDigits;
 import edu.alibaba.mpc4j.common.data.classification.Weather;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.dp.ldp.LdpConfig;
 import edu.alibaba.mpc4j.sml.opboost.OpBoostSlave;
 import edu.alibaba.mpc4j.sml.opboost.OpBoostSlaveConfig;
@@ -40,7 +38,7 @@ import java.util.stream.IntStream;
  * @date 2021/09/26
  */
 @RunWith(Parameterized.class)
-public class OpGbdtClsSingleSlaveTest {
+public class OpGbdtClsSingleSlaveTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpGbdtClsSingleSlaveTest.class);
 
     static {
@@ -89,31 +87,29 @@ public class OpGbdtClsSingleSlaveTest {
     private final OpBoostSlave slave;
 
     public OpGbdtClsSingleSlaveTest(String name, Formula formula, DataFrame train, DataFrame test) {
+        super(name);
         this.name = name;
         this.formula = formula;
         this.train = train;
         this.test = test;
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        Rpc hostRpc = rpcManager.getRpc(0);
-        Rpc slaveRpc = rpcManager.getRpc(1);
-        host = new ClsOpGradBoostHost(hostRpc, slaveRpc.ownParty());
-        slave = new OpBoostSlave(slaveRpc, hostRpc.ownParty());
+        host = new ClsOpGradBoostHost(firstRpc, secondRpc.ownParty());
+        slave = new OpBoostSlave(secondRpc, firstRpc.ownParty());
     }
 
     @Before
+    @Override
     public void connect() {
-        host.getRpc().connect();
-        slave.getRpc().connect();
+        super.connect();
         host.init();
         slave.init();
     }
 
     @After
+    @Override
     public void disconnect() {
         host.destroy();
         slave.destroy();
-        host.getRpc().disconnect();
-        slave.getRpc().disconnect();
+        super.connect();
     }
 
     @Test
@@ -150,7 +146,7 @@ public class OpGbdtClsSingleSlaveTest {
             .addLdpConfig(slaveLdpConfigMap)
             .build();
         GradientTreeBoost federatedModel = federateTraining(
-             formula, hostDataFrame, hostConfig, slaveDataFrame, slaveConfig
+            formula, hostDataFrame, hostConfig, slaveDataFrame, slaveConfig
         );
         LOGGER.info("{} verify difference between plain model and federated model", name);
         // 预测结果

@@ -32,13 +32,9 @@ public abstract class AbstractLnotSender extends AbstractTwoPartyPto implements 
      */
     protected int n;
     /**
-     * max round num
-     */
-    protected int maxRoundNum;
-    /**
      * update num
      */
-    protected long updateNum;
+    protected int updateNum;
     /**
      * num
      */
@@ -49,21 +45,19 @@ public abstract class AbstractLnotSender extends AbstractTwoPartyPto implements 
         this.config = config;
     }
 
-    protected void setInitInput(int l, int maxRoundNum, int updateNum) {
+    protected void setInitInput(int l, int updateNum) {
         MathPreconditions.checkPositiveInRangeClosed("l", l, IntUtils.MAX_L);
         this.l = l;
         byteL = CommonUtils.getByteLength(l);
         n = 1 << l;
-        MathPreconditions.checkPositiveInRangeClosed("maxRoundNum", maxRoundNum, config.maxBaseNum());
-        this.maxRoundNum = maxRoundNum;
-        MathPreconditions.checkGreaterOrEqual("updateNum", updateNum, maxRoundNum);
+        MathPreconditions.checkPositive("updateNum", updateNum);
         this.updateNum = updateNum;
         initState();
     }
 
     protected void setPtoInput(int num) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxRoundNum);
+        MathPreconditions.checkPositive("num", num);
         this.num = num;
         extraInfo++;
     }

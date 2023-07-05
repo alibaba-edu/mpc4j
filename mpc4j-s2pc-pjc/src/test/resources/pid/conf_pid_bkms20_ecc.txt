@@ -1,0 +1,8 @@
+# 协议类型
+pto_type = PID
+
+# 对数集合大小（log(n)）
+log_set_size = 12,10
+
+# 协议名称
+pid_pto_name = BKMS20_ECC

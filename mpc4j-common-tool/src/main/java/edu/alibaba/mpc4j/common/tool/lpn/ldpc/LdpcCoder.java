@@ -2,8 +2,8 @@ package edu.alibaba.mpc4j.common.tool.lpn.ldpc;
 
 import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.ExtremeSparseBitMatrix;
-import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.LowerTriangularSparseBitMatrix;
-import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.SparseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.LowerTriSquareSparseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.sparse.NaiveSparseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 
 import java.util.Arrays;
@@ -33,15 +33,15 @@ public class LdpcCoder {
     /**
      * 分块矩阵A
      */
-    private final SparseBitMatrix matrixA;
+    private final NaiveSparseBitMatrix matrixA;
     /**
      * 分块矩阵B
      */
-    private final SparseBitMatrix matrixB;
+    private final NaiveSparseBitMatrix matrixB;
     /**
      * 分块矩阵C
      */
-    private final LowerTriangularSparseBitMatrix matrixC;
+    private final LowerTriSquareSparseBitMatrix matrixC;
     /**
      * 分块矩阵D
      */
@@ -66,7 +66,7 @@ public class LdpcCoder {
      * 包私有构造函数
      * 传入所有成员变量，完成初始化。
      */
-    LdpcCoder(SparseBitMatrix matrixA, SparseBitMatrix matrixB, LowerTriangularSparseBitMatrix matrixC, ExtremeSparseBitMatrix matrixD,
+    LdpcCoder(NaiveSparseBitMatrix matrixA, NaiveSparseBitMatrix matrixB, LowerTriSquareSparseBitMatrix matrixC, ExtremeSparseBitMatrix matrixD,
               ExtremeSparseBitMatrix matrixF, DenseBitMatrix matrixEp, int gapValue, int kValue) {
         this.matrixA = matrixA;
         this.matrixB = matrixB;
@@ -107,7 +107,7 @@ public class LdpcCoder {
         // step2  计算 p = pp * B + p。
         matrixB.lmulAddi(pp, p);
         // step 3， 计算 p = p*E'^{-1}。
-        p = matrixEp.lmul(p);
+        p = matrixEp.leftMultiply(p);
         //step 4, 计算 x = p *D + x。
         //noinspection SuspiciousNameCombination
         matrixD.lmulAddi(p, x);
@@ -150,7 +150,7 @@ public class LdpcCoder {
         // 各步骤定义和对 boolean[] 的transEncode相同。
         pp = matrixC.invLextMul(pp);
         matrixB.lExtMulAddi(pp, p);
-        p = matrixEp.lExtMul(p);
+        p = matrixEp.leftGf2lMultiply(p);
         //noinspection SuspiciousNameCombination
         matrixD.lExtMulAddi(p, x);
         matrixF.lExtMulAddi(p, ppp);

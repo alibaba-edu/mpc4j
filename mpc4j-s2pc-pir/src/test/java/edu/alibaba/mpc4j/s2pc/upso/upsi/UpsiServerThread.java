@@ -5,26 +5,26 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import java.util.Set;
 
 /**
- * 非平衡PSI协议服务端线程。
+ * UPSI server thread.
  *
  * @author Liqiang Peng
  * @date 2022/5/26
  */
 public class UpsiServerThread<T> extends Thread {
     /**
-     * 服务端
+     * UPSI server
      */
     private final UpsiServer<T> server;
     /**
-     * 服务端集合
+     * server element set
      */
     private final Set<T> serverElementSet;
     /**
-     * 客户端元素数量
+     * client element size
      */
     private final int clientElementSize;
     /**
-     * 客户端最大元素数量
+     * max client element size
      */
     private final int maxClientElementSize;
 

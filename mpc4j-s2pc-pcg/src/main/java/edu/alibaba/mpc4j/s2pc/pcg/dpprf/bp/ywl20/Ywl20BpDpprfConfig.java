@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.ywl20;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
@@ -15,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.PreCotFactory;
  * @author Weiran Liu
  * @date 2022/8/16
  */
-public class Ywl20BpDpprfConfig implements BpDpprfConfig {
+public class Ywl20BpDpprfConfig extends AbstractMultiPartyPtoConfig implements BpDpprfConfig {
     /**
      * core COT config
      */
@@ -26,7 +26,7 @@ public class Ywl20BpDpprfConfig implements BpDpprfConfig {
     private final PreCotConfig preCotConfig;
 
     private Ywl20BpDpprfConfig(Builder builder) {
-        assert builder.coreCotConfig.getEnvType().equals(builder.preCotConfig.getEnvType());
+        super(SecurityModel.MALICIOUS, builder.coreCotConfig, builder.preCotConfig);
         coreCotConfig = builder.coreCotConfig;
         preCotConfig = builder.preCotConfig;
     }
@@ -42,29 +42,6 @@ public class Ywl20BpDpprfConfig implements BpDpprfConfig {
     @Override
     public BpDpprfFactory.BpDpprfType getPtoType() {
         return BpDpprfFactory.BpDpprfType.YWL20;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        coreCotConfig.setEnvType(envType);
-        preCotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return coreCotConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.MALICIOUS;
-        if (coreCotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = coreCotConfig.getSecurityModel();
-        }
-        if (preCotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = preCotConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Ywl20BpDpprfConfig> {

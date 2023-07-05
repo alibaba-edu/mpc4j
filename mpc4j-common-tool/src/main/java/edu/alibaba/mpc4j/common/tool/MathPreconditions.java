@@ -40,7 +40,7 @@ public class MathPreconditions {
      * Check x > 0.
      *
      * @param role the name of the value x.
-     * @param x the value x.
+     * @param x    the value x.
      * @return the value x.
      * @throws IllegalArgumentException if x <= 0.
      */
@@ -56,7 +56,7 @@ public class MathPreconditions {
      * Check x > 0.
      *
      * @param role the name of the value x.
-     * @param x the value x.
+     * @param x    the value x.
      * @return the value x.
      * @throws IllegalArgumentException if x <= 0.
      */
@@ -72,7 +72,7 @@ public class MathPreconditions {
      * Check x > 0.
      *
      * @param role the name of the value x.
-     * @param x the value x.
+     * @param x    the value x.
      * @return the value x.
      * @throws IllegalArgumentException if x <= 0.
      */
@@ -88,7 +88,7 @@ public class MathPreconditions {
      * Check x > 0.
      *
      * @param role the name of the value x.
-     * @param x the value x.
+     * @param x    the value x.
      * @return the value x.
      * @throws IllegalArgumentException if x <= 0.
      */
@@ -104,7 +104,7 @@ public class MathPreconditions {
      * Check x >= 0.
      *
      * @param role the name of the value x.
-     * @param x the value x.
+     * @param x    the value x.
      * @return the value x.
      * @throws IllegalArgumentException if x < 0.
      */
@@ -120,7 +120,7 @@ public class MathPreconditions {
      * Check x >= 0.
      *
      * @param role the name of the value x.
-     * @param x the value x.
+     * @param x    the value x.
      * @return the value x.
      * @throws IllegalArgumentException if x < 0.
      */
@@ -136,7 +136,7 @@ public class MathPreconditions {
      * Check x >= 0.
      *
      * @param role the name of the value x.
-     * @param x the value x.
+     * @param x    the value x.
      * @return the value x.
      * @throws IllegalArgumentException if x < 0.
      */
@@ -152,7 +152,7 @@ public class MathPreconditions {
      * Check x >= 0.
      *
      * @param role the name of the value x.
-     * @param x the value x.
+     * @param x    the value x.
      * @return the value x.
      * @throws IllegalArgumentException if x < 0.
      */
@@ -169,8 +169,8 @@ public class MathPreconditions {
      *
      * @param roleX the name of the value x.
      * @param roleY the name of the value y.
-     * @param x the value x.
-     * @param y the value y.
+     * @param x     the value x.
+     * @param y     the value y.
      * @throws IllegalArgumentException if x != y.
      */
     public static void checkEqual(String roleX, String roleY, int x, int y) {
@@ -184,8 +184,8 @@ public class MathPreconditions {
      *
      * @param roleX the name of the value x.
      * @param roleY the name of the value y.
-     * @param x the value x.
-     * @param y the value y.
+     * @param x     the value x.
+     * @param y     the value y.
      * @throws IllegalArgumentException if x != y.
      */
     public static void checkEqual(String roleX, String roleY, long x, long y) {
@@ -197,10 +197,10 @@ public class MathPreconditions {
     /**
      * Check x == y.
      *
-     * @param roleX the name of the value x.
-     * @param roleY the name of the value y.
-     * @param x the value x.
-     * @param y the value y.
+     * @param roleX     the name of the value x.
+     * @param roleY     the name of the value y.
+     * @param x         the value x.
+     * @param y         the value y.
      * @param precision the precision, that is, x == y iff |x - y| <= precision.
      * @throws IllegalArgumentException if x != y.
      */
@@ -215,8 +215,8 @@ public class MathPreconditions {
      *
      * @param roleX the name of the value x.
      * @param roleY the name of the value y.
-     * @param x the value x.
-     * @param y the value y.
+     * @param x     the value x.
+     * @param y     the value y.
      * @throws IllegalArgumentException if x != y.
      */
     public static void checkEqual(String roleX, String roleY, BigInteger x, BigInteger y) {
@@ -229,8 +229,8 @@ public class MathPreconditions {
      * Check x > min.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param min the value min.
+     * @param x    the value x.
+     * @param min  the value min.
      * @return the value x.
      * @throws IllegalArgumentException if x <= min.
      */
@@ -246,8 +246,8 @@ public class MathPreconditions {
      * Check x > min.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param min the value min.
+     * @param x    the value x.
+     * @param min  the value min.
      * @return the value x.
      * @throws IllegalArgumentException if x <= min.
      */
@@ -263,8 +263,8 @@ public class MathPreconditions {
      * Check x > min.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param min the value min.
+     * @param x    the value x.
+     * @param min  the value min.
      * @return the value x.
      * @throws IllegalArgumentException if x <= min.
      */
@@ -280,8 +280,8 @@ public class MathPreconditions {
      * Check x > min.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param min the value min.
+     * @param x    the value x.
+     * @param min  the value min.
      * @return the value x.
      * @throws IllegalArgumentException if x <= min.
      */
@@ -297,8 +297,8 @@ public class MathPreconditions {
      * Check x >= min.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param min the value min.
+     * @param x    the value x.
+     * @param min  the value min.
      * @return the value x.
      * @throws IllegalArgumentException if x < min.
      */
@@ -314,8 +314,8 @@ public class MathPreconditions {
      * Check x >= min.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param min the value min.
+     * @param x    the value x.
+     * @param min  the value min.
      * @return the value x.
      * @throws IllegalArgumentException if x < min.
      */
@@ -331,8 +331,8 @@ public class MathPreconditions {
      * Check x >= min.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param min the value min.
+     * @param x    the value x.
+     * @param min  the value min.
      * @return the value x.
      * @throws IllegalArgumentException if x < min.
      */
@@ -348,8 +348,8 @@ public class MathPreconditions {
      * Check x >= min.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param min the value min.
+     * @param x    the value x.
+     * @param min  the value min.
      * @return the value x.
      * @throws IllegalArgumentException if x < min.
      */
@@ -365,8 +365,8 @@ public class MathPreconditions {
      * Check x < max.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if x >= max.
      */
@@ -382,8 +382,8 @@ public class MathPreconditions {
      * Check x < max.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if x >= max.
      */
@@ -399,8 +399,8 @@ public class MathPreconditions {
      * Check x < max.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if x >= max.
      */
@@ -416,8 +416,8 @@ public class MathPreconditions {
      * Check x < max.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if x >= max.
      */
@@ -433,8 +433,8 @@ public class MathPreconditions {
      * Check x <= max.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if x > max.
      */
@@ -450,8 +450,8 @@ public class MathPreconditions {
      * Check x <= max.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if x > max.
      */
@@ -467,8 +467,8 @@ public class MathPreconditions {
      * Check x <= max.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if x > max.
      */
@@ -484,8 +484,8 @@ public class MathPreconditions {
      * Check x <= max.
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if x >= max.
      */
@@ -501,8 +501,8 @@ public class MathPreconditions {
      * Check x ∈ (0, max).
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ (0, max).
      */
@@ -519,8 +519,8 @@ public class MathPreconditions {
      * Check x ∈ (0, max).
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ (0, max).
      */
@@ -537,8 +537,8 @@ public class MathPreconditions {
      * Check x ∈ (0, max).
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ (0, max).
      */
@@ -555,8 +555,8 @@ public class MathPreconditions {
      * Check x ∈ (0, max).
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ (0, max).
      */
@@ -573,8 +573,8 @@ public class MathPreconditions {
      * Check x ∈ (0, max].
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ (0, max].
      */
@@ -591,8 +591,8 @@ public class MathPreconditions {
      * Check x ∈ (0, max].
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ (0, max].
      */
@@ -609,8 +609,8 @@ public class MathPreconditions {
      * Check x ∈ (0, max].
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ (0, max].
      */
@@ -627,8 +627,8 @@ public class MathPreconditions {
      * Check x ∈ (0, max].
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ (0, max].
      */
@@ -645,8 +645,8 @@ public class MathPreconditions {
      * Check x ∈ [0, max).
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ [0, max).
      */
@@ -663,8 +663,8 @@ public class MathPreconditions {
      * Check x ∈ [0, max).
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ [0, max).
      */
@@ -681,8 +681,8 @@ public class MathPreconditions {
      * Check x ∈ [0, max).
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ [0, max).
      */
@@ -699,8 +699,8 @@ public class MathPreconditions {
      * Check x ∈ [0, max).
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max <= 0 or x ∉ [0, max).
      */
@@ -717,8 +717,8 @@ public class MathPreconditions {
      * Check x ∈ [0, max].
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max < 0 or x ∉ [0, max].
      */
@@ -735,8 +735,8 @@ public class MathPreconditions {
      * Check x ∈ [0, max].
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max < 0 or x ∉ [0, max].
      */
@@ -753,8 +753,8 @@ public class MathPreconditions {
      * Check x ∈ [0, max].
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max < 0 or x ∉ [0, max].
      */
@@ -771,8 +771,8 @@ public class MathPreconditions {
      * Check x ∈ [0, max].
      *
      * @param role the name of the value x.
-     * @param x the value x.
-     * @param max the value max.
+     * @param x    the value x.
+     * @param max  the value max.
      * @return the value x.
      * @throws IllegalArgumentException if max < 0 or x ∉ [0, max].
      */
@@ -781,6 +781,158 @@ public class MathPreconditions {
         checkNonNegative("max", max);
         if (x.signum() < 0 || BigIntegerUtils.greater(x, max)) {
             throw new IllegalArgumentException(role + " (" + x + ") must be in range [0, " + max + "]");
+        }
+        return x;
+    }
+
+    /**
+     * Check x ∈ [min, max).
+     *
+     * @param role the name of the value x.
+     * @param x    the value x.
+     * @param min  the value min.
+     * @param max  the value max.
+     * @return the value x.
+     * @throws IllegalArgumentException if max <= min or x ∉ [min, max).
+     */
+    @CanIgnoreReturnValue
+    public static int checkInRange(String role, int x, int min, int max) {
+        checkGreater("max", max, min);
+        if (x < min || x >= max) {
+            throw new IllegalArgumentException(role + " (" + x + ") must be in range [" + min + ", " + max + ")");
+        }
+        return x;
+    }
+
+    /**
+     * Check x ∈ [min, max).
+     *
+     * @param role the name of the value x.
+     * @param x    the value x.
+     * @param min  the value min.
+     * @param max  the value max.
+     * @return the value x.
+     * @throws IllegalArgumentException if max <= min or x ∉ [min, max).
+     */
+    @CanIgnoreReturnValue
+    public static long checkInRange(String role, long x, long min, long max) {
+        checkGreater("max", max, min);
+        if (x < min || x >= max) {
+            throw new IllegalArgumentException(role + " (" + x + ") must be in range [" + min + ", " + max + ")");
+        }
+        return x;
+    }
+
+    /**
+     * Check x ∈ [min, max).
+     *
+     * @param role the name of the value x.
+     * @param x    the value x.
+     * @param min  the value min.
+     * @param max  the value max.
+     * @return the value x.
+     * @throws IllegalArgumentException if max <= min or x ∉ [min, max).
+     */
+    @CanIgnoreReturnValue
+    public static double checkInRange(String role, double x, double min, double max) {
+        checkGreater("max", max, min);
+        if (x < min || x >= max) {
+            throw new IllegalArgumentException(role + " (" + x + ") must be in range [" + min + ", " + max + ")");
+        }
+        return x;
+    }
+
+    /**
+     * Check x ∈ [min, max).
+     *
+     * @param role the name of the value x.
+     * @param x    the value x.
+     * @param min  the value min.
+     * @param max  the value max.
+     * @return the value x.
+     * @throws IllegalArgumentException if max <= min or x ∉ [min, max).
+     */
+    @CanIgnoreReturnValue
+    public static BigInteger checkInRange(String role, BigInteger x, BigInteger min, BigInteger max) {
+        checkGreater("max", max, min);
+        if (BigIntegerUtils.less(x, min) || BigIntegerUtils.greaterOrEqual(x, max)) {
+            throw new IllegalArgumentException(role + " (" + x + ") must be in range [" + min + ", " + max + ")");
+        }
+        return x;
+    }
+
+    /**
+     * Check x ∈ [min, max].
+     *
+     * @param role the name of the value x.
+     * @param x    the value x.
+     * @param min  the value min.
+     * @param max  the value max.
+     * @return the value x.
+     * @throws IllegalArgumentException if max < min or x ∉ [min, max].
+     */
+    @CanIgnoreReturnValue
+    public static int checkInRangeClosed(String role, int x, int min, int max) {
+        checkGreaterOrEqual("max", max, min);
+        if (x < min || x > max) {
+            throw new IllegalArgumentException(role + " (" + x + ") must be in range [" + min + ", " + max + "]");
+        }
+        return x;
+    }
+
+    /**
+     * Check x ∈ [min, max].
+     *
+     * @param role the name of the value x.
+     * @param x    the value x.
+     * @param min  the value min.
+     * @param max  the value max.
+     * @return the value x.
+     * @throws IllegalArgumentException if max < min or x ∉ [min, max].
+     */
+    @CanIgnoreReturnValue
+    public static long checkInRangeClosed(String role, long x, long min, long max) {
+        checkGreaterOrEqual("max", max, min);
+        if (x < min || x > max) {
+            throw new IllegalArgumentException(role + " (" + x + ") must be in range [" + min + ", " + max + "]");
+        }
+        return x;
+    }
+
+    /**
+     * Check x ∈ [min, max].
+     *
+     * @param role the name of the value x.
+     * @param x    the value x.
+     * @param min  the value min.
+     * @param max  the value max.
+     * @return the value x.
+     * @throws IllegalArgumentException if max < min or x ∉ [min, max].
+     */
+    @CanIgnoreReturnValue
+    public static double checkInRangeClosed(String role, double x, double min, double max) {
+        checkGreaterOrEqual("max", max, min);
+        if (x < min || x > max) {
+            throw new IllegalArgumentException(role + " (" + x + ") must be in range [" + min + ", " + max + "]");
+        }
+        return x;
+    }
+
+    /**
+     * Check x ∈ [min, max].
+     *
+     * @param role the name of the value x.
+     * @param x    the value x.
+     * @param min  the value min.
+     * @param max  the value max.
+     * @return the value x.
+     * @throws IllegalArgumentException if max < min or x ∉ [min, max].
+     */
+    @CanIgnoreReturnValue
+    public static BigInteger checkInRangeClosed(String role, BigInteger x, BigInteger min, BigInteger max) {
+        checkGreaterOrEqual("max", max, min);
+        if (BigIntegerUtils.less(x, min) || BigIntegerUtils.greater(x, max)) {
+            throw new IllegalArgumentException(role + " (" + x + ") must be in range [" + min + ", " + max + "]");
         }
         return x;
     }

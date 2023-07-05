@@ -1,25 +1,26 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zl;
 
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 /**
- * l比特三元组生成协议配置项。
+ * Zl multiplication triple generator.
  *
  * @author Weiran Liu
  * @date 2022/8/11
  */
 public interface ZlMtgConfig extends MultiPartyPtoConfig {
     /**
-     * 返回协议类型。
+     * Gets protocol type.
      *
-     * @return 协议类型。
+     * @return protocol type.
      */
     ZlMtgFactory.ZlMtgType getPtoType();
 
     /**
-     * 返回底层协议最大数量。
+     * Gets Zl instance.
      *
-     * @return 底层协议最大数量。
+     * @return Zl instance.
      */
-    int maxBaseNum();
+    Zl getZl();
 }

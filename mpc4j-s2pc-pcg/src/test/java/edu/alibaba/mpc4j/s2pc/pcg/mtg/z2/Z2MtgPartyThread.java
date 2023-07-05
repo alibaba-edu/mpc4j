@@ -3,28 +3,37 @@ package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 
 /**
- * 布尔三元组生成协议参与方线程。
+ * Z2 multiplication triple generator party thread.
  *
  * @author Weiran Liu
  * @date 2022/02/08
  */
 class Z2MtgPartyThread extends Thread {
     /**
-     * 参与方
+     * party
      */
     private final Z2MtgParty party;
     /**
-     * 布尔三元组数量
+     * num
      */
     private final int num;
     /**
-     * 输出
+     * update num
+     */
+    private final int updateNum;
+    /**
+     * output
      */
     private Z2Triple output;
 
     Z2MtgPartyThread(Z2MtgParty party, int num) {
+        this(party, num, num);
+    }
+
+    Z2MtgPartyThread(Z2MtgParty party, int num, int updateNum) {
         this.party = party;
         this.num = num;
+        this.updateNum = updateNum;
     }
 
     Z2Triple getOutput() {
@@ -34,7 +43,7 @@ class Z2MtgPartyThread extends Thread {
     @Override
     public void run() {
         try {
-            party.init(num, num);
+            party.init(updateNum);
             output = party.generate(num);
         } catch (MpcAbortException e) {
             e.printStackTrace();

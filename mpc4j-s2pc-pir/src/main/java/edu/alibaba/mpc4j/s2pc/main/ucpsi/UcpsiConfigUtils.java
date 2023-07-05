@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.main.ucpsi;
 
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.UcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.cgs22.Cgs22UcpsiConfig;
@@ -28,7 +29,6 @@ public class UcpsiConfigUtils {
      * @return config.
      */
     public static UcpsiConfig createUcpsiConfig(Properties properties) {
-        // 读取协议类型
         String ucpsiTypeString = PropertiesUtils.readString(properties, "pto_name");
         UcpsiType ucpsiType = UcpsiType.valueOf(ucpsiTypeString);
         boolean silent = PropertiesUtils.readBoolean(properties, "silent");
@@ -47,21 +47,21 @@ public class UcpsiConfigUtils {
     }
 
     private static UcpsiConfig createPsty19UcpsiOkvsConfig(boolean silent) {
-        return new Psty19UcpsiConfig.Builder(silent).build();
+        return new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, silent).build();
     }
 
     private static UcpsiConfig createPsty19UcpsiPirConfig(boolean silent) {
-        return new Psty19UcpsiConfig.Builder(silent)
+        return new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, silent)
             .setUbopprfConfig(new PirUbopprfConfig.Builder().build())
             .build();
     }
 
     private static UcpsiConfig createCgs22UcpsiOkvsConfig(boolean silent) {
-        return new Cgs22UcpsiConfig.Builder(silent).build();
+        return new Cgs22UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, silent).build();
     }
 
     private static UcpsiConfig createCgs22UcpsiPirConfig(boolean silent) {
-        return new Cgs22UcpsiConfig.Builder(silent)
+        return new Cgs22UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, silent)
             .setUrbopprfConfig(new PirUrbopprfConfig.Builder().build())
             .build();
     }

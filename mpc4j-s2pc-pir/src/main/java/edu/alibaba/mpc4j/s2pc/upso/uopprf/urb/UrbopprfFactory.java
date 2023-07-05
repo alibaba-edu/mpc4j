@@ -2,7 +2,6 @@ package edu.alibaba.mpc4j.s2pc.upso.uopprf.urb;
 
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.cgs22.Cgs22UrbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.cgs22.Cgs22UrbopprfReceiver;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.cgs22.Cgs22UrbopprfSender;
@@ -81,18 +80,9 @@ public class UrbopprfFactory {
     /**
      * Creates a default config.
      *
-     * @param securityModel the security model.
      * @return a default config.
      */
-    public static UrbopprfConfig createDefaultConfig(SecurityModel securityModel) {
-        switch (securityModel) {
-            case IDEAL:
-            case SEMI_HONEST:
-                return new Cgs22UrbopprfConfig.Builder().build();
-            case COVERT:
-            case MALICIOUS:
-            default:
-                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
-        }
+    public static UrbopprfConfig createDefaultConfig() {
+        return new Cgs22UrbopprfConfig.Builder().build();
     }
 }

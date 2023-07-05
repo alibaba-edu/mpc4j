@@ -32,10 +32,6 @@ class BaseHhLdpConfig implements HhLdpConfig {
      * the privacy parameter ε / w
      */
     private final double windowEpsilon;
-    /**
-     * the window size (w)
-     */
-    private final int windowSize;
 
     protected BaseHhLdpConfig(Builder builder) {
         type = builder.type;
@@ -43,7 +39,6 @@ class BaseHhLdpConfig implements HhLdpConfig {
         d = builder.d;
         k = builder.k;
         windowEpsilon = builder.windowEpsilon;
-        windowSize = builder.windowSize;
     }
 
     @Override
@@ -72,11 +67,6 @@ class BaseHhLdpConfig implements HhLdpConfig {
     }
 
     @Override
-    public int getWindowSize() {
-        return windowSize;
-    }
-
-    @Override
     public boolean isConverge() {
         return true;
     }
@@ -102,12 +92,8 @@ class BaseHhLdpConfig implements HhLdpConfig {
          * the privacy parameter ε / w
          */
         private final double windowEpsilon;
-        /**
-         * the window size (w)
-         */
-        private final int windowSize;
 
-        public Builder(HhLdpType type, Set<String> domainSet, int k, double windowEpsilon, int windowSize) {
+        public Builder(HhLdpType type, Set<String> domainSet, int k, double windowEpsilon) {
             this.type = type;
             d = domainSet.size();
             MathPreconditions.checkGreater("|Ω|", d, 1);
@@ -116,8 +102,6 @@ class BaseHhLdpConfig implements HhLdpConfig {
             this.k = k;
             MathPreconditions.checkPositive("ε / w", windowEpsilon);
             this.windowEpsilon = windowEpsilon;
-            MathPreconditions.checkPositive("w", windowSize);
-            this.windowSize = windowSize;
         }
 
         @Override

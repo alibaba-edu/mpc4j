@@ -9,9 +9,9 @@ import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcFactory;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcParty;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.AbstractOprpReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpReceiverOutput;
 
@@ -29,9 +29,9 @@ import java.util.stream.IntStream;
  */
 public class LowMcOprpReceiver extends AbstractOprpReceiver {
     /**
-     * BC协议接收方
+     * Z2 circuit receiver
      */
-    private final BcParty bcReceiver;
+    private final Z2cParty z2cReceiver;
     /**
      * 初始变换密钥
      */
@@ -43,8 +43,14 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
 
     public LowMcOprpReceiver(Rpc receiverRpc, Party senderParty, LowMcOprpConfig config) {
         super(LowMcOprpPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        bcReceiver = BcFactory.createReceiver(receiverRpc, senderParty, config.getBcConfig());
-        addSubPtos(bcReceiver);
+        z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, config.getZ2cConfig());
+        addSubPtos(z2cReceiver);
+    }
+
+    public LowMcOprpReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, LowMcOprpConfig config) {
+        super(LowMcOprpPtoDesc.getInstance(), receiverRpc, senderParty, config);
+        z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, aiderParty, config.getZ2cConfig());
+        addSubPtos(z2cReceiver);
     }
 
     @Override
@@ -64,10 +70,7 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
 
         stopWatch.start();
         // 初始化BC协议
-        bcReceiver.init(
-            LowMcUtils.SBOX_NUM * 3 * maxRoundBatchSize,
-            LowMcUtils.SBOX_NUM * 3 * maxRoundBatchSize * LowMcUtils.ROUND
-        );
+        z2cReceiver.init(LowMcUtils.SBOX_NUM * 3 * maxRoundBatchSize * LowMcUtils.ROUND);
         stopWatch.stop();
         long initBcTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -152,10 +155,10 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
     private void extendKey(byte[] receiverShareKeyBytes) {
         long[] receiverShareKeyLongs = LongUtils.byteArrayToLongArray(receiverShareKeyBytes);
         // 初始扩展密钥
-        initKeyShare = LowMcUtils.KEY_MATRICES[0].lmul(receiverShareKeyLongs);
+        initKeyShare = LowMcUtils.KEY_MATRICES[0].leftMultiply(receiverShareKeyLongs);
         // 根据轮数扩展密钥
         roundKeyShares = IntStream.range(0, LowMcUtils.ROUND)
-            .mapToObj(roundIndex -> LowMcUtils.KEY_MATRICES[roundIndex + 1].lmul(receiverShareKeyLongs))
+            .mapToObj(roundIndex -> LowMcUtils.KEY_MATRICES[roundIndex + 1].leftMultiply(receiverShareKeyLongs))
             .toArray(long[][]::new);
     }
 
@@ -198,7 +201,7 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
             System.arraycopy(b1, 0, ccb1, offset + 2 * batchByteSize, batchByteSize);
         }
         // 一轮AND运算
-        byte[] sbox1 = bcReceiver.and(
+        byte[] sbox1 = z2cReceiver.and(
             SquareZ2Vector.create(LowMcUtils.SBOX_NUM * 3 * roundBatchSize, baa1, false),
             SquareZ2Vector.create(LowMcUtils.SBOX_NUM * 3 * roundBatchSize, ccb1, false)
         ).getBitVector().getBytes();
@@ -211,7 +214,7 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
             byte[] bc1 = new byte[batchByteSize];
             System.arraycopy(sbox1, offset, bc1, 0, batchByteSize);
             BytesUtils.reduceByteArray(bc1, batchSize);
-            SquareZ2Vector a1Sbox = bcReceiver.xor(
+            SquareZ2Vector a1Sbox = z2cReceiver.xor(
                 SquareZ2Vector.create(batchSize, a1, false),
                 SquareZ2Vector.create(batchSize, bc1, false)
             );
@@ -220,22 +223,22 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
             byte[] ac1 = new byte[batchByteSize];
             System.arraycopy(sbox1, offset + batchByteSize, ac1, 0, batchByteSize);
             BytesUtils.reduceByteArray(ac1, batchSize);
-            SquareZ2Vector b1Sbox = bcReceiver.xor(
+            SquareZ2Vector b1Sbox = z2cReceiver.xor(
                 SquareZ2Vector.create(batchSize, a1, false),
                 SquareZ2Vector.create(batchSize, b1, false)
             );
-            b1Sbox = bcReceiver.xor(b1Sbox, SquareZ2Vector.create(batchSize, ac1, false));
+            b1Sbox = z2cReceiver.xor(b1Sbox, SquareZ2Vector.create(batchSize, ac1, false));
             byte[] b1SboxBytes = b1Sbox.getBitVector().getBytes();
             // c = a ⊕ b ⊕ c ⊕ (a ☉ b)
             byte[] ab1 = new byte[batchByteSize];
             System.arraycopy(sbox1, offset + 2 * batchByteSize, ab1, 0, batchByteSize);
             BytesUtils.reduceByteArray(ab1, batchSize);
-            SquareZ2Vector c1Sbox = bcReceiver.xor(
+            SquareZ2Vector c1Sbox = z2cReceiver.xor(
                 SquareZ2Vector.create(batchSize, a1, false),
                 SquareZ2Vector.create(batchSize, b1, false)
             );
-            c1Sbox = bcReceiver.xor(c1Sbox, SquareZ2Vector.create(batchSize, c1, false));
-            c1Sbox = bcReceiver.xor(c1Sbox, SquareZ2Vector.create(batchSize, ab1, false));
+            c1Sbox = z2cReceiver.xor(c1Sbox, SquareZ2Vector.create(batchSize, c1, false));
+            c1Sbox = z2cReceiver.xor(c1Sbox, SquareZ2Vector.create(batchSize, ab1, false));
             byte[] c1SboxBytes = c1Sbox.getBitVector().getBytes();
             stateBytesTransMatrix.setColumn(sboxIndex * 3, a1SboxBytes);
             stateBytesTransMatrix.setColumn(sboxIndex * 3 + 1, b1SboxBytes);
@@ -251,7 +254,7 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
         IntStream rowIndexIntStream = IntStream.range(0, batchSize);
         rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
         return rowIndexIntStream
-            .mapToObj(row -> LowMcUtils.LINEAR_MATRICES[roundIndex].lmul(stateLongs[row]))
+            .mapToObj(row -> LowMcUtils.LINEAR_MATRICES[roundIndex].leftMultiply(stateLongs[row]))
             .toArray(long[][]::new);
     }
 

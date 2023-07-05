@@ -7,36 +7,38 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 /**
- * 关键词索引PIR协议服务端接口。
+ * Keyword PIR server interface.
  *
  * @author Liqiang Peng
  * @date 2022/6/20
  */
-public interface KwPirServer<T> extends TwoPartyPto {
+public interface KwPirServer extends TwoPartyPto {
     /**
-     * 初始化协议。
+     * server initializes protocol.
      *
-     * @param kwPirParams     关键词PIR参数。
-     * @param keywordLabelMap 关键字和标签映射。
-     * @param labelByteLength 标签字节长度。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param kwPirParams     keyword PIR params.
+     * @param keyValueMap     key value map.
+     * @param valueByteLength value byte length.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(KwPirParams kwPirParams, Map<T, ByteBuffer> keywordLabelMap, int labelByteLength) throws MpcAbortException;
+    void init(KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> keyValueMap, int valueByteLength)
+        throws MpcAbortException;
 
     /**
-     * 初始化协议。
+     * server initializes protocol.
      *
-     * @param keywordLabelMap  关键字和标签映射。
-     * @param maxRetrievalSize 最大检索数量。
-     * @param labelByteLength  标签字节长度。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param keyValueMap      key value map.
+     * @param maxRetrievalSize max retrieval size.
+     * @param valueByteLength  value byte length.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(Map<T, ByteBuffer> keywordLabelMap, int maxRetrievalSize, int labelByteLength) throws MpcAbortException;
+    void init(Map<ByteBuffer, ByteBuffer> keyValueMap, int maxRetrievalSize, int valueByteLength)
+        throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * server executes protocol.
      *
-     * @throws MpcAbortException 如果协议异常中止。
+     * @throws MpcAbortException the protocol failure aborts.
      */
     void pir() throws MpcAbortException;
 }

@@ -44,15 +44,6 @@ public class BytesRingEfficiencyTest {
      * the stop watch
      */
     private static final StopWatch STOP_WATCH = new StopWatch();
-    /**
-     * the GF2K test types
-     */
-    private static final Gf2kType[] GF2K_TYPES = new Gf2kType[]{Gf2kType.BC, Gf2kType.NTL, Gf2kType.RINGS,};
-    /**
-     * the GF2E test types
-     */
-    private static final Gf2eType[] GF2E_TYPES = new Gf2eType[]{Gf2eType.NTL, Gf2eType.RINGS};
-
 
     @Test
     public void testGf2kEfficiency() {
@@ -60,7 +51,10 @@ public class BytesRingEfficiencyTest {
             "                type", "         l",
             "   add(us)", "  addi(us)", "   neg(us)", "  negi(us)", "   sub(us)", "  subi(us)", "   mul(us)", "  muli(us)"
         );
-        for (Gf2kType type : GF2K_TYPES) {
+        Gf2kType[] gf2kTypes = new Gf2kType[]{
+            Gf2kType.COMBINED, Gf2kType.NTL, Gf2kType.BC, Gf2kType.RINGS,
+        };
+        for (Gf2kType type : gf2kTypes) {
             Gf2k gf2k = Gf2kFactory.createInstance(EnvType.STANDARD, type);
             testEfficiency(gf2k);
         }
@@ -72,9 +66,10 @@ public class BytesRingEfficiencyTest {
             "                type", "         l",
             "   add(us)", "  addi(us)", "   neg(us)", "  negi(us)", "   sub(us)", "  subi(us)", "   mul(us)", "  muli(us)"
         );
-        int[] ls = new int[]{1, 2, 3, 4, 40, 62, 256};
+        Gf2eType[] gf2eTypes = new Gf2eType[]{Gf2eType.NTL, Gf2eType.RINGS};
+        int[] ls = new int[]{1, 2, 3, 4, 40, 62, 128, 256};
         for (int l : ls) {
-            for (Gf2eType type : GF2E_TYPES) {
+            for (Gf2eType type : gf2eTypes) {
                 Gf2e gf2e = Gf2eFactory.createInstance(EnvType.STANDARD, type, l);
                 testEfficiency(gf2e);
             }

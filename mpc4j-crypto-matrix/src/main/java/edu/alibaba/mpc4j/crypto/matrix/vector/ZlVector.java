@@ -20,17 +20,36 @@ import java.util.stream.IntStream;
  */
 public class ZlVector implements RingVector {
     /**
-     * Zl instance
+     * merges vectors.
+     *
+     * @param vectors vectors.
+     * @return the merged vector.
      */
-    private final Zl zl;
+    public static ZlVector merge(ZlVector[] vectors) {
+        MathPreconditions.checkPositive("vectors.length", vectors.length);
+        ZlVector mergeVector = ZlVector.createEmpty(vectors[0].getZl());
+        for (ZlVector vector : vectors) {
+            MathPreconditions.checkPositive("vector.num", vector.getNum());
+            mergeVector.merge(vector);
+        }
+        return mergeVector;
+    }
+
     /**
-     * elements
+     * splits the vector.
+     *
+     * @param mergeVector the merged vector.
+     * @param nums        nums for each of the split vector.
+     * @return the split vectors.
      */
-    private BigInteger[] elements;
-    /**
-     * parallel operation.
-     */
-    private boolean parallel;
+    public static ZlVector[] split(ZlVector mergeVector, int[] nums) {
+        ZlVector[] vectors = new ZlVector[nums.length];
+        for (int index = 0; index < nums.length; index++) {
+            vectors[index] = mergeVector.split(nums[index]);
+        }
+        MathPreconditions.checkEqual("final mergeVector.num", "0", mergeVector.getNum(), 0);
+        return vectors;
+    }
 
     /**
      * Creates a vector.
@@ -68,7 +87,7 @@ public class ZlVector implements RingVector {
     /**
      * Creates an all-one vector.
      *
-     * @param zl Zl instance.
+     * @param zl  Zl instance.
      * @param num the num.
      * @return a vector.
      */
@@ -84,7 +103,7 @@ public class ZlVector implements RingVector {
     /**
      * Creates an all-zero vector.
      *
-     * @param zl Zl instance.
+     * @param zl  Zl instance.
      * @param num the num.
      * @return a vector.
      */
@@ -109,6 +128,19 @@ public class ZlVector implements RingVector {
 
         return vector;
     }
+
+    /**
+     * Zl instance
+     */
+    private final Zl zl;
+    /**
+     * elements
+     */
+    private BigInteger[] elements;
+    /**
+     * parallel operation.
+     */
+    private boolean parallel;
 
     private ZlVector(Zl zl) {
         this.zl = zl;
@@ -321,7 +353,7 @@ public class ZlVector implements RingVector {
 
     @Override
     public String toString() {
-        String[] stringData = Arrays.stream(Arrays.copyOf(elements, MatrixUtils.DISPLAY_NUM))
+        String[] stringData = Arrays.stream(Arrays.copyOf(elements, Math.min(elements.length, MatrixUtils.DISPLAY_NUM)))
             .map(BigInteger::toString)
             .toArray(String[]::new);
         return this.getClass().getSimpleName() + " (l = " + zl.getL() + "): " + Arrays.toString(stringData);

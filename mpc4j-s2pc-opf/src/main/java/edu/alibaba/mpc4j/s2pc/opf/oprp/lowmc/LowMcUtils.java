@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.opf.oprp.lowmc;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.LongSquareDenseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.LongDenseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.JdkLongsLowMcPrp;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import org.bouncycastle.util.encoders.Hex;
@@ -13,104 +13,116 @@ import java.io.InputStreamReader;
 import java.util.Objects;
 
 /**
- * LOWMC协议工具类。
+ * LowMc utilities.
  *
  * @author Weiran Liu
  * @date 2022/02/11
  */
 class LowMcUtils {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private LowMcUtils() {
         // empty
     }
 
     /**
-     * LowMC配置文件存储路径
+     * LowMC config fire path
      */
     static final String LOW_MC_FILE = "low_mc/lowmc_128_128_20.txt";
     /**
-     * 线性变换矩阵前缀
+     * prefix string of linear transform matrix
      */
     static final String LINEAR_MATRIX_PREFIX = "L_";
     /**
-     * 密钥扩展矩阵前缀
+     * prefix string of key extension matrix
      */
     static final String KEY_MATRIX_PREFIX = "K_";
     /**
-     * 常数矩阵
+     * prefix string of constant
      */
     static final String CONSTANT_PREFIX = "C_";
     /**
-     * 10个sbox
+     * size = 128
+     */
+    private static final int SIZE = CommonConstants.BLOCK_BIT_LENGTH;
+    /**
+     * byte size = 16
+     */
+    private static final int BYTE_SIZE = CommonConstants.BLOCK_BYTE_LENGTH;
+    /**
+     * long size = 2
+     */
+    private static final int LONG_SIZE = CommonConstants.BLOCK_LONG_LENGTH;
+    /**
+     * number of sboxes
      */
     static final int SBOX_NUM = 10;
     /**
-     * 总轮数
+     * number of rounds
      */
     static final int ROUND = 20;
     /**
-     * 轮密钥矩阵，一共有r + 1组，每组128个128比特的布尔元素
+     * r + 1 key extension matrices, each contains 128 × 128 bits.
      */
-    static final LongSquareDenseBitMatrix[] KEY_MATRICES;
+    static final LongDenseBitMatrix[] KEY_MATRICES;
     /**
-     * 轮线性矩阵，一共有r组，每组为128个128比特的布尔元素
+     * r linear transform matrices, each contains 128 × 128 bits.
      */
-    static final LongSquareDenseBitMatrix[] LINEAR_MATRICES;
+    static final LongDenseBitMatrix[] LINEAR_MATRICES;
     /**
-     * 轮常数加值，一共有r个，每组为128比特的布尔元素
+     * r constants, each contains 128 bits
      */
     static final long[][] CONSTANTS;
 
     static {
-        // 打开lowMc配置文件
+        // open LowMc config file
         try {
             InputStream lowMcInputStream = Objects.requireNonNull(
                 JdkLongsLowMcPrp.class.getClassLoader().getResourceAsStream(LOW_MC_FILE)
             );
             InputStreamReader lowMcInputStreamReader = new InputStreamReader(lowMcInputStream);
             BufferedReader lowMcBufferedReader = new BufferedReader(lowMcInputStreamReader);
-            // 读取线性变换矩阵，共有r组
-            LINEAR_MATRICES = new LongSquareDenseBitMatrix[ROUND];
+            // read r linear transform matrices
+            LINEAR_MATRICES = new LongDenseBitMatrix[ROUND];
             for (int roundIndex = 0; roundIndex < ROUND; roundIndex++) {
-                // 第一行是标识位
+                // the first line is a flag
                 String label = lowMcBufferedReader.readLine();
                 assert label.equals(LINEAR_MATRIX_PREFIX + roundIndex);
-                // 后面跟着BLOCK_BIT_LENGTH行数据
-                byte[][] squareMatrix = new byte[CommonConstants.BLOCK_BIT_LENGTH][];
-                for (int bitIndex = 0; bitIndex < CommonConstants.BLOCK_BIT_LENGTH; bitIndex++) {
+                // the following 128 lines are 128-bit data
+                byte[][] squareMatrix = new byte[SIZE][];
+                for (int bitIndex = 0; bitIndex < SIZE; bitIndex++) {
                     String line = lowMcBufferedReader.readLine();
                     squareMatrix[bitIndex] = Hex.decode(line);
-                    assert squareMatrix[bitIndex].length == CommonConstants.BLOCK_BYTE_LENGTH;
+                    assert squareMatrix[bitIndex].length == BYTE_SIZE;
                 }
-                LINEAR_MATRICES[roundIndex] = LongSquareDenseBitMatrix.fromDense(squareMatrix);
+                LINEAR_MATRICES[roundIndex] = LongDenseBitMatrix.createFromDense(SIZE, squareMatrix);
             }
-            // 读取密钥扩展矩阵，共有r + 1组
-            KEY_MATRICES = new LongSquareDenseBitMatrix[ROUND + 1];
+            // read r + 1 key extension matrices
+            KEY_MATRICES = new LongDenseBitMatrix[ROUND + 1];
             for (int roundIndex = 0; roundIndex < ROUND + 1; roundIndex++) {
-                // 第一行是标识位
+                // the first line is a flag
                 String label = lowMcBufferedReader.readLine();
                 assert label.equals(KEY_MATRIX_PREFIX + (roundIndex));
-                // 后面跟着BLOCK_BIT_LENGTH行数据
-                byte[][] squareMatrix = new byte[CommonConstants.BLOCK_BIT_LENGTH][];
-                for (int bitIndex = 0; bitIndex < CommonConstants.BLOCK_BIT_LENGTH; bitIndex++) {
+                // the following 128 lines are 128-bit data
+                byte[][] squareMatrix = new byte[SIZE][];
+                for (int bitIndex = 0; bitIndex < SIZE; bitIndex++) {
                     String line = lowMcBufferedReader.readLine();
                     squareMatrix[bitIndex] = Hex.decode(line);
-                    assert squareMatrix[bitIndex].length == CommonConstants.BLOCK_BYTE_LENGTH;
+                    assert squareMatrix[bitIndex].length == BYTE_SIZE;
                 }
-                KEY_MATRICES[roundIndex] = LongSquareDenseBitMatrix.fromDense(squareMatrix);
+                KEY_MATRICES[roundIndex] = LongDenseBitMatrix.createFromDense(SIZE, squareMatrix);
             }
-            // 读取常数，共有r组
+            // read r constants
             CONSTANTS = new long[ROUND][];
             for (int roundIndex = 0; roundIndex < ROUND; roundIndex++) {
-                // 第一行是标识位
+                // the first line is a flag
                 String label = lowMcBufferedReader.readLine();
                 assert label.equals(CONSTANT_PREFIX + roundIndex);
-                // 第二行是常数
+                // the following line is 128-bit data
                 String line = lowMcBufferedReader.readLine();
                 CONSTANTS[roundIndex] = LongUtils.byteArrayToLongArray(Hex.decode(line));
-                assert CONSTANTS[roundIndex].length == CommonConstants.BLOCK_LONG_LENGTH;
+                assert CONSTANTS[roundIndex].length == LONG_SIZE;
             }
             lowMcBufferedReader.close();
             lowMcInputStreamReader.close();

@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 /**
  * BytesRing interface. Elements in BytesRing are represented as byte array.
@@ -211,4 +212,17 @@ public interface BytesRing {
      * @return true if the element p is a valid element in range [0, 2^l).
      */
     boolean validateRangeElement(byte[] p);
+
+    /**
+     * Returns whether the two elements are equal.
+     *
+     * @param p p.
+     * @param q q.
+     * @return true if p == q, false otherwise.
+     */
+    default boolean isEqual(byte[] p, byte[] q) {
+        validateElement(p);
+        validateElement(q);
+        return Arrays.equals(p, q);
+    }
 }

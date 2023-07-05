@@ -2,9 +2,8 @@ package edu.alibaba.mpc4j.s2pc.upso.ucpsi;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 
-import java.nio.ByteBuffer;
 import java.util.Set;
 
 /**
@@ -13,7 +12,7 @@ import java.util.Set;
  * @author Liqiang Peng
  * @date 2023/4/17
  */
-public interface UcpsiServer extends TwoPartyPto {
+public interface UcpsiServer<T> extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
@@ -21,7 +20,7 @@ public interface UcpsiServer extends TwoPartyPto {
      * @param maxClientElementSize max client element size.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(Set<ByteBuffer> serverElementSet, int maxClientElementSize) throws MpcAbortException;
+    void init(Set<T> serverElementSet, int maxClientElementSize) throws MpcAbortException;
 
     /**
      * Executes the protocol.

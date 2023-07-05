@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.opf.oprf.fipr05;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfConfig;
@@ -13,13 +13,14 @@ import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
  * @author Weiran Liu
  * @date 2023/4/13
  */
-public class Fipr05MpOprfConfig implements MpOprfConfig {
+public class Fipr05MpOprfConfig extends AbstractMultiPartyPtoConfig implements MpOprfConfig {
     /**
      * single-query OPRF config
      */
     private final SqOprfConfig sqOprfConfig;
 
     private Fipr05MpOprfConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST, builder.sqOprfConfig);
         sqOprfConfig = builder.sqOprfConfig;
     }
 
@@ -30,25 +31,6 @@ public class Fipr05MpOprfConfig implements MpOprfConfig {
     @Override
     public OprfFactory.OprfType getPtoType() {
         return OprfFactory.OprfType.FIPR05;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        sqOprfConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return sqOprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (sqOprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = sqOprfConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Fipr05MpOprfConfig> {

@@ -249,7 +249,6 @@ void plain_decomposition(Plaintext &pt, const SEALContext &context, uint32_t dec
     uint32_t total_bits = plain_modulus.bit_count();
     uint64_t *raw_ptr = pt.data();
     for (uint32_t p = 0; p < r_l; p++) {
-        vector<uint64_t *> results;
         res = (std::uint64_t *) calloc((coeff_count * coeff_modulus_size), sizeof(uint64_t));
         uint32_t shift_amount = (total_bits) - ((p + 1) * base_bit);
         for (uint32_t k = 0; k < coeff_count; k++) {
@@ -310,8 +309,8 @@ Ciphertext get_sum(vector<Ciphertext> &query, Evaluator& evaluator, GaloisKeys &
         uint32_t count = (end - start) + 1;
         uint32_t next_power_of_two = get_next_power_of_two(count);
         int32_t mid = (int32_t) next_power_of_two / 2;
-        seal::Ciphertext left_sum = get_sum(query, evaluator, gal_keys, encoded_db, start, start + mid - 1);
-        seal::Ciphertext right_sum = get_sum(query, evaluator, gal_keys, encoded_db, start + mid, end);
+        Ciphertext left_sum = get_sum(query, evaluator, gal_keys, encoded_db, start, start + mid - 1);
+        Ciphertext right_sum = get_sum(query, evaluator, gal_keys, encoded_db, start + mid, end);
         evaluator.rotate_rows_inplace(right_sum, -mid, gal_keys);
         evaluator.add_inplace(left_sum, right_sum);
         return left_sum;
@@ -321,8 +320,10 @@ Ciphertext get_sum(vector<Ciphertext> &query, Evaluator& evaluator, GaloisKeys &
         uint32_t query_size = query.size();
         evaluator.multiply_plain(query[0], encoded_db[query_size * start], column_sum);
         for (uint32_t j = 1; j < query_size; j++) {
-            evaluator.multiply_plain(query[j], encoded_db[query_size * start + j], temp_ct);
-            evaluator.add_inplace(column_sum, temp_ct);
+            if (!encoded_db[query_size * start + j].is_zero()) {
+                evaluator.multiply_plain(query[j], encoded_db[query_size * start + j], temp_ct);
+                evaluator.add_inplace(column_sum, temp_ct);
+            }
         }
         evaluator.transform_from_ntt_inplace(column_sum);
         return column_sum;
@@ -346,12 +347,246 @@ uint32_t get_next_power_of_two(uint32_t number) {
     return (1 << number_of_bits);
 }
 
-vector<uint64_t> rotate_plain(vector<uint64_t> original, int32_t index) {
-    int32_t row_count = (int32_t) original.size() / 2;
-    std::vector<uint64_t> result(original.size(), 0ULL);
-    for (int32_t i = 0; i < row_count; i++)
-    {
-        result[i] = original[(row_count - index + i) % row_count];
+vector<Ciphertext> new_expand_query(const EncryptionParameters& parms, const std::vector<Ciphertext>& cts, uint32_t total_items,
+                                    const GaloisKeys& galois_keys) {
+    uint32_t poly_modulus_degree = parms.poly_modulus_degree();
+    uint32_t expect_cts_size = (total_items % parms.poly_modulus_degree() == 0)
+            ? total_items / parms.poly_modulus_degree() : total_items / parms.poly_modulus_degree() + 1;
+    if (cts.size() != expect_cts_size) {
+        throw logic_error("Number of ciphertexts doesn't match number of items for oblivious expansion.");
     }
-    return result;
+    // Consider a more specific example, indices[0] = 1, indices[1] = 0, the corresponding PT is: c_4x^4 + c_1x^1.
+    // The expanded result is: [E(0) E(1) E(0) E(0) , E(1) E(0) E(0) E(0)]
+    std::vector<Ciphertext> results;
+    results.reserve(total_items);
+    for (const auto& ct : cts) {
+        vector<Ciphertext> temp = new_single_expand_query(parms, ct, std::min(poly_modulus_degree, total_items), galois_keys);
+        results.insert(results.end(), std::make_move_iterator(temp.begin()),std::make_move_iterator(temp.end()));
+        // Except for the last ciphertext, each previous ciphertext is expanded to a vector of length N
+        total_items -= poly_modulus_degree;
+    }
+    return results;
+}
+
+vector<Ciphertext> new_single_expand_query(const EncryptionParameters& parms, const Ciphertext& ct, const uint32_t num_items,
+                                           const GaloisKeys& galois_keys) {
+    SEALContext context(parms);
+    Evaluator evaluator(context);
+    const uint32_t poly_modulus_degree = parms.poly_modulus_degree();
+    // single ct is expanded to a vector of length N at most
+    if (num_items > poly_modulus_degree) {
+        throw logic_error("Cannot expand more items from a CT than poly modulus degree.");
+    }
+    size_t logm = ceil(log2(num_items));
+    // if num_items is just power of 2, return itself.
+    std::vector<seal::Ciphertext> results(get_next_power_of_two(num_items));
+    results[0] = ct;
+    for (size_t j = 0; j < logm; ++j) {
+        const size_t two_power_j = (1 << j);
+        for (size_t k = 0; k < two_power_j; ++k) {
+            auto c0 = results[k];
+            evaluator.apply_galois_inplace(c0, (poly_modulus_degree >> j) + 1, galois_keys);
+            uint32_t index1 =  ((poly_modulus_degree << 1) - two_power_j) % (poly_modulus_degree << 1);
+            // This essentially produces what the paper calls c1
+            multiply_power_of_X(results[k], results[k + two_power_j], index1, context);
+            // Do the multiply by power of x after substitution operator to avoid
+            // having to do the substitution operator a second time, since it's about
+            // 20x slower. Except that now instead of multiplying by x^(-2^j) we have
+            // to do the substitution first ourselves, producing
+            // (x^(N/2^j + 1))^(-2^j) = 1/x^(2^j * (N/2^j + 1)) = 1/x^(N + 2^j)
+            seal::Ciphertext c1;
+            uint32_t index2 =  ((poly_modulus_degree << 1) - (poly_modulus_degree + two_power_j)) % (poly_modulus_degree << 1);
+            multiply_power_of_X(c0, c1, index2, context);
+            evaluator.add_inplace(results[k], c0);
+            evaluator.add_inplace(results[k + two_power_j], c1);
+        }
+    }
+    results.resize(num_items);
+    return results;
+}
+
+vector<Ciphertext> multiply_mulpir(const EncryptionParameters& parms, const RelinKeys* const relin_keys, const vector<Plaintext>& database,
+                                   uint32_t database_it, vector<Ciphertext>& selection_vector, uint32_t selection_vector_it,
+                                   vector<int32_t>& dimensions, uint32_t depth) {
+    SEALContext context(parms);
+    Evaluator evaluator(context);
+    const size_t this_dimension = dimensions[0];
+    vector<int32_t> remaining_dimensions = vector<int32_t>(dimensions.begin() + 1, dimensions.end());
+    vector<Ciphertext> result;
+    bool first_pass = true;
+    for (size_t i = 0; i < this_dimension; ++i) {
+        // make sure we don't go past end of DB
+        if (database_it == database.size()) break;
+        vector<Ciphertext> temp_ct;
+        // When recursing to the last dimension, execute ct*pt, and then accumulate
+        if (remaining_dimensions.empty()) {
+            // base case: have to multiply against DB
+            temp_ct.resize(1);
+            evaluator.multiply_plain(selection_vector[selection_vector_it + i],database[database_it++], temp_ct[0]);
+        } else {
+            // enter recursion
+            vector<Ciphertext> lower_result =
+                multiply_mulpir(parms, relin_keys, database, database_it, selection_vector, selection_vector_it + this_dimension, remaining_dimensions, depth + 1);
+            uint32_t ramain_dim_prod = std::accumulate(remaining_dimensions.begin(), remaining_dimensions.end(), 1, multiplies<uint32_t>());
+            database_it += ramain_dim_prod;
+            temp_ct.resize(1);
+            // when ciphertext * ciphertext , can not be NTT form
+            // lower_result[0] has been handled, here we handle the selection_vector
+            if (selection_vector[selection_vector_it + i].is_ntt_form()) {
+                evaluator.transform_from_ntt_inplace(selection_vector[selection_vector_it + i]);
+            }
+            evaluator.multiply(lower_result[0], selection_vector[selection_vector_it + i], temp_ct[0]);
+            evaluator.relinearize_inplace(temp_ct[0], *relin_keys);
+        }
+        // this is the start point for ct + ct
+        if (first_pass) {
+            result = temp_ct;
+            first_pass = false;
+        } else {
+            for (size_t j = 0; j < result.size(); ++j) {
+                evaluator.add_inplace(result[j], temp_ct[j]);
+            }
+        } // next for loop
+    }
+    // ensure when ciphertext * ciphertext, the ct is not the NTT form
+    for (auto& ct : result) {
+        if (ct.is_ntt_form()) {
+            evaluator.transform_from_ntt_inplace(ct);
+        }
+    }
+    return result;                  
+}
+
+vector<Ciphertext> mk22_expand_input_ciphers(const EncryptionParameters& parms, const GaloisKeys& galois_keys,
+                                             vector<Ciphertext>& input_ciphers, uint64_t num_input_ciphers, uint64_t num_bits) {
+    vector<Ciphertext> answer;
+    vector<Ciphertext> temp_expanded;
+    // m
+    uint64_t remaining_bits = num_bits;
+    // Corresponding paper Algorithm 5, line-3
+    for (uint32_t i = 0; i < num_input_ciphers; i++){
+        temp_expanded.clear();
+        // A single ciphertext expands to 2^c ciphertexts
+        temp_expanded = mk22_expand_procedure(parms, galois_keys, input_ciphers[i], min<uint64_t>(remaining_bits, parms.poly_modulus_degree()));
+        for (const auto & j : temp_expanded)
+            answer.push_back(j);
+        remaining_bits -= temp_expanded.size();
+    }
+    return answer;
+}
+
+// convert single Ciphertext to 2^c Ciphertext 
+vector<Ciphertext> mk22_expand_procedure(const EncryptionParameters& parms, const GaloisKeys& galois_keys, const Ciphertext &input_cipher, uint64_t used_slots) {
+    SEALContext context(parms);
+    Evaluator evaluator(context);
+    vector<Ciphertext> ciphers(used_slots);
+    // Corresponding to the paper Algorithm 5, the part after line-4, not including for j \in [h]  
+    uint64_t expansion_level = (int)ceil(log2(used_slots));
+    ciphers[0] = input_cipher; // line-4
+    for (uint64_t a = 0; a < expansion_level; a++) { // line-5
+        for (uint64_t b = 0; b < (1<<a); b++) { // line-6
+            auto temp_0=ciphers[b];
+            auto temp_2=ciphers[b];
+            evaluator.apply_galois_inplace(temp_0, (parms.poly_modulus_degree() >> a) + 1, galois_keys);
+            evaluator.add_inplace(ciphers[b], temp_0);
+            if (b + (1 << a) < used_slots) {
+                Ciphertext temp_1;
+                // multiply_power_of_X almost equals multiply_inverse_power_of_X in constant-weight PIR opensource
+                uint32_t index = ((parms.poly_modulus_degree() << 1) - (1 << a)) % (parms.poly_modulus_degree() << 1);
+                multiply_power_of_X(temp_2, ciphers[b + (1 << a) ], index, context);
+                multiply_power_of_X(temp_0, temp_1, index, context);
+                evaluator.sub_inplace(ciphers[b + (1<<a)], temp_1);
+            }
+        }
+    }
+    return ciphers;
+}
+
+void mk22_generate_selection_vector(Evaluator& evaluator, const RelinKeys* relin_keys, uint32_t codeword_bit_length,
+                                    uint32_t hamming_weight, uint32_t eq_type, vector<Ciphertext>& expanded_query,
+                                    vector<vector<uint32_t>>& pt_index_codewords, vector<Ciphertext>& selection_vector) {
+    for (uint32_t ch = 0; ch < pt_index_codewords.size(); ch++) {
+        selection_vector[ch] = mk22_generate_selection_bit(evaluator, relin_keys, codeword_bit_length, hamming_weight,
+                                                           eq_type,expanded_query,pt_index_codewords[ch]);
+    }
+}
+
+Ciphertext mk22_faster_inner_product(Evaluator& evaluator, vector<Ciphertext>& selection_vector, vector<Plaintext>& database){
+    if(selection_vector.size() !=  database.size()) {
+        throw logic_error("the size of selection vector should be equal the size of the database.");
+    }
+    for (auto & i : selection_vector){
+        if(!i.is_ntt_form()) {
+            evaluator.transform_to_ntt_inplace(i);
+        }
+    }
+    vector<Ciphertext> sub_ciphers;
+    Ciphertext operand;
+    for (uint32_t ch = 0; ch < database.size(); ch++){
+        evaluator.multiply_plain(selection_vector[ch], database[ch], operand);
+        sub_ciphers.push_back(operand);
+    }
+    Ciphertext encrypted_answer;
+    evaluator.add_many(sub_ciphers, encrypted_answer);
+    return encrypted_answer;
+}
+
+Ciphertext mk22_generate_selection_bit(Evaluator& evaluator, const RelinKeys* relin_keys, uint32_t codeword_bit_length,
+                                       uint32_t hamming_weight, uint32_t eq_type, vector<Ciphertext>& encrypted_query,
+                                       vector<uint32_t>& single_pt_index_codeword) {
+    if (single_pt_index_codeword.size() != encrypted_query.size()) {
+        throw logic_error(" codewords bit length should equal between plain codewords and cipher codewords vector");
+    }
+    Ciphertext temp_ciphertext;
+    if (eq_type == 0) {
+        // eq_type = 0 -->  folklore_eq
+        temp_ciphertext = mk22_folklore_eq(evaluator,relin_keys, codeword_bit_length,  encrypted_query, single_pt_index_codeword);
+    } else if (eq_type == 1) {
+        // eq_type = 1 --> constant_weight_eq
+        temp_ciphertext = mk22_constant_weight_eq(evaluator, relin_keys, codeword_bit_length, hamming_weight, encrypted_query, single_pt_index_codeword);
+    }else {
+        throw logic_error("eq_type must be 0 or 1.");
+    }
+    return temp_ciphertext;
+}
+
+Ciphertext mk22_folklore_eq(Evaluator& evaluator, const RelinKeys* relin_keys, uint32_t codeword_bit_length,
+                            vector<Ciphertext>& encrypted_query, vector<uint32_t>& single_pt_index_codeword) {
+    Ciphertext temp_ciphertext;
+    vector<Ciphertext> mult_operands;
+    for (uint32_t i = 0; i < codeword_bit_length; i++){
+        if (single_pt_index_codeword[i] == 1) {
+            mult_operands.push_back(encrypted_query[i]);
+        } else {
+            Ciphertext operand;
+            evaluator.sub_plain(encrypted_query[i], Plaintext("1"), operand);
+            evaluator.negate_inplace(operand);
+            mult_operands.push_back(operand);
+        }
+    }
+    evaluator.multiply_many(mult_operands, *relin_keys, temp_ciphertext);
+    return temp_ciphertext;
+}
+
+Ciphertext mk22_constant_weight_eq(Evaluator& evaluator, const RelinKeys* relin_keys, uint32_t codeword_bit_length,
+                                   uint32_t hamming_weight, vector<Ciphertext>& encrypted_query,
+                                   vector<uint32_t>& single_pt_index_codeword){
+    Ciphertext temp_ciphertext;
+    if (hamming_weight > 1) { // k > 1
+        vector<Ciphertext> mult_operands;
+        // m-bit
+        for (uint32_t i = 0; i < codeword_bit_length; i++){
+            if (single_pt_index_codeword[i] == 1) {
+                mult_operands.push_back(encrypted_query[i]);
+            }
+        }
+        evaluator.multiply_many(mult_operands, *relin_keys, temp_ciphertext);
+    } else {
+        for (uint32_t i = 0; i < codeword_bit_length; i++){
+            if (single_pt_index_codeword[i] == 1){
+                temp_ciphertext = encrypted_query[i];
+            }
+        }
+    }
+    return temp_ciphertext;
 }

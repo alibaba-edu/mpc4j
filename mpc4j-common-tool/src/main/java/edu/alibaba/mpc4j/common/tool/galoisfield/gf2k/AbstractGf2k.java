@@ -11,7 +11,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import java.security.SecureRandom;
 
 /**
- * Abstract GF(2^k) interface.
+ * Abstract GF(2^κ) interface.
  *
  * @author Weiran Liu
  * @date 2023/2/17
@@ -24,7 +24,7 @@ abstract class AbstractGf2k implements Gf2k {
     /**
      * l = λ (in byte length)
      */
-    private static final int BYTE_L = CommonConstants.BLOCK_BYTE_LENGTH;
+    protected static final int BYTE_L = CommonConstants.BLOCK_BYTE_LENGTH;
     /**
      * the zero element
      */
@@ -167,13 +167,13 @@ abstract class AbstractGf2k implements Gf2k {
 
     @Override
     public boolean isZero(byte[] p) {
-        validateElement(p);
+        assert validateElement(p);
         return BytesUtils.equals(p, zero);
     }
 
     @Override
     public boolean isOne(byte[] p) {
-        validateElement(p);
+        assert validateElement(p);
         return BytesUtils.equals(p, one);
     }
 

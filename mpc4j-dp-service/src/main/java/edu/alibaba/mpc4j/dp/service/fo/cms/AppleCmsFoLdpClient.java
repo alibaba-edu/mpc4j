@@ -2,7 +2,6 @@ package edu.alibaba.mpc4j.dp.service.fo.cms;
 
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
-import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory.BitVectorType;
 import edu.alibaba.mpc4j.common.tool.hash.IntHash;
 import edu.alibaba.mpc4j.common.tool.hash.IntHashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
@@ -78,7 +77,7 @@ public class AppleCmsFoLdpClient extends AbstractFoLdpClient {
         // sets the encoding vector \vec v {-1, 1}^m to be 1 in position h_j(d) and -1 everywhere else.
         int hj = Math.abs(intHash.hash(itemIndexBytes, hashSeeds[j]) % m);
         // for reducing the communication cost, we use a BitVector to represent \vec v, false for -1 and true for 1.
-        BitVector bitVector = BitVectorFactory.createZeros(BitVectorType.BYTES_BIT_VECTOR, m);
+        BitVector bitVector = BitVectorFactory.createZeros(m);
         for (int i = 0; i < m; i++) {
             double u = random.nextDouble();
             if (i != hj) {

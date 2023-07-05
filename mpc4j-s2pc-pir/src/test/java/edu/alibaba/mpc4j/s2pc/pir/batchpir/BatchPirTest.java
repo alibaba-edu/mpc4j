@@ -1,18 +1,18 @@
 package edu.alibaba.mpc4j.s2pc.pir.batchpir;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
-import edu.alibaba.mpc4j.s2pc.pir.batchindex.BatchIndexPirClient;
-import edu.alibaba.mpc4j.s2pc.pir.batchindex.BatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.batchindex.BatchIndexPirFactory;
-import edu.alibaba.mpc4j.s2pc.pir.batchindex.BatchIndexPirServer;
-import edu.alibaba.mpc4j.s2pc.pir.batchindex.psipir.Lpzg24BatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.batchindex.vectorizedpir.Mr23BatchIndexPirConfig;
-import org.apache.commons.lang3.StringUtils;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.naive.NaiveBatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.psipir.Lpzl24BatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.single.fastpir.Ayaa21SingleIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.single.onionpir.Mcr21SingleIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.single.xpir.Mbfk16SingleIndexPirConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,41 +22,41 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 /**
- * 批量索引PIR测试类。
+ * batch PIR test.
  *
  * @author Liqiang Peng
  * @date 2023/3/9
  */
 @RunWith(Parameterized.class)
-public class BatchPirTest {
+public class BatchPirTest extends AbstractTwoPartyPtoTest {
     /**
-     * 默认比特长度
+     * default bit length
      */
-    private static final int DEFAULT_BIT_LENGTH = 16;
+    private static final int DEFAULT_BIT_LENGTH = 20;
     /**
-     * 较小比特长度
+     * small bit length
      */
     private static final int SMALL_BIT_LENGTH = 1;
     /**
-     * 较大比特长度
+     * large bit length
      */
     private static final int LARGE_BIT_LENGTH = 32;
     /**
-     * 较小服务端元素数量
+     * small server element size
      */
-    private static final int SMALL_SERVER_ELEMENT_SIZE = 1 << 14;
+    private static final int SMALL_SERVER_ELEMENT_SIZE = 1 << 12;
     /**
-     * 默认服务端元素数量
+     * default server element size
      */
-    private static final int DEFAULT_SERVER_ELEMENT_SIZE = 1 << 16;
+    private static final int DEFAULT_SERVER_ELEMENT_SIZE = 1 << 18;
     /**
-     * 默认检索数目
+     * default retrieval size
      */
-    private static final int DEFAULT_RETRIEVAL_SIZE = 1 << 11;
+    private static final int DEFAULT_RETRIEVAL_SIZE = 1 << 8;
     /**
-     * 特殊检索数目
+     * special retrieval size
      */
-    private static final int SPECIAL_RETRIEVAL_SIZE = 1 << 8 + 1;
+    private static final int SPECIAL_RETRIEVAL_SIZE = (1 << 5) + 1;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -65,42 +65,52 @@ public class BatchPirTest {
         // PSI-PIR
         configurations.add(new Object[]{
             BatchIndexPirFactory.BatchIndexPirType.PSI_PIR.name(),
-            new Lpzg24BatchIndexPirConfig.Builder().build()
+            new Lpzl24BatchIndexPirConfig.Builder().build()
         });
         // vectorized batch PIR
         configurations.add(new Object[]{
             BatchIndexPirFactory.BatchIndexPirType.VECTORIZED_BATCH_PIR.name(),
             new Mr23BatchIndexPirConfig.Builder().build()
         });
+        // naive batch PIR
+        configurations.add(new Object[]{
+            BatchIndexPirFactory.BatchIndexPirType.NAIVE_BATCH_PIR.name() + " - SEAL PIR",
+            new NaiveBatchIndexPirConfig.Builder().build()
+        });
+        configurations.add(new Object[]{
+            BatchIndexPirFactory.BatchIndexPirType.NAIVE_BATCH_PIR.name() + " - XPIR",
+            new NaiveBatchIndexPirConfig.Builder()
+                .setSingleIndexPirConfig(new Mbfk16SingleIndexPirConfig.Builder().build())
+                .build()
+        });
+        configurations.add(new Object[]{
+            BatchIndexPirFactory.BatchIndexPirType.NAIVE_BATCH_PIR.name() + " - Onion PIR",
+            new NaiveBatchIndexPirConfig.Builder()
+                .setSingleIndexPirConfig(new Mcr21SingleIndexPirConfig.Builder().build())
+                .build()
+        });
+        configurations.add(new Object[]{
+            BatchIndexPirFactory.BatchIndexPirType.NAIVE_BATCH_PIR.name() + " - Fast PIR",
+            new NaiveBatchIndexPirConfig.Builder()
+                .setSingleIndexPirConfig(new Ayaa21SingleIndexPirConfig.Builder().build())
+                .build()
+        });
         return configurations;
     }
 
     /**
-     * 服务端
-     */
-    private final Rpc serverRpc;
-    /**
-     * 客户端
-     */
-    private final Rpc clientRpc;
-    /**
-     * 批量索引PIR配置项
+     * batch PIR config
      */
     private final BatchIndexPirConfig config;
 
     public BatchPirTest(String name, BatchIndexPirConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        serverRpc = rpcManager.getRpc(0);
-        clientRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
     }
 
     @Test
     public void testSmallBitLength() {
-        testPto(DEFAULT_SERVER_ELEMENT_SIZE, DEFAULT_RETRIEVAL_SIZE, SMALL_BIT_LENGTH, false);
+        testPto(DEFAULT_SERVER_ELEMENT_SIZE, DEFAULT_RETRIEVAL_SIZE, SMALL_BIT_LENGTH, true);
     }
 
     @Test
@@ -120,46 +130,46 @@ public class BatchPirTest {
 
     @Test
     public void test2Retrieval() {
-        testPto(DEFAULT_SERVER_ELEMENT_SIZE, 2, DEFAULT_BIT_LENGTH, false);
+        testPto(DEFAULT_SERVER_ELEMENT_SIZE, 2, DEFAULT_BIT_LENGTH, true);
     }
 
     @Test
     public void test1Retrieval() {
-        testPto(DEFAULT_SERVER_ELEMENT_SIZE, 1, DEFAULT_BIT_LENGTH, false);
+        testPto(DEFAULT_SERVER_ELEMENT_SIZE, 1, DEFAULT_BIT_LENGTH, true);
     }
 
     @Test
     public void testSmallElementSize() {
-        testPto(SMALL_SERVER_ELEMENT_SIZE, DEFAULT_RETRIEVAL_SIZE, DEFAULT_BIT_LENGTH, false);
+        testPto(SMALL_SERVER_ELEMENT_SIZE, DEFAULT_RETRIEVAL_SIZE, DEFAULT_BIT_LENGTH, true);
     }
 
     @Test
     public void testSpecialElementSize() {
-        testPto(DEFAULT_SERVER_ELEMENT_SIZE + 1, DEFAULT_RETRIEVAL_SIZE, DEFAULT_BIT_LENGTH, false);
+        testPto(DEFAULT_SERVER_ELEMENT_SIZE + 1, DEFAULT_RETRIEVAL_SIZE, DEFAULT_BIT_LENGTH, true);
     }
 
     @Test
     public void testSpecialRetrievalSize() {
-        testPto(DEFAULT_SERVER_ELEMENT_SIZE, SPECIAL_RETRIEVAL_SIZE, DEFAULT_BIT_LENGTH, false);
+        testPto(DEFAULT_SERVER_ELEMENT_SIZE, SPECIAL_RETRIEVAL_SIZE, DEFAULT_BIT_LENGTH, true);
     }
 
     @Test
     public void testSmallElementSize1Retrieval() {
-        testPto(SMALL_SERVER_ELEMENT_SIZE, 1, DEFAULT_BIT_LENGTH, false);
+        testPto(SMALL_SERVER_ELEMENT_SIZE, 1, DEFAULT_BIT_LENGTH, true);
     }
 
     @Test
     public void testSmallElementSize2Retrieval() {
-        testPto(SMALL_SERVER_ELEMENT_SIZE, 2, DEFAULT_BIT_LENGTH, false);
+        testPto(SMALL_SERVER_ELEMENT_SIZE, 2, DEFAULT_BIT_LENGTH, true);
     }
 
     public void testPto(int serverElementSize, int retrievalIndexSize, int elementBitLength, boolean parallel) {
         Set<Integer> retrievalIndexSet = PirUtils.generateRetrievalIndexSet(serverElementSize, retrievalIndexSize);
         NaiveDatabase database = PirUtils.generateDataBase(serverElementSize, elementBitLength);
-        // 创建参与方实例
-        BatchIndexPirServer server = BatchIndexPirFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        BatchIndexPirClient client = BatchIndexPirFactory.createClient(clientRpc, serverRpc.ownParty(), config);
-        // 设置并发
+        // create instance
+        BatchIndexPirServer server = BatchIndexPirFactory.createServer(firstRpc, secondRpc.ownParty(), config);
+        BatchIndexPirClient client = BatchIndexPirFactory.createClient(secondRpc, firstRpc.ownParty(), config);
+        // set parallel
         server.setParallel(parallel);
         client.setParallel(parallel);
         BatchPirServerThread serverThread = new BatchPirServerThread(server, database, retrievalIndexSize);
@@ -168,24 +178,21 @@ public class BatchPirTest {
             client, retrievalIndexList, elementBitLength, serverElementSize, retrievalIndexSize
         );
         try {
-            // 开始执行协议
             serverThread.start();
             clientThread.start();
-            // 等待线程停止
             serverThread.join();
             clientThread.join();
-            // 验证结果
+            // verify
             Map<Integer, byte[]> result = clientThread.getRetrievalResult();
             Assert.assertEquals(retrievalIndexSize, result.size());
             result.forEach((key, value) ->
                 Assert.assertEquals(ByteBuffer.wrap(database.getBytesData(key)), ByteBuffer.wrap(value))
             );
+            // destroy
+            new Thread(server::destroy).start();
+            new Thread(client::destroy).start();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        server.destroy();
-        client.destroy();
     }
 }
-
-

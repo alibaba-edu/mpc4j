@@ -1,10 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu.zcl22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.okve.ovdm.ecc.EccOvdmFactory;
-import edu.alibaba.mpc4j.common.tool.okve.ovdm.ecc.EccOvdmFactory.EccOvdmType;
-import edu.alibaba.mpc4j.common.tool.okve.ovdm.zp.ZpOvdmFactory.ZpOvdmType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.crypto.matrix.okve.ovdm.ecc.EccOvdmFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.ovdm.ecc.EccOvdmFactory.EccOvdmType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.ovdm.zp.ZpOvdmFactory.ZpOvdmType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
@@ -16,7 +17,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
  * @author Weiran Liu
  * @date 2022/02/16
  */
-public class Zcl22PkePsuConfig implements PsuConfig {
+public class Zcl22PkePsuConfig extends AbstractMultiPartyPtoConfig implements PsuConfig {
     /**
      * 核COT协议配置项
      */
@@ -39,6 +40,7 @@ public class Zcl22PkePsuConfig implements PsuConfig {
     private final int pipeSize;
 
     private Zcl22PkePsuConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST, builder.coreCotConfig);
         coreCotConfig = builder.coreCotConfig;
         zpOvdmType = builder.zpOvdmType;
         eccOvdmType = builder.eccOvdmType;
@@ -69,25 +71,6 @@ public class Zcl22PkePsuConfig implements PsuConfig {
 
     public int getPipeSize() {
         return pipeSize;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        coreCotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return coreCotConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (coreCotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = coreCotConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Zcl22PkePsuConfig> {
@@ -137,7 +120,7 @@ public class Zcl22PkePsuConfig implements PsuConfig {
         }
 
         public Builder setPipeSize(int pipeSize) {
-            assert pipeSize > 0 : "Pipeline Size must be greater than 0: " + pipeSize;
+            MathPreconditions.checkPositive("pipeSize", pipeSize);
             this.pipeSize = pipeSize;
             return this;
         }

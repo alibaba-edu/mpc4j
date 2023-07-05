@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.upso.ucpsi.psty19;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtConfig;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtFactory;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtConfig;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.UcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.UbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.UbopprfFactory;
@@ -16,7 +16,7 @@ import static edu.alibaba.mpc4j.s2pc.upso.ucpsi.UcpsiFactory.*;
  * @author Liqiang Peng
  * @date 2023/4/17
  */
-public class Psty19UcpsiConfig implements UcpsiConfig {
+public class Psty19UcpsiConfig extends AbstractMultiPartyPtoConfig implements UcpsiConfig {
     /**
      * unbalanced batch OPPRF config
      */
@@ -27,7 +27,7 @@ public class Psty19UcpsiConfig implements UcpsiConfig {
     private final PeqtConfig peqtConfig;
 
     private Psty19UcpsiConfig(Builder builder) {
-        assert builder.ubopprfConfig.getEnvType().equals(builder.peqtConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST, builder.ubopprfConfig, builder.peqtConfig);
         ubopprfConfig = builder.ubopprfConfig;
         peqtConfig = builder.peqtConfig;
     }
@@ -35,22 +35,6 @@ public class Psty19UcpsiConfig implements UcpsiConfig {
     @Override
     public UcpsiType getPtoType() {
         return UcpsiType.PSTY19;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        ubopprfConfig.setEnvType(envType);
-        peqtConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return ubopprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     public UbopprfConfig getUbopprfConfig() {
@@ -71,9 +55,9 @@ public class Psty19UcpsiConfig implements UcpsiConfig {
          */
         private PeqtConfig peqtConfig;
 
-        public Builder(boolean silent) {
-            ubopprfConfig = UbopprfFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            peqtConfig = PeqtFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        public Builder(SecurityModel securityModel, boolean silent) {
+            ubopprfConfig = UbopprfFactory.createDefaultConfig();
+            peqtConfig = PeqtFactory.createDefaultConfig(securityModel, silent);
         }
 
         public Builder setUbopprfConfig(UbopprfConfig ubopprfConfig) {

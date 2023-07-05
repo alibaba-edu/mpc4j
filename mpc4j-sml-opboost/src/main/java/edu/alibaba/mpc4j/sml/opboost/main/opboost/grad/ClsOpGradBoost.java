@@ -45,7 +45,7 @@ public class ClsOpGradBoost extends AbstractClsOpBoost {
             + "_" + totalRound
             // 参与方ID
             + "_" + ownRpc.ownParty().getPartyId()
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         // 输出表头

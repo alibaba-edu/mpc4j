@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu.gmr21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
@@ -19,7 +19,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
  * @author Weiran Liu
  * @date 2022/02/15
  */
-public class Gmr21PsuConfig implements PsuConfig {
+public class Gmr21PsuConfig extends AbstractMultiPartyPtoConfig implements PsuConfig {
     /**
      * 布谷鸟哈希所用OPRF协议配置项
      */
@@ -46,10 +46,9 @@ public class Gmr21PsuConfig implements PsuConfig {
     private final CuckooHashBinType cuckooHashBinType;
 
     private Gmr21PsuConfig(Builder builder) {
-        // 协议的环境类型必须相同
-        assert builder.cuckooHashOprfConfig.getEnvType().equals(builder.peqtOprfConfig.getEnvType());
-        assert builder.cuckooHashOprfConfig.getEnvType().equals(builder.osnConfig.getEnvType());
-        assert builder.cuckooHashOprfConfig.getEnvType().equals(builder.coreCotConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST,
+            builder.cuckooHashOprfConfig, builder.peqtOprfConfig, builder.osnConfig, builder.coreCotConfig
+        );
         cuckooHashOprfConfig = builder.cuckooHashOprfConfig;
         peqtOprfConfig = builder.peqtOprfConfig;
         osnConfig = builder.osnConfig;
@@ -87,36 +86,6 @@ public class Gmr21PsuConfig implements PsuConfig {
         return cuckooHashBinType;
     }
 
-    @Override
-    public void setEnvType(EnvType envType) {
-        peqtOprfConfig.setEnvType(envType);
-        osnConfig.setEnvType(envType);
-        coreCotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return cuckooHashOprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (cuckooHashOprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = cuckooHashOprfConfig.getSecurityModel();
-        }
-        if (peqtOprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = peqtOprfConfig.getSecurityModel();
-        }
-        if (osnConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = osnConfig.getSecurityModel();
-        }
-        if (coreCotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = coreCotConfig.getSecurityModel();
-        }
-        return securityModel;
-    }
-
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Gmr21PsuConfig> {
         /**
          * 布谷鸟哈希所用OPRF协议配置项
@@ -143,10 +112,10 @@ public class Gmr21PsuConfig implements PsuConfig {
          */
         private CuckooHashBinType cuckooHashBinType;
 
-        public Builder() {
+        public Builder(boolean silent) {
             cuckooHashOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
             peqtOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
-            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             coreCotConfig = CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
             okvsType = OkvsType.MEGA_BIN;
             // GMR21源代码使用普通布谷鸟哈希实现无贮存区布谷鸟哈希的功能，这样通信量可以更小一点

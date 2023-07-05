@@ -126,13 +126,6 @@ public class BytesBitVector implements BitVector {
     }
 
     @Override
-    public void replaceCopy(BitVector that) {
-        assertEqualBitNum(that);
-        byte[] thatBytes = that.getBytes();
-        System.arraycopy(thatBytes, 0, bytes, 0, byteNum);
-    }
-
-    @Override
     public void set(int index, boolean value) {
         assert index >= 0 && index < bitNum : "index must be in range [0, " + bitNum + ")";
         BinaryUtils.setBoolean(bytes, index + offset, value);
@@ -153,6 +146,13 @@ public class BytesBitVector implements BitVector {
         copyBitVector.offset = offset;
 
         return copyBitVector;
+    }
+
+    @Override
+    public void replaceCopy(BitVector that) {
+        assertEqualBitNum(that);
+        byte[] thatBytes = that.getBytes();
+        System.arraycopy(thatBytes, 0, bytes, 0, byteNum);
     }
 
     @Override

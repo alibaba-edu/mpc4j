@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.kos15;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
@@ -13,13 +13,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
  * @author Weiran Liu
  * @date 2022/5/30
  */
-public class Kos15CoreCotConfig implements CoreCotConfig {
+public class Kos15CoreCotConfig extends AbstractMultiPartyPtoConfig implements CoreCotConfig {
     /**
      * 基础OT协议
      */
     private final BaseOtConfig baseOtConfig;
 
     private Kos15CoreCotConfig(Builder builder) {
+        super(SecurityModel.MALICIOUS, builder.baseOtConfig);
         baseOtConfig = builder.baseOtConfig;
     }
 
@@ -30,25 +31,6 @@ public class Kos15CoreCotConfig implements CoreCotConfig {
     @Override
     public CoreCotFactory.CoreCotType getPtoType() {
         return CoreCotFactory.CoreCotType.KOS15;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        baseOtConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return baseOtConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.MALICIOUS;
-        if (baseOtConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = baseOtConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Kos15CoreCotConfig> {

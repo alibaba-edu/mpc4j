@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotConfig;
@@ -15,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.PreCotFactory;
  * @author Weiran Liu
  * @date 2022/7/13
  */
-public class CacheCotConfig implements CotConfig {
+public class CacheCotConfig extends AbstractMultiPartyPtoConfig implements CotConfig {
     /**
      * no-choice COT config
      */
@@ -26,8 +26,7 @@ public class CacheCotConfig implements CotConfig {
     private final PreCotConfig preCotConfig;
 
     private CacheCotConfig(Builder builder) {
-        // two environments must be the same
-        assert builder.ncCotConfig.getEnvType().equals(builder.preCotConfig.getEnvType());
+        super(SecurityModel.MALICIOUS, builder.ncCotConfig, builder.preCotConfig);
         ncCotConfig = builder.ncCotConfig;
         preCotConfig = builder.preCotConfig;
     }
@@ -43,29 +42,6 @@ public class CacheCotConfig implements CotConfig {
     @Override
     public CotFactory.CotType getPtoType() {
         return CotFactory.CotType.CACHE;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        ncCotConfig.setEnvType(envType);
-        preCotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return ncCotConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.MALICIOUS;
-        if (ncCotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = ncCotConfig.getSecurityModel();
-        }
-        if (preCotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = preCotConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<CacheCotConfig> {

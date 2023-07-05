@@ -25,7 +25,8 @@ namespace seal
         void encrypt(Plaintext &plain, RGSWCipher &cipher);
         void encrypt_zero(RLWECipher &cipher);
         void ExternalProduct(RLWECipher &dst, RLWECipher &src, RGSWCipher operand);
-        void ExternalProduct_internal(util::RNSIter res_iter0, util::RNSIter res_iter1, util::RNSIter decntt_iter, util::RNSIter prod_iter0, util::RNSIter prod_iter1, RLWECipher &src, RGSWCipher operand);
+
+        [[maybe_unused]] void ExternalProduct_internal(util::RNSIter res_iter0, util::RNSIter res_iter1, util::RNSIter decntt_iter, util::RNSIter prod_iter0, util::RNSIter prod_iter1, RLWECipher &src, RGSWCipher operand);
     private:
         SEALContext context_;
         Evaluator evaluator_;

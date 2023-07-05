@@ -1,20 +1,14 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pso.psi.hfh99.Hfh99ByteEccPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.hfh99.Hfh99EccPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16.Kkrt16PsiConfig;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -22,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,22 +29,18 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/9/19
  */
 @RunWith(Parameterized.class)
-public class PsiTest {
+public class PsiTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(PsiTest.class);
     /**
-     * 随机状态
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    /**
-     * 默认数量
+     * default size
      */
     private static final int DEFAULT_SIZE = 99;
     /**
-     * 元素字节长度
+     * element byte length
      */
     private static final int ELEMENT_BYTE_LENGTH = CommonConstants.BLOCK_BYTE_LENGTH;
     /**
-     * 较大数量
+     * large size
      */
     private static final int LARGE_SIZE = 1 << 14;
 
@@ -92,38 +81,13 @@ public class PsiTest {
     }
 
     /**
-     * 服务端
-     */
-    private final Rpc serverRpc;
-    /**
-     * 客户端
-     */
-    private final Rpc clientRpc;
-    /**
-     * 协议类型
+     * config
      */
     private final PsiConfig config;
 
     public PsiTest(String name, PsiConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        serverRpc = rpcManager.getRpc(0);
-        clientRpc = rpcManager.getRpc(1);
+       super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        serverRpc.connect();
-        clientRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        serverRpc.disconnect();
-        clientRpc.disconnect();
     }
 
     @Test
@@ -172,8 +136,8 @@ public class PsiTest {
     }
 
     private void testPto(int serverSetSize, int clientSetSize, boolean parallel) {
-        PsiServer<ByteBuffer> server = PsiFactory.createServer(serverRpc, clientRpc.ownParty(), config);
-        PsiClient<ByteBuffer> client = PsiFactory.createClient(clientRpc, serverRpc.ownParty(), config);
+        PsiServer<ByteBuffer> server = PsiFactory.createServer(firstRpc, secondRpc.ownParty(), config);
+        PsiClient<ByteBuffer> client = PsiFactory.createClient(secondRpc, firstRpc.ownParty(), config);
         server.setParallel(parallel);
         client.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -183,41 +147,32 @@ public class PsiTest {
             LOGGER.info("-----test {}，server_size = {}，client_size = {}-----",
                 server.getPtoDesc().getPtoName(), serverSetSize, clientSetSize
             );
-            // 生成集合
+            // generate sets
             ArrayList<Set<ByteBuffer>> sets = PsoUtils.generateBytesSets(serverSetSize, clientSetSize, ELEMENT_BYTE_LENGTH);
             Set<ByteBuffer> serverSet = sets.get(0);
             Set<ByteBuffer> clientSet = sets.get(1);
-            // 构建线程
             PsiServerThread serverThread = new PsiServerThread(server, serverSet, clientSet.size());
             PsiClientThread clientThread = new PsiClientThread(client, clientSet, serverSet.size());
             StopWatch stopWatch = new StopWatch();
-            // 开始执行协议
+            // start
             stopWatch.start();
             serverThread.start();
             clientThread.start();
-            // 等待线程停止
+            // stop
             serverThread.join();
             clientThread.join();
             stopWatch.stop();
             long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
-            // 验证结果
+            // verify
             assertOutput(serverSet, clientSet, clientThread.getIntersectionSet());
-            LOGGER.info("Server data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                serverRpc.getSendDataPacketNum(), serverRpc.getPayloadByteLength(), serverRpc.getSendByteLength(),
-                time
-            );
-            LOGGER.info("Client data_packet_num = {}, payload_bytes = {}B, send_bytes = {}B, time = {}ms",
-                clientRpc.getSendDataPacketNum(), clientRpc.getPayloadByteLength(), clientRpc.getSendByteLength(),
-                time
-            );
-            serverRpc.reset();
-            clientRpc.reset();
+            printAndResetRpc(time);
+            // destroy
+            new Thread(server::destroy).start();
+            new Thread(client::destroy).start();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        server.destroy();
-        client.destroy();
     }
 
     private void assertOutput(Set<ByteBuffer> serverSet, Set<ByteBuffer> clientSet, Set<ByteBuffer> outputIntersectionSet) {

@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * CMG21关键词索引PIR协议信息。论文来源：
+ * CMG21 keyword PIR protocol description. The protocol comes from the following paper:
  * <p>
  * Kelong Cong, Radames Cruz Moreno, Mariana Botelho da Gama, Wei Dai, Ilia Iliashenko, Kim Laine, and Michael
  * Rosenberg. Labeled psi from homomorphic encryption with reduced computation and communication. ACM CCS 2021, pp.
@@ -16,59 +16,55 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
  */
 public class Cmg21KwPirPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 7261080771728862744L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "CMG21_KEYWORD_PIR";
 
     /**
-     * 协议步骤
+     * protocol step
      */
     enum PtoStep {
         /**
-         * 服务端发送布谷鸟哈希密钥
+         * server send cuckoo hash keys
          */
         SERVER_SEND_CUCKOO_HASH_KEYS,
         /**
-         * 客户端发送布谷鸟哈希是否分桶成功
-         */
-        CLIENT_SEND_CUCKOO_HASH_RESULT,
-        /**
-         * 客户端发送加密方案密钥
+         * client send encryption params
          */
         CLIENT_SEND_FHE_PARAMS,
         /**
-         * 客户端发送加密查询
+         * client send query
          */
         CLIENT_SEND_QUERY,
         /**
-         * 服务端返回元素密文
+         * server send item response
          */
         SERVER_SEND_ITEM_RESPONSE,
         /**
-         * 服务端返回标签密文
+         * server send label response
          */
         SERVER_SEND_LABEL_RESPONSE,
         /**
-         * 客户端发送盲化元素
+         * client send blind
          */
         CLIENT_SEND_BLIND,
         /**
-         * 服务端返回客户端盲化元素PRF
+         * server send blind prf
          */
         SERVER_SEND_BLIND_PRF,
     }
 
     /**
-     * 单例模式
+     * the singleton mode
      */
     private static final Cmg21KwPirPtoDesc INSTANCE = new Cmg21KwPirPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private Cmg21KwPirPtoDesc() {
         // empty

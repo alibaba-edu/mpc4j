@@ -3,16 +3,16 @@ package edu.alibaba.mpc4j.s2pc.pir.keyword;
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 
 /**
- * 关键词索引协议配置项。
+ * PIR config interface.
  *
  * @author Liqiang Peng
  * @date 2022/6/20
  */
 public interface KwPirConfig extends MultiPartyPtoConfig {
     /**
-     * 返回协议类型。
+     * protocol type.
      *
-     * @return 协议类型。
+     * @return protocol type.
      */
     KwPirFactory.KwPirType getProType();
 }

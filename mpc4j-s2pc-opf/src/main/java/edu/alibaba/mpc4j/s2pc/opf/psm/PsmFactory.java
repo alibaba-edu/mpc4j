@@ -77,7 +77,7 @@ public class PsmFactory implements PtoFactory {
     /**
      * Creates a default config.
      *
-     * @param securityModel the security model.
+     * @param securityModel security model.
      * @param silent        if using a silent protocol.
      * @return a default config.
      */

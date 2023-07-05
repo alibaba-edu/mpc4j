@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.filter;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 
@@ -9,58 +10,64 @@ import java.security.SecureRandom;
 import java.util.List;
 
 /**
- * 过滤器工厂。
+ * filter factory.
  *
  * @author Weiran Liu
  * @date 2020/06/30
  */
 public class FilterFactory {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private FilterFactory() {
         // empty
     }
 
     /**
-     * 过滤器类型
+     * filter type.
      */
     public enum FilterType {
         /**
-         * SetFilter
+         * Set Filter
          */
         SET_FILTER,
         /**
-         * 布隆过滤器
+         * Naive Bloom Filter
          */
-        BLOOM_FILTER,
+        NAIVE_BLOOM_FILTER,
         /**
-         * 布谷鸟过滤器
+         * Cuckoo Filter
          */
         CUCKOO_FILTER,
         /**
-         * 稀疏布隆过滤器
+         * Sparse Bloom Filter
          */
         SPARSE_BLOOM_FILTER,
         /**
-         * 真空过滤器
+         * Vacuum Filter
          */
         VACUUM_FILTER,
+        /**
+         * Bloom Filter without hash collision
+         */
+        LPRST21_BLOOM_FILTER,
     }
 
     /**
-     * 返回过滤器的哈希函数数量。
+     * Gets hash num.
      *
-     * @param type    过滤器类型。
-     * @param maxSize 最大元素数量。
-     * @return 哈希函数数量。
+     * @param type    filter type.
+     * @param maxSize max number of elements.
+     * @return hash num.
      */
     public static int getHashNum(FilterType type, int maxSize) {
         switch (type) {
             case SET_FILTER:
                 return SetFilter.HASH_NUM;
-            case BLOOM_FILTER:
-                return BloomFilter.HASH_NUM;
+            case NAIVE_BLOOM_FILTER:
+                return NaiveBloomFilter.HASH_NUM;
+            case LPRST21_BLOOM_FILTER:
+                return Lprst21BloomFilter.HASH_NUM;
             case SPARSE_BLOOM_FILTER:
                 return SparseBloomFilter.getHashNum(maxSize);
             case CUCKOO_FILTER:
@@ -73,21 +80,23 @@ public class FilterFactory {
     }
 
     /**
-     * 创建一个过滤器。
+     * Creates an empty filter.
      *
-     * @param envType 环境类型。
-     * @param type    过滤器类型。
-     * @param maxSize 最大插入元素数量。
-     * @param keys    哈希密钥。
-     * @return 指定类型的过滤器。
+     * @param envType environment.
+     * @param type    filter type.
+     * @param maxSize max number of elements.
+     * @param keys    keys.
+     * @return an empty filter.
      */
     public static <X> Filter<X> createFilter(EnvType envType, FilterType type, int maxSize, byte[][] keys) {
-        assert keys.length == getHashNum(type, maxSize);
+        MathPreconditions.checkEqual("keys.length", "hashNum", keys.length, getHashNum(type, maxSize));
         switch (type) {
             case SET_FILTER:
                 return SetFilter.create(maxSize);
-            case BLOOM_FILTER:
-                return BloomFilter.create(envType, maxSize, keys);
+            case NAIVE_BLOOM_FILTER:
+                return NaiveBloomFilter.create(envType, maxSize, keys);
+            case LPRST21_BLOOM_FILTER:
+                return Lprst21BloomFilter.create(envType, maxSize, keys);
             case SPARSE_BLOOM_FILTER:
                 return SparseBloomFilter.create(envType, maxSize, keys);
             case CUCKOO_FILTER:
@@ -100,12 +109,13 @@ public class FilterFactory {
     }
 
     /**
-     * 创建一个过滤器。
+     * Creates an empty filter.
      *
-     * @param envType 环境类型。
-     * @param maxSize 最大插入元素数量。
-     * @param secureRandom 随机状态
-     * @return 指定类型的过滤器。
+     * @param envType      environment.
+     * @param type         filter type.
+     * @param maxSize      max number of elements.
+     * @param secureRandom the random state to generate keys.
+     * @return an empty filter.
      */
     public static <X> Filter<X> createFilter(EnvType envType, FilterType type, int maxSize, SecureRandom secureRandom) {
         int hashNum = getHashNum(type, maxSize);
@@ -114,20 +124,22 @@ public class FilterFactory {
     }
 
     /**
-     * 创建一个可合并过滤器。
+     * Creates an empty merge filter.
      *
-     * @param envType 环境类型。
-     * @param type    过滤器类型。
-     * @param maxSize 期望插入的元素数量。
-     * @param keys    哈希密钥。
-     * @return 指定类型的可合并过滤器。
+     * @param envType environment.
+     * @param type    filter type.
+     * @param maxSize max number of elements.
+     * @param keys    keys.
+     * @return an empty merge filter.
      */
     public static <X> MergeFilter<X> createMergeFilter(EnvType envType, FilterType type, int maxSize, byte[][] keys) {
         switch (type) {
             case SET_FILTER:
                 return SetFilter.create(maxSize);
-            case BLOOM_FILTER:
-                return BloomFilter.create(envType, maxSize, keys);
+            case NAIVE_BLOOM_FILTER:
+                return NaiveBloomFilter.create(envType, maxSize, keys);
+            case LPRST21_BLOOM_FILTER:
+                return Lprst21BloomFilter.create(envType, maxSize, keys);
             case SPARSE_BLOOM_FILTER:
                 return SparseBloomFilter.create(envType, maxSize, keys);
             default:
@@ -136,22 +148,23 @@ public class FilterFactory {
     }
 
     /**
-     * 创建一个过滤器。
+     * Creates the filter from {@code List<byte[]>}.
      *
-     * @param envType       环境类型。
-     * @param byteArrayList 用{@code List<byte[]>}表示的过滤器。
-     * @return 创建好的过滤器。
-     * @throws IllegalArgumentException 如果数据包大小不正确或过滤器类型不正确。
+     * @param envType       environment.
+     * @param byteArrayList the {@code List<byte[]>}.
+     * @return the filter.
      */
-    public static <X> Filter<X> createFilter(EnvType envType, List<byte[]> byteArrayList) throws IllegalArgumentException {
+    public static <X> Filter<X> createFilter(EnvType envType, List<byte[]> byteArrayList) {
         Preconditions.checkArgument(byteArrayList.size() >= 1);
         int filterTypeOrdinal = IntUtils.byteArrayToInt(byteArrayList.get(0));
         FilterType filterType = FilterType.values()[filterTypeOrdinal];
         switch (filterType) {
             case SET_FILTER:
                 return SetFilter.fromByteArrayList(byteArrayList);
-            case BLOOM_FILTER:
-                return BloomFilter.fromByteArrayList(envType, byteArrayList);
+            case NAIVE_BLOOM_FILTER:
+                return NaiveBloomFilter.fromByteArrayList(envType, byteArrayList);
+            case LPRST21_BLOOM_FILTER:
+                return Lprst21BloomFilter.fromByteArrayList(envType, byteArrayList);
             case SPARSE_BLOOM_FILTER:
                 return SparseBloomFilter.fromByteArrayList(envType, byteArrayList);
             case CUCKOO_FILTER:

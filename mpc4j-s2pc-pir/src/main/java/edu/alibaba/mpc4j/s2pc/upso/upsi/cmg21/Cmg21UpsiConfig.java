@@ -1,52 +1,27 @@
 package edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.UpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.UpsiFactory.UpsiType;
 
 /**
- * CMG21协议配置项。
+ * CMG21 config.
  *
  * @author Liqiang Peng
  * @date 2022/6/13
  */
-public class Cmg21UpsiConfig implements UpsiConfig {
+public class Cmg21UpsiConfig extends AbstractMultiPartyPtoConfig implements UpsiConfig {
     /**
-     * MP-OPRF协议
+     * MP-OPRF
      */
     private final MpOprfConfig mpOprfConfig;
 
     public Cmg21UpsiConfig(Builder builder) {
+        super(SecurityModel.MALICIOUS, builder.mpOprfConfig);
         mpOprfConfig = builder.mpOprfConfig;
-        EnvType envType = mpOprfConfig.getEnvType();
-        assert (!envType.equals(EnvType.STANDARD_JDK)) && (!envType.equals(EnvType.INLAND_JDK)) :
-            "Protocol using " + CommonConstants.MPC4J_NATIVE_FHE_NAME
-                + " must not be " + EnvType.STANDARD_JDK.name() + " or " + EnvType.INLAND_JDK.name()
-                + ": " + envType.name();
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        if (envType.equals(EnvType.STANDARD_JDK) || envType.equals(EnvType.INLAND_JDK)) {
-            throw new IllegalArgumentException("Protocol using " + CommonConstants.MPC4J_NATIVE_FHE_NAME
-                + " must not be " + EnvType.STANDARD_JDK.name() + " or " + EnvType.INLAND_JDK.name()
-                + ": " + envType.name());
-        }
-        mpOprfConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return mpOprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     @Override
@@ -60,7 +35,7 @@ public class Cmg21UpsiConfig implements UpsiConfig {
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Cmg21UpsiConfig> {
         /**
-         * MP-OPRF协议
+         * MP-OPRF
          */
         private MpOprfConfig mpOprfConfig;
 

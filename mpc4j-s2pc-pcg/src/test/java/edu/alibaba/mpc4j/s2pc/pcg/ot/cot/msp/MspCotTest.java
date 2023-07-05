@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -10,11 +9,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
@@ -22,11 +18,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory.MspCotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20.Ywl20UniMspCotConfig;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -40,12 +32,8 @@ import org.slf4j.LoggerFactory;
  * @date 2022/01/24
  */
 @RunWith(Parameterized.class)
-public class MspCotTest {
+public class MspCotTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(MspCotTest.class);
-    /**
-     * 随机状态
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * 默认多点数量
      */
@@ -65,64 +53,38 @@ public class MspCotTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // BCG19_REG (Malicious)
-        configurationParams.add(new Object[] {
-            MspCotType.BCG19_REG.name() + " (Malicious)",
+        Collection<Object[]> configurations = new ArrayList<>();
+
+        // BCG19_REG
+        configurations.add(new Object[] {
+            MspCotType.BCG19_REG.name() + " (" + SecurityModel.MALICIOUS.name() + ")",
             new Bcg19RegMspCotConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
-        // YWL20_UNI (Malicious)
-        configurationParams.add(new Object[] {
-            MspCotType.YWL20_UNI.name() + "(Malicious)",
-            new Ywl20UniMspCotConfig.Builder(SecurityModel.MALICIOUS).build(),
-        });
-        // BCG19_REG (Semi-Honest)
-        configurationParams.add(new Object[] {
-            MspCotType.BCG19_REG.name() + " (Semi-Honest)",
+        configurations.add(new Object[] {
+            MspCotType.BCG19_REG.name() + " (" + SecurityModel.SEMI_HONEST.name() + ")",
             new Bcg19RegMspCotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
-        // YWL20_UNI (Semi-honest)
-        configurationParams.add(new Object[] {
-            MspCotType.YWL20_UNI.name() + "(Semi-Honest)",
+        // YWL20_UNI
+        configurations.add(new Object[] {
+            MspCotType.YWL20_UNI.name() + " (" + SecurityModel.MALICIOUS.name() + ")",
+            new Ywl20UniMspCotConfig.Builder(SecurityModel.MALICIOUS).build(),
+        });
+        configurations.add(new Object[] {
+            MspCotType.YWL20_UNI.name() + " (" + SecurityModel.SEMI_HONEST.name() + ")",
             new Ywl20UniMspCotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
 
-        return configurationParams;
+        return configurations;
     }
 
-    /**
-     * 发送方
-     */
-    private final Rpc senderRpc;
-    /**
-     * 接收方
-     */
-    private final Rpc receiverRpc;
     /**
      * 协议类型
      */
     private final MspCotConfig config;
 
     public MspCotTest(String name, MspCotConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        senderRpc = rpcManager.getRpc(0);
-        receiverRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        senderRpc.connect();
-        receiverRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        senderRpc.disconnect();
-        receiverRpc.disconnect();
     }
 
     @Test
@@ -166,8 +128,8 @@ public class MspCotTest {
     }
 
     private void testPto(int t, int num, boolean parallel) {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        MspCotSender sender = MspCotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        MspCotReceiver receiver = MspCotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -179,39 +141,34 @@ public class MspCotTest {
             SECURE_RANDOM.nextBytes(delta);
             MspCotSenderThread senderThread = new MspCotSenderThread(sender, delta, t, num);
             MspCotReceiverThread receiverThread = new MspCotReceiverThread(receiver, t, num);
-            StopWatch stopWatch = new StopWatch();
-            // 开始执行协议
-            stopWatch.start();
+            STOP_WATCH.start();
+            // start
             senderThread.start();
             receiverThread.start();
+            // stop
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long senderByteLength = senderRpc.getSendByteLength();
-            long receiverByteLength = receiverRpc.getSendByteLength();
-            senderRpc.reset();
-            receiverRpc.reset();
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
+            // verify
             MspCotSenderOutput senderOutput = senderThread.getSenderOutput();
             MspCotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            // 验证结果
             assertOutput(num, senderOutput, receiverOutput);
-            LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
-                senderByteLength, receiverByteLength, time
-            );
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     @Test
     public void testPrecomputeLargeNumLargeT() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        MspCotSender sender = MspCotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        MspCotReceiver receiver = MspCotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
@@ -227,39 +184,34 @@ public class MspCotTest {
             CotReceiverOutput preReceiverOutput = CotTestUtils.genReceiverOutput(preSenderOutput, SECURE_RANDOM);
             MspCotSenderThread senderThread = new MspCotSenderThread(sender, delta, t, num, preSenderOutput);
             MspCotReceiverThread receiverThread = new MspCotReceiverThread(receiver, t, num, preReceiverOutput);
-            StopWatch stopWatch = new StopWatch();
-            // 开始执行协议
-            stopWatch.start();
+            STOP_WATCH.start();
+            // start
             senderThread.start();
             receiverThread.start();
+            // stop
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long senderByteLength = senderRpc.getSendByteLength();
-            long receiverByteLength = receiverRpc.getSendByteLength();
-            senderRpc.reset();
-            receiverRpc.reset();
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
+            // verify
             MspCotSenderOutput senderOutput = senderThread.getSenderOutput();
             MspCotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            // 验证结果
             assertOutput(num, senderOutput, receiverOutput);
-            LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
-                senderByteLength, receiverByteLength, time
-            );
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} (precompute) end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     @Test
     public void testResetDelta() {
-        MspCotSender sender = MspCotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        MspCotReceiver receiver = MspCotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        MspCotSender sender = MspCotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        MspCotReceiver receiver = MspCotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
@@ -267,63 +219,48 @@ public class MspCotTest {
             LOGGER.info("-----test {} (reset Δ) start-----", sender.getPtoDesc().getPtoName());
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
-            // 第一次执行
+            // first round
             MspCotSenderThread senderThread = new MspCotSenderThread(sender, delta, DEFAULT_T, DEFAULT_NUM);
             MspCotReceiverThread receiverThread = new MspCotReceiverThread(receiver, DEFAULT_T, DEFAULT_NUM);
-            StopWatch stopWatch = new StopWatch();
-            stopWatch.start();
+            STOP_WATCH.start();
             senderThread.start();
             receiverThread.start();
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long firstTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long firstSenderByteLength = senderRpc.getSendByteLength();
-            long firstReceiverByteLength = receiverRpc.getSendByteLength();
-            senderRpc.reset();
-            receiverRpc.reset();
+            STOP_WATCH.stop();
+            long firstTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
             MspCotSenderOutput senderOutput = senderThread.getSenderOutput();
             MspCotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
             assertOutput(DEFAULT_NUM, senderOutput, receiverOutput);
-            // 第二次执行，重置Δ
+            printAndResetRpc(firstTime);
+            // second round, reset Δ
             SECURE_RANDOM.nextBytes(delta);
             senderThread = new MspCotSenderThread(sender, delta, DEFAULT_T, DEFAULT_NUM);
             receiverThread = new MspCotReceiverThread(receiver, DEFAULT_T, DEFAULT_NUM);
-            stopWatch.start();
+            STOP_WATCH.start();
             senderThread.start();
             receiverThread.start();
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long secondTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long secondSenderByteLength = senderRpc.getSendByteLength();
-            long secondReceiverByteLength = receiverRpc.getSendByteLength();
-            senderRpc.reset();
-            receiverRpc.reset();
+            STOP_WATCH.stop();
+            long secondTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
             MspCotSenderOutput secondSenderOutput = senderThread.getSenderOutput();
             MspCotReceiverOutput secondReceiverOutput = receiverThread.getReceiverOutput();
-            // Δ应该不等
+            assertOutput(DEFAULT_NUM, secondSenderOutput, secondReceiverOutput);
+            // Δ should be different
             Assert.assertNotEquals(
                 ByteBuffer.wrap(secondSenderOutput.getDelta()), ByteBuffer.wrap(senderOutput.getDelta())
             );
-            // 通信量应该相等
-            Assert.assertEquals(secondSenderByteLength, firstSenderByteLength);
-            Assert.assertEquals(secondReceiverByteLength, firstReceiverByteLength);
-            assertOutput(DEFAULT_NUM, secondSenderOutput, secondReceiverOutput);
-            LOGGER.info("1st round, Send. {}B, Recv. {}B, {}ms",
-                firstSenderByteLength, firstReceiverByteLength, firstTime
-            );
-            LOGGER.info("2nd round, Send. {}B, Recv. {}B, {}ms",
-                secondSenderByteLength, secondReceiverByteLength, secondTime
-            );
+            printAndResetRpc(secondTime);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} (reset Δ) end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     private void assertOutput(int num, MspCotSenderOutput senderOutput, MspCotReceiverOutput receiverOutput) {

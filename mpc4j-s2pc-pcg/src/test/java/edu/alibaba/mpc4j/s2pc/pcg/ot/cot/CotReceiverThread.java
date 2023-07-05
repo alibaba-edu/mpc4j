@@ -18,13 +18,22 @@ class CotReceiverThread extends Thread {
      */
     private final boolean[] choices;
     /**
+     * update num
+     */
+    private final int updateNum;
+    /**
      * the receiver output
      */
     private CotReceiverOutput receiverOutput;
 
     CotReceiverThread(CotReceiver receiver, boolean[] choices) {
+        this(receiver, choices, choices.length);
+    }
+
+    CotReceiverThread(CotReceiver receiver, boolean[] choices, int updateNum) {
         this.receiver = receiver;
         this.choices = choices;
+        this.updateNum = updateNum;
     }
 
     CotReceiverOutput getReceiverOutput() {
@@ -34,7 +43,7 @@ class CotReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.init(choices.length, choices.length);
+            receiver.init(updateNum);
             receiverOutput = receiver.receive(choices);
         } catch (MpcAbortException e) {
             e.printStackTrace();

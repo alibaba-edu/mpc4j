@@ -15,9 +15,10 @@ public interface LcotReceiver extends TwoPartyPto {
      *
      * @param inputBitLength 选择值比特长度。
      * @param maxNum         最大执行数量。
+     * @return output bit length.
      * @throws MpcAbortException 如果协议异常中止。
      */
-    void init(int inputBitLength, int maxNum) throws MpcAbortException;
+    int init(int inputBitLength, int maxNum) throws MpcAbortException;
 
     /**
      * 执行协议。

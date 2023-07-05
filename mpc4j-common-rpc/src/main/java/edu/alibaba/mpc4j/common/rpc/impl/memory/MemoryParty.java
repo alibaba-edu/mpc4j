@@ -28,7 +28,7 @@ public class MemoryParty implements Party {
      * @param partyId   参与方ID。
      * @param partyName 参与方名称。
      */
-    MemoryParty(int partyId, String partyName) {
+    public MemoryParty(int partyId, String partyName) {
         Preconditions.checkArgument(partyId >= 0, "Party ID must be greater than 0");
         Preconditions.checkArgument(StringUtils.isNotBlank(partyName), "Party Name should not be blank");
         this.partyId = partyId;

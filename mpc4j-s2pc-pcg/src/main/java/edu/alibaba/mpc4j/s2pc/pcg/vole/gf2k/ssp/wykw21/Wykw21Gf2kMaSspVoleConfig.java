@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.wykw21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.sp.SpDpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.sp.SpDpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleConfig;
@@ -15,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.Gf2kSspVoleFactory;
  * @author Weiran Liu
  * @date 2023/3/18
  */
-public class Wykw21Gf2kMaSspVoleConfig implements Gf2kSspVoleConfig {
+public class Wykw21Gf2kMaSspVoleConfig extends AbstractMultiPartyPtoConfig implements Gf2kSspVoleConfig {
     /**
      * GF2K core VOLE config
      */
@@ -26,7 +26,7 @@ public class Wykw21Gf2kMaSspVoleConfig implements Gf2kSspVoleConfig {
     private final SpDpprfConfig spDpprfConfig;
 
     private Wykw21Gf2kMaSspVoleConfig(Builder builder) {
-        assert builder.spDpprfConfig.getEnvType().equals(builder.gf2kCoreVoleConfig.getEnvType());
+        super(SecurityModel.MALICIOUS, builder.gf2kCoreVoleConfig, builder.spDpprfConfig);
         gf2kCoreVoleConfig = builder.gf2kCoreVoleConfig;
         spDpprfConfig = builder.spDpprfConfig;
     }
@@ -42,29 +42,6 @@ public class Wykw21Gf2kMaSspVoleConfig implements Gf2kSspVoleConfig {
     @Override
     public Gf2kSspVoleFactory.Gf2kSspVoleType getPtoType() {
         return Gf2kSspVoleFactory.Gf2kSspVoleType.WYKW21_MALICIOUS;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        gf2kCoreVoleConfig.setEnvType(envType);
-        spDpprfConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return gf2kCoreVoleConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.MALICIOUS;
-        if (gf2kCoreVoleConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = gf2kCoreVoleConfig.getSecurityModel();
-        }
-        if (spDpprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = spDpprfConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Wykw21Gf2kMaSspVoleConfig> {

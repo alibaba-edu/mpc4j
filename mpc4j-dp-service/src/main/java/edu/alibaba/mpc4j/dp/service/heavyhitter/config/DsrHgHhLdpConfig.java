@@ -62,8 +62,8 @@ public class DsrHgHhLdpConfig extends BaseHhLdpConfig implements HgHhLdpConfig {
          */
         private Random hgRandom;
 
-        public Builder(Set<String> domainSet, int k, double windowEpsilon, int windowSize) {
-            super(HhLdpFactory.HhLdpType.DSR, domainSet, k, windowEpsilon, windowSize);
+        public Builder(Set<String> domainSet, int k, double windowEpsilon) {
+            super(HhLdpFactory.HhLdpType.DSR, domainSet, k, windowEpsilon);
             // set default values
             w = 1;
             lambdaH = k;

@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
-import edu.alibaba.mpc4j.s2pc.pir.batchindex.BatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.batchindex.vectorizedpir.Mr23BatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.UrbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.UrbopprfFactory;
 

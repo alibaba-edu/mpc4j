@@ -8,36 +8,40 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 关键词索引PIR协议客户端接口。
+ * Keyword PIR client interface.
  *
  * @author Liqiang Peng
  * @date 2022/6/20
  */
-public interface KwPirClient<T> extends TwoPartyPto {
-    /**
-     * 初始化协议。
-     *
-     * @param kwPirParams     关键字PIR参数。
-     * @param labelByteLength 标签字节长度。
-     * @throws MpcAbortException 如果协议异常中止。
-     */
-    void init(KwPirParams kwPirParams, int labelByteLength) throws MpcAbortException;
+public interface KwPirClient extends TwoPartyPto {
 
     /**
-     * 初始化协议。
+     * client initializes protocol.
      *
-     * @param maxRetrievalSize 最大检索数量。
-     * @param labelByteLength  标签字节长度。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param kwPirParams       keyword PIR params.
+     * @param serverElementSize server element size.
+     * @param valueByteLength   value byte length.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(int maxRetrievalSize, int labelByteLength) throws MpcAbortException;
+    void init(KwPirParams kwPirParams, int serverElementSize, int valueByteLength) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * client initializes protocol.
      *
-     * @param retrievalSet 检索集合。
-     * @return 查询元素和标签映射。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @
+     * @param maxRetrievalSize  max retrieval size.
+     * @param serverElementSize server element size.
+     * @param valueByteLength   value byte length.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    Map<T, ByteBuffer> pir(Set<T> retrievalSet) throws MpcAbortException;
+    void init(int maxRetrievalSize, int serverElementSize, int valueByteLength) throws MpcAbortException;
+
+    /**
+     * client executes protocol.
+     *
+     * @param retrievalKeySet retrieval key set.
+     * @return key value map.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    Map<ByteBuffer, ByteBuffer> pir(Set<ByteBuffer> retrievalKeySet) throws MpcAbortException;
 }

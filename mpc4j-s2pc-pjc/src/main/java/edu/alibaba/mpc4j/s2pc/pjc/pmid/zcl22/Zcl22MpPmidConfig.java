@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidConfig;
@@ -16,7 +16,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
  * @author Weiran Liu
  * @date 2022/5/10
  */
-public class Zcl22MpPmidConfig implements PmidConfig {
+public class Zcl22MpPmidConfig extends AbstractMultiPartyPtoConfig implements PmidConfig {
     /**
      * MP-OPRF协议配置项
      */
@@ -31,8 +31,7 @@ public class Zcl22MpPmidConfig implements PmidConfig {
     private final OkvsType sigmaOkvsType;
 
     private Zcl22MpPmidConfig(Builder builder) {
-        // 协议的环境类型必须相同
-        assert builder.mpOprfConfig.getEnvType().equals(builder.psuConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST, builder.mpOprfConfig, builder.psuConfig);
         mpOprfConfig = builder.mpOprfConfig;
         psuConfig = builder.psuConfig;
         sigmaOkvsType = builder.sigmaOkvsType;
@@ -41,29 +40,6 @@ public class Zcl22MpPmidConfig implements PmidConfig {
     @Override
     public PmidType getPtoType() {
         return PmidType.ZCL22_MP;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        mpOprfConfig.setEnvType(envType);
-        psuConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return mpOprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (mpOprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = mpOprfConfig.getSecurityModel();
-        }
-        if (psuConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = psuConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public MpOprfConfig getMpOprfConfig() {

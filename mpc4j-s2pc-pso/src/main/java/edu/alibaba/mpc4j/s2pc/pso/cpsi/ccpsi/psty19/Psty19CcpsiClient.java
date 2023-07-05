@@ -14,9 +14,9 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtFactory;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtParty;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtParty;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.AbstractCcpsiClient;
@@ -24,6 +24,7 @@ import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiClientOutput;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.psty19.Psty19CcpsiPtoDesc.PtoStep;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -37,7 +38,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2023/3/29
  */
-public class Psty19CcpsiClient extends AbstractCcpsiClient {
+public class Psty19CcpsiClient<T> extends AbstractCcpsiClient<T> {
     /**
      * batched OPPRF receiver
      */
@@ -57,7 +58,7 @@ public class Psty19CcpsiClient extends AbstractCcpsiClient {
     /**
      * cuckoo hash bin
      */
-    private CuckooHashBin<ByteBuffer> cuckooHashBin;
+    private CuckooHashBin<T> cuckooHashBin;
 
     public Psty19CcpsiClient(Rpc serverRpc, Party clientParty, Psty19CcpsiConfig config) {
         super(Psty19CcpsiPtoDesc.getInstance(), serverRpc, clientParty, config);
@@ -91,7 +92,7 @@ public class Psty19CcpsiClient extends AbstractCcpsiClient {
     }
 
     @Override
-    public CcpsiClientOutput psi(Set<ByteBuffer> clientElementSet, int serverElementSize) throws MpcAbortException {
+    public CcpsiClientOutput<T> psi(Set<T> clientElementSet, int serverElementSize) throws MpcAbortException {
         setPtoInput(clientElementSet, serverElementSize);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
@@ -124,7 +125,7 @@ public class Psty19CcpsiClient extends AbstractCcpsiClient {
         // P2 inputs Table_1[1], . . . , Table_1[β] and receives y_1^*, ..., y_β^*
         byte[][] inputArray = IntStream.range(0, beta)
             .mapToObj(batchIndex -> {
-                HashBinEntry<ByteBuffer> item = cuckooHashBin.getHashBinEntry(batchIndex);
+                HashBinEntry<T> item = cuckooHashBin.getHashBinEntry(batchIndex);
                 byte[] itemBytes = cuckooHashBin.getHashBinEntry(batchIndex).getItemByteArray();
                 return ByteBuffer.allocate(itemBytes.length + Integer.BYTES)
                     .put(itemBytes)
@@ -151,17 +152,17 @@ public class Psty19CcpsiClient extends AbstractCcpsiClient {
         // P2 inputs y_1^*, ..., y_β^* and outputs z1.
         SquareZ2Vector z1 = peqtReceiver.peqt(peqtL, targetArray);
         // create the table
-        ByteBuffer[] table = IntStream.range(0, beta)
+        ArrayList<T> table = IntStream.range(0, beta)
             .mapToObj(batchIndex -> {
-                HashBinEntry<ByteBuffer> item = cuckooHashBin.getHashBinEntry(batchIndex);
+                HashBinEntry<T> item = cuckooHashBin.getHashBinEntry(batchIndex);
                 if (item.getHashIndex() == HashBinEntry.DUMMY_ITEM_HASH_INDEX) {
-                    return ByteBuffer.wrap(new byte[0]);
+                    return null;
                 } else {
                     return item.getItem();
                 }
             })
-            .toArray(ByteBuffer[]::new);
-        CcpsiClientOutput clientOutput = new CcpsiClientOutput(table, z1);
+            .collect(Collectors.toCollection(ArrayList::new));
+        CcpsiClientOutput<T> clientOutput = new CcpsiClientOutput<>(table, z1);
         cuckooHashBin = null;
         stopWatch.stop();
         long peqtTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

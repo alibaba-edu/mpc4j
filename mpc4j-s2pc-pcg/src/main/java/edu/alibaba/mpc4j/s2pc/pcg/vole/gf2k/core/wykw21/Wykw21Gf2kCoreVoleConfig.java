@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.wykw21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleConfig;
@@ -13,13 +13,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleFactory;
  * @author Weiran Liu
  * @date 2023/3/16
  */
-public class Wykw21Gf2kCoreVoleConfig implements Gf2kCoreVoleConfig {
+public class Wykw21Gf2kCoreVoleConfig extends AbstractMultiPartyPtoConfig implements Gf2kCoreVoleConfig {
     /**
      * the base OT config.
      */
     private final BaseOtConfig baseOtConfig;
 
     private Wykw21Gf2kCoreVoleConfig(Builder builder) {
+        super(SecurityModel.MALICIOUS, builder.baseOtConfig);
         baseOtConfig = builder.baseOtConfig;
     }
 
@@ -30,25 +31,6 @@ public class Wykw21Gf2kCoreVoleConfig implements Gf2kCoreVoleConfig {
     @Override
     public Gf2kCoreVoleFactory.Gf2kCoreVoleType getPtoType() {
         return Gf2kCoreVoleFactory.Gf2kCoreVoleType.WYKW21;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        baseOtConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return baseOtConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.MALICIOUS;
-        if (baseOtConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = baseOtConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Wykw21Gf2kCoreVoleConfig> {

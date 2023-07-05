@@ -46,9 +46,13 @@ public class PidMain {
      */
     private static final int WARMUP_SET_SIZE = 1 << 10;
     /**
-     * 秒表
+     * server stop watch
      */
-    private final StopWatch stopWatch;
+    private final StopWatch serverStopWatch;
+    /**
+     * server stop watch
+     */
+    private final StopWatch clientStopWatch;
     /**
      * 配置参数
      */
@@ -56,10 +60,11 @@ public class PidMain {
 
     public PidMain(Properties properties) {
         this.properties = properties;
-        stopWatch = new StopWatch();
+        serverStopWatch = new StopWatch();
+        clientStopWatch = new StopWatch();
     }
 
-    public void run() throws Exception {
+    public void runNetty() throws Exception {
         Rpc ownRpc = RpcPropertiesUtils.readNettyRpc(properties, "server", "client");
         if (ownRpc.ownParty().getPartyId() == 0) {
             runServer(ownRpc, ownRpc.getParty(1));
@@ -68,7 +73,7 @@ public class PidMain {
         }
     }
 
-    private void runServer(Rpc serverRpc, Party clientParty) throws Exception {
+    public void runServer(Rpc serverRpc, Party clientParty) throws Exception {
         // 读取协议参数
         LOGGER.info("{} read settings", serverRpc.ownParty().getPartyName());
         // 读取集合大小
@@ -91,7 +96,7 @@ public class PidMain {
             + "_" + ELEMENT_BYTE_LENGTH * Byte.SIZE
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         // 写入统计结果头文件
@@ -176,11 +181,11 @@ public class PidMain {
         pidServer.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", pidServer.ownParty().getPartyName());
-        stopWatch.start();
+        serverStopWatch.start();
         pidServer.init(serverSetSize, clientSetSize);
-        stopWatch.stop();
-        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
+        serverStopWatch.stop();
+        long initTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
+        serverStopWatch.reset();
         long initDataPacketNum = pidServer.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = pidServer.getRpc().getPayloadByteLength();
         long initSendByteLength = pidServer.getRpc().getSendByteLength();
@@ -188,11 +193,11 @@ public class PidMain {
         pidServer.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", pidServer.ownParty().getPartyName());
-        stopWatch.start();
+        serverStopWatch.start();
         pidServer.pid(serverElementSet, clientSetSize);
-        stopWatch.stop();
-        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
+        serverStopWatch.stop();
+        long ptoTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
+        serverStopWatch.reset();
         long ptoDataPacketNum = pidServer.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = pidServer.getRpc().getPayloadByteLength();
         long ptoSendByteLength = pidServer.getRpc().getSendByteLength();
@@ -212,7 +217,7 @@ public class PidMain {
         LOGGER.info("{} finish", pidServer.ownParty().getPartyName());
     }
 
-    private void runClient(Rpc clientRpc, Party serverParty) throws Exception {
+    public void runClient(Rpc clientRpc, Party serverParty) throws Exception {
         // 读取协议参数
         LOGGER.info("{} read settings", clientRpc.ownParty().getPartyName());
         // 读取集合大小
@@ -235,7 +240,7 @@ public class PidMain {
             + "_" + ELEMENT_BYTE_LENGTH * Byte.SIZE
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         // 写入统计结果头文件
@@ -318,11 +323,11 @@ public class PidMain {
         pidClient.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", pidClient.ownParty().getPartyName());
-        stopWatch.start();
+        clientStopWatch.start();
         pidClient.init(clientSetSize, serverSetSize);
-        stopWatch.stop();
-        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
+        clientStopWatch.stop();
+        long initTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
+        clientStopWatch.reset();
         long initDataPacketNum = pidClient.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = pidClient.getRpc().getPayloadByteLength();
         long initSendByteLength = pidClient.getRpc().getSendByteLength();
@@ -330,11 +335,11 @@ public class PidMain {
         pidClient.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", pidClient.ownParty().getPartyName());
-        stopWatch.start();
+        clientStopWatch.start();
         pidClient.pid(clientElementSet, serverSetSize);
-        stopWatch.stop();
-        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
+        clientStopWatch.stop();
+        long ptoTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
+        clientStopWatch.reset();
         long ptoDataPacketNum = pidClient.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = pidClient.getRpc().getPayloadByteLength();
         long ptoSendByteLength = pidClient.getRpc().getSendByteLength();

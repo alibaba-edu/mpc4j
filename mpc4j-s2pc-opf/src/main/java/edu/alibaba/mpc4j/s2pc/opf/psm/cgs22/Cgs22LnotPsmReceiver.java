@@ -6,9 +6,9 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcFactory;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcParty;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.opf.psm.cgs22.Cgs22LnotPsmPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.opf.psm.AbstractPsmReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory;
@@ -30,7 +30,7 @@ public class Cgs22LnotPsmReceiver extends AbstractPsmReceiver {
     /**
      * Boolean circuit receiver
      */
-    private final BcParty bcReceiver;
+    private final Z2cParty bcReceiver;
     /**
      * LNOT receiver
      */
@@ -38,7 +38,7 @@ public class Cgs22LnotPsmReceiver extends AbstractPsmReceiver {
 
     public Cgs22LnotPsmReceiver(Rpc senderRpc, Party receiverParty, Cgs22LnotPsmConfig config) {
         super(Cgs22LnotPsmPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        bcReceiver = BcFactory.createReceiver(senderRpc, receiverParty, config.getBcConfig());
+        bcReceiver = Z2cFactory.createReceiver(senderRpc, receiverParty, config.getZ2cConfig());
         addSubPtos(bcReceiver);
         lnotReceiver = LnotFactory.createReceiver(senderRpc, receiverParty, config.getLnotConfig());
         addSubPtos(lnotReceiver);
@@ -53,8 +53,8 @@ public class Cgs22LnotPsmReceiver extends AbstractPsmReceiver {
         // q = l / m, where m = 4
         int maxByteL = CommonUtils.getByteLength(maxL);
         int maxQ = maxByteL * 2;
-        bcReceiver.init(maxNum * (maxQ - 1) * d, maxNum * (maxQ - 1) * d);
-        lnotReceiver.init(4, maxNum, maxNum * maxQ);
+        bcReceiver.init(maxNum * (maxQ - 1) * d);
+        lnotReceiver.init(4, maxNum * maxQ);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -82,7 +82,7 @@ public class Cgs22LnotPsmReceiver extends AbstractPsmReceiver {
         BitVector[][] eqArrays = new BitVector[d][q];
         for (int i = 0; i < d; i++) {
             for (int j = 0; j < q; j++) {
-                eqArrays[i][j] = BitVectorFactory.createZeros(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num);
+                eqArrays[i][j] = BitVectorFactory.createZeros(num);
             }
         }
         // for j ∈ [0,q) do
@@ -98,7 +98,7 @@ public class Cgs22LnotPsmReceiver extends AbstractPsmReceiver {
             extraInfo++;
             MpcAbortPreconditions.checkArgument(evsPayload.size() == (1 << 4) * d);
             BitVector[] evArrays = evsPayload.stream()
-                .map(ev -> BitVectorFactory.create(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, ev))
+                .map(ev -> BitVectorFactory.create(num, ev))
                 .toArray(BitVector[]::new);
             for (int index = 0; index < num; index++) {
                 int v = lnotReceiverOutput.getChoice(index);

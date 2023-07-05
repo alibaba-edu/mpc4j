@@ -35,3 +35,7 @@ psu_pto_name = KRTW19_OPT
 # psu_pto_name = JSZ22_SFS
 # psu_pto_name = ZCL22_SKE
 # psu_pto_name = ZCL22_PKE
+
+# 是否压缩编码, used only when PSU is set to be ZCL22_PKE
+compress_encode = true
+# compress_encode = false

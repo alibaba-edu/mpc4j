@@ -1,30 +1,31 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.impl.cache;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.Z2CoreMtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.Z2CoreMtgFactory;
 
 /**
- * 缓存布尔三元组生成协议配置项。
+ * cache Z2 multiplication triple generator config.
  *
  * @author Weiran Liu
  * @date 2022/7/14
  */
-public class CacheZ2MtgConfig implements Z2MtgConfig {
+public class CacheZ2MtgConfig extends AbstractMultiPartyPtoConfig implements Z2MtgConfig {
     /**
-     * 核布尔三元组生成协议配置项
+     * core multiplication triple generator config
      */
-    private final Z2CoreMtgConfig z2CoreMtgConfig;
+    private final Z2CoreMtgConfig coreMtgConfig;
 
     private CacheZ2MtgConfig(Builder builder) {
-        z2CoreMtgConfig = builder.z2CoreMtgConfig;
+        super(builder.coreMtgConfig);
+        coreMtgConfig = builder.coreMtgConfig;
     }
 
-    public Z2CoreMtgConfig getZ2CoreMtgConfig() {
-        return z2CoreMtgConfig;
+    public Z2CoreMtgConfig getCoreMtgConfig() {
+        return coreMtgConfig;
     }
 
     @Override
@@ -32,33 +33,18 @@ public class CacheZ2MtgConfig implements Z2MtgConfig {
         return Z2MtgFactory.Z2MtgType.CACHE;
     }
 
-    @Override
-    public void setEnvType(EnvType envType) {
-        z2CoreMtgConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return z2CoreMtgConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return z2CoreMtgConfig.getSecurityModel();
-    }
-
     public static class Builder implements org.apache.commons.lang3.builder.Builder<CacheZ2MtgConfig> {
         /**
-         * 核布尔三元组生成协议配置项
+         * core multiplication triple generator config
          */
-        private Z2CoreMtgConfig z2CoreMtgConfig;
+        private Z2CoreMtgConfig coreMtgConfig;
 
         public Builder(SecurityModel securityModel) {
-            z2CoreMtgConfig = Z2CoreMtgFactory.createDefaultConfig(securityModel, true);
+            coreMtgConfig = Z2CoreMtgFactory.createDefaultConfig(securityModel, true);
         }
 
-        public Builder setZ2CoreMtgConfig(Z2CoreMtgConfig z2CoreMtgConfig) {
-            this.z2CoreMtgConfig = z2CoreMtgConfig;
+        public Builder setCoreMtgConfig(Z2CoreMtgConfig coreMtgConfig) {
+            this.coreMtgConfig = coreMtgConfig;
             return this;
         }
 

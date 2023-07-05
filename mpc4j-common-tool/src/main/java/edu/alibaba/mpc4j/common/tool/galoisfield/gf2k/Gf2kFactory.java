@@ -3,52 +3,52 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 
 /**
- * GF(2^128)运算工厂类。
+ * GF(2^κ) factory.
  *
  * @author Weiran Liu
  * @date 2022/01/15
  */
 public class Gf2kFactory {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private Gf2kFactory() {
         // empty
     }
 
     /**
-     * GF(2^128)运算类型
+     * GF(2^κ) type.
      */
     public enum Gf2kType {
         /**
-         * 指令集实现的GF(2^128)运算
+         * combined
          */
-        SSE,
+        COMBINED,
         /**
-         * 本地NTL库实现的GF(2^128)运算
+         * NTL
          */
         NTL,
         /**
-         * Bouncy Castle实现的GF(2^128)运算
+         * Bouncy Castle
          */
         BC,
         /**
-         * Rings实现的GF(2^128)运算
+         * Rings
          */
         RINGS,
     }
 
     /**
-     * 创建GF(2^128)运算实例。
+     * Creates a GF(2^κ) instance.
      *
      * @param envType the environment.
-     * @param type 类型。
-     * @return GF(2 ^ 128)运算实例。
+     * @param type    type.
+     * @return an instance.
      */
     public static Gf2k createInstance(EnvType envType, Gf2kType type) {
         switch (type) {
-            case SSE:
-                return new SseGf2k(envType);
+            case COMBINED:
+                return new CombinedGf2k(envType);
             case NTL:
                 return new NtlGf2k(envType);
             case BC:
@@ -61,15 +61,15 @@ public class Gf2kFactory {
     }
 
     /**
-     * 创建GF(2^128)运算实例。
+     * Creates a GF(2^κ) instance.
      *
-     * @param envType 环境类型。
-     * @return GF(2 ^ 128)运算实例。
+     * @param envType the environment.
+     * @return an instance.
      */
     public static Gf2k createInstance(EnvType envType) {
-        // 经过测试，无论何环境，都应使用BC_GF2K
         switch (envType) {
             case STANDARD:
+                return new CombinedGf2k(envType);
             case STANDARD_JDK:
             case INLAND:
             case INLAND_JDK:

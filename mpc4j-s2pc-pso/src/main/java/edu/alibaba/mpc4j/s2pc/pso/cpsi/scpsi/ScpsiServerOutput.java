@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi;
 
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 /**
  * server-payload circuit PSI server output.
@@ -11,28 +11,28 @@ import java.nio.ByteBuffer;
  * @author Weiran Liu
  * @date 2023/3/29
  */
-public class ScpsiServerOutput {
+public class ScpsiServerOutput<T> {
     /**
      * the server table
      */
-    private final ByteBuffer[] table;
+    private final ArrayList<T> table;
     /**
      * the server share bits
      */
     private final SquareZ2Vector z0;
 
-    public ScpsiServerOutput(ByteBuffer[] table, SquareZ2Vector z0) {
-        MathPreconditions.checkPositive("β", table.length);
+    public ScpsiServerOutput(ArrayList<T> table, SquareZ2Vector z0) {
+        MathPreconditions.checkPositive("β", table.size());
         this.table = table;
-        MathPreconditions.checkEqual("z0.bitNum", "β", z0.getNum(), table.length);
+        MathPreconditions.checkEqual("z0.bitNum", "β", z0.getNum(), table.size());
         this.z0 = z0;
     }
 
     public int getBeta() {
-        return table.length;
+        return table.size();
     }
 
-    public ByteBuffer[] getTable() {
+    public ArrayList<T> getTable() {
         return table;
     }
 

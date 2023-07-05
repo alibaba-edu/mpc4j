@@ -13,7 +13,6 @@ import java.math.BigInteger;
  * @date 2022/12/28
  */
 public class MathPreconditionsTest {
-
     @Test
     public void testCheckPositive() {
         // check -1 is not positive
@@ -21,7 +20,7 @@ public class MathPreconditionsTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkPositive("x", -1L));
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkPositive("x", -1.0));
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkPositive("x", BigInteger.ONE.negate())
+            MathPreconditions.checkPositive("x", BigInteger.valueOf(-1))
         );
         // check 0 is not positive
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkPositive("x", 0));
@@ -44,7 +43,7 @@ public class MathPreconditionsTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkNonNegative("x", -1L));
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkNonNegative("x", -1.0));
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkNonNegative("x", BigInteger.ONE.negate())
+            MathPreconditions.checkNonNegative("x", BigInteger.valueOf(-1))
         );
         // check 0 is non-negative
         MathPreconditions.checkNonNegative("x", 1);
@@ -71,13 +70,13 @@ public class MathPreconditionsTest {
             MathPreconditions.checkEqual("x", "y", -1.0, 0.0, DoubleUtils.PRECISION)
         );
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkEqual("x", "y", BigInteger.ONE.negate(), BigInteger.ZERO)
+            MathPreconditions.checkEqual("x", "y", BigInteger.valueOf(-1), BigInteger.ZERO)
         );
         // check -1 is equal to -1
         MathPreconditions.checkEqual("x", "y", -1, -1);
         MathPreconditions.checkEqual("x", "y", -1L, -1L);
         MathPreconditions.checkEqual("x", "y", -1.0, -1.0, DoubleUtils.PRECISION);
-        MathPreconditions.checkEqual("x", "y", BigInteger.ONE.negate(), BigInteger.ONE.negate());
+        MathPreconditions.checkEqual("x", "y", BigInteger.valueOf(-1), BigInteger.valueOf(-1));
         // check 2 is equal to 2
         MathPreconditions.checkEqual("x", "y", 2, 2);
         MathPreconditions.checkEqual("x", "y", 2L, 2L);
@@ -93,14 +92,14 @@ public class MathPreconditionsTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkGreater("x", -1L, -1L));
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkGreater("x", -1.0, -1.0));
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkGreater("x", BigInteger.ONE.negate(), BigInteger.ONE.negate())
+            MathPreconditions.checkGreater("x", BigInteger.valueOf(-1), BigInteger.valueOf(-1))
         );
         // check -1 is not greater than 0
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkGreater("x", -1, 0));
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkGreater("x", -1L, 0L));
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkGreater("x", -1.0, 0.0));
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkGreater("x", BigInteger.ONE.negate(), BigInteger.ZERO)
+            MathPreconditions.checkGreater("x", BigInteger.valueOf(-1), BigInteger.ZERO)
         );
         // check 1 is greater than 0
         MathPreconditions.checkGreater("x", 1, 0);
@@ -122,13 +121,13 @@ public class MathPreconditionsTest {
             MathPreconditions.checkGreaterOrEqual("x", -2.0, -1.0)
         );
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkGreaterOrEqual("x", BigInteger.valueOf(2).negate(), BigInteger.ONE.negate())
+            MathPreconditions.checkGreaterOrEqual("x", BigInteger.valueOf(2).negate(), BigInteger.valueOf(-1))
         );
         // check -1 is greater than or equal to -1
         MathPreconditions.checkGreaterOrEqual("x", -1, -1);
         MathPreconditions.checkGreaterOrEqual("x", -1L, -1L);
         MathPreconditions.checkGreaterOrEqual("x", -1.0, -1.0);
-        MathPreconditions.checkGreaterOrEqual("x", BigInteger.ONE.negate(), BigInteger.ONE.negate());
+        MathPreconditions.checkGreaterOrEqual("x", BigInteger.valueOf(-1), BigInteger.valueOf(-1));
         // check 1 is greater than 0
         MathPreconditions.checkGreaterOrEqual("x", 1, 0);
         MathPreconditions.checkGreaterOrEqual("x", 1L, 0L);
@@ -143,7 +142,7 @@ public class MathPreconditionsTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkLess("x", -1L, -1L));
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkLess("x", -1.0, -1.0));
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkLess("x", BigInteger.ONE.negate(), BigInteger.ONE.negate())
+            MathPreconditions.checkLess("x", BigInteger.valueOf(-1), BigInteger.valueOf(-1))
         );
         // check 1 is not less than 0
         Assert.assertThrows(IllegalArgumentException.class, () -> MathPreconditions.checkLess("x", 1, 0));
@@ -156,7 +155,7 @@ public class MathPreconditionsTest {
         MathPreconditions.checkLess("x", -1, 0);
         MathPreconditions.checkLess("x", -1L, 0L);
         MathPreconditions.checkLess("x", -1.0, 0.0);
-        MathPreconditions.checkLess("x", BigInteger.ONE.negate(), BigInteger.ZERO);
+        MathPreconditions.checkLess("x", BigInteger.valueOf(-1), BigInteger.ZERO);
     }
 
     @Test
@@ -165,7 +164,7 @@ public class MathPreconditionsTest {
         MathPreconditions.checkLessOrEqual("x", -1, -1);
         MathPreconditions.checkLessOrEqual("x", -1L, -1L);
         MathPreconditions.checkLessOrEqual("x", -1.0, -1.0);
-        MathPreconditions.checkLessOrEqual("x", BigInteger.ONE.negate(), BigInteger.ONE.negate());
+        MathPreconditions.checkLessOrEqual("x", BigInteger.valueOf(-1), BigInteger.valueOf(-1));
         // check 1 is not less than 0
         Assert.assertThrows(IllegalArgumentException.class, () ->
             MathPreconditions.checkLessOrEqual("x", 1, 0)
@@ -183,7 +182,7 @@ public class MathPreconditionsTest {
         MathPreconditions.checkLessOrEqual("x", -1, 0);
         MathPreconditions.checkLessOrEqual("x", -1L, 0L);
         MathPreconditions.checkLessOrEqual("x", -1.0, 0.0);
-        MathPreconditions.checkLessOrEqual("x", BigInteger.ONE.negate(), BigInteger.ZERO);
+        MathPreconditions.checkLessOrEqual("x", BigInteger.valueOf(-1), BigInteger.ZERO);
     }
 
     @Test
@@ -224,7 +223,7 @@ public class MathPreconditionsTest {
             MathPreconditions.checkPositiveInRange("x", -1.0, 2.0)
         );
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkPositiveInRange("x", BigInteger.ONE.negate(), BigInteger.valueOf(2))
+            MathPreconditions.checkPositiveInRange("x", BigInteger.valueOf(-1), BigInteger.valueOf(2))
         );
         // check 0 is not positive
         Assert.assertThrows(IllegalArgumentException.class, () ->
@@ -290,7 +289,7 @@ public class MathPreconditionsTest {
             MathPreconditions.checkPositiveInRangeClosed("x", -1.0, 2.0)
         );
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkPositiveInRangeClosed("x", BigInteger.ONE.negate(), BigInteger.valueOf(2))
+            MathPreconditions.checkPositiveInRangeClosed("x", BigInteger.valueOf(-1), BigInteger.valueOf(2))
         );
         // check 0 is not positive
         Assert.assertThrows(IllegalArgumentException.class, () ->
@@ -356,7 +355,7 @@ public class MathPreconditionsTest {
             MathPreconditions.checkNonNegativeInRange("x", -1.0, 1.0)
         );
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkNonNegativeInRange("x", BigInteger.ONE.negate(), BigInteger.ONE)
+            MathPreconditions.checkNonNegativeInRange("x", BigInteger.valueOf(-1), BigInteger.ONE)
         );
         // check 0 is non-negative in range [0, 1)
         MathPreconditions.checkNonNegativeInRange("x", 0, 1);
@@ -406,7 +405,7 @@ public class MathPreconditionsTest {
             MathPreconditions.checkNonNegativeInRangeClosed("x", -1.0, 1.0)
         );
         Assert.assertThrows(IllegalArgumentException.class, () ->
-            MathPreconditions.checkNonNegativeInRangeClosed("x", BigInteger.ONE.negate(), BigInteger.ONE)
+            MathPreconditions.checkNonNegativeInRangeClosed("x", BigInteger.valueOf(-1), BigInteger.ONE)
         );
         // check 0 is non-negative in range [0, 1]
         MathPreconditions.checkNonNegativeInRangeClosed("x", 0, 1);
@@ -423,5 +422,149 @@ public class MathPreconditionsTest {
         MathPreconditions.checkNonNegativeInRangeClosed("x", 1L, 2L);
         MathPreconditions.checkNonNegativeInRangeClosed("x", 1.0, 2.0);
         MathPreconditions.checkNonNegativeInRangeClosed("x", BigInteger.ONE, BigInteger.valueOf(2));
+    }
+
+    @Test
+    public void testCheckInRange() {
+        // [0, 0) is not a valid range
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 0, 0, 0)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 0L, 0L, 0L)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 0.0, 0.0, 0.0)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO)
+        );
+        // [-1, -1) is not a valid range
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", -1, -1, -1)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", -1L, -1L, -1L)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", -1.0, -1.0, -1.0)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", BigInteger.valueOf(-1L), BigInteger.valueOf(-1L), BigInteger.valueOf(-1L))
+        );
+        // [-1, 0) is a valid range
+        MathPreconditions.checkInRange("x", -1, -1, 0);
+        MathPreconditions.checkInRange("x", -1L, -1L, 0);
+        MathPreconditions.checkInRange("x", -1.0, -1.0, 0);
+        MathPreconditions.checkInRange("x", BigInteger.valueOf(-1L), BigInteger.valueOf(-1L), BigInteger.ZERO);
+        // check -2 is not in range [-1, 1)
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", -2, -1, 1)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", -2L, -1L, 1L)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", -2.0, -1.0, 1.0)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", BigInteger.valueOf(-2L), BigInteger.valueOf(-1L), BigInteger.ONE)
+        );
+        // check -1 is in range [-1, 1)
+        MathPreconditions.checkInRange("x", -1, -1, 1);
+        MathPreconditions.checkInRange("x", -1L, -1L, 1L);
+        MathPreconditions.checkInRange("x", -1.0, -1.0, 1.0);
+        MathPreconditions.checkInRange("x", BigInteger.valueOf(-1L), BigInteger.valueOf(-1L), BigInteger.ONE);
+        // check 0 is in range [-1, 1)
+        MathPreconditions.checkInRange("x", 0, -1, 1);
+        MathPreconditions.checkInRange("x", 0L, -1L, 1L);
+        MathPreconditions.checkInRange("x", 0.0, -1.0, 1.0);
+        MathPreconditions.checkInRange("x", BigInteger.ZERO, BigInteger.valueOf(-1L), BigInteger.ONE);
+        // check 1 is not in range [-1, 1)
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 1, -1, 1)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 1L, -1L, 1L)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 1.0, -1.0, 1.0)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", BigInteger.ONE, BigInteger.valueOf(-1L), BigInteger.ONE)
+        );
+        // check 2 is not in range [-1, 1)
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 2, -1, 1)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 2L, -1L, 1L)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 2.0, -1.0, 1.0)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", BigInteger.valueOf(2L), BigInteger.valueOf(-1L), BigInteger.ONE)
+        );
+    }
+
+    @Test
+    public void testCheckInRangeClosed() {
+        // [0, 0] is a valid range
+        MathPreconditions.checkInRangeClosed("x", 0, 0, 0);
+        MathPreconditions.checkInRangeClosed("x", 0L, 0L, 0L);
+        MathPreconditions.checkInRangeClosed("x", 0.0, 0.0, 0.0);
+        MathPreconditions.checkInRangeClosed("x", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO);
+        // [-1, -1] is a valid range
+        MathPreconditions.checkInRangeClosed("x", -1, -1, -1);
+        MathPreconditions.checkInRangeClosed("x", -1L, -1L, -1L);
+        MathPreconditions.checkInRangeClosed("x", -1.0, -1.0, -1.0);
+        MathPreconditions.checkInRangeClosed("x", BigInteger.valueOf(-1L), BigInteger.valueOf(-1L), BigInteger.valueOf(-1L));
+        // [-1, 0] is a valid range
+        MathPreconditions.checkInRangeClosed("x", -1, -1, 0);
+        MathPreconditions.checkInRangeClosed("x", -1L, -1L, 0);
+        MathPreconditions.checkInRangeClosed("x", -1.0, -1.0, 0);
+        MathPreconditions.checkInRangeClosed("x", BigInteger.valueOf(-1L), BigInteger.valueOf(-1L), BigInteger.ZERO);
+        // check -2 is not in range [-1, 1]
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRangeClosed("x", -2, -1, 1)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRangeClosed("x", -2L, -1L, 1L)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRangeClosed("x", -2.0, -1.0, 1.0)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRangeClosed("x", BigInteger.valueOf(-2L), BigInteger.valueOf(-1L), BigInteger.ONE)
+        );
+        // check -1 is in range [-1, 1]
+        MathPreconditions.checkInRangeClosed("x", -1, -1, 1);
+        MathPreconditions.checkInRangeClosed("x", -1L, -1L, 1L);
+        MathPreconditions.checkInRangeClosed("x", -1.0, -1.0, 1.0);
+        MathPreconditions.checkInRangeClosed("x", BigInteger.valueOf(-1L), BigInteger.valueOf(-1L), BigInteger.ONE);
+        // check 0 is in range [-1, 1]
+        MathPreconditions.checkInRangeClosed("x", 0, -1, 1);
+        MathPreconditions.checkInRangeClosed("x", 0L, -1L, 1L);
+        MathPreconditions.checkInRangeClosed("x", 0.0, -1.0, 1.0);
+        MathPreconditions.checkInRangeClosed("x", BigInteger.ZERO, BigInteger.valueOf(-1L), BigInteger.ONE);
+        // check 1 is in range [-1. 1
+        MathPreconditions.checkInRangeClosed("x", 1, -1, 1);
+        MathPreconditions.checkInRangeClosed("x", 1L, -1L, 1L);
+        MathPreconditions.checkInRangeClosed("x", 1.0, -1.0, 1.0);
+        MathPreconditions.checkInRangeClosed("x", BigInteger.ONE, BigInteger.valueOf(-1L), BigInteger.ONE);
+        // check 2 is not in range [-1, 1)
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 2, -1, 1)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 2L, -1L, 1L)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", 2.0, -1.0, 1.0)
+        );
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            MathPreconditions.checkInRange("x", BigInteger.valueOf(2L), BigInteger.valueOf(-1L), BigInteger.ONE)
+        );
     }
 }

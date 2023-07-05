@@ -2,7 +2,6 @@ package edu.alibaba.mpc4j.s2pc.opf.opprf.rb;
 
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.cgs22.Cgs22RbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.cgs22.Cgs22RbopprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.cgs22.Cgs22RbopprfSender;
@@ -72,18 +71,9 @@ public class RbopprfFactory {
     /**
      * Creates a default config.
      *
-     * @param securityModel the security model.
      * @return a default config.
      */
-    public static RbopprfConfig createDefaultConfig(SecurityModel securityModel) {
-        switch (securityModel) {
-            case IDEAL:
-            case SEMI_HONEST:
-                return new Cgs22RbopprfConfig.Builder().build();
-            case COVERT:
-            case MALICIOUS:
-            default:
-                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
-        }
+    public static RbopprfConfig createDefaultConfig() {
+        return new Cgs22RbopprfConfig.Builder().build();
     }
 }

@@ -20,6 +20,10 @@ public class HhLdpMetrics {
      */
     private long payloadBytes;
     /**
+     * context bytes
+     */
+    private long contextBytes;
+    /**
      * memory bytes
      */
     private long memoryBytes;
@@ -70,6 +74,14 @@ public class HhLdpMetrics {
 
     public void setPayloadBytes(long payloadBytes) {
         this.payloadBytes = payloadBytes;
+    }
+
+    public long getContextBytes() {
+        return contextBytes;
+    }
+
+    public void setContextBytes(long contextBytes) {
+        this.contextBytes = contextBytes;
     }
 
     public long getMemoryBytes() {

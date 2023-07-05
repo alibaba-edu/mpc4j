@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * GF(2^128)运算一致性验证。
+ * GF(2^128) consistency test.
  *
  * @author Weiran Liu
  * @date 2022/01/16
@@ -25,33 +25,34 @@ import java.util.Collection;
 @Ignore
 public class Gf2kConsistencyTest {
     /**
-     * 随机测试轮数
+     * max random round
      */
     private static final int MAX_RANDOM_ROUND = 1000;
     /**
-     * 随机状态
+     * random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // BC V.S. Native_SSE
-        configurationParams.add(new Object[] {"BC V.S. SSE", Gf2kType.BC, Gf2kType.SSE});
-        // BC V.S. Native_NTL
-        configurationParams.add(new Object[] {"BC V.S. NTL", Gf2kType.BC, Gf2kType.NTL});
-        // BC V.S. RINGS
-        configurationParams.add(new Object[] {"BC V.S. RINGS", Gf2kType.BC, Gf2kType.RINGS});
+        Collection<Object[]> configurations = new ArrayList<>();
 
-        return configurationParams;
+        // BC V.S. COMBINED
+        configurations.add(new Object[]{"BC V.S. COMBINED", Gf2kType.BC, Gf2kType.COMBINED});
+        // BC V.S. NTL
+        configurations.add(new Object[]{"BC V.S. NTL", Gf2kType.BC, Gf2kType.NTL});
+        // BC V.S. RINGS
+        configurations.add(new Object[]{"BC V.S. RINGS", Gf2kType.BC, Gf2kType.RINGS});
+
+        return configurations;
     }
 
     /**
-     * 被比较类型
+     * this GF(2^κ)
      */
     private final Gf2k thisGf2k;
     /**
-     * 比较类型
+     * that GF(2^κ)
      */
     private final Gf2k thatGf2k;
 

@@ -1,6 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.main.ucpsi;
 
 /**
+ * UCPSI type.
+ *
  * @author Liqiang Peng
  * @date 2023/4/23
  */

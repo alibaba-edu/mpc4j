@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.dp.service.fo.rappor;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
-import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory.BitVectorType;
 import edu.alibaba.mpc4j.common.tool.hash.IntHash;
 import edu.alibaba.mpc4j.common.tool.hash.IntHashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -118,7 +117,7 @@ public class RapporFoLdpServer extends AbstractFoLdpServer {
         // read the bloom filter bytes
         byte[] bloomFilterBytes = new byte[mByteLength];
         System.arraycopy(itemBytes, 0, bloomFilterBytes, 0, bloomFilterBytes.length);
-        BitVector bloomFilter = BitVectorFactory.create(BitVectorType.BYTES_BIT_VECTOR, m, bloomFilterBytes);
+        BitVector bloomFilter = BitVectorFactory.create(m, bloomFilterBytes);
         // read the cohort index
         int cohortIndexByteLength = IntUtils.boundedNonNegIntByteLength(cohortNum);
         byte[] cohortIndexBytes = new byte[cohortIndexByteLength];

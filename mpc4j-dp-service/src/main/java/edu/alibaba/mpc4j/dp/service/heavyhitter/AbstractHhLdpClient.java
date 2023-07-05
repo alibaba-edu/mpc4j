@@ -29,10 +29,6 @@ public abstract class AbstractHhLdpClient implements HhLdpClient {
      */
     protected final double windowEpsilon;
     /**
-     * the window size (w)
-     */
-    protected final int windowSize;
-    /**
      * the domain set
      */
     protected final Set<String> domainSet;
@@ -42,7 +38,6 @@ public abstract class AbstractHhLdpClient implements HhLdpClient {
         d = hhLdpConfig.getD();
         k = hhLdpConfig.getK();
         windowEpsilon = hhLdpConfig.getWindowEpsilon();
-        windowSize = hhLdpConfig.getWindowSize();
         domainSet = hhLdpConfig.getDomainSet();
     }
 
@@ -74,10 +69,5 @@ public abstract class AbstractHhLdpClient implements HhLdpClient {
     @Override
     public double getWindowEpsilon() {
         return windowEpsilon;
-    }
-
-    @Override
-    public int getWindowSize() {
-        return windowSize;
     }
 }

@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ZlCoreMtgConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.ZlCoreMtgFactory;
@@ -14,7 +14,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotFactory;
  * @author Sheng Hu, Weiran Liu
  * @date 2022/2/20
  */
-public class Dsz15OtZlCoreMtgConfig implements ZlCoreMtgConfig {
+public class Dsz15OtZlCoreMtgConfig extends AbstractMultiPartyPtoConfig implements ZlCoreMtgConfig {
     /**
      * the Zl instance
      */
@@ -25,6 +25,7 @@ public class Dsz15OtZlCoreMtgConfig implements ZlCoreMtgConfig {
     private final CotConfig cotConfig;
 
     private Dsz15OtZlCoreMtgConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST, builder.cotConfig);
         zl = builder.zl;
         cotConfig = builder.cotConfig;
     }
@@ -40,27 +41,8 @@ public class Dsz15OtZlCoreMtgConfig implements ZlCoreMtgConfig {
     }
 
     @Override
-    public int maxAllowNum() {
+    public int maxNum() {
         return (int) Math.floor((double) (1 << 24) / zl.getL());
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        cotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return cotConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (cotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = cotConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public CotConfig getCotConfig() {

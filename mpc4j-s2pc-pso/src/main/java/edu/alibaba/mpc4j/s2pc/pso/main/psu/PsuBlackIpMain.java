@@ -100,7 +100,7 @@ public class PsuBlackIpMain {
             + "_" + config.getPtoType().name()
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         // 写入统计结果头文件
@@ -177,7 +177,7 @@ public class PsuBlackIpMain {
             + "_" + config.getPtoType().name()
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         // 写入统计结果头文件

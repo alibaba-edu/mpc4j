@@ -35,7 +35,6 @@ public class OpBoostSlaveThread extends Thread {
             slave.fit(slaveDataFrame, slaveConfig);
         } catch (MpcAbortException e) {
             e.printStackTrace();
-            System.exit(-1);
         }
     }
 }

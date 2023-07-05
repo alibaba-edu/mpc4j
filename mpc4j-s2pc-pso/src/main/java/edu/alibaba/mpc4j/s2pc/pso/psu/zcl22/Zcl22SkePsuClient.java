@@ -10,15 +10,15 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
-import edu.alibaba.mpc4j.common.tool.okve.ovdm.gf2e.Gf2eOvdm;
-import edu.alibaba.mpc4j.common.tool.okve.ovdm.gf2e.Gf2eOvdmFactory;
-import edu.alibaba.mpc4j.common.tool.okve.ovdm.gf2e.Gf2eOvdmFactory.Gf2eOvdmType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.ovdm.gf2e.Gf2eOvdm;
+import edu.alibaba.mpc4j.crypto.matrix.okve.ovdm.gf2e.Gf2eOvdmFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.ovdm.gf2e.Gf2eOvdmFactory.Gf2eOvdmType;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcFactory;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcParty;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
@@ -42,9 +42,9 @@ import java.util.stream.IntStream;
  */
 public class Zcl22SkePsuClient extends AbstractPsuClient {
     /**
-     * BC协议接收方
+     * Z2 circuit receiver
      */
-    private final BcParty bcReceiver;
+    private final Z2cParty z2cReceiver;
     /**
      * OPRP协议发送方
      */
@@ -72,8 +72,8 @@ public class Zcl22SkePsuClient extends AbstractPsuClient {
 
     public Zcl22SkePsuClient(Rpc clientRpc, Party serverParty, Zcl22SkePsuConfig config) {
         super(Zcl22SkePsuPtoDesc.getInstance(), clientRpc, serverParty, config);
-        bcReceiver = BcFactory.createReceiver(clientRpc, serverParty, config.getBcConfig());
-        addSubPtos(bcReceiver);
+        z2cReceiver = Z2cFactory.createReceiver(clientRpc, serverParty, config.getZ2cConfig());
+        addSubPtos(z2cReceiver);
         oprpSender = OprpFactory.createSender(clientRpc, serverParty, config.getOprpConfig());
         addSubPtos(oprpSender);
         coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
@@ -88,7 +88,7 @@ public class Zcl22SkePsuClient extends AbstractPsuClient {
 
         stopWatch.start();
         // 涉及三元组部分的初始化
-        bcReceiver.init(maxServerElementSize, maxServerElementSize * CommonConstants.BLOCK_BIT_LENGTH);
+        z2cReceiver.init(maxServerElementSize * CommonConstants.BLOCK_BIT_LENGTH);
         oprpSender.init(maxServerElementSize);
         stopWatch.stop();
         long bcTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -232,8 +232,8 @@ public class Zcl22SkePsuClient extends AbstractPsuClient {
         SquareZ2Vector clientPeqtShares = SquareZ2Vector.createZeros(serverElementSize);
         for (int index = 0; index < CommonConstants.BLOCK_BIT_LENGTH - logSize; index++) {
             byte[] bits = transposeTransBitMatrix.getColumn(index);
-            SquareZ2Vector notBits = bcReceiver.not(SquareZ2Vector.create(serverElementSize, bits, false));
-            clientPeqtShares = bcReceiver.and(clientPeqtShares, notBits);
+            SquareZ2Vector notBits = z2cReceiver.not(SquareZ2Vector.create(serverElementSize, bits, false));
+            clientPeqtShares = z2cReceiver.and(clientPeqtShares, notBits);
         }
         return clientPeqtShares.getBitVector().getBytes();
     }

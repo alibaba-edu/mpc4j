@@ -15,7 +15,7 @@ class CcpsiClientThread extends Thread {
     /**
      * client
      */
-    private final CcpsiClient client;
+    private final CcpsiClient<ByteBuffer> client;
     /**
      * client element set
      */
@@ -27,15 +27,15 @@ class CcpsiClientThread extends Thread {
     /**
      * client output
      */
-    private CcpsiClientOutput clientOutput;
+    private CcpsiClientOutput<ByteBuffer> clientOutput;
 
-    CcpsiClientThread(CcpsiClient client, Set<ByteBuffer> clientElementSet, int serverElementSize) {
+    CcpsiClientThread(CcpsiClient<ByteBuffer> client, Set<ByteBuffer> clientElementSet, int serverElementSize) {
         this.client = client;
         this.clientElementSet = clientElementSet;
         this.serverElementSize = serverElementSize;
     }
 
-    CcpsiClientOutput getClientOutput() {
+    CcpsiClientOutput<ByteBuffer> getClientOutput() {
         return clientOutput;
     }
 

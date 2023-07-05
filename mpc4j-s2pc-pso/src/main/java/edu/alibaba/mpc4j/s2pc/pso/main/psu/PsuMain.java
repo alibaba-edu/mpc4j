@@ -48,9 +48,13 @@ public class PsuMain {
      */
     private static final int WARMUP_SET_SIZE = 1 << 10;
     /**
-     * 秒表
+     * server stop watch
      */
-    private final StopWatch stopWatch;
+    private final StopWatch serverStopWatch;
+    /**
+     * server stop watch
+     */
+    private final StopWatch clientStopWatch;
     /**
      * 配置参数
      */
@@ -58,10 +62,11 @@ public class PsuMain {
 
     public PsuMain(Properties properties) {
         this.properties = properties;
-        stopWatch = new StopWatch();
+        serverStopWatch = new StopWatch();
+        clientStopWatch = new StopWatch();
     }
 
-    public void run() throws Exception {
+    public void runNetty() throws Exception {
         Rpc ownRpc = RpcPropertiesUtils.readNettyRpc(properties, "server", "client");
         if (ownRpc.ownParty().getPartyId() == 0) {
             runServer(ownRpc, ownRpc.getParty(1));
@@ -72,7 +77,7 @@ public class PsuMain {
         }
     }
 
-    private void runServer(Rpc serverRpc, Party clientParty) throws Exception {
+    public void runServer(Rpc serverRpc, Party clientParty) throws Exception {
         // 读取协议参数
         LOGGER.info("{} read settings", serverRpc.ownParty().getPartyName());
         // 读取元素字节长度
@@ -105,7 +110,7 @@ public class PsuMain {
             + "_" + elementByteLength * Byte.SIZE
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         // 写入统计结果头文件
@@ -190,11 +195,11 @@ public class PsuMain {
         psuServer.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", psuServer.ownParty().getPartyName());
-        stopWatch.start();
+        serverStopWatch.start();
         psuServer.init(serverSetSize, clientSetSize);
-        stopWatch.stop();
-        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
+        serverStopWatch.stop();
+        long initTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
+        serverStopWatch.reset();
         long initDataPacketNum = psuServer.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = psuServer.getRpc().getPayloadByteLength();
         long initSendByteLength = psuServer.getRpc().getSendByteLength();
@@ -202,11 +207,11 @@ public class PsuMain {
         psuServer.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", psuServer.ownParty().getPartyName());
-        stopWatch.start();
+        serverStopWatch.start();
         psuServer.psu(serverElementSet, clientSetSize, elementByteLength);
-        stopWatch.stop();
-        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
+        serverStopWatch.stop();
+        long ptoTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
+        serverStopWatch.reset();
         long ptoDataPacketNum = psuServer.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = psuServer.getRpc().getPayloadByteLength();
         long ptoSendByteLength = psuServer.getRpc().getSendByteLength();
@@ -226,7 +231,7 @@ public class PsuMain {
         LOGGER.info("{} finish", psuServer.ownParty().getPartyName());
     }
 
-    private void runClient(Rpc clientRpc, Party serverParty) throws Exception {
+    public void runClient(Rpc clientRpc, Party serverParty) throws Exception {
         // 读取协议参数
         LOGGER.info("{} read settings", clientRpc.ownParty().getPartyName());
         // 读取元素字节长度
@@ -259,7 +264,7 @@ public class PsuMain {
             + "_" + elementByteLength * Byte.SIZE
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         // 写入统计结果头文件
@@ -347,11 +352,11 @@ public class PsuMain {
         psuClient.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", psuClient.ownParty().getPartyName());
-        stopWatch.start();
+        clientStopWatch.start();
         psuClient.init(clientSetSize, serverSetSize);
-        stopWatch.stop();
-        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
+        clientStopWatch.stop();
+        long initTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
+        clientStopWatch.reset();
         long initDataPacketNum = psuClient.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = psuClient.getRpc().getPayloadByteLength();
         long initSendByteLength = psuClient.getRpc().getSendByteLength();
@@ -359,11 +364,11 @@ public class PsuMain {
         psuClient.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", psuClient.ownParty().getPartyName());
-        stopWatch.start();
+        clientStopWatch.start();
         psuClient.psu(clientElementSet, serverSetSize, elementByteLength);
-        stopWatch.stop();
-        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
+        clientStopWatch.stop();
+        long ptoTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
+        clientStopWatch.reset();
         long ptoDataPacketNum = psuClient.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = psuClient.getRpc().getPayloadByteLength();
         long ptoSendByteLength = psuClient.getRpc().getSendByteLength();

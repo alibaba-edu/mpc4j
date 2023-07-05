@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.base;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.crypto.kyber.KyberEngineFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory.BaseOtType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.co15.Co15BaseOtConfig;
@@ -12,11 +9,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19EccBaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19.Mr19KyberBaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.np01.Np01ByteBaseOtConfig;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -24,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -37,12 +29,8 @@ import java.util.stream.IntStream;
  * @date 2019/07/12
  */
 @RunWith(Parameterized.class)
-public class BaseOtTest {
+public class BaseOtTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseOtTest.class);
-    /**
-     * 随机状态
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * 默认数量
      */
@@ -132,38 +120,13 @@ public class BaseOtTest {
     }
 
     /**
-     * 发送方
-     */
-    private final Rpc senderRpc;
-    /**
-     * 接收方
-     */
-    private final Rpc receiverRpc;
-    /**
      * 协议类型
      */
     private final BaseOtConfig config;
 
     public BaseOtTest(String name, BaseOtConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        senderRpc = rpcManager.getRpc(0);
-        receiverRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        senderRpc.connect();
-        receiverRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        senderRpc.disconnect();
-        receiverRpc.disconnect();
     }
 
     @Test
@@ -187,8 +150,8 @@ public class BaseOtTest {
     }
 
     private void testPto(int num, boolean parallel) {
-        BaseOtSender sender = BaseOtFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        BaseOtReceiver receiver = BaseOtFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        BaseOtSender sender = BaseOtFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        BaseOtReceiver receiver = BaseOtFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -200,30 +163,26 @@ public class BaseOtTest {
             boolean[] choices = new boolean[num];
             IntStream.range(0, num).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
             BaseOtReceiverThread receiverThread = new BaseOtReceiverThread(receiver, choices);
-            StopWatch stopWatch = new StopWatch();
-            // 开始执行协议
-            stopWatch.start();
+            STOP_WATCH.start();
+            // start
             senderThread.start();
             receiverThread.start();
-            // 等待线程停止
+            // stop
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long totalTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            // 验证结果
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
+            // verify
             assertOutput(num, senderThread.getSenderOutput(), receiverThread.getReceiverOutput());
-            LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
-                senderRpc.getSendByteLength(), receiverRpc.getSendByteLength(), totalTime
-            );
-            senderRpc.reset();
-            receiverRpc.reset();
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     private void assertOutput(int num, BaseOtSenderOutput senderOutput, BaseOtReceiverOutput receiverOutput) {

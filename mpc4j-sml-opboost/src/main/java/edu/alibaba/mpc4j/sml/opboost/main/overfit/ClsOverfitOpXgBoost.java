@@ -72,7 +72,7 @@ public class ClsOverfitOpXgBoost extends AbstractOverfitOpXgBoost {
             + "_" + datasetName
             // 测试轮数
             + "_" + totalRound
-            + ".txt";
+            + ".output";
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         // 输出表头

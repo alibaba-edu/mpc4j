@@ -13,12 +13,11 @@ public interface LnotReceiver extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
-     * @param l           choice bit length.
-     * @param maxRoundNum max round num.
-     * @param updateNum   update num.
+     * @param l         choice bit length.
+     * @param updateNum update num.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(int l, int maxRoundNum, int updateNum) throws MpcAbortException;
+    void init(int l, int updateNum) throws MpcAbortException;
 
     /**
      * Executes the protocol.

@@ -8,30 +8,26 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
 /**
- * 布尔三元组生成协议参与方。
+ * abstract Z2 multiplication triple generation party.
  *
  * @author Sheng Hu, Weiran Liu
  * @date 2022/02/07
  */
 public abstract class AbstractZ2MtgParty extends AbstractTwoPartyPto implements Z2MtgParty {
     /**
-     * 配置项
+     * config
      */
     protected final Z2MtgConfig config;
     /**
-     * 最大单轮数量
-     */
-    protected int maxRoundNum;
-    /**
-     * 更新数量
+     * update num
      */
     protected long updateNum;
     /**
-     * 数量
+     * num
      */
     protected int num;
     /**
-     * 字节数量
+     * byte num
      */
     protected int byteNum;
 
@@ -40,16 +36,15 @@ public abstract class AbstractZ2MtgParty extends AbstractTwoPartyPto implements 
         this.config = config;
     }
 
-    protected void setInitInput(int maxRoundNum, int updateNum) {
-        MathPreconditions.checkPositiveInRangeClosed("maxRoundNum", maxRoundNum, updateNum);
-        this.maxRoundNum = maxRoundNum;
+    protected void setInitInput(int updateNum) {
+        MathPreconditions.checkPositive("updateNum", updateNum);
         this.updateNum = updateNum;
         initState();
     }
 
     protected void setPtoInput(int num) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxRoundNum);
+        MathPreconditions.checkPositive("num", num);
         this.num = num;
         byteNum = CommonUtils.getByteLength(num);
         extraInfo += num;

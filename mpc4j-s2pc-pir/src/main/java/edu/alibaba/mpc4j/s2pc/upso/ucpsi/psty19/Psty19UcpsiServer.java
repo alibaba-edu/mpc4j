@@ -14,9 +14,9 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtFactory;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtParty;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtParty;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.AbstractUcpsiServer;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.UbopprfFactory;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.UbopprfSender;
@@ -34,7 +34,7 @@ import java.util.stream.IntStream;
  * @author Liqiang Peng
  * @date 2023/4/17
  */
-public class Psty19UcpsiServer extends AbstractUcpsiServer {
+public class Psty19UcpsiServer<T> extends AbstractUcpsiServer<T> {
     /**
      * unbalanced batch OPPRF sender
      */
@@ -87,7 +87,7 @@ public class Psty19UcpsiServer extends AbstractUcpsiServer {
     }
 
     @Override
-    public void init(Set<ByteBuffer> serverElementSet, int maxClientElementSize) throws MpcAbortException {
+    public void init(Set<T> serverElementSet, int maxClientElementSize) throws MpcAbortException {
         setInitInput(serverElementSet, maxClientElementSize);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
@@ -174,12 +174,12 @@ public class Psty19UcpsiServer extends AbstractUcpsiServer {
 
     private void generateBopprfInputs(int l) {
         int byteL = CommonUtils.getByteLength(l);
-        RandomPadHashBin<ByteBuffer> simpleHashBin = new RandomPadHashBin<>(envType, beta, serverElementSize, hashKeys);
+        RandomPadHashBin<T> simpleHashBin = new RandomPadHashBin<>(envType, beta, serverElementSize, hashKeys);
         simpleHashBin.insertItems(serverElementArrayList);
         // P1 generates the input arrays
         inputArrays = IntStream.range(0, beta)
             .mapToObj(batchIndex -> {
-                ArrayList<HashBinEntry<ByteBuffer>> bin = new ArrayList<>(simpleHashBin.getBin(batchIndex));
+                ArrayList<HashBinEntry<T>> bin = new ArrayList<>(simpleHashBin.getBin(batchIndex));
                 return bin.stream()
                     .map(entry -> {
                         byte[] itemBytes = entry.getItemByteArray();

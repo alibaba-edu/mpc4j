@@ -1,65 +1,85 @@
 package edu.alibaba.mpc4j.s2pc.pir.keyword;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * 关键词索引PIR协议客户端线程。
+ * keyword PIR client thread.
  *
  * @author Liqiang Peng
  * @date 2022/6/22
  */
-public class KwPirClientThread<T> extends Thread {
+public class KwPirClientThread extends Thread {
+    private static final Logger LOGGER = LoggerFactory.getLogger(KwPirClientThread.class);
     /**
-     * 关键词PIR协议客户端
+     * keyword PIR client
      */
-    private final KwPirClient<T> client;
+    private final KwPirClient client;
     /**
-     * 标签字节长度
+     * label byte length
      */
     private final int labelByteLength;
     /**
-     * 检索集合
+     * retrieval sets
      */
-    private final ArrayList<Set<T>> retrievalSets;
+    private final List<Set<ByteBuffer>> retrievalSets;
     /**
-     * 客户端检索数量
+     * retrieval size
      */
     private final int retrievalSize;
     /**
-     * 检索次数
+     * repeat time
      */
     private final int repeatTime;
     /**
-     * PIR结果
+     * retrieval result
      */
-    private final ArrayList<Map<T, ByteBuffer>> retrievalResults;
+    private final List<Map<ByteBuffer, ByteBuffer>> retrievalResults;
+    /**
+     * server element size
+     */
+    private final int serverElementSize;
 
-    KwPirClientThread(KwPirClient<T> client, ArrayList<Set<T>> retrievalSets, int retrievalSize, int labelByteLength) {
+    KwPirClientThread(KwPirClient client, List<Set<ByteBuffer>> retrievalSets, int retrievalSize, int serverElementSize,
+                      int labelByteLength) {
         this.client = client;
         this.retrievalSets = retrievalSets;
         this.retrievalSize = retrievalSize;
+        this.serverElementSize = serverElementSize;
         this.labelByteLength = labelByteLength;
         repeatTime = retrievalSets.size();
         retrievalResults = new ArrayList<>(repeatTime);
     }
 
-    public Map<T, ByteBuffer> getRetrievalResult(int index) {
+    public Map<ByteBuffer, ByteBuffer> getRetrievalResult(int index) {
         return retrievalResults.get(index);
     }
 
     @Override
     public void run() {
         try {
-            client.init(retrievalSize, labelByteLength);
+            client.init(retrievalSize, serverElementSize, labelByteLength);
+            LOGGER.info(
+                "Client: The Offline Communication costs {}MB", client.getRpc().getSendByteLength() * 1.0 / (1 << 20)
+            );
             client.getRpc().synchronize();
+            client.getRpc().reset();
+
             for (int i = 0; i < repeatTime; i++) {
                 retrievalResults.add(client.pir(retrievalSets.get(i)));
             }
+            LOGGER.info(
+                "Client: The Online Communication costs {}MB", client.getRpc().getSendByteLength() * 1.0 / (1 << 20)
+            );
+            client.getRpc().synchronize();
+            client.getRpc().reset();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

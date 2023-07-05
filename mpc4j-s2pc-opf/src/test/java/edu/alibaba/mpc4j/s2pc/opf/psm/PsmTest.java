@@ -1,27 +1,20 @@
 package edu.alibaba.mpc4j.s2pc.opf.psm;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.opf.psm.PsmFactory.PsmType;
 import edu.alibaba.mpc4j.s2pc.opf.psm.cgs22.Cgs22LnotPsmConfig;
 import edu.alibaba.mpc4j.s2pc.opf.psm.cgs22.Cgs22OpprfPsmConfig;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,12 +27,8 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/4/16
  */
 @RunWith(Parameterized.class)
-public class PsmTest {
+public class PsmTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(PsmTest.class);
-    /**
-     * the random state
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * default num
      */
@@ -61,63 +50,28 @@ public class PsmTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // CGS22_OPPRF (direct, semi-honest)
+        // CGS22_OPPRF
         configurations.add(new Object[]{
-            PsmType.CGS22_OPPRF.name() + " (direct, semi-honest)",
+            PsmType.CGS22_OPPRF.name() + " (" + SecurityModel.SEMI_HONEST.name() + ")",
             new Cgs22OpprfPsmConfig.Builder(SecurityModel.SEMI_HONEST, false).build()
         });
-        // CGS22_OPPRF (silent, semi-honest)
+        // CGS22_LNOT
         configurations.add(new Object[]{
-            PsmType.CGS22_OPPRF.name() + " (silent, semi-honest)",
-            new Cgs22OpprfPsmConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
-        });
-        // CGS22_LNOT (direct, semi-honest)
-        configurations.add(new Object[]{
-            PsmType.CGS22_LNOT.name() + " (direct, semi-honest)",
+            PsmType.CGS22_LNOT.name() + " (" + SecurityModel.SEMI_HONEST.name() + ")",
             new Cgs22LnotPsmConfig.Builder(SecurityModel.SEMI_HONEST, false).build()
-        });
-        // CGS22_LNOT (silent, semi-honest)
-        configurations.add(new Object[]{
-            PsmType.CGS22_LNOT.name() + " (silent, semi-honest)",
-            new Cgs22LnotPsmConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
 
         return configurations;
     }
 
     /**
-     * the sender RPC
-     */
-    private final Rpc senderRpc;
-    /**
-     * the receiver RPC
-     */
-    private final Rpc receiverRpc;
-    /**
-     * the config
+     * config
      */
     private final PsmConfig config;
 
     public PsmTest(String name, PsmConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        senderRpc = rpcManager.getRpc(0);
-        receiverRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        senderRpc.connect();
-        receiverRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        senderRpc.disconnect();
-        receiverRpc.disconnect();
     }
 
     @Test
@@ -180,8 +134,8 @@ public class PsmTest {
         byte[][][] senderInputArrays = PsmTestUtils.genSenderInputArrays(l, d, num, SECURE_RANDOM);
         byte[][] receiverInputArray = PsmTestUtils.genReceiverInputArray(l, d, senderInputArrays, SECURE_RANDOM);
         // init the protocol
-        PsmSender sender = PsmFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        PsmReceiver receiver = PsmFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        PsmSender sender = PsmFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        PsmReceiver receiver = PsmFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         try {
@@ -189,35 +143,29 @@ public class PsmTest {
             PsmSenderThread senderThread = new PsmSenderThread(sender, l, d, senderInputArrays);
             PsmReceiverThread receiverThread = new PsmReceiverThread(receiver, l, d, receiverInputArray);
             StopWatch stopWatch = new StopWatch();
-            // execute the protocol
+            // start
             stopWatch.start();
             senderThread.start();
             receiverThread.start();
+            // stop
             senderThread.join();
             receiverThread.join();
             stopWatch.stop();
             long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
-            long senderByteLength = senderRpc.getSendByteLength();
-            long senderRound = senderRpc.getSendDataPacketNum();
-            long receiverByteLength = receiverRpc.getSendByteLength();
-            long receiverRound = receiverRpc.getSendDataPacketNum();
-            senderRpc.reset();
-            receiverRpc.reset();
+            // verify
             SquareZ2Vector z0 = senderThread.getZ0();
             SquareZ2Vector z1 = receiverThread.getZ1();
             BitVector z = z0.getBitVector().xor(z1.getBitVector());
             // verify
             assertOutput(num, senderInputArrays, receiverInputArray, z);
-            LOGGER.info("Sender sends {}B / {} rounds, Receiver sends {}B / {} rounds, time = {}ms",
-                senderByteLength, senderRound, receiverByteLength, receiverRound, time
-            );
-            LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     private void assertOutput(int num, byte[][][] senderInputArrays, byte[][] receiverInputArray, BitVector z) {

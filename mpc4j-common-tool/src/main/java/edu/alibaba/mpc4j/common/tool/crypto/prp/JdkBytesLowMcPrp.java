@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.crypto.prp;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.ByteSquareDenseBitMatrix;
+import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.ByteDenseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -94,21 +94,29 @@ public class JdkBytesLowMcPrp implements Prp {
         (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF,
     };
     /**
+     * size = 128
+     */
+    private static final int SIZE = CommonConstants.BLOCK_BIT_LENGTH;
+    /**
+     * byte size
+     */
+    private static final int BYTE_SIZE = CommonConstants.BLOCK_BYTE_LENGTH;
+    /**
      * 总轮数
      */
     private final int round;
     /**
      * 轮密钥矩阵，一共有r + 1组，每组128个128比特的布尔元素
      */
-    private final ByteSquareDenseBitMatrix[] keyMatrices;
+    private final ByteDenseBitMatrix[] keyMatrices;
     /**
      * 轮线性矩阵，一共有r组，每组为128个128比特的布尔元素
      */
-    private final ByteSquareDenseBitMatrix[] linearMatrices;
+    private final ByteDenseBitMatrix[] linearMatrices;
     /**
      * 轮线性逆矩阵，一共有r组，每组为128个128比特的布尔元素
      */
-    private final ByteSquareDenseBitMatrix[] invertLinearMatrices;
+    private final ByteDenseBitMatrix[] invertLinearMatrices;
     /**
      * 轮常数加值，一共有r个，每组为128比特的布尔元素
      */
@@ -139,36 +147,36 @@ public class JdkBytesLowMcPrp implements Prp {
             InputStreamReader lowMcInputStreamReader = new InputStreamReader(lowMcInputStream);
             BufferedReader lowMcBufferedReader = new BufferedReader(lowMcInputStreamReader);
             // 读取线性变换矩阵，共有r组
-            linearMatrices = new ByteSquareDenseBitMatrix[round];
-            invertLinearMatrices = new ByteSquareDenseBitMatrix[round];
+            linearMatrices = new ByteDenseBitMatrix[round];
+            invertLinearMatrices = new ByteDenseBitMatrix[round];
             for (int roundIndex = 0; roundIndex < round; roundIndex++) {
                 // 第一行是标识位
                 String label = lowMcBufferedReader.readLine();
                 assert label.equals(LINEAR_MATRIX_PREFIX + roundIndex);
                 // 后面跟着BLOCK_BIT_LENGTH行数据
-                byte[][] squareMatrix = new byte[CommonConstants.BLOCK_BIT_LENGTH][];
-                for (int bitIndex = 0; bitIndex < CommonConstants.BLOCK_BIT_LENGTH; bitIndex++) {
+                byte[][] squareMatrix = new byte[SIZE][];
+                for (int bitIndex = 0; bitIndex < SIZE; bitIndex++) {
                     String line = lowMcBufferedReader.readLine();
                     squareMatrix[bitIndex] = Hex.decode(line);
-                    assert squareMatrix[bitIndex].length == CommonConstants.BLOCK_BYTE_LENGTH;
+                    assert squareMatrix[bitIndex].length == BYTE_SIZE;
                 }
-                linearMatrices[roundIndex] = ByteSquareDenseBitMatrix.fromDense(squareMatrix);
-                invertLinearMatrices[roundIndex] = (ByteSquareDenseBitMatrix) linearMatrices[roundIndex].inverse();
+                linearMatrices[roundIndex] = ByteDenseBitMatrix.createFromDense(SIZE, squareMatrix);
+                invertLinearMatrices[roundIndex] = linearMatrices[roundIndex].inverse();
             }
             // 读取密钥扩展矩阵，共有r + 1组
-            keyMatrices = new ByteSquareDenseBitMatrix[round + 1];
+            keyMatrices = new ByteDenseBitMatrix[round + 1];
             for (int roundIndex = 0; roundIndex < round + 1; roundIndex++) {
                 // 第一行是标识位
                 String label = lowMcBufferedReader.readLine();
                 assert label.equals(KEY_MATRIX_PREFIX + roundIndex);
                 // 后面跟着BLOCK_BIT_LENGTH行数据
-                byte[][] squareMatrix = new byte[CommonConstants.BLOCK_BIT_LENGTH][];
-                for (int bitIndex = 0; bitIndex < CommonConstants.BLOCK_BIT_LENGTH; bitIndex++) {
+                byte[][] squareMatrix = new byte[SIZE][];
+                for (int bitIndex = 0; bitIndex < SIZE; bitIndex++) {
                     String line = lowMcBufferedReader.readLine();
                     squareMatrix[bitIndex] = Hex.decode(line);
-                    assert squareMatrix[bitIndex].length == CommonConstants.BLOCK_BYTE_LENGTH;
+                    assert squareMatrix[bitIndex].length == BYTE_SIZE;
                 }
-                keyMatrices[roundIndex] = ByteSquareDenseBitMatrix.fromDense(squareMatrix);
+                keyMatrices[roundIndex] = ByteDenseBitMatrix.createFromDense(SIZE, squareMatrix);
             }
             // 读取常数，共有r组
             constants = new byte[round][];
@@ -179,7 +187,7 @@ public class JdkBytesLowMcPrp implements Prp {
                 // 第二行是常数
                 String line = lowMcBufferedReader.readLine();
                 constants[roundIndex] = Hex.decode(line);
-                assert constants[roundIndex].length == CommonConstants.BLOCK_BYTE_LENGTH;
+                assert constants[roundIndex].length == BYTE_SIZE;
             }
             lowMcBufferedReader.close();
             lowMcInputStreamReader.close();
@@ -192,20 +200,20 @@ public class JdkBytesLowMcPrp implements Prp {
 
     @Override
     public void setKey(byte[] key) {
-        assert key.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert key.length == BYTE_SIZE;
         // LowMC内部不存储密钥，只存储扩展密钥，因此密钥得到了拷贝
         // 初始扩展密钥
-        initKey = keyMatrices[0].lmul(key);
+        initKey = keyMatrices[0].leftMultiply(key);
         // 根据轮数扩展密钥
         roundKeys = IntStream.range(0, round)
-            .mapToObj(roundIndex -> keyMatrices[roundIndex + 1].lmul(key))
+            .mapToObj(roundIndex -> keyMatrices[roundIndex + 1].leftMultiply(key))
             .toArray(byte[][]::new);
     }
 
     @Override
     public byte[] prp(byte[] plaintext) {
         assert (initKey != null && roundKeys != null);
-        assert plaintext.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert plaintext.length == BYTE_SIZE;
         byte[] state = BytesUtils.clone(plaintext);
         // initial whitening
         // state = plaintext + MultiplyWithGF2Matrix(KMatrix(0),key)
@@ -214,7 +222,7 @@ public class JdkBytesLowMcPrp implements Prp {
             // m computations of 3-bit sbox, remaining n-3m bits remain the same
             sboxLayer(state);
             // affine layer, state = MultiplyWithGF2Matrix(LMatrix(i),state)
-            state = linearMatrices[roundIndex].lmul(state);
+            state = linearMatrices[roundIndex].leftMultiply(state);
             // state = state + Constants(i)
             BytesUtils.xori(state, constants[roundIndex]);
             // generate round key and add to the state
@@ -227,7 +235,7 @@ public class JdkBytesLowMcPrp implements Prp {
     @Override
     public byte[] invPrp(byte[] ciphertext) {
         assert (initKey != null && roundKeys != null);
-        assert ciphertext.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert ciphertext.length == BYTE_SIZE;
         byte[] state = BytesUtils.clone(ciphertext);
         for (int roundIndex = round - 1; roundIndex >= 0; roundIndex--) {
             // generate round key and add to the state
@@ -235,7 +243,7 @@ public class JdkBytesLowMcPrp implements Prp {
             // state = state + Constants(i)
             BytesUtils.xori(state, constants[roundIndex]);
             // affine layer, state = MultiplyWithGF2Matrix(LMatrix(i),state)
-            state = invertLinearMatrices[roundIndex].lmul(state);
+            state = invertLinearMatrices[roundIndex].leftMultiply(state);
             // m computations of 3-bit sbox, remaining n-3m bits remain the same
             sboxInvLayer(state);
         }

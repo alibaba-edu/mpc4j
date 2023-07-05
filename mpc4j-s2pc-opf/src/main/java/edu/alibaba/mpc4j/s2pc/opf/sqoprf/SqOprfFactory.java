@@ -4,6 +4,12 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
+import edu.alibaba.mpc4j.s2pc.opf.sqoprf.pssw09.Pssw09SqOprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.sqoprf.pssw09.Pssw09SqOprfReceiver;
+import edu.alibaba.mpc4j.s2pc.opf.sqoprf.pssw09.Pssw09SqOprfSender;
+import edu.alibaba.mpc4j.s2pc.opf.sqoprf.nr04.Nr04EccSqOprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.sqoprf.nr04.Nr04EccSqOprfReceiver;
+import edu.alibaba.mpc4j.s2pc.opf.sqoprf.nr04.Nr04EccSqOprfSender;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.ra17.*;
 
 /**
@@ -33,13 +39,13 @@ public class SqOprfFactory implements PtoFactory {
          */
         RA17_BYTE_ECC,
         /**
-         * Naor-Reingold OPRF
+         * Naor-Reingold OPRF based on ECC
          */
-        NR04,
+        NR04_ECC,
         /**
-         * LowMC-based OPRF
+         * LowMC OPRF
          */
-        LOW_MC,
+        PSSW09,
     }
 
     /**
@@ -57,8 +63,10 @@ public class SqOprfFactory implements PtoFactory {
                 return new Ra17EccSqOprfSender(senderRpc, receiverParty, (Ra17EccSqOprfConfig) config);
             case RA17_BYTE_ECC:
                 return new Ra17ByteEccSqOprfSender(senderRpc, receiverParty, (Ra17ByteEccSqOprfConfig) config);
-            case NR04:
-            case LOW_MC:
+            case NR04_ECC:
+                return new Nr04EccSqOprfSender(senderRpc, receiverParty, (Nr04EccSqOprfConfig) config);
+            case PSSW09:
+                return new Pssw09SqOprfSender(senderRpc, receiverParty, (Pssw09SqOprfConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + SqOprfType.class.getSimpleName() + ": " + type.name());
         }
@@ -79,8 +87,10 @@ public class SqOprfFactory implements PtoFactory {
                 return new Ra17EccSqOprfReceiver(receiverRpc, senderParty, (Ra17EccSqOprfConfig) config);
             case RA17_BYTE_ECC:
                 return new Ra17ByteEccSqOprfReceiver(receiverRpc, senderParty, (Ra17ByteEccSqOprfConfig) config);
-            case NR04:
-            case LOW_MC:
+            case NR04_ECC:
+                return new Nr04EccSqOprfReceiver(receiverRpc, senderParty, (Nr04EccSqOprfConfig) config);
+            case PSSW09:
+                return new Pssw09SqOprfReceiver(receiverRpc, senderParty, (Pssw09SqOprfConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + SqOprfType.class.getSimpleName() + ": " + type.name());
         }
@@ -96,9 +106,9 @@ public class SqOprfFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-                return new Ra17ByteEccSqOprfConfig.Builder().build();
             case COVERT:
             case MALICIOUS:
+                return new Ra17ByteEccSqOprfConfig.Builder().build();
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }

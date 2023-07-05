@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.opf.oprp.lowmc;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcConfig;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcFactory;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory.OprpType;
 
@@ -13,18 +13,19 @@ import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory.OprpType;
  * @author Weiran Liu
  * @date 2022/02/11
  */
-public class LowMcOprpConfig implements OprpConfig {
+public class LowMcOprpConfig extends AbstractMultiPartyPtoConfig implements OprpConfig {
     /**
-     * BC协议
+     * Z2 circuit config
      */
-    private final BcConfig bcConfig;
+    private final Z2cConfig z2cConfig;
 
     private LowMcOprpConfig(Builder builder) {
-        bcConfig = builder.bcConfig;
+        super(builder.z2cConfig);
+        z2cConfig = builder.z2cConfig;
     }
 
-    public BcConfig getBcConfig() {
-        return bcConfig;
+    public Z2cConfig getZ2cConfig() {
+        return z2cConfig;
     }
 
     @Override
@@ -32,37 +33,18 @@ public class LowMcOprpConfig implements OprpConfig {
         return OprpType.LOW_MC;
     }
 
-    @Override
-    public void setEnvType(EnvType envType) {
-        bcConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return bcConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (bcConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = bcConfig.getSecurityModel();
-        }
-        return securityModel;
-    }
-
     public static class Builder implements org.apache.commons.lang3.builder.Builder<LowMcOprpConfig> {
         /**
          * BC协议配置项
          */
-        private BcConfig bcConfig;
+        private Z2cConfig z2cConfig;
 
-        public Builder() {
-            bcConfig = BcFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+        public Builder(SecurityModel securityModel) {
+            z2cConfig = Z2cFactory.createDefaultConfig(securityModel, true);
         }
 
-        public Builder setBcConfig(BcConfig bcConfig) {
-            this.bcConfig = bcConfig;
+        public Builder setZ2cConfig(Z2cConfig z2cConfig) {
+            this.z2cConfig = z2cConfig;
             return this;
         }
 

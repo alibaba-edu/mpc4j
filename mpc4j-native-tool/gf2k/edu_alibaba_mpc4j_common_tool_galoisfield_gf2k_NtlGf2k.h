@@ -7,6 +7,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k_L
+#define edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k_L 128L
+#undef edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k_BYTE_L
+#define edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k_BYTE_L 16L
 /*
  * Class:     edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k
  * Method:    nativeMul
@@ -21,6 +25,38 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2k
  * Signature: ([B[B)V
  */
 JNIEXPORT void JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k_nativeMuli
+  (JNIEnv *, jobject, jbyteArray, jbyteArray);
+
+/*
+ * Class:     edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k
+ * Method:    nativeInv
+ * Signature: ([B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k_nativeInv
+  (JNIEnv *, jobject, jbyteArray);
+
+/*
+ * Class:     edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k
+ * Method:    nativeInvi
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k_nativeInvi
+  (JNIEnv *, jobject, jbyteArray);
+
+/*
+ * Class:     edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k
+ * Method:    nativeDiv
+ * Signature: ([B[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k_nativeDiv
+  (JNIEnv *, jobject, jbyteArray, jbyteArray);
+
+/*
+ * Class:     edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k
+ * Method:    nativeDivi
+ * Signature: ([B[B)V
+ */
+JNIEXPORT void JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k_nativeDivi
   (JNIEnv *, jobject, jbyteArray, jbyteArray);
 
 #ifdef __cplusplus

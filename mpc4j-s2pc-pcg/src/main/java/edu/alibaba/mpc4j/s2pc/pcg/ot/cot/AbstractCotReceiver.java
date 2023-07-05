@@ -18,13 +18,9 @@ public abstract class AbstractCotReceiver extends AbstractTwoPartyPto implements
      */
     protected final CotConfig config;
     /**
-     * max round num
-     */
-    protected int maxRoundNum;
-    /**
      * update num
      */
-    protected long updateNum;
+    protected int updateNum;
     /**
      * choices
      */
@@ -39,16 +35,15 @@ public abstract class AbstractCotReceiver extends AbstractTwoPartyPto implements
         this.config = config;
     }
 
-    protected void setInitInput(int maxRoundNum, int updateNum) {
-        MathPreconditions.checkPositiveInRangeClosed("maxRoundNum", maxRoundNum, updateNum);
-        this.maxRoundNum = maxRoundNum;
+    protected void setInitInput(int updateNum) {
+        MathPreconditions.checkPositive("updateNum", updateNum);
         this.updateNum = updateNum;
         initState();
     }
 
     protected void setPtoInput(boolean[] choices) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", choices.length, maxRoundNum);
+        MathPreconditions.checkPositive("num", choices.length);
         this.choices = choices;
         num = choices.length;
         extraInfo++;

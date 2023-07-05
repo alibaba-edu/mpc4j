@@ -46,8 +46,8 @@ public class CacheLnotReceiver extends AbstractLnotReceiver {
     }
 
     @Override
-    public void init(int l, int maxRoundNum, int updateNum) throws MpcAbortException {
-        setInitInput(l, maxRoundNum, updateNum);
+    public void init(int l, int updateNum) throws MpcAbortException {
+        setInitInput(l, updateNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();

@@ -2,7 +2,6 @@ package edu.alibaba.mpc4j.dp.service.fo.hadamard;
 
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
-import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory.BitVectorType;
 import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
@@ -66,7 +65,7 @@ public class HmLowEpsFoLdpClient extends AbstractFoLdpClient {
         checkItemInDomain(item);
         int x = domain.getItemIndex(item) + 1;
         int[] jArray = new int[t];
-        BitVector coefficients = BitVectorFactory.createZeros(BitVectorType.BYTES_BIT_VECTOR, t);
+        BitVector coefficients = BitVectorFactory.createZeros(t);
         for (int i = 0; i < t; i++) {
             // sample an index j. The paper states that j ∈ [d]. However, it seems that correct way is j ∈ [n]
             jArray[i] = random.nextInt(n);
@@ -80,7 +79,7 @@ public class HmLowEpsFoLdpClient extends AbstractFoLdpClient {
             boolean success = false;
             while (!success) {
                 // preserves the result with probability p^* = e^ε / (e^ε + 2^t - 1), and otherwise perturbs uniformly.
-                randomCoefficients = BitVectorFactory.createRandom(BitVectorType.BYTES_BIT_VECTOR, t, random);
+                randomCoefficients = BitVectorFactory.createRandom(t, random);
                 success = !coefficients.equals(randomCoefficients);
             }
             coefficients = randomCoefficients;

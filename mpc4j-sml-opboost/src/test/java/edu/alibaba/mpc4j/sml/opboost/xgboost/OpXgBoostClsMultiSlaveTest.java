@@ -7,9 +7,7 @@ import edu.alibaba.mpc4j.common.data.classification.BreastCancer;
 import edu.alibaba.mpc4j.common.data.classification.Iris;
 import edu.alibaba.mpc4j.common.data.classification.PenDigits;
 import edu.alibaba.mpc4j.common.data.classification.Weather;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractThreePartyPtoTest;
 import edu.alibaba.mpc4j.dp.ldp.LdpConfig;
 import edu.alibaba.mpc4j.sml.opboost.*;
 import ml.dmlc.xgboost4j.java.Booster;
@@ -44,7 +42,7 @@ import java.util.stream.IntStream;
  * @date 2021/10/09
  */
 @RunWith(Parameterized.class)
-public class OpXgBoostClsMultiSlaveTest {
+public class OpXgBoostClsMultiSlaveTest extends AbstractThreePartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpXgBoostClsMultiSlaveTest.class);
 
     static {
@@ -103,38 +101,33 @@ public class OpXgBoostClsMultiSlaveTest {
     private final OpBoostSlave rightSlave;
 
     public OpXgBoostClsMultiSlaveTest(String name, Formula formula, DataFrame train, DataFrame test, boolean plainVerify) {
+        super(name);
         this.name = name;
         this.formula = formula;
         this.train = train;
         this.test = test;
         this.plainVerify = plainVerify;
-        RpcManager rpcManager = new MemoryRpcManager(3);
-        Rpc hostRpc = rpcManager.getRpc(0);
-        Rpc leftSlaveRpc = rpcManager.getRpc(1);
-        Rpc rightSlaveRpc = rpcManager.getRpc(2);
-        host = new OpXgBoostHost(hostRpc, leftSlaveRpc.ownParty(), rightSlaveRpc.ownParty());
-        leftSlave = new OpBoostSlave(leftSlaveRpc, hostRpc.ownParty());
-        rightSlave = new OpBoostSlave(rightSlaveRpc, hostRpc.ownParty());
+        host = new OpXgBoostHost(firstRpc, secondRpc.ownParty(), thirdRpc.ownParty());
+        leftSlave = new OpBoostSlave(secondRpc, firstRpc.ownParty());
+        rightSlave = new OpBoostSlave(thirdRpc, firstRpc.ownParty());
     }
 
     @Before
+    @Override
     public void connect() {
-        host.getRpc().connect();
-        leftSlave.getRpc().connect();
-        rightSlave.getRpc().connect();
+        super.connect();
         host.init();
         leftSlave.init();
         rightSlave.init();
     }
 
     @After
+    @Override
     public void disconnect() {
         host.destroy();
         leftSlave.destroy();
         rightSlave.destroy();
-        host.getRpc().disconnect();
-        leftSlave.getRpc().disconnect();
-        rightSlave.getRpc().disconnect();
+        super.disconnect();
     }
 
     @Test

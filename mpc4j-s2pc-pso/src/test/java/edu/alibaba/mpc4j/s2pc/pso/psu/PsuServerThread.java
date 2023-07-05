@@ -40,11 +40,8 @@ class PsuServerThread extends Thread {
     @Override
     public void run() {
         try {
-            server.getRpc().connect();
             server.init(serverElementSet.size(), clientElementSize);
             server.psu(serverElementSet, clientElementSize, elementByteLength);
-            server.destroy();
-            server.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

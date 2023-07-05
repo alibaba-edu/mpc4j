@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * CMG21非平衡PSI协议参数检查器。
+ * CMG21 UPSI params checker.
  *
  * @author Liqiang Peng
  * @date 2022/8/9
@@ -23,39 +23,38 @@ public class Cmg21UpsiParamsChecker {
         System.loadLibrary(CommonConstants.MPC4J_NATIVE_FHE_NAME);
     }
 
-    /**
-     * 私有构造函数
-     */
     private Cmg21UpsiParamsChecker() {
         // empty
     }
 
     /**
-     * 检查非平衡PSI协议参数的有效性。
+     * check the validity of the params.
      *
-     * @param params 参数。
-     * @return 非平衡PSI协议参数的有效性。
+     * @param params params.
+     * @return whether the params is valid.
      */
     public static boolean checkValid(Cmg21UpsiParams params) {
         assert params.getCuckooHashBinType().equals(CuckooHashBinFactory.CuckooHashBinType.NAIVE_3_HASH)
             || params.getCuckooHashBinType().equals(CuckooHashBinFactory.CuckooHashBinType.NO_STASH_ONE_HASH)
             : CuckooHashBinFactory.CuckooHashBinType.class.getSimpleName() + "only support "
-            + CuckooHashBinFactory.CuckooHashBinType.NO_STASH_ONE_HASH + " or " + CuckooHashBinFactory.CuckooHashBinType.NAIVE_3_HASH;
+            + CuckooHashBinFactory.CuckooHashBinType.NO_STASH_ONE_HASH + " or "
+            + CuckooHashBinFactory.CuckooHashBinType.NAIVE_3_HASH;
         assert params.getBinNum() > 0 : "bin num should be greater than 0";
-        assert params.getItemEncodedSlotSize() >= 2 && params.getItemEncodedSlotSize() <= 32 : "the size of slots for encoded item should "
-            + "smaller than or equal 32 and greater than or equal 2";
-        assert params.getPsLowDegree() <= params.getMaxPartitionSizePerBin() : "psLowDegree should be smaller or equal than " +
-            "maxPartitionSizePerBin";
-        // 检查query powers是否合理
+        assert params.getItemEncodedSlotSize() >= 2 && params.getItemEncodedSlotSize() <= 32
+            : "the size of slots for encoded item should smaller than or equal 32 and greater than or equal 2";
+        assert params.getPsLowDegree() <= params.getMaxPartitionSizePerBin() :
+            "psLowDegree should be smaller or equal than maxPartitionSizePerBin";
         checkQueryPowers(params.getQueryPowers(), params.getPsLowDegree());
-        assert (params.getPolyModulusDegree() & (params.getPolyModulusDegree() - 1)) == 0 : "polyModulusDegree is not a power of two";
-        assert params.getPlainModulus() % (2 * params.getPolyModulusDegree()) == 1 : "plainModulus should be a specific prime number to " +
-            "supports batching ";
-        int encodedBitLength = params.getItemEncodedSlotSize() * (int) Math.floor(Math.log(params.getPlainModulus()) / Math.log(2));
-        assert encodedBitLength >= 80 && encodedBitLength <= 256 : "encoded bits should greater than or equal 80 " +
-            "and smaller than or equal 256";
-        assert params.getBinNum() % (params.getPolyModulusDegree() / params.getItemEncodedSlotSize()) == 0 : "binNum should be a multiple of " +
-            "polyModulusDegree / itemEncodedSlotSize";
+        assert (params.getPolyModulusDegree() & (params.getPolyModulusDegree() - 1)) == 0
+            : "polyModulusDegree is not a power of two";
+        assert params.getPlainModulus() % (2 * params.getPolyModulusDegree()) == 1
+            : "plainModulus should be a specific prime number to supports batching";
+        int encodedBitLength = params.getItemEncodedSlotSize() *
+            (int) Math.floor(Math.log(params.getPlainModulus()) / Math.log(2));
+        assert encodedBitLength >= 80 && encodedBitLength <= 256
+            : "encoded bits should greater than or equal 80 and smaller than or equal 256";
+        assert params.getBinNum() % (params.getPolyModulusDegree() / params.getItemEncodedSlotSize()) == 0
+            : "binNum should be a multiple of polyModulusDegree / itemEncodedSlotSize";
         assert params.expectServerSize() > 0 : "ExpectServerSize must be greater than 0: " + params.expectServerSize();
         int maxItemSize = CuckooHashBinFactory.getMaxItemSize(params.getCuckooHashBinType(), params.getBinNum());
         assert params.maxClientElementSize() > 0 && params.maxClientElementSize() <= maxItemSize
@@ -72,12 +71,16 @@ public class Cmg21UpsiParamsChecker {
                 }
             });
             PowerNode[] innerPowerNodes = PowerUtils.computePowers(innerPowersSet, params.getPsLowDegree());
-            PowerNode[] outerPowerNodes = PowerUtils.computePowers(outerPowersSet, params.getMaxPartitionSizePerBin() / (params.getPsLowDegree() + 1));
+            PowerNode[] outerPowerNodes = PowerUtils.computePowers(
+                outerPowersSet, params.getMaxPartitionSizePerBin() / (params.getPsLowDegree() + 1)
+            );
             parentPowers = new int[innerPowerNodes.length + outerPowerNodes.length][2];
             int[][] innerPowerNodesDegree = Arrays.stream(innerPowerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
             int[][] outerPowerNodesDegree = Arrays.stream(outerPowerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
             System.arraycopy(innerPowerNodesDegree, 0, parentPowers, 0, innerPowerNodesDegree.length);
-            System.arraycopy(outerPowerNodesDegree, 0, parentPowers, innerPowerNodesDegree.length, outerPowerNodesDegree.length);
+            System.arraycopy(
+                outerPowerNodesDegree, 0, parentPowers, innerPowerNodesDegree.length, outerPowerNodesDegree.length
+            );
         } else {
             Set<Integer> sourcePowersSet = Arrays.stream(params.getQueryPowers())
                 .boxed()
@@ -91,10 +94,10 @@ public class Cmg21UpsiParamsChecker {
     }
 
     /**
-     * 检查问询幂次方的有效性。
+     * check the validity of the query powers.
      *
-     * @param sourcePowers 问询幂次方数组（不一定有序）。
-     * @param psLowDegree  最低问询阶。
+     * @param sourcePowers source powers.
+     * @param psLowDegree  Paterson-Stockmeyer low degree
      */
     private static void checkQueryPowers(int[] sourcePowers, int psLowDegree) {
         int[] sortSourcePowers = Arrays.stream(sourcePowers)
@@ -108,7 +111,7 @@ public class Cmg21UpsiParamsChecker {
         assert sortSourcePowers[0] == 1 : "query powers must contain 1";
         for (int sourcePower : sourcePowers) {
             assert sourcePower <= psLowDegree || sourcePower % (psLowDegree + 1) == 0
-                : "query powers中大于ps_low_degree的输入应能被ps_low_degree + 1整除: " + sourcePower;
+                : "query powers should be divided by ps_low_degree + 1 or smaller than ps_low_degree: " + sourcePower;
         }
     }
 }

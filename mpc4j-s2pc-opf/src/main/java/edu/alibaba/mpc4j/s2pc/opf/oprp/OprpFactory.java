@@ -4,46 +4,46 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.lowmc.LowMcOprpConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.lowmc.LowMcOprpReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.lowmc.LowMcOprpSender;
 
 /**
- * OPRP协议工厂。
+ * OPRP factory.
  *
  * @author Weiran Liu
  * @date 2022/02/11
  */
 public class OprpFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor
      */
     private OprpFactory() {
         // empty
     }
 
     /**
-     * 协议类型
+     * protocol type
      */
     public enum OprpType {
         /**
-         * 20轮LowMC协议
+         * LowMC
          */
         LOW_MC,
         /**
-         * 20轮逆LowMC协议
+         * inverse LowMC
          */
         LOW_MC_INV,
     }
 
     /**
-     * 构建发送方。
+     * Creates a sender.
      *
-     * @param senderRpc     发送方通信接口。
-     * @param receiverParty 接收方信息。
-     * @param config        配置项。
-     * @return 发送方。
+     * @param senderRpc     sender RPC.
+     * @param receiverParty receiver party.
+     * @param config        config.
+     * @return a sender.
      */
     public static OprpSender createSender(Rpc senderRpc, Party receiverParty, OprpConfig config) {
         OprpType type = config.getPtoType();
@@ -57,12 +57,32 @@ public class OprpFactory implements PtoFactory {
     }
 
     /**
-     * 构建接收方。
+     * Creates a sender.
      *
-     * @param receiverRpc 接收方通信接口。
-     * @param senderParty 发送方信息。
-     * @param config      配置项。
-     * @return 接收方。
+     * @param senderRpc     sender RPC.
+     * @param receiverParty receiver party.
+     * @param aiderParty    aider party.
+     * @param config        config.
+     * @return a sender.
+     */
+    public static OprpSender createSender(Rpc senderRpc, Party receiverParty, Party aiderParty, OprpConfig config) {
+        OprpType type = config.getPtoType();
+        switch (type) {
+            case LOW_MC:
+                return new LowMcOprpSender(senderRpc, receiverParty, aiderParty, (LowMcOprpConfig) config);
+            case LOW_MC_INV:
+            default:
+                throw new IllegalArgumentException("Invalid " + OprpType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a receiver.
+     *
+     * @param receiverRpc receiver RPC.
+     * @param senderParty sender party.
+     * @param config      config.
+     * @return a receiver.
      */
     public static OprpReceiver createReceiver(Rpc receiverRpc, Party senderParty, OprpConfig config) {
         OprpType type = config.getPtoType();
@@ -76,22 +96,35 @@ public class OprpFactory implements PtoFactory {
     }
 
     /**
-     * 创建默认协议配置项。
+     * Creates a receiver.
      *
-     * @param securityModel 安全模型。
-     * @return 默认协议配置项。
+     * @param receiverRpc receiver RPC.
+     * @param senderParty sender party.
+     * @param aiderParty  aider party.
+     * @param config      config.
+     * @return a receiver.
+     */
+    public static OprpReceiver createReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, OprpConfig config) {
+        OprpType type = config.getPtoType();
+        switch (type) {
+            case LOW_MC:
+                return new LowMcOprpReceiver(receiverRpc, senderParty, aiderParty, (LowMcOprpConfig) config);
+            case LOW_MC_INV:
+            default:
+                throw new IllegalArgumentException("Invalid " + OprpType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a default config.
+     *
+     * @param securityModel security model.
+     * @param silent        use silent.
+     * @return a default config.
      */
     public static OprpConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
-        switch (securityModel) {
-            case IDEAL:
-            case SEMI_HONEST:
-                return new LowMcOprpConfig.Builder()
-                    .setBcConfig(BcFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent))
-                    .build();
-            case COVERT:
-            case MALICIOUS:
-            default:
-                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
-        }
+        return new LowMcOprpConfig.Builder(securityModel)
+            .setZ2cConfig(Z2cFactory.createDefaultConfig(securityModel, silent))
+            .build();
     }
 }

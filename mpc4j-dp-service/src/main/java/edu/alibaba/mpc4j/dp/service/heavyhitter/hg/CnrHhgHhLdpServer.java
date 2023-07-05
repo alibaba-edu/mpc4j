@@ -4,13 +4,14 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.sampler.binary.bernoulli.ExpBernoulliSampler;
 import edu.alibaba.mpc4j.common.tool.hash.IntHash;
 import edu.alibaba.mpc4j.common.tool.hash.IntHashFactory;
-import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.AbstractHhLdpServer;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.HhLdpFactory;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.HhLdpServerState;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.config.CnrHhgHhLdpConfig;
+import edu.alibaba.mpc4j.dp.service.tool.BucketDoubleComparator;
 import edu.alibaba.mpc4j.dp.service.heavyhitter.utils.HgHhLdpServerContext;
 import edu.alibaba.mpc4j.dp.service.tool.BucketDomain;
+import edu.alibaba.mpc4j.dp.service.tool.HeavyGuardianUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,6 +32,10 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
      * ln(b)
      */
     private static final double LN_B = Math.log(B);
+    /**
+     * bucket comparator
+     */
+    private final BucketDoubleComparator bucketComparator;
     /**
      * the non-cryptographic 32-bit hash function
      */
@@ -102,6 +107,7 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
 
     public CnrHhgHhLdpServer(CnrHhgHhLdpConfig config) {
         super(config);
+        bucketComparator = new BucketDoubleComparator();
         w = config.getW();
         lambdaH = config.getLambdaH();
         lambdaL = config.getLambdaL();
@@ -168,8 +174,7 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
     private boolean warmupInsert(String item) {
         num++;
         // it first computes the hash function h(e) (1 ⩽ h(e) ⩽ w) to map e to bucket A[h(e)].
-        byte[] itemByteArray = ObjectUtils.objectToByteArray(item);
-        int bucketIndex = Math.abs(intHash.hash(itemByteArray) % w);
+        int bucketIndex = HeavyGuardianUtils.getItemBucket(intHash, w, item);
         Map<String, Double> bucket = buckets.get(bucketIndex);
         // Case 1: e is in one cell in the heavy part of A[h(e)] (being a king or a guardian).
         if (bucket.containsKey(item)) {
@@ -191,9 +196,7 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
         // is the value of the Count field of the weakest guardian.
         assert bucket.size() == lambdaH;
         // find the weakest guardian
-        List<Map.Entry<String, Double>> bucketList = new ArrayList<>(bucket.entrySet());
-        bucketList.sort(Comparator.comparingDouble(Map.Entry::getValue));
-        Map.Entry<String, Double> weakestBucketCell = bucketList.get(0);
+        Map.Entry<String, Double> weakestBucketCell = Collections.min(bucket.entrySet(), bucketComparator);
         String weakestBucketItem = weakestBucketCell.getKey();
         double weakestBucketCount = weakestBucketCell.getValue();
         // Sample a boolean value, with probability P = b^{−C}, the boolean value is 1
@@ -281,8 +284,7 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
     private boolean randomizeInsert(String item) {
         num++;
         // it first computes the hash function h(e) (1 ⩽ h(e) ⩽ w) to map e to bucket A[h(e)].
-        byte[] itemByteArray = ObjectUtils.objectToByteArray(item);
-        int bucketIndex = Math.abs(intHash.hash(itemByteArray) % w);
+        int bucketIndex = HeavyGuardianUtils.getItemBucket(intHash, w, item);
         Map<String, Double> bucket = buckets.get(bucketIndex);
         ldpBucketNums[bucketIndex]++;
         bucketDebias(bucketIndex);
@@ -306,9 +308,7 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
         // is the value of the Count field of the weakest guardian.
         assert bucket.size() == lambdaH;
         // find the weakest guardian
-        List<Map.Entry<String, Double>> bucketList = new ArrayList<>(bucket.entrySet());
-        bucketList.sort(Comparator.comparingDouble(Map.Entry::getValue));
-        Map.Entry<String, Double> weakestBucketCell = bucketList.get(0);
+        Map.Entry<String, Double> weakestBucketCell = Collections.min(bucket.entrySet(), bucketComparator);
         String weakestBucketItem = weakestBucketCell.getKey();
         double weakestBucketCount = weakestBucketCell.getValue();
         // Sample a boolean value, with probability P = b^{−C}, the boolean value is 1
@@ -329,9 +329,7 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
         if (weakestBucketCount <= 0) {
             // find the strongest buffer cell
             Map<String, Double> buffer = buffers.get(bucketIndex);
-            List<Map.Entry<String, Double>> bufferList = new ArrayList<>(buffer.entrySet());
-            bufferList.sort(Comparator.comparingDouble(Map.Entry::getValue));
-            Map.Entry<String, Double> strongestBufferCell = bufferList.get(bufferList.size() - 1);
+            Map.Entry<String, Double> strongestBufferCell = Collections.max(buffer.entrySet(), bucketComparator);
             String strongestBufferItem = strongestBufferCell.getKey();
             // put the strongest buffer item into the bucket
             bucket.remove(weakestBucketItem);
@@ -396,9 +394,7 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
         // is the value of the Count field of the weakest guardian.
         assert buffer.size() == lambdaL;
         // find the weakest guardian
-        List<Map.Entry<String, Double>> bufferList = new ArrayList<>(buffer.entrySet());
-        bufferList.sort(Comparator.comparingDouble(Map.Entry::getValue));
-        Map.Entry<String, Double> weakestBufferCell = bufferList.get(0);
+        Map.Entry<String, Double> weakestBufferCell = Collections.min(buffer.entrySet(), bucketComparator);
         String weakestBufferItem = weakestBufferCell.getKey();
         double weakestBufferCount = weakestBufferCell.getValue();
         // Sample a boolean value, with probability P = b^{−C}, the boolean value is 1
@@ -447,8 +443,7 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
     }
 
     private double response(String item) {
-        byte[] itemByteArray = ObjectUtils.objectToByteArray(item);
-        int bucketIndex = Math.abs(intHash.hash(itemByteArray) % w);
+        int bucketIndex = HeavyGuardianUtils.getItemBucket(intHash, w, item);
         // first, it checks the heavy part in bucket A[h(e)].
         Map<String, Double> bucket = buckets.get(bucketIndex);
         switch (hhLdpServerState) {
@@ -476,6 +471,6 @@ public class CnrHhgHhLdpServer extends AbstractHhLdpServer implements HhgHhLdpSe
 
     @Override
     public HgHhLdpServerContext getServerContext() {
-        return new HgHhLdpServerContext(buckets);
+        return HgHhLdpServerContext.fromBuckets(buckets);
     }
 }

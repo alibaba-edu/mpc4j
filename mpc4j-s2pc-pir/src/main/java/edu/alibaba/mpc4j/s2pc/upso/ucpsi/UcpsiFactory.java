@@ -46,13 +46,13 @@ public class UcpsiFactory implements PtoFactory {
      * @param config      the config.
      * @return a server.
      */
-    public static UcpsiServer createServer(Rpc serverRpc, Party clientParty, UcpsiConfig config) {
+    public static <X> UcpsiServer<X> createServer(Rpc serverRpc, Party clientParty, UcpsiConfig config) {
         UcpsiType type = config.getPtoType();
         switch (type) {
             case PSTY19:
-                return new Psty19UcpsiServer(serverRpc, clientParty, (Psty19UcpsiConfig) config);
+                return new Psty19UcpsiServer<>(serverRpc, clientParty, (Psty19UcpsiConfig) config);
             case CGS22:
-                return new Cgs22UcpsiServer(serverRpc, clientParty, (Cgs22UcpsiConfig) config);
+                return new Cgs22UcpsiServer<>(serverRpc, clientParty, (Cgs22UcpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + UcpsiType.class.getSimpleName() + ": " + type.name());
         }
@@ -66,13 +66,13 @@ public class UcpsiFactory implements PtoFactory {
      * @param config      the config.
      * @return a client.
      */
-    public static UcpsiClient createClient(Rpc clientRpc, Party serverParty, UcpsiConfig config) {
+    public static <X> UcpsiClient<X> createClient(Rpc clientRpc, Party serverParty, UcpsiConfig config) {
         UcpsiType type = config.getPtoType();
         switch (type) {
             case PSTY19:
-                return new Psty19UcpsiClient(clientRpc, serverParty, (Psty19UcpsiConfig) config);
+                return new Psty19UcpsiClient<>(clientRpc, serverParty, (Psty19UcpsiConfig) config);
             case CGS22:
-                return new Cgs22UcpsiClient(clientRpc, serverParty, (Cgs22UcpsiConfig) config);
+                return new Cgs22UcpsiClient<>(clientRpc, serverParty, (Cgs22UcpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + UcpsiType.class.getSimpleName() + ": " + type.name());
         }

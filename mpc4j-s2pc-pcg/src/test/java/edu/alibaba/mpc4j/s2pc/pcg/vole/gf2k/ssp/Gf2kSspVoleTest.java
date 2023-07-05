@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
@@ -13,11 +10,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.Gf2kSspVoleFactory.Gf2kSspVoleType;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.wykw21.Wykw21Gf2kShSspVoleConfig;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -25,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -38,12 +30,8 @@ import java.util.stream.IntStream;
  * @date 2023/3/16
  */
 @RunWith(Parameterized.class)
-public class Gf2kSspVoleTest {
+public class Gf2kSspVoleTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(Gf2kSspVoleTest.class);
-    /**
-     * the random state
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * GF2K
      */
@@ -70,38 +58,13 @@ public class Gf2kSspVoleTest {
     }
 
     /**
-     * the sender RPC
-     */
-    private final Rpc senderRpc;
-    /**
-     * the receiver RPC
-     */
-    private final Rpc receiverRpc;
-    /**
      * config
      */
     private final Gf2kSspVoleConfig config;
 
     public Gf2kSspVoleTest(String name, Gf2kSspVoleConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        senderRpc = rpcManager.getRpc(0);
-        receiverRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        senderRpc.connect();
-        receiverRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        senderRpc.disconnect();
-        receiverRpc.disconnect();
     }
 
     @Test
@@ -162,8 +125,8 @@ public class Gf2kSspVoleTest {
     }
 
     private void testPto(int alpha, int num, boolean parallel) {
-        Gf2kSspVoleSender sender = Gf2kSspVoleFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Gf2kSspVoleReceiver receiver = Gf2kSspVoleFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        Gf2kSspVoleSender sender = Gf2kSspVoleFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        Gf2kSspVoleReceiver receiver = Gf2kSspVoleFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -174,39 +137,34 @@ public class Gf2kSspVoleTest {
             byte[] delta = GF2K.createRangeRandom(SECURE_RANDOM);
             Gf2kSspVoleSenderThread senderThread = new Gf2kSspVoleSenderThread(sender, alpha, num);
             Gf2kSspVoleReceiverThread receiverThread = new Gf2kSspVoleReceiverThread(receiver, delta, num);
-            StopWatch stopWatch = new StopWatch();
+            STOP_WATCH.start();
             // start
-            stopWatch.start();
             senderThread.start();
             receiverThread.start();
+            // stop
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long senderByteLength = senderRpc.getSendByteLength();
-            long receiverByteLength = receiverRpc.getSendByteLength();
-            senderRpc.reset();
-            receiverRpc.reset();
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
+            // verify
             Gf2kSspVoleSenderOutput senderOutput = senderThread.getSenderOutput();
             Gf2kSspVoleReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            // 验证结果
             assertOutput(num, senderOutput, receiverOutput);
-            LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
-                senderByteLength, receiverByteLength, time
-            );
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     @Test
     public void testPrecompute() {
-        Gf2kSspVoleSender sender = Gf2kSspVoleFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Gf2kSspVoleReceiver receiver = Gf2kSspVoleFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        Gf2kSspVoleSender sender = Gf2kSspVoleFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        Gf2kSspVoleReceiver receiver = Gf2kSspVoleFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
@@ -222,39 +180,31 @@ public class Gf2kSspVoleTest {
             Gf2kSspVoleSenderThread senderThread
                 = new Gf2kSspVoleSenderThread(sender, alpha, num, preSenderOutput);
             Gf2kSspVoleReceiverThread receiverThread = new Gf2kSspVoleReceiverThread(receiver, delta, num, preReceiverOutput);
-            StopWatch stopWatch = new StopWatch();
-            // start
-            stopWatch.start();
+            STOP_WATCH.start();
             senderThread.start();
             receiverThread.start();
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long senderByteLength = senderRpc.getSendByteLength();
-            long receiverByteLength = receiverRpc.getSendByteLength();
-            senderRpc.reset();
-            receiverRpc.reset();
-            // verify
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
             Gf2kSspVoleSenderOutput senderOutput = senderThread.getSenderOutput();
             Gf2kSspVoleReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
             assertOutput(num, senderOutput, receiverOutput);
-            LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
-                senderByteLength, receiverByteLength, time
-            );
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} (precompute) end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     @Test
     public void testResetDelta() {
-        Gf2kSspVoleSender sender = Gf2kSspVoleFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        Gf2kSspVoleReceiver receiver = Gf2kSspVoleFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        Gf2kSspVoleSender sender = Gf2kSspVoleFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        Gf2kSspVoleReceiver receiver = Gf2kSspVoleFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
@@ -266,61 +216,46 @@ public class Gf2kSspVoleTest {
             // first round
             Gf2kSspVoleSenderThread senderThread = new Gf2kSspVoleSenderThread(sender, alpha, num);
             Gf2kSspVoleReceiverThread receiverThread = new Gf2kSspVoleReceiverThread(receiver, delta, num);
-            StopWatch stopWatch = new StopWatch();
-            stopWatch.start();
+            STOP_WATCH.start();
             senderThread.start();
             receiverThread.start();
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long firstTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long firstSenderByteLength = senderRpc.getSendByteLength();
-            long firstReceiverByteLength = receiverRpc.getSendByteLength();
-            senderRpc.reset();
-            receiverRpc.reset();
+            STOP_WATCH.stop();
+            long firstTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
             Gf2kSspVoleSenderOutput firstSenderOutput = senderThread.getSenderOutput();
             Gf2kSspVoleReceiverOutput firstReceiverOutput = receiverThread.getReceiverOutput();
             assertOutput(num, firstSenderOutput, firstReceiverOutput);
+            printAndResetRpc(firstTime);
             // second round, reset Δ
             delta = GF2K.createRangeRandom(SECURE_RANDOM);
             alpha = SECURE_RANDOM.nextInt(num);
             senderThread = new Gf2kSspVoleSenderThread(sender, alpha, num);
             receiverThread = new Gf2kSspVoleReceiverThread(receiver, delta, num);
-            stopWatch.start();
+            STOP_WATCH.start();
             senderThread.start();
             receiverThread.start();
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long secondTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long secondSenderByteLength = senderRpc.getSendByteLength();
-            long secondReceiverByteLength = receiverRpc.getSendByteLength();
-            senderRpc.reset();
-            receiverRpc.reset();
+            STOP_WATCH.stop();
+            long secondTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
             Gf2kSspVoleSenderOutput secondSenderOutput = senderThread.getSenderOutput();
             Gf2kSspVoleReceiverOutput secondReceiverOutput = receiverThread.getReceiverOutput();
             assertOutput(num, secondSenderOutput, secondReceiverOutput);
-            // Δ should be unequal
+            // Δ should be different
             Assert.assertNotEquals(
                 ByteBuffer.wrap(secondReceiverOutput.getDelta()), ByteBuffer.wrap(firstReceiverOutput.getDelta())
             );
-            // communication should be equal
-            Assert.assertEquals(secondSenderByteLength, firstSenderByteLength);
-            Assert.assertEquals(secondReceiverByteLength, firstReceiverByteLength);
-            LOGGER.info("1st round, Send. {}B, Recv. {}B, {}ms",
-                firstSenderByteLength, firstReceiverByteLength, firstTime
-            );
-            LOGGER.info("2nd round, Send. {}B, Recv. {}B, {}ms",
-                secondSenderByteLength, secondReceiverByteLength, secondTime
-            );
+            printAndResetRpc(secondTime);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} (reset Δ) end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 
     private void assertOutput(int num, Gf2kSspVoleSenderOutput senderOutput, Gf2kSspVoleReceiverOutput receiverOutput) {

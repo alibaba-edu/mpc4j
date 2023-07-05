@@ -5,26 +5,32 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.aid.AidZlCoreMtgConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.aid.AidZlCoreMtgParty;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.core.dsz15.*;
 
 /**
- * 核l比特三元组生成协议工厂。
+ * Zl core multiplication triple generator factory.
  *
  * @author Weiran Liu
  * @date 2022/8/11
  */
 public class ZlCoreMtgFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor
      */
     private ZlCoreMtgFactory() {
         // empty
     }
 
     /**
-     * 协议类型
+     * protocol type
      */
     public enum ZlCoreMtgType {
+        /**
+         * aid
+         */
+        AID,
         /**
          * OT-based DSZ15
          */
@@ -36,12 +42,12 @@ public class ZlCoreMtgFactory implements PtoFactory {
     }
 
     /**
-     * 构建发送方。
+     * Creates a sender.
      *
-     * @param senderRpc     发送方通信接口。
-     * @param receiverParty 接收方信息。
-     * @param config        配置项。
-     * @return 发送方。
+     * @param senderRpc     sender RPC.
+     * @param receiverParty receiver party.
+     * @param config        config.
+     * @return a sender.
      */
     public static ZlCoreMtgParty createSender(Rpc senderRpc, Party receiverParty, ZlCoreMtgConfig config) {
         ZlCoreMtgType type = config.getPtoType();
@@ -56,12 +62,32 @@ public class ZlCoreMtgFactory implements PtoFactory {
     }
 
     /**
-     * 构建接收方。
+     * Creates a sender.
      *
-     * @param receiverRpc 接收方通信接口。
-     * @param senderParty 发送方信息。
-     * @param config      配置项。
-     * @return 接收方。
+     * @param senderRpc     sender RPC.
+     * @param receiverParty receiver party.
+     * @param aiderParty    aider party.
+     * @param config        config.
+     * @return a sender.
+     */
+    public static ZlCoreMtgParty createSender(Rpc senderRpc, Party receiverParty, Party aiderParty, ZlCoreMtgConfig config) {
+        ZlCoreMtgType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (type) {
+            case AID:
+                return new AidZlCoreMtgParty(senderRpc, receiverParty, aiderParty, (AidZlCoreMtgConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + ZlCoreMtgType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a receiver.
+     *
+     * @param receiverRpc receiver RPC.
+     * @param senderParty sender party.
+     * @param config      config.
+     * @return a receiver.
      */
     public static ZlCoreMtgParty createReceiver(Rpc receiverRpc, Party senderParty, ZlCoreMtgConfig config) {
         ZlCoreMtgType type = config.getPtoType();
@@ -76,14 +102,36 @@ public class ZlCoreMtgFactory implements PtoFactory {
     }
 
     /**
-     * 创建默认配置项。
+     * Creates a receiver.
      *
-     * @param securityModel 安全模型。
-     * @param zl            the Zl instance.
-     * @return 默认配置项。
+     * @param receiverRpc receiver RPC.
+     * @param senderParty sender party.
+     * @param aiderParty  aider party.
+     * @param config      config.
+     * @return a receiver.
+     */
+    public static ZlCoreMtgParty createReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, ZlCoreMtgConfig config) {
+        ZlCoreMtgType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (type) {
+            case AID:
+                return new AidZlCoreMtgParty(receiverRpc, senderParty, aiderParty, (AidZlCoreMtgConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + ZlCoreMtgType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a default config.
+     *
+     * @param securityModel security model.
+     * @param zl            Zl instance.
+     * @return default config.
      */
     public static ZlCoreMtgConfig createDefaultConfig(SecurityModel securityModel, Zl zl) {
         switch (securityModel) {
+            case TRUSTED_DEALER:
+                return new AidZlCoreMtgConfig.Builder(zl).build();
             case SEMI_HONEST:
                 return new Dsz15OtZlCoreMtgConfig.Builder(zl).build();
             case COVERT:

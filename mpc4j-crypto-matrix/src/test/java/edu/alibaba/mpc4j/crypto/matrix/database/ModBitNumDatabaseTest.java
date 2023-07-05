@@ -38,7 +38,7 @@ public class ModBitNumDatabaseTest {
      */
     private static final int MIN_ROWS = 1;
     /**
-     * max num
+     * max rows
      */
     private static final int MAX_ROWS = 64;
     /**
@@ -126,7 +126,7 @@ public class ModBitNumDatabaseTest {
         Assert.assertThrows(IllegalArgumentException.class, () ->
             DatabaseFactory.createRandom(type, l, 0, SECURE_RANDOM)
         );
-        // create an empty database with rows = 0
+        // create an empty database with l = 0
         Assert.assertThrows(IllegalArgumentException.class, () -> DatabaseFactory.createEmpty(type, 0));
         // create a database with data.l > l
         Assert.assertThrows(IllegalArgumentException.class, () -> {

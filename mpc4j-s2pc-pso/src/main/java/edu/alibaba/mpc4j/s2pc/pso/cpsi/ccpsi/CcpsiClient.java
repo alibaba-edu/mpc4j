@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 
-import java.nio.ByteBuffer;
 import java.util.Set;
 
 /**
@@ -12,7 +11,7 @@ import java.util.Set;
  * @author Weiran Liu
  * @date 2023/4/19
  */
-public interface CcpsiClient extends TwoPartyPto {
+public interface CcpsiClient<T> extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
@@ -30,5 +29,5 @@ public interface CcpsiClient extends TwoPartyPto {
      * @return the client output.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    CcpsiClientOutput psi(Set<ByteBuffer> clientElementSet, int serverElementSize) throws MpcAbortException;
+    CcpsiClientOutput<T> psi(Set<T> clientElementSet, int serverElementSize) throws MpcAbortException;
 }

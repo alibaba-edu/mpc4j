@@ -13,68 +13,76 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.Z2CoreMtgParty;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 离线布尔三元组生成协议发送方。
+ * offline Z2 multiplication triple generator sender.
  *
  * @author Weiran Liu
  * @date 2022/4/8
  */
 public class OfflineZ2MtgSender extends AbstractZ2MtgParty {
     /**
-     * 核布尔三元组生成协议发送方
+     * core multiplication triple generator
      */
-    private final Z2CoreMtgParty z2CoreMtgSender;
+    private final Z2CoreMtgParty coreMtgSender;
     /**
      * max base num
      */
     private final int maxBaseNum;
     /**
-     * 更新时的单次数量
+     * num per round per update
      */
     private int updateRoundNum;
     /**
-     * 更新时的执行轮数
+     * round per update
      */
     private int updateRound;
     /**
-     * 缓存区
+     * triple buffer
      */
-    private Z2Triple z2TripleBuffer;
+    private Z2Triple tripleBuffer;
 
     public OfflineZ2MtgSender(Rpc senderRpc, Party receiverParty, OfflineZ2MtgConfig config) {
         super(OfflineZ2MtgPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        Z2CoreMtgConfig z2CoreMtgConfig = config.getZ2CoreMtgConfig();
-        z2CoreMtgSender = Z2CoreMtgFactory.createSender(senderRpc, receiverParty, z2CoreMtgConfig);
-        addSubPtos(z2CoreMtgSender);
-        maxBaseNum = z2CoreMtgConfig.maxNum();
+        Z2CoreMtgConfig coreMtgConfig = config.getCoreMtgConfig();
+        coreMtgSender = Z2CoreMtgFactory.createSender(senderRpc, receiverParty, coreMtgConfig);
+        addSubPtos(coreMtgSender);
+        maxBaseNum = coreMtgConfig.maxNum();
+    }
+
+    public OfflineZ2MtgSender(Rpc senderRpc, Party receiverParty, Party aiderParty, OfflineZ2MtgConfig config) {
+        super(OfflineZ2MtgPtoDesc.getInstance(), senderRpc, receiverParty, config);
+        Z2CoreMtgConfig coreMtgConfig = config.getCoreMtgConfig();
+        coreMtgSender = Z2CoreMtgFactory.createSender(senderRpc, receiverParty, aiderParty, coreMtgConfig);
+        addSubPtos(coreMtgSender);
+        maxBaseNum = coreMtgConfig.maxNum();
     }
 
     @Override
-    public void init(int maxRoundNum, int updateNum) throws MpcAbortException {
-        setInitInput(maxRoundNum, updateNum);
+    public void init(int updateNum) throws MpcAbortException {
+        setInitInput(updateNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         if (updateNum <= maxBaseNum) {
-            // 如果最大数量小于支持的单轮最大数量，则执行1轮最大数量即可
+            // we only need to run one round
             updateRoundNum = updateNum;
             updateRound = 1;
         } else {
-            // 如果最大数量大于支持的单轮最大数量，则分批执行
+            // we need to run multiple rounds
             updateRoundNum = maxBaseNum;
             updateRound = (int) Math.ceil((double) updateNum / maxBaseNum);
         }
-        z2CoreMtgSender.init(updateRoundNum);
-        z2TripleBuffer = Z2Triple.createEmpty();
+        coreMtgSender.init(updateRoundNum);
+        tripleBuffer = Z2Triple.createEmpty();
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.INIT_STEP, 1, 2, initTime);
 
-        // 生成所需的布尔三元组
+        // generate triple in offline phase
         for (int round = 1; round <= updateRound; round++) {
             stopWatch.start();
-            Z2Triple booleanTriple = z2CoreMtgSender.generate(updateRoundNum);
-            z2TripleBuffer.merge(booleanTriple);
+            Z2Triple triple = coreMtgSender.generate(updateRoundNum);
+            tripleBuffer.merge(triple);
             stopWatch.stop();
             long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
@@ -89,12 +97,12 @@ public class OfflineZ2MtgSender extends AbstractZ2MtgParty {
         setPtoInput(num);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        while (num > z2TripleBuffer.getNum()) {
-            // 如果所需的数量大于缓存区数量，则继续生成
+        while (num > tripleBuffer.getNum()) {
+            // generate if we do not have enough triples
             for (int round = 1; round <= updateRound; round++) {
                 stopWatch.start();
-                Z2Triple booleanTriple = z2CoreMtgSender.generate(updateRoundNum);
-                z2TripleBuffer.merge(booleanTriple);
+                Z2Triple triple = coreMtgSender.generate(updateRoundNum);
+                tripleBuffer.merge(triple);
                 stopWatch.stop();
                 long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
                 stopWatch.reset();
@@ -103,7 +111,7 @@ public class OfflineZ2MtgSender extends AbstractZ2MtgParty {
         }
 
         stopWatch.start();
-        Z2Triple senderOutput = z2TripleBuffer.split(num);
+        Z2Triple senderOutput = tripleBuffer.split(num);
         stopWatch.stop();
         long splitTripleTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.direct;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
@@ -13,13 +13,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
  * @author Weiran Liu
  * @date 2022/7/14
  */
-public class DirectNcCotConfig implements NcCotConfig {
+public class DirectNcCotConfig extends AbstractMultiPartyPtoConfig implements NcCotConfig {
     /**
      * core COT config
      */
     private final CoreCotConfig coreCotConfig;
 
     private DirectNcCotConfig(Builder builder) {
+        super(SecurityModel.MALICIOUS, builder.coreCotConfig);
         coreCotConfig = builder.coreCotConfig;
     }
 
@@ -36,25 +37,6 @@ public class DirectNcCotConfig implements NcCotConfig {
     public int maxNum() {
         // In theory, core COT can support arbitrary num. Here we limit the max num in case of memory exception.
         return 1 << 24;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        coreCotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return coreCotConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.MALICIOUS;
-        if (coreCotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = coreCotConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<DirectNcCotConfig> {

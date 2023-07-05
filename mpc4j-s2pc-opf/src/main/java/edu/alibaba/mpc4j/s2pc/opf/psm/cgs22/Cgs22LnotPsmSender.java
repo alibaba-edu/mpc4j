@@ -10,9 +10,9 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcFactory;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.BcParty;
-import edu.alibaba.mpc4j.s2pc.aby.basics.bc.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.opf.psm.AbstractPsmSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotSender;
@@ -32,9 +32,9 @@ import java.util.stream.IntStream;
  */
 public class Cgs22LnotPsmSender extends AbstractPsmSender {
     /**
-     * Boolean circuit sender
+     * Z2 circuit sender
      */
-    private final BcParty bcSender;
+    private final Z2cParty z2cSender;
     /**
      * LNOT sender
      */
@@ -42,8 +42,8 @@ public class Cgs22LnotPsmSender extends AbstractPsmSender {
 
     public Cgs22LnotPsmSender(Rpc senderRpc, Party receiverParty, Cgs22LnotPsmConfig config) {
         super(Cgs22LnotPsmPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        bcSender = BcFactory.createSender(senderRpc, receiverParty, config.getBcConfig());
-        addSubPtos(bcSender);
+        z2cSender = Z2cFactory.createSender(senderRpc, receiverParty, config.getZ2cConfig());
+        addSubPtos(z2cSender);
         lnotSender = LnotFactory.createSender(senderRpc, receiverParty, config.getLnotConfig());
         addSubPtos(lnotSender);
     }
@@ -57,8 +57,8 @@ public class Cgs22LnotPsmSender extends AbstractPsmSender {
         // q = l / m, where m = 4
         int maxByteL = CommonUtils.getByteLength(maxL);
         int maxQ = maxByteL * 2;
-        bcSender.init(maxNum * (maxQ - 1) * d, maxNum * (maxQ - 1) * d);
-        lnotSender.init(4, maxNum, maxNum * maxQ);
+        z2cSender.init(maxNum * (maxQ - 1) * d);
+        lnotSender.init(4, maxNum * maxQ);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -86,7 +86,7 @@ public class Cgs22LnotPsmSender extends AbstractPsmSender {
         BitVector[][] eqArrays = new BitVector[d][q];
         for (int i = 0; i < d; i++) {
             for (int j = 0; j < q; j++) {
-                eqArrays[i][j] = BitVectorFactory.createZeros(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num);
+                eqArrays[i][j] = BitVectorFactory.createZeros(num);
             }
         }
 
@@ -103,7 +103,7 @@ public class Cgs22LnotPsmSender extends AbstractPsmSender {
                     // P0 samples <eq_{0,i,j>_0 ← {0,1}, ∀i ∈ [d].
                     BitVector[] evArray = new BitVector[d];
                     for (int i = 0; i < d; i++) {
-                        evArray[i] = BitVectorFactory.createRandom(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, secureRandom);
+                        evArray[i] = BitVectorFactory.createRandom(num, secureRandom);
                     }
                     for (int index = 0; index < num; index++) {
                         byte[] ri = lnotSenderOutput.getRb(index, v);
@@ -189,7 +189,7 @@ public class Cgs22LnotPsmSender extends AbstractPsmSender {
                     eqsx0[k] = eqArrays0[i][k * 2];
                     eqsy0[k] = eqArrays0[i][k * 2 + 1];
                 }
-                SquareZ2Vector[] eqsz0 = bcSender.and(eqsx0, eqsy0);
+                SquareZ2Vector[] eqsz0 = z2cSender.and(eqsx0, eqsy0);
                 if (eqArrays0[i].length % 2 == 1) {
                     eqsz0 = Arrays.copyOf(eqsz0, nodeNum + 1);
                     eqsz0[nodeNum] = eqArrays0[i][eqArrays0[i].length - 1];
@@ -200,7 +200,7 @@ public class Cgs22LnotPsmSender extends AbstractPsmSender {
         // P1 computes eq_{log(q),1,0}_0 ⊕ ... ⊕ eq_{log(q),d,0}_0
         SquareZ2Vector z0 = SquareZ2Vector.createZeros(num);
         for (int i = 0; i < d; i++) {
-            z0 = bcSender.xor(z0, eqArrays0[i][0]);
+            z0 = z2cSender.xor(z0, eqArrays0[i][0]);
         }
         return z0;
     }

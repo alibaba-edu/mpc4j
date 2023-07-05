@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * CMG21非平衡PSI协议参数检查器测试。
+ * CMG21 UPSI params checker.
  *
  * @author Liqiang Peng
  * @date 2022/8/9
@@ -73,7 +73,7 @@ public class Cmg21UpsiParamsCheckerTest {
     }
 
     /**
-     * 协议类型
+     * params
      */
     private final Cmg21UpsiParams cmg21UpsiParams;
 

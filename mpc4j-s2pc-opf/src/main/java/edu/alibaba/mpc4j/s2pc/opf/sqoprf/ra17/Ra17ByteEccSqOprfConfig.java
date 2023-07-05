@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.opf.sqoprf.ra17;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
 
@@ -11,34 +11,15 @@ import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
  * @author Weiran Liu
  * @date 2023/4/13
  */
-public class Ra17ByteEccSqOprfConfig implements SqOprfConfig {
-    /**
-     * environment
-     */
-    private EnvType envType;
+public class Ra17ByteEccSqOprfConfig extends AbstractMultiPartyPtoConfig implements SqOprfConfig {
 
     private Ra17ByteEccSqOprfConfig(Builder builder) {
-        envType = EnvType.STANDARD;
+        super(SecurityModel.MALICIOUS);
     }
 
     @Override
     public SqOprfFactory.SqOprfType getPtoType() {
         return SqOprfFactory.SqOprfType.RA17_BYTE_ECC;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        this.envType = envType;
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return envType;
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Ra17ByteEccSqOprfConfig> {

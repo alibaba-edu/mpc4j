@@ -36,7 +36,7 @@ public class SueFoLdpClient extends AbstractFoLdpClient {
         checkItemInDomain(item);
         int itemIndex = domain.getItemIndex(item);
         // Encode(v) = [0,...,0,1,0,...,0], a length-d binary vector where only the v-th position is 1.
-        BitVector v = BitVectorFactory.createZeros(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, d);
+        BitVector v = BitVectorFactory.createZeros(d);
         IntStream.range(0, d).forEach(bitIndex -> {
             double sample = random.nextDouble();
             if (bitIndex == itemIndex) {

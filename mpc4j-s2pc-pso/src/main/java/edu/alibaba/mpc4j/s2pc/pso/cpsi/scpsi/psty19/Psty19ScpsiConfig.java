@@ -1,10 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.psty19;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtConfig;
-import edu.alibaba.mpc4j.s2pc.aby.circuit.peqt.PeqtFactory;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtConfig;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiFactory;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfConfig;
@@ -16,7 +17,7 @@ import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfFactory;
  * @author Weiran Liu
  * @date 2023/3/29
  */
-public class Psty19ScpsiConfig implements ScpsiConfig {
+public class Psty19ScpsiConfig extends AbstractMultiPartyPtoConfig implements ScpsiConfig {
     /**
      * Batch OPPRF config
      */
@@ -31,7 +32,7 @@ public class Psty19ScpsiConfig implements ScpsiConfig {
     private final CuckooHashBinType cuckooHashBinType;
 
     private Psty19ScpsiConfig(Builder builder) {
-        assert builder.bopprfConfig.getEnvType().equals(builder.peqtConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST, builder.bopprfConfig, builder.peqtConfig);
         bopprfConfig = builder.bopprfConfig;
         peqtConfig = builder.peqtConfig;
         cuckooHashBinType = builder.cuckooHashBinType;
@@ -43,19 +44,8 @@ public class Psty19ScpsiConfig implements ScpsiConfig {
     }
 
     @Override
-    public void setEnvType(EnvType envType) {
-        bopprfConfig.setEnvType(envType);
-        peqtConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return bopprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
+    public int getOutputBitNum(int serverElementSize, int clientElementSize) {
+        return CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
     }
 
     public BopprfConfig getBopprfConfig() {
@@ -84,9 +74,9 @@ public class Psty19ScpsiConfig implements ScpsiConfig {
          */
         private CuckooHashBinType cuckooHashBinType;
 
-        public Builder(boolean silent) {
-            bopprfConfig = BopprfFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            peqtConfig = PeqtFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        public Builder(SecurityModel securityModel, boolean silent) {
+            bopprfConfig = BopprfFactory.createDefaultConfig();
+            peqtConfig = PeqtFactory.createDefaultConfig(securityModel, silent);
             cuckooHashBinType = CuckooHashBinType.NO_STASH_PSZ18_3_HASH;
         }
 

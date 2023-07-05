@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.utils;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
 import java.nio.LongBuffer;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -579,5 +580,21 @@ public class BinaryUtils {
             return null;
         }
         return Arrays.copyOf(binary, binary.length);
+    }
+
+    /**
+     * Creates a random boolean array.
+     *
+     * @param binaryLength binary length.
+     * @param secureRandom random state.
+     * @return a random boolean array.
+     */
+    public static boolean[] randomBinary(int binaryLength, SecureRandom secureRandom) {
+        assert binaryLength > 0 : "binaryLength must be greater than 0: " + binaryLength;
+        boolean[] v = new boolean[binaryLength];
+        for (int i = 0; i < binaryLength; i++) {
+            v[i] = secureRandom.nextBoolean();
+        }
+        return v;
     }
 }

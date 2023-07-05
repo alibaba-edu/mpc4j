@@ -83,7 +83,8 @@ namespace seal
     }
 }
 #else
-    void TFHEcipher::ExternalProduct_internal(util::RNSIter res_iter0, util::RNSIter res_iter1, util::RNSIter decntt_iter, util::RNSIter prod_iter0, util::RNSIter prod_iter1, RLWECipher &src, RGSWCipher operand)
+
+    [[maybe_unused]] void TFHEcipher::ExternalProduct_internal(util::RNSIter res_iter0, util::RNSIter res_iter1, util::RNSIter decntt_iter, util::RNSIter prod_iter0, util::RNSIter prod_iter1, RLWECipher &src, RGSWCipher operand)
     {
         RLWECipher decntt(context_), product(context_);
         decntt.resize(2);

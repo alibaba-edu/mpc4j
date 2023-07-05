@@ -30,12 +30,12 @@ public class DirectCotSender extends AbstractCotSender {
     }
 
     @Override
-    public void init(byte[] delta, int maxRoundNum, int updateNum) throws MpcAbortException {
-        setInitInput(delta, maxRoundNum, updateNum);
+    public void init(byte[] delta, int updateNum) throws MpcAbortException {
+        setInitInput(delta, updateNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        coreCotSender.init(delta, maxRoundNum);
+        coreCotSender.init(delta, updateNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -50,8 +50,17 @@ public class DirectCotSender extends AbstractCotSender {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // directly invoke core COT
-        CotSenderOutput senderOutput = coreCotSender.send(num);
+        CotSenderOutput senderOutput = CotSenderOutput.createEmpty(delta);
+        if (num <= updateNum) {
+            senderOutput.merge(coreCotSender.send(num));
+        } else {
+            int currentNum = senderOutput.getNum();
+            while (currentNum < num) {
+                int roundNum = Math.min((num - currentNum), updateNum);
+                senderOutput.merge(coreCotSender.send(roundNum));
+                currentNum = senderOutput.getNum();
+            }
+        }
         stopWatch.stop();
         long coreCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

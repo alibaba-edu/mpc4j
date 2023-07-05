@@ -1,7 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.base.mr19;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.crypto.kyber.KyberEngineFactory.KyberType;
 import edu.alibaba.mpc4j.common.tool.crypto.kyber.params.KyberParams;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtConfig;
@@ -13,7 +14,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
  * @author Sheng Hu, Weiran Liu
  * @date 2022/08/05
  */
-public class Mr19KyberBaseOtConfig implements BaseOtConfig {
+public class Mr19KyberBaseOtConfig extends AbstractMultiPartyPtoConfig implements BaseOtConfig {
     /**
      * Kyber安全系数
      */
@@ -22,36 +23,20 @@ public class Mr19KyberBaseOtConfig implements BaseOtConfig {
      * Kyber方案类型
      */
     private final KyberType kyberType;
-    /**
-     * 环境类型
-     */
-    private EnvType envType;
 
-    private Mr19KyberBaseOtConfig(Mr19KyberBaseOtConfig.Builder builder) {
-        assert KyberParams.validParamsK(builder.paramsK) : KyberParams.INVALID_PARAMS_K_ERROR_MESSAGE + builder.paramsK;
+    private Mr19KyberBaseOtConfig(Builder builder) {
+        super(SecurityModel.MALICIOUS);
+        Preconditions.checkArgument(
+            KyberParams.validParamsK(builder.paramsK),
+            KyberParams.INVALID_PARAMS_K_ERROR_MESSAGE + builder.paramsK
+        );
         paramsK = builder.paramsK;
         kyberType = builder.kyberType;
-        envType = EnvType.STANDARD;
     }
 
     @Override
     public BaseOtFactory.BaseOtType getPtoType() {
         return BaseOtFactory.BaseOtType.MR19_KYBER;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        this.envType = envType;
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return envType;
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.MALICIOUS;
     }
 
     public int getParamsK() {

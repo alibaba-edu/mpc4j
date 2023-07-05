@@ -48,11 +48,8 @@ class PsuClientThread extends Thread {
     @Override
     public void run() {
         try {
-            client.getRpc().connect();
             client.init(clientElementSet.size(), serverElementSize);
             unionSet = client.psu(clientElementSet, serverElementSize, elementByteLength);
-            client.destroy();
-            client.getRpc().disconnect();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

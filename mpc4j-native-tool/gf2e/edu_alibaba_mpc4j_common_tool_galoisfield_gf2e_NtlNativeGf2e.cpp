@@ -18,65 +18,44 @@ auto ntl_div = [](const NTL::GF2E& a, const NTL::GF2E& b) {
     return a / b;
 };
 
+NTL::GF2E convertGf2eElement(JNIEnv *env, jbyteArray jElement, jint jByteL) {
+    jbyte *jElementBuffer = (*env).GetByteArrayElements(jElement, nullptr);
+    uint8_t data[jByteL];
+    memcpy(data, jElementBuffer, jByteL);
+    reverseBytes(data, jByteL);
+    NTL::GF2X elementFromBytes = NTL::GF2XFromBytes(data, (long) jByteL);
+    NTL::GF2E element = to_GF2E(elementFromBytes);
+    (*env).ReleaseByteArrayElements(jElement, jElementBuffer, 0);
+    return element;
+}
+
+void setGf2eElement(JNIEnv *env, const NTL::GF2E& element, jbyteArray jElement, jint jByteL) {
+    uint8_t data[jByteL];
+    BytesFromGF2X(data, NTL::rep(element), (long) jByteL);
+    reverseBytes(data, jByteL);
+    (*env).SetByteArrayRegion(jElement, 0, jByteL, (const jbyte *) data);
+}
+
 template<typename Operation>
 static jbyteArray NtlGf2eOperationHelper(JNIEnv* env, jclass context, jbyteArray jMinBytes, jint jByteL,
                                           jbyteArray ja, jbyteArray jb, Operation&& operation) {
-    // 初始化有限域
     initGF2E(env, jMinBytes);
-    // 转换a
-    jbyte *jaBuffer = (*env).GetByteArrayElements(ja, nullptr);
-    uint8_t dataA[jByteL];
-    memcpy(dataA, jaBuffer, jByteL);
-    reverseBytes(dataA, jByteL);
-    NTL::GF2X aFromBytes = NTL::GF2XFromBytes(dataA, (long) jByteL);
-    NTL::GF2E a = to_GF2E(aFromBytes);
-    (*env).ReleaseByteArrayElements(ja, jaBuffer, 0);
-    // 转换b
-    jbyte *jbBuffer = (*env).GetByteArrayElements(jb, nullptr);
-    uint8_t dataB[jByteL];
-    memcpy(dataB, jbBuffer, jByteL);
-    reverseBytes(dataB, jByteL);
-    NTL::GF2X bFromBytes = NTL::GF2XFromBytes(dataB, (long) jByteL);
-    NTL::GF2E b = to_GF2E(bFromBytes);
-    (*env).ReleaseByteArrayElements(jb, jbBuffer, 0);
-    // 运算
+    NTL::GF2E a = convertGf2eElement(env, ja, jByteL);
+    NTL::GF2E b = convertGf2eElement(env, jb, jByteL);
     NTL::GF2E c = operation(a, b);
-    // 返回结果
-    BytesFromGF2X(dataA, NTL::rep(c), (long) jByteL);
-    reverseBytes(dataA, jByteL);
     jbyteArray jc = (*env).NewByteArray((jsize) jByteL);
-    (*env).SetByteArrayRegion(jc, 0, jByteL, (const jbyte *) dataA);
-
+    setGf2eElement(env, c, jc, jByteL);
     return jc;
 }
 
 template<typename Operation>
 static void NtlGf2eInplaceOperationHelper(JNIEnv* env, jclass context, jbyteArray jMinBytes, jint jByteL,
                                           jbyteArray ja, jbyteArray jb, Operation&& operation) {
-    // 初始化有限域
     initGF2E(env, jMinBytes);
-    // 转换a
-    jbyte *jaBuffer = (*env).GetByteArrayElements(ja, nullptr);
-    uint8_t dataA[jByteL];
-    memcpy(dataA, jaBuffer, jByteL);
-    reverseBytes(dataA, jByteL);
-    NTL::GF2X aFromBytes = NTL::GF2XFromBytes(dataA, (long) jByteL);
-    NTL::GF2E a = to_GF2E(aFromBytes);
-    // 转换b
-    jbyte *jbBuffer = (*env).GetByteArrayElements(jb, nullptr);
-    uint8_t dataB[jByteL];
-    memcpy(dataB, jbBuffer, jByteL);
-    reverseBytes(dataB, jByteL);
-    NTL::GF2X bFromBytes = NTL::GF2XFromBytes(dataB, (long) jByteL);
-    NTL::GF2E b = to_GF2E(bFromBytes);
-    (*env).ReleaseByteArrayElements(jb, jbBuffer, 0);
-    // 运算
+    NTL::GF2E a = convertGf2eElement(env, ja, jByteL);
+    NTL::GF2E b = convertGf2eElement(env, jb, jByteL);
     NTL::GF2E c = operation(a, b);
-    // 返回结果
-    BytesFromGF2X(dataA, NTL::rep(c), (long) jByteL);
-    reverseBytes(dataA, jByteL);
-    // 不能(*env).ReleaseByteArrayElements(ja, jaBuffer, 0)，否则结果会有错误
-    (*env).SetByteArrayRegion(ja, 0, jByteL, (const jbyte *) dataA);
+    setGf2eElement(env, c, ja, jByteL);
 }
 
 JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2e_NtlNativeGf2e_nativeMul
@@ -101,42 +80,18 @@ JNIEXPORT void JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2e_NtlNa
 
 JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2e_NtlNativeGf2e_nativeInv
         (JNIEnv *env, jclass context, jbyteArray jMinBytes, jint jByteL, jbyteArray ja) {
-    // 初始化有限域
     initGF2E(env, jMinBytes);
-    // 转换a
-    jbyte *jaBuffer = (*env).GetByteArrayElements(ja, nullptr);
-    uint8_t dataA[jByteL];
-    memcpy(dataA, jaBuffer, jByteL);
-    reverseBytes(dataA, jByteL);
-    NTL::GF2X aFromBytes = NTL::GF2XFromBytes(dataA, (long) jByteL);
-    NTL::GF2E a = to_GF2E(aFromBytes);
-    // 计算a的逆
+    NTL::GF2E a = convertGf2eElement(env, ja, jByteL);
     NTL::GF2E c = inv(a);
-    // 返回结果
-    BytesFromGF2X(dataA, NTL::rep(c), (long) jByteL);
-    reverseBytes(dataA, jByteL);
     jbyteArray jc = (*env).NewByteArray((jsize) jByteL);
-    (*env).SetByteArrayRegion(jc, 0, jByteL, (const jbyte *) dataA);
-
+    setGf2eElement(env, c, jc, jByteL);
     return jc;
 }
 
 JNIEXPORT void JNICALL Java_edu_alibaba_mpc4j_common_tool_galoisfield_gf2e_NtlNativeGf2e_nativeInvi
         (JNIEnv *env, jclass context, jbyteArray jMinBytes, jint jByteL, jbyteArray ja) {
-    // 初始化有限域
     initGF2E(env, jMinBytes);
-    // 转换a
-    jbyte *jaBuffer = (*env).GetByteArrayElements(ja, nullptr);
-    uint8_t dataA[jByteL];
-    memcpy(dataA, jaBuffer, jByteL);
-    reverseBytes(dataA, jByteL);
-    NTL::GF2X aFromBytes = NTL::GF2XFromBytes(dataA, (long) jByteL);
-    NTL::GF2E a = to_GF2E(aFromBytes);
-    // 计算a的逆
+    NTL::GF2E a = convertGf2eElement(env, ja, jByteL);
     NTL::GF2E c = inv(a);
-    // 返回结果
-    BytesFromGF2X(dataA, NTL::rep(c), (long) jByteL);
-    reverseBytes(dataA, jByteL);
-    // 不能(*env).ReleaseByteArrayElements(ja, jaBuffer, 0)，否则结果会有错误
-    (*env).SetByteArrayRegion(ja, 0, jByteL, (const jbyte *) dataA);
+    setGf2eElement(env, c, ja, jByteL);
 }

@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * 过滤器性能测试。
+ * Filter efficiency test.
  *
  * @author Weiran Liu
  * @date 2022/4/19
@@ -29,27 +29,24 @@ import java.util.stream.IntStream;
 public class FilterEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(FilterEfficiencyTest.class);
     /**
-     * 随机状态
+     * the random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
-     * 最大元素数量对数输出格式
-     */
-    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("00");
-    /**
-     * 时间输出格式
+     * time decimal format
      */
     private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.000");
     /**
-     * 秒表
+     * stop watch
      */
     private static final StopWatch STOP_WATCH = new StopWatch();
     /**
-     * 测试类型
+     * types
      */
-    private static final FilterType[] TYPES = new FilterType[] {
+    private static final FilterType[] TYPES = new FilterType[]{
         FilterType.SET_FILTER,
-        FilterType.BLOOM_FILTER,
+        FilterType.NAIVE_BLOOM_FILTER,
+        FilterType.LPRST21_BLOOM_FILTER,
         FilterType.SPARSE_BLOOM_FILTER,
         FilterType.CUCKOO_FILTER,
         FilterType.VACUUM_FILTER,
@@ -58,15 +55,10 @@ public class FilterEfficiencyTest {
     @Test
     public void testEfficiency() {
         LOGGER.info("{}\t{}\t{}", "                name", "    log(n)", "   time(s)");
-        // 2^4个元素
         testEfficiency(4);
-        // 2^8个元素
         testEfficiency(8);
-        // 2^12个元素
         testEfficiency(12);
-        // 2^16个元素
         testEfficiency(16);
-        // 2^20个元素
         testEfficiency(20);
     }
 
@@ -85,12 +77,12 @@ public class FilterEfficiencyTest {
             STOP_WATCH.start();
             items.forEach(item -> filter.put(ByteBuffer.wrap(item)));
             STOP_WATCH.stop();
-            double time = (double)STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / 1000;
+            double time = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / 1000;
             STOP_WATCH.reset();
             LOGGER.info(
                 "{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(logN), 10),
+                StringUtils.leftPad(String.valueOf(logN), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(time), 10)
             );
         }

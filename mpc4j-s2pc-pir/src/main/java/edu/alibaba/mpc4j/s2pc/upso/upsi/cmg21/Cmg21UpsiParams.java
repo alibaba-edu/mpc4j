@@ -12,62 +12,62 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
- * CMG21非平衡PSI方案参数。
+ * CMG21 UPSI params.
  *
  * @author Liqiang Peng
  * @date 2022/5/25
  */
 public class Cmg21UpsiParams implements UpsiParams {
     /**
-     * 布谷鸟哈希类型
+     * cuckoo hash type
      */
     private final CuckooHashBinType cuckooHashBinType;
     /**
-     * 哈希桶数目
+     * bin num
      */
     private final int binNum;
     /**
-     * 每个哈希桶内分块的最大元素个数
+     * max partition size per bin
      */
     private final int maxPartitionSizePerBin;
     /**
-     * 元素编码后占的卡槽个数
+     * item encoded slot size
      */
     private final int itemEncodedSlotSize;
     /**
-     * Paterson-Stockmeyer方法的低阶值
+     * Paterson-Stockmeyer low degree
      */
     private final int psLowDegree;
     /**
-     * 查询幂次方
+     * query powers
      */
     private final int[] queryPowers;
     /**
-     * 明文模数
+     * plain modulus
      */
     private final int plainModulus;
     /**
-     * 多项式阶
+     * poly modulus degree
      */
     private final int polyModulusDegree;
     /**
-     * 系数模数的比特值
+     * coeff modulus bits
      */
     private final int[] coeffModulusBits;
     /**
-     * 服务端预估数量
+     * expect server size
      */
     private final int expectServerSize;
     /**
-     * 客户端最大数量
+     * max client size
      */
     private final int maxClientSize;
     /**
-     * 每个密文中的元素数目
+     * item per ciphertext
      */
     private final int itemPerCiphertext;
     /**
-     * 密文总数
+     * ciphertext num
      */
     private final int ciphertextNum;
 
@@ -91,20 +91,20 @@ public class Cmg21UpsiParams implements UpsiParams {
     }
 
     /**
-     * 创建非平衡PSI协议参数，不检查参数的有效性。
+     * create UPSI params without checking the validity of the params.
      *
-     * @param cuckooHashBinType      布谷鸟哈希类型
-     * @param binNum                 哈希桶数目。
-     * @param maxPartitionSizePerBin 每个哈希桶内分块的最大元素个数。
-     * @param itemEncodedSlotSize    元素编码后占的卡槽个数。
-     * @param psLowDegree            Paterson-Stockmeyer方法的低阶值。
-     * @param queryPowers            查询幂次方。
-     * @param plainModulus           明文模数。
-     * @param polyModulusDegree      多项式阶。
-     * @param coeffModulusBits       系数模数的比特值。
-     * @param expectServerSize       服务端预估数量。
-     * @param maxClientSize          客户端最大数量。
-     * @return 非平衡PSI参数。
+     * @param cuckooHashBinType      cuckoo hash type.
+     * @param binNum                 bin num.
+     * @param maxPartitionSizePerBin max partition size per bin.
+     * @param itemEncodedSlotSize    item encoded slot size.
+     * @param psLowDegree            Paterson-Stockmeyer low degree.
+     * @param queryPowers            query powers.
+     * @param plainModulus           plain modulus.
+     * @param polyModulusDegree      poly modulus degree.
+     * @param coeffModulusBits       coeff modulus bits.
+     * @param expectServerSize       expect server size.
+     * @param maxClientSize          max client size.
+     * @return UPSI params.
      */
     public static Cmg21UpsiParams uncheckCreate(CuckooHashBinType cuckooHashBinType, int binNum,
                                                 int maxPartitionSizePerBin, int itemEncodedSlotSize, int psLowDegree,
@@ -119,20 +119,20 @@ public class Cmg21UpsiParams implements UpsiParams {
     }
 
     /**
-     * 创建非平衡PSI协议参数，检查参数的有效性。
+     * create a valid UPSI params.
      *
-     * @param cuckooHashBinType      布谷鸟哈希类型
-     * @param binNum                 哈希桶数目。
-     * @param maxPartitionSizePerBin 每个哈希桶内分块的最大元素个数。
-     * @param itemEncodedSlotSize    元素编码后占的卡槽个数。
-     * @param psLowDegree            Paterson-Stockmeyer方法的低阶值。
-     * @param queryPowers            查询幂次方。
-     * @param plainModulus           明文模数。
-     * @param polyModulusDegree      多项式阶。
-     * @param coeffModulusBits       系数模数的比特值。
-     * @param expectServerSize       服务端预估数量。
-     * @param maxClientSize          客户端最大数量。
-     * @return 非平衡PSI参数。
+     * @param cuckooHashBinType      cuckoo hash type.
+     * @param binNum                 bin num.
+     * @param maxPartitionSizePerBin max partition size per bin.
+     * @param itemEncodedSlotSize    item encoded slot size.
+     * @param psLowDegree            Paterson-Stockmeyer low degree.
+     * @param queryPowers            query powers.
+     * @param plainModulus           plain modulus.
+     * @param polyModulusDegree      poly modulus degree.
+     * @param coeffModulusBits       coeff modulus bits.
+     * @param expectServerSize       expect server size.
+     * @param maxClientSize          max client size.
+     * @return UPSI params.
      */
     public static Cmg21UpsiParams create(CuckooHashBinType cuckooHashBinType, int binNum,
                                          int maxPartitionSizePerBin, int itemEncodedSlotSize, int psLowDegree,
@@ -152,7 +152,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     }
 
     /**
-     * 服务端2K，客户端最大元素数量1
+     * serve size 2000, max client size 1.
      */
     public static final Cmg21UpsiParams SERVER_2K_CLIENT_MAX_1 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NO_STASH_ONE_HASH, 512, 15,
@@ -163,7 +163,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端100K，客户端最大元素数量1
+     * serve size 100000, max client size 1.
      */
     public static final Cmg21UpsiParams SERVER_100K_CLIENT_MAX_1 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NO_STASH_ONE_HASH, 512, 20,
@@ -174,7 +174,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量1K，计算量最优
+     * serve size 1 million, max client size 1000, optimized to minimize computation cost.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_1K_CMP = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 2046, 101,
@@ -185,7 +185,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量1K，通信量最优
+     * serve size 1 million, max client size 1000, optimized to minimize communication cost.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_1K_COM = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 1638, 125,
@@ -196,7 +196,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量11041
+     * serve size 1 million, max client size 11041.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_11041 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 16384, 98,
@@ -207,7 +207,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量2K，计算量最优
+     * serve size 1 million, max client size 2000, optimized to minimize computation cost.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_2K_CMP = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 3410, 72,
@@ -218,7 +218,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量2K，通信量最优
+     * serve size 1 million, max client size 2000, optimized to minimize communication cost.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_2K_COM = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 3410, 125,
@@ -229,7 +229,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量256
+     * serve size 1 million, max client size 256.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_256 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 585, 180,
@@ -240,7 +240,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量4K，计算量最优
+     *  serve size 1 million, max client size 4000, optimized to minimize computation cost.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_4K_CMP = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 6552, 40,
@@ -251,7 +251,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量4K，通信量最优
+     * serve size 1 million, max client size 4000, optimized to minimize communication cost.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_4K_COM = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 6825, 98,
@@ -262,7 +262,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量512，计算量最优
+     * serve size 1 million, max client size 512, optimized to minimize computation cost.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_512_CMP = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 1364, 128,
@@ -273,7 +273,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量512，通信量最优
+     * serve size 1 million, max client size 512, optimized to minimize communication cost.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_512_COM = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 1364, 228,
@@ -284,7 +284,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端1M，客户端最大元素数量5535
+     * serve size 1 million, max client size 5535.
      */
     public static final Cmg21UpsiParams SERVER_1M_CLIENT_MAX_5535 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 8192, 98,
@@ -295,7 +295,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端16M，客户端最大元素数量1024
+     * serve size 16 million, max client size 1024.
      */
     public static final Cmg21UpsiParams SERVER_16M_CLIENT_MAX_1024 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 1638, 1304,
@@ -306,7 +306,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端16M，客户端最大元素数量2048
+     * serve size 16 million, max client size 2048.
      */
     public static final Cmg21UpsiParams SERVER_16M_CLIENT_MAX_2048 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 3276, 1304,
@@ -318,7 +318,7 @@ public class Cmg21UpsiParams implements UpsiParams {
 
 
     /**
-     * 服务端256M，客户端最大元素数量1024
+     * serve size 256 million, max client size 1024.
      */
     public static final Cmg21UpsiParams SERVER_256M_CLIENT_MAX_1024 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 2048, 4000,
@@ -329,7 +329,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端256M，客户端最大元素数量2048
+     * serve size 256 million, max client size 2048.
      */
     public static final Cmg21UpsiParams SERVER_256M_CLIENT_MAX_2048 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 4096, 4000,
@@ -340,7 +340,7 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 服务端256M，客户端最大元素数量4096
+     * serve size 256 million, max client size 4096.
      */
     public static final Cmg21UpsiParams SERVER_256M_CLIENT_MAX_4096 = Cmg21UpsiParams.uncheckCreate(
         CuckooHashBinType.NAIVE_3_HASH, 6144, 4000,
@@ -351,108 +351,108 @@ public class Cmg21UpsiParams implements UpsiParams {
     );
 
     /**
-     * 返回布谷鸟哈希类型。
+     * return cuckoo hash type.
      *
-     * @return 布谷鸟哈希类型。
+     * @return cuckoo hash type.
      */
     public CuckooHashBinType getCuckooHashBinType() {
         return cuckooHashBinType;
     }
 
     /**
-     * 返回布谷鸟哈希桶的哈希数量。
+     * return hash num.
      *
-     * @return 布谷鸟哈希桶的哈希数量。
+     * @return hash num.
      */
-    public int getCuckooHashKeyNum() {
+    public int getCuckooHashNum() {
         return CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }
 
     /**
-     * 返回哈希桶数目。
+     * return bin num.
      *
-     * @return 哈希桶数目。
+     * @return bin num.
      */
     public int getBinNum() {
         return binNum;
     }
 
     /**
-     * 返回每个哈希桶内分块的最大元素个数。
+     * return max partition size per bin.
      *
-     * @return 每个哈希桶内分块的最大元素个数。
+     * @return max partition size per bin.
      */
     public int getMaxPartitionSizePerBin() {
         return maxPartitionSizePerBin;
     }
 
     /**
-     * 返回元素编码后占的卡槽个数。
+     * return item encoded slot size.
      *
-     * @return 元素编码后占的卡槽个数。
+     * @return item encoded slot size.
      */
     public int getItemEncodedSlotSize() {
         return itemEncodedSlotSize;
     }
 
     /**
-     * 返回Paterson-Stockmeyer方法的低阶值。
+     * return Paterson-Stockmeyer low degree.
      *
-     * @return Paterson-Stockmeyer方法的低阶值。
+     * @return Paterson-Stockmeyer low degree.
      */
     public int getPsLowDegree() {
         return psLowDegree;
     }
 
     /**
-     * 返回查询幂次方。
+     * return query powers.
      *
-     * @return 查询幂次方。
+     * @return query powers.
      */
     public int[] getQueryPowers() {
         return queryPowers;
     }
 
     /**
-     * 返回明文模数。
+     * return plain modulus.
      *
-     * @return 明文模数。
+     * @return plain modulus.
      */
     public int getPlainModulus() {
         return plainModulus;
     }
 
     /**
-     * 返回多项式阶。
+     * return poly modulus degree.
      *
-     * @return 多项式阶。
+     * @return poly modulus degree.
      */
     public int getPolyModulusDegree() {
         return polyModulusDegree;
     }
 
     /**
-     * 返回系数模数的比特值。
+     * return coeff modulus bits.
      *
-     * @return 系数模数的比特值。
+     * @return coeff modulus bits.
      */
     public int[] getCoeffModulusBits() {
         return coeffModulusBits;
     }
 
     /**
-     * 返回密文数目。
+     * return ciphertext num.
      *
-     * @return 密文数目。
+     * @return ciphertext num.
      */
     public int getCiphertextNum() {
         return ciphertextNum;
     }
 
     /**
-     * 返回每个密文中的元素数目。
+     * return item per ciphertext.
      *
-     * @return 每个密文中的元素数目。
+     * @return item per ciphertext.
      */
     public int getItemPerCiphertext() {
         return itemPerCiphertext;
@@ -481,11 +481,11 @@ public class Cmg21UpsiParams implements UpsiParams {
     }
 
     /**
-     * 返回哈希桶条目中元素对应的编码数组。
+     * return encoded array.
      *
-     * @param hashBinEntry 哈希桶条目。
-     * @param isReceiver   是否为接收方。
-     * @return 哈希桶条目中元素对应的编码数组。
+     * @param hashBinEntry hash bin entry.
+     * @param isReceiver   is receiver.
+     * @return encoded array.
      */
     public long[] getHashBinEntryEncodedArray(HashBinEntry<ByteBuffer> hashBinEntry, boolean isReceiver) {
         long[] encodedArray = new long[itemEncodedSlotSize];
@@ -493,7 +493,6 @@ public class Cmg21UpsiParams implements UpsiParams {
         assert bitLength >= 80;
         int shiftBits = BigInteger.valueOf(plainModulus).bitLength() - 1;
         BigInteger shiftMask = BigInteger.ONE.shiftLeft(shiftBits).subtract(BigInteger.ONE);
-        // 判断是否为空桶
         if (hashBinEntry.getHashIndex() != -1) {
             assert hashBinEntry.getHashIndex() < 3 : "hash index should be [0, 1, 2]";
             BigInteger input = BigIntegerUtils.byteArrayToNonNegBigInteger(hashBinEntry.getItem().array());

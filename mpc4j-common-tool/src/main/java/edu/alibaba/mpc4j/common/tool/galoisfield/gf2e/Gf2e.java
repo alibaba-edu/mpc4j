@@ -3,6 +3,8 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2e;
 import edu.alibaba.mpc4j.common.tool.galoisfield.BytesField;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 
+import java.util.Arrays;
+
 /**
  * GF(2^l) interface.
  *

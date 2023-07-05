@@ -1,37 +1,36 @@
 package edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.s2pc.upso.upsi.UpsiClient;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.UpsiParams;
 
 import java.util.Set;
 
 
 /**
- * 非平衡PSI协议客户端线程。
+ * CMG21 UPSI client thread.
  *
  * @author Liqiang Peng
  * @date 2022/5/26
  */
 public class Cmg21UpsiClientThread<T> extends Thread {
     /**
-     * 客户端
+     * CMG21 UPSI client
      */
-    private final UpsiClient<T> client;
+    private final Cmg21UpsiClient<T> client;
     /**
-     * UPSI协议配置项
+     * UPSI config
      */
-    private final UpsiParams upsiParams;
+    private final Cmg21UpsiParams upsiParams;
     /**
-     * 客户端集合
+     * client element set
      */
     private final Set<T> clientElementSet;
     /**
-     * 交集
+     * intersection set
      */
     private Set<T> intersectionSet;
 
-    Cmg21UpsiClientThread(UpsiClient<T> client, UpsiParams upsiParams, Set<T> clientElementSet) {
+    Cmg21UpsiClientThread(Cmg21UpsiClient<T> client, Cmg21UpsiParams upsiParams, Set<T> clientElementSet) {
         this.client = client;
         this.upsiParams = upsiParams;
         this.clientElementSet = clientElementSet;

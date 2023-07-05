@@ -14,34 +14,34 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 非平衡PSI协议服务端。
+ * abstract UPSI server.
  *
  * @author Liqiang Peng
  * @date 2022/6/14
  */
 public abstract class AbstractUpsiServer<T> extends AbstractTwoPartyPto implements UpsiServer<T> {
     /**
-     * 客户端最大元素数量
+     * max client element size
      */
     private int maxClientElementSize;
     /**
-     * 服务端元素数组
+     * server element list
      */
-    protected ArrayList<ByteBuffer> serverElementArrayList;
+    protected List<ByteBuffer> serverElementList;
     /**
-     * 字节数组和对象映射
+     * byte array object map
      */
     protected Map<ByteBuffer, T> byteArrayObjectMap;
     /**
-     * 服务端元素数量
+     * server element size
      */
     protected int serverElementSize;
     /**
-     * 客户端元素数量
+     * client element size
      */
     protected int clientElementSize;
     /**
-     * 特殊空元素字节缓存区
+     * bot element bytebuffer
      */
     protected ByteBuffer botElementByteBuffer;
 
@@ -57,12 +57,11 @@ public abstract class AbstractUpsiServer<T> extends AbstractTwoPartyPto implemen
 
     protected void setPtoInput(Set<T> serverElementSet, int clientElementSize) {
         checkInitialized();
-        // 设置特殊空元素
         byte[] botElementByteArray = new byte[CommonConstants.STATS_BYTE_LENGTH];
         Arrays.fill(botElementByteArray, (byte)0xFF);
         botElementByteBuffer = ByteBuffer.wrap(botElementByteArray);
         MathPreconditions.checkPositive("serverElementSize", serverElementSet.size());
-        serverElementArrayList = serverElementSet.stream()
+        serverElementList = serverElementSet.stream()
             .map(ObjectUtils::objectToByteArray)
             .map(ByteBuffer::wrap)
             .peek(xi -> Preconditions.checkArgument(!xi.equals(botElementByteBuffer), "xi must not equal ⊥"))

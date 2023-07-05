@@ -1,23 +1,23 @@
 package edu.alibaba.mpc4j.s2pc.upso.upsi;
 
 /**
- * 非平衡PSI协议参数。
+ * UPSI params interface.
  *
  * @author Weiran Liu
  * @date 2022/8/7
  */
 public interface UpsiParams {
     /**
-     * 返回最大客户端元素数量。
+     * return max client element size.
      *
-     * @return 最大客户端元素数量。
+     * @return max client element size.
      */
     int maxClientElementSize();
 
     /**
-     * 返回预估服务端元素数量。实际使用时可以超过预估数量。
+     * return expect server size, this is not strict upper bound.
      *
-     * @return 预估服务端元素数量。
+     * @return expect server size.
      */
     int expectServerSize();
 }

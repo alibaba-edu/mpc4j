@@ -21,10 +21,11 @@ public class RpcPropertiesUtils {
     }
 
     /**
-     * 设置Netty通信接口。
+     * reads and sets Netty RPC.
      *
-     * @param properties 配置项。
-     * @return 通信接口。
+     * @param properties properties.
+     * @param partyPrefix the prefixes of the parties.
+     * @return Netty RPC.
      */
     public static Rpc readNettyRpc(Properties properties, String... partyPrefix) {
         MathPreconditions.checkGreater("# of parties", partyPrefix.length, 1);

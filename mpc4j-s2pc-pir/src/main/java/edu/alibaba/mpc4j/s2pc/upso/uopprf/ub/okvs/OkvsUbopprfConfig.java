@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.okvs;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.UbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.UbopprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfConfig;
@@ -14,7 +14,7 @@ import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
  * @author Weiran Liu
  * @date 2023/3/26
  */
-public class OkvsUbopprfConfig implements UbopprfConfig {
+public class OkvsUbopprfConfig extends AbstractMultiPartyPtoConfig implements UbopprfConfig {
     /**
      * single-query OPRF config
      */
@@ -25,6 +25,7 @@ public class OkvsUbopprfConfig implements UbopprfConfig {
     private final OkvsFactory.OkvsType okvsType;
 
     private OkvsUbopprfConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST, builder.sqOprfConfig);
         sqOprfConfig = builder.sqOprfConfig;
         okvsType = builder.okvsType;
     }
@@ -32,21 +33,6 @@ public class OkvsUbopprfConfig implements UbopprfConfig {
     @Override
     public UbopprfFactory.UbopprfType getPtoType() {
         return UbopprfFactory.UbopprfType.OKVS;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        sqOprfConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return sqOprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     public SqOprfConfig getSqOprfConfig() {

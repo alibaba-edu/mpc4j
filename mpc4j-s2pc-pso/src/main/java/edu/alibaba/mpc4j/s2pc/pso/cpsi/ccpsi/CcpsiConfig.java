@@ -15,4 +15,13 @@ public interface CcpsiConfig extends MultiPartyPtoConfig {
      * @return tye type.
      */
     CcpsiFactory.CcpsiType getPtoType();
+
+    /**
+     * Gets number of shared bits.
+     *
+     * @param serverElementSize server element size.
+     * @param clientElementSize client element size.
+     * @return number of shared bits.
+     */
+    int getOutputBitNum(int serverElementSize, int clientElementSize);
 }

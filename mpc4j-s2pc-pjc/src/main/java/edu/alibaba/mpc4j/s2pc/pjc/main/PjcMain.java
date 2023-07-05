@@ -4,7 +4,6 @@ import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.main.pid.PidMain;
 import edu.alibaba.mpc4j.s2pc.pjc.main.pmid.PmidMain;
 import edu.alibaba.mpc4j.s2pc.pso.main.PsoMain;
-import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,11 +24,7 @@ public class PjcMain {
      * @param args 只有一个输入：配置文件。
      */
     public static void main(String[] args) throws Exception {
-        // 读取日志配置文件
-        LOGGER.info("read log config");
-        Properties log4jProperties = new Properties();
-        log4jProperties.load(PsoMain.class.getResourceAsStream("/log4j.properties"));
-        PropertyConfigurator.configure(log4jProperties);
+        PropertiesUtils.loadLog4jProperties();
         // 读取配置文件
         LOGGER.info("read PTO config");
         Properties properties = PropertiesUtils.loadProperties(args[0]);
@@ -39,11 +34,11 @@ public class PjcMain {
         switch (ptoType) {
             case PidMain.PTO_TYPE_NAME:
                 PidMain pidMain = new PidMain(properties);
-                pidMain.run();
+                pidMain.runNetty();
                 break;
             case PmidMain.PTO_TYPE_NAME:
                 PmidMain pmidMain = new PmidMain(properties);
-                pmidMain.run();
+                pmidMain.runNetty();
                 break;
             default:
                 throw new IllegalArgumentException("Invalid pto_type: " + ptoType);

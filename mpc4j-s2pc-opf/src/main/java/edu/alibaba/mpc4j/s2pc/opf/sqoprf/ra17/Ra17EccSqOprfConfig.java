@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.opf.sqoprf.ra17;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
 
@@ -11,39 +11,20 @@ import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
  * @author Qixian Zhou
  * @date 2023/4/11
  */
-public class Ra17EccSqOprfConfig implements SqOprfConfig {
+public class Ra17EccSqOprfConfig extends AbstractMultiPartyPtoConfig implements SqOprfConfig {
     /**
      * compress encode
      */
     private final boolean compressEncode;
-    /**
-     * environment
-     */
-    private EnvType envType;
 
-    private Ra17EccSqOprfConfig(Ra17EccSqOprfConfig.Builder builder) {
+    private Ra17EccSqOprfConfig(Builder builder) {
+        super(SecurityModel.MALICIOUS);
         compressEncode = builder.compressEncode;
-        envType = EnvType.STANDARD;
     }
 
     @Override
     public SqOprfFactory.SqOprfType getPtoType() {
         return SqOprfFactory.SqOprfType.RA17_ECC;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        this.envType = envType;
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return envType;
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     public boolean getCompressEncode() {

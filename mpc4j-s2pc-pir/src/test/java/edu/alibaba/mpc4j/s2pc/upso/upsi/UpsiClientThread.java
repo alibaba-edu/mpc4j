@@ -6,26 +6,26 @@ import java.util.Set;
 
 
 /**
- * 非平衡PSI协议客户端线程。
+ * UPSI client thread.
  *
  * @author Liqiang Peng
  * @date 2022/5/26
  */
 public class UpsiClientThread<T> extends Thread {
     /**
-     * 客户端
+     * UPSI client
      */
     private final UpsiClient<T> client;
     /**
-     * 客户端集合
+     * client element set
      */
     private final Set<T> clientElementSet;
     /**
-     * 交集
+     * intersection set
      */
     private Set<T> intersectionSet;
     /**
-     * 客户端最大元素数量
+     * max client element size
      */
     private final int maxClientElementSize;
 

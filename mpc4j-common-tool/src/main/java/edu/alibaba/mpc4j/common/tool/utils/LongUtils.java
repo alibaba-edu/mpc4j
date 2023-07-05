@@ -188,6 +188,62 @@ public class LongUtils {
     }
 
     /**
+     * Verify that the given {@code long[]} has the fixed size and contains at most {@code bitLength} valid bits.
+     * The bits are represented in Big-endian format.
+     *
+     * @param longArray  the given {@code long[]}.
+     * @param longLength the expected long length.
+     * @param bitLength  the expected bit length.
+     * @return true the given {@code long[]} has the fixed size and contains at most {@code bitLength} valid bits.
+     */
+    public static boolean isFixedReduceLongArray(long[] longArray, final int longLength, final int bitLength) {
+        assert longLength >= 0 : "byteLength must be greater than or equal to 0: " + longLength;
+        if (longArray.length != longLength) {
+            return false;
+        }
+        assert bitLength >= 0 && bitLength <= longArray.length * Long.SIZE;
+        for (int binaryIndex = 0; binaryIndex < longArray.length * Long.SIZE - bitLength; binaryIndex++) {
+            if (BinaryUtils.getBoolean(longArray, binaryIndex)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Creates an all-one long array.
+     *
+     * @param bitLength bit length.
+     * @return an all-one long array.
+     */
+    public static long[] allOneLongArray(int bitLength) {
+        int longLength = CommonUtils.getLongLength(bitLength);
+        long[] vector = new long[longLength];
+        Arrays.fill(vector, 0xFFFFFFFFFFFFFFFFL);
+        LongUtils.reduceLongArray(vector, bitLength);
+        return vector;
+    }
+
+    /**
+     * Generates a random long array.
+     *
+     * @param longLength   long length.
+     * @param bitLength    bit length.
+     * @param secureRandom random state.
+     * @return a random long array.
+     */
+    public static long[] randomLongArray(final int longLength, final int bitLength, SecureRandom secureRandom) {
+        assert longLength * Long.SIZE >= bitLength
+            : "bitLength = " + bitLength + ", longLength does not have enough room: " + longLength;
+        long[] longArray = new long[longLength];
+        for (int i = 0; i < longLength; i++) {
+            longArray[i] = secureRandom.nextLong();
+        }
+        LongUtils.reduceLongArray(longArray, bitLength);
+        return longArray;
+    }
+
+    /**
      * 返回给定{@code long[]}的克隆结果。
      *
      * @param longArray 待克隆的{@code long[]}。
@@ -198,6 +254,19 @@ public class LongUtils {
             return null;
         }
         return Arrays.copyOf(longArray, longArray.length);
+    }
+
+    /**
+     * 返回给定{@code long[][]}的克隆结果。
+     *
+     * @param longArrays 待克隆的{@code long[][]}。
+     * @return {@code long[][]}的克隆结果。如果待克隆的{@code long[][]}为null，则返回null。
+     */
+    public static long[][] clone(final long[][] longArrays) {
+        if (longArrays == null) {
+            return null;
+        }
+        return Arrays.stream(longArrays).map(LongUtils::clone).toArray(long[][]::new);
     }
 
     /**

@@ -85,7 +85,21 @@ public class HhLdpMainTest {
     }
 
     @Test
-    public void testGammaNoWarmup() throws IOException {
+    public void testNoLambdaL() throws IOException {
+        HhLdpMain hhLdpMain = createHhLdpMain("test_config/hh_ldp_test_config_no_lambdal.conf");
+        Assert.assertEquals(0, hhLdpMain.getGammaHs().length);
+        hhLdpMain.run();
+    }
+
+    @Test
+    public void testLambdaL() throws IOException {
+        HhLdpMain hhLdpMain = createHhLdpMain("test_config/hh_ldp_test_config_lambdal.conf");
+        Assert.assertTrue(hhLdpMain.getLambdaL() > 0);
+        hhLdpMain.run();
+    }
+
+    @Test
+    public void testNoWarmupGammaH() throws IOException {
         HhLdpMain hhLdpMain = createHhLdpMain("test_config/hh_ldp_test_config_gammah_no_warmup.conf");
         Assert.assertEquals(0, hhLdpMain.getWarmupNum());
         Assert.assertTrue(hhLdpMain.getGammaHs().length > 0);

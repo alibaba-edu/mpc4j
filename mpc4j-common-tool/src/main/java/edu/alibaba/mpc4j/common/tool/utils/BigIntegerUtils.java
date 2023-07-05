@@ -76,6 +76,32 @@ public class BigIntegerUtils {
     }
 
     /**
+     * Clone the data.
+     *
+     * @param data data.
+     * @return clone data.
+     */
+    public static BigInteger[] clone(BigInteger[] data) {
+        BigInteger[] cData = new BigInteger[data.length];
+        System.arraycopy(data, 0, cData, 0, data.length);
+        return cData;
+    }
+
+    /**
+     * Clone the data.
+     *
+     * @param data data.
+     * @return clone data.
+     */
+    public static BigInteger[][] clone(BigInteger[][] data) {
+        BigInteger[][] cData = new BigInteger[data.length][];
+        for (int iRow = 0; iRow < data.length; iRow++) {
+            cData[iRow] = clone(data[iRow]);
+        }
+        return cData;
+    }
+
+    /**
      * 将{@code BigInteger}转换为{@code byte[]}，大端表示。注意：转换过程已经对数据进行了拷贝。
      *
      * @param bigInteger 待转换的{@code BigInteger}。

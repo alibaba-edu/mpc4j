@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.core.rss19;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
@@ -15,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.core.Zp64CoreMtgFactory;
  * @author Liqiang Peng
  * @date 2022/9/5
  */
-public class Rss19Zp64CoreMtgConfig implements Zp64CoreMtgConfig {
+public class Rss19Zp64CoreMtgConfig extends AbstractMultiPartyPtoConfig implements Zp64CoreMtgConfig {
 
     static {
         System.loadLibrary(CommonConstants.MPC4J_NATIVE_FHE_NAME);
@@ -29,20 +29,16 @@ public class Rss19Zp64CoreMtgConfig implements Zp64CoreMtgConfig {
      * the prime
      */
     private final long p;
-    /**
-     * the environment
-     */
-    private EnvType envType;
 
     private Rss19Zp64CoreMtgConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST);
         polyModulusDegree = builder.polyModulusDegree;
         p = Rss19Zp64CoreMtgNativeUtils.checkCreatePlainModulus(polyModulusDegree, builder.primeBitLength);
-        envType = EnvType.STANDARD;
     }
 
     @Override
     public Zp64 getZp64() {
-        return Zp64Factory.createInstance(envType, p);
+        return Zp64Factory.createInstance(getEnvType(), p);
     }
 
     /**
@@ -57,21 +53,6 @@ public class Rss19Zp64CoreMtgConfig implements Zp64CoreMtgConfig {
     @Override
     public int maxAllowNum() {
         return Integer.MAX_VALUE;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        this.envType = envType;
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return envType;
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     @Override

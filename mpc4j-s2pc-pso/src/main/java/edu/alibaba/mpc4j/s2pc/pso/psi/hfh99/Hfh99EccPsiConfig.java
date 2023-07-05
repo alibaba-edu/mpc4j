@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi.hfh99;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory;
 
@@ -11,39 +11,20 @@ import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory;
  * @author Weiran Liu
  * @date 2022/9/19
  */
-public class Hfh99EccPsiConfig implements PsiConfig {
+public class Hfh99EccPsiConfig extends AbstractMultiPartyPtoConfig implements PsiConfig {
     /**
      * 是否压缩编码
      */
     private final boolean compressEncode;
-    /**
-     * 环境类型
-     */
-    private EnvType envType;
 
     private Hfh99EccPsiConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST);
         compressEncode = builder.compressEncode;
-        envType = EnvType.STANDARD;
     }
 
     @Override
     public PsiFactory.PsiType getPtoType() {
         return PsiFactory.PsiType.HFH99_ECC;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        this.envType = envType;
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return envType;
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     public boolean getCompressEncode() {

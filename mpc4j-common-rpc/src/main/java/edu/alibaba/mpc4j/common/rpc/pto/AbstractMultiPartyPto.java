@@ -289,7 +289,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
             case NON_INITIALIZED:
             case DESTROYED:
             default:
-                throw new IllegalStateException("Party state must not be " + PartyState.DESTROYED);
+                throw new IllegalStateException("Party state must not be " + partyState);
         }
     }
 
@@ -306,7 +306,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
                 return;
             case DESTROYED:
             default:
-                throw new IllegalStateException("Party state must not be " + PartyState.DESTROYED);
+                throw new IllegalStateException("Party state must not be " + partyState);
         }
     }
 

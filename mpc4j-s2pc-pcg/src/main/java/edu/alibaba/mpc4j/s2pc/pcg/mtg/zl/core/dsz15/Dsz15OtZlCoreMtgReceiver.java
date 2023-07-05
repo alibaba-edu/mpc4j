@@ -95,8 +95,8 @@ public class Dsz15OtZlCoreMtgReceiver extends AbstractZlCoreMtgParty {
         stopWatch.start();
         byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(delta);
-        cotSender.init(delta, maxNum * l, maxNum * l);
-        cotReceiver.init(maxNum * l, maxNum * l);
+        cotSender.init(delta, maxNum * l);
+        cotReceiver.init(maxNum * l);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

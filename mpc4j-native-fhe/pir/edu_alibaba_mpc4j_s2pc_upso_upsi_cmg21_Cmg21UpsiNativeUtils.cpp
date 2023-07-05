@@ -11,13 +11,16 @@
 using namespace std;
 using namespace seal;
 
-JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_genEncryptionParameters(
+[[maybe_unused]] JNIEXPORT
+jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_genEncryptionParameters(
         JNIEnv *env, jclass, jint poly_modulus_degree, jlong plain_modulus, jintArray coeff_modulus_bits) {
     uint32_t coeff_size = env->GetArrayLength(coeff_modulus_bits);
     jint* coeff_ptr = env->GetIntArrayElements(coeff_modulus_bits, JNI_FALSE);
     vector<int32_t> bit_sizes(coeff_ptr, coeff_ptr + coeff_size);
-    EncryptionParameters parms = generate_encryption_parameters(scheme_type::bfv, poly_modulus_degree, plain_modulus,
-                                                                CoeffModulus::Create(poly_modulus_degree, std::move(bit_sizes)));
+    EncryptionParameters parms = EncryptionParameters(scheme_type::bfv);
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_plain_modulus(plain_modulus);
+    parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, std::move(bit_sizes)));
     SEALContext context = SEALContext(parms);
     KeyGenerator key_gen = KeyGenerator(context);
     const SecretKey &secret_key = key_gen.secret_key();
@@ -38,15 +41,17 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiN
     return list_obj;
 }
 
-JNIEXPORT jboolean JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_checkSealParams(
+[[maybe_unused]] JNIEXPORT
+jboolean JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_checkSealParams(
         JNIEnv *env, jclass, jint poly_modulus_degree, jlong plain_modulus, jintArray coeff_modulus_bits,
         jobjectArray jparent_powers, jintArray jsource_power_index, jint ps_low_power, jint max_bin_size) {
     uint32_t coeff_size = env->GetArrayLength(coeff_modulus_bits);
     jint* ptr = env->GetIntArrayElements(coeff_modulus_bits, JNI_FALSE);
     vector<int32_t> bit_sizes(ptr, ptr + coeff_size);
-    EncryptionParameters parms = generate_encryption_parameters(scheme_type::bfv, poly_modulus_degree, plain_modulus,
-                                                                CoeffModulus::Create(poly_modulus_degree,
-                                                                                     std::move(bit_sizes)));
+    EncryptionParameters parms = EncryptionParameters(scheme_type::bfv);
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_plain_modulus(plain_modulus);
+    parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, std::move(bit_sizes)));
     SEALContext context = SEALContext(parms);
     jclass exception = env->FindClass("java/lang/Exception");
     if (!context.parameters_set()) {
@@ -132,7 +137,8 @@ JNIEXPORT jboolean JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21Upsi
     return decryptor.invariant_noise_budget(f_evaluated) > 0;
 }
 
-JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_computeEncryptedPowers(
+[[maybe_unused]] JNIEXPORT
+jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_computeEncryptedPowers(
         JNIEnv *env, jclass, jbyteArray parms_bytes, jbyteArray relin_keys_bytes, jobject query_list,
         jobjectArray jparent_powers, jintArray jsource_power_index, jint ps_low_power) {
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
@@ -160,7 +166,8 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiN
     return serialize_ciphertexts(env, encrypted_powers);
 }
 
-JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_optComputeMatches(
+[[maybe_unused]] JNIEXPORT
+jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_optComputeMatches(
         JNIEnv *env, jclass, jbyteArray parms_bytes, jbyteArray relin_keys_bytes, jobjectArray database_coeffs,
         jobject query_list, jint ps_low_power) {
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
@@ -169,7 +176,6 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21Up
     Evaluator evaluator(context);
     // encrypted query powers
     vector<Ciphertext> query_powers = deserialize_ciphertexts(env, query_list, context);
-    auto high_powers_parms_id = get_parms_id_for_chain_idx(context, 1);
     auto low_powers_parms_id = get_parms_id_for_chain_idx(context, 2);
     vector<Plaintext> plaintexts = deserialize_plaintexts(env, database_coeffs, context);
     uint32_t ps_high_degree = ps_low_power + 1;
@@ -182,7 +188,8 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21Up
     return serialize_ciphertext(env, f_evaluated);
 }
 
-JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_naiveComputeMatches(
+[[maybe_unused]] JNIEXPORT
+jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_naiveComputeMatches(
         JNIEnv *env, jclass, jbyteArray parms_bytes, jobjectArray database_coeffs, jobject query_list) {
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
     SEALContext context(parms);
@@ -198,7 +205,8 @@ JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21Up
     return serialize_ciphertext(env, f_evaluated);
 }
 
-JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_generateQuery(
+[[maybe_unused]] JNIEXPORT
+jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_generateQuery(
         JNIEnv *env, jclass, jbyteArray parms_bytes, jbyteArray pk_bytes, jbyteArray sk_bytes, jobjectArray coeffs_array) {
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
     SEALContext context = SEALContext(parms);
@@ -214,7 +222,8 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiN
     return serialize_ciphertexts(env, query);
 }
 
-JNIEXPORT jlongArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_decodeReply(
+[[maybe_unused]] JNIEXPORT
+jlongArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils_decodeReply(
         JNIEnv *env, jclass, jbyteArray parms_bytes, jbyteArray sk_bytes, jbyteArray response_bytes) {
     EncryptionParameters parms = deserialize_encryption_parms(env, parms_bytes);
     SEALContext context = SEALContext(parms);
@@ -222,7 +231,6 @@ JNIEXPORT jlongArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21Up
     BatchEncoder encoder(context);
     Decryptor decryptor(context, secret_key);
     uint32_t slot_count = encoder.slot_count();
-    vector<uint64_t> result;
     Ciphertext response = deserialize_ciphertext(env, response_bytes, context);
     Plaintext decrypted;
     vector<uint64_t> dec_vec(slot_count);

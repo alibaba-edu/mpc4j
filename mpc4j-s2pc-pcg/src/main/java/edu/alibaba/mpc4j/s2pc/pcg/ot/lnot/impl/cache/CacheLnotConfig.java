@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.cache;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc.NcLnotConfig;
@@ -15,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.pre.PreLnotFactory;
  * @author Weiran Liu
  * @date 2023/4/14
  */
-public class CacheLnotConfig implements LnotConfig {
+public class CacheLnotConfig extends AbstractMultiPartyPtoConfig implements LnotConfig {
     /**
      * no-choice LNOT config
      */
@@ -26,8 +26,7 @@ public class CacheLnotConfig implements LnotConfig {
     private final PreLnotConfig preLnotConfig;
 
     private CacheLnotConfig(Builder builder) {
-        // two environments must be the same
-        assert builder.ncLnotConfig.getEnvType().equals(builder.preLnotConfig.getEnvType());
+        super(SecurityModel.MALICIOUS, builder.ncLnotConfig, builder.preLnotConfig);
         ncLnotConfig = builder.ncLnotConfig;
         preLnotConfig = builder.preLnotConfig;
     }
@@ -48,29 +47,6 @@ public class CacheLnotConfig implements LnotConfig {
     @Override
     public int maxBaseNum() {
         return ncLnotConfig.maxNum();
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        ncLnotConfig.setEnvType(envType);
-        preLnotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return ncLnotConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.MALICIOUS;
-        if (ncLnotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = ncLnotConfig.getSecurityModel();
-        }
-        if (preLnotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = preLnotConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<CacheLnotConfig> {

@@ -93,10 +93,10 @@ public class Dsz15OtZlCoreMtgSender extends AbstractZlCoreMtgParty {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        cotReceiver.init(maxNum * l, maxNum * l);
+        cotReceiver.init(maxNum * l);
         byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(delta);
-        cotSender.init(delta, maxNum * l, maxNum * l);
+        cotSender.init(delta, maxNum * l);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

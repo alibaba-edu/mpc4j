@@ -1,10 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc;
 
-import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotSenderOutput;
@@ -12,17 +9,12 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc.NcLnotFactory.NcLnotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc.cot.CotNcLnotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc.direct.DirectNcLnotConfig;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -34,12 +26,8 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/4/11
  */
 @RunWith(Parameterized.class)
-public class NcLnotTest {
+public class NcLnotTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(NcLnotTest.class);
-    /**
-     * the random state
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * default l
      */
@@ -70,22 +58,20 @@ public class NcLnotTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // COT (Malicious)
+        // COT
         configurations.add(new Object[] {
             NcLnotType.COT.name() + " (" + SecurityModel.MALICIOUS + ")",
             new CotNcLnotConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
-        // COT (Semi-honest)
         configurations.add(new Object[] {
             NcLnotType.COT.name() + " (" + SecurityModel.SEMI_HONEST + ")",
             new CotNcLnotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
-        // DIRECT (Malicious)
+        // DIRECT
         configurations.add(new Object[] {
             NcLnotType.DIRECT.name() + " (" + SecurityModel.MALICIOUS + ")",
             new DirectNcLnotConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
-        // DIRECT (Semi-honest)
         configurations.add(new Object[] {
             NcLnotType.DIRECT.name() + " (" + SecurityModel.SEMI_HONEST + ")",
             new DirectNcLnotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
@@ -95,38 +81,13 @@ public class NcLnotTest {
     }
 
     /**
-     * sender RPC
-     */
-    private final Rpc senderRpc;
-    /**
-     * receiver RPC
-     */
-    private final Rpc receiverRpc;
-    /**
      * config
      */
     private final NcLnotConfig config;
 
     public NcLnotTest(String name, NcLnotConfig config) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        // We cannot use NettyRPC in the test case since it needs multi-thread connect / disconnect.
-        // In other word, we cannot connect / disconnect NettyRpc in @Before / @After, respectively.
-        RpcManager rpcManager = new MemoryRpcManager(2);
-        senderRpc = rpcManager.getRpc(0);
-        receiverRpc = rpcManager.getRpc(1);
+        super(name);
         this.config = config;
-    }
-
-    @Before
-    public void connect() {
-        senderRpc.connect();
-        receiverRpc.connect();
-    }
-
-    @After
-    public void disconnect() {
-        senderRpc.disconnect();
-        receiverRpc.disconnect();
     }
 
     @Test
@@ -180,8 +141,8 @@ public class NcLnotTest {
     }
 
     private void testPto(int l, int num, int round, boolean parallel) {
-        NcLnotSender sender = NcLnotFactory.createSender(senderRpc, receiverRpc.ownParty(), config);
-        NcLnotReceiver receiver = NcLnotFactory.createReceiver(receiverRpc, senderRpc.ownParty(), config);
+        NcLnotSender sender = NcLnotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        NcLnotReceiver receiver = NcLnotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -193,32 +154,27 @@ public class NcLnotTest {
             SECURE_RANDOM.nextBytes(delta);
             NcLnotSenderThread senderThread = new NcLnotSenderThread(sender, l, num, round);
             NcLnotReceiverThread receiverThread = new NcLnotReceiverThread(receiver, l, num, round);
-            StopWatch stopWatch = new StopWatch();
-            // execute the protocol
-            stopWatch.start();
+            STOP_WATCH.start();
+            // start
             senderThread.start();
             receiverThread.start();
+            // stop
             senderThread.join();
             receiverThread.join();
-            stopWatch.stop();
-            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            long senderByteLength = senderRpc.getSendByteLength();
-            senderRpc.reset();
-            long receiverByteLength = receiverRpc.getSendByteLength();
-            receiverRpc.reset();
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
+            // verify
             LnotSenderOutput senderOutput = senderThread.getSenderOutput();
             LnotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            // verify
             LnotTestUtils.assertOutput(l, num * round, senderOutput, receiverOutput);
-            LOGGER.info("Sender sends {}B, Receiver sends {}B, time = {}ms",
-                senderByteLength, receiverByteLength, time
-            );
+            printAndResetRpc(time);
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        sender.destroy();
-        receiver.destroy();
     }
 }

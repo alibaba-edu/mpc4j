@@ -80,7 +80,7 @@ public class Ms13OsnSender extends AbstractOsnSender {
         byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(delta);
         // 每次调用maxWidth次COT协议，一共调用maxSwitchNum次
-        cotSender.init(delta, maxWidth, maxSwitchNum);
+        cotSender.init(delta, maxSwitchNum);
         stopWatch.stop();
         long cotInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

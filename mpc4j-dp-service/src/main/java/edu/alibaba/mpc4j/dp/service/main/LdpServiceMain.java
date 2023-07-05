@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.dp.service.main;
 
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
-import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,11 +16,7 @@ public class LdpServiceMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(LdpServiceMain.class);
 
     public static void main(String[] args) throws Exception {
-        // read log config file
-        LOGGER.info("read log config");
-        Properties log4jProperties = new Properties();
-        log4jProperties.load(LdpServiceMain.class.getResourceAsStream("/log4j.properties"));
-        PropertyConfigurator.configure(log4jProperties);
+        PropertiesUtils.loadLog4jProperties();
         // read config file
         LOGGER.info("read config file");
         Properties properties = PropertiesUtils.loadProperties(args[0]);

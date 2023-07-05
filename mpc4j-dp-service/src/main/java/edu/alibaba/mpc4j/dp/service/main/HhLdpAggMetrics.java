@@ -40,6 +40,10 @@ public class HhLdpAggMetrics {
      */
     private long payloadBytes;
     /**
+     * context bytes
+     */
+    private long contextBytes;
+    /**
      * memory bytes
      */
     private long memoryBytes;
@@ -80,6 +84,7 @@ public class HhLdpAggMetrics {
         serverTimeMs += metrics.getServerTimeMs();
         clientTimeMs += metrics.getClientTimeMs();
         payloadBytes += metrics.getPayloadBytes();
+        contextBytes += metrics.getContextBytes();
         memoryBytes += metrics.getMemoryBytes();
         warmupNdcg += metrics.getWarmupNdcg();
         warmupPrecision += metrics.getWarmupPrecision();
@@ -117,6 +122,10 @@ public class HhLdpAggMetrics {
 
     public long getPayloadBytes() {
         return payloadBytes / round;
+    }
+
+    public long getContextBytes() {
+        return contextBytes / round;
     }
 
     public long getMemoryBytes() {

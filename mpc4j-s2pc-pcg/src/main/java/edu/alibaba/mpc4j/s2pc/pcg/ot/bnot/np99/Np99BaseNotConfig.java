@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.np99;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.BaseNotConfig;
@@ -14,13 +14,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.BaseNotFactory;
  * @author Hanwen Feng
  * @date 2022/07/19
  */
-public class Np99BaseNotConfig implements BaseNotConfig {
+public class Np99BaseNotConfig extends AbstractMultiPartyPtoConfig implements BaseNotConfig {
     /**
      * 基础OT协议配置项
      */
     private final BaseOtConfig baseOtConfig;
 
     private Np99BaseNotConfig(Builder builder) {
+        super(SecurityModel.MALICIOUS, builder.baseOtConfig);
         baseOtConfig = builder.baseOtConfig;
     }
 
@@ -31,21 +32,6 @@ public class Np99BaseNotConfig implements BaseNotConfig {
     @Override
     public BaseNotFactory.BaseNotType getPtoType() {
         return BaseNotFactory.BaseNotType.NP99;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        baseOtConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return baseOtConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return baseOtConfig.getSecurityModel();
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Np99BaseNotConfig> {

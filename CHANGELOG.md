@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[1.0.8\]
+
+### Added
+
+- `mpc4j-common-circuit`
+  - We abstract `MpcZlVector` and `MpcZlParty`.
+  - We add some circuit implementations, including adder, multiplier, and sorting network.
+- `mpc4j-common-tool`
+  - We add a new BitVector named `CombinedBitVector` that tries its best to support efficient BitVector operations. Now users can use `CombinedBitVector` for all cases.
+- `mpc4j-crypto-matrix`
+  - We implement Zp matrix and Zp64 matrix.
+- `mpc4j-s2pc-pcg`
+  - We implement coin-tossing protocols with semi-honest and malicious security.
+- `mpc4j-sp2c-aby`
+  - We implement Trust-Dealer model, that is, an aider can distribute Boolean and Multiplication triples for general MPC.
+  - We implement daBits and EdaBits.
+  - We implement some comparisons.
+- `mpc4j-s2pc-opf`
+  - We implement Naor-Ringold OPRF, and OPRP-based OPRF.
+- `mpc4j-s2pc-pir`
+  - We implement more index PIRs, including Simple / Double PIR (USENIX Security 2023), Mul PIR (USENIX Security 2021), constant-weight PIR (USENIX Security 2022).
+  - We implement Pantheon PIR (VLDB 2022).
+- `mpc4j-s2pc-pso`
+  - We formalize and implement some PSI cardinality protocols, including EC-DH-based, DH-OPRF-based, and circuit-PSI-based.
+  - We implement server-aided PSI protocols.
+- others
+  - We add test cases for PSU, PID and PMID.
+
+### Changed
+
+- `mpc4j-common-tool`
+  - We refine Filter implementations.
+  - We refine implementations for sparse bit vector and sparse bit matrix.
+- `mpc4j-s2pc-pcg`
+  - We add silent model for all protocols that can leverage silent OT to reduce communication costs.
+  - We remove number of bits / number of elements in general MPC.
+- `mpc4j-crypto-matrix`
+    - We move OKVS implementations into `mpc4j-crypto-matrix`.
+- others
+  - We refine configs for multi-party protocols so that we can remove many duplicate codes.
+  - We refine test cases for multi-party protocols so tha we can remove many duplicate codes.
+
+### Fixed
+
+- `mpc4j-common-tool`
+  - We fixed a bug in CommitFactory. We need to create a commitment scheme with SHA256 hash for STANDARD and with SM3 hash for INLAND.
+- `mpc4j-crypto-matrix`
+  - We fixed a bug for `toString()` in vectors and databases. We need to correctly display the string even if the vector (the database) is empty (with num = 0).
+
 ## \[1.0.7\]
 
 ### Added

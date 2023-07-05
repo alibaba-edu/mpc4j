@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.upso.ucpsi.cgs22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.psm.PsmConfig;
 import edu.alibaba.mpc4j.s2pc.opf.psm.PsmFactory;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.UcpsiConfig;
@@ -16,7 +16,7 @@ import static edu.alibaba.mpc4j.s2pc.upso.ucpsi.UcpsiFactory.UcpsiType;
  * @author Liqiang Peng
  * @date 2023/4/17
  */
-public class Cgs22UcpsiConfig implements UcpsiConfig {
+public class Cgs22UcpsiConfig extends AbstractMultiPartyPtoConfig implements UcpsiConfig {
     /**
      * unbalanced related batch OPPRF config
      */
@@ -27,7 +27,7 @@ public class Cgs22UcpsiConfig implements UcpsiConfig {
     private final PsmConfig psmConfig;
 
     private Cgs22UcpsiConfig(Builder builder) {
-        assert builder.urbopprfConfig.getEnvType().equals(builder.psmConfig.getEnvType());
+        super(SecurityModel.SEMI_HONEST, builder.urbopprfConfig, builder.psmConfig);
         urbopprfConfig = builder.urbopprfConfig;
         psmConfig = builder.psmConfig;
     }
@@ -35,22 +35,6 @@ public class Cgs22UcpsiConfig implements UcpsiConfig {
     @Override
     public UcpsiType getPtoType() {
         return UcpsiType.CGS22;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        urbopprfConfig.setEnvType(envType);
-        psmConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return urbopprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     public UrbopprfConfig getUrbopprfConfig() {
@@ -71,9 +55,9 @@ public class Cgs22UcpsiConfig implements UcpsiConfig {
          */
         private PsmConfig psmConfig;
 
-        public Builder(boolean silent) {
-            urbopprfConfig = UrbopprfFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            psmConfig = PsmFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        public Builder(SecurityModel securityModel, boolean silent) {
+            urbopprfConfig = UrbopprfFactory.createDefaultConfig();
+            psmConfig = PsmFactory.createDefaultConfig(securityModel, silent);
         }
 
         public Builder setUrbopprfConfig(UrbopprfConfig urbopprfConfig) {

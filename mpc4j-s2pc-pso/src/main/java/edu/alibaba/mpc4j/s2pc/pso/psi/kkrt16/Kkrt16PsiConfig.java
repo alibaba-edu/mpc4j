@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
@@ -16,7 +16,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory;
  * @author Weiran Liu
  * @date 2022/9/19
  */
-public class Kkrt16PsiConfig implements PsiConfig {
+public class Kkrt16PsiConfig extends AbstractMultiPartyPtoConfig implements PsiConfig {
     /**
      * OPRF配置项
      */
@@ -31,6 +31,7 @@ public class Kkrt16PsiConfig implements PsiConfig {
     private final FilterType filterType;
 
     private Kkrt16PsiConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST, builder.oprfConfig);
         oprfConfig = builder.oprfConfig;
         cuckooHashBinType = builder.cuckooHashBinType;
         filterType = builder.filterType;
@@ -39,25 +40,6 @@ public class Kkrt16PsiConfig implements PsiConfig {
     @Override
     public PsiFactory.PsiType getPtoType() {
         return PsiFactory.PsiType.KKRT16;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        oprfConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return oprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.SEMI_HONEST;
-        if (oprfConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = oprfConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public OprfConfig getOprfConfig() {

@@ -24,13 +24,9 @@ public abstract class AbstractCotSender extends AbstractTwoPartyPto implements C
      */
     protected byte[] delta;
     /**
-     * max round num
-     */
-    protected int maxRoundNum;
-    /**
      * update num
      */
-    protected long updateNum;
+    protected int updateNum;
     /**
      * num
      */
@@ -41,18 +37,17 @@ public abstract class AbstractCotSender extends AbstractTwoPartyPto implements C
         this.config = config;
     }
 
-    protected void setInitInput(byte[] delta, int maxRoundNum, int updateNum) {
+    protected void setInitInput(byte[] delta, int updateNum) {
         MathPreconditions.checkEqual("Δ.length", "λ(B)", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
         this.delta = BytesUtils.clone(delta);
-        MathPreconditions.checkPositiveInRangeClosed("maxRoundNum", maxRoundNum, updateNum);
-        this.maxRoundNum = maxRoundNum;
+        MathPreconditions.checkPositive("updateNum", updateNum);
         this.updateNum = updateNum;
         initState();
     }
 
     protected void setPtoInput(int num) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxRoundNum);
+        MathPreconditions.checkPositive("num", num);
         this.num = num;
         extraInfo++;
     }

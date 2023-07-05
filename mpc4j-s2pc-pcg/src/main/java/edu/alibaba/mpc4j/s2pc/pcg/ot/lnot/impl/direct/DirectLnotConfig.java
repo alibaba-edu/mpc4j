@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.direct;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.LcotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.LcotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotConfig;
@@ -13,13 +13,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory;
  * @author Weiran Liu
  * @date 2023/4/13
  */
-public class DirectLnotConfig implements LnotConfig {
+public class DirectLnotConfig extends AbstractMultiPartyPtoConfig implements LnotConfig {
     /**
      * 1-out-of-2^l COT config
      */
     private final LcotConfig lcotConfig;
 
     private DirectLnotConfig(Builder builder) {
+        super(SecurityModel.MALICIOUS, builder.lcotConfig);
         lcotConfig = builder.lcotConfig;
     }
 
@@ -36,25 +37,6 @@ public class DirectLnotConfig implements LnotConfig {
     public int maxBaseNum() {
         // in theory, 1-out-of-2^l COT can support arbitrary number of COTs. Here we also provide some limitations.
         return 1 << 24;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        lcotConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return lcotConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        SecurityModel securityModel = SecurityModel.MALICIOUS;
-        if (lcotConfig.getSecurityModel().compareTo(securityModel) < 0) {
-            securityModel = lcotConfig.getSecurityModel();
-        }
-        return securityModel;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<DirectLnotConfig> {

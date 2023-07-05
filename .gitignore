@@ -1,6 +1,7 @@
 target/
 cmake-build-release/
 cmake-build-debug/
+local/
 !.mvn/wrapper/maven-wrapper.jar
 
 ### STS ###
@@ -19,3 +20,7 @@ cmake-build-debug/
 *.iws
 *.iml
 *.ipr
+
+### input and output
+*.input
+*.output

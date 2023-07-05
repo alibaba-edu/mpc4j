@@ -1,8 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pjc.main.pid;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
+import edu.alibaba.mpc4j.s2pc.pjc.pid.bkms20.Bkms20ByteEccPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.main.psu.PsuConfigUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.bkms20.Bkms20EccPidConfig;
@@ -37,6 +38,8 @@ public class PidConfigUtils {
         String pidTypeString = PropertiesUtils.readString(properties, "pid_pto_name");
         PidFactory.PidType pidType = PidFactory.PidType.valueOf(pidTypeString);
         switch (pidType) {
+            case BKMS20_BYTE_ECC:
+                return createBkms20EccPidConfig();
             case BKMS20_ECC:
                 return createBkms20PidConfig(properties);
             case GMR21_MP:
@@ -48,6 +51,10 @@ public class PidConfigUtils {
                     "Invalid " + PidFactory.PidType.class.getSimpleName() + ":" + pidTypeString
                 );
         }
+    }
+
+    private static Bkms20ByteEccPidConfig createBkms20EccPidConfig() {
+        return new Bkms20ByteEccPidConfig.Builder().build();
     }
 
     private static Bkms20EccPidConfig createBkms20PidConfig(Properties properties) {
