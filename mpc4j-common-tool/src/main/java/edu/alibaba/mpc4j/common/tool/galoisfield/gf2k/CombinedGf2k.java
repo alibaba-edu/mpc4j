@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 
 /**
- * combined GF(2^κ).
+ * combined GF(2^128).
  *
  * @author Weiran Liu
  * @date 2023/7/2
@@ -14,14 +14,14 @@ class CombinedGf2k extends AbstractGf2k {
      */
     private final NtlGf2k ntlGf2k;
     /**
-     * BC GF(2^κ).
+     * JDK GF(2^κ).
      */
-    private final BcGf2k bcGf2k;
+    private final JdkGf2k jdkGf2k;
 
     CombinedGf2k(EnvType envType) {
         super(envType);
         ntlGf2k = new NtlGf2k(envType);
-        bcGf2k = new BcGf2k(envType);
+        jdkGf2k = new JdkGf2k(envType);
     }
 
     @Override
@@ -51,11 +51,11 @@ class CombinedGf2k extends AbstractGf2k {
 
     @Override
     public byte[] mul(byte[] p, byte[] q) {
-        return bcGf2k.mul(p, q);
+        return jdkGf2k.mul(p, q);
     }
 
     @Override
     public void muli(byte[] p, byte[] q) {
-        bcGf2k.muli(p, q);
+        jdkGf2k.muli(p, q);
     }
 }

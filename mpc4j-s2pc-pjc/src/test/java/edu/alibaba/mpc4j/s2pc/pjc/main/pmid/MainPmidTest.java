@@ -50,7 +50,7 @@ public class MainPmidTest {
     }
 
     @Test
-    public void tesZcl22SloppyGmr21() throws Exception {
+    public void testZcl22SloppyGmr21() throws Exception {
         Properties properties = readConfig("pmid/conf_pmid_zcl22_sloppy_gmr21.txt");
         runTest(new PmidMain(properties));
     }

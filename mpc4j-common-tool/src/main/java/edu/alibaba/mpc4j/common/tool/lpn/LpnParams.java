@@ -1,5 +1,9 @@
 package edu.alibaba.mpc4j.common.tool.lpn;
 
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 /**
  * LPN参数。
  *
@@ -96,7 +100,28 @@ public class LpnParams {
     }
 
     @Override
+    public int hashCode() {
+        return new HashCodeBuilder().append(n).append(k).append(t).hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof LpnParams) {
+            LpnParams that = (LpnParams) obj;
+            return new EqualsBuilder()
+                .append(this.n, that.n)
+                .append(this.k, that.k)
+                .append(this.t, that.t)
+                .isEquals();
+        }
+        return false;
+    }
+
+    @Override
     public String toString() {
-        return String.format("LPN params: (n1 = %s, n0 = %s, t = %s)", n, k, t);
+        return String.format("LPN params: (n = %s, k = %s, t = %s)", n, k, t);
     }
 }

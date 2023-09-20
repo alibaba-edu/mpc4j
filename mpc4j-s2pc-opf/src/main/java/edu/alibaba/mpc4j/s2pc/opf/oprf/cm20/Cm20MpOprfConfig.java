@@ -8,14 +8,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 
 /**
- * CM20-MPOPRF协议配置项。
+ * CM20-MP-OPRF config.
  *
  * @author Weiran Liu
  * @date 2022/03/03
  */
 public class Cm20MpOprfConfig extends AbstractMultiPartyPtoConfig implements MpOprfConfig {
     /**
-     * 核COT协议配置项
+     * core COT config
      */
     private final CoreCotConfig coreCotConfig;
 
@@ -35,7 +35,7 @@ public class Cm20MpOprfConfig extends AbstractMultiPartyPtoConfig implements MpO
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Cm20MpOprfConfig> {
         /**
-         * 核COT协议配置项
+         * core COT config
          */
         private CoreCotConfig coreCotConfig;
 

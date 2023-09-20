@@ -2,13 +2,16 @@ package edu.alibaba.mpc4j.s2pc.upso.ucpsi;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.naive.NaiveBatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.simplepir.CuckooHashBatchSimplePirConfig;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.cgs22.Cgs22UcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.psty19.Psty19UcpsiConfig;
+import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.peqt.Sj23PeqtUcpsiConfig;
+import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.pdsm.Sj23PdsmUcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.pir.PirUbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.pir.PirUrbopprfConfig;
 import org.junit.Assert;
@@ -34,19 +37,19 @@ public class UcpsiTest extends AbstractTwoPartyPtoTest {
     /**
      * default server element size
      */
-    private static final int DEFAULT_SERVER_ELEMENT_SIZE = 1 << 15;
-    /**
-     * small server element size
-     */
-    private static final int SMALL_SERVER_ELEMENT_SIZE = 1 << 12;
+    private static final int DEFAULT_SERVER_ELEMENT_SIZE = 1 << 16;
     /**
      * default client element size
      */
-    private static final int DEFAULT_CLIENT_ELEMENT_SIZE = 1 << 8;
+    private static final int DEFAULT_CLIENT_ELEMENT_SIZE = 1 << 6;
+    /**
+     * default client element size
+     */
+    private static final int SMALL_CLIENT_ELEMENT_SIZE = 1 << 4;
     /**
      * element bit length
      */
-    private static final int ELEMENT_BIT_LENGTH = CommonConstants.BLOCK_BIT_LENGTH;
+    private static final int ELEMENT_BIT_LENGTH = Double.SIZE;
     /**
      * element byte length
      */
@@ -56,11 +59,34 @@ public class UcpsiTest extends AbstractTwoPartyPtoTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
+        // SJ23
+        configurations.add(new Object[]{
+            UcpsiFactory.UcpsiType.SJ23_PEQT.name(),
+            new Sj23PeqtUcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
+                .build()
+        });
+        configurations.add(new Object[]{
+            UcpsiFactory.UcpsiType.SJ23_PDSM.name(),
+            new Sj23PdsmUcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
+                .build()
+        });
         // CGS22
         configurations.add(new Object[]{
-            UcpsiFactory.UcpsiType.CGS22.name() + " (direct + pir)",
-            new Cgs22UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, false)
-                .setUrbopprfConfig(new PirUrbopprfConfig.Builder().build())
+            UcpsiFactory.UcpsiType.CGS22.name() + " (direct + naive batch simple pir)",
+            new Cgs22UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
+                .setUrbopprfConfig(
+                    new PirUrbopprfConfig.Builder().setBatchIndexPirConfig(
+                        new NaiveBatchIndexPirConfig.Builder().build())
+                        .build())
+                .build()
+        });
+        configurations.add(new Object[]{
+            UcpsiFactory.UcpsiType.CGS22.name() + " (direct + cuckoo hash batch simple pir)",
+            new Cgs22UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
+                .setUrbopprfConfig(
+                    new PirUrbopprfConfig.Builder().setBatchIndexPirConfig(
+                            new CuckooHashBatchSimplePirConfig.Builder().build())
+                        .build())
                 .build()
         });
         configurations.add(new Object[]{
@@ -73,9 +99,21 @@ public class UcpsiTest extends AbstractTwoPartyPtoTest {
         });
         // PSTY19
         configurations.add(new Object[]{
-            UcpsiFactory.UcpsiType.PSTY19.name() + " (direct + pir)",
-            new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, false)
-                .setUbopprfConfig(new PirUbopprfConfig.Builder().build())
+            UcpsiFactory.UcpsiType.PSTY19.name() + " (direct + naive batch simple pir)",
+            new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
+                .setUbopprfConfig(
+                    new PirUbopprfConfig.Builder().setBatchIndexPirConfig(
+                            new NaiveBatchIndexPirConfig.Builder().build())
+                        .build())
+                .build()
+        });
+        configurations.add(new Object[]{
+            UcpsiFactory.UcpsiType.PSTY19.name() + " (direct + cuckoo hash batch simple pir)",
+            new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
+                .setUbopprfConfig(
+                    new PirUbopprfConfig.Builder().setBatchIndexPirConfig(
+                            new CuckooHashBatchSimplePirConfig.Builder().build())
+                        .build())
                 .build()
         });
         configurations.add(new Object[]{
@@ -120,8 +158,8 @@ public class UcpsiTest extends AbstractTwoPartyPtoTest {
     }
 
     @Test
-    public void testSmallServer() {
-        testPto(SMALL_SERVER_ELEMENT_SIZE, DEFAULT_CLIENT_ELEMENT_SIZE, false);
+    public void testSmallClient() {
+        testPto(DEFAULT_SERVER_ELEMENT_SIZE, SMALL_CLIENT_ELEMENT_SIZE, true);
     }
 
     private void testPto(int serverSetSize, int clientSetSize, boolean parallel) {

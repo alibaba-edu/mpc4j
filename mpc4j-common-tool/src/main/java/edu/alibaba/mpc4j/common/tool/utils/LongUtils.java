@@ -27,6 +27,30 @@ public class LongUtils {
     }
 
     /**
+     * Clone the data.
+     *
+     * @param data data.
+     * @return clone data.
+     */
+    public static long[] clone(final long[] data) {
+        return Arrays.copyOf(data, data.length);
+    }
+
+    /**
+     * Clone the data.
+     *
+     * @param data data.
+     * @return clone data.
+     */
+    public static long[][] clone(final long[][] data) {
+        long[][] cloneData = new long[data.length][];
+        for (int iRow = 0; iRow < data.length; iRow++) {
+            cloneData[iRow] = clone(data[iRow]);
+        }
+        return cloneData;
+    }
+
+    /**
      * 将{@code long}转换为{@code byte[]}，大端表示。
      *
      * @param value 待转换的{@code long}。
@@ -241,32 +265,6 @@ public class LongUtils {
         }
         LongUtils.reduceLongArray(longArray, bitLength);
         return longArray;
-    }
-
-    /**
-     * 返回给定{@code long[]}的克隆结果。
-     *
-     * @param longArray 待克隆的{@code long[]}。
-     * @return {@code long[]}的克隆结果。如果待克隆的{@code long[]}为null，则返回null。
-     */
-    public static long[] clone(final long[] longArray) {
-        if (longArray == null) {
-            return null;
-        }
-        return Arrays.copyOf(longArray, longArray.length);
-    }
-
-    /**
-     * 返回给定{@code long[][]}的克隆结果。
-     *
-     * @param longArrays 待克隆的{@code long[][]}。
-     * @return {@code long[][]}的克隆结果。如果待克隆的{@code long[][]}为null，则返回null。
-     */
-    public static long[][] clone(final long[][] longArrays) {
-        if (longArrays == null) {
-            return null;
-        }
-        return Arrays.stream(longArrays).map(LongUtils::clone).toArray(long[][]::new);
     }
 
     /**

@@ -11,8 +11,8 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.opf.psm.PsmFactory;
-import edu.alibaba.mpc4j.s2pc.opf.psm.PsmSender;
+import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmFactory;
+import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmSender;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.AbstractUcpsiClient;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.UcpsiClientOutput;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.cgs22.Cgs22UcpsiPtoDesc.PtoStep;
@@ -43,7 +43,7 @@ public class Cgs22UcpsiClient<T> extends AbstractUcpsiClient<T> {
     /**
      * private set membership sender
      */
-    private final PsmSender psmSender;
+    private final PdsmSender pdsmSender;
     /**
      * d
      */
@@ -77,14 +77,14 @@ public class Cgs22UcpsiClient<T> extends AbstractUcpsiClient<T> {
      */
     private NoStashCuckooHashBin<T> cuckooHashBin;
 
-    public Cgs22UcpsiClient(Rpc serverRpc, Party clientParty, Cgs22UcpsiConfig config) {
-        super(Cgs22UcpsiPtoDesc.getInstance(), serverRpc, clientParty, config);
+    public Cgs22UcpsiClient(Rpc clientRpc, Party serverParty, Cgs22UcpsiConfig config) {
+        super(Cgs22UcpsiPtoDesc.getInstance(), clientRpc, serverParty, config);
         UrbopprfConfig rbopprfConfig = config.getUrbopprfConfig();
-        urbopprfReceiver = UrbopprfFactory.createReceiver(serverRpc, clientParty, rbopprfConfig);
+        urbopprfReceiver = UrbopprfFactory.createReceiver(clientRpc, serverParty, rbopprfConfig);
         addSubPtos(urbopprfReceiver);
         d = rbopprfConfig.getD();
-        psmSender = PsmFactory.createSender(serverRpc, clientParty, config.getPsmConfig());
-        addSubPtos(psmSender);
+        pdsmSender = PdsmFactory.createSender(clientRpc, serverParty, config.getPsmConfig());
+        addSubPtos(pdsmSender);
         cuckooHashBinType = CuckooHashBinType.NO_STASH_PSZ18_3_HASH;
         hashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }
@@ -118,7 +118,7 @@ public class Cgs22UcpsiClient<T> extends AbstractUcpsiClient<T> {
         logStepInfo(PtoState.INIT_STEP, 2, 3, opprfTime);
 
         stopWatch.start();
-        psmSender.init(psmL, d, beta);
+        pdsmSender.init(psmL, d, beta);
         stopWatch.stop();
         long psmTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -177,7 +177,7 @@ public class Cgs22UcpsiClient<T> extends AbstractUcpsiClient<T> {
                     .toArray(byte[][]::new))
             .toArray(byte[][][]::new);
         // private set membership
-        SquareZ2Vector z1 = psmSender.psm(psmL, targetArrays);
+        SquareZ2Vector z1 = pdsmSender.pdsm(psmL, targetArrays);
         // create the table
         ArrayList<T> table = IntStream.range(0, beta)
             .mapToObj(batchIndex -> {

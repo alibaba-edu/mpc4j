@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
 import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
@@ -53,9 +54,9 @@ public class Mk22SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(SingleIndexPirParams indexPirParams, int serverElementSize, int elementBitLength) {
+        setInitInput(serverElementSize, elementBitLength);
         assert (indexPirParams instanceof Mk22SingleIndexPirParams);
         params = (Mk22SingleIndexPirParams) indexPirParams;
-        params.setQueryParams(serverElementSize);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
@@ -75,13 +76,13 @@ public class Mk22SingleIndexPirClient extends AbstractSingleIndexPirClient {
     }
 
     @Override
-    public void init(int serverElementSize, int elementByteLength) {
-        params = Mk22SingleIndexPirParams.DEFAULT_PARAMS;
-        params.setQueryParams(serverElementSize);
+    public void init(int serverElementSize, int elementBitLength) {
+        setInitInput(serverElementSize, elementBitLength);
+        setDefaultParams();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        List<byte[]> publicKeysPayload = clientSetup(serverElementSize, elementByteLength);
+        List<byte[]> publicKeysPayload = clientSetup(serverElementSize, elementBitLength);
         // client sends Galois keys
         DataPacketHeader clientPublicKeysHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), extraInfo,
@@ -133,11 +134,11 @@ public class Mk22SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public List<byte[]> clientSetup(int serverElementSize, int elementBitLength) {
-        if (params == null) {
-            params = Mk22SingleIndexPirParams.DEFAULT_PARAMS;
-        }
+        params.setQueryParams(serverElementSize);
         int maxPartitionBitLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength();
-        setInitInput(serverElementSize, elementBitLength, maxPartitionBitLength);
+        partitionBitLength = Math.min(maxPartitionBitLength, elementBitLength);
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        partitionSize = CommonUtils.getUnitNum(elementBitLength, partitionBitLength);
         elementSizeOfPlaintext = PirUtils.elementSizeOfPlaintext(
             partitionByteLength, params.getPolyModulusDegree(), params.getPlainModulusBitLength()
         );
@@ -175,6 +176,11 @@ public class Mk22SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public byte[] decodeResponse(List<byte[]> response, int index) throws MpcAbortException {
+        return decodeResponse(response, index, elementBitLength);
+    }
+
+    @Override
+    public byte[] decodeResponse(List<byte[]> response, int index, int elementBitLength) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(response.size() == partitionSize);
         ZlDatabase[] databases = new ZlDatabase[partitionSize];
         IntStream intStream = IntStream.range(0, partitionSize);
@@ -190,6 +196,11 @@ public class Mk22SingleIndexPirClient extends AbstractSingleIndexPirClient {
             databases[partitionIndex] = ZlDatabase.create(partitionByteLength * Byte.SIZE, new byte[][]{partitionBytes});
         });
         return NaiveDatabase.createFromZl(elementBitLength, databases).getBytesData(0);
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Mk22SingleIndexPirParams.DEFAULT_PARAMS;
     }
 
     /**

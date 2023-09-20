@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidConfig;
@@ -28,7 +28,7 @@ public class Zcl22MpPmidConfig extends AbstractMultiPartyPtoConfig implements Pm
     /**
      * σ的OKVS类型
      */
-    private final OkvsType sigmaOkvsType;
+    private final Gf2eDokvsType sigmaOkvsType;
 
     private Zcl22MpPmidConfig(Builder builder) {
         super(SecurityModel.SEMI_HONEST, builder.mpOprfConfig, builder.psuConfig);
@@ -50,7 +50,7 @@ public class Zcl22MpPmidConfig extends AbstractMultiPartyPtoConfig implements Pm
         return psuConfig;
     }
 
-    public OkvsType getSigmaOkvsType() {
+    public Gf2eDokvsType getSigmaOkvsType() {
         return sigmaOkvsType;
     }
 
@@ -66,13 +66,13 @@ public class Zcl22MpPmidConfig extends AbstractMultiPartyPtoConfig implements Pm
         /**
          * σ的OKVS类型
          */
-        private OkvsType sigmaOkvsType;
+        private Gf2eDokvsType sigmaOkvsType;
 
         public Builder() {
             super();
             mpOprfConfig = OprfFactory.createMpOprfDefaultConfig(SecurityModel.SEMI_HONEST);
             psuConfig = PsuFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            sigmaOkvsType = OkvsType.H3_SINGLETON_GCT;
+            sigmaOkvsType = Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT;
         }
 
         public Builder setMpOprfConfig(MpOprfConfig mpOprfConfig) {
@@ -85,7 +85,7 @@ public class Zcl22MpPmidConfig extends AbstractMultiPartyPtoConfig implements Pm
             return this;
         }
 
-        public Builder setSigmaOkvsType(OkvsType sigmaOkvsType) {
+        public Builder setSigmaOkvsType(Gf2eDokvsType sigmaOkvsType) {
             this.sigmaOkvsType = sigmaOkvsType;
             return this;
         }

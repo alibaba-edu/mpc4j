@@ -1,6 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
@@ -99,8 +101,9 @@ class NaiveCuckooHashBin<T> implements CuckooHashBin<T> {
      * @return 贮存区大小。
      */
     static int getStashSize(int maxItemSize) {
-        assert maxItemSize > 0 && maxItemSize <= CuckooHashBinFactory.MAX_ITEM_SIZE_UPPER_BOUND
-            : "maxItemSize must be in range (0, " + CuckooHashBinFactory.MAX_ITEM_SIZE_UPPER_BOUND + "]";
+        MathPreconditions.checkPositiveInRangeClosed(
+            "maxItemSize", maxItemSize, CuckooHashBinFactory.MAX_ITEM_SIZE_UPPER_BOUND
+        );
         if (maxItemSize > 1 << 20) {
             // 当2^20 < maxItemSize <= 2^24，stash size = 2
             return 2;
@@ -242,9 +245,9 @@ class NaiveCuckooHashBin<T> implements CuckooHashBin<T> {
 
     @Override
     public void insertItems(Collection<T> items) {
-        assert (!insertedItems && !insertedPaddingItems);
+        Preconditions.checkArgument(!insertedItems && !insertedPaddingItems);
         // 一次插入的元素数量要小于等于预先设定好的数量
-        assert items.size() <= maxItemSize;
+        MathPreconditions.checkNonNegativeInRangeClosed("itemSize", items.size(), maxItemSize);
         for (T item : items) {
             insertItem(item);
         }
@@ -363,13 +366,13 @@ class NaiveCuckooHashBin<T> implements CuckooHashBin<T> {
 
     @Override
     public int binSize(int binIndex) {
-        assert binIndex >= 0 && binIndex < binNum;
+        MathPreconditions.checkNonNegativeInRange("binIndex", binIndex, binNum);
         return bins[binIndex] == null ? 0 : 1;
     }
 
     @Override
     public HashBinEntry<T> getHashBinEntry(int binIndex) {
-        assert binIndex >= 0 && binIndex < binNum;
+        MathPreconditions.checkNonNegativeInRange("binIndex", binIndex, binNum);
         return bins[binIndex];
     }
 
@@ -380,7 +383,7 @@ class NaiveCuckooHashBin<T> implements CuckooHashBin<T> {
 
     @Override
     public void insertPaddingItems(SecureRandom secureRandom) {
-        assert (insertedItems && !insertedPaddingItems);
+        Preconditions.checkArgument(insertedItems && !insertedPaddingItems);
         // 在bin中添加虚拟元素
         paddingItemSize = 0;
         for (int binIndex = 0; binIndex < binNum(); binIndex++) {
@@ -400,9 +403,9 @@ class NaiveCuckooHashBin<T> implements CuckooHashBin<T> {
 
     @Override
     public void insertPaddingItems(T emptyItem) {
-        assert (insertedItems && !insertedPaddingItems);
+        Preconditions.checkArgument(insertedItems && !insertedPaddingItems);
         // 插入的空元素不能为已存在的元素
-        assert (!contains(emptyItem));
+        Preconditions.checkArgument(!contains(emptyItem));
         // 在bin中添加虚拟元素
         paddingItemSize = 0;
         for (int binIndex = 0; binIndex < binNum(); binIndex++) {

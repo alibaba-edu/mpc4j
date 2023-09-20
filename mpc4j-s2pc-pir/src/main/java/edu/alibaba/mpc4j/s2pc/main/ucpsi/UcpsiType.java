@@ -12,15 +12,31 @@ public enum UcpsiType {
      */
     PSTY19_OKVS,
     /**
-     * PSTY19 PIR
+     * PSTY19 SIMPLE PIR
      */
-    PSTY19_PIR,
+    PSTY19_SIMPLE_PIR,
     /**
      * CGS22 OKVS
      */
     CGS22_OKVS,
     /**
-     * CGS22 PIR
+     * CGS22 SIMPLE PIR
      */
-    CGS22_PIR,
+    CGS22_SIMPLE_PIR,
+    /**
+     * SJ23 PEQT
+     */
+    SJ23_PEQT,
+    /**
+     * SJ23 PSM
+     */
+    SJ23_PSM,
+    /**
+     * CGS22_VECTORIZED_BATCH_PIR
+     */
+    CGS22_VECTORIZED_BATCH_PIR,
+    /**
+     * PSTY19_VECTORIZED_BATCH_PIR
+     */
+    PSTY19_VECTORIZED_BATCH_PIR,
 }

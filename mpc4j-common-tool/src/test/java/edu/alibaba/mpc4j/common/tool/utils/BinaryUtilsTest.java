@@ -341,13 +341,13 @@ public class BinaryUtilsTest {
 
     private void testByteArraySetBoolean(byte[] byteArray) {
         // 测试每一位置设置为1
-        byte[] trueByteArray = Arrays.copyOf(byteArray, byteArray.length);
+        byte[] trueByteArray = BytesUtils.clone(byteArray);
         IntStream.range(0, trueByteArray.length * Byte.SIZE).forEach(binaryIndex -> {
             BinaryUtils.setBoolean(trueByteArray, binaryIndex, true);
             Assert.assertTrue(BinaryUtils.getBoolean(trueByteArray, binaryIndex));
         });
         // 测试每一位置设置为0
-        byte[] falseByteArray = Arrays.copyOf(byteArray, byteArray.length);
+        byte[] falseByteArray = BytesUtils.clone(byteArray);
         IntStream.range(0, trueByteArray.length * Byte.SIZE).forEach(binaryIndex -> {
             BinaryUtils.setBoolean(falseByteArray, binaryIndex, false);
             Assert.assertFalse(BinaryUtils.getBoolean(falseByteArray, binaryIndex));
@@ -362,13 +362,13 @@ public class BinaryUtilsTest {
 
     private void testLongArraySetBoolean(long[] longArray) {
         // 测试每一位置设置为1
-        long[] trueLongArray = Arrays.copyOf(longArray, longArray.length);
+        long[] trueLongArray = LongUtils.clone(longArray);
         IntStream.range(0, trueLongArray.length * Long.SIZE).forEach(binaryIndex -> {
             BinaryUtils.setBoolean(trueLongArray, binaryIndex, true);
             Assert.assertTrue(BinaryUtils.getBoolean(trueLongArray, binaryIndex));
         });
         // 测试每一位置设置为0
-        long[] falseByteArray = Arrays.copyOf(longArray, longArray.length);
+        long[] falseByteArray = LongUtils.clone(longArray);
         IntStream.range(0, trueLongArray.length * Long.SIZE).forEach(binaryIndex -> {
             BinaryUtils.setBoolean(falseByteArray, binaryIndex, false);
             Assert.assertFalse(BinaryUtils.getBoolean(falseByteArray, binaryIndex));

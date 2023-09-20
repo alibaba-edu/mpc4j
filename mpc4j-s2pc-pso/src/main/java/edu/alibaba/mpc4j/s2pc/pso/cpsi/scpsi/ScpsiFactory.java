@@ -9,6 +9,9 @@ import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.cgs22.Cgs22ScpsiServer;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.psty19.Psty19ScpsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.psty19.Psty19ScpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.psty19.Psty19ScpsiServer;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.rs21.Rs21ScpsiClient;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.rs21.Rs21ScpsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.rs21.Rs21ScpsiServer;
 
 /**
  * server-payload circuit PSI factory.
@@ -58,6 +61,7 @@ public class ScpsiFactory implements PtoFactory {
             case CGS22:
                 return new Cgs22ScpsiServer<>(serverRpc, clientParty, (Cgs22ScpsiConfig) config);
             case RS21:
+                return new Rs21ScpsiServer<>(serverRpc, clientParty, (Rs21ScpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + ScpsiType.class.getSimpleName() + ": " + type.name());
         }
@@ -79,6 +83,7 @@ public class ScpsiFactory implements PtoFactory {
             case CGS22:
                 return new Cgs22ScpsiClient<>(clientRpc, serverParty, (Cgs22ScpsiConfig) config);
             case RS21:
+                return new Rs21ScpsiClient<>(clientRpc, serverParty, (Rs21ScpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + ScpsiType.class.getSimpleName() + ": " + type.name());
         }

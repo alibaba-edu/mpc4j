@@ -25,13 +25,9 @@ public class SetFilter<T> implements MergeFilter<T> {
      */
     static final int HASH_NUM = 0;
     /**
-     * set
+     * no hash key
      */
-    private Set<ByteBuffer> set;
-    /**
-     * max number of elements.
-     */
-    private int maxSize;
+    static final int HASH_KEY_NUM = 0;
 
     /**
      * Creates an empty filter.
@@ -73,6 +69,15 @@ public class SetFilter<T> implements MergeFilter<T> {
 
         return setFilter;
     }
+
+    /**
+     * set
+     */
+    private Set<ByteBuffer> set;
+    /**
+     * max number of elements.
+     */
+    private int maxSize;
 
     private SetFilter() {
         // empty

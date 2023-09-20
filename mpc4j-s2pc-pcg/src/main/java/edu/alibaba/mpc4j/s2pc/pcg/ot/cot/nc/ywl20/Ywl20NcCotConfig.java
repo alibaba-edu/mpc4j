@@ -10,18 +10,18 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotFactory;
 
 /**
- * YWL20-NC-COT协议配置项。
+ * YWL20-NC-COT config.
  *
  * @author Weiran Liu
  * @date 2022/01/27
  */
 public class Ywl20NcCotConfig extends AbstractMultiPartyPtoConfig implements NcCotConfig {
     /**
-     * 核COT协议配置项
+     * core COT config
      */
     private final CoreCotConfig coreCotConfig;
     /**
-     * MSP-COT协议配置项
+     * MSP-COT config
      */
     private final MspCotConfig mspCotConfig;
 
@@ -51,11 +51,11 @@ public class Ywl20NcCotConfig extends AbstractMultiPartyPtoConfig implements NcC
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Ywl20NcCotConfig> {
         /**
-         * 核COT协议配置项
+         * core COT config
          */
         private CoreCotConfig coreCotConfig;
         /**
-         * MSP-COT协议配置项
+         * MSP-COT config
          */
         private MspCotConfig mspCotConfig;
 

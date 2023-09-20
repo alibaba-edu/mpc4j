@@ -33,11 +33,11 @@ public class PrpEfficiencyTest {
     /**
      * 次数输出格式
      */
-    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("00");
+    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("0");
     /**
      * 时间输出格式
      */
-    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("000.0000");
+    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.0000");
     /**
      * 全0密钥
      */

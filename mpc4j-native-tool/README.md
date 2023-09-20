@@ -10,6 +10,7 @@
 - [NTL](https://libntl.org/): A high-performance, portable C++ library providing data structures and algorithms for manipulating signed, arbitrary length integers and for vectors, matrices, and polynomials over the integers and finite fields, developed by [Victor Shoup](https://shoup.net/).
 - [MCL](https://github.com/herumi/mcl): A portable and fast pairing-based cryptography library. MCL also includes fast Elliptic Curve implementations. 
 - [libsodium](https://doc.libsodium.org/): A modern, easy-to-use software library for encryption, decryption, signatures, password hashing, and more. libsodium includes efficient X25519 and Ed25519 implementations. 
+- [FourQlib](https://github.com/microsoft/FourQlib): An library that implements essential elliptic curve and cryptographic functions based on FourQ, a high-security, high-performance elliptic curve that targets the 128-bit security level. The original FourQlib does not support macOS. We update some codes in FourQlib so that now it supports macOS. See `README.md` in `mpc4j-native-fourq` on how to compile and install FourQlib. 
 
 ## Compilation
 
@@ -34,7 +35,18 @@ We do not provide a "one-time" script to automatically install all dependencies 
 
 ### Compile `mpc4j-native-tool`
 
-Go to the path of `mpc4j-native-tool`, and run the following command to compile `mpc4j-native-tool`.
+First, go to the path of `mpc4j-native-fourq`, and run the following command to compile and install `FourQlib`.
+
+```shell
+mkdir build
+cd build
+cmake .. 
+make 
+make test
+sudo make install
+```
+
+Then, go to the path of `mpc4j-native-tool`, and run the following command to compile `mpc4j-native-tool`.
 
 ```shell
 mkdir cmake-build-release

@@ -4,10 +4,11 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
 import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
-import edu.alibaba.mpc4j.crypto.matrix.zp64.Zl64Matrix;
+import edu.alibaba.mpc4j.crypto.matrix.zl64.Zl64Matrix;
 import edu.alibaba.mpc4j.crypto.matrix.vector.Zl64Vector;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.AbstractSingleIndexPirClient;
@@ -61,10 +62,6 @@ public class Hhcm23DoubleSingleIndexPirClient extends AbstractSingleIndexPirClie
      * random matrix A2
      */
     private Zl64Matrix a2;
-    /**
-     * row index
-     */
-    private int rowIndex;
 
     public Hhcm23DoubleSingleIndexPirClient(Rpc clientRpc, Party serverParty, Hhcm23DoubleSingleIndexPirConfig config) {
         super(getInstance(), clientRpc, serverParty, config);
@@ -74,6 +71,7 @@ public class Hhcm23DoubleSingleIndexPirClient extends AbstractSingleIndexPirClie
     @Override
     public void init(SingleIndexPirParams indexPirParams, int serverElementSize, int elementBitLength)
         throws MpcAbortException {
+        setInitInput(serverElementSize, elementBitLength);
         assert indexPirParams instanceof Hhcm23DoubleSingleIndexPirParams;
         params = (Hhcm23DoubleSingleIndexPirParams) indexPirParams;
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -103,7 +101,8 @@ public class Hhcm23DoubleSingleIndexPirClient extends AbstractSingleIndexPirClie
 
     @Override
     public void init(int serverElementSize, int elementBitLength) throws MpcAbortException {
-        params = Hhcm23DoubleSingleIndexPirParams.DEFAULT_PARAMS;
+        setInitInput(serverElementSize, elementBitLength);
+        setDefaultParams();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         DataPacketHeader seedPayloadHeader = new DataPacketHeader(
@@ -154,7 +153,7 @@ public class Hhcm23DoubleSingleIndexPirClient extends AbstractSingleIndexPirClie
         );
         List<byte[]> serverResponsePayload = rpc.receive(serverResponseHeader).getPayload();
         stopWatch.start();
-        byte[] element = decodeResponse(serverResponsePayload, rowIndex);
+        byte[] element = decodeResponse(serverResponsePayload, index);
         stopWatch.stop();
         long responseTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -170,7 +169,9 @@ public class Hhcm23DoubleSingleIndexPirClient extends AbstractSingleIndexPirClie
         rows = dims[0];
         cols = dims[1];
         params.setPlainModulo(PirUtils.getBitLength(cols));
-        setInitInput(serverElementSize, elementBitLength, params.logP - 1);
+        partitionBitLength = Math.min(params.logP - 1, elementBitLength);
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        partitionSize = CommonUtils.getUnitNum(elementBitLength, partitionBitLength);
         // secret key
         secretKey1 = Zl64Vector.createRandom(params.zl64, params.n, secureRandom);
         secretKey1.setParallel(parallel);
@@ -181,7 +182,7 @@ public class Hhcm23DoubleSingleIndexPirClient extends AbstractSingleIndexPirClie
     @Override
     public List<byte[]> generateQuery(int index) {
         // row index
-        rowIndex = index / rows;
+        int rowIndex = index / rows;
         // column index
         int colIndex = index % rows;
         // q / p
@@ -209,7 +210,12 @@ public class Hhcm23DoubleSingleIndexPirClient extends AbstractSingleIndexPirClie
     }
 
     @Override
-    public byte[] decodeResponse(List<byte[]> serverResponse, int rowIndex) throws MpcAbortException {
+    public byte[] decodeResponse(List<byte[]> serverResponse, int index) throws MpcAbortException {
+        return decodeResponse(serverResponse, index, elementBitLength);
+    }
+
+    @Override
+    public byte[] decodeResponse(List<byte[]> serverResponse, int index, int elementBitLength) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(serverResponse.size() == partitionSize * 2);
         ZlDatabase[] databases = new ZlDatabase[partitionSize];
         long q = 1L << (params.zl64.getL() - 1);
@@ -248,6 +254,11 @@ public class Hhcm23DoubleSingleIndexPirClient extends AbstractSingleIndexPirClie
             databases[i] = ZlDatabase.create(partitionBitLength, new byte[][]{bytes});
         }
         return NaiveDatabase.createFromZl(elementBitLength, databases).getBytesData(0);
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Hhcm23DoubleSingleIndexPirParams.DEFAULT_PARAMS;
     }
 
     private long recomposed(long p, long[] digits) {

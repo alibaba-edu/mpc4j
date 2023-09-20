@@ -9,8 +9,9 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.Okvs;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.AbstractBopprfSender;
@@ -36,13 +37,13 @@ import java.util.stream.IntStream;
  */
 public class OkvsBopprfSender extends AbstractBopprfSender {
     /**
-     * the OPRF sender
+     * OPRF sender
      */
     private final OprfSender oprfSender;
     /**
-     * the OKVS type
+     * OKVS type
      */
-    private final OkvsFactory.OkvsType okvsType;
+    private final Gf2eDokvsType okvsType;
 
     public OkvsBopprfSender(Rpc senderRpc, Party receiverParty, OkvsBopprfConfig config) {
         super(OkvsBopprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -77,11 +78,11 @@ public class OkvsBopprfSender extends AbstractBopprfSender {
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 2, oprfTime, "Sender runs OPRF");
+        logStepInfo(PtoState.PTO_STEP, 1, 3, oprfTime, "Sender runs OPRF");
 
         stopWatch.start();
         // generate OKVS keys
-        byte[][] okvsKeys = CommonUtils.generateRandomKeys(OkvsFactory.getHashNum(okvsType), secureRandom);
+        byte[][] okvsKeys = CommonUtils.generateRandomKeys(Gf2eDokvsFactory.getHashKeyNum(okvsType), secureRandom);
         List<byte[]> okvsKeysPayload = Arrays.stream(okvsKeys).collect(Collectors.toList());
         DataPacketHeader okvsKeysHeader = new DataPacketHeader(
             encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_OKVS_KEYS.ordinal(), extraInfo,
@@ -109,7 +110,7 @@ public class OkvsBopprfSender extends AbstractBopprfSender {
     }
 
     private List<byte[]> generateOkvsPayload(OprfSenderOutput oprfSenderOutput, byte[][] okvsKeys) {
-        Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(envType, okvsType, pointNum, l, okvsKeys);
+        Gf2eDokvs<ByteBuffer> okvs = Gf2eDokvsFactory.createInstance(envType, okvsType, pointNum, l, okvsKeys);
         okvs.setParallelEncode(parallel);
         // construct key-value map
         Map<ByteBuffer, byte[]> keyValueMap = new ConcurrentHashMap<>(pointNum);
@@ -133,7 +134,7 @@ public class OkvsBopprfSender extends AbstractBopprfSender {
                 keyValueMap.put(ByteBuffer.wrap(input), programOutput);
             }
         });
-        byte[][] okvsStorage = okvs.encode(keyValueMap);
+        byte[][] okvsStorage = okvs.encode(keyValueMap, false);
         return Arrays.stream(okvsStorage).collect(Collectors.toList());
     }
 }

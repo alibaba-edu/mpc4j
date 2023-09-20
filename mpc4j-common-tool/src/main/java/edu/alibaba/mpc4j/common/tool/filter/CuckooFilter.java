@@ -60,7 +60,11 @@ public class CuckooFilter<T> implements Filter<T> {
     /**
      * hash num
      */
-    static final int HASH_NUM = 2;
+    private static final int HASH_NUM = 2;
+    /**
+     * hash key num
+     */
+    static final int HASH_KEY_NUM = HASH_NUM;
 
     /**
      * Gets the bucket num, must be in format 2^k.
@@ -286,9 +290,7 @@ public class CuckooFilter<T> implements Filter<T> {
                 ByteBuffer choiceFingerprint = choiceBucket.remove(choiceEntryIndex).getFingerprint();
                 choiceFingerprintBytes = choiceFingerprint.array();
                 // 将待插入的指纹插入到新的位置中
-                ByteBuffer copyAddedFingerprint = ByteBuffer.wrap(
-                    Arrays.copyOf(addedFingerprintBytes, addedFingerprintBytes.length)
-                );
+                ByteBuffer copyAddedFingerprint = ByteBuffer.wrap(BytesUtils.clone(addedFingerprintBytes));
                 choiceBucket.add(new CuckooFilterEntry(copyAddedFingerprint));
                 // 踢出再插入元素后，哈希桶中元素的数量应该仍然为ENTRIES_PER_BUCKET
                 Preconditions.checkArgument(choiceBucket.size() == ENTRIES_PER_BUCKET);

@@ -12,29 +12,25 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.SspCotReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp.SspCotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.AbstractMspCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiverOutput;
 
 /**
- * BCG19-REG-MSP-COT协议接收方。
+ * BCG19-REG-MSP-COT receiver
  *
  * @author Weiran Liu
  * @date 2022/01/25
  */
 public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
     /**
-     * BSP-COT协议接收方
+     * BSP-COT receiver
      */
     private final BspCotReceiver bspCotReceiver;
     /**
-     * 预计算接收方输出
+     * pre-computed COT receiver output
      */
     private CotReceiverOutput cotReceiverOutput;
-    /**
-     * BSP-COT协议接收方输出
-     */
-    private BspCotReceiverOutput bspCotReceiverOutput;
 
     public Bcg19RegMspCotReceiver(Rpc senderRpc, Party receiverParty, Bcg19RegMspCotConfig config) {
         super(Bcg19RegMspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -48,7 +44,7 @@ public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 原本应该设置为maxN / maxT，但此值不与T成正比，最后考虑直接设置为maxN
+        // In theory, maxEachNum = maxN / maxT, but for larger T, maxN / maxT can be small. So we set maxEachNum = maxN
         bspCotReceiver.init(maxT, maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -75,32 +71,32 @@ public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // 生成稀疏数组
-        int[] innerTargetArray = IntStream.range(0, t)
+        // generate sparse points
+        int[] innerAlphaArray = IntStream.range(0, t)
             .map(i -> {
-                // 需要转换为long计算，否则n和t比较大时会溢出
+                // due to the rounding problem, here we must convert to long then divide
                 int lowerBound = (int) (i * (long) num / t);
                 int upperBound = (int) ((i + 1) * (long) num / t);
                 return secureRandom.nextInt(upperBound - lowerBound);
             })
             .toArray();
-        // 执行2选1-单点批处理COT
+        // execute BSP-COT with batchNum = t, eachNum = num / t.
+        BspCotReceiverOutput bspCotReceiverOutput;
         if (cotReceiverOutput == null) {
-            bspCotReceiverOutput = bspCotReceiver.receive(innerTargetArray, (int) Math.ceil((double) num / t));
+            bspCotReceiverOutput = bspCotReceiver.receive(innerAlphaArray, (int) Math.ceil((double) num / t));
         } else {
             bspCotReceiverOutput = bspCotReceiver.receive(
-                innerTargetArray, (int) Math.ceil((double) num / t), cotReceiverOutput
+                innerAlphaArray, (int) Math.ceil((double) num / t), cotReceiverOutput
             );
             cotReceiverOutput = null;
         }
         stopWatch.stop();
-        long bspcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long bspTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 2, bspcotTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, bspTime);
 
         stopWatch.start();
-        // 计算输出结果
-        MspCotReceiverOutput receiverOutput = generateReceiverOutput(innerTargetArray);
+        MspCotReceiverOutput receiverOutput = generateReceiverOutput(innerAlphaArray, bspCotReceiverOutput);
         stopWatch.stop();
         long outputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -110,21 +106,23 @@ public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
         return receiverOutput;
     }
 
-    private MspCotReceiverOutput generateReceiverOutput(int[] innerTargetArray) {
-        int[] targetArray = new int[t];
+    private MspCotReceiverOutput generateReceiverOutput(int[] innerAlphaArray,
+                                                        BspCotReceiverOutput bspCotReceiverOutput) {
+        int[] alphaArray = new int[t];
         byte[][] rbArray = IntStream.range(0, t)
             .mapToObj(i -> {
-                // 需要转换为long计算，否则n和t比较大时会溢出
+                // we need to first compute num / t then multiply i, since i * num may be greater than Integer.MAX_VALUE
+                // due to the rounding problem, here we must convert to long then divide
                 int lowerBound = (int) (i * (long) num / t);
                 int upperBound = (int) ((i + 1) * (long) num / t);
-                targetArray[i] = innerTargetArray[i] + lowerBound;
-                SspCotReceiverOutput sspcotReceiverOutput = bspCotReceiverOutput.get(i);
+                alphaArray[i] = innerAlphaArray[i] + lowerBound;
+                SspCotReceiverOutput eachReceiverOutput = bspCotReceiverOutput.get(i);
                 return IntStream.range(0, upperBound - lowerBound)
-                    .mapToObj(sspcotReceiverOutput::getRb)
+                    .mapToObj(eachReceiverOutput::getRb)
                     .toArray(byte[][]::new);
             })
             .flatMap(Arrays::stream)
             .toArray(byte[][]::new);
-        return MspCotReceiverOutput.create(targetArray, rbArray);
+        return MspCotReceiverOutput.create(alphaArray, rbArray);
     }
 }

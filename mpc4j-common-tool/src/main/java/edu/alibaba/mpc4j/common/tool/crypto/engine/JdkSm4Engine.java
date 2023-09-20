@@ -16,6 +16,7 @@ import org.bouncycastle.util.Pack;
  * @author Weiran Liu
  * @date 2021/11/30
  */
+@SuppressWarnings({"AlibabaLowerCamelCaseVariableNaming", "AlibabaCommentsMustBeJavadocFormat", "AlibabaUndefineMagicConstant"})
 public class JdkSm4Engine {
     /**
      * S-Box

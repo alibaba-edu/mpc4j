@@ -56,18 +56,12 @@ public class Mbfk16SingleIndexPirServer extends AbstractSingleIndexPirServer {
 
     @Override
     public void init(SingleIndexPirParams indexPirParams, NaiveDatabase database) throws MpcAbortException {
+        setInitInput(database);
         assert (indexPirParams instanceof Mbfk16SingleIndexPirParams);
         params = (Mbfk16SingleIndexPirParams) indexPirParams;
         logPhaseInfo(PtoState.INIT_BEGIN);
 
-        DataPacketHeader clientPublicKeysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), extraInfo,
-            otherParty().getPartyId(), rpc.ownParty().getPartyId()
-        );
-        List<byte[]> publicKeyPayload = rpc.receive(clientPublicKeysHeader).getPayload();
-
         stopWatch.start();
-        setPublicKey(publicKeyPayload);
         encodedDatabase = serverSetup(database);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -79,17 +73,11 @@ public class Mbfk16SingleIndexPirServer extends AbstractSingleIndexPirServer {
 
     @Override
     public void init(NaiveDatabase database) throws MpcAbortException {
-        params = Mbfk16SingleIndexPirParams.DEFAULT_PARAMS;
+        setInitInput(database);
+        setDefaultParams();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
-        DataPacketHeader clientPublicKeysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), extraInfo,
-            otherParty().getPartyId(), rpc.ownParty().getPartyId()
-        );
-        List<byte[]> publicKeyPayload = rpc.receive(clientPublicKeysHeader).getPayload();
-
         stopWatch.start();
-        setPublicKey(publicKeyPayload);
         encodedDatabase = serverSetup(database);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -129,11 +117,14 @@ public class Mbfk16SingleIndexPirServer extends AbstractSingleIndexPirServer {
     @Override
     public List<byte[][]> serverSetup(NaiveDatabase database) {
         int maxPartitionBitLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength();
-        setInitInput(database, database.getL(), maxPartitionBitLength);
+        partitionBitLength = Math.min(maxPartitionBitLength, database.getL());
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        databases = database.partitionZl(partitionBitLength);
+        partitionSize = databases.length;
         elementSizeOfPlaintext = PirUtils.elementSizeOfPlaintext(
             partitionByteLength, params.getPolyModulusDegree(), params.getPlainModulusBitLength()
         );
-        plaintextSize = CommonUtils.getUnitNum(num, elementSizeOfPlaintext);
+        plaintextSize = CommonUtils.getUnitNum(database.rows(), elementSizeOfPlaintext);
         dimensionSize = PirUtils.computeDimensionLength(plaintextSize, params.getDimension());
         // encode database
         IntStream intStream = IntStream.range(0, partitionSize);
@@ -144,7 +135,7 @@ public class Mbfk16SingleIndexPirServer extends AbstractSingleIndexPirServer {
     @Override
     public List<byte[]> generateResponse(List<byte[]> clientQueryPayload, List<byte[][]> encodedDatabase)
         throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(clientQueryPayload.size() == Arrays.stream(dimensionSize).sum());
+        MpcAbortPreconditions.checkArgument(clientQueryPayload.size() == getQuerySize());
         IntStream intStream = IntStream.range(0, partitionSize);
         intStream = parallel ? intStream.parallel() : intStream;
         return intStream
@@ -155,15 +146,25 @@ public class Mbfk16SingleIndexPirServer extends AbstractSingleIndexPirServer {
             .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    @Override
+    public List<byte[]> generateResponse(List<byte[]> clientQuery) throws MpcAbortException {
+        return generateResponse(clientQuery, encodedDatabase);
+    }
+
+    @Override
+    public int getQuerySize() {
+        return Arrays.stream(dimensionSize).sum();
+    }
+
     /**
      * database preprocess.
      *
      * @param partitionIndex partition index.
      * @return BFV plaintexts in NTT form.
      */
-    public byte[][] preprocessDatabase(int partitionIndex) {
-        byte[] combinedBytes = new byte[num * partitionByteLength];
-        IntStream.range(0, num).forEach(rowIndex -> {
+    private byte[][] preprocessDatabase(int partitionIndex) {
+        byte[] combinedBytes = new byte[databases[partitionIndex].rows() * partitionByteLength];
+        IntStream.range(0, databases[partitionIndex].rows()).forEach(rowIndex -> {
             byte[] element = databases[partitionIndex].getBytesData(rowIndex);
             System.arraycopy(element, 0, combinedBytes, rowIndex * partitionByteLength, partitionByteLength);
         });
@@ -172,7 +173,7 @@ public class Mbfk16SingleIndexPirServer extends AbstractSingleIndexPirServer {
         assert (plaintextSize <= prod);
         List<long[]> coeffsList = new ArrayList<>();
         int byteSizeOfPlaintext = elementSizeOfPlaintext * partitionByteLength;
-        int totalByteSize = num * partitionByteLength;
+        int totalByteSize = databases[partitionIndex].rows() * partitionByteLength;
         int usedCoeffSize = elementSizeOfPlaintext *
             CommonUtils.getUnitNum(Byte.SIZE * partitionByteLength, params.getPlainModulusBitLength());
         assert (usedCoeffSize <= params.getPolyModulusDegree())
@@ -212,9 +213,11 @@ public class Mbfk16SingleIndexPirServer extends AbstractSingleIndexPirServer {
 
     @Override
     public void setPublicKey(List<byte[]> clientPublicKeysPayload) throws MpcAbortException {
-        if (params == null) {
-            params = Mbfk16SingleIndexPirParams.DEFAULT_PARAMS;
-        }
-        MpcAbortPreconditions.checkArgument(clientPublicKeysPayload.size() == 0);
+        // empty;
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Mbfk16SingleIndexPirParams.DEFAULT_PARAMS;
     }
 }

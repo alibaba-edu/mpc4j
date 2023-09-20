@@ -10,6 +10,9 @@ import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.cgs22.Cgs22CcpsiServer;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.psty19.Psty19CcpsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.psty19.Psty19CcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.psty19.Psty19CcpsiServer;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.rs21.Rs21CcpsiClient;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.rs21.Rs21CcpsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.rs21.Rs21CcpsiServer;
 
 /**
  * client-payload circuit PSI factory.
@@ -59,6 +62,7 @@ public class CcpsiFactory implements PtoFactory {
             case CGS22:
                 return new Cgs22CcpsiServer<>(serverRpc, clientParty, (Cgs22CcpsiConfig) config);
             case RS21:
+                return new Rs21CcpsiServer<>(serverRpc, clientParty, (Rs21CcpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + CcpsiType.class.getSimpleName() + ": " + type.name());
         }
@@ -80,6 +84,7 @@ public class CcpsiFactory implements PtoFactory {
             case CGS22:
                 return new Cgs22CcpsiClient<>(clientRpc, serverParty, (Cgs22CcpsiConfig) config);
             case RS21:
+                return new Rs21CcpsiClient<>(clientRpc, serverParty, (Rs21CcpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + CcpsiType.class.getSimpleName() + ": " + type.name());
         }
@@ -97,7 +102,7 @@ public class CcpsiFactory implements PtoFactory {
             case IDEAL:
             case TRUSTED_DEALER:
             case SEMI_HONEST:
-                return new Psty19CcpsiConfig.Builder(securityModel, silent).build();
+                return new Psty19CcpsiConfig.Builder(silent).build();
             case COVERT:
             case MALICIOUS:
             default:

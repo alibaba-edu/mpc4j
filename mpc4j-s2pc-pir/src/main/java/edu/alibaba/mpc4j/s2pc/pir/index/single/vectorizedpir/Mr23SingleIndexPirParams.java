@@ -31,29 +31,45 @@ public class Mr23SingleIndexPirParams implements SingleIndexPirParams {
     /**
      * first two dimension size
      */
-    private final int firstTwoDimensionSize;
+    public int firstTwoDimensionSize;
     /**
      * third dimension size
      */
-    private final int thirdDimensionSize;
+    public int thirdDimensionSize;
+    /**
+     * gap
+     */
+    public int gap;
+    /**
+     * row size
+     */
+    public int rowSize;
 
-    public Mr23SingleIndexPirParams(int polyModulusDegree, int plainModulusBitLength, int firstTwoDimensionSize,
-                                    int thirdDimensionSize) {
+    public Mr23SingleIndexPirParams(int polyModulusDegree, int plainModulusBitLength) {
+        assert polyModulusDegree >= 1 << 13;
         this.polyModulusDegree = polyModulusDegree;
+        assert plainModulusBitLength < Integer.SIZE;
         this.plainModulusBitLength = plainModulusBitLength;
-        assert firstTwoDimensionSize == PirUtils.getNextPowerOfTwo(firstTwoDimensionSize);
-        this.firstTwoDimensionSize = firstTwoDimensionSize;
-        this.thirdDimensionSize = thirdDimensionSize;
+        this.rowSize = polyModulusDegree / 2;
         this.encryptionParams = Mr23SingleIndexPirNativeUtils.generateEncryptionParams(
             polyModulusDegree, plainModulusBitLength
         );
+    }
+
+    public Mr23SingleIndexPirParams(int polyModulusDegree, int plainModulusBitLength, byte[] encryptionParams) {
+        assert polyModulusDegree >= 1 << 13;
+        this.polyModulusDegree = polyModulusDegree;
+        assert plainModulusBitLength < Integer.SIZE;
+        this.plainModulusBitLength = plainModulusBitLength;
+        this.rowSize = polyModulusDegree / 2;
+        this.encryptionParams = encryptionParams;
     }
 
     /**
      * default params
      */
     public static Mr23SingleIndexPirParams DEFAULT_PARAMS = new Mr23SingleIndexPirParams(
-        8192, 20, 128, 4
+        8192, 22
     );
 
     @Override
@@ -71,17 +87,13 @@ public class Mr23SingleIndexPirParams implements SingleIndexPirParams {
         return 3;
     }
 
+    public int[] getDimensionSize() {
+        return new int[] {firstTwoDimensionSize, firstTwoDimensionSize, thirdDimensionSize};
+    }
+
     @Override
     public byte[] getEncryptionParams() {
         return encryptionParams;
-    }
-
-    public int getFirstTwoDimensionSize() {
-        return firstTwoDimensionSize;
-    }
-
-    public int getThirdDimensionSize() {
-        return thirdDimensionSize;
     }
 
     @Override
@@ -89,6 +101,16 @@ public class Mr23SingleIndexPirParams implements SingleIndexPirParams {
         return
             "SEAL encryption parameters : " + "\n" +
             " - degree of polynomial modulus : " + polyModulusDegree + "\n" +
-            " - size of plaintext modulus : " + plainModulusBitLength;
+            " - size of plaintext modulus : " + plainModulusBitLength + "\n" +
+            " - first two dimension size : " + firstTwoDimensionSize + "\n" +
+            " - third dimension size :" + thirdDimensionSize;
+    }
+
+    public void calculateDimensions(int num) {
+        int cubeRoot = (int) Math.ceil(Math.cbrt(num));
+        firstTwoDimensionSize = PirUtils.getNextPowerOfTwo(cubeRoot);
+        assert firstTwoDimensionSize <= polyModulusDegree / 2 : "first two dimensions exceed polynomial degree";
+        thirdDimensionSize = (int) Math.ceil(num / Math.pow(firstTwoDimensionSize, 2));
+        this.gap = rowSize / firstTwoDimensionSize;
     }
 }

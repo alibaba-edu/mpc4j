@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.sampler.integral.gaussian.DiscGaussSampler;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64;
+import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.crypto.matrix.MatrixUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -141,7 +142,7 @@ public class Zl64Vector implements RingVector {
 
     @Override
     public Zl64Vector copy() {
-        long[] copyElements = Arrays.copyOf(elements, elements.length);
+        long[] copyElements = LongUtils.clone(elements);
         return Zl64Vector.create(zl64, copyElements);
     }
 

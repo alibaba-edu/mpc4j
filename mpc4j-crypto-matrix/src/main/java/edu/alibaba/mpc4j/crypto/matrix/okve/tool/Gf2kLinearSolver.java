@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.matrix.okve.tool;
 
-import cc.redberry.rings.linear.LinearSolver;
+import cc.redberry.rings.linear.LinearSolver.SystemInfo;
 import cc.redberry.rings.util.ArraysUtil;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
@@ -50,20 +50,13 @@ public class Gf2kLinearSolver {
      * @return the information for row Echelon form.
      */
     private RowEchelonFormInfo rowEchelonForm(byte[][][] lhs, byte[][] rhs) {
-        MathPreconditions.checkEqual("lhs.length", "rhs.length", lhs.length, rhs.length);
         int nRows = lhs.length;
         TIntSet maxLisColumns = new TIntHashSet(nRows);
         // do not need to solve when nRows = 0
         if (nRows == 0) {
             return new RowEchelonFormInfo(0, maxLisColumns);
         }
-        // m >= n
-        MathPreconditions.checkGreaterOrEqual("m", lhs[0].length, nRows);
         int nColumns = lhs[0].length;
-        // verify each row has m elements
-        Arrays.stream(lhs).forEach(row ->
-            MathPreconditions.checkEqual("m", "lsh[i].length", nColumns, row.length)
-        );
         // number of zero columns, here we consider if some columns are 0.
         int nZeroColumns = 0;
         for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
@@ -112,7 +105,7 @@ public class Gf2kLinearSolver {
      * @param result where to place the result.
      * @return system information (inconsistent or consistent).
      */
-    public LinearSolver.SystemInfo freeSolve(byte[][][] lhs, byte[][] rhs, byte[][] result) {
+    public SystemInfo freeSolve(byte[][][] lhs, byte[][] rhs, byte[][] result) {
         return solve(lhs, rhs, result, false);
     }
 
@@ -126,11 +119,11 @@ public class Gf2kLinearSolver {
      * @param result where to place the result.
      * @return system information (inconsistent or consistent).
      */
-    public LinearSolver.SystemInfo fullSolve(byte[][][] lhs, byte[][] rhs, byte[][] result) {
+    public SystemInfo fullSolve(byte[][][] lhs, byte[][] rhs, byte[][] result) {
         return solve(lhs, rhs, result, true);
     }
 
-    private LinearSolver.SystemInfo solve(byte[][][] lhs, byte[][] rhs, byte[][] result, boolean isFull) {
+    private SystemInfo solve(byte[][][] lhs, byte[][] rhs, byte[][] result, boolean isFull) {
         MathPreconditions.checkEqual("lhs.length", "rhs.length", lhs.length, rhs.length);
         int nRows = lhs.length;
         int nColumns = result.length;
@@ -174,7 +167,7 @@ public class Gf2kLinearSolver {
         return solveUnderDeterminedRows(lhs, rhs, result, info, isFull);
     }
 
-    private LinearSolver.SystemInfo solveOneRow(byte[][][] lhs, byte[][] rhs, byte[][] result, boolean isFull) {
+    private SystemInfo solveOneRow(byte[][][] lhs, byte[][] rhs, byte[][] result, boolean isFull) {
         int nColumns = result.length;
         // when n = 1, then the linear system only has one equation a[0]x[0] + ... + a[m]x[m] = b[0]
         if (nColumns == 1) {
@@ -239,7 +232,7 @@ public class Gf2kLinearSolver {
         }
     }
 
-    private LinearSolver.SystemInfo solveUnderDeterminedRows(byte[][][] lhs, byte[][] rhs, byte[][] result,
+    private SystemInfo solveUnderDeterminedRows(byte[][][] lhs, byte[][] rhs, byte[][] result,
                                                              RowEchelonFormInfo info, boolean isFull) {
         int nRows = lhs.length;
         int nColumns = result.length;
@@ -316,7 +309,6 @@ public class Gf2kLinearSolver {
                 // subtract other free variables
                 for (int nonMaxLisColumn : nonMaxLisColumnArray) {
                     if (!gf2k.isZero(lhs[iNzRow][nonMaxLisColumn])) {
-                        rhs[0] = gf2k.sub(rhs[0], gf2k.mul(lhs[0][i], result[i]));
                         result[iNzColumn] = gf2k.sub(result[iNzColumn], gf2k.mul(lhs[iNzRow][nonMaxLisColumn], result[nonMaxLisColumn]));
                     }
                 }

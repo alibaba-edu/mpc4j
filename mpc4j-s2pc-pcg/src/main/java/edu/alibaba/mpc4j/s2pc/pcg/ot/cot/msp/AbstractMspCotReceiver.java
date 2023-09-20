@@ -8,30 +8,30 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 /**
- * MSP-COT协议接收方。
+ * abstract multi single-point COT receiver.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
 public abstract class AbstractMspCotReceiver extends AbstractTwoPartyPto implements MspCotReceiver {
     /**
-     * 配置项
+     * config
      */
     private final MspCotConfig config;
     /**
-     * 最大数量
+     * max num
      */
-    protected int maxNum;
+    private int maxNum;
     /**
-     * 最大稀疏点数量
+     * max sparse num
      */
-    protected int maxT;
+    private int maxT;
     /**
-     * 数量
+     * num
      */
     protected int num;
     /**
-     * 稀疏点数量
+     * sparse num
      */
     protected int t;
 

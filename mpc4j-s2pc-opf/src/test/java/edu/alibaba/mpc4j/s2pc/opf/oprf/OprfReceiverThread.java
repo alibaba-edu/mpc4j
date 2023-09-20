@@ -1,8 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.opf.oprf;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfReceiver;
-import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfReceiverOutput;
 
 /**
  * OPRF receiver thread

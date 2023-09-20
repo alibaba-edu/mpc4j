@@ -68,14 +68,8 @@ public class MainPsuTest {
     }
 
     @Test
-    public void testKrtw19Opt() throws Exception {
-        Properties properties = readConfig("psu/conf_psu_krtw19_opt.txt");
-        runTest(new PsuMain(properties));
-    }
-
-    @Test
-    public void testKrtw19Ori() throws Exception {
-        Properties properties = readConfig("psu/conf_psu_krtw19_ori.txt");
+    public void testKrtw19() throws Exception {
+        Properties properties = readConfig("psu/conf_psu_krtw19.txt");
         runTest(new PsuMain(properties));
     }
 
@@ -98,7 +92,7 @@ public class MainPsuTest {
     }
 
     @Test
-    public void testZcl22PkeOfflineFalse() throws Exception {
+    public void testZcl22SkeOfflineFalse() throws Exception {
         Properties properties = readConfig("psu/conf_psu_zcl22_ske_offline_false.txt");
         runTest(new PsuMain(properties));
     }

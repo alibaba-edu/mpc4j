@@ -5,7 +5,6 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
 /**
  * Abstract Single Index PIR client.
@@ -33,21 +32,18 @@ public abstract class AbstractSingleIndexPirClient extends AbstractTwoPartyPto i
     /**
      * partition size
      */
-    protected int partitionSize;
+    public int partitionSize;
 
     protected AbstractSingleIndexPirClient(PtoDesc ptoDesc, Rpc clientRpc, Party serverParty,
                                            SingleIndexPirConfig config) {
         super(ptoDesc, clientRpc, serverParty, config);
     }
 
-    protected void setInitInput(int num, int elementBitLength, int maxPartitionBitLength) {
+    protected void setInitInput(int num, int elementBitLength) {
         MathPreconditions.checkPositive("elementBitLength", elementBitLength);
         this.elementBitLength = elementBitLength;
         MathPreconditions.checkPositive("num", num);
         this.num = num;
-        partitionBitLength = Math.min(maxPartitionBitLength, elementBitLength);
-        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
-        partitionSize = CommonUtils.getUnitNum(elementBitLength, partitionBitLength);
         initState();
     }
 

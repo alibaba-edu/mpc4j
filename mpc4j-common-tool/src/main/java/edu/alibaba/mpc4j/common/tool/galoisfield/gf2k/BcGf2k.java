@@ -38,9 +38,8 @@ class BcGf2k extends AbstractGf2k {
         assert validateElement(p);
         assert validateElement(q);
         // here we must copy q, since we need to support muli(p, p).
-        byte[] copyQ = BytesUtils.clone(q);
+        byte[] copyQ = BytesUtils.reverseBitArray(q);
         BytesUtils.innerReverseBitArray(p);
-        BytesUtils.innerReverseBitArray(copyQ);
         GCMUtil.multiply(p, copyQ);
         BytesUtils.innerReverseBitArray(p);
     }
@@ -85,7 +84,6 @@ class BcGf2k extends AbstractGf2k {
 
     @Override
     public void invi(byte[] p) {
-        assert validateNonZeroElement(p);
         byte[] y = inv(p);
         System.arraycopy(y, 0, p, 0, BYTE_L);
     }

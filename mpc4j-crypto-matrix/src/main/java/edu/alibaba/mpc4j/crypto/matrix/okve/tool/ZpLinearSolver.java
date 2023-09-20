@@ -49,20 +49,13 @@ public class ZpLinearSolver {
      * @return the information for row Echelon form.
      */
     private RowEchelonFormInfo rowEchelonForm(BigInteger[][] lhs, BigInteger[] rhs) {
-        MathPreconditions.checkEqual("lhs.length", "rhs.length", lhs.length, rhs.length);
         int nRows = lhs.length;
         TIntSet maxLisColumns = new TIntHashSet(nRows);
         // do not need to solve when nRows = 0
         if (nRows == 0) {
             return new RowEchelonFormInfo(0, maxLisColumns);
         }
-        // m >= n
-        MathPreconditions.checkGreaterOrEqual("m", lhs[0].length, nRows);
         int nColumns = lhs[0].length;
-        // verify each row has m elements
-        Arrays.stream(lhs).forEach(row ->
-            MathPreconditions.checkEqual("m", "lsh[i].length", nColumns, row.length)
-        );
         // number of zero columns, here we consider if some columns are 0.
         int nZeroColumns = 0;
         for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
@@ -161,7 +154,7 @@ public class ZpLinearSolver {
         Arrays.fill(result, zp.createZero());
         // for determined system, free and full solution are the same
         if (nUnderDetermined == 0 && nColumns == nRows) {
-            for (int i = nColumns - 1; i >= 0; i--) {
+            for (int i = nRows - 1; i >= 0; i--) {
                 BigInteger sum = BigInteger.ZERO;
                 for (int j = i + 1; j < nColumns; j++) {
                     sum = zp.add(sum, zp.mul(result[j], lhs[i][j]));
@@ -313,7 +306,6 @@ public class ZpLinearSolver {
                 // subtract other free variables
                 for (int nonMaxLisColumn : nonMaxLisColumnArray) {
                     if (!zp.isZero(lhs[iNzRow][nonMaxLisColumn])) {
-                        rhs[0] = zp.sub(rhs[0], zp.mul(lhs[0][i], result[i]));
                         result[iNzColumn] = zp.sub(result[iNzColumn], zp.mul(lhs[iNzRow][nonMaxLisColumn], result[nonMaxLisColumn]));
                     }
                 }

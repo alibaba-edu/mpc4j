@@ -34,23 +34,28 @@ public class KwPirParamsServerThread extends Thread {
      */
     private final int labelByteLength;
     /**
+     * max retrieval size
+     */
+    private final int retrievalSize;
+    /**
      * repeat time
      */
     private final int repeatTime;
 
-    KwPirParamsServerThread(KwPirServer server, KwPirParams kwPirParams,
-                            Map<ByteBuffer, ByteBuffer> keywordLabelMap, int labelByteLength, int repeatTime) {
+    KwPirParamsServerThread(KwPirServer server, KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> keywordLabelMap,
+                            int retrievalSize, int labelByteLength, int repeatTime) {
         this.server = server;
         this.kwPirParams = kwPirParams;
         this.keywordLabelMap = keywordLabelMap;
         this.labelByteLength = labelByteLength;
+        this.retrievalSize = retrievalSize;
         this.repeatTime = repeatTime;
     }
 
     @Override
     public void run() {
         try {
-            server.init(kwPirParams, keywordLabelMap, labelByteLength);
+            server.init(kwPirParams, keywordLabelMap, retrievalSize, labelByteLength);
             LOGGER.info(
                 "Server: The Offline Communication costs {}MB", server.getRpc().getSendByteLength() * 1.0 / (1 << 20)
             );

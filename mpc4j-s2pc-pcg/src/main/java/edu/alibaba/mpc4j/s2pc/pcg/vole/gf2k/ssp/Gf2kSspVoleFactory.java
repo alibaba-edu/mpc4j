@@ -4,12 +4,11 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.wykw21.Wykw21Gf2kShSspVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.wykw21.Wykw21Gf2kShSspVoleReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.wykw21.Wykw21Gf2kShSspVoleSender;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.wykw21.*;
 
 /**
- * Single single-point GF2K VOLE factory.
+ * Single single-point GF2K-VOLE factory.
  *
  * @author Weiran Liu
  * @date 2023/3/16
@@ -44,7 +43,7 @@ public class Gf2kSspVoleFactory implements PtoFactory {
      * @return the pre-computed num.
      */
     public static int getPrecomputeNum(Gf2kSspVoleConfig config, int num) {
-        assert num > 0 : "num must be greater than 0: " + num;
+        MathPreconditions.checkPositive("num", num);
         Gf2kSspVoleType type = config.getPtoType();
         switch (type) {
             case WYKW21_SEMI_HONEST:
@@ -68,8 +67,9 @@ public class Gf2kSspVoleFactory implements PtoFactory {
         Gf2kSspVoleType type = config.getPtoType();
         switch (type) {
             case WYKW21_SEMI_HONEST:
-                return new Wykw21Gf2kShSspVoleSender(senderRpc, receiverParty, (Wykw21Gf2kShSspVoleConfig) config);
+                return new Wykw21ShGf2kSspVoleSender(senderRpc, receiverParty, (Wykw21ShGf2kSspVoleConfig) config);
             case WYKW21_MALICIOUS:
+                return new Wykw21MaGf2kSspVoleSender(senderRpc, receiverParty, (Wykw21MaGf2kSspVoleConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + Gf2kSspVoleType.class.getSimpleName() + ": " + type.name());
         }
@@ -87,8 +87,9 @@ public class Gf2kSspVoleFactory implements PtoFactory {
         Gf2kSspVoleType type = config.getPtoType();
         switch (type) {
             case WYKW21_SEMI_HONEST:
-                return new Wykw21Gf2kShSspVoleReceiver(receiverRpc, senderParty, (Wykw21Gf2kShSspVoleConfig) config);
+                return new Wykw21ShGf2kSspVoleReceiver(receiverRpc, senderParty, (Wykw21ShGf2kSspVoleConfig) config);
             case WYKW21_MALICIOUS:
+                return new Wykw21MaGf2kSspVoleReceiver(receiverRpc, senderParty, (Wykw21MaGf2kSspVoleConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + Gf2kSspVoleType.class.getSimpleName() + ": " + type.name());
         }
@@ -104,9 +105,10 @@ public class Gf2kSspVoleFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-                return new Wykw21Gf2kShSspVoleConfig.Builder().build();
+                return new Wykw21ShGf2kSspVoleConfig.Builder().build();
             case COVERT:
             case MALICIOUS:
+                return new Wykw21MaGf2kSspVoleConfig.Builder().build();
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }

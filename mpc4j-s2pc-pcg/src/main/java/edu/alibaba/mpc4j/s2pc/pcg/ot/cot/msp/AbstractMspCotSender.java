@@ -10,34 +10,34 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
 /**
- * MSP-COT协议发送方。
+ * abstract multi single-point COT sender.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
 public abstract class AbstractMspCotSender extends AbstractTwoPartyPto implements MspCotSender {
     /**
-     * 配置项
+     * config
      */
     private final MspCotConfig config;
     /**
-     * 关联值Δ
+     * Δ
      */
     protected byte[] delta;
     /**
-     * 最大数量
+     * max num
      */
-    protected int maxNum;
+    private int maxNum;
     /**
-     * 最大稀疏点数量
+     * max sparse num
      */
-    protected int maxT;
+    private int maxT;
     /**
-     * 数量
+     * num
      */
     protected int num;
     /**
-     * 稀疏点数量
+     * sparse num
      */
     protected int t;
 
@@ -48,7 +48,6 @@ public abstract class AbstractMspCotSender extends AbstractTwoPartyPto implement
 
     protected void setInitInput(byte[] delta, int maxT, int maxNum) {
         MathPreconditions.checkEqual("Δ.length", "λ(B)", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        // 拷贝一份
         this.delta = BytesUtils.clone(delta);
         MathPreconditions.checkPositive("maxNum", maxNum);
         this.maxNum = maxNum;

@@ -22,7 +22,7 @@ class Psty19UcpsiPtoDesc implements PtoDesc {
     /**
      * the protocol name
      */
-    private static final String PTO_NAME = "PRTY19-UCPSI";
+    private static final String PTO_NAME = "PSTY19-UCPSI";
 
     /**
      * the protocol step

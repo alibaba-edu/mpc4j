@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.AbstractSingleIndexPirServer;
@@ -65,6 +66,7 @@ public class Mk22SingleIndexPirServer extends AbstractSingleIndexPirServer {
 
     @Override
     public void init(SingleIndexPirParams indexPirParams, NaiveDatabase database) throws MpcAbortException {
+        setInitInput(database);
         assert (indexPirParams instanceof Mk22SingleIndexPirParams);
         params = (Mk22SingleIndexPirParams) indexPirParams;
         params.setQueryParams(database.rows());
@@ -78,7 +80,7 @@ public class Mk22SingleIndexPirServer extends AbstractSingleIndexPirServer {
         List<byte[]> publicKeyPayload = rpc.receive(clientPublicKeysHeader).getPayload();
 
         stopWatch.start();
-        handleClientPublicKeysPayload(publicKeyPayload);
+        setPublicKey(publicKeyPayload);
         encodedDatabase = serverSetup(database);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -90,7 +92,8 @@ public class Mk22SingleIndexPirServer extends AbstractSingleIndexPirServer {
 
     @Override
     public void init(NaiveDatabase database) throws MpcAbortException {
-        params = Mk22SingleIndexPirParams.DEFAULT_PARAMS;
+        setInitInput(database);
+        setDefaultParams();
         params.setQueryParams(database.rows());
         logPhaseInfo(PtoState.INIT_BEGIN);
 
@@ -102,7 +105,7 @@ public class Mk22SingleIndexPirServer extends AbstractSingleIndexPirServer {
         List<byte[]> publicKeyPayload = rpc.receive(clientPublicKeysHeader).getPayload();
 
         stopWatch.start();
-        handleClientPublicKeysPayload(publicKeyPayload);
+        setPublicKey(publicKeyPayload);
         encodedDatabase = serverSetup(database);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -140,21 +143,6 @@ public class Mk22SingleIndexPirServer extends AbstractSingleIndexPirServer {
 
     @Override
     public void setPublicKey(List<byte[]> clientPublicKeysPayload) throws MpcAbortException {
-        if (params == null) {
-            params = Mk22SingleIndexPirParams.DEFAULT_PARAMS;
-        }
-        MpcAbortPreconditions.checkArgument(clientPublicKeysPayload.size() == 2);
-        this.galoisKeys = clientPublicKeysPayload.remove(0);
-        this.relinKeys = clientPublicKeysPayload.remove(0);
-    }
-
-    /**
-     * server handle client public keys.
-     *
-     * @param clientPublicKeysPayload public keys.
-     * @throws MpcAbortException the protocol failure aborts.
-     */
-    public void handleClientPublicKeysPayload(List<byte[]> clientPublicKeysPayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(clientPublicKeysPayload.size() == 2);
         this.galoisKeys = clientPublicKeysPayload.remove(0);
         this.relinKeys = clientPublicKeysPayload.remove(0);
@@ -163,11 +151,14 @@ public class Mk22SingleIndexPirServer extends AbstractSingleIndexPirServer {
     @Override
     public List<byte[][]> serverSetup(NaiveDatabase database) {
         int maxPartitionBitLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength();
-        setInitInput(database, database.getL(), maxPartitionBitLength);
+        partitionBitLength = Math.min(maxPartitionBitLength, database.getL());
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        databases = database.partitionZl(partitionBitLength);
+        partitionSize = databases.length;
         elementSizeOfPlaintext = PirUtils.elementSizeOfPlaintext(
             partitionByteLength, params.getPolyModulusDegree(), params.getPlainModulusBitLength()
         );
-        plaintextSize = (int) Math.ceil((double) num / this.elementSizeOfPlaintext);
+        plaintextSize = (int) Math.ceil((double) database.rows() / this.elementSizeOfPlaintext);
         plaintextIndexCodewords = getPlaintextIndexCodeword();
         // encode database
         IntStream intStream = IntStream.range(0, partitionSize);
@@ -178,8 +169,7 @@ public class Mk22SingleIndexPirServer extends AbstractSingleIndexPirServer {
     @Override
     public List<byte[]> generateResponse(List<byte[]> clientQueryPayload, List<byte[][]> encodedDatabase)
         throws MpcAbortException {
-        // query ciphertext number should be h = ceil(m/2^c)
-        MpcAbortPreconditions.checkArgument(clientQueryPayload.size() == params.getNumInputCiphers());
+        MpcAbortPreconditions.checkArgument(clientQueryPayload.size() == getQuerySize());
         IntStream intStream = IntStream.range(0, partitionSize);
         intStream = parallel ? intStream.parallel() : intStream;
         int eqType;
@@ -210,6 +200,21 @@ public class Mk22SingleIndexPirServer extends AbstractSingleIndexPirServer {
             .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    @Override
+    public List<byte[]> generateResponse(List<byte[]> clientQuery) throws MpcAbortException {
+        return generateResponse(clientQuery, encodedDatabase);
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Mk22SingleIndexPirParams.DEFAULT_PARAMS;
+    }
+
+    @Override
+    public int getQuerySize() {
+        return params.getNumInputCiphers();
+    }
+
     /**
      * database preprocess.
      *
@@ -217,15 +222,15 @@ public class Mk22SingleIndexPirServer extends AbstractSingleIndexPirServer {
      * @return BFV plaintexts in NTT form.
      */
     private byte[][] preprocessDatabase(int partitionSingleIndex) {
-        byte[] combinedBytes = new byte[num * partitionByteLength];
-        IntStream.range(0, num).forEach(rowSingleIndex -> {
+        byte[] combinedBytes = new byte[databases[partitionSingleIndex].rows() * partitionByteLength];
+        IntStream.range(0, databases[partitionSingleIndex].rows()).forEach(rowSingleIndex -> {
             byte[] element = databases[partitionSingleIndex].getBytesData(rowSingleIndex);
             System.arraycopy(element, 0, combinedBytes, rowSingleIndex * partitionByteLength, partitionByteLength);
         });
         // in Constant-weight PIR, dimension is always 1.
         List<long[]> coeffsList = new ArrayList<>();
         int byteSizeOfPlaintext = elementSizeOfPlaintext * partitionByteLength;
-        int totalByteSize = num * partitionByteLength;
+        int totalByteSize = databases[partitionSingleIndex].rows() * partitionByteLength;
         int usedCoeffSize = elementSizeOfPlaintext *
             ((int) Math.ceil(Byte.SIZE * partitionByteLength / (double) params.getPlainModulusBitLength()));
         assert (usedCoeffSize <= params.getPolyModulusDegree())

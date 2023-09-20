@@ -18,7 +18,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.AbstractBspCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.SspCotReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp.SspCotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
@@ -32,26 +32,26 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * YWL20-BSP-COT恶意安全协议接收方。
+ * malicious YWL20-BSP-COT receiver.
  *
  * @author Weiran Liu
  * @date 2022/6/7
  */
 public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
     /**
-     * DPPRF协议配置项
+     * BP-DPPRF config
      */
     private final BpDpprfConfig bpDpprfConfig;
     /**
-     * COT协议接收方
+     * core COT
      */
     private final CoreCotReceiver coreCotReceiver;
     /**
-     * DPPRF协议发送方
+     * BP-DPPRF
      */
     private final BpDpprfReceiver bpDpprfReceiver;
     /**
-     * GF(2^128)运算接口
+     * GF(2^128) instance
      */
     private final Gf2k gf2k;
     /**
@@ -59,19 +59,19 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
      */
     private final Hash hash;
     /**
-     * COT协议接收方输出
+     * COT receiver output
      */
     private CotReceiverOutput cotReceiverOutput;
     /**
-     * 验证COT协议接收方输出
+     * check COT receiver output
      */
     private CotReceiverOutput checkCotReceiverOutput;
     /**
-     * DPPRF接收方输出
+     * BP-DPPRF receiver output
      */
     private BpDpprfReceiverOutput bpDpprfReceiverOutput;
     /**
-     * 随机预言机
+     * random oracle
      */
     private Prf randomOracle;
 
@@ -87,16 +87,16 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
     }
 
     @Override
-    public void init(int maxBatchNum, int maxNum) throws MpcAbortException {
-        setInitInput(maxBatchNum, maxNum);
+    public void init(int maxBatchNum, int maxEachNum) throws MpcAbortException {
+        setInitInput(maxBatchNum, maxEachNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 协议执行过程要请求两次COT，一次用于DPPRF，一次是128个
-        int maxCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, maxBatchNum, maxNum)
+        // we need to request COT two times, one for DPPRF, one for λ
+        int maxCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, maxBatchNum, maxEachNum)
             + CommonConstants.BLOCK_BIT_LENGTH;
         coreCotReceiver.init(maxCotNum);
-        bpDpprfReceiver.init(maxBatchNum, maxNum);
+        bpDpprfReceiver.init(maxBatchNum, maxEachNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -123,15 +123,15 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
     }
 
     @Override
-    public BspCotReceiverOutput receive(int[] alphaArray, int num) throws MpcAbortException {
-        setPtoInput(alphaArray, num);
+    public BspCotReceiverOutput receive(int[] alphaArray, int eachNum) throws MpcAbortException {
+        setPtoInput(alphaArray, eachNum);
         return receive();
     }
 
     @Override
-    public BspCotReceiverOutput receive(int[] alphaArray, int num, CotReceiverOutput preReceiverOutput)
+    public BspCotReceiverOutput receive(int[] alphaArray, int eachNum, CotReceiverOutput preReceiverOutput)
         throws MpcAbortException {
-        setPtoInput(alphaArray, num, preReceiverOutput);
+        setPtoInput(alphaArray, eachNum, preReceiverOutput);
         cotReceiverOutput = preReceiverOutput;
         return receive();
     }
@@ -141,7 +141,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
 
         stopWatch.start();
         // R send (extend, h) to F_COT, which returns (r_i, t_i) ∈ {0,1} × {0,1}^κ to R
-        int dpprfCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, batchNum, num);
+        int dpprfCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, batchNum, eachNum);
         if (cotReceiverOutput == null) {
             boolean[] rs = new boolean[dpprfCotNum + CommonConstants.BLOCK_BIT_LENGTH];
             IntStream.range(0, dpprfCotNum + CommonConstants.BLOCK_BIT_LENGTH).forEach(index ->
@@ -160,7 +160,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
         logStepInfo(PtoState.PTO_STEP, 1, 4, cotTime);
 
         stopWatch.start();
-        bpDpprfReceiverOutput = bpDpprfReceiver.puncture(alphaArray, num, extendCotReceiverOutput);
+        bpDpprfReceiverOutput = bpDpprfReceiver.puncture(alphaArray, eachNum, extendCotReceiverOutput);
         stopWatch.stop();
         long dpprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -186,7 +186,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(checkChoiceHeader, checkChoicePayload));
-        // 先本地计算H'(w)，再接收对方的值
+        // locally compute H'(w), then receive H'(v)
         byte[] expectHashValue = computeExpectHashValue(receiverOutput);
         DataPacketHeader actualHashValueHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_HASH_VALUE.ordinal(), extraInfo,
@@ -214,7 +214,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
             .mapToObj(batchIndex -> {
                 byte[][] rbArray = bpDpprfReceiverOutput.getSpDpprfReceiverOutput(batchIndex).getPprfKeys();
                 // computes w[α]
-                for (int i = 0; i < num; i++) {
+                for (int i = 0; i < eachNum; i++) {
                     if (i != alphaArray[batchIndex]) {
                         BytesUtils.xori(correlateByteArrays[batchIndex], rbArray[i]);
                     }
@@ -245,7 +245,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
     }
 
     private byte[] computeExpectHashValue(BspCotReceiverOutput receiverOutput) {
-        // R computes Z :=  Σ_{i ∈ [κ]} (z^*[i]·X^i) ∈ F_{2^κ}，常数次运算，不需要并发
+        // R computes Z :=  Σ_{i ∈ [κ]} (z^*[i]·X^i) ∈ F_{2^κ}
         byte[] z = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         for (int checkIndex = 0; checkIndex < CommonConstants.BLOCK_BIT_LENGTH; checkIndex++) {
             byte[] zi = checkCotReceiverOutput.getRb(checkIndex);
@@ -263,7 +263,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
         byte[][] ws = lIntStream
             .mapToObj(l -> {
                 byte[] w = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                for (int i = 0; i < num; i++) {
+                for (int i = 0; i < eachNum; i++) {
                     // samples uniform {χ_i}_{i ∈ [n]}
                     byte[] indexMessage = ByteBuffer.allocate(Long.BYTES + Integer.BYTES + Integer.BYTES)
                         .putLong(extraInfo).putInt(l).putInt(i).array();

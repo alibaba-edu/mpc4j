@@ -203,29 +203,39 @@ public class BytesBitVector implements BitVector {
         assert bitNum > 0 && bitNum <= this.bitNum
             : "number of reduced bits must be in range (0, " + this.bitNum + "]: " + bitNum;
         if (bitNum < this.bitNum) {
-            // 缩减长度，方法为原始数据与长度对应全1比特串求AND
-            BigInteger remainBigInteger = getBigInteger();
-            BigInteger mask = BigInteger.ONE.shiftLeft(bitNum).subtract(BigInteger.ONE);
-            remainBigInteger = remainBigInteger.and(mask);
-            // update the remained bit vector
+            // compute number of reduced bytes, and set the remaining first byte as leading zeros.
+            int remainByteNum = CommonUtils.getByteLength(bitNum);
+            offset = remainByteNum * Byte.SIZE - bitNum;
+            bytes = Arrays.copyOfRange(bytes, byteNum - remainByteNum, byteNum);
+            if (offset > 0) {
+                bytes[0] &= (byte) ((1 << (Byte.SIZE - offset)) - 1);
+            }
+            // update other parameters
             this.bitNum = bitNum;
-            byteNum = CommonUtils.getByteLength(this.bitNum);
-            bytes = BigIntegerUtils.nonNegBigIntegerToByteArray(remainBigInteger, byteNum);
-            offset = byteNum * Byte.SIZE - this.bitNum;
+            this.byteNum = remainByteNum;
         }
     }
 
     @Override
     public void merge(BitVector that) {
-        BigInteger mergeBigInteger = that.getBigInteger();
-        BigInteger remainBigInteger = getBigInteger();
-        // shift the remained bit vector
-        remainBigInteger = remainBigInteger.shiftLeft(that.bitNum()).or(mergeBigInteger);
-        // update the remained bit vector
         bitNum += that.bitNum();
-        byteNum = bitNum == 0 ? 0 : CommonUtils.getByteLength(bitNum);
-        bytes = BigIntegerUtils.nonNegBigIntegerToByteArray(remainBigInteger, byteNum);
-        offset = byteNum * Byte.SIZE - bitNum;
+        if (that.bitNum() == that.byteNum() * Byte.SIZE) {
+            // if that BitVector can be represented as whole bytes, then directly merge bytes.
+            byte[] resBytes = new byte[this.byteNum + that.byteNum()];
+            System.arraycopy(bytes, 0, resBytes, 0, byteNum);
+            System.arraycopy(that.getBytes(), 0, resBytes, this.byteNum, that.byteNum());
+            bytes = resBytes;
+            byteNum += that.byteNum();
+        } else {
+            BigInteger mergeBigInteger = that.getBigInteger();
+            BigInteger remainBigInteger = getBigInteger();
+            // shift the remained bit vector
+            remainBigInteger = remainBigInteger.shiftLeft(that.bitNum()).or(mergeBigInteger);
+            // update the remained bit vector
+            byteNum = bitNum == 0 ? 0 : CommonUtils.getByteLength(bitNum);
+            bytes = BigIntegerUtils.nonNegBigIntegerToByteArray(remainBigInteger, byteNum);
+            offset = byteNum * Byte.SIZE - bitNum;
+        }
     }
 
     @Override

@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.utils;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -17,6 +18,11 @@ public class IntUtils {
      */
     public static final int MAX_L = Integer.SIZE - 2;
     /**
+     * maximal signed power of 2
+     */
+    public static final int MAX_SIGNED_POWER_OF_TWO = 1 << (Integer.SIZE - 2);
+
+    /**
      * private constructor.
      */
     private IntUtils() {
@@ -24,9 +30,28 @@ public class IntUtils {
     }
 
     /**
-     * maximal signed power of 2
+     * Clone the data.
+     *
+     * @param data data.
+     * @return clone data.
      */
-    public static final int MAX_SIGNED_POWER_OF_TWO = 1 << (Integer.SIZE - 2);
+    public static int[] clone(final int[] data) {
+        return Arrays.copyOf(data, data.length);
+    }
+
+    /**
+     * Clone the data.
+     *
+     * @param data data.
+     * @return clone data.
+     */
+    public static int[][] clone(final int[][] data) {
+        int[][] cloneData = new int[data.length][];
+        for (int iRow = 0; iRow < data.length; iRow++) {
+            cloneData[iRow] = clone(data[iRow]);
+        }
+        return cloneData;
+    }
 
     /**
      * Converts an int value to a byte array (length = Integer.BYTES) using big-endian format.

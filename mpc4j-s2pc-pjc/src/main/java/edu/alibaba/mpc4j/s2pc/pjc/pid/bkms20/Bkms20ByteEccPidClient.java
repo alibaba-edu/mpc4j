@@ -195,7 +195,7 @@ public class Bkms20ByteEccPidClient<T> extends AbstractPidParty<T> {
             shuffleUp[i] = up[shuffleMap.get(i)];
         }
         // Given shuffleMap = [2, 0, 1, 3], reShuffleMap = [2 -> 0, 0 -> 1, 1 -> 2, 3 -> 3]
-        reShuffleMap = IntStream.range(0, otherElementSetSize)
+        reShuffleMap = IntStream.range(0, ownElementSetSize)
             .boxed()
             .collect(Collectors.toMap(shuffleMap::get, Function.identity()));
         // send to P
@@ -257,9 +257,7 @@ public class Bkms20ByteEccPidClient<T> extends AbstractPidParty<T> {
     }
 
     private List<byte[]> handleSpPayload(List<byte[]> spPayload) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(
-            spPayload.size() <= otherElementSetSize && spPayload.size() <= ownElementSetSize
-        );
+        MpcAbortPreconditions.checkArgument(spPayload.size() <= ownElementSetSize);
         // For each s_p^i ∈ S_p, s_p^i' = (s_p^i)^{r_p}
         Stream<byte[]> spStream = spPayload.stream();
         spStream = parallel ? spStream.parallel() : spStream;
@@ -269,9 +267,7 @@ public class Bkms20ByteEccPidClient<T> extends AbstractPidParty<T> {
     }
 
     private void handleScpPayload(List<byte[]> scpPayload) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(
-            scpPayload.size() <= otherElementSetSize && scpPayload.size() <= ownElementSetSize
-        );
+        MpcAbortPreconditions.checkArgument(scpPayload.size() <= otherElementSetSize);
         // For every s_c^i ∈ S_c', let s_c^i'' = s_c^i^{r_p} and M_p[(s_p^i)^{r_p}] = ⊥
         Stream<byte[]> scpStream = scpPayload.stream();
         scpStream = parallel ? scpStream.parallel() : scpStream;

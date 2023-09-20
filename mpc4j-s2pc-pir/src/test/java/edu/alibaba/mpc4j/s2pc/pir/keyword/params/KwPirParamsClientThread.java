@@ -48,12 +48,17 @@ public class KwPirParamsClientThread extends Thread {
      * server element size
      */
     private final int serverElementSize;
+    /**
+     * max retrieval size
+     */
+    private final int retrievalSize;
 
-    KwPirParamsClientThread(KwPirClient client, KwPirParams kwPirParams,
-                            List<Set<ByteBuffer>> retrievalSets, int serverElementSize, int labelByteLength) {
+    KwPirParamsClientThread(KwPirClient client, KwPirParams kwPirParams, List<Set<ByteBuffer>> retrievalSets,
+                            int retrievalSize, int serverElementSize, int labelByteLength) {
         this.client = client;
         this.kwPirParams = kwPirParams;
         this.retrievalSets = retrievalSets;
+        this.retrievalSize = retrievalSize;
         this.serverElementSize = serverElementSize;
         this.labelByteLength = labelByteLength;
         repeatTime = retrievalSets.size();
@@ -67,7 +72,7 @@ public class KwPirParamsClientThread extends Thread {
     @Override
     public void run() {
         try {
-            client.init(kwPirParams, serverElementSize, labelByteLength);
+            client.init(kwPirParams, serverElementSize, retrievalSize, labelByteLength);
             LOGGER.info(
                 "Client: The Offline Communication costs {}MB", client.getRpc().getSendByteLength() * 1.0 / (1 << 20)
             );

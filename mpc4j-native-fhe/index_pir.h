@@ -90,4 +90,7 @@ void mk22_generate_selection_vector(Evaluator& evaluator, const RelinKeys* relin
 
 Ciphertext mk22_faster_inner_product(Evaluator& evaluator, vector<Ciphertext>& selection_vector, vector<Plaintext>& database);
 
+vector<Ciphertext> merge_response(const SEALContext& context, const GaloisKeys& galois_keys, vector<Ciphertext> response,
+                                  int32_t num_slots_per_entry, uint32_t first_two_dimension_size);
+
 #endif //MPC4J_NATIVE_FHE_INDEX_PIR_H

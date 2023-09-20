@@ -2,89 +2,91 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp;
 
 import java.util.Arrays;
 
+import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.BatchPcgOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp.SspCotSenderOutput;
 
 /**
- * BSP-COT协议发送方输出。
+ * Batched single-point COT sender output.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
-public class BspCotSenderOutput implements PcgPartyOutput {
+public class BspCotSenderOutput implements BatchPcgOutput {
     /**
-     * SSPCOT协议发送方输出数组
+     * SSP-COT sender outputs
      */
     private SspCotSenderOutput[] senderOutputs;
     /**
-     * 关联值Δ
+     * Δ
      */
     private byte[] delta;
     /**
-     * 每个SSPCOT协议发送方输出的数量
+     * num in each SSP-COT sender output
      */
     private int eachNum;
 
     /**
-     * 创建发送方输出。
+     * Creates a sender output.
      *
-     * @param sspCotSenderOutputs SSPCOT协议发送方输出数组。
-     * @return 发送方输出。
+     * @param sspCotSenderOutputs SSP-COT sender outputs.
+     * @return a sender output.
      */
     public static BspCotSenderOutput create(SspCotSenderOutput[] sspCotSenderOutputs) {
         BspCotSenderOutput senderOutput = new BspCotSenderOutput();
-        assert sspCotSenderOutputs.length > 0;
-        // 取第一个输出的参数
+        MathPreconditions.checkPositive("num", sspCotSenderOutputs.length);
+        // get Δ and each num
         senderOutput.delta = BytesUtils.clone(sspCotSenderOutputs[0].getDelta());
         senderOutput.eachNum = sspCotSenderOutputs[0].getNum();
-        // 设置其余输出
+        // set other outputs
         senderOutput.senderOutputs = Arrays.stream(sspCotSenderOutputs)
-            // 验证所有Δ相等，且数量均为num
-            .peek(sspcotSenderOutput -> {
-                assert BytesUtils.equals(senderOutput.delta, sspcotSenderOutput.getDelta());
-                assert sspcotSenderOutput.getNum() == senderOutput.eachNum;
+            .peek(iOutput -> {
+                Preconditions.checkArgument(BytesUtils.equals(senderOutput.delta, iOutput.getDelta()));
+                MathPreconditions.checkEqual("each num", "i-th num", senderOutput.eachNum, iOutput.getNum());
             })
             .toArray(SspCotSenderOutput[]::new);
         return senderOutput;
     }
 
     /**
-     * 私有构造函数。
+     * private constructor.
      */
     private BspCotSenderOutput() {
         // empty
     }
 
     /**
-     * 返回关联值Δ。
+     * Gets Δ.
      *
-     * @return 关联值Δ。
+     * @return Δ.
      */
     public byte[] getDelta() {
         return delta;
     }
 
     /**
-     * 返回SSPCOT协议发送方输出。
+     * Gets the assigned SSP-COT sender output.
      *
-     * @param index 索引值。
-     * @return 发送方输出。
+     * @param index index.
+     * @return SSP-COT sender output.
      */
     public SspCotSenderOutput get(int index) {
         return senderOutputs[index];
     }
 
     /**
-     * 返回数量。
+     * Gets num in each SSP-COT sender output.
      *
-     * @return 数量。
+     * @return num in each SSP-COT sender output.
      */
     public int getEachNum() {
         return eachNum;
     }
 
     @Override
-    public int getNum() {
+    public int getBatchNum() {
         return senderOutputs.length;
     }
 }

@@ -146,7 +146,7 @@ public class OpGbdtClsSingleSlaveTest extends AbstractTwoPartyPtoTest {
             .addLdpConfig(slaveLdpConfigMap)
             .build();
         GradientTreeBoost federatedModel = federateTraining(
-            formula, hostDataFrame, hostConfig, slaveDataFrame, slaveConfig
+             formula, hostDataFrame, hostConfig, slaveDataFrame, slaveConfig
         );
         LOGGER.info("{} verify difference between plain model and federated model", name);
         // 预测结果

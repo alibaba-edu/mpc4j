@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
 import java.security.SecureRandom;
@@ -45,10 +46,6 @@ public class CuckooHashBinFactory {
          * 单哈希函数布谷鸟哈希
          */
         NO_STASH_ONE_HASH,
-        /**
-         * 无暂存区布谷鸟哈希
-         */
-        NO_STASH_DRRT18,
         /**
          * 无暂存区，包含3个哈希函数的YWL20布谷鸟哈希
          */
@@ -98,8 +95,6 @@ public class CuckooHashBinFactory {
                 return new NaiveCuckooHashBin<>(envType, type, maxItemSize, keys);
             case NO_STASH_NAIVE:
                 return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, keys);
-            case NO_STASH_DRRT18:
-                return new Drrt18NoStashCuckooHashBin<>(envType, maxItemSize, keys);
             case NO_STASH_PSZ18_3_HASH:
             case NO_STASH_PSZ18_4_HASH:
             case NO_STASH_PSZ18_5_HASH:
@@ -201,8 +196,6 @@ public class CuckooHashBinFactory {
                 return new NaiveCuckooHashBin<>(envType, type, maxItemSize, binNum, keys);
             case NO_STASH_NAIVE:
                 return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
-            case NO_STASH_DRRT18:
-                return new Drrt18NoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
             case NO_STASH_PSZ18_3_HASH:
             case NO_STASH_PSZ18_4_HASH:
             case NO_STASH_PSZ18_5_HASH:
@@ -222,7 +215,6 @@ public class CuckooHashBinFactory {
         switch (type) {
             case NO_STASH_ONE_HASH:
             case NO_STASH_NAIVE:
-            case NO_STASH_DRRT18:
             case NO_STASH_PSZ18_3_HASH:
             case NO_STASH_PSZ18_4_HASH:
             case NO_STASH_PSZ18_5_HASH:
@@ -255,8 +247,6 @@ public class CuckooHashBinFactory {
         switch (type) {
             case NO_STASH_NAIVE:
                 return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, keys);
-            case NO_STASH_DRRT18:
-                return new Drrt18NoStashCuckooHashBin<>(envType, maxItemSize, keys);
             case NO_STASH_PSZ18_3_HASH:
             case NO_STASH_PSZ18_4_HASH:
             case NO_STASH_PSZ18_5_HASH:
@@ -286,8 +276,6 @@ public class CuckooHashBinFactory {
                 return new OneHashCuckooHashBin<>(envType, binNum, keys);
             case NO_STASH_NAIVE:
                 return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
-            case NO_STASH_DRRT18:
-                return new Drrt18NoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
             case NO_STASH_PSZ18_3_HASH:
             case NO_STASH_PSZ18_4_HASH:
             case NO_STASH_PSZ18_5_HASH:
@@ -302,26 +290,26 @@ public class CuckooHashBinFactory {
     }
 
     private static void checkInputs(CuckooHashBinType type, int maxItemSize, int binNum, byte[][] keys) {
-        assert keys.length == getHashNum(type) : type.name() + " needs " + getHashNum(type) + " hash keys";
+        MathPreconditions.checkEqual("hashNum", "keys.length", getHashNum(type), keys.length);
         switch (type) {
             case NO_STASH_ONE_HASH:
-                assert maxItemSize == 1 : type.name() + " only support inserting exactly one item: " + maxItemSize;
+                MathPreconditions.checkEqual("maxItemSize", "1", maxItemSize, 1);
                 break;
             case NAIVE_2_HASH:
             case NAIVE_3_HASH:
             case NAIVE_4_HASH:
             case NAIVE_5_HASH:
             case NO_STASH_NAIVE:
-            case NO_STASH_DRRT18:
             case NO_STASH_PSZ18_3_HASH:
             case NO_STASH_PSZ18_4_HASH:
             case NO_STASH_PSZ18_5_HASH:
-                assert maxItemSize > 0 && maxItemSize <= CuckooHashBinFactory.MAX_ITEM_SIZE_UPPER_BOUND
-                    : "maxItemSize must be in range (0, " + CuckooHashBinFactory.MAX_ITEM_SIZE_UPPER_BOUND + "]";
-                assert binNum > maxItemSize : "binNum must be greater than maxItemSize";
+                MathPreconditions.checkPositiveInRangeClosed(
+                    "maxItemSize", maxItemSize, CuckooHashBinFactory.MAX_ITEM_SIZE_UPPER_BOUND
+                );
+                MathPreconditions.checkGreater("binNum", binNum, maxItemSize);
                 break;
             default:
-                throw new IllegalArgumentException("Invalid CuckooHashBinType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -339,7 +327,6 @@ public class CuckooHashBinFactory {
                 return 2;
             case NAIVE_3_HASH:
             case NO_STASH_NAIVE:
-            case NO_STASH_DRRT18:
             case NO_STASH_PSZ18_3_HASH:
                 return 3;
             case NAIVE_4_HASH:
@@ -349,7 +336,7 @@ public class CuckooHashBinFactory {
             case NO_STASH_PSZ18_5_HASH:
                 return 5;
             default:
-                throw new IllegalArgumentException("Invalid CuckooHashBinType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -370,14 +357,12 @@ public class CuckooHashBinFactory {
                 return NaiveCuckooHashBin.getBinNum(type, maxItemSize);
             case NO_STASH_NAIVE:
                 return NaiveNoStashCuckooHashBin.getBinNum(maxItemSize);
-            case NO_STASH_DRRT18:
-                return Drrt18NoStashCuckooHashBin.getBinNum(maxItemSize);
             case NO_STASH_PSZ18_3_HASH:
             case NO_STASH_PSZ18_4_HASH:
             case NO_STASH_PSZ18_5_HASH:
                 return Psz18NoStashCuckooHashBin.getBinNum(type, maxItemSize);
             default:
-                throw new IllegalArgumentException("Invalid CuckooHashBinType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -399,14 +384,12 @@ public class CuckooHashBinFactory {
                 return NaiveCuckooHashBin.getMaxItemSize(type, binNum);
             case NO_STASH_NAIVE:
                 return NaiveNoStashCuckooHashBin.getMaxItemSize(binNum);
-            case NO_STASH_DRRT18:
-                return Drrt18NoStashCuckooHashBin.getMaxItemSize(binNum);
             case NO_STASH_PSZ18_3_HASH:
             case NO_STASH_PSZ18_4_HASH:
             case NO_STASH_PSZ18_5_HASH:
-                return Psz18NoStashCuckooHashBin.getBinNum(type, binNum);
+                return Psz18NoStashCuckooHashBin.getMaxItemSize(type, binNum);
             default:
-                throw new IllegalArgumentException("Invalid CuckooHashBinType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -425,13 +408,12 @@ public class CuckooHashBinFactory {
             case NAIVE_5_HASH:
                 return NaiveCuckooHashBin.getStashSize(maxItemSize);
             case NO_STASH_NAIVE:
-            case NO_STASH_DRRT18:
             case NO_STASH_PSZ18_3_HASH:
             case NO_STASH_PSZ18_4_HASH:
             case NO_STASH_PSZ18_5_HASH:
                 return 0;
             default:
-                throw new IllegalArgumentException("Invalid CuckooHashBinType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
         }
     }
 }

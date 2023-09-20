@@ -20,6 +20,10 @@ public class NtlGf2ePoly extends AbstractGf2ePoly {
     }
 
     /**
+     * type
+     */
+    private static final Gf2ePolyType TYPE = Gf2ePolyType.NTL;
+    /**
      * 不可约多项式
      */
     private final byte[] minBytes;
@@ -40,13 +44,12 @@ public class NtlGf2ePoly extends AbstractGf2ePoly {
 
     @Override
     public Gf2ePolyType getType() {
-        return Gf2ePolyType.NTL;
+        return TYPE;
     }
 
     @Override
     public int coefficientNum(int num) {
-        assert num >= 1 : "# of points must be greater than or equal to 1: " + num;
-        return num;
+        return Gf2ePolyFactory.getCoefficientNum(TYPE, num);
     }
 
     @Override

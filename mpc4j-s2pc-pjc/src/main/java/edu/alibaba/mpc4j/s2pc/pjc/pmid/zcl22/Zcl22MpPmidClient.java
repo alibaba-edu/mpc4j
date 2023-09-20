@@ -6,9 +6,9 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.Okvs;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.AbstractPmidClient;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidPartyOutput;
@@ -49,7 +49,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
     /**
      * σ的OKVS类型
      */
-    private final OkvsType sigmaOkvsType;
+    private final Gf2eDokvsType sigmaOkvsType;
     /**
      * 客户端σ的OKVS密钥
      */
@@ -118,7 +118,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
 
         stopWatch.start();
         List<byte[]> clientKeysPayload = new LinkedList<>();
-        int okvsHashKeyNum = OkvsFactory.getHashNum(sigmaOkvsType);
+        int okvsHashKeyNum = Gf2eDokvsFactory.getHashKeyNum(sigmaOkvsType);
         // 客户端OKVS密钥，由客户端生成
         clientSigmaOkvsHashKeys = IntStream.range(0, okvsHashKeyNum)
             .mapToObj(keyIndex -> {
@@ -284,12 +284,12 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
                     return dy;
                 }
             ));
-        Okvs<ByteBuffer> clientSigmaOkvs = OkvsFactory.createInstance(
+        Gf2eDokvs<ByteBuffer> clientSigmaOkvs = Gf2eDokvsFactory.createInstance(
             envType, sigmaOkvsType, clientSetSize, sigmaOkvsValueByteLength * Byte.SIZE, clientSigmaOkvsHashKeys
         );
         // σ的OKVS编码可以并行处理
         clientSigmaOkvs.setParallelEncode(parallel);
-        byte[][] clientSigmaOkvsStorage = clientSigmaOkvs.encode(clientSigmaOkvsKeyValueMap);
+        byte[][] clientSigmaOkvsStorage = clientSigmaOkvs.encode(clientSigmaOkvsKeyValueMap, false);
         List<byte[]> clientSigmaOkvsPayload = Arrays.stream(clientSigmaOkvsStorage).collect(Collectors.toList());
         DataPacketHeader clientSigmaOkvsHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_SIGMA_OKVS.ordinal(), extraInfo,
@@ -321,11 +321,11 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverSigmaOkvsPayload = rpc.receive(serverSigmaOkvsHeader).getPayload();
-        int serverSigmaOkvsM = OkvsFactory.getM(sigmaOkvsType, serverSetSize);
+        int serverSigmaOkvsM = Gf2eDokvsFactory.getM(envType, sigmaOkvsType, serverSetSize);
         MpcAbortPreconditions.checkArgument(serverSigmaOkvsPayload.size() == serverSigmaOkvsM);
         // 读取服务端σ的OKVS
         byte[][] serverSigmaOkvsStorage = serverSigmaOkvsPayload.toArray(new byte[0][]);
-        Okvs<ByteBuffer> serverSigmaOkvs = OkvsFactory.createInstance(
+        Gf2eDokvs<ByteBuffer> serverSigmaOkvs = Gf2eDokvsFactory.createInstance(
             envType, sigmaOkvsType, serverSetSize, sigmaOkvsValueByteLength * Byte.SIZE, serverSigmaOkvsHashKeys
         );
         dyArray = new int[clientSetSize];

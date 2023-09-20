@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * MSP-COT协议测试。
+ * MSP-COT tests.
  *
  * @author Weiran Liu
  * @date 2022/01/24
@@ -35,19 +35,19 @@ import org.slf4j.LoggerFactory;
 public class MspCotTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(MspCotTest.class);
     /**
-     * 默认多点数量
+     * default sparse num
      */
     private static final int DEFAULT_T = 1 << 4;
     /**
-     * 默认密钥数量
+     * default num
      */
     private static final int DEFAULT_NUM = 1 << 10;
     /**
-     * 较大多点数量
+     * large spare num
      */
     private static final int LARGE_T = 1 << 10;
     /**
-     * 较大密钥数量
+     * large num
      */
     private static final int LARGE_NUM = 1 << 16;
 
@@ -78,7 +78,7 @@ public class MspCotTest extends AbstractTwoPartyPtoTest {
     }
 
     /**
-     * 协议类型
+     * config
      */
     private final MspCotConfig config;
 

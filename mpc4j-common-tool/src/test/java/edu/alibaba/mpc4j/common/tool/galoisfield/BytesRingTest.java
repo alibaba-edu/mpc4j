@@ -7,6 +7,8 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64Factory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64Factory.Gf64Type;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -45,10 +47,23 @@ public class BytesRingTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
+        // GF64
+        for (Gf64Type type : Gf64Type.values()) {
+            configurations.add(new Object[]{
+                Gf64Type.class.getSimpleName() + " (" + type.name() + ")",
+                Gf64Factory.createInstance(EnvType.STANDARD, type),
+            });
+        }
+        // GF2K
+        for (Gf2kType type : Gf2kType.values()) {
+            configurations.add(new Object[]{
+                Gf2kType.class.getSimpleName() + " (" + type.name() + ")",
+                Gf2kFactory.createInstance(EnvType.STANDARD, type),
+            });
+        }
         // GF2E
-        Gf2eType[] gf2eTypes = new Gf2eType[]{Gf2eType.NTL, Gf2eType.RINGS};
         int[] ls = new int[]{1, 2, 3, 4, 39, 40, 41, 128, 256};
-        for (Gf2eType type : gf2eTypes) {
+        for (Gf2eType type : Gf2eType.values()) {
             // add each l
             for (int l : ls) {
                 configurations.add(new Object[]{
@@ -56,15 +71,6 @@ public class BytesRingTest {
                     Gf2eFactory.createInstance(EnvType.STANDARD, type, l),
                 });
             }
-        }
-
-        // GF2K
-        Gf2kType[] gf2kTypes = new Gf2kType[]{Gf2kType.COMBINED, Gf2kType.NTL, Gf2kType.BC, Gf2kType.RINGS};
-        for (Gf2kType type : gf2kTypes) {
-            configurations.add(new Object[]{
-                Gf2kType.class.getSimpleName() + " (" + type.name() + ")",
-                Gf2kFactory.createInstance(EnvType.STANDARD, type),
-            });
         }
 
         return configurations;

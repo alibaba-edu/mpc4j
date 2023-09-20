@@ -5,40 +5,40 @@ import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
 /**
- * BSP-COT发送方接口。
+ * Batched single-point COT sender.
  *
  * @author Weiran Liu
  * @date 2022/02/03
  */
 public interface BspCotSender extends TwoPartyPto {
     /**
-     * 初始化协议。
+     * Inits the protocol.
      *
-     * @param delta       关联值Δ。
-     * @param maxBatchNum 最大批处理数量。
-     * @param maxNum      最大数量。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param delta       Δ.
+     * @param maxBatchNum max batch num.
+     * @param maxEachNum  max num for each SSP-COT.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(byte[] delta, int maxBatchNum, int maxNum) throws MpcAbortException;
+    void init(byte[] delta, int maxBatchNum, int maxEachNum) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Executes the protocol.
      *
-     * @param batchNum 批处理数量。
-     * @param num      数量。
-     * @return 发送方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param batchNum batch num.
+     * @param eachNum  num for each SSP-COT.
+     * @return sender output.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    BspCotSenderOutput send(int batchNum, int num) throws MpcAbortException;
+    BspCotSenderOutput send(int batchNum, int eachNum) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Executes the protocol.
      *
-     * @param batchNum        批处理数量。
-     * @param num             数量。
-     * @param preSenderOutput 预计算发送方输出。
-     * @return 发送方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param batchNum        batch num.
+     * @param eachNum         num for each SSP-COT.
+     * @param preSenderOutput pre-computed COT sender output.
+     * @return sender output.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    BspCotSenderOutput send(int batchNum, int num, CotSenderOutput preSenderOutput) throws MpcAbortException;
+    BspCotSenderOutput send(int batchNum, int eachNum, CotSenderOutput preSenderOutput) throws MpcAbortException;
 }

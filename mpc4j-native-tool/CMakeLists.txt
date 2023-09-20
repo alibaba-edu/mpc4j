@@ -257,6 +257,7 @@ add_library(
         ntl_poly/ntl_zp.cpp
         gf2k/edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k.cpp
         gf2e/edu_alibaba_mpc4j_common_tool_galoisfield_gf2e_NtlNativeGf2e.cpp
+        gf64/edu_alibaba_mpc4j_common_tool_galoisfield_gf64_NtlGf64.cpp
         ntl_poly/ntl_zp64.cpp
         ntl_poly/edu_alibaba_mpc4j_common_tool_polynomial_zp64_NtlZp64Poly.cpp
         ecc_mcl/mcl_ecc.cpp

@@ -35,12 +35,16 @@ public abstract class AbstractKwPirServer extends AbstractTwoPartyPto implements
      * bot element bytebuffer
      */
     protected ByteBuffer botElementByteBuffer;
+    /**
+     * max retrieval size
+     */
+    protected int maxRetrievalSize;
 
     protected AbstractKwPirServer(PtoDesc ptoDesc, Rpc serverRpc, Party clientParty, KwPirConfig config) {
         super(ptoDesc, serverRpc, clientParty, config);
     }
 
-    protected void setInitInput(Map<ByteBuffer, ByteBuffer> keywordLabelMap, int labelByteLength) {
+    protected void setInitInput(Map<ByteBuffer, ByteBuffer> keywordLabelMap, int maxRetrievalSize, int labelByteLength) {
         MathPreconditions.checkPositive("labelByteLength", labelByteLength);
         this.labelByteLength = labelByteLength;
         byte[] botElementByteArray = new byte[CommonConstants.STATS_BYTE_LENGTH];
@@ -56,6 +60,8 @@ public abstract class AbstractKwPirServer extends AbstractTwoPartyPto implements
             Preconditions.checkArgument(!item.equals(botElementByteBuffer), "xi must not equal ⊥");
             keywordList.add(item);
         }
+        MathPreconditions.checkPositive("maxRetrievalSize", maxRetrievalSize);
+        this.maxRetrievalSize = maxRetrievalSize;
         initState();
     }
 

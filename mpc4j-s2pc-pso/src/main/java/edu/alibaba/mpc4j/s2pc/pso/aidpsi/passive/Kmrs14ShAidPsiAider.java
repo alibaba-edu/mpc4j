@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * KMRS14 semi-honest PSI aider.
@@ -57,10 +58,14 @@ public class Kmrs14ShAidPsiAider extends AbstractAidPsiAider {
 
         stopWatch.start();
         // aider computes the intersection and returns it to all the parties
-        Set<ByteBuffer> serverPrpElementSet = serverPrpElementPayload.stream()
+        Stream<byte[]> serverPrpElementStream = serverPrpElementPayload.stream();
+        serverPrpElementStream = parallel ? serverPrpElementStream.parallel() : serverPrpElementStream;
+        Set<ByteBuffer> serverPrpElementSet = serverPrpElementStream
             .map(ByteBuffer::wrap)
             .collect(Collectors.toSet());
-        List<byte[]> intersectionPrpPayload = clientPrpElementPayload.stream()
+        Stream<byte[]> clientPrpElementStream = clientPrpElementPayload.stream();
+        clientPrpElementStream = parallel ? clientPrpElementStream.parallel() : clientPrpElementStream;
+        List<byte[]> intersectionPrpPayload = clientPrpElementStream
             .map(ByteBuffer::wrap)
             .filter(serverPrpElementSet::contains)
             .map(ByteBuffer::array)

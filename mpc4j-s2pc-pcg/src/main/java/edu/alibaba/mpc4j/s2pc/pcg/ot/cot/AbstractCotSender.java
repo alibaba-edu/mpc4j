@@ -32,8 +32,8 @@ public abstract class AbstractCotSender extends AbstractTwoPartyPto implements C
      */
     protected int num;
 
-    public AbstractCotSender(PtoDesc ptoDesc, Rpc ownRpc, Party otherParty, CotConfig config) {
-        super(ptoDesc, ownRpc, otherParty, config);
+    public AbstractCotSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, CotConfig config) {
+        super(ptoDesc, senderRpc, receiverParty, config);
         this.config = config;
     }
 

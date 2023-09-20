@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp;
 
-import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.BatchPcgOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.sp.SpDpprfSenderOutput;
 
 import java.util.Arrays;
@@ -11,7 +11,7 @@ import java.util.Arrays;
  * @author Weiran Liu
  * @date 2022/12/21
  */
-public class BpDpprfSenderOutput implements PcgPartyOutput {
+public class BpDpprfSenderOutput implements BatchPcgOutput {
     /**
      * α upper bound
      */
@@ -60,7 +60,7 @@ public class BpDpprfSenderOutput implements PcgPartyOutput {
     }
 
     @Override
-    public int getNum() {
+    public int getBatchNum() {
         return senderOutputs.length;
     }
 

@@ -28,7 +28,25 @@ class Cmg21KwPirNativeUtils {
      * @param coeffModulusBits  coeffs modulus bits.
      * @return encryption params.
      */
-    static native List<byte[]> genEncryptionParameters(int polyModulusDegree, long plainModulus, int[] coeffModulusBits);
+    static native byte[] genEncryptionParameters(int polyModulusDegree, long plainModulus, int[] coeffModulusBits);
+
+    /**
+     * generate keys.
+     *
+     * @param encryptionParams encryption params.
+     * @return key pair.
+     */
+    static native List<byte[]> keyGen(byte[] encryptionParams);
+
+    /**
+     * preprocess database.
+     *
+     * @param encryptionParameters encryption parameters.
+     * @param coeffs               coefficients.
+     * @param psLowDegree          Paterson-Stockmeyer low degree.
+     * @return plaintext in NTT form.
+     */
+    static native List<byte[]> preprocessDatabase(byte[] encryptionParameters, long[][] coeffs, int psLowDegree);
 
     /**
      * check the validity of encryption params.
@@ -72,7 +90,7 @@ class Cmg21KwPirNativeUtils {
      * @return encrypted matches.
      */
     static native byte[] optComputeMatches(byte[] encryptionParams, byte[] publicKey, byte[] relinKeys,
-                                           long[][] plaintextPolys, List<byte[]> ciphertextPolys, int psLowDegree);
+                                           List<byte[]> plaintextPolys, List<byte[]> ciphertextPolys, int psLowDegree);
 
     /**
      * naive method compute matches.
@@ -83,7 +101,7 @@ class Cmg21KwPirNativeUtils {
      * @param ciphertextPolys  ciphertexts.
      * @return encrypted matches.
      */
-    static native byte[] naiveComputeMatches(byte[] encryptionParams, byte[] publicKey, long[][] plaintextPolys,
+    static native byte[] naiveComputeMatches(byte[] encryptionParams, byte[] publicKey, List<byte[]> plaintextPolys,
                                              List<byte[]> ciphertextPolys);
 
     /**

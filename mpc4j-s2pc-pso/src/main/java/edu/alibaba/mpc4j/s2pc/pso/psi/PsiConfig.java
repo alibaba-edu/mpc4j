@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi;
 
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory.PsiType;
 
 /**
  * PSI协议配置项。
@@ -10,9 +11,9 @@ import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
  */
 public interface PsiConfig extends MultiPartyPtoConfig {
     /**
-     * 返回协议类型。
+     * Gets protocol type.
      *
-     * @return 协议类型。
+     * @return protocol type.
      */
-    PsiFactory.PsiType getPtoType();
+    PsiType getPtoType();
 }

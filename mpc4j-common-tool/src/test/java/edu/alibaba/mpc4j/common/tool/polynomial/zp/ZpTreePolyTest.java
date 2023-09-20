@@ -68,7 +68,7 @@ public class ZpTreePolyTest {
 
     @Test
     public void testType() {
-        ZpTreePoly zpTreePoly = ZpPolyFactory.createInstance(type, DEFAULT_L);
+        ZpTreePoly zpTreePoly = ZpPolyFactory.createTreeInstance(type, DEFAULT_L);
         Assert.assertEquals(type, zpTreePoly.getType());
     }
 
@@ -76,12 +76,12 @@ public class ZpTreePolyTest {
     public void testIllegalInputs() {
         // 尝试设置l = 0
         try {
-            ZpPolyFactory.createInstance(type, 0);
+            ZpPolyFactory.createTreeInstance(type, 0);
             throw new IllegalStateException("ERROR: successfully create ZpTreePoly with l = 0");
         } catch (AssertionError ignored) {
 
         }
-        ZpTreePoly zpTreePoly = ZpPolyFactory.createInstance(type, DEFAULT_L);
+        ZpTreePoly zpTreePoly = ZpPolyFactory.createTreeInstance(type, DEFAULT_L);
         BigInteger p = zpTreePoly.getPrime();
         // 尝试对数量不匹配的点插值
         try {
@@ -159,7 +159,7 @@ public class ZpTreePolyTest {
 
     @Test
     public void testOneInterpolation() {
-        ZpTreePoly zpTreePoly = ZpPolyFactory.createInstance(type, DEFAULT_L);
+        ZpTreePoly zpTreePoly = ZpPolyFactory.createTreeInstance(type, DEFAULT_L);
         BigInteger p = zpTreePoly.getPrime();
         int pointNum = 1;
         BigInteger[] xArray = IntStream.range(0, pointNum)
@@ -184,7 +184,7 @@ public class ZpTreePolyTest {
     }
 
     private void testConstantInterpolation(int l) {
-        ZpTreePoly zpTreePoly = ZpPolyFactory.createInstance(type, l);
+        ZpTreePoly zpTreePoly = ZpPolyFactory.createTreeInstance(type, l);
         BigInteger[] xArray = IntStream.range(0, DEFAULT_NUM)
             .mapToObj(BigInteger::valueOf)
             .toArray(BigInteger[]::new);
@@ -212,7 +212,7 @@ public class ZpTreePolyTest {
     }
 
     private void testRandomInterpolation(int l) {
-        ZpTreePoly zpTreePoly = ZpPolyFactory.createInstance(type, l);
+        ZpTreePoly zpTreePoly = ZpPolyFactory.createTreeInstance(type, l);
         BigInteger p = zpTreePoly.getPrime();
         BigInteger[] xArray = IntStream.range(0, DEFAULT_NUM)
             .mapToObj(index -> BigIntegerUtils.randomNonNegative(p, SECURE_RANDOM))

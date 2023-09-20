@@ -26,18 +26,18 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_single_vectorize
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_index_single_vectorizedpir_Mr23SingleIndexPirNativeUtils
  * Method:    preprocessDatabase
- * Signature: ([B[[JI)Ljava/util/List;
+ * Signature: ([B[[J)Ljava/util/List;
  */
 JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_single_vectorizedpir_Mr23SingleIndexPirNativeUtils_preprocessDatabase
-  (JNIEnv *, jclass, jbyteArray, jobjectArray, jint);
+  (JNIEnv *, jclass, jbyteArray, jobjectArray);
 
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_index_single_vectorizedpir_Mr23SingleIndexPirNativeUtils
  * Method:    generateQuery
- * Signature: ([B[B[B[II)Ljava/util/List;
+ * Signature: ([B[B[B[I)Ljava/util/List;
  */
 JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_single_vectorizedpir_Mr23SingleIndexPirNativeUtils_generateQuery
-  (JNIEnv *, jclass, jbyteArray, jbyteArray, jbyteArray, jintArray, jint);
+  (JNIEnv *, jclass, jbyteArray, jbyteArray, jbyteArray, jintArray);
 
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_index_single_vectorizedpir_Mr23SingleIndexPirNativeUtils

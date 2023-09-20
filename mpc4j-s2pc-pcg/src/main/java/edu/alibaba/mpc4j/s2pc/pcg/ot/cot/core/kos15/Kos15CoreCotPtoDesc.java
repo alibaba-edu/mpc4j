@@ -28,10 +28,6 @@ class Kos15CoreCotPtoDesc implements PtoDesc {
      */
     enum PtoStep {
         /**
-         * 发送方发送随机预言密钥
-         */
-        SENDER_SEND_RANDOM_ORACLE_KEY,
-        /**
          * 接收方发送矩阵
          */
         RECEIVER_SEND_MATRIX,
@@ -39,6 +35,10 @@ class Kos15CoreCotPtoDesc implements PtoDesc {
          * 接收方发送验证信息
          */
         RECEIVER_SEND_CHECK,
+        /**
+         * 发送方发送随机采样元素
+         */
+        SENDER_SEND_CHI_POLYNOMIAL,
     }
 
     /**

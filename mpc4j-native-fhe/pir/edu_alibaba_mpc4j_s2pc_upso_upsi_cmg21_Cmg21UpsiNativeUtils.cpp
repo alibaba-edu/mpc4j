@@ -232,6 +232,12 @@ jlongArray JNICALL Java_edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUt
     Decryptor decryptor(context, secret_key);
     uint32_t slot_count = encoder.slot_count();
     Ciphertext response = deserialize_ciphertext(env, response_bytes, context);
+    int32_t noise_budget = decryptor.invariant_noise_budget(response);
+    jclass exception = env->FindClass("java/lang/Exception");
+    if (noise_budget == 0) {
+        env->ThrowNew(exception, "noise budget is 0.");
+        return nullptr;
+    }
     Plaintext decrypted;
     vector<uint64_t> dec_vec(slot_count);
     decryptor.decrypt(response, decrypted);

@@ -85,7 +85,7 @@ public class ZpPolyFactory {
      * @param l    有限域比特长度。
      * @return 二叉树多项式插值实例。
      */
-    public static ZpTreePoly createInstance(ZpTreePolyType type, int l) {
+    public static ZpTreePoly createTreeInstance(ZpTreePolyType type, int l) {
         switch (type) {
             case RINGS_TREE:
                 return new RingsZpTreePoly(l);

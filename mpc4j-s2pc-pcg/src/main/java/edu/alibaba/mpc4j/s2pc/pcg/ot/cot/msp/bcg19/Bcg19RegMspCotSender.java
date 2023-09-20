@@ -12,29 +12,25 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.SspCotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp.SspCotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.AbstractMspCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSenderOutput;
 
 /**
- * BCG19-REG-MSP-COT协议发送方。
+ * BCG19-REG-MSP-COT sender.
  *
  * @author Weiran Liu
  * @date 2022/01/25
  */
 public class Bcg19RegMspCotSender extends AbstractMspCotSender {
     /**
-     * BSP-COT协议发送方
+     * BSP-COT sender
      */
     private final BspCotSender bspCotSender;
     /**
-     * 预计算发送方输出
+     * pre-computed COT sender output
      */
     private CotSenderOutput cotSenderOutput;
-    /**
-     * BSP-COT协议发送方输出
-     */
-    private BspCotSenderOutput bspCotSenderOutput;
 
     public Bcg19RegMspCotSender(Rpc senderRpc, Party receiverParty, Bcg19RegMspCotConfig config) {
         super(Bcg19RegMspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -48,7 +44,7 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 原本应该设置为maxN / maxT，但此值不与T成正比，最后考虑直接设置为maxN
+        // In theory, maxEachNum = maxN / maxT, but for larger T, maxN / maxT can be small. So we set maxEachNum = maxN
         bspCotSender.init(delta, maxT, maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -75,7 +71,8 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // 执行t次2选1-单点批处理COT，每一个的选择范围是n/t
+        // execute BSP-COT with batchNum = t, eachNum = num / t.
+        BspCotSenderOutput bspCotSenderOutput;
         if (cotSenderOutput == null) {
             bspCotSenderOutput = bspCotSender.send(t, (int) Math.ceil((double) num / t));
         } else {
@@ -83,13 +80,12 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
             cotSenderOutput = null;
         }
         stopWatch.stop();
-        long bspcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long bspTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 2, bspcotTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, bspTime);
 
         stopWatch.start();
-        // 计算输出结果
-        MspCotSenderOutput senderOutput = generateSenderOutput();
+        MspCotSenderOutput senderOutput = generateSenderOutput(bspCotSenderOutput);
         stopWatch.stop();
         long outputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -99,20 +95,20 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
         return senderOutput;
     }
 
-    private MspCotSenderOutput generateSenderOutput() {
+    private MspCotSenderOutput generateSenderOutput(BspCotSenderOutput bspCotSenderOutput) {
         byte[][] r0Array = IntStream.range(0, t)
             .mapToObj(i -> {
-                // 需要转换为long计算，否则n和t比较大时会溢出
+                // we need to first compute num / t then multiply i, since i * num may be greater than Integer.MAX_VALUE
+                // due to the rounding problem, here we must convert to long then divide
                 int lowerBound = (int) (i * (long) num / t);
                 int upperBound = (int) ((i + 1) * (long) num / t);
-                SspCotSenderOutput spcotSenderOutput = bspCotSenderOutput.get(i);
+                SspCotSenderOutput eachSenderOutput = bspCotSenderOutput.get(i);
                 return IntStream.range(0, upperBound - lowerBound)
-                    .mapToObj(spcotSenderOutput::getR0)
+                    .mapToObj(eachSenderOutput::getR0)
                     .toArray(byte[][]::new);
             })
             .flatMap(Arrays::stream)
             .toArray(byte[][]::new);
-        bspCotSenderOutput = null;
         return MspCotSenderOutput.create(delta, r0Array);
     }
 }

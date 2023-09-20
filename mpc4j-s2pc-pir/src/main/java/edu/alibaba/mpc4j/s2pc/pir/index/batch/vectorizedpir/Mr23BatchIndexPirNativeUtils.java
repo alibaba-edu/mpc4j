@@ -15,15 +15,6 @@ class Mr23BatchIndexPirNativeUtils {
     }
 
     /**
-     * generate encryption parameters.
-     *
-     * @param polyModulusDegree     poly modulus degree.
-     * @param plainModulusBitLength plain modulus bit length.
-     * @return encryption parameters.
-     */
-    static native byte[] generateEncryptionParams(int polyModulusDegree, int plainModulusBitLength);
-
-    /**
      * key generations.
      *
      * @param encryptionParameters encryption parameters.
@@ -36,10 +27,9 @@ class Mr23BatchIndexPirNativeUtils {
      *
      * @param encryptionParameters encryption parameters.
      * @param coeffs               coefficients.
-     * @param totalSize            total plaintext size.
      * @return plaintext in NTT form.
      */
-    static native List<byte[]> preprocessDatabase(byte[] encryptionParameters, long[][] coeffs, int totalSize);
+    static native List<byte[]> preprocessDatabase(byte[] encryptionParameters, long[][] coeffs);
 
     /**
      * generate encrypted query.
@@ -53,7 +43,6 @@ class Mr23BatchIndexPirNativeUtils {
     static native List<byte[]> generateQuery(byte[] encryptionParameters, byte[] publicKey, byte[] secretKey,
                                              long[][] queries);
 
-
     /**
      * generate response.
      *
@@ -64,10 +53,13 @@ class Mr23BatchIndexPirNativeUtils {
      * @param relinKeys             relinearization keys.
      * @param galoisKeys            Galois keys.
      * @param firstTwoDimensionSize first two dimension size.
+     * @param thirdDimensionSize    third dimension size.
+     * @param partitionSize         partition size.
      * @return response.
      */
-    static native byte[] generateReply(byte[] encryptionParameters, List<byte[]> queryList, List<byte[]> dbPlaintexts,
-                                       byte[] publicKey, byte[] relinKeys, byte[] galoisKeys, int firstTwoDimensionSize);
+    static native List<byte[]> generateReply(byte[] encryptionParameters, List<byte[]> queryList, List<byte[]> dbPlaintexts,
+                                             byte[] publicKey, byte[] relinKeys, byte[] galoisKeys, int firstTwoDimensionSize,
+                                             int thirdDimensionSize, int partitionSize);
 
     /**
      * decrypt reply.
@@ -78,15 +70,4 @@ class Mr23BatchIndexPirNativeUtils {
      * @return retrieval result.
      */
     static native long[] decryptReply(byte[] encryptionParameters, byte[] secretKey, byte[] response);
-
-    /**
-     * merge responses.
-     *
-     * @param encryptionParameters encryption parameters.
-     * @param galoisKey            Galois keys.
-     * @param responses            responses.
-     * @param g                    vectorized batch PIR params.
-     * @return merged reponse.
-     */
-    static native byte[] mergeResponse(byte[] encryptionParameters, byte[] galoisKey, List<byte[]> responses, int g);
 }

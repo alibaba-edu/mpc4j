@@ -59,6 +59,7 @@ public class Mr23SingleIndexPirServer extends AbstractSingleIndexPirServer {
 
     @Override
     public void init(SingleIndexPirParams indexPirParams, NaiveDatabase database) throws MpcAbortException {
+        setInitInput(database);
         assert (indexPirParams instanceof Mr23SingleIndexPirParams);
         params = (Mr23SingleIndexPirParams) indexPirParams;
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -83,7 +84,8 @@ public class Mr23SingleIndexPirServer extends AbstractSingleIndexPirServer {
 
     @Override
     public void init(NaiveDatabase database) throws MpcAbortException {
-        params = Mr23SingleIndexPirParams.DEFAULT_PARAMS;
+        setInitInput(database);
+        setDefaultParams();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         // receive public keys
@@ -131,9 +133,7 @@ public class Mr23SingleIndexPirServer extends AbstractSingleIndexPirServer {
     }
 
     @Override
-    public List<byte[]> generateResponse(List<byte[]> clientQueryPayload, List<byte[][]> encodedDatabase)
-        throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(clientQueryPayload.size() == params.getDimension());
+    public List<byte[]> generateResponse(List<byte[]> clientQueryPayload, List<byte[][]> encodedDatabase) {
         IntStream intStream = IntStream.range(0, partitionSize);
         intStream = parallel ? intStream.parallel() : intStream;
         return intStream
@@ -144,9 +144,19 @@ public class Mr23SingleIndexPirServer extends AbstractSingleIndexPirServer {
                 publicKey,
                 relinKeys,
                 galoisKeys,
-                params.getFirstTwoDimensionSize())
+                params.firstTwoDimensionSize)
             )
             .collect(toCollection(ArrayList::new));
+    }
+
+    @Override
+    public List<byte[]> generateResponse(List<byte[]> clientQuery) throws MpcAbortException {
+        return generateResponse(clientQuery, encodedDatabase);
+    }
+
+    @Override
+    public int getQuerySize() {
+        return params.getDimension();
     }
 
     /**
@@ -156,36 +166,40 @@ public class Mr23SingleIndexPirServer extends AbstractSingleIndexPirServer {
      * @return BFV plaintexts in NTT form.
      */
     private byte[][] preprocessDatabase(int partitionIndex) {
-        long[] items = new long[num];
-        IntStream.range(0, num)
-            .forEach(i -> items[i] = IntUtils.fixedByteArrayToNonNegInt(databases[partitionIndex].getBytesData(i)));
-        int dimLength = params.getFirstTwoDimensionSize();
-        int size = CommonUtils.getUnitNum(num, dimLength);
+        long[] items = IntStream.range(0, num)
+            .mapToLong(i -> IntUtils.fixedByteArrayToNonNegInt(databases[partitionIndex].getBytesData(i)))
+            .toArray();
+        int roundedNum = (int) (Math.pow(params.firstTwoDimensionSize, 2) * params.thirdDimensionSize);
+        int size = CommonUtils.getUnitNum(roundedNum, params.firstTwoDimensionSize);
         long[][] coeffs = new long[size][params.getPolyModulusDegree()];
-        int length = dimLength;
-        int groupBinSize = (params.getPolyModulusDegree() / 2) / params.getFirstTwoDimensionSize();
-        for (int i = 0; i < size; i++) {
-            long[] temp = new long[params.getPolyModulusDegree()];
-            if (i == (size - 1)) {
-                length = num - dimLength * i;
+        for (int i = 0; i < roundedNum; i++) {
+            int plaintextIndex = i / params.firstTwoDimensionSize;
+            int slot = (i * params.gap) % params.rowSize;
+            if (i < num) {
+                coeffs[plaintextIndex][slot] = items[i];
+            } else {
+                coeffs[plaintextIndex][slot] = secureRandom.nextInt(1 << params.getPlainModulusBitLength());
             }
-            for (int j = 0; j < length; j++) {
-                temp[j * groupBinSize] = items[i * dimLength + j];
-            }
-            coeffs[i] = PirUtils.plaintextRotate(temp, (i % dimLength) * groupBinSize);
         }
-        return Mr23SingleIndexPirNativeUtils
-            .preprocessDatabase(params.getEncryptionParams(), coeffs, params.getFirstTwoDimensionSize())
+        for (int i = 0; i < size; i += params.firstTwoDimensionSize) {
+            for (int j = 0; j < params.firstTwoDimensionSize; j++) {
+                coeffs[i + j] = PirUtils.plaintextRotate(coeffs[i + j], j * params.gap);
+            }
+        }
+        return Mr23SingleIndexPirNativeUtils.preprocessDatabase(params.getEncryptionParams(), coeffs)
             .toArray(new byte[0][]);
     }
 
     @Override
     public List<byte[][]> serverSetup(NaiveDatabase database) {
-        int maxPartitionBitLength = params.getPlainModulusBitLength();
-        setInitInput(database, database.getL(), maxPartitionBitLength);
+        params.calculateDimensions(database.rows());
+        int maxPartitionBitLength = params.getPlainModulusBitLength() - 1;
+        partitionBitLength = Math.min(maxPartitionBitLength, database.getL());
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        databases = database.partitionZl(partitionBitLength);
+        partitionSize = databases.length;
         assert params.getDimension() == 3;
-        int product =
-            params.getFirstTwoDimensionSize() * params.getFirstTwoDimensionSize() * params.getThirdDimensionSize();
+        int product = (int) (Math.pow(params.firstTwoDimensionSize, 2) * params.thirdDimensionSize);
         assert product >= num;
         // encode database
         IntStream intStream = IntStream.range(0, partitionSize);
@@ -195,12 +209,14 @@ public class Mr23SingleIndexPirServer extends AbstractSingleIndexPirServer {
 
     @Override
     public void setPublicKey(List<byte[]> clientPublicKeysPayload) throws MpcAbortException {
-        if (params == null) {
-            params = Mr23SingleIndexPirParams.DEFAULT_PARAMS;
-        }
         MpcAbortPreconditions.checkArgument(clientPublicKeysPayload.size() == 3);
         publicKey = clientPublicKeysPayload.remove(0);
         relinKeys = clientPublicKeysPayload.remove(0);
         galoisKeys = clientPublicKeysPayload.remove(0);
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Mr23SingleIndexPirParams.DEFAULT_PARAMS;
     }
 }

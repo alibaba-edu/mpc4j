@@ -57,6 +57,7 @@ public class Mcr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(SingleIndexPirParams indexPirParams, int serverElementSize, int elementBitLength) {
+        setInitInput(serverElementSize, elementBitLength);
         assert (indexPirParams instanceof Mcr21SingleIndexPirParams);
         params = (Mcr21SingleIndexPirParams) indexPirParams;
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -78,7 +79,8 @@ public class Mcr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(int serverElementSize, int elementBitLength) {
-        params = Mcr21SingleIndexPirParams.DEFAULT_PARAMS;
+        setInitInput(serverElementSize, elementBitLength);
+        setDefaultParams();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
@@ -133,15 +135,14 @@ public class Mcr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public List<byte[]> clientSetup(int serverElementSize, int elementBitLength) {
-        if (params == null) {
-            params = Mcr21SingleIndexPirParams.DEFAULT_PARAMS;
-        }
         int maxPartitionBitLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength();
-        setInitInput(serverElementSize, elementBitLength, maxPartitionBitLength);
+        partitionBitLength = Math.min(maxPartitionBitLength, elementBitLength);
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        partitionSize = CommonUtils.getUnitNum(elementBitLength, partitionBitLength);
         elementSizeOfPlaintext = PirUtils.elementSizeOfPlaintext(
             partitionByteLength, params.getPolyModulusDegree(), params.getPlainModulusBitLength()
         );
-        int plaintextSize = CommonUtils.getUnitNum(num, elementSizeOfPlaintext);
+        int plaintextSize = CommonUtils.getUnitNum(serverElementSize, elementSizeOfPlaintext);
         dimensionSize = PirUtils.computeDimensionLength(
             plaintextSize, params.getFirstDimensionSize(), params.SUBSEQUENT_DIMENSION_SIZE
         );
@@ -160,6 +161,11 @@ public class Mcr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public byte[] decodeResponse(List<byte[]> response, int index) throws MpcAbortException {
+        return decodeResponse(response, index, elementBitLength);
+    }
+
+    @Override
+    public byte[] decodeResponse(List<byte[]> response, int index, int elementBitLength) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(response.size() == partitionSize);
         ZlDatabase[] databases = new ZlDatabase[partitionSize];
         IntStream intStream = IntStream.range(0, partitionSize);
@@ -175,6 +181,11 @@ public class Mcr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
             databases[partitionIndex] = ZlDatabase.create(partitionBitLength, new byte[][]{partitionBytes});
         });
         return NaiveDatabase.createFromZl(elementBitLength, databases).getBytesData(0);
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Mcr21SingleIndexPirParams.DEFAULT_PARAMS;
     }
 
     /**

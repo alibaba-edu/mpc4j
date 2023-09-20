@@ -4,10 +4,10 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
 import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
-import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.AbstractSingleIndexPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.SingleIndexPirParams;
 
@@ -46,10 +46,6 @@ public class Mr23SingleIndexPirClient extends AbstractSingleIndexPirClient {
      * offset
      */
     private int offset;
-    /**
-     * dimension size
-     */
-    private int[] dimensionSize;
 
     public Mr23SingleIndexPirClient(Rpc clientRpc, Party serverParty, Mr23SingleIndexPirConfig config) {
         super(getInstance(), clientRpc, serverParty, config);
@@ -57,6 +53,7 @@ public class Mr23SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(SingleIndexPirParams indexPirParams, int serverElementSize, int elementBitLength) {
+        setInitInput(serverElementSize, elementBitLength);
         assert (indexPirParams instanceof Mr23SingleIndexPirParams);
         params = (Mr23SingleIndexPirParams) indexPirParams;
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -79,7 +76,8 @@ public class Mr23SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(int serverElementSize, int elementBitLength) {
-        params = Mr23SingleIndexPirParams.DEFAULT_PARAMS;
+        setInitInput(serverElementSize, elementBitLength);
+        setDefaultParams();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
@@ -135,58 +133,61 @@ public class Mr23SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public List<byte[]> generateQuery(int index) {
-        int[] temp = PirUtils.computeIndices(index, dimensionSize);
-        int[] permutedIndices = IntStream.range(0, params.getDimension())
-            .map(i -> temp[params.getDimension() - 1 - i])
-            .toArray();
-        int[] indices = new int[params.getDimension()];
+        int[] slotPositions = new int[params.getDimension()];
+        slotPositions[2] = (int) (index / Math.pow(params.firstTwoDimensionSize, 2));
+        slotPositions[1] = (int)
+            ((index - slotPositions[2] * Math.pow(params.firstTwoDimensionSize, 2)) / params.firstTwoDimensionSize);
+        slotPositions[0] = index % params.firstTwoDimensionSize;
+        int currentSlot = 0;
         for (int i = 0; i < params.getDimension(); i++) {
-            indices[i] = permutedIndices[i];
-            for (int j = 0; j < i; j++) {
-                indices[i] = (indices[i] + permutedIndices[j]) % params.getFirstTwoDimensionSize();
-            }
+            int slotPosition = slotPositions[i];
+            int rotatedSlot = (currentSlot + slotPosition) % params.firstTwoDimensionSize;
+            slotPositions[i] = (rotatedSlot * params.gap) % params.rowSize;
+            currentSlot = (currentSlot + slotPosition) % params.firstTwoDimensionSize;
         }
-        offset = indices[params.getDimension() - 1];
+        offset = currentSlot;
         return Mr23SingleIndexPirNativeUtils.generateQuery(
-            params.getEncryptionParams(), publicKey, secretKey, indices, params.getFirstTwoDimensionSize()
+            params.getEncryptionParams(), publicKey, secretKey, slotPositions
         );
     }
 
     @Override
     public List<byte[]> clientSetup(int serverElementSize, int elementBitLength) {
-        if (params == null) {
-            params = Mr23SingleIndexPirParams.DEFAULT_PARAMS;
-        }
-        int maxPartitionBitLength = params.getPlainModulusBitLength();
-        setInitInput(serverElementSize, elementBitLength, maxPartitionBitLength);
+        params.calculateDimensions(serverElementSize);
+        int maxPartitionBitLength = params.getPlainModulusBitLength() - 1;
+        partitionBitLength = Math.min(maxPartitionBitLength, elementBitLength);
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        partitionSize = CommonUtils.getUnitNum(elementBitLength, partitionBitLength);
         assert params.getDimension() == 3;
-        int product =
-            params.getFirstTwoDimensionSize() * params.getFirstTwoDimensionSize() * params.getThirdDimensionSize();
+        int product = (int) (Math.pow(params.firstTwoDimensionSize, 2) * params.thirdDimensionSize);
         assert product >= num;
-        dimensionSize = new int[] {
-            params.getThirdDimensionSize(), params.getFirstTwoDimensionSize(), params.getFirstTwoDimensionSize()
-        };
         return generateKeyPair();
     }
 
     @Override
     public byte[] decodeResponse(List<byte[]> response, int index) throws MpcAbortException {
+        return decodeResponse(response, index, elementBitLength);
+    }
+
+    @Override
+    public byte[] decodeResponse(List<byte[]> response, int index, int elementBitLength) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(response.size() == partitionSize);
         ZlDatabase[] databases = new ZlDatabase[partitionSize];
         IntStream intStream = IntStream.range(0, partitionSize);
         intStream = parallel ? intStream.parallel() : intStream;
         intStream.forEach(partitionIndex -> {
             long coeffs = Mr23SingleIndexPirNativeUtils.decryptReply(
-                params.getEncryptionParams(),
-                secretKey,
-                response.get(partitionIndex),
-                offset,
-                params.getFirstTwoDimensionSize()
+                params.getEncryptionParams(), secretKey, response.get(partitionIndex), offset, params.gap
             );
             byte[] bytes = IntUtils.nonNegIntToFixedByteArray(Math.toIntExact(coeffs), partitionByteLength);
             databases[partitionIndex] = ZlDatabase.create(partitionBitLength, new byte[][]{bytes});
         });
         return NaiveDatabase.createFromZl(elementBitLength, databases).getBytesData(0);
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Mr23SingleIndexPirParams.DEFAULT_PARAMS;
     }
 
     /**

@@ -16,13 +16,14 @@ public interface KwPirServer extends TwoPartyPto {
     /**
      * server initializes protocol.
      *
-     * @param kwPirParams     keyword PIR params.
-     * @param keyValueMap     key value map.
-     * @param valueByteLength value byte length.
+     * @param kwPirParams      keyword PIR params.
+     * @param keyValueMap      key value map.
+     * @param maxRetrievalSize max retrieval size.
+     * @param valueByteLength  value byte length.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> keyValueMap, int valueByteLength)
-        throws MpcAbortException;
+    void init(KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> keyValueMap, int maxRetrievalSize,
+              int valueByteLength) throws MpcAbortException;
 
     /**
      * server initializes protocol.

@@ -1,13 +1,14 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import org.bouncycastle.util.encoders.Hex;
+import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
 
 import java.util.Arrays;
 
 /**
- * Single single-point GF2K VOLE receiver output.
+ * Single single-point GF2K-VOLE receiver output.
  * <p>
  * The receiver gets (Δ, q) with t = q + Δ · x, where x and t are owned by the sender, and there are only one non-zero x.
  * </p>
@@ -15,7 +16,7 @@ import java.util.Arrays;
  * @author Weiran Liu
  * @date 2023/3/16
  */
-public class Gf2kSspVoleReceiverOutput {
+public class Gf2kSspVoleReceiverOutput implements PcgPartyOutput {
     /**
      * Δ
      */
@@ -33,18 +34,16 @@ public class Gf2kSspVoleReceiverOutput {
      * @return a sender output.
      */
     public static Gf2kSspVoleReceiverOutput create(byte[] delta, byte[][] qArray) {
-        Gf2kSspVoleReceiverOutput senderOutput = new Gf2kSspVoleReceiverOutput();
-        assert delta.length == CommonConstants.BLOCK_BYTE_LENGTH
-            : "Δ must be in range [0, 2^" + CommonConstants.BLOCK_BIT_LENGTH + "): " + Hex.toHexString(delta);
-        senderOutput.delta = BytesUtils.clone(delta);
-        assert qArray.length > 0 : "# of r0 must be greater than 0: " + qArray.length;
-        senderOutput.qs = Arrays.stream(qArray)
-            .peek(q -> {
-                assert q.length == CommonConstants.BLOCK_BYTE_LENGTH
-                    : "q must be in range [0, 2^" + CommonConstants.BLOCK_BIT_LENGTH + "): " + Hex.toHexString(q);
-            })
+        Gf2kSspVoleReceiverOutput receiverOutput = new Gf2kSspVoleReceiverOutput();
+        MathPreconditions.checkEqual("delta.length", "λ in bytes", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
+        receiverOutput.delta = BytesUtils.clone(delta);
+        MathPreconditions.checkPositive("qArray.length", qArray.length);
+        receiverOutput.qs = Arrays.stream(qArray)
+            .peek(q ->
+                MathPreconditions.checkEqual("q.length", "λ in bytes", delta.length, CommonConstants.BLOCK_BYTE_LENGTH)
+            )
             .toArray(byte[][]::new);
-        return senderOutput;
+        return receiverOutput;
     }
 
     /**
@@ -64,20 +63,16 @@ public class Gf2kSspVoleReceiverOutput {
     }
 
     /**
-     * Gets q.
+     * Gets the assigned q.
      *
-     * @param index the index.
-     * @return q.
+     * @param index index.
+     * @return the assigned q.
      */
     public byte[] getQ(int index) {
         return qs[index];
     }
 
-    /**
-     * Gets num.
-     *
-     * @return num.
-     */
+    @Override
     public int getNum() {
         return qs.length;
     }

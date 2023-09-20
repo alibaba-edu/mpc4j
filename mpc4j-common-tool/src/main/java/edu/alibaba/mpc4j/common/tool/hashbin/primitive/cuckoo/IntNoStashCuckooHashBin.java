@@ -15,6 +15,20 @@ public interface IntNoStashCuckooHashBin {
     IntCuckooHashBinFactory.IntCuckooHashBinType getType();
 
     /**
+     * Gets number of hashes.
+     *
+     * @return number of hashes.
+     */
+    int getHashNum();
+
+    /**
+     * Gets hash keys.
+     *
+     * @return hash keys.
+     */
+    byte[][] getHashKeys();
+
+    /**
      * 返回支持的最大元素数量。
      *
      * @return 支持的最大元素数量。

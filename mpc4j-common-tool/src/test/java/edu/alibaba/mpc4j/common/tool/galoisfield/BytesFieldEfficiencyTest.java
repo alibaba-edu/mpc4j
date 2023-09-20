@@ -7,6 +7,9 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64Factory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64Factory.Gf64Type;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -46,12 +49,23 @@ public class BytesFieldEfficiencyTest {
     private static final StopWatch STOP_WATCH = new StopWatch();
 
     @Test
+    public void testGf64Efficiency() {
+        LOGGER.info("{}\t{}\t{}\t{}\t{}",
+            "                type", "         l", "   mul(us)", "   div(us)", "   inv(us)"
+        );
+        for (Gf64Type type : Gf64Type.values()) {
+            Gf64 gf64 = Gf64Factory.createInstance(EnvType.STANDARD, type);
+            testEfficiency(gf64);
+        }
+        LOGGER.info(StringUtils.rightPad("", 60, '-'));
+    }
+
+    @Test
     public void testGf2kEfficiency() {
         LOGGER.info("{}\t{}\t{}\t{}\t{}",
             "                type", "         l", "   mul(us)", "   div(us)", "   inv(us)"
         );
-        Gf2kType[] gf2kTypes = new Gf2kType[]{Gf2kType.COMBINED, Gf2kType.NTL, Gf2kType.BC, Gf2kType.RINGS};
-        for (Gf2kType type : gf2kTypes) {
+        for (Gf2kType type : Gf2kType.values()) {
             Gf2k gf2k = Gf2kFactory.createInstance(EnvType.STANDARD, type);
             testEfficiency(gf2k);
         }
@@ -63,10 +77,9 @@ public class BytesFieldEfficiencyTest {
         LOGGER.info("{}\t{}\t{}\t{}\t{}",
             "                type", "         l", "   mul(us)", "   div(us)", "   inv(us)"
         );
-        Gf2eType[] gf2eTypes = new Gf2eType[]{Gf2eType.NTL, Gf2eType.RINGS};
         int[] ls = new int[]{1, 2, 3, 4, 40, 62, 128};
         for (int l : ls) {
-            for (Gf2eType type : gf2eTypes) {
+            for (Gf2eType type : Gf2eType.values()) {
                 Gf2e gf2e = Gf2eFactory.createInstance(EnvType.STANDARD, type, l);
                 testEfficiency(gf2e);
             }
@@ -85,6 +98,7 @@ public class BytesFieldEfficiencyTest {
         });
         // warmup
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
+            bytesField.mul(arrayA[index], arrayB[index]);
             bytesField.div(arrayA[index], arrayB[index]);
             bytesField.inv(arrayA[index]);
         });

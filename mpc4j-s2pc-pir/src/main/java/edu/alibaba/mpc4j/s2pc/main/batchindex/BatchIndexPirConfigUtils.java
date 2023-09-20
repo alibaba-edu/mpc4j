@@ -24,7 +24,7 @@ public class BatchIndexPirConfigUtils {
 
     public static BatchIndexPirConfig createBatchIndexPirConfig(Properties properties) {
         // read protocol type
-        String batchIndexPirTypeString = PropertiesUtils.readString(properties, "batch_pir_pto_name");
+        String batchIndexPirTypeString = PropertiesUtils.readString(properties, "pto_name");
         BatchIndexPirType pirType = BatchIndexPirType.valueOf(batchIndexPirTypeString);
         switch (pirType) {
             case PSI_PIR:

@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pjc.main.pid;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.bkms20.Bkms20ByteEccPidConfig;
 import edu.alibaba.mpc4j.s2pc.pso.main.psu.PsuConfigUtils;
@@ -78,7 +78,7 @@ public class PidConfigUtils {
     private static Gmr21SloppyPidConfig createGmr21SloppyPidConfig(Properties properties) {
         PsuConfig psuConfig = PsuConfigUtils.createPsuConfig(properties);
         return new Gmr21SloppyPidConfig.Builder()
-            .setSloppyOkvsType(OkvsType.MEGA_BIN)
+            .setSloppyOkvsType(Gf2eDokvsType.MEGA_BIN)
             .setPsuConfig(psuConfig)
             .build();
     }

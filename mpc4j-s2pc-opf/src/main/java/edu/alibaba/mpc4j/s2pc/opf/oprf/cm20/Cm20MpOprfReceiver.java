@@ -17,6 +17,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.cm20.Cm20MpOprfPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.AbstractMpOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -24,7 +25,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 
 import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -32,14 +33,14 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * CM20-MPOPRF接收方。
+ * CM20-MP-OPRF receiver.
  *
  * @author Weiran Liu
  * @date 2022/03/03
  */
 public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
     /**
-     * 核COT协议发送方
+     * core COT sender
      */
     private final CoreCotSender coreCotSender;
     /**
@@ -47,27 +48,27 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
      */
     private final Hash h1;
     /**
-     * 规约批处理数量
+     * n = max(2, batchSize)
      */
     private int n;
     /**
-     * 批处理数量字节长度
+     * n in byte
      */
     private int nByteLength;
     /**
-     * 批处理数量偏移量
+     * n offset
      */
     private int nOffset;
     /**
-     * 编码比特长度（w）
+     * PRF output bit length (w)
      */
     private int w;
     /**
-     * PRF输出字节长度
+     * w in byte
      */
     private int wByteLength;
     /**
-     * PRF输出字节长度偏移量
+     * w offset
      */
     private int wOffset;
     /**
@@ -75,15 +76,15 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
      */
     private Prf f;
     /**
-     * ROT发送方输出
+     * COT sender output
      */
     private CotSenderOutput cotSenderOutput;
     /**
-     * 矩阵A
+     * matrix A, organized by columns
      */
     private byte[][] matrixA;
     /**
-     * 输入编码结果
+     * input encodes
      */
     private int[][] encodes;
 
@@ -100,8 +101,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 计算maxW，初始化COT协议
-        int maxW = Cm20MpOprfUtils.getW(Math.max(maxBatchSize, maxPrfNum));
+        int maxW = Cm20MpOprfPtoDesc.getW(Math.max(maxBatchSize, maxPrfNum));
         byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(delta);
         coreCotSender.init(delta, maxW);
@@ -121,11 +121,9 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         stopWatch.start();
         nByteLength = CommonUtils.getByteLength(n);
         nOffset = nByteLength * Byte.SIZE - n;
-        // 计算w
-        w = Cm20MpOprfUtils.getW(n);
+        w = Cm20MpOprfPtoDesc.getW(n);
         wByteLength = CommonUtils.getByteLength(w);
         wOffset = wByteLength * Byte.SIZE - w;
-        // 执行COT协议
         cotSenderOutput = coreCotSender.send(w);
         stopWatch.stop();
         long cotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -133,17 +131,14 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         logStepInfo(PtoState.PTO_STEP, 1, 4, cotTime, "COT");
 
         stopWatch.start();
-        // 初始化伪随机函数密钥
         byte[] prfKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        // 先发送生成的伪随机函数密钥
-        List<byte[]> prfKeyPayload = new LinkedList<>();
-        prfKeyPayload.add(prfKey);
+        // we send the key first so that the sender can compute something ahead of time
+        List<byte[]> prfKeyPayload = Collections.singletonList(prfKey);
         DataPacketHeader prfKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), Cm20MpOprfPtoDesc.PtoStep.RECEIVER_SEND_KEY.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_KEY.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(prfKeyHeader, prfKeyPayload));
-        // 再初始化自己的伪随机函数
         f = PrfFactory.createInstance(envType, w * Integer.BYTES);
         f.setKey(prfKey);
         stopWatch.stop();
@@ -152,11 +147,11 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         logStepInfo(PtoState.PTO_STEP, 2, 4, prfKeyTime, "Receiver sends PRF Key");
 
         stopWatch.start();
-        // 生成关联矩阵B = A ⊕ D
+        // generate B = A ⊕ D
         List<byte[]> deltaPayload = generateDeltaPayload();
         cotSenderOutput = null;
         DataPacketHeader deltaHeader = new DataPacketHeader(
-            encodeTaskId, ptoDesc.getPtoId(), Cm20MpOprfPtoDesc.PtoStep.RECEIVER_SEND_DELTA.ordinal(), extraInfo,
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.RECEIVER_SEND_DELTA.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(deltaHeader, deltaPayload));
@@ -166,7 +161,6 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         logStepInfo(PtoState.PTO_STEP, 3, 4, deltaTime, "Receiver generates Δ");
 
         stopWatch.start();
-        // 生成OPRF
         MpOprfReceiverOutput receiverOutput = generateOprfOutput();
         matrixA = null;
         encodes = null;
@@ -182,7 +176,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
     @Override
     protected void setPtoInput(byte[][] inputs) {
         super.setPtoInput(inputs);
-        // 如果batchSize = 1，则实际执行时的n要设置成大于1，否则无法成功编码
+        // n = max(2, batchSize)
         n = batchSize == 1 ? 2 : batchSize;
     }
 
@@ -192,9 +186,8 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         inputStream = parallel ? inputStream.parallel() : inputStream;
         encodes = inputStream
             .map(input -> {
-                // 计算哈希值
                 byte[] extendPrf = f.getBytes(h1.digestToBytes(input));
-                // F: {0, 1}^λ × {0, 1}^{2λ} → [m]^w，这里使用不安全转换函数来提高效率。
+                // F: {0, 1}^λ × {0, 1}^{2λ} → [m]^w
                 int[] encode = IntUtils.byteArrayToIntArray(extendPrf);
                 for (int index = 0; index < w; index++) {
                     encode[index] = Math.abs(encode[index] % n) + nOffset;
@@ -213,7 +206,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
             BinaryUtils.setBoolean(dColumn, positions, false);
             return dColumn;
         }).toArray(byte[][]::new);
-        // 生成Δ
+        // generate Δ
         Prg prg = PrgFactory.createInstance(envType, nByteLength);
         matrixA = new byte[w][nByteLength];
         IntStream deltaIntStream = IntStream.range(0, w);
@@ -236,11 +229,11 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         inputIndexStream = parallel ? inputIndexStream.parallel() : inputIndexStream;
         byte[][] prfs = inputIndexStream
             .mapToObj(index -> {
-                // 当输出长度比较短的时候，直接用boolean[]会更快一些
-                boolean[] binaryPrf = new boolean[wByteLength * Byte.SIZE];
-                IntStream.range(0, w).forEach(wIndex -> binaryPrf[wIndex + wOffset] =
-                    BinaryUtils.getBoolean(matrixA[wIndex], encodes[index][wIndex]));
-                return BinaryUtils.binaryToByteArray(binaryPrf);
+                byte[] prf = new byte[wByteLength];
+                IntStream.range(0, w).forEach(wIndex -> BinaryUtils.setBoolean(
+                    prf, wIndex + wOffset, BinaryUtils.getBoolean(matrixA[wIndex], encodes[index][wIndex])
+                ));
+                return prf;
             })
             .toArray(byte[][]::new);
         return new MpOprfReceiverOutput(wByteLength, inputs, prfs);

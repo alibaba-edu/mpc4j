@@ -47,9 +47,9 @@ public class Kos16ZpCoreVoleSender extends AbstractZpCoreVoleSender {
      */
     private BigInteger[][] t0;
 
-    public Kos16ZpCoreVoleSender(Rpc receiverRpc, Party senderParty, Kos16ZpCoreVoleConfig config) {
-        super(Kos16ZpCoreVolePtoDesc.getInstance(), receiverRpc, senderParty, config);
-        baseOtSender = BaseOtFactory.createSender(receiverRpc, senderParty, config.getBaseOtConfig());
+    public Kos16ZpCoreVoleSender(Rpc senderRpc, Party receiverParty, Kos16ZpCoreVoleConfig config) {
+        super(Kos16ZpCoreVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
+        baseOtSender = BaseOtFactory.createSender(senderRpc, receiverParty, config.getBaseOtConfig());
         addSubPtos(baseOtSender);
     }
 

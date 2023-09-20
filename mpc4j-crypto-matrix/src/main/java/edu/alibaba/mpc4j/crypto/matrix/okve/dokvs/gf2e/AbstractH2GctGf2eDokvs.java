@@ -13,18 +13,17 @@ import edu.alibaba.mpc4j.crypto.matrix.okve.cuckootable.H2CuckooTable;
 import edu.alibaba.mpc4j.crypto.matrix.okve.cuckootable.H2CuckooTableTcFinder;
 import edu.alibaba.mpc4j.crypto.matrix.okve.tool.BinaryLinearSolver;
 import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.security.SecureRandom;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * abstract DOKVS using garbled cuckoo table with 2 hash functions. The non-doubly construction is from the following
@@ -51,11 +50,11 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
     /**
      * number of sparse hashes
      */
-    private static final int SPARSE_HASH_NUM = 2;
+    static final int SPARSE_HASH_NUM = 2;
     /**
-     * number of total hashes
+     * number of hash keys
      */
-    static int TOTAL_HASH_NUM = SPARSE_HASH_NUM + 1;
+    static int HASH_KEY_NUM = 2;
     /**
      * left m, i.e., sparse part.
      */
@@ -65,13 +64,9 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
      */
     private final int rm;
     /**
-     * H1: {0, 1}^* -> [0, lm)
+     * Hi: {0, 1}^* -> [0, lm)
      */
-    private final Prf h1;
-    /**
-     * H2: {0, 1}^* -> [0, lm)
-     */
-    private final Prf h2;
+    private final Prf hl;
     /**
      * Hr: {0, 1}^* -> {0, 1}^rm
      */
@@ -87,33 +82,26 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
     /**
      * key -> h1
      */
-    private TObjectIntMap<T> dataH1Map;
+    private Map<T, Integer> dataH1Map;
     /**
      * key -> h2
      */
-    private TObjectIntMap<T> dataH2Map;
+    private Map<T, Integer> dataH2Map;
     /**
      * key -> hr
      */
     private Map<T, boolean[]> dataHrMap;
 
     AbstractH2GctGf2eDokvs(EnvType envType, int n, int lm, int rm, int l,
-                           byte[][] keys, CuckooTableTcFinder<T> tcFinder) {
-        this(envType, n, lm, rm, l, keys, tcFinder, new SecureRandom());
-    }
-
-    AbstractH2GctGf2eDokvs(EnvType envType, int n, int lm, int rm, int l,
                            byte[][] keys, CuckooTableTcFinder<T> tcFinder, SecureRandom secureRandom) {
-        super(n, lm + rm, l);
-        MathPreconditions.checkEqual("keys.length", "hash_num", keys.length, TOTAL_HASH_NUM);
+        super(n, lm + rm, l, secureRandom);
+        MathPreconditions.checkEqual("keys.length", "hash_num", keys.length, HASH_KEY_NUM);
         this.lm = lm;
         this.rm = rm;
-        h1 = PrfFactory.createInstance(envType, Integer.BYTES);
-        h1.setKey(keys[0]);
-        h2 = PrfFactory.createInstance(envType, Integer.BYTES);
-        h2.setKey(keys[1]);
+        hl = PrfFactory.createInstance(envType, Integer.BYTES * SPARSE_HASH_NUM);
+        hl.setKey(keys[0]);
         hr = PrfFactory.createInstance(envType, rm / Byte.SIZE);
-        hr.setKey(keys[2]);
+        hr.setKey(keys[1]);
         this.tcFinder = tcFinder;
         linearSolver = new BinaryLinearSolver(l, secureRandom);
     }
@@ -126,15 +114,13 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
     @Override
     public int[] sparsePositions(T key) {
         byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        int[] sparsePositions = new int[SPARSE_HASH_NUM];
-        // h1
-        sparsePositions[0] = h1.getInteger(0, keyBytes, lm);
-        // h2 != h1
-        int h2Index = 0;
-        do {
-            sparsePositions[1] = h2.getInteger(h2Index, keyBytes, lm);
-            h2Index++;
-        } while (sparsePositions[1] == sparsePositions[0]);
+        int[] sparsePositions = IntUtils.byteArrayToIntArray(hl.getBytes(keyBytes));
+        // we now use the method provided in VOLE-PSI to get distinct hash indexes
+        sparsePositions[0] = Math.abs(sparsePositions[0] % lm);
+        sparsePositions[1] = Math.abs(sparsePositions[1] % (lm - 1));
+        if (sparsePositions[1] >= sparsePositions[0]) {
+            sparsePositions[1]++;
+        }
         return sparsePositions;
     }
 
@@ -150,14 +136,14 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
     }
 
     @Override
-    public int maxDensePositionNum() {
+    public int densePositionRange() {
         return rm;
     }
 
     @Override
     public byte[] decode(byte[][] storage, T key) {
+        // here we do not verify bit length for each storage, otherwise decode would require O(n) computation.
         MathPreconditions.checkEqual("storage.length", "m", storage.length, m);
-        assert storage.length == m;
         assert (tcFinder instanceof CuckooTableSingletonTcFinder || tcFinder instanceof H2CuckooTableTcFinder);
         int[] sparsePositions = sparsePositions(key);
         boolean[] binaryDensePositions = binaryDensePositions(key);
@@ -181,16 +167,18 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
         // construct maps
         Set<T> keySet = keyValueMap.keySet();
         int keySize = keySet.size();
-        dataH1Map = new TObjectIntHashMap<>(keySize);
-        dataH2Map = new TObjectIntHashMap<>(keySize);
-        dataHrMap = new HashMap<>(keySize);
-        for (T key : keySet) {
+        dataH1Map = new ConcurrentHashMap<>(keySize);
+        dataH2Map = new ConcurrentHashMap<>(keySize);
+        dataHrMap = new ConcurrentHashMap<>(keySize);
+        Stream<T> keyStream = keySet.stream();
+        keyStream = parallelEncode ? keyStream.parallel() : keyStream;
+        keyStream.forEach(key -> {
             int[] sparsePositions = sparsePositions(key);
             boolean[] binaryDensePositions = binaryDensePositions(key);
             dataH1Map.put(key, sparsePositions[0]);
             dataH2Map.put(key, sparsePositions[1]);
             dataHrMap.put(key, binaryDensePositions);
-        }
+        });
         // generate cuckoo table with 2 hash functions
         H2CuckooTable<T> h2CuckooTable = generateCuckooTable(keyValueMap);
         // find two-core graph
@@ -308,7 +296,10 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
         // M˜* (P_{m' + C_1}, ..., P_{m' + C_{d˜})^T = (v'_{R_1}, ..., v'_{R_{d˜})^T.
         byte[][] vectorX = new byte[d + rm][];
         LinearSolver.SystemInfo systemInfo = linearSolver.fullSolve(tildePrimeMatrix, d + rm, vectorY, vectorX);
-        assert systemInfo.equals(LinearSolver.SystemInfo.Consistent);
+        // Although d˜ > d + rm, we cannot find solution with a negligible probability since the matrix is not full rank
+        if (!systemInfo.equals(LinearSolver.SystemInfo.Consistent)) {
+            throw new ArithmeticException("There is no solution, the linear system does not have full rank");
+        }
         // update the result into the storage
         for (int iRow = 0; iRow < d; iRow++) {
             storage[coreVertexArray[iRow]] = BytesUtils.clone(vectorX[iRow]);
@@ -350,7 +341,10 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
                 rowIndex++;
             }
             LinearSolver.SystemInfo systemInfo = linearSolver.freeSolve(matrixM, m, vectorY, vectorX);
-            assert systemInfo.equals(LinearSolver.SystemInfo.Consistent);
+            // Although d˜ > d + rm, we cannot find solution with a negligible probability since the matrix is not full rank
+            if (!systemInfo.equals(LinearSolver.SystemInfo.Consistent)) {
+                throw new ArithmeticException("There is no solution, the linear system does not have full rank");
+            }
             byte[][] storage = new byte[m][];
             // set left part
             for (int vertex : coreVertexSet.toArray()) {

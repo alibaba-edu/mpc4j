@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.matrix.okve.tool;
 
-import cc.redberry.rings.linear.LinearSolver;
+import cc.redberry.rings.linear.LinearSolver.SystemInfo;
 import cc.redberry.rings.util.ArraysUtil;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
@@ -65,22 +65,14 @@ public class BinaryLinearSolver {
      * @return the information for row Echelon form.
      */
     private RowEchelonFormInfo rowEchelonForm(byte[][] lhs, int nColumns, byte[][] rhs) {
-        MathPreconditions.checkEqual("lhs.length", "rhs.length", lhs.length, rhs.length);
         int nRows = lhs.length;
         TIntSet maxLisColumns = new TIntHashSet(nRows);
         // do not need to solve when nRows = 0
         if (nRows == 0) {
-            MathPreconditions.checkEqual("m", "0", nColumns, 0);
             return new RowEchelonFormInfo(0, maxLisColumns);
         }
-        // m >= n
-        MathPreconditions.checkGreaterOrEqual("m", nColumns, nRows);
         int nByteColumns = CommonUtils.getByteLength(nColumns);
         int nOffsetColumns = nByteColumns * Byte.SIZE - nColumns;
-        // verify each row has at most nColumns valid bits
-        Arrays.stream(lhs).forEach(row ->
-            Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(row, nByteColumns, nColumns))
-        );
         // number of zero columns, here we consider if some columns are 0.
         int nZeroColumns = 0;
         for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
@@ -130,7 +122,7 @@ public class BinaryLinearSolver {
      * @param result   where to place the result.
      * @return system information (inconsistent or consistent).
      */
-    public LinearSolver.SystemInfo freeSolve(byte[][] lhs, int nColumns, byte[][] rhs, byte[][] result) {
+    public SystemInfo freeSolve(byte[][] lhs, int nColumns, byte[][] rhs, byte[][] result) {
         return solve(lhs, nColumns, rhs, result, false);
     }
 
@@ -145,11 +137,11 @@ public class BinaryLinearSolver {
      * @param result   where to place the result.
      * @return system information (inconsistent or consistent).
      */
-    public LinearSolver.SystemInfo fullSolve(byte[][] lhs, int nColumns, byte[][] rhs, byte[][] result) {
+    public SystemInfo fullSolve(byte[][] lhs, int nColumns, byte[][] rhs, byte[][] result) {
         return solve(lhs, nColumns, rhs, result, true);
     }
 
-    private LinearSolver.SystemInfo solve(byte[][] lhs, int nColumns, byte[][] rhs, byte[][] result, boolean isFull) {
+    private SystemInfo solve(byte[][] lhs, int nColumns, byte[][] rhs, byte[][] result, boolean isFull) {
         MathPreconditions.checkEqual("lhs.length", "rhs.length", lhs.length, rhs.length);
         int nRows = lhs.length;
         // m >= n
@@ -175,7 +167,7 @@ public class BinaryLinearSolver {
             return Consistent;
         }
         if (nRows == 1) {
-            return solveOneRow(lhs, nColumns, rhs, result, isFull);
+            return solveOneRow(lhs[0], rhs[0], result, isFull);
         }
         // if n > 1, transform lsh to Echelon form.
         RowEchelonFormInfo info = rowEchelonForm(lhs, nColumns, rhs);
@@ -183,7 +175,7 @@ public class BinaryLinearSolver {
         Arrays.fill(result, createZero());
         // for determined system, free and full solution are the same
         if (nUnderDetermined == 0 && nColumns == nRows) {
-            for (int i = nColumns - 1; i >= 0; i--) {
+            for (int i = nRows - 1; i >= 0; i--) {
                 byte[] sum = createZero();
                 for (int j = i + 1; j < nColumns; j++) {
                     if (BinaryUtils.getBoolean(lhs[i], nOffsetColumns + j)) {
@@ -194,23 +186,23 @@ public class BinaryLinearSolver {
             }
             return Consistent;
         }
-        return solveUnderDeterminedRows(lhs, nColumns, rhs, result, info, isFull);
+        return solveUnderDeterminedRows(lhs, rhs, result, info, isFull);
     }
 
-    private LinearSolver.SystemInfo solveOneRow(
-        byte[][] lhs, int nColumns, byte[][] rhs, byte[][] result, boolean isFull) {
+    private SystemInfo solveOneRow(byte[] lh0, byte[] rh0, byte[][] result, boolean isFull) {
+        int nColumns = result.length;
         int nByteColumns = CommonUtils.getByteLength(nColumns);
         int nOffsetColumns = nByteColumns * Byte.SIZE - nColumns;
         // when n = 1, then the linear system only has one equation a[0]x[0] + ... + a[m]x[m] = b[0]
         if (nColumns == 1) {
             // if m = 1, then we directly compute a[0]x[0] = b[0]
-            if (BinaryUtils.getBoolean(lhs[0], nOffsetColumns)) {
+            if (BinaryUtils.getBoolean(lh0, nOffsetColumns)) {
                 // if a[0] = 1, then x[0] = b[0] / a[0] = b[0]
-                result[0] = BytesUtils.clone(rhs[0]);
+                result[0] = BytesUtils.clone(rh0);
                 return Consistent;
             } else {
                 // if a[0] = 0, it can be solved only if b[0] = 0
-                if (isZero(rhs[0])) {
+                if (isZero(rh0)) {
                     result[0] = isFull ? createNonZeroRandom() : createZero();
                     return Consistent;
                 } else {
@@ -223,14 +215,14 @@ public class BinaryLinearSolver {
         // find the first non-zero a[t]
         int firstNonZeroColumn = -1;
         for (int i = 0; i < nColumns; ++i) {
-            if (BinaryUtils.getBoolean(lhs[0], nOffsetColumns + i)) {
+            if (BinaryUtils.getBoolean(lh0, nOffsetColumns + i)) {
                 firstNonZeroColumn = i;
                 break;
             }
         }
         // if all a[i] = 0, we have solution only if b[0] = 0
         if (firstNonZeroColumn == -1) {
-            if (isZero(rhs[0])) {
+            if (isZero(rh0)) {
                 if (isFull) {
                     // full random variables
                     for (int i = 0; i < nColumns; i++) {
@@ -252,21 +244,22 @@ public class BinaryLinearSolver {
                     }
                     // for i != t, set random x[i]
                     result[i] = createNonZeroRandom();
-                    if (BinaryUtils.getBoolean(lhs[0], nOffsetColumns + i)) {
+                    if (BinaryUtils.getBoolean(lh0, nOffsetColumns + i)) {
                         // a[i] != 0, b[0] = b[0] - a[i] * x[i] = b[0] - x[i].
-                        subi(rhs[0], result[i]);
+                        subi(rh0, result[i]);
                     }
                 }
             }
             // set x[t] = b[0] / a[0] = b[0]
-            result[firstNonZeroColumn] = BytesUtils.clone(rhs[0]);
+            result[firstNonZeroColumn] = BytesUtils.clone(rh0);
             return Consistent;
         }
     }
 
-    private LinearSolver.SystemInfo solveUnderDeterminedRows(byte[][] lhs, int nColumns, byte[][] rhs, byte[][] result,
-                                                             RowEchelonFormInfo info, boolean isFull) {
+    private SystemInfo solveUnderDeterminedRows(byte[][] lhs, byte[][] rhs, byte[][] result,
+                                                RowEchelonFormInfo info, boolean isFull) {
         int nRows = lhs.length;
+        int nColumns = result.length;
         int nByteColumns = CommonUtils.getByteLength(nColumns);
         int nOffsetColumns = nByteColumns * Byte.SIZE - nColumns;
         // back substitution in case of under-determined system

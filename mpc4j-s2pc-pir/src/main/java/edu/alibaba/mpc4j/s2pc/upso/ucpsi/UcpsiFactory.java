@@ -9,6 +9,12 @@ import edu.alibaba.mpc4j.s2pc.upso.ucpsi.cgs22.Cgs22UcpsiServer;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.psty19.Psty19UcpsiClient;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.psty19.Psty19UcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.psty19.Psty19UcpsiServer;
+import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.peqt.Sj23PeqtUcpsiClient;
+import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.peqt.Sj23PeqtUcpsiConfig;
+import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.peqt.Sj23PeqtUcpsiServer;
+import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.pdsm.Sj23PdsmUcpsiClient;
+import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.pdsm.Sj23PdsmUcpsiConfig;
+import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.pdsm.Sj23PdsmUcpsiServer;
 
 /**
  * Unbalanced Circuit PSI factory.
@@ -36,6 +42,14 @@ public class UcpsiFactory implements PtoFactory {
          * CGS22 circuit PSI
          */
         CGS22,
+        /**
+         * SJ23 circuit PSI construction 1
+         */
+        SJ23_PEQT,
+        /**
+         * SJ23 circuit PSI construction 2
+         */
+        SJ23_PDSM,
     }
 
     /**
@@ -53,6 +67,10 @@ public class UcpsiFactory implements PtoFactory {
                 return new Psty19UcpsiServer<>(serverRpc, clientParty, (Psty19UcpsiConfig) config);
             case CGS22:
                 return new Cgs22UcpsiServer<>(serverRpc, clientParty, (Cgs22UcpsiConfig) config);
+            case SJ23_PEQT:
+                return new Sj23PeqtUcpsiServer<>(serverRpc, clientParty, (Sj23PeqtUcpsiConfig) config);
+            case SJ23_PDSM:
+                return new Sj23PdsmUcpsiServer<>(serverRpc, clientParty, (Sj23PdsmUcpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + UcpsiType.class.getSimpleName() + ": " + type.name());
         }
@@ -73,6 +91,10 @@ public class UcpsiFactory implements PtoFactory {
                 return new Psty19UcpsiClient<>(clientRpc, serverParty, (Psty19UcpsiConfig) config);
             case CGS22:
                 return new Cgs22UcpsiClient<>(clientRpc, serverParty, (Cgs22UcpsiConfig) config);
+            case SJ23_PEQT:
+                return new Sj23PeqtUcpsiClient<>(clientRpc, serverParty, (Sj23PeqtUcpsiConfig) config);
+            case SJ23_PDSM:
+                return new Sj23PdsmUcpsiClient<>(clientRpc, serverParty, (Sj23PdsmUcpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + UcpsiType.class.getSimpleName() + ": " + type.name());
         }

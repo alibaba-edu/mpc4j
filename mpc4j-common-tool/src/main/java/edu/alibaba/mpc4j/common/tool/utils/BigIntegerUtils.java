@@ -81,10 +81,8 @@ public class BigIntegerUtils {
      * @param data data.
      * @return clone data.
      */
-    public static BigInteger[] clone(BigInteger[] data) {
-        BigInteger[] cData = new BigInteger[data.length];
-        System.arraycopy(data, 0, cData, 0, data.length);
-        return cData;
+    public static BigInteger[] clone(final BigInteger[] data) {
+        return Arrays.copyOf(data, data.length);
     }
 
     /**
@@ -93,12 +91,12 @@ public class BigIntegerUtils {
      * @param data data.
      * @return clone data.
      */
-    public static BigInteger[][] clone(BigInteger[][] data) {
-        BigInteger[][] cData = new BigInteger[data.length][];
+    public static BigInteger[][] clone(final BigInteger[][] data) {
+        BigInteger[][] cloneData = new BigInteger[data.length][];
         for (int iRow = 0; iRow < data.length; iRow++) {
-            cData[iRow] = clone(data[iRow]);
+            cloneData[iRow] = clone(data[iRow]);
         }
-        return cData;
+        return cloneData;
     }
 
     /**

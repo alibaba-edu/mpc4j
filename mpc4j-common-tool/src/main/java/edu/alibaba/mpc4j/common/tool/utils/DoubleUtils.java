@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -13,13 +14,6 @@ import java.util.stream.IntStream;
  * @date 2021/12/10
  */
 public class DoubleUtils {
-    /**
-     * 私有构造函数
-     */
-    private DoubleUtils() {
-        // empty
-    }
-
     /**
      * 浮点数默认精度
      */
@@ -44,6 +38,37 @@ public class DoubleUtils {
      * exp(-1)
      */
     public static final double EXP_NEGATIVE_1 = Math.exp(-1.0);
+
+    /**
+     * private constructor.
+     */
+    private DoubleUtils() {
+        // empty
+    }
+
+    /**
+     * Clone the data.
+     *
+     * @param data data.
+     * @return clone data.
+     */
+    public static double[] clone(final double[] data) {
+        return Arrays.copyOf(data, data.length);
+    }
+
+    /**
+     * Clone the data.
+     *
+     * @param data data.
+     * @return clone data.
+     */
+    public static double[][] clone(final double[][] data) {
+        double[][] cloneData = new double[data.length][];
+        for (int iRow = 0; iRow < data.length; iRow++) {
+            cloneData[iRow] = clone(data[iRow]);
+        }
+        return cloneData;
+    }
 
     /**
      * 将{@code double}转换为{@code byte[]}，大端表示。

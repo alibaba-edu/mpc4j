@@ -29,6 +29,10 @@ public class Gf2kFactory {
          */
         NTL,
         /**
+         * JDK
+         */
+        JDK,
+        /**
          * Bouncy Castle
          */
         BC,
@@ -51,6 +55,8 @@ public class Gf2kFactory {
                 return new CombinedGf2k(envType);
             case NTL:
                 return new NtlGf2k(envType);
+            case JDK:
+                return new JdkGf2k(envType);
             case BC:
                 return new BcGf2k(envType);
             case RINGS:

@@ -47,7 +47,6 @@ public class CuckooHashBinEfficiencyTest {
         CuckooHashBinType.NAIVE_4_HASH,
         CuckooHashBinType.NAIVE_5_HASH,
         CuckooHashBinType.NO_STASH_NAIVE,
-        CuckooHashBinType.NO_STASH_DRRT18,
         CuckooHashBinType.NO_STASH_PSZ18_3_HASH,
         CuckooHashBinType.NO_STASH_PSZ18_4_HASH,
         CuckooHashBinType.NO_STASH_PSZ18_5_HASH,

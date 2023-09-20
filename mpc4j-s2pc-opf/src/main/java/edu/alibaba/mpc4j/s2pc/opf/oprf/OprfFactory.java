@@ -11,6 +11,9 @@ import edu.alibaba.mpc4j.s2pc.opf.oprf.fipr05.Fipr05MpOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.fipr05.Fipr05MpOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.fipr05.Fipr05MpOprfSender;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.kkrt16.*;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.rs21.Rs21MpOprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.rs21.Rs21MpOprfReceiver;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.rs21.Rs21MpOprfSender;
 
 /**
  * OPRF factory.
@@ -53,7 +56,7 @@ public class OprfFactory implements PtoFactory {
     }
 
     /**
-     * Creates a OPRF sender.
+     * Creates an OPRF sender.
      *
      * @param senderRpc     the sender RPC.
      * @param receiverParty the receiver party.
@@ -71,13 +74,15 @@ public class OprfFactory implements PtoFactory {
                 return new Kkrt16OptOprfSender(senderRpc, receiverParty, (Kkrt16OptOprfConfig) config);
             case CM20:
                 return new Cm20MpOprfSender(senderRpc, receiverParty, (Cm20MpOprfConfig) config);
+            case RS21:
+                return new Rs21MpOprfSender(senderRpc, receiverParty, (Rs21MpOprfConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + OprfType.class.getSimpleName() + ": " + type.name());
         }
     }
 
     /**
-     * Creates a OPRF receiver.
+     * Creates an OPRF receiver.
      *
      * @param receiverRpc the receiver RPC.
      * @param senderParty the sender party.
@@ -95,6 +100,8 @@ public class OprfFactory implements PtoFactory {
                 return new Kkrt16OptOprfReceiver(receiverRpc, senderParty, (Kkrt16OptOprfConfig) config);
             case CM20:
                 return new Cm20MpOprfReceiver(receiverRpc, senderParty, (Cm20MpOprfConfig) config);
+            case RS21:
+                return new Rs21MpOprfReceiver(receiverRpc, senderParty, (Rs21MpOprfConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + OprfType.class.getSimpleName() + ": " + type.name());
         }
@@ -134,6 +141,7 @@ public class OprfFactory implements PtoFactory {
             case CM20:
                 return new Cm20MpOprfSender(senderRpc, receiverParty, (Cm20MpOprfConfig) config);
             case RS21:
+                return new Rs21MpOprfSender(senderRpc, receiverParty, (Rs21MpOprfConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + OprfType.class.getSimpleName() + ": " + type.name());
         }
@@ -155,6 +163,7 @@ public class OprfFactory implements PtoFactory {
             case CM20:
                 return new Cm20MpOprfReceiver(receiverRpc, senderParty, (Cm20MpOprfConfig) config);
             case RS21:
+                return new Rs21MpOprfReceiver(receiverRpc, senderParty, (Rs21MpOprfConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + OprfType.class.getSimpleName() + ": " + type.name());
         }

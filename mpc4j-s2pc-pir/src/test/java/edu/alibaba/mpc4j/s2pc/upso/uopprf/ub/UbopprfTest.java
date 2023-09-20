@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.upso.uopprf.ub;
 
 import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.UopprfTestUtils;
@@ -57,25 +57,44 @@ public class UbopprfTest extends AbstractTwoPartyPtoTest {
         Collection<Object[]> configurations = new ArrayList<>();
 
         configurations.add(new Object[]{
-            UbopprfType.PIR.name() + "(H3_SINGLETON_GCT)",
-            new PirUbopprfConfig.Builder().setOkvsType(OkvsFactory.OkvsType.H3_SINGLETON_GCT).build(),
+            UbopprfType.PIR.name() + "(" + Gf2eDokvsType.H3_SPARSE_CLUSTER_BLAZE_GCT + ")",
+            new PirUbopprfConfig.Builder().setSparseOkvsType(Gf2eDokvsType.H3_SPARSE_CLUSTER_BLAZE_GCT).build(),
         });
         configurations.add(new Object[]{
-            UbopprfType.OKVS.name() + "(H3_SINGLETON_GCT)",
-            new OkvsUbopprfConfig.Builder().setOkvsType(OkvsFactory.OkvsType.H3_SINGLETON_GCT).build(),
+            UbopprfType.PIR.name() + "(" + Gf2eDokvsType.H3_SINGLETON_GCT + ")",
+            new PirUbopprfConfig.Builder().setSparseOkvsType(Gf2eDokvsType.H3_SINGLETON_GCT).build(),
         });
         configurations.add(new Object[]{
-            UbopprfType.OKVS.name() + "(H2_SINGLETON_GCT)",
-            new OkvsUbopprfConfig.Builder().setOkvsType(OkvsFactory.OkvsType.H2_SINGLETON_GCT).build(),
+            UbopprfType.PIR.name() + "(" + Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT + ")",
+            new PirUbopprfConfig.Builder().setSparseOkvsType(Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT).build(),
         });
         configurations.add(new Object[]{
-            UbopprfType.OKVS.name() + "(GBF)",
-            new OkvsUbopprfConfig.Builder().setOkvsType(OkvsFactory.OkvsType.GBF).build(),
+            UbopprfType.PIR.name() + "(" + Gf2eDokvsType.H2_SINGLETON_GCT + ")",
+            new PirUbopprfConfig.Builder().setSparseOkvsType(Gf2eDokvsType.H2_SINGLETON_GCT).build(),
         });
-        // MegaBin
         configurations.add(new Object[]{
-            UbopprfType.OKVS.name() + "(MegaBin)",
-            new OkvsUbopprfConfig.Builder().setOkvsType(OkvsFactory.OkvsType.MEGA_BIN).build(),
+            UbopprfType.OKVS.name() + "(" + Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT + ")",
+            new OkvsUbopprfConfig.Builder().setOkvsType(Gf2eDokvsType.H3_SPARSE_CLUSTER_BLAZE_GCT).build(),
+        });
+        configurations.add(new Object[]{
+            UbopprfType.OKVS.name() + "(" + Gf2eDokvsType.H3_SPARSE_CLUSTER_BLAZE_GCT + ")",
+            new OkvsUbopprfConfig.Builder().setOkvsType(Gf2eDokvsType.H3_SPARSE_CLUSTER_BLAZE_GCT).build(),
+        });
+        configurations.add(new Object[]{
+            UbopprfType.OKVS.name() + "(" + Gf2eDokvsType.H3_SINGLETON_GCT + ")",
+            new OkvsUbopprfConfig.Builder().setOkvsType(Gf2eDokvsType.H3_SINGLETON_GCT).build(),
+        });
+        configurations.add(new Object[]{
+            UbopprfType.OKVS.name() + "(" + Gf2eDokvsType.H2_SINGLETON_GCT + ")",
+            new OkvsUbopprfConfig.Builder().setOkvsType(Gf2eDokvsType.H2_SINGLETON_GCT).build(),
+        });
+        configurations.add(new Object[]{
+            UbopprfType.OKVS.name() + "(" + Gf2eDokvsType.DISTINCT_GBF + ")",
+            new OkvsUbopprfConfig.Builder().setOkvsType(Gf2eDokvsType.DISTINCT_GBF).build(),
+        });
+        configurations.add(new Object[]{
+            UbopprfType.OKVS.name() + "(" + Gf2eDokvsType.MEGA_BIN + ")",
+            new OkvsUbopprfConfig.Builder().setOkvsType(Gf2eDokvsType.MEGA_BIN).build(),
         });
 
         return configurations;

@@ -45,7 +45,7 @@ public abstract class AbstractPidParty<T> extends AbstractTwoPartyPto implements
         MathPreconditions.checkGreater("maxOwnElementSetSize", maxOwnElementSetSize, 1);
         this.maxOwnElementSetSize = maxOwnElementSetSize;
         MathPreconditions.checkGreater("maxOtherElementSetSize", maxOtherElementSetSize, 1);
-        this.maxOtherElementSetSize = maxOwnElementSetSize;
+        this.maxOtherElementSetSize = maxOtherElementSetSize;
         initState();
     }
 

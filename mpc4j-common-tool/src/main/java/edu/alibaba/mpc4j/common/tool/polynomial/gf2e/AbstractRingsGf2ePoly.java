@@ -15,15 +15,24 @@ import java.util.stream.IntStream;
  * @date 2021/12/26
  */
 abstract class AbstractRingsGf2ePoly extends AbstractGf2ePoly {
+    /**
+     * type
+     */
+    private final Gf2ePolyFactory.Gf2ePolyType type;
 
-    AbstractRingsGf2ePoly(int l) {
+    AbstractRingsGf2ePoly(Gf2ePolyFactory.Gf2ePolyType type, int l) {
         super(l);
+        this.type = type;
+    }
+
+    @Override
+    public Gf2ePolyFactory.Gf2ePolyType getType() {
+        return type;
     }
 
     @Override
     public int coefficientNum(int num) {
-        assert num >= 1 : "# of points must be greater than or equal to 1: " + num;
-        return num;
+        return Gf2ePolyFactory.getCoefficientNum(type, num);
     }
 
     @Override

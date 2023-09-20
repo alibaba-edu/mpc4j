@@ -30,13 +30,13 @@ public class CotOutputTest {
     @Test
     public void testIllegalSenderInputs() {
         // create a sender output with num = 0
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
             CotSenderOutput.create(delta, new byte[0][]);
         });
         // create a sender output with short length Δ
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH - 1];
             SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
@@ -49,7 +49,7 @@ public class CotOutputTest {
             CotSenderOutput.create(delta, r0Array);
         });
         // create a sender output with long length Δ
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH + 1];
             SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
@@ -62,7 +62,7 @@ public class CotOutputTest {
             CotSenderOutput.create(delta, r0Array);
         });
         // create a sender output with short length r0
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
@@ -75,7 +75,7 @@ public class CotOutputTest {
             CotSenderOutput.create(delta, r0Array);
         });
         // create a sender output with long length r0
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
             byte[][] r0Array = IntStream.range(0, MAX_NUM)
@@ -88,7 +88,7 @@ public class CotOutputTest {
             CotSenderOutput.create(delta, r0Array);
         });
         // merge two sender outputs with different Δ
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[] delta0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta0);
             byte[][] r0Array0 = IntStream.range(0, MAX_NUM)
@@ -116,9 +116,11 @@ public class CotOutputTest {
     @Test
     public void testIllegalReceiverOutputs() {
         // create a receiver output with num = 0
-        Assert.assertThrows(AssertionError.class, () -> CotReceiverOutput.create(new boolean[0], new byte[0][]));
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            CotReceiverOutput.create(new boolean[0], new byte[0][])
+        );
         // create a receiver output with mismatched num
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             boolean[] choices = new boolean[MIN_NUM];
             IntStream.range(0, choices.length).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
             byte[][] rbArray = IntStream.range(0, MAX_NUM)
@@ -131,7 +133,7 @@ public class CotOutputTest {
             CotReceiverOutput.create(choices, rbArray);
         });
         // create a receiver output with short length rb
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             boolean[] choices = new boolean[MAX_NUM];
             IntStream.range(0, choices.length).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
             byte[][] rbArray = IntStream.range(0, MAX_NUM)
@@ -144,7 +146,7 @@ public class CotOutputTest {
             CotReceiverOutput.create(choices, rbArray);
         });
         // create a receiver output with long length rb
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             boolean[] choices = new boolean[MAX_NUM];
             IntStream.range(0, choices.length).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
             byte[][] rbArray = IntStream.range(0, MAX_NUM)

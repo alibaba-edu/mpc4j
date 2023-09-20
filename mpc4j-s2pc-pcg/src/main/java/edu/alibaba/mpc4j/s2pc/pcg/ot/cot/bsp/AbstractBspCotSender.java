@@ -13,34 +13,34 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import java.util.Arrays;
 
 /**
- * BSP-COT协议发送方。
+ * abstract BSP-COT sender.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
 public abstract class AbstractBspCotSender extends AbstractTwoPartyPto implements BspCotSender {
     /**
-     * 配置项
+     * config
      */
     private final BspCotConfig config;
     /**
-     * 关联值Δ
+     * Δ
      */
     protected byte[] delta;
     /**
-     * 最大数量
+     * max num for each SSP-COT
      */
-    private int maxNum;
+    private int maxEachNum;
     /**
-     * 最大批处理数量
+     * max batch num
      */
     protected int maxBatchNum;
     /**
-     * 数量
+     * num for each SSP-COT
      */
-    protected int num;
+    protected int eachNum;
     /**
-     * 批处理数量
+     * batch num
      */
     protected int batchNum;
 
@@ -49,31 +49,30 @@ public abstract class AbstractBspCotSender extends AbstractTwoPartyPto implement
         this.config = config;
     }
 
-    protected void setInitInput(byte[] delta, int maxBatchNum, int maxNum) {
+    protected void setInitInput(byte[] delta, int maxBatchNum, int maxEachNum) {
         MathPreconditions.checkEqual("Δ.length", "λ(B)", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        // 拷贝一份
         this.delta = BytesUtils.clone(delta);
-        MathPreconditions.checkPositive("maxNum", maxNum);
-        this.maxNum = maxNum;
+        MathPreconditions.checkPositive("maxEachNum", maxEachNum);
+        this.maxEachNum = maxEachNum;
         MathPreconditions.checkPositive("maxBatchNum", maxBatchNum);
         this.maxBatchNum = maxBatchNum;
         initState();
     }
 
-    protected void setPtoInput(int batchNum, int num) {
+    protected void setPtoInput(int batchNum, int eachNum) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
-        this.num = num;
+        MathPreconditions.checkPositiveInRangeClosed("eachNum", eachNum, maxEachNum);
+        this.eachNum = eachNum;
         MathPreconditions.checkPositiveInRangeClosed("batchNum", batchNum, maxBatchNum);
         this.batchNum = batchNum;
         extraInfo++;
     }
 
-    protected void setPtoInput(int batchNum, int num, CotSenderOutput preSenderOutput) {
-        setPtoInput(batchNum, num);
+    protected void setPtoInput(int batchNum, int eachNum, CotSenderOutput preSenderOutput) {
+        setPtoInput(batchNum, eachNum);
         Preconditions.checkArgument(Arrays.equals(delta, preSenderOutput.getDelta()));
         MathPreconditions.checkGreaterOrEqual(
-            "preCotNum", preSenderOutput.getNum(), BspCotFactory.getPrecomputeNum(config, batchNum, num)
+            "preCotNum", preSenderOutput.getNum(), BspCotFactory.getPrecomputeNum(config, batchNum, eachNum)
         );
     }
 }

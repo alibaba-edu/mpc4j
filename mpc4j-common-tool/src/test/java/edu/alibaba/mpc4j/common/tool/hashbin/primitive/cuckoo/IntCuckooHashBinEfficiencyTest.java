@@ -43,7 +43,6 @@ public class IntCuckooHashBinEfficiencyTest {
 
     private static final IntCuckooHashBinType[] TYPES = new IntCuckooHashBinType[] {
         IntCuckooHashBinType.NO_STASH_NAIVE,
-        IntCuckooHashBinType.NO_STASH_DRRT18,
         IntCuckooHashBinType.NO_STASH_PSZ18_3_HASH,
         IntCuckooHashBinType.NO_STASH_PSZ18_4_HASH,
         IntCuckooHashBinType.NO_STASH_PSZ18_5_HASH,

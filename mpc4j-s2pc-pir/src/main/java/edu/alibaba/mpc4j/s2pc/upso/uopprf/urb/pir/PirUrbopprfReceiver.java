@@ -76,25 +76,6 @@ public class PirUrbopprfReceiver extends AbstractUrbopprfReceiver {
         setInitInput(l, batchSize, pointNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
-        stopWatch.start();
-        // init oprf
-        sqOprfReceiver.init(batchSize);
-        // init batch PIR
-        binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, pointNum);
-        batchIndexPirClient.init(binNum, l, batchSize * d);
-        stopWatch.stop();
-        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
-
-        logPhaseInfo(PtoState.INIT_END);
-    }
-
-    @Override
-    public byte[][][] opprf(byte[][] inputArray) throws MpcAbortException {
-        setPtoInput(inputArray);
-        logPhaseInfo(PtoState.PTO_BEGIN);
-
         // receive garbled hash table keys
         DataPacketHeader garbledTableKeysHeader = new DataPacketHeader(
             encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE_KEYS.ordinal(), extraInfo,
@@ -113,6 +94,25 @@ public class PirUrbopprfReceiver extends AbstractUrbopprfReceiver {
                 return prf;
             })
             .toArray(Prf[]::new);
+        // init oprf
+        sqOprfReceiver.init(batchSize);
+        // init batch PIR
+        binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, pointNum);
+        batchIndexPirClient.init(binNum, l, batchSize * d);
+        stopWatch.stop();
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
+
+        logPhaseInfo(PtoState.INIT_END);
+    }
+
+    @Override
+    public byte[][][] opprf(byte[][] inputArray) throws MpcAbortException {
+        setPtoInput(inputArray);
+        logPhaseInfo(PtoState.PTO_BEGIN);
+
+        stopWatch.start();
         List<Integer> retrievalIndexList = generateRetrievalIndexList();
         Map<Integer, byte[]> garbledTablePayload = batchIndexPirClient.pir(retrievalIndexList);
         stopWatch.stop();

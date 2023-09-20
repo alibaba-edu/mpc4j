@@ -9,22 +9,22 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 
 /**
- * NC-COT协议发送方。
+ * abstract no-choice COT sender.
  *
  * @author Weiran Liu
  * @date 2022/01/26
  */
 public abstract class AbstractNcCotSender extends AbstractTwoPartyPto implements NcCotSender {
     /**
-     * 配置项
+     * config
      */
     private final NcCotConfig config;
     /**
-     * 关联值Δ
+     * Δ
      */
     protected byte[] delta;
     /**
-     * 数量
+     * num
      */
     protected int num;
 
@@ -35,7 +35,6 @@ public abstract class AbstractNcCotSender extends AbstractTwoPartyPto implements
 
     protected void setInitInput(byte[] delta, int num) {
         MathPreconditions.checkEqual("Δ.length", "λ(B)", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        // 拷贝一份
         this.delta = BytesUtils.clone(delta);
         MathPreconditions.checkPositiveInRangeClosed("num", num, config.maxNum());
         this.num = num;

@@ -2,11 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -22,7 +18,6 @@ import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntNoStashCuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.AbstractMspCotReceiver;
@@ -30,50 +25,46 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20.Ywl20UniMspCotPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotReceiverOutput;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 
 /**
- * YWL20-UNI-MSP-COT协议接收方。
+ * YWL20-UNI-MSP-COT receiver.
  *
  * @author Weiran Liu
  * @date 2022/01/24
  */
 public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
     /**
-     * 哈希函数数量
+     * hash num
      */
     private static final int HASH_NUM = IntCuckooHashBinFactory.getHashNum(Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE);
     /**
-     * BSP-COT协议接收方
+     * BSP-COT receiver
      */
     private final BspCotReceiver bspCotReceiver;
     /**
-     * 预计算接收方输出
+     * pre-computed COT receiver output
      */
     private CotReceiverOutput cotReceiverOutput;
     /**
-     * 系数索引值数组
+     * α array
      */
-    private int[] targetArray;
+    private int[] alphaArray;
     /**
-     * 哈希密钥
-     */
-    private byte[][] keys;
-    /**
-     * 布谷鸟哈希桶
+     * cuckoo hash bin
      */
     private IntNoStashCuckooHashBin intNoStashCuckooHashBin;
     /**
-     * 哈希桶
+     * hash bin
      */
     private SimpleIntHashBin intHashBin;
     /**
-     * 索引值位置映射
+     * position maps
      */
-    private ArrayList<Map<Integer, Integer>> positionMaps;
-    /**
-     * BSP-COT协议接收方输出
-     */
-    private BspCotReceiverOutput bspCotReceiverOutput;
+    private ArrayList<TIntIntMap> positionMaps;
 
     public Ywl20UniMspCotReceiver(Rpc senderRpc, Party receiverParty, Ywl20UniMspCotConfig config) {
         super(Ywl20UniMspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -88,7 +79,7 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
 
         stopWatch.start();
         int maxBinNum = IntCuckooHashBinFactory.getBinNum(Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE, maxT);
-        // 原本应该设置为maxBinSize，但此值不与T成正比，最后考虑直接设置为HASH_NUM * maxN
+        // In theory, eachNum = maxBinSize. but for larger T, minSize can be small. So we set maxEachNum = HASH_NUM * maxNum
         bspCotReceiver.init(maxBinNum, HASH_NUM * (maxNum + 1));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -129,6 +120,7 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
 
         stopWatch.start();
         // R sends (sp-extend, |B_j| + 1, p_j) to F_{SPCOT}
+        BspCotReceiverOutput bspCotReceiverOutput;
         if (cotReceiverOutput == null) {
             bspCotReceiverOutput = bspCotReceiver.receive(targetArray, intHashBin.maxBinSize() + 1);
         } else {
@@ -136,13 +128,12 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
             cotReceiverOutput = null;
         }
         stopWatch.stop();
-        long bspcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long bspTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 2, 3, bspcotTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 3, bspTime);
 
         stopWatch.start();
-        // 计算输出结果
-        MspCotReceiverOutput receiverOutput = generateReceiverOutput();
+        MspCotReceiverOutput receiverOutput = generateReceiverOutput(bspCotReceiverOutput);
         stopWatch.stop();
         long outputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -153,35 +144,23 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
     }
 
     private List<byte[]> generateHashKeysPayload() {
-        // 生成稀疏数组
-        Set<Integer> itemSet = new HashSet<>(t);
+        // generate sparse points
+        TIntSet itemSet = new TIntHashSet(t);
         while (itemSet.size() < t) {
             itemSet.add(secureRandom.nextInt(num));
         }
-        targetArray = itemSet.stream().mapToInt(item -> item).toArray();
-        boolean success = false;
-        // 重复插入，直到成功
-        while (!success) {
-            try {
-                keys = CommonUtils.generateRandomKeys(HASH_NUM, secureRandom);
-                intNoStashCuckooHashBin = IntCuckooHashBinFactory.createInstance(
-                    envType, Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE, targetArray.length, keys
-                );
-                // R inserts α_0,...,α_{t − 1} into a Cuckoo hash table T of size m
-                intNoStashCuckooHashBin.insertItems(targetArray);
-                success = true;
-            } catch (ArithmeticException ignored) {
-
-            }
-        }
-        return Arrays.stream(keys).collect(Collectors.toList());
+        alphaArray = itemSet.toArray();
+        intNoStashCuckooHashBin = IntCuckooHashBinFactory.createEnforceInstance(
+            envType, Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE, alphaArray.length, alphaArray, secureRandom
+        );
+        return Arrays.stream(intNoStashCuckooHashBin.getHashKeys()).collect(Collectors.toList());
     }
 
     private int[] generateTargetArray() {
         // R independently builds m buckets {B_j}_{j ∈ [m]} with B_j = {x ∈ [n] | ∃i ∈ [τ]: h_i(x) = j}
         int m = intNoStashCuckooHashBin.binNum();
         // Initialize m empty buckets {B_j}_{j ∈ [m]}.
-        intHashBin = new SimpleIntHashBin(envType, m, num, keys);
+        intHashBin = new SimpleIntHashBin(envType, m, num, intNoStashCuckooHashBin.getHashKeys());
         // For each x ∈ [n], i ∈ [τ], compute j := h_i(x) and add x into bucket B_j.
         int[] xs = IntStream.range(0, num).toArray();
         intHashBin.insertItems(xs);
@@ -194,7 +173,7 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
                     .sorted()
                     .toArray();
                 // Define a function pos_j : B_j → [|Bj|] to map a value into its position in the j-th bucket B_j.
-                Map<Integer, Integer> positionMap = new HashMap<>(bin.length);
+                TIntIntMap positionMap = new TIntIntHashMap(bin.length);
                 for (int position = 0; position < bin.length; position++) {
                     positionMap.put(bin[position], position);
                 }
@@ -216,7 +195,7 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
             .toArray();
     }
 
-    private MspCotReceiverOutput generateReceiverOutput() {
+    private MspCotReceiverOutput generateReceiverOutput(BspCotReceiverOutput bspCotReceiverOutput) {
         // For each x ∈ [n]
         IntStream nIntStream = IntStream.range(0, num);
         nIntStream = parallel ? nIntStream.parallel() : nIntStream;
@@ -233,7 +212,6 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
             .toArray(byte[][]::new);
         intHashBin = null;
         positionMaps = null;
-        bspCotReceiverOutput = null;
-        return MspCotReceiverOutput.create(targetArray, rbArray);
+        return MspCotReceiverOutput.create(alphaArray, rbArray);
     }
 }

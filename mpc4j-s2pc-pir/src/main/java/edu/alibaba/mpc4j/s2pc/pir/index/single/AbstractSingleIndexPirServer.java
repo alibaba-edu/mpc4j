@@ -41,12 +41,8 @@ public abstract class AbstractSingleIndexPirServer extends AbstractTwoPartyPto i
         super(ptoDesc, serverRpc, clientParty, config);
     }
 
-    protected void setInitInput(NaiveDatabase database, int elementBitLength, int maxPartitionBitLength) {
+    protected void setInitInput(NaiveDatabase database) {
         num = database.rows();
-        partitionBitLength = Math.min(maxPartitionBitLength, elementBitLength);
-        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
-        databases = database.partitionZl(partitionBitLength);
-        partitionSize = databases.length;
         initState();
     }
 

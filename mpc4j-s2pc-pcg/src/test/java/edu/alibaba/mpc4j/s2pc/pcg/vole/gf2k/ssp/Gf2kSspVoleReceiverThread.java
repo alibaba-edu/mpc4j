@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleReceiverOutput;
 
 /**
- * Single single-point GF2K VOLE receiver thread.
+ * Single single-point GF2K-VOLE receiver thread.
  *
  * @author Weiran Liu
  * @date 2023/3/16

@@ -5,44 +5,67 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.ywl20.*;
 
 /**
- * BSP-COT协议工厂。
+ * Batched single-point COT factory.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
 public class BspCotFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private BspCotFactory() {
         // empty
     }
 
     /**
-     * 协议类型
+     * protocol type
      */
     public enum BspCotType {
         /**
-         * YWL20半诚实安全协议
+         * YWL20 (semi-honest)
          */
         YWL20_SEMI_HONEST,
         /**
-         * YWL20恶意安全协议
+         * YWL20 (malicious)
          */
         YWL20_MALICIOUS,
     }
 
     /**
-     * 构建发送方。
+     * Gets the pre-computed num.
      *
-     * @param senderRpc     发送方通信接口。
-     * @param receiverParty 接收方信息。
-     * @param config        配置项。
-     * @return 发送方。
+     * @param config   config.
+     * @param batchNum batch num.
+     * @param num      num in each SSP-COT.
+     * @return pre-computed num.
+     */
+    public static int getPrecomputeNum(BspCotConfig config, int batchNum, int num) {
+        MathPreconditions.checkPositive("batchNum", batchNum);
+        MathPreconditions.checkPositive("num", num);
+        BspCotType type = config.getPtoType();
+        switch (type) {
+            case YWL20_SEMI_HONEST:
+                return LongUtils.ceilLog2(num) * batchNum;
+            case YWL20_MALICIOUS:
+                return LongUtils.ceilLog2(num) * batchNum + CommonConstants.BLOCK_BIT_LENGTH;
+            default:
+                throw new IllegalArgumentException("Invalid: " + BspCotType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a sender.
+     *
+     * @param senderRpc     sender RPC.
+     * @param receiverParty receiver party.
+     * @param config        config.
+     * @return a sender.
      */
     public static BspCotSender createSender(Rpc senderRpc, Party receiverParty, BspCotConfig config) {
         BspCotType type = config.getPtoType();
@@ -52,17 +75,17 @@ public class BspCotFactory implements PtoFactory {
             case YWL20_MALICIOUS:
                 return new Ywl20MaBspCotSender(senderRpc, receiverParty, (Ywl20MaBspCotConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid BspCotType: " + type.name());
+                throw new IllegalArgumentException("Invalid: " + BspCotType.class.getSimpleName() + ": " + type.name());
         }
     }
 
     /**
-     * 构建接收方。
+     * Creates a receiver.
      *
-     * @param receiverRpc 接收方通信接口。
-     * @param senderParty 发送方信息。
-     * @param config      配置项。
-     * @return 接收方。
+     * @param receiverRpc receiver RPC.
+     * @param senderParty sender party.
+     * @param config      config.
+     * @return a receiver.
      */
     public static BspCotReceiver createReceiver(Rpc receiverRpc, Party senderParty, BspCotConfig config) {
         BspCotType type = config.getPtoType();
@@ -72,36 +95,15 @@ public class BspCotFactory implements PtoFactory {
             case YWL20_MALICIOUS:
                 return new Ywl20MaBspCotReceiver(receiverRpc, senderParty, (Ywl20MaBspCotConfig) config);
             default:
-                throw new IllegalArgumentException("Invalid BspCotType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + BspCotType.class.getSimpleName() + ": " + type.name());
         }
     }
 
     /**
-     * 返回执行协议所需的预计算数量。
+     * Creates a default config.
      *
-     * @param config 配置项。
-     * @param batch  批处理数量。
-     * @param num    数量。
-     * @return 预计算数量。
-     */
-    public static int getPrecomputeNum(BspCotConfig config, int batch, int num) {
-        assert num > 0 && batch > 0;
-        BspCotType type = config.getPtoType();
-        switch (type) {
-            case YWL20_SEMI_HONEST:
-                return LongUtils.ceilLog2(num) * batch;
-            case YWL20_MALICIOUS:
-                return LongUtils.ceilLog2(num) * batch + CommonConstants.BLOCK_BIT_LENGTH;
-            default:
-                throw new IllegalArgumentException("Invalid BspCotType: " + type.name());
-        }
-    }
-
-    /**
-     * 创建默认协议配置项。
-     *
-     * @param securityModel 安全模型。
-     * @return 默认协议配置项。
+     * @param securityModel security model.
+     * @return a default config.
      */
     public static BspCotConfig createDefaultConfig(SecurityModel securityModel) {
         switch (securityModel) {

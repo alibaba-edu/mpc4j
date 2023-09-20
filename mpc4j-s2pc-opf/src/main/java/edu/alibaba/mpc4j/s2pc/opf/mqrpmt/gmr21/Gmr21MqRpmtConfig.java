@@ -2,8 +2,10 @@ package edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
@@ -31,9 +33,9 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
      */
     private final OsnConfig osnConfig;
     /**
-     * OKVS类型
+     * OKVS type
      */
-    private final OkvsType okvsType;
+    private final Gf2eDokvsType okvsType;
     /**
      * 布谷鸟哈希类型
      */
@@ -53,6 +55,13 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
         return MqRpmtFactory.MqRpmtType.GMR21;
     }
 
+    @Override
+    public int getVectorLength(int serverElementSize, int clientElementSize) {
+        MathPreconditions.checkGreater("server_element_size", serverElementSize, 1);
+        MathPreconditions.checkGreater("client_element_size", clientElementSize, 1);
+        return CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
+    }
+
     public OprfConfig getCuckooHashOprfConfig() {
         return cuckooHashOprfConfig;
     }
@@ -65,7 +74,7 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
         return osnConfig;
     }
 
-    public OkvsType getOkvsType() {
+    public Gf2eDokvsType getOkvsType() {
         return okvsType;
     }
 
@@ -87,9 +96,9 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
          */
         private OsnConfig osnConfig;
         /**
-         * OKVS类型
+         * OKVS type
          */
-        private OkvsType okvsType;
+        private Gf2eDokvsType okvsType;
         /**
          * 布谷鸟哈希类型
          */
@@ -99,7 +108,7 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
             cuckooHashOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
             peqtOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
             osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
-            okvsType = OkvsType.MEGA_BIN;
+            okvsType = Gf2eDokvsType.MEGA_BIN;
             // GMR21源代码使用普通布谷鸟哈希实现无贮存区布谷鸟哈希的功能，这样通信量可以更小一点
             cuckooHashBinType = CuckooHashBinType.NAIVE_3_HASH;
         }
@@ -119,7 +128,7 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
             return this;
         }
 
-        public Builder setOkvsType(OkvsType okvsType) {
+        public Builder setOkvsType(Gf2eDokvsType okvsType) {
             this.okvsType = okvsType;
             return this;
         }

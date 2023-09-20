@@ -14,17 +14,12 @@ import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePolyFactory.Gf2ePolyTyp
 class RingsNewtonGf2ePoly extends AbstractRingsGf2ePoly {
 
     RingsNewtonGf2ePoly(int l) {
-        super(l);
+        super(Gf2ePolyType.RINGS_NEWTON, l);
     }
 
     @Override
     protected UnivariatePolynomial<UnivariatePolynomialZp64> polynomialInterpolate(
         int num, UnivariatePolynomialZp64[] xArray, UnivariatePolynomialZp64[] yArray) {
         return UnivariateInterpolation.interpolateNewton(finiteField, xArray, yArray);
-    }
-
-    @Override
-    public Gf2ePolyType getType() {
-        return Gf2ePolyType.RINGS_NEWTON;
     }
 }

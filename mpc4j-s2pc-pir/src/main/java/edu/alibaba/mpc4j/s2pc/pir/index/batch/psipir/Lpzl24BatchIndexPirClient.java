@@ -4,8 +4,8 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
-import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteFullEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -19,7 +19,6 @@ import edu.alibaba.mpc4j.s2pc.pir.index.batch.AbstractBatchIndexPirClient;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiClient;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiParams;
-import org.bouncycastle.math.ec.ECPoint;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -49,10 +48,6 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
      */
     private final Cmg21UpsiClient<ByteBuffer> upsiClient;
     /**
-     * cuckoo hash bin
-     */
-    private CuckooHashBin<ByteBuffer> cuckooHashBin;
-    /**
      * β^{-1}
      */
     private BigInteger[] inverseBetas;
@@ -61,39 +56,55 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
      */
     private byte[][] hashKeys;
     /**
-     * index list
+     * ecc
      */
-    protected List<ByteBuffer> indicesByteBuffer;
+    private final ByteFullEcc ecc;
 
     public Lpzl24BatchIndexPirClient(Rpc clientRpc, Party serverParty, Lpzl24BatchIndexPirConfig config) {
         super(getInstance(), clientRpc, serverParty, config);
         upsiClient = new Cmg21UpsiClient<>(clientRpc, serverParty, (Cmg21UpsiConfig) config.getUpsiConfig());
         addSubPtos(upsiClient);
+        ecc = ByteEccFactory.createFullInstance(envType);
     }
 
     @Override
     public void init(int serverElementSize, int elementBitLength, int maxRetrievalSize) throws MpcAbortException {
+        setInitInput(serverElementSize, elementBitLength, maxRetrievalSize);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // UPSI params
         Cmg21UpsiParams params = null;
-        if (maxRetrievalSize <= 256) {
-            params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_256;
-        } else if (maxRetrievalSize <= 512) {
-            params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_512_CMP;
-        } else if (maxRetrievalSize <= 1024) {
-            params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_1K_CMP;
-        } else if (maxRetrievalSize <= 2048) {
-            params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_2K_CMP;
-        } else if (maxRetrievalSize <= 4096) {
-            params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_4K_CMP;
+        if (serverElementSize <= 1 << 20) {
+            if (maxRetrievalSize <= 256) {
+                params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_256;
+            } else if (maxRetrievalSize <= 512) {
+                params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_512_COM;
+            } else if (maxRetrievalSize <= 1024) {
+                params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_1K_COM;
+            } else if (maxRetrievalSize <= 2048) {
+                params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_2K_COM;
+            } else if (maxRetrievalSize <= 4096) {
+                params = Cmg21UpsiParams.SERVER_1M_CLIENT_MAX_4K_COM;
+            } else {
+                MpcAbortPreconditions.checkArgument(false, "retrieval size is larger than the upper bound.");
+            }
         } else {
-            MpcAbortPreconditions.checkArgument(false, "retrieval size is larger than the upper bound.");
+            if (maxRetrievalSize <= 1024) {
+                params = Cmg21UpsiParams.SERVER_16M_CLIENT_MAX_1024;
+            } else if (maxRetrievalSize <= 2048) {
+                params = Cmg21UpsiParams.SERVER_16M_CLIENT_MAX_2048;
+            } else if (maxRetrievalSize <= 4096) {
+                params = Cmg21UpsiParams.SERVER_16M_CLIENT_MAX_4096;
+            } else if (maxRetrievalSize <= 11041) {
+                params = Cmg21UpsiParams.SERVER_16M_CLIENT_MAX_11041;
+            } else {
+                MpcAbortPreconditions.checkArgument(false, "retrieval size is larger than the upper bound.");
+            }
         }
         assert params != null;
         upsiClient.init(params);
-        setInitInput(serverElementSize, elementBitLength, params.maxClientElementSize());
+
         partitionBitLength = 1;
         partitionSize = CommonUtils.getUnitNum(elementBitLength, partitionBitLength);
         List<byte[]> keyPair = Lpzl24BatchIndexPirNativeUtils.genEncryptionParameters(
@@ -128,10 +139,10 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
 
         // MP-OPRF
         stopWatch.start();
-        indicesByteBuffer = IntStream.range(0, retrievalSize)
+        List<ByteBuffer> indices = IntStream.range(0, retrievalSize)
             .mapToObj(i -> ByteBuffer.wrap(IntUtils.intToByteArray(indexList.get(i))))
             .collect(Collectors.toCollection(ArrayList::new));
-        List<byte[]> blindPayload = generateBlindPayload();
+        List<byte[]> blindPayload = generateBlindPayload(indices);
         DataPacketHeader blindHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_BLIND.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
@@ -145,7 +156,7 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
         List<ByteBuffer> blindPrf = handleBlindPrf(blindPrfPayload);
         Map<ByteBuffer, ByteBuffer> blindPrfMap = IntStream.range(0, retrievalSize)
             .boxed()
-            .collect(Collectors.toMap(blindPrf::get, indicesByteBuffer::get, (a, b) -> b));
+            .collect(Collectors.toMap(blindPrf::get, indices::get, (a, b) -> b));
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -153,7 +164,7 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
 
         stopWatch.start();
         // generate cuckoo hash bin
-        generateCuckooHashBin(blindPrf);
+        CuckooHashBin<ByteBuffer> cuckooHashBin = generateCuckooHashBin(blindPrf);
         stopWatch.stop();
         long cuckooHashKeyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -187,7 +198,7 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
 
         stopWatch.start();
         // decode reply
-        Map<Integer, byte[]> pirResult = handleServerResponse(responsePayload, blindPrfMap);
+        Map<Integer, byte[]> pirResult = handleServerResponse(responsePayload, blindPrfMap, cuckooHashBin, indices);
         stopWatch.stop();
         long decodeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -200,12 +211,16 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
     /**
      * handle server response.
      *
-     * @param serverResponse server response.
-     * @param oprfMap        OPRF map.
+     * @param serverResponse    server response.
+     * @param oprfMap           OPRF map.
+     * @param cuckooHashBin     cuckoo hash bin.
+     * @param indicesByteBuffer indices.
      * @return retrieval result map.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    private Map<Integer, byte[]> handleServerResponse(List<byte[]> serverResponse, Map<ByteBuffer, ByteBuffer> oprfMap)
+    private Map<Integer, byte[]> handleServerResponse(List<byte[]> serverResponse, Map<ByteBuffer, ByteBuffer> oprfMap,
+                                                      CuckooHashBin<ByteBuffer> cuckooHashBin,
+                                                      List<ByteBuffer> indicesByteBuffer)
         throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(
             serverResponse.size() % (upsiClient.params.getCiphertextNum() * partitionSize) == 0
@@ -219,7 +234,7 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
         byte[][] pirResult = new byte[retrievalSize][byteLength];
         for (int i = 0; i < partitionSize; i++) {
             Set<ByteBuffer> intersectionSet = upsiClient.recoverPsiResult(
-                coeffs.subList(i*size, (i+1)*size), oprfMap, cuckooHashBin
+                coeffs.subList(i * size, (i + 1) * size), oprfMap, cuckooHashBin
             );
             for (int j = 0; j < retrievalSize; j++) {
                 boolean temp = intersectionSet.contains(indicesByteBuffer.get(j));
@@ -228,19 +243,22 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
         }
         return IntStream.range(0, retrievalSize)
             .boxed()
-            .collect(Collectors.toMap(
-                i -> indicesByteBuffer.get(i).getInt(), i -> pirResult[i], (a, b) -> b,
-                () -> new HashMap<>(retrievalSize)
-                ));
+            .collect(
+                Collectors.toMap(
+                    i -> indicesByteBuffer.get(i).getInt(),
+                    i -> pirResult[i], (a, b) -> b,
+                    () -> new HashMap<>(retrievalSize)
+                )
+            );
     }
 
     /**
      * generate blind element list.
      *
+     * @param indicesByteBuffer indices.
      * @return blind element list.
      */
-    private List<byte[]> generateBlindPayload() {
-        Ecc ecc = EccFactory.createInstance(envType);
+    private List<byte[]> generateBlindPayload(List<ByteBuffer> indicesByteBuffer) {
         BigInteger n = ecc.getN();
         inverseBetas = new BigInteger[retrievalSize];
         IntStream retrievalIntStream = IntStream.range(0, retrievalSize);
@@ -250,10 +268,9 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
                 BigInteger beta = BigIntegerUtils.randomPositive(n, secureRandom);
                 inverseBetas[index] = beta.modInverse(n);
                 // hash to point
-                ECPoint element = ecc.hashToCurve(indicesByteBuffer.get(index).array());
-                return ecc.multiply(element, beta);
+                byte[] element = ecc.hashToCurve(indicesByteBuffer.get(index).array());
+                return ecc.mul(element, beta);
             })
-            .map(element -> ecc.encode(element, true))
             .collect(Collectors.toList());
     }
 
@@ -269,15 +286,10 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
         Kdf kdf = KdfFactory.createInstance(envType);
         Prg prg = PrgFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH * 2);
         byte[][] blindPrfArray = blindPrf.toArray(new byte[0][]);
-        Ecc ecc = EccFactory.createInstance(envType);
         IntStream batchIntStream = IntStream.range(0, retrievalSize);
         batchIntStream = parallel ? batchIntStream.parallel() : batchIntStream;
         return batchIntStream
-            .mapToObj(index -> {
-                ECPoint element = ecc.decode(blindPrfArray[index]);
-                return ecc.multiply(element, inverseBetas[index]);
-            })
-            .map(element -> ecc.encode(element, false))
+            .mapToObj(index -> ecc.mul(blindPrfArray[index], inverseBetas[index]))
             .map(kdf::deriveKey)
             .map(prg::extendToBytes)
             .map(ByteBuffer::wrap)
@@ -288,9 +300,11 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
      * client generates no stash cuckoo hash bin.
      *
      * @param itemList item list.
+     * @return cuckoo hash bin.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    private void generateCuckooHashBin(List<ByteBuffer> itemList) throws MpcAbortException {
-        cuckooHashBin = createCuckooHashBin(
+    private CuckooHashBin<ByteBuffer> generateCuckooHashBin(List<ByteBuffer> itemList) throws MpcAbortException {
+        CuckooHashBin<ByteBuffer> cuckooHashBin = createCuckooHashBin(
             envType, upsiClient.params.getCuckooHashBinType(), retrievalSize, upsiClient.params.getBinNum(), hashKeys
         );
         boolean success = false;
@@ -302,5 +316,6 @@ public class Lpzl24BatchIndexPirClient extends AbstractBatchIndexPirClient {
         byte[] randomBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(randomBytes);
         cuckooHashBin.insertPaddingItems(ByteBuffer.wrap(randomBytes));
+        return cuckooHashBin;
     }
 }

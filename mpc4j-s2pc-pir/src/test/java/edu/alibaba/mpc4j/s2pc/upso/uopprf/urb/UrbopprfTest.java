@@ -41,7 +41,7 @@ public class UrbopprfTest extends AbstractTwoPartyPtoTest {
     /**
      * large batch size
      */
-    private static final int LARGE_BATCH_NUM = 512;
+    private static final int LARGE_BATCH_NUM = 256;
     /**
      * default point num
      */

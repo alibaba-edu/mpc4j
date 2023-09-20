@@ -196,4 +196,18 @@ public interface LongRing {
      * @return true if the element p is a valid element in range [0, 2^l).
      */
     boolean validateRangeElement(long p);
+
+    /**
+     * Returns whether the two elements are equal.
+     *
+     * @param p p.
+     * @param q q.
+     * @return true if p == q, false otherwise.
+     */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    default boolean isEqual(long p, long q) {
+        validateElement(p);
+        validateElement(q);
+        return p == q;
+    }
 }

@@ -7,6 +7,7 @@
 package edu.alibaba.mpc4j.common.tool.crypto.ecc.cafe;
 
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.utils.ByteEccUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
@@ -56,7 +57,7 @@ public class CafeScalar {
             throw new IllegalArgumentException("Invalid scalar representation:" + Hex.toHexString(s));
         }
         // Store a copy to prevent interior mutability
-        this.s = Arrays.copyOf(s, s.length);
+        this.s = BytesUtils.clone(s);
     }
 
     /**
@@ -462,7 +463,7 @@ public class CafeScalar {
      */
     public byte[] encode() {
         // Return a copy to prevent interior mutability
-        return Arrays.copyOf(s, s.length);
+        return BytesUtils.clone(s);
     }
 
     /**

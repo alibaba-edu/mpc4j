@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.polynomial.gf2e;
 
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 /**
  * GF2E多项式插值工厂类。
@@ -69,6 +70,43 @@ public class Gf2ePolyFactory {
             case STANDARD_JDK:
             case INLAND_JDK:
                 return createInstance(Gf2ePolyType.RINGS_NEWTON, l);
+            default:
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
+        }
+    }
+
+    /**
+     * Gets number of coefficients given n interpolated points.
+     *
+     * @param type type.
+     * @return number of interpolated points.
+     */
+    public static int getCoefficientNum(Gf2ePolyType type, int num) {
+        MathPreconditions.checkPositive("num", num);
+        switch (type) {
+            case NTL:
+            case RINGS_NEWTON:
+            case RINGS_LAGRANGE:
+                return num;
+            default:
+                throw new IllegalArgumentException("Invalid " + Gf2ePolyType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Gets number of coefficients given n interpolated points.
+     *
+     * @param envType environment.
+     * @return number of interpolated points.
+     */
+    public static int getCoefficientNum(EnvType envType, int num) {
+        switch (envType) {
+            case STANDARD:
+            case INLAND:
+                return getCoefficientNum(Gf2ePolyType.NTL, num);
+            case STANDARD_JDK:
+            case INLAND_JDK:
+                return getCoefficientNum(Gf2ePolyType.RINGS_NEWTON, num);
             default:
                 throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }

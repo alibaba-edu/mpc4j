@@ -41,10 +41,7 @@ public class IntCuckooHashBinTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
-        // DRRT18
-        configurations.add(new Object[]{
-            IntCuckooHashBinType.NO_STASH_DRRT18.name(), IntCuckooHashBinType.NO_STASH_DRRT18
-        });
+
         // PSZ18_5_HASH
         configurations.add(new Object[]{
             IntCuckooHashBinType.NO_STASH_PSZ18_5_HASH.name(), IntCuckooHashBinType.NO_STASH_PSZ18_5_HASH
@@ -56,10 +53,6 @@ public class IntCuckooHashBinTest {
         // PSZ18_3_HASH
         configurations.add(new Object[]{
             IntCuckooHashBinType.NO_STASH_PSZ18_3_HASH.name(), IntCuckooHashBinType.NO_STASH_PSZ18_3_HASH
-        });
-        // DRRT18
-        configurations.add(new Object[]{
-            IntCuckooHashBinType.NO_STASH_DRRT18.name(), IntCuckooHashBinType.NO_STASH_DRRT18
         });
         // NAIVE
         configurations.add(new Object[]{
@@ -81,95 +74,50 @@ public class IntCuckooHashBinTest {
 
     @Test
     public void testIllegalInputs() {
-        // 密钥长度不正确
-        try {
+        // try less keys
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[][] lessKeys = CommonUtils.generateRandomKeys(
                 IntCuckooHashBinFactory.getHashNum(type) - 1, HashBinTestUtils.SECURE_RANDOM
             );
-            IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, 1 << 16, lessKeys);
-            throw new IllegalStateException("ERROR: successfully create IntCuckooHashBin with kess keys");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
+            IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, lessKeys);
+        });
+        // try more kesy
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[][] moreKeys = CommonUtils.generateRandomKeys(
                 IntCuckooHashBinFactory.getHashNum(type) + 1, HashBinTestUtils.SECURE_RANDOM
             );
             IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, moreKeys);
-            throw new IllegalStateException("ERROR: successfully create IntCuckooHashBin with more keys");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试创建插入0个元素的哈希桶
-        try {
-            byte[][] initKeys = CommonUtils.generateRandomKeys(
-                IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-            );
-            IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, 0, initKeys);
-            throw new IllegalStateException("ERROR: successfully create IntCuckooHashBin with 0 maxSize");
-        } catch (AssertionError ignored) {
-
-        }
-        byte[][] keys = CommonUtils.generateRandomKeys(
+        });
+        // try 0 elements
+        final byte[][] keys = CommonUtils.generateRandomKeys(
             IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
         );
-        IntNoStashCuckooHashBin intHashBin = IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, keys);
-        // 尝试插入较多数量的元素
-        try {
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, 0, keys)
+        );
+        final IntNoStashCuckooHashBin intHashBin = IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, keys);
+        // try inserting more elements
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             int[] items = HashBinTestUtils.randomIntItems(DEFAULT_N + 1);
             intHashBin.insertItems(items);
-            throw new IllegalStateException("ERROR: successfully insert more items into IntCuckooHashBin");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试插入重复元素
-        int[] distinctItems = HashBinTestUtils.randomIntItems(DEFAULT_N - 2);
-        int[] duplicateItems = Arrays.copyOf(distinctItems, DEFAULT_N);
-        boolean duplicateSuccess = false;
-        while (!duplicateSuccess) {
-            try {
-                intHashBin.insertItems(duplicateItems);
-                //noinspection UnusedAssignment
-                duplicateSuccess = true;
-                throw new IllegalStateException("ERROR: successfully insert duplicated items into IntCuckooHashBin");
-            } catch (ArithmeticException e) {
-                keys = CommonUtils.generateRandomKeys(
-                    IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-                );
-                intHashBin = IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, keys);
-            } catch (IllegalArgumentException ignored) {
-                break;
-            }
-        }
-        try {
-            // 尝试插入负数元素
+        });
+        // try inserting duplicated elements
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            int[] distinctItems = HashBinTestUtils.randomIntItems(DEFAULT_N - 2);
+            int[] duplicateItems = Arrays.copyOf(distinctItems, DEFAULT_N);
+            intHashBin.insertItems(duplicateItems);
+        });
+        // try inserting negative itesm
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             int[] items = IntStream.range(-1, DEFAULT_N - 1).toArray();
             intHashBin.insertItems(items);
-            throw new IllegalStateException("ERROR: successfully insert negative item");
-        } catch (AssertionError ignored) {
-
-        }
-        // 插入元素
+        });
         int[] items = HashBinTestUtils.randomIntItems(DEFAULT_N);
-        boolean success = false;
-        while (!success) {
-            try {
-                intHashBin.insertItems(items);
-                success = true;
-            } catch (ArithmeticException ignored) {
-                keys = CommonUtils.generateRandomKeys(
-                    IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-                );
-                intHashBin = IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, keys);
-            }
-        }
-        // 尝试再次插入元素
-        try {
-            intHashBin.insertItems(items);
-            throw new IllegalStateException("ERROR: successfully insert items twice into IntCuckooHashBin");
-        } catch (AssertionError ignored) {
-
-        }
+        intHashBin.insertItems(items);
+        // try insert items twice
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            intHashBin.insertItems(items)
+        );
     }
 
     @Test

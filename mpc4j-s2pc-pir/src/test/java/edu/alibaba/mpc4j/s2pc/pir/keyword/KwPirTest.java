@@ -5,6 +5,7 @@ import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.aaag22.Aaag22KwPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.keyword.alpr21.Alpr21KwPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21.Cmg21KwPirConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,7 +31,7 @@ public class KwPirTest extends AbstractTwoPartyPtoTest {
     /**
      * short label byte length
      */
-    private static final int SHORT_LABEL_BYTE_LENGTH = CommonConstants.STATS_BYTE_LENGTH;
+    private static final int SHORT_LABEL_BYTE_LENGTH = Double.BYTES;
     /**
      * default label byte length
      */
@@ -42,7 +43,7 @@ public class KwPirTest extends AbstractTwoPartyPtoTest {
     /**
      * server element size
      */
-    private static final int SERVER_MAP_SIZE = 1 << 18;
+    private static final int SERVER_MAP_SIZE = 1 << 14;
     /**
      * client element size
      */
@@ -60,7 +61,10 @@ public class KwPirTest extends AbstractTwoPartyPtoTest {
         configurations.add(new Object[]{
             KwPirFactory.KwPirType.AAAG22.name(), new Aaag22KwPirConfig.Builder().build()
         });
-
+        // ALPR21
+        configurations.add(new Object[]{
+            KwPirFactory.KwPirType.ALPR21.name(), new Alpr21KwPirConfig.Builder().build()
+        });
         return configurations;
     }
 

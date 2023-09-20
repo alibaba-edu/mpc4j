@@ -2,38 +2,36 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSenderOutput;
 
 /**
- * MSP-COT协议发送方线程。
+ * MSP-COT sender thread.
  *
  * @author Weiran Liu
  * @date 2022/01/24
  */
 class MspCotSenderThread extends Thread {
     /**
-     * 发送方
+     * sender
      */
     private final MspCotSender sender;
     /**
-     * 关联值Δ
+     * Δ
      */
     private final byte[] delta;
     /**
-     * 稀疏点数量
+     * sparse num
      */
     private final int t;
     /**
-     * 数量
+     * num
      */
     private final int num;
     /**
-     * 预计算发送方输出
+     * pre-computed COT sender output
      */
     private final CotSenderOutput preSenderOutput;
     /**
-     * 输出
+     * sender output
      */
     private MspCotSenderOutput senderOutput;
 

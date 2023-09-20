@@ -41,7 +41,7 @@ public class VectorizedPirTest extends AbstractTwoPartyPtoTest {
     /**
      * database size
      */
-    private static final int SERVER_ELEMENT_SIZE = 1 << 12;
+    private static final int SERVER_ELEMENT_SIZE = 1 << 16;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -50,12 +50,7 @@ public class VectorizedPirTest extends AbstractTwoPartyPtoTest {
         configurations.add(new Object[]{
             SingleIndexPirFactory.SingleIndexPirType.VECTORIZED_PIR.name(),
             pirConfig,
-            new Mr23SingleIndexPirParams(
-                8192,
-                20,
-                64,
-                20
-            )
+            new Mr23SingleIndexPirParams(8192, 22)
         });
         return configurations;
     }
@@ -77,28 +72,38 @@ public class VectorizedPirTest extends AbstractTwoPartyPtoTest {
 
     @Test
     public void testVectorizedPir() {
-        testVectorizedPir(indexPirConfig, indexPirParams, DEFAULT_ELEMENT_BIT_LENGTH, false);
+        testVectorizedPir(indexPirConfig, indexPirParams, SERVER_ELEMENT_SIZE, DEFAULT_ELEMENT_BIT_LENGTH, false);
     }
 
     @Test
     public void testParallelVectorizedPir() {
-        testVectorizedPir(indexPirConfig, indexPirParams, DEFAULT_ELEMENT_BIT_LENGTH, true);
+        testVectorizedPir(indexPirConfig, indexPirParams, SERVER_ELEMENT_SIZE, DEFAULT_ELEMENT_BIT_LENGTH, true);
     }
 
     @Test
     public void testLargeElementVectorizedPir() {
-        testVectorizedPir(indexPirConfig, indexPirParams, LARGE_ELEMENT_BIT_LENGTH, true);
+        testVectorizedPir(indexPirConfig, indexPirParams, SERVER_ELEMENT_SIZE, LARGE_ELEMENT_BIT_LENGTH, true);
+    }
+
+    @Test
+    public void testOneElementVectorizedPir() {
+        testVectorizedPir(indexPirConfig, indexPirParams, 1, DEFAULT_ELEMENT_BIT_LENGTH, true);
+    }
+
+    @Test
+    public void testSpecialElementSizeVectorizedPir() {
+        testVectorizedPir(indexPirConfig, indexPirParams, SERVER_ELEMENT_SIZE + 1, DEFAULT_ELEMENT_BIT_LENGTH, true);
     }
 
     @Test
     public void testSmallElementVectorizedPir() {
-        testVectorizedPir(indexPirConfig, indexPirParams, SMALL_ELEMENT_BIT_LENGTH, true);
+        testVectorizedPir(indexPirConfig, indexPirParams, SERVER_ELEMENT_SIZE, SMALL_ELEMENT_BIT_LENGTH, true);
     }
 
     public void testVectorizedPir(Mr23SingleIndexPirConfig config, Mr23SingleIndexPirParams indexPirParams,
-                                  int elementBitLength, boolean parallel) {
-        int retrievalIndex = PirUtils.generateRetrievalIndex(SERVER_ELEMENT_SIZE);
-        NaiveDatabase database = PirUtils.generateDataBase(SERVER_ELEMENT_SIZE, elementBitLength);
+                                  int serverElementSize, int elementBitLength, boolean parallel) {
+        int retrievalIndex = PirUtils.generateRetrievalIndex(serverElementSize);
+        NaiveDatabase database = PirUtils.generateDataBase(serverElementSize, elementBitLength);
         Mr23SingleIndexPirServer server = new Mr23SingleIndexPirServer(firstRpc, secondRpc.ownParty(), config);
         Mr23SingleIndexPirClient client = new Mr23SingleIndexPirClient(secondRpc, firstRpc.ownParty(), config);
         // set parallel
@@ -106,7 +111,7 @@ public class VectorizedPirTest extends AbstractTwoPartyPtoTest {
         client.setParallel(parallel);
         IndexPirParamsServerThread serverThread = new IndexPirParamsServerThread(server, indexPirParams, database);
         IndexPirParamsClientThread clientThread = new IndexPirParamsClientThread(
-            client, indexPirParams, retrievalIndex, SERVER_ELEMENT_SIZE, elementBitLength
+            client, indexPirParams, retrievalIndex, serverElementSize, elementBitLength
         );
         try {
             serverThread.start();
@@ -119,6 +124,7 @@ public class VectorizedPirTest extends AbstractTwoPartyPtoTest {
             // destroy
             new Thread(server::destroy).start();
             new Thread(client::destroy).start();
+            System.out.println(indexPirParams.toString());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

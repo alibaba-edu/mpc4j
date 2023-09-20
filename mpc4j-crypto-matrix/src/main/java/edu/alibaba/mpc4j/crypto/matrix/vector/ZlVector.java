@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.crypto.matrix.vector;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
+import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.crypto.matrix.MatrixUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -153,7 +154,7 @@ public class ZlVector implements RingVector {
 
     @Override
     public ZlVector copy() {
-        BigInteger[] copyElements = Arrays.copyOf(elements, elements.length);
+        BigInteger[] copyElements = BigIntegerUtils.clone(elements);
         return ZlVector.create(zl, copyElements);
     }
 

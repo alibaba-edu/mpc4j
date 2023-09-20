@@ -5,40 +5,40 @@ import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
 /**
- * MSP-COT协议发送方接口。
+ * multi single-point COT sender.
  *
  * @author Weiran Liu
  * @date 2022/02/03
  */
 public interface MspCotSender extends TwoPartyPto {
     /**
-     * 初始化协议。
+     * Inits the protocol.
      *
-     * @param delta  关联值Δ。
-     * @param maxT   最大稀疏点数量。
-     * @param maxNum 最大数量。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param delta  Δ.
+     * @param maxT   max sparse num.
+     * @param maxNum max num.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     void init(byte[] delta, int maxT, int maxNum) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Executes the protocol.
      *
-     * @param t   稀疏点数量。
-     * @param num 数量。
-     * @return 发送方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param t   sparse num.
+     * @param num num.
+     * @return sender output.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     MspCotSenderOutput send(int t, int num) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Executes the protocol.
      *
-     * @param t               稀疏点数量。
-     * @param num             数量。
-     * @param preSenderOutput 预计算发送方输出。
-     * @return 发送方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param t               sparse num.
+     * @param num             num.
+     * @param preSenderOutput pre-computed COT sender output.
+     * @return sender output.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     MspCotSenderOutput send(int t, int num, CotSenderOutput preSenderOutput) throws MpcAbortException;
 }

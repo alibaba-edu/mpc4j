@@ -5,9 +5,10 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.Okvs;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.okvs.OkvsUbopprfPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.ub.AbstractUbopprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
@@ -33,26 +34,21 @@ public class OkvsUbopprfReceiver extends AbstractUbopprfReceiver {
     /**
      * the OKVS type
      */
-    private final OkvsFactory.OkvsType okvsType;
-    /**
-     * sent OKVS
-     */
-    private boolean sent;
-    /**
-     * OKVS keys
-     */
-    private byte[][] okvsKeys;
+    private final Gf2eDokvsType okvsType;
     /**
      * OKVS storage
      */
     private byte[][] okvsStorage;
+    /**
+     * OKVS
+     */
+    private Gf2eDokvs<ByteBuffer> okvs;
 
     public OkvsUbopprfReceiver(Rpc receiverRpc, Party senderParty, OkvsUbopprfConfig config) {
         super(OkvsUbopprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
         sqOprfReceiver = SqOprfFactory.createReceiver(receiverRpc, senderParty, config.getSqOprfConfig());
         addSubPtos(sqOprfReceiver);
         okvsType = config.getOkvsType();
-        sent = false;
     }
 
     @Override
@@ -60,8 +56,19 @@ public class OkvsUbopprfReceiver extends AbstractUbopprfReceiver {
         setInitInput(l, batchSize, pointNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
+        // receive OKVS keys
+        DataPacketHeader okvsKeysHeader = new DataPacketHeader(
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_OKVS_KEYS.ordinal(), extraInfo,
+            otherParty().getPartyId(), ownParty().getPartyId()
+        );
+        List<byte[]> okvsKeysPayload = rpc.receive(okvsKeysHeader).getPayload();
+
         stopWatch.start();
-        sent = false;
+        // init okvs
+        int keyNum = Gf2eDokvsFactory.getHashKeyNum(okvsType);
+        MpcAbortPreconditions.checkArgument(okvsKeysPayload.size() == keyNum);
+        byte[][] okvsKeys = okvsKeysPayload.toArray(new byte[0][]);
+        okvs = Gf2eDokvsFactory.createInstance(envType, okvsType, pointNum, l, okvsKeys);
         // init oprf
         sqOprfReceiver.init(batchSize);
         stopWatch.stop();
@@ -77,32 +84,22 @@ public class OkvsUbopprfReceiver extends AbstractUbopprfReceiver {
         setPtoInput(inputArray);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        if (!sent) {
-            // receive OKVS keys
-            DataPacketHeader okvsKeysHeader = new DataPacketHeader(
-                encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_OKVS_KEYS.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> okvsKeysPayload = rpc.receive(okvsKeysHeader).getPayload();
-            // receive OKVS
-            DataPacketHeader okvsHeader = new DataPacketHeader(
-                encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_OKVS.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> okvsPayload = rpc.receive(okvsHeader).getPayload();
+        // receive OKVS
+        DataPacketHeader okvsHeader = new DataPacketHeader(
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_OKVS.ordinal(), extraInfo,
+            otherParty().getPartyId(), ownParty().getPartyId()
+        );
+        List<byte[]> okvsPayload = rpc.receive(okvsHeader).getPayload();
 
-            stopWatch.start();
-            int keyNum = OkvsFactory.getHashNum(okvsType);
-            MpcAbortPreconditions.checkArgument(okvsKeysPayload.size() == keyNum);
-            okvsKeys = okvsKeysPayload.toArray(new byte[0][]);
-            MpcAbortPreconditions.checkArgument(okvsPayload.size() == OkvsFactory.getM(okvsType, pointNum));
-            okvsStorage = okvsPayload.toArray(new byte[0][]);
-            sent = true;
-            stopWatch.stop();
-            long okvsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            logStepInfo(PtoState.PTO_STEP, 0, 2, okvsTime, "Receiver receives OKVS");
-        }
+        stopWatch.start();
+        MpcAbortPreconditions.checkArgument(
+            okvsPayload.size() == Gf2eDokvsFactory.getM(envType, okvsType, pointNum)
+        );
+        okvsStorage = okvsPayload.toArray(new byte[0][]);
+        stopWatch.stop();
+        long okvsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 0, 2, okvsTime, "Receiver receives OKVS");
 
         stopWatch.start();
         // OPRF
@@ -128,7 +125,6 @@ public class OkvsUbopprfReceiver extends AbstractUbopprfReceiver {
         Prf prf = PrfFactory.createInstance(envType, byteL);
         prf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
         // compute PRF output
-        Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(envType, okvsType, pointNum, l, okvsKeys);
         IntStream batchIntStream = IntStream.range(0, batchSize);
         batchIntStream = parallel ? batchIntStream.parallel() : batchIntStream;
         return batchIntStream

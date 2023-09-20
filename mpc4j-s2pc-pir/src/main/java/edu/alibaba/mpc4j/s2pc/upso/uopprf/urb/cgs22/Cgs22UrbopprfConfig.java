@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.cgs22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
@@ -16,7 +16,7 @@ import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.UrbopprfFactory;
  * @author Weiran Liu
  * @date 2023/4/18
  */
-public class Cgs22UrbopprfConfig implements UrbopprfConfig {
+public class Cgs22UrbopprfConfig extends AbstractMultiPartyPtoConfig implements UrbopprfConfig {
     /**
      * d = 3
      */
@@ -31,6 +31,7 @@ public class Cgs22UrbopprfConfig implements UrbopprfConfig {
     private final CuckooHashBinType cuckooHashBinType;
 
     private Cgs22UrbopprfConfig(Builder builder) {
+        super(SecurityModel.SEMI_HONEST, builder.sqOprfConfig);
         sqOprfConfig = builder.sqOprfConfig;
         cuckooHashBinType = builder.cuckooHashBinType;
     }
@@ -38,21 +39,6 @@ public class Cgs22UrbopprfConfig implements UrbopprfConfig {
     @Override
     public UrbopprfFactory.UrbopprfType getPtoType() {
         return UrbopprfFactory.UrbopprfType.CGS22;
-    }
-
-    @Override
-    public void setEnvType(EnvType envType) {
-        sqOprfConfig.setEnvType(envType);
-    }
-
-    @Override
-    public EnvType getEnvType() {
-        return sqOprfConfig.getEnvType();
-    }
-
-    @Override
-    public SecurityModel getSecurityModel() {
-        return SecurityModel.SEMI_HONEST;
     }
 
     public SqOprfConfig getSqOprfConfig() {

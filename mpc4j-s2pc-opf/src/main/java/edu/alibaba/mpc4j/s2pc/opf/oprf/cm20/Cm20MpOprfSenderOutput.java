@@ -1,7 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.opf.oprf.cm20;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
@@ -16,38 +18,38 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
- * CM20-MPOPRF发送方输出。
+ * CM20-MP-OPRF sender output.
  *
  * @author Weiran Liu
  * @date 2022/03/03
  */
 public class Cm20MpOprfSenderOutput implements MpOprfSenderOutput {
     /**
-     * 批处理数量
+     * batch size
      */
     private final int batchSize;
     /**
-     * 规约批处理数量
+     * n = max(2, batchSize)
      */
     private final int n;
     /**
-     * 批处理数量字节长度
+     * n in byte
      */
     private final int nByteLength;
     /**
-     * 批处理数量偏移量
+     * n offset
      */
     private final int nOffset;
     /**
-     * PRF输出比特长度（w）
+     * PRF output bit length (w)
      */
     private final int w;
     /**
-     * PRF输出字节长度
+     * w in byte
      */
     private final int wByteLength;
     /**
-     * PRF输出字节长度偏移量
+     * w offset
      */
     private final int wOffset;
     /**
@@ -59,49 +61,44 @@ public class Cm20MpOprfSenderOutput implements MpOprfSenderOutput {
      */
     private final Hash h1;
     /**
-     * 矩阵C
+     * matrix C, organized by columns
      */
     private final byte[][] matrixC;
 
     Cm20MpOprfSenderOutput(EnvType envType, int batchSize, int w, byte[] prfKey, byte[][] matrixC) {
-        assert batchSize > 0 : "BatchSize must be greater than 0: " + batchSize;
+        MathPreconditions.checkPositive("batchSize", batchSize);
         this.batchSize = batchSize;
-        this.n = batchSize == 1 ? 2 : batchSize;
+        // n = max(2, batchSize)
+        n = batchSize == 1 ? 2 : batchSize;
         nByteLength = CommonUtils.getByteLength(n);
         nOffset = nByteLength * Byte.SIZE - n;
-        // 输出比特长度至少大于安全常数
-        assert w > CommonConstants.BLOCK_BIT_LENGTH;
+        MathPreconditions.checkGreaterOrEqual("w", w, CommonConstants.BLOCK_BIT_LENGTH);
         this.w = w;
         wByteLength = CommonUtils.getByteLength(w);
         wOffset = wByteLength * Byte.SIZE - w;
-        // f对每一个元素要输出w个整数
         f = PrfFactory.createInstance(envType, w * Integer.BYTES);
         f.setKey(prfKey);
         h1 = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH * 2);
-        assert matrixC.length == w;
+        MathPreconditions.checkEqual("matrixC.length", "w", matrixC.length, w);
         this.matrixC = Arrays.stream(matrixC)
-            .peek(column -> {
-                assert column.length == nByteLength;
-                assert BytesUtils.isReduceByteArray(column, n);
-            })
+            .peek(column -> Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(column, nByteLength, n)))
             .map(BytesUtils::clone)
             .toArray(byte[][]::new);
     }
 
     @Override
     public byte[] getPrf(byte[] input) {
-        // 计算哈希值
         byte[] extendPrf = f.getBytes(h1.digestToBytes(input));
-        // F: {0, 1}^λ × {0, 1}^{2λ} → [m]^w ，这里使用不安全转换函数来提高效率。
+        // F: {0, 1}^λ × {0, 1}^{2λ} → [m]^w
         int[] encode = IntUtils.byteArrayToIntArray(extendPrf);
         for (int index = 0; index < w; index++) {
             encode[index] = Math.abs(encode[index] % n) + nOffset;
         }
-        // 计算OPRF结果，当输出长度比较短的时候，直接用boolean[]会更快一些
-        boolean[] binaryPrf = new boolean[wByteLength * Byte.SIZE];
-        IntStream.range(0, w).forEach(wIndex -> binaryPrf[wIndex + wOffset] =
-            BinaryUtils.getBoolean(matrixC[wIndex], encode[wIndex]));
-        return BinaryUtils.binaryToByteArray(binaryPrf);
+        byte[] prf = new byte[wByteLength];
+        IntStream.range(0, w).forEach(wIndex -> BinaryUtils.setBoolean(
+            prf, wIndex + wOffset, BinaryUtils.getBoolean(matrixC[wIndex], encode[wIndex])
+        ));
+        return prf;
     }
 
     @Override

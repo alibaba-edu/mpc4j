@@ -1,0 +1,17 @@
+# protocol type
+pto_type = PSI
+
+# element byte length
+element_byte_length = 16
+
+# parties log set size (log(n))
+server_log_set_size = 12,10
+client_log_set_size = 12,10
+
+# protocol name
+psi_pto_name = RR22
+
+# specific config
+security_model = MALICIOUS
+okvs_type = H3_CLUSTER_FIELD_BLAZE_GCT
+append_string = _malicious

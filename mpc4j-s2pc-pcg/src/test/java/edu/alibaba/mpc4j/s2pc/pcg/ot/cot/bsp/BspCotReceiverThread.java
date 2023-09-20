@@ -2,34 +2,32 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotReceiverOutput;
 
 /**
- * BSP-COT协议接收方线程。
+ * Batched single-point COT receiver thread.
  *
  * @author Weiran Liu
  * @date 2022/01/24
  */
 class BspCotReceiverThread extends Thread {
     /**
-     * 接收方
+     * receiver
      */
     private final BspCotReceiver receiver;
     /**
-     * α数组
+     * α array
      */
     private final int[] alphaArray;
     /**
-     * 数量
+     * num
      */
     private final int num;
     /**
-     * 预计算接收方输出
+     * pre-computed receiver output
      */
     private final CotReceiverOutput preReceiverOutput;
     /**
-     * 输出
+     * receiver output
      */
     private BspCotReceiverOutput receiverOutput;
 

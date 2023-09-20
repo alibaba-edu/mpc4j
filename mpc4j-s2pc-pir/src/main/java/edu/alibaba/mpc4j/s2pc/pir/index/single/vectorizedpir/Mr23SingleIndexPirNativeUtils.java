@@ -36,10 +36,9 @@ class Mr23SingleIndexPirNativeUtils {
      *
      * @param encryptionParams encryption params.
      * @param coeffs           coeffs.
-     * @param dimensionsSize   dimension size.
      * @return BFV plaintexts in NTT form.
      */
-    static native List<byte[]> preprocessDatabase(byte[] encryptionParams, long[][] coeffs, int dimensionsSize);
+    static native List<byte[]> preprocessDatabase(byte[] encryptionParams, long[][] coeffs);
 
     /**
      * generate query.
@@ -48,11 +47,9 @@ class Mr23SingleIndexPirNativeUtils {
      * @param publicKey        public key.
      * @param secretKey        secret key.
      * @param indices          indices.
-     * @param slotNum          slot num.
      * @return query ciphertexts.
      */
-    static native List<byte[]> generateQuery(byte[] encryptionParams, byte[] publicKey, byte[] secretKey, int[] indices,
-                                             int slotNum);
+    static native List<byte[]> generateQuery(byte[] encryptionParams, byte[] publicKey, byte[] secretKey, int[] indices);
 
     /**
      * generate response.
@@ -76,8 +73,8 @@ class Mr23SingleIndexPirNativeUtils {
      * @param secretKey        secret key.
      * @param response         response ciphertext.
      * @param offset           offset.
-     * @param slotNum          slot num.
+     * @param gap              gap.
      * @return coefficient.
      */
-    static native long decryptReply(byte[] encryptionParams, byte[] secretKey, byte[] response, int offset, int slotNum);
+    static native long decryptReply(byte[] encryptionParams, byte[] secretKey, byte[] response, int offset, int gap);
 }

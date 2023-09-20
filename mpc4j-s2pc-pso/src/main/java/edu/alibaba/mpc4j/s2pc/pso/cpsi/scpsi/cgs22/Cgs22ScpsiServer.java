@@ -18,8 +18,8 @@ import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.RbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.RbopprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.RbopprfReceiver;
-import edu.alibaba.mpc4j.s2pc.opf.psm.PsmFactory;
-import edu.alibaba.mpc4j.s2pc.opf.psm.PsmSender;
+import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmFactory;
+import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmSender;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.AbstractScpsiServer;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiServerOutput;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.cgs22.Cgs22ScpsiPtoDesc.PtoStep;
@@ -47,7 +47,7 @@ public class Cgs22ScpsiServer<T> extends AbstractScpsiServer<T> {
     /**
      * private set membership sender
      */
-    private final PsmSender psmSender;
+    private final PdsmSender pdsmSender;
     /**
      * d
      */
@@ -71,8 +71,8 @@ public class Cgs22ScpsiServer<T> extends AbstractScpsiServer<T> {
         rbopprfReceiver = RbopprfFactory.createReceiver(serverRpc, clientParty, rbopprfConfig);
         addSubPtos(rbopprfReceiver);
         d = rbopprfConfig.getD();
-        psmSender = PsmFactory.createSender(serverRpc, clientParty, config.getPsmConfig());
-        addSubPtos(psmSender);
+        pdsmSender = PdsmFactory.createSender(serverRpc, clientParty, config.getPsmConfig());
+        addSubPtos(pdsmSender);
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }
@@ -89,7 +89,7 @@ public class Cgs22ScpsiServer<T> extends AbstractScpsiServer<T> {
         rbopprfReceiver.init(maxBeta, maxPointNum);
         // init private set membership, where max(l_psm) = σ + log_2(d * β_max)
         int maxPsmL = CommonConstants.STATS_BIT_LENGTH + LongUtils.ceilLog2((long) d * maxBeta);
-        psmSender.init(maxPsmL, d, maxBeta);
+        pdsmSender.init(maxPsmL, d, maxBeta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -160,7 +160,7 @@ public class Cgs22ScpsiServer<T> extends AbstractScpsiServer<T> {
                     .toArray(byte[][]::new))
             .toArray(byte[][][]::new);
         // P1 inputs y_1^*, ..., y_β^* and outputs z0.
-        SquareZ2Vector z0 = psmSender.psm(psmL, targetArrays);
+        SquareZ2Vector z0 = pdsmSender.pdsm(psmL, targetArrays);
         // create the table
         ArrayList<T> table = IntStream.range(0, beta)
             .mapToObj(batchIndex -> {

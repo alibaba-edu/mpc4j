@@ -6,22 +6,22 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 
 /**
- * PSI协议服务端线程。
+ * PSI server thread.
  *
  * @author Weiran Liu
  * @date 2022/9/19
  */
 class PsiServerThread extends Thread {
     /**
-     * PSI服务端
+     * PSI server
      */
     private final PsiServer<ByteBuffer> server;
     /**
-     * 服务端集合
+     * server element set
      */
     private final Set<ByteBuffer> serverElementSet;
     /**
-     * 客户端元素数量
+     * client element size
      */
     private final int clientElementSize;
 

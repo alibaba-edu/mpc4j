@@ -1,9 +1,12 @@
 package edu.alibaba.mpc4j.s2pc.opf.oprf;
 
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory.OprfType;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.cm20.Cm20MpOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.fipr05.Fipr05MpOprfConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.rs21.Rs21MpOprfConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,13 +43,22 @@ public class MpOprfTest extends AbstractTwoPartyPtoTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
+        // RS21
+        configurations.add(new Object[]{
+            OprfType.RS21.name() + " (" + SecurityModel.MALICIOUS + ")",
+            new Rs21MpOprfConfig.Builder(SecurityModel.MALICIOUS).build(),
+        });
+        configurations.add(new Object[]{
+            OprfType.RS21.name() + " (" + SecurityModel.SEMI_HONEST + ")",
+            new Rs21MpOprfConfig.Builder(SecurityModel.SEMI_HONEST).build(),
+        });
         // CM20
         configurations.add(new Object[]{
-            OprfFactory.OprfType.CM20.name(), new Cm20MpOprfConfig.Builder().build(),
+            OprfType.CM20.name(), new Cm20MpOprfConfig.Builder().build(),
         });
         // FIPR05
         configurations.add(new Object[]{
-            OprfFactory.OprfType.FIPR05.name(), new Fipr05MpOprfConfig.Builder().build(),
+            OprfType.FIPR05.name(), new Fipr05MpOprfConfig.Builder().build(),
         });
 
         return configurations;

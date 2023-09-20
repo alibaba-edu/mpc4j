@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidConfig;
@@ -29,11 +29,11 @@ public class Zcl22SloppyPmidConfig extends AbstractMultiPartyPtoConfig implement
     /**
      * Sloppy的OKVS类型
      */
-    private final OkvsType sloppyOkvsType;
+    private final Gf2eDokvsType sloppyOkvsType;
     /**
      * σ的OKVS类型
      */
-    private final OkvsType sigmaOkvsType;
+    private final Gf2eDokvsType sigmaOkvsType;
     /**
      * 布谷鸟哈希类型
      */
@@ -61,11 +61,11 @@ public class Zcl22SloppyPmidConfig extends AbstractMultiPartyPtoConfig implement
         return psuConfig;
     }
 
-    public OkvsType getSloppyOkvsType() {
+    public Gf2eDokvsType getSloppyOkvsType() {
         return sloppyOkvsType;
     }
 
-    public OkvsType getSigmaOkvsType() {
+    public Gf2eDokvsType getSigmaOkvsType() {
         return sigmaOkvsType;
     }
 
@@ -85,11 +85,11 @@ public class Zcl22SloppyPmidConfig extends AbstractMultiPartyPtoConfig implement
         /**
          * Sloppy的OKVS类型
          */
-        private OkvsType sloppyOkvsType;
+        private Gf2eDokvsType sloppyOkvsType;
         /**
          * σ的OKVS类型
          */
-        private OkvsType sigmaOkvsType;
+        private Gf2eDokvsType sigmaOkvsType;
         /**
          * 布谷鸟哈希类型
          */
@@ -98,8 +98,8 @@ public class Zcl22SloppyPmidConfig extends AbstractMultiPartyPtoConfig implement
         public Builder() {
             oprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
             psuConfig = PsuFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            sloppyOkvsType = OkvsType.MEGA_BIN;
-            sigmaOkvsType = OkvsType.H3_SINGLETON_GCT;
+            sloppyOkvsType = Gf2eDokvsType.MEGA_BIN;
+            sigmaOkvsType = Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT;
             cuckooHashBinType = CuckooHashBinType.NAIVE_3_HASH;
         }
 
@@ -113,12 +113,12 @@ public class Zcl22SloppyPmidConfig extends AbstractMultiPartyPtoConfig implement
             return this;
         }
 
-        public Builder setSloppyOkvsType(OkvsType sloppyOkvsType) {
+        public Builder setSloppyOkvsType(Gf2eDokvsType sloppyOkvsType) {
             this.sloppyOkvsType = sloppyOkvsType;
             return this;
         }
 
-        public Builder setSigmaOkvsType(OkvsType sigmaOkvsType) {
+        public Builder setSigmaOkvsType(Gf2eDokvsType sigmaOkvsType) {
             this.sigmaOkvsType = sigmaOkvsType;
             return this;
         }

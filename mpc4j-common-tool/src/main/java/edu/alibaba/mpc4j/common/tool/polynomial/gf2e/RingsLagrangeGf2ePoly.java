@@ -13,17 +13,12 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 class RingsLagrangeGf2ePoly extends AbstractRingsGf2ePoly {
 
     RingsLagrangeGf2ePoly(int l) {
-        super(l);
+        super(Gf2ePolyFactory.Gf2ePolyType.RINGS_LAGRANGE, l);
     }
 
     @Override
     protected UnivariatePolynomial<UnivariatePolynomialZp64> polynomialInterpolate(
         int num, UnivariatePolynomialZp64[] xArray, UnivariatePolynomialZp64[] yArray) {
         return UnivariateInterpolation.interpolateLagrange(finiteField, xArray, yArray);
-    }
-
-    @Override
-    public Gf2ePolyFactory.Gf2ePolyType getType() {
-        return Gf2ePolyFactory.Gf2ePolyType.RINGS_LAGRANGE;
     }
 }

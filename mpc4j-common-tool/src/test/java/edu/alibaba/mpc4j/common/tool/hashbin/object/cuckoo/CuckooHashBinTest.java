@@ -54,10 +54,6 @@ public class CuckooHashBinTest {
         configurations.add(new Object[] {
             CuckooHashBinType.NO_STASH_PSZ18_3_HASH.name(), CuckooHashBinType.NO_STASH_PSZ18_3_HASH
         });
-        // NO_STASH_DRRT18
-        configurations.add(new Object[] {
-            CuckooHashBinType.NO_STASH_DRRT18.name(), CuckooHashBinType.NO_STASH_DRRT18
-        });
         // NO_STASH_NAIVE
         configurations.add(new Object[] {
             CuckooHashBinType.NO_STASH_NAIVE.name(), CuckooHashBinType.NO_STASH_NAIVE
@@ -86,121 +82,66 @@ public class CuckooHashBinTest {
 
     @Test
     public void testIllegalInputs() {
-        // 密钥长度不正确
-        try {
+        // try less keys
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[][] lessKeys = CommonUtils.generateRandomKeys(
                 CuckooHashBinFactory.getHashNum(type) - 1, HashBinTestUtils.SECURE_RANDOM
             );
             CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, DEFAULT_N, lessKeys);
-            throw new IllegalStateException("ERROR: successfully create CuckooHashBin with less keys");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
+        });
+        // try more keys
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[][] moreKeys = CommonUtils.generateRandomKeys(
                 CuckooHashBinFactory.getHashNum(type) + 1, HashBinTestUtils.SECURE_RANDOM
             );
             CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, DEFAULT_N, moreKeys);
-            throw new IllegalStateException("ERROR: successfully create CuckooHashBin with more keys");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试创建插入0个元素的哈希桶
-        try {
-            byte[][] initKeys = CommonUtils.generateRandomKeys(
-                CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-            );
-            CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, 0, initKeys);
-            throw new IllegalStateException("ERROR: successfully create CuckooHashBin with 0 maxSize");
-        } catch (AssertionError ignored) {
-
-        }
-        byte[][] keys = CommonUtils.generateRandomKeys(
+        });
+        final byte[][] keys = CommonUtils.generateRandomKeys(
             CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
         );
-        CuckooHashBin<ByteBuffer> hashBin = CuckooHashBinFactory.createCuckooHashBin(
+        // try 0 elements
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, 0, keys)
+        );
+        final CuckooHashBin<ByteBuffer> hashBin = CuckooHashBinFactory.createCuckooHashBin(
             EnvType.STANDARD, type, DEFAULT_N, keys
         );
-        // 尝试在未插入元素的时候插入虚拟元素
-        try {
-            hashBin.insertPaddingItems(HashBinTestUtils.SECURE_RANDOM);
-            throw new IllegalStateException("ERROR: successfully insert padding items before inserting items");
-        } catch (AssertionError ignored) {
-
-        }
-        try {
-            hashBin.insertPaddingItems(ByteBuffer.wrap(new byte[0]));
-            throw new IllegalStateException("ERROR: successfully insert empty items before inserting items");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试插入较多数量的元素
-        try {
+        // try inserting dummy elements before inserting elements
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            hashBin.insertPaddingItems(HashBinTestUtils.SECURE_RANDOM)
+        );
+        // try inserting empty elements before inserting elements
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            hashBin.insertPaddingItems(ByteBuffer.wrap(new byte[0]))
+        );
+        // try inserting more elements
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             List<ByteBuffer> items = HashBinTestUtils.randomByteBufferItems(DEFAULT_N + 1);
             hashBin.insertItems(items);
-            throw new IllegalStateException("ERROR: successfully insert more items into CuckooHashBin");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试插入重复元素
-        List<ByteBuffer> duplicateItems = HashBinTestUtils.randomByteBufferItems(DEFAULT_N - 2);
-        duplicateItems.add(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
-        duplicateItems.add(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
-        boolean duplicateSuccess = false;
-        while (!duplicateSuccess) {
-            try {
-                hashBin.insertItems(duplicateItems);
-                //noinspection UnusedAssignment
-                duplicateSuccess = true;
-                throw new IllegalStateException("ERROR: successfully insert duplicated items into CuckooHashBin");
-            } catch (ArithmeticException e) {
-                keys = CommonUtils.generateRandomKeys(
-                    CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-                );
-                hashBin = CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, DEFAULT_N, keys);
-            } catch (IllegalArgumentException ignored) {
-                break;
-            }
-        }
-        // 插入元素
+        });
+        // try inserting duplicated elements
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            List<ByteBuffer> duplicateItems = HashBinTestUtils.randomByteBufferItems(DEFAULT_N - 2);
+            duplicateItems.add(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
+            duplicateItems.add(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
+            hashBin.insertItems(duplicateItems);
+        });
         List<ByteBuffer> items = HashBinTestUtils.randomByteBufferItems(DEFAULT_N);
-        boolean success = false;
-        while (!success) {
-            try {
-                hashBin.insertItems(items);
-                success = true;
-            } catch (ArithmeticException ignored) {
-                keys = CommonUtils.generateRandomKeys(
-                    CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-                );
-                hashBin = CuckooHashBinFactory.createCuckooHashBin(
-                    EnvType.STANDARD, type, DEFAULT_N, keys
-                );
-            }
-        }
-        // 尝试再次插入元素
-        try {
+        hashBin.insertItems(items);
+        // try inserting twice
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             List<ByteBuffer> moreItems = HashBinTestUtils.randomByteBufferItems(DEFAULT_N);
             hashBin.insertItems(moreItems);
-            throw new IllegalStateException("ERROR: successfully insert items twice into CuckooHashBin");
-        } catch (AssertionError ignored) {
-
-        }
-        // 尝试填充已存在的元素
-        try {
-            hashBin.insertPaddingItems(items.get(0));
-            throw new IllegalStateException("ERROR: successfully treat existing item as the empty item");
-        } catch (AssertionError ignored) {
-
-        }
+        });
+        // try padding with existing elements
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            hashBin.insertPaddingItems(items.get(0))
+        );
         hashBin.insertPaddingItems(HashBinTestUtils.SECURE_RANDOM);
-        // 尝试再次填充虚拟元素
-        try {
-            hashBin.insertPaddingItems(HashBinTestUtils.SECURE_RANDOM);
-            throw new IllegalStateException("ERROR: successfully insert padding items twice");
-        } catch (AssertionError ignored) {
-
-        }
+        // try padding twice
+        Assert.assertThrows(IllegalArgumentException.class, () ->
+            hashBin.insertPaddingItems(HashBinTestUtils.SECURE_RANDOM)
+        );
     }
 
     @Test

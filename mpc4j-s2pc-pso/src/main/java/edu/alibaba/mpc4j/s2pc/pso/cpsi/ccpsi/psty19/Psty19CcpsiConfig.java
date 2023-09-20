@@ -8,8 +8,8 @@ import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtConfig;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfFactory;
-import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiConfig;
-import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiFactory;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.BopprfCcpsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiFactory.CcpsiType;
 
 /**
  * PSTY19 client-payload circuit PSI config.
@@ -17,7 +17,7 @@ import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiFactory;
  * @author Weiran Liu
  * @date 2023/4/19
  */
-public class Psty19CcpsiConfig extends AbstractMultiPartyPtoConfig implements CcpsiConfig {
+public class Psty19CcpsiConfig extends AbstractMultiPartyPtoConfig implements BopprfCcpsiConfig {
     /**
      * Batch OPPRF config
      */
@@ -39,8 +39,8 @@ public class Psty19CcpsiConfig extends AbstractMultiPartyPtoConfig implements Cc
     }
 
     @Override
-    public CcpsiFactory.CcpsiType getPtoType() {
-        return CcpsiFactory.CcpsiType.PSTY19;
+    public CcpsiType getPtoType() {
+        return CcpsiType.PSTY19;
     }
 
     @Override
@@ -48,14 +48,17 @@ public class Psty19CcpsiConfig extends AbstractMultiPartyPtoConfig implements Cc
         return CuckooHashBinFactory.getBinNum(cuckooHashBinType, clientElementSize);
     }
 
+    @Override
     public BopprfConfig getBopprfConfig() {
         return bopprfConfig;
     }
 
+    @Override
     public PeqtConfig getPeqtConfig() {
         return peqtConfig;
     }
 
+    @Override
     public CuckooHashBinType getCuckooHashBinType() {
         return cuckooHashBinType;
     }
@@ -64,7 +67,7 @@ public class Psty19CcpsiConfig extends AbstractMultiPartyPtoConfig implements Cc
         /**
          * Batch OPPRF config
          */
-        private BopprfConfig bopprfConfig;
+        private final BopprfConfig bopprfConfig;
         /**
          * private equality test config
          */
@@ -74,15 +77,10 @@ public class Psty19CcpsiConfig extends AbstractMultiPartyPtoConfig implements Cc
          */
         private CuckooHashBinType cuckooHashBinType;
 
-        public Builder(SecurityModel securityModel, boolean silent) {
+        public Builder(boolean silent) {
             bopprfConfig = BopprfFactory.createDefaultConfig();
-            peqtConfig = PeqtFactory.createDefaultConfig(securityModel, silent);
+            peqtConfig = PeqtFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             cuckooHashBinType = CuckooHashBinType.NO_STASH_PSZ18_3_HASH;
-        }
-
-        public Builder setBopprfConfig(BopprfConfig bopprfConfig) {
-            this.bopprfConfig = bopprfConfig;
-            return this;
         }
 
         public Builder setPeqtConfig(PeqtConfig peqtConfig) {

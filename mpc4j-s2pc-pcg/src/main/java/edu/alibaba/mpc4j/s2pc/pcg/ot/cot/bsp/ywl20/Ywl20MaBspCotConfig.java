@@ -10,18 +10,18 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 
 /**
- * YWL20-BSP-COT恶意安全协议配置项。
+ * malicious YWL20-BSP-COT config.
  *
  * @author Weiran Liu
  * @date 2022/6/7
  */
 public class Ywl20MaBspCotConfig extends AbstractMultiPartyPtoConfig implements BspCotConfig {
     /**
-     * 核COT协议配置项
+     * core COT
      */
     private final CoreCotConfig coreCotConfig;
     /**
-     * DPPRF协议配置项
+     * BP-DPPRF
      */
     private final BpDpprfConfig bpDpprfConfig;
 
@@ -46,11 +46,11 @@ public class Ywl20MaBspCotConfig extends AbstractMultiPartyPtoConfig implements 
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Ywl20MaBspCotConfig> {
         /**
-         * 核COT协议配置项
+         * core COT
          */
         private CoreCotConfig coreCotConfig;
         /**
-         * DPPRF协议配置项
+         * BP-DPPRF
          */
         private BpDpprfConfig bpDpprfConfig;
 

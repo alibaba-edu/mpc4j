@@ -10,34 +10,34 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 /**
- * BSP-COT协议接收方。
+ * abstract BSP-COT receiver.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
 public abstract class AbstractBspCotReceiver extends AbstractTwoPartyPto implements BspCotReceiver {
     /**
-     * 配置项
+     * config
      */
     private final BspCotConfig config;
     /**
-     * 最大数量
+     * max num for each SSP-COT
      */
-    private int maxNum;
+    private int maxEachNum;
     /**
-     * 最大批处理数量
+     * max batch num
      */
     private int maxBatchNum;
     /**
-     * 单点索引值数组
+     * α array
      */
     protected int[] alphaArray;
     /**
-     * 数量
+     * num for each SSP-COT
      */
-    protected int num;
+    protected int eachNum;
     /**
-     * 批处理数量
+     * batch num
      */
     protected int batchNum;
 
@@ -46,30 +46,30 @@ public abstract class AbstractBspCotReceiver extends AbstractTwoPartyPto impleme
         this.config = config;
     }
 
-    protected void setInitInput(int maxBatchNum, int maxNum) {
-        MathPreconditions.checkPositive("maxNum", maxNum);
-        this.maxNum = maxNum;
+    protected void setInitInput(int maxBatchNum, int maxEachNum) {
+        MathPreconditions.checkPositive("maxEachNum", maxEachNum);
+        this.maxEachNum = maxEachNum;
         MathPreconditions.checkPositive("maxBatchNum", maxBatchNum);
         this.maxBatchNum = maxBatchNum;
         initState();
     }
 
-    protected void setPtoInput(int[] alphaArray, int num) {
+    protected void setPtoInput(int[] alphaArray, int eachNum) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
-        this.num = num;
+        MathPreconditions.checkPositiveInRangeClosed("eachNum", eachNum, maxEachNum);
+        this.eachNum = eachNum;
         batchNum = alphaArray.length;
         MathPreconditions.checkPositiveInRangeClosed("batchNum", batchNum, maxBatchNum);
         this.alphaArray = Arrays.stream(alphaArray)
-            .peek(alpha -> MathPreconditions.checkNonNegativeInRange("α", alpha, num))
+            .peek(alpha -> MathPreconditions.checkNonNegativeInRange("α", alpha, eachNum))
             .toArray();
         extraInfo++;
     }
 
-    protected void setPtoInput(int[] alphaArray, int num, CotReceiverOutput preReceiverOutput) {
-        setPtoInput(alphaArray, num);
+    protected void setPtoInput(int[] alphaArray, int eachNum, CotReceiverOutput preReceiverOutput) {
+        setPtoInput(alphaArray, eachNum);
         MathPreconditions.checkGreaterOrEqual(
-            "preCotNum", preReceiverOutput.getNum(), BspCotFactory.getPrecomputeNum(config, batchNum, num)
+            "preCotNum", preReceiverOutput.getNum(), BspCotFactory.getPrecomputeNum(config, batchNum, eachNum)
         );
     }
 }

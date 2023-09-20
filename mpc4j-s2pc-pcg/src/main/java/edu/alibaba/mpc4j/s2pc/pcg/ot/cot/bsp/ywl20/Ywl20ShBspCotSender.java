@@ -19,33 +19,33 @@ import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.AbstractBspCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.SspCotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp.SspCotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.ywl20.Ywl20ShBspCotPtoDesc.PtoStep;
 
 /**
- * YWL20-BSP-COT半诚实安全协议发送方。
+ * semi-honest YWL20-BSP-COT sender.
  *
  * @author Weiran Liu
  * @date 2022/01/24
  */
 public class Ywl20ShBspCotSender extends AbstractBspCotSender {
     /**
-     * DPPRF协议配置项
+     * BP-DPPRF config
      */
     private final BpDpprfConfig bpDpprfConfig;
     /**
-     * 核COT协议发送方
+     * core COT
      */
     private final CoreCotSender coreCotSender;
     /**
-     * DPPRF协议发送方
+     * BP-DPPRF
      */
     private final BpDpprfSender bpDpprfSender;
     /**
-     * COT协议发送方输出
+     * COT sender output
      */
     private CotSenderOutput cotSenderOutput;
 
@@ -59,14 +59,14 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
     }
 
     @Override
-    public void init(byte[] delta, int maxBatchNum, int maxNum) throws MpcAbortException {
-        setInitInput(delta, maxBatchNum, maxNum);
+    public void init(byte[] delta, int maxBatchNum, int maxEachNum) throws MpcAbortException {
+        setInitInput(delta, maxBatchNum, maxEachNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, maxBatchNum, maxNum);
+        int maxCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, maxBatchNum, maxEachNum);
         coreCotSender.init(delta, maxCotNum);
-        bpDpprfSender.init(maxBatchNum, maxNum);
+        bpDpprfSender.init(maxBatchNum, maxEachNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -76,14 +76,14 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
     }
 
     @Override
-    public BspCotSenderOutput send(int batchNum, int num) throws MpcAbortException {
-        setPtoInput(batchNum, num);
+    public BspCotSenderOutput send(int batchNum, int eachNum) throws MpcAbortException {
+        setPtoInput(batchNum, eachNum);
         return send();
     }
 
     @Override
-    public BspCotSenderOutput send(int batchNum, int num, CotSenderOutput preSenderOutput) throws MpcAbortException {
-        setPtoInput(batchNum, num, preSenderOutput);
+    public BspCotSenderOutput send(int batchNum, int eachNum, CotSenderOutput preSenderOutput) throws MpcAbortException {
+        setPtoInput(batchNum, eachNum, preSenderOutput);
         cotSenderOutput = preSenderOutput;
         return send();
     }
@@ -93,7 +93,7 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
 
         stopWatch.start();
         // S send (extend, h) to F_COT, which returns q_i ∈ {0,1}^κ to S
-        int cotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, batchNum, num);
+        int cotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, batchNum, eachNum);
         if (cotSenderOutput == null) {
             cotSenderOutput = coreCotSender.send(cotNum);
         } else {
@@ -105,7 +105,7 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
         logStepInfo(PtoState.PTO_STEP, 1, 3, cotTime);
 
         stopWatch.start();
-        BpDpprfSenderOutput bpDpprfSenderOutput = bpDpprfSender.puncture(batchNum, num, cotSenderOutput);
+        BpDpprfSenderOutput bpDpprfSenderOutput = bpDpprfSender.puncture(batchNum, eachNum, cotSenderOutput);
         cotSenderOutput = null;
         stopWatch.stop();
         long dpprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -120,7 +120,7 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
                 // S sets v = (s_0^h,...,s_{n - 1}^h)
                 byte[][] vs = bpDpprfSenderOutput.getSpDpprfSenderOutput(batchIndex).getPrfKeys();
                 // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
-                for (int i = 0; i < num; i++) {
+                for (int i = 0; i < eachNum; i++) {
                     BytesUtils.xori(correlateByteArrays[batchIndex], vs[i]);
                 }
                 return SspCotSenderOutput.create(delta, vs);

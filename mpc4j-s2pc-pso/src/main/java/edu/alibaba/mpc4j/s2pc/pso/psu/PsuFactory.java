@@ -12,14 +12,14 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.*;
 import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.*;
 
 /**
- * PSU协议工厂。
+ * PSU factory.
  *
  * @author Weiran Liu
  * @date 2022/02/14
  */
 public class PsuFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private PsuFactory() {
         // empty
@@ -30,15 +30,11 @@ public class PsuFactory implements PtoFactory {
      */
     public enum PsuType {
         /**
-         * KRTW19原始方案
+         * KRTW19
          */
-        KRTW19_ORI,
+        KRTW19,
         /**
-         * KRTW19优化方案
-         */
-        KRTW19_OPT,
-        /**
-         * GMR21方案
+         * GMR21
          */
         GMR21,
         /**
@@ -70,10 +66,8 @@ public class PsuFactory implements PtoFactory {
     public static PsuServer createServer(Rpc serverRpc, Party clientParty, PsuConfig config) {
         PsuType type = config.getPtoType();
         switch (type) {
-            case KRTW19_ORI:
-                return new Krtw19OriPsuServer(serverRpc, clientParty, (Krtw19OriPsuConfig) config);
-            case KRTW19_OPT:
-                return new Krtw19OptPsuServer(serverRpc, clientParty, (Krtw19OptPsuConfig) config);
+            case KRTW19:
+                return new Krtw19PsuServer(serverRpc, clientParty, (Krtw19PsuConfig) config);
             case GMR21:
                 return new Gmr21PsuServer(serverRpc, clientParty, (Gmr21PsuConfig) config);
             case ZCL22_SKE:
@@ -100,10 +94,8 @@ public class PsuFactory implements PtoFactory {
     public static PsuClient createClient(Rpc clientRpc, Party serverParty, PsuConfig config) {
         PsuType type = config.getPtoType();
         switch (type) {
-            case KRTW19_ORI:
-                return new Krtw19OriPsuClient(clientRpc, serverParty, (Krtw19OriPsuConfig) config);
-            case KRTW19_OPT:
-                return new Krtw19OptPsuClient(clientRpc, serverParty, (Krtw19OptPsuConfig) config);
+            case KRTW19:
+                return new Krtw19PsuClient(clientRpc, serverParty, (Krtw19PsuConfig) config);
             case GMR21:
                 return new Gmr21PsuClient(clientRpc, serverParty, (Gmr21PsuConfig) config);
             case ZCL22_SKE:

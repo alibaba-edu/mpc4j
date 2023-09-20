@@ -55,17 +55,13 @@ public class Mbfk16SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(SingleIndexPirParams indexPirParams, int serverElementSize, int elementBitLength) {
+        setInitInput(serverElementSize, elementBitLength);
         assert (indexPirParams instanceof Mbfk16SingleIndexPirParams);
         params = (Mbfk16SingleIndexPirParams) indexPirParams;
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        List<byte[]> publicKeysPayload = clientSetup(serverElementSize, elementBitLength);
-        DataPacketHeader clientPublicKeysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), extraInfo,
-            rpc.ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(clientPublicKeysHeader, publicKeysPayload));
+        clientSetup(serverElementSize, elementBitLength);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -76,16 +72,12 @@ public class Mbfk16SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(int serverElementSize, int elementBitLength) {
-        params = Mbfk16SingleIndexPirParams.DEFAULT_PARAMS;
+        setInitInput(serverElementSize, elementBitLength);
+        setDefaultParams();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        List<byte[]> publicKeysPayload = clientSetup(serverElementSize, elementBitLength);
-        DataPacketHeader clientPublicKeysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), extraInfo,
-            rpc.ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(clientPublicKeysHeader, publicKeysPayload));
+        clientSetup(serverElementSize, elementBitLength);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -132,15 +124,14 @@ public class Mbfk16SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public List<byte[]> clientSetup(int serverElementSize, int elementBitLength) {
-        if (params == null) {
-            params = Mbfk16SingleIndexPirParams.DEFAULT_PARAMS;
-        }
         int maxPartitionBitLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength();
-        setInitInput(serverElementSize, elementBitLength, maxPartitionBitLength);
+        partitionBitLength = Math.min(maxPartitionBitLength, elementBitLength);
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        partitionSize = CommonUtils.getUnitNum(elementBitLength, partitionBitLength);
         elementSizeOfPlaintext = PirUtils.elementSizeOfPlaintext(
             partitionByteLength, params.getPolyModulusDegree(), params.getPlainModulusBitLength()
         );
-        int plaintextSize = CommonUtils.getUnitNum(num, elementSizeOfPlaintext);
+        int plaintextSize = CommonUtils.getUnitNum(serverElementSize, elementSizeOfPlaintext);
         dimensionSize = PirUtils.computeDimensionLength(plaintextSize, params.getDimension());
         return generateKeyPair();
     }
@@ -157,6 +148,11 @@ public class Mbfk16SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public byte[] decodeResponse(List<byte[]> response, int index) throws MpcAbortException {
+        return decodeResponse(response, index, elementBitLength);
+    }
+
+    @Override
+    public byte[] decodeResponse(List<byte[]> response, int index, int elementBitLength) throws MpcAbortException {
         int partitionResponseSize = IntStream.range(0, params.getDimension() - 1)
             .map(i -> params.getExpansionRatio())
             .reduce(1, (a, b) -> a * b);
@@ -191,5 +187,10 @@ public class Mbfk16SingleIndexPirClient extends AbstractSingleIndexPirClient {
         this.publicKey = keyPair.remove(0);
         this.secretKey = keyPair.remove(0);
         return new ArrayList<>();
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Mbfk16SingleIndexPirParams.DEFAULT_PARAMS;
     }
 }

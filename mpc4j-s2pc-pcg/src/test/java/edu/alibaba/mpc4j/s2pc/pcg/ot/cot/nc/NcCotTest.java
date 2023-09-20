@@ -87,7 +87,7 @@ public class NcCotTest extends AbstractTwoPartyPtoTest {
             NcCotType.YWL20.name() + " (" + SecurityModel.SEMI_HONEST + ", Unique-Index)",
             new Ywl20NcCotConfig.Builder(SecurityModel.SEMI_HONEST).setMspCotConfig(shUniMspCotConfig).build(),
         });
-        // CRR21 (Malicious, Regular-Index, Silver11)
+        // CRR21 (Regular-Index, Silver11)
         configurations.add(new Object[]{
             NcCotType.CRR21.name() + " (" + SecurityModel.MALICIOUS + " (Regular-Index, Silver 11)",
             new Crr21NcCotConfig.Builder(SecurityModel.MALICIOUS).setCodeType(LdpcCreatorUtils.CodeType.SILVER_11)
@@ -132,7 +132,6 @@ public class NcCotTest extends AbstractTwoPartyPtoTest {
             new Crr21NcCotConfig.Builder(SecurityModel.MALICIOUS).setCodeType(LdpcCreatorUtils.CodeType.SILVER_5)
                 .setMspCotConfig(new Ywl20UniMspCotConfig.Builder(SecurityModel.MALICIOUS).build()).build(),
         });
-        // CRR21 (Semi-honest, Unique-Index, Silver5)
         configurations.add(new Object[]{
             NcCotType.CRR21.name() + " (" + SecurityModel.SEMI_HONEST + ", Unique-Index, Silver 5)",
             new Crr21NcCotConfig.Builder(SecurityModel.SEMI_HONEST).setCodeType(LdpcCreatorUtils.CodeType.SILVER_5)

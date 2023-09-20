@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory.IntCuckooHashBinType;
@@ -21,7 +22,7 @@ abstract class AbstractIntNoStashCuckooHashBin implements IntNoStashCuckooHashBi
      */
     private final IntCuckooHashBinType type;
     /**
-     * 哈希函数数量为3
+     * hash num
      */
     private final int hashNum;
     /**
@@ -92,15 +93,26 @@ abstract class AbstractIntNoStashCuckooHashBin implements IntNoStashCuckooHashBi
     }
 
     @Override
+    public int getHashNum() {
+        return hashNum;
+    }
+
+    @Override
+    public byte[][] getHashKeys() {
+        return Arrays.stream(hashes)
+            .map(Prf::getKey)
+            .toArray(byte[][]::new);
+    }
+
+    @Override
     public void insertItems(int[] items) {
-        assert !insertedItems;
+        Preconditions.checkArgument(!insertedItems);
         // 一次插入的元素数量小于等于预先设定好的数量
-        assert items.length <= maxItemSize;
+        MathPreconditions.checkNonNegativeInRangeClosed("item.length", items.length, maxItemSize);
         long distinctCount = Arrays.stream(items)
-            .peek(item -> {
-                assert item >= 0 : "Item must be non-negative: " + item;
-            })
-            .distinct().count();
+            .peek(item -> MathPreconditions.checkNonNegative("item", item))
+            .distinct()
+            .count();
         Preconditions.checkArgument(distinctCount == items.length, "Inserted items contain duplicate item");
         for (int item : items) {
             insertItem(item, 0, 0);

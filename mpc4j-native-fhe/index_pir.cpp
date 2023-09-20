@@ -590,3 +590,75 @@ Ciphertext mk22_constant_weight_eq(Evaluator& evaluator, const RelinKeys* relin_
     }
     return temp_ciphertext;
 }
+
+vector<Ciphertext> merge_response(const SEALContext& context, const GaloisKeys& galois_keys, vector<Ciphertext> response,
+                                  int32_t num_slots_per_entry, uint32_t first_two_dimension_size) {
+    Evaluator evaluator(context);
+    BatchEncoder batch_encoder(context);
+    uint32_t row_size = context.first_context_data()->parms().poly_modulus_degree() / 2;
+    auto g = (int32_t) (row_size / first_two_dimension_size);
+    uint32_t size = response.size() / num_slots_per_entry;
+    vector<vector<Ciphertext>> responses;
+    responses.reserve(size);
+    for (uint32_t i = 0; i < size; i++) {
+        vector<Ciphertext> temp;
+        temp.reserve(num_slots_per_entry);
+        for (uint32_t j = 0; j < num_slots_per_entry; j++) {
+            temp.push_back(response[j * size + i]);
+        }
+        responses.push_back(temp);
+    }
+    uint32_t num_slots_per_entry_rounded = get_next_power_of_two(num_slots_per_entry);
+    uint32_t max_empty_slots = first_two_dimension_size;
+    auto num_chunk_ctx = ceil(num_slots_per_entry * 1.0 / max_empty_slots);
+    vector<Ciphertext> chunk_response;
+    for (uint32_t i = 0; i < size; i++) {
+        auto remaining_slots_entry = num_slots_per_entry;
+        for (uint32_t j = 0; j < num_chunk_ctx; j++) {
+            auto chunk_idx = j * max_empty_slots;
+            int32_t loop = std::min((int32_t) max_empty_slots, remaining_slots_entry);
+            Ciphertext chunk_ct_acc = responses[i][chunk_idx];
+            for (int32_t k = 1; k < loop; k++) {
+                evaluator.rotate_rows_inplace(responses[i][chunk_idx + k], -k * g, galois_keys);
+                evaluator.add_inplace(chunk_ct_acc, responses[i][chunk_idx + k]);
+            }
+            remaining_slots_entry -= loop;
+            chunk_response.push_back(chunk_ct_acc);
+        }
+    }
+    auto current_fill = g * num_slots_per_entry;
+    size_t num_buckets_merged = row_size / current_fill;
+    if (ceil(num_slots_per_entry * 1.0 / max_empty_slots) > 1 || num_buckets_merged <= 1 || chunk_response.size() == 1) {
+        return chunk_response;
+    }
+    current_fill = g * (int32_t) num_slots_per_entry_rounded;
+    auto merged_ctx_needed = ceil(((double) chunk_response.size() * current_fill * 1.0) / row_size);
+    vector<Ciphertext> chunk_bucket_responses;
+    for (int32_t i = 0; i < merged_ctx_needed; i++) {
+        Ciphertext ct_acc;
+        for (int32_t j = 0; j < num_buckets_merged; j++) {
+            if (i * num_buckets_merged + j < chunk_response.size()) {
+                Ciphertext copy_ct_acc = chunk_response[i * num_buckets_merged + j];
+                Ciphertext tmp_ct = copy_ct_acc;
+                for (int32_t k = 1; k < row_size / current_fill; k *= 2) {
+                    evaluator.rotate_rows_inplace(tmp_ct, -k * current_fill, galois_keys);
+                    evaluator.add_inplace(copy_ct_acc, tmp_ct);
+                    tmp_ct = copy_ct_acc;
+                }
+                std::vector<uint64_t> selection_vector(context.first_context_data()->parms().poly_modulus_degree(), 0ULL);
+                std::fill_n(selection_vector.begin() + (j * current_fill), current_fill, 1ULL);
+                std::fill_n(selection_vector.begin() + row_size + (j * current_fill), current_fill, 1ULL);
+                Plaintext selection_pt;
+                batch_encoder.encode(selection_vector, selection_pt);
+                evaluator.multiply_plain_inplace(copy_ct_acc, selection_pt);
+                if (j == 0) {
+                    ct_acc = copy_ct_acc;
+                } else {
+                    evaluator.add_inplace(ct_acc, copy_ct_acc);
+                }
+            }
+        }
+        chunk_bucket_responses.push_back(ct_acc);
+    }
+    return chunk_bucket_responses;
+}

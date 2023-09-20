@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[1.0.9\]
+
+### Added
+
+- `mpc4j-common-tool`
+  - Introduce the way of setting ball-and-box argument in open source code [VOLE-PSI](https://github.com/Visa-Research/volepsi), see `MaxBinSizeUtils` for more details.
+  - Introduce a more efficient way of doing operations in GF128 field. The implementation is inspired by the blog [Reversing a Finite Filed Multiplication Optimizaion](https://blog.quarkslab.com/reversing-a-finite-field-multiplication-optimization.html).
+  - Implement operations in GF64 field.
+- `mpc4j-common-matrix`
+  - Implement "Blazing Fast OKVS" introduced in the paper "Blazing Fast PSI from Improved OKVS and Subfield VOLE". The implementation is inspired by the open-soure code [VOLE-PSI](https://github.com/Visa-Research/volepsi).
+  - Implement "band encoding OKVS" introduced in the paper "Near-Optimal Oblivious Key-Value Stores for Efficient PSI, PSU and Volume-Hiding Multi-Maps". We thank Joon Young Seo and Kevin Yeo for the offline discussion of some implementation details.
+- `mpc4j-s2pc-pcg`
+  - Implement silent VOLE (both for semi-honest version and the malicious version) in GF128 field, using the technique introduced in the paper "Wolverine: Fast, Scalable, and Communication-Efficient Zero-Knowledge Proofs for Boolean and Arithmetic Circuits".
+  - Implement single-point OT / single-point VOLE for ease of tests.
+- `mpc4j-s2pc-opf`
+  - Implement private set membership protocol introduced in the paper "Circuit-PSI with Linear Complexity via Relaxed Batch OPPRF". 
+  - Implement VOLE-OPRF introduced in the paper "VOLE-PSI: fast OPRF and circuit-PSI from vector-OLE".
+- `mpc4j-s2pc-pir`
+  - Implement native and PBC batch query for index PIR.
+  - Implement unbalanced circuit PSI introduced in the paper "PSI with computation or Circuit-PSI for Unbalanced Sets from Homomorphic Encryption".
+  - Implement circuit PSI (both for equal-size and unequal-size) introduced in the paper "Efficient circuit-based PSI with linear communication".
+  - Implement circuit PSI (both for equal-size and unequal-size) introduced in the paper "Circuit-PSI with Linear Complexity via Relaxed Batch OPPRF".
+  - Implement client-preprocessing PIR introduced in the paper "Piano : Extremely Simple , Single-Server PIR with Sublinear Server Computation". The implementation is inspired by the open-source code [Piano-PIR](https://github.com/pianopir/Piano-PIR).
+  - Implement client-preprocessing PIR introduced in the paper "Simple and Practical Amortized Sublinear Private Information Retrieval".
+- `mpc4j-s2pc-pso`
+  - Implement aider-PSI introduced in the paper "Scaling private set intersection to billion-element sets".
+  - Implement RT21 PSI introduced in the paper "Compact and Malicious Private Set Intersection for Small Sets". The implementation is inspired by the open-source code [MiniPSI](https://github.com/osu-crypto/MiniPSI).
+  - Implement PRTY19 PSI introduced in the paper "SpOT-Light : Lightweight Private Set Intersection from Sparse OT Extension".
+  - Implement PRTY20 PSI introduced in the paper "PSI from PaXoS: Fast, Malicious Private Set Intersection".
+  - Implement DCW13 PSI introduced in the paper "When private set intersection meets big data: An efficient and scalable protocol".
+  - Implement RS21 PSI introduced in the paper "VOLE-PSI: fast OPRF and circuit-PSI from vector-OLE".
+  - Implement RR22 PSI introduced in the paper "Blazing Fast PSI from Improved OKVS and Subfield VOLE".
+  - Implement PSZ14 PSI introduced in the paper "Faster Private Set Intersection based on OT Extension".
+
+### Changed
+
+- `mpc4-common-tool`
+  - Introduce ways of computing distinct hashes in the open-source code [VOLE-PSI](https://github.com/Visa-Research/volepsi) (related to Bloom Filter, Garbled Bloom Filter, and Garbled Cuckoo Table).
+  - Choose parameters for no-stash cuckoo hash for small item sizes.
+- `mpc4j-common-matrix`
+  - Refactor codes for OKVS so that OKVS implementations with doubly obliviousness share the same code with standard OKVS implementations.
+- `mpc4j-s2pc-pir`
+  - Faster matrix multiplication by avoiding unnecessary module operation in SimplePIR.
+  - Refined labeled-PSI implementations based on the open-source code [APSI](https://github.com/Microsoft/APSI) of the paper "Labeled PSI from Homomorphic Encryption with Reduced Computation and Communication".
+  
+### Fixed
+
+- common
+  - Update documentations to show to install FourQ, and how to solve the problem if FourQ test cases are failed.
+- `mpc4j-s2pc-pcg`
+  - Fix a bug for wrong LPN parameters used in silent OT.
+  - Fix a bug for malicious-secure 1-out-of-2 COT introduced in the paper "SoftSpokenOT: Communication - Computation Tradeoffs in OT Extension" and fixed by the revised version of the paper "Actively Secure OT Extension with Optimal Overhead".
+- `mpc4j-s2pc-pir`
+  - Fix a bug for SimplePIR to support values with arbitrary bit length (instead of bit length that divides `Byte.SIZE`).
+  - Fix a bug for Vectorized PIR to support values with arbitrary bit length (instead of bit length that divides `Byte.SIZE`).
+- `mpc4j-s2pc-pjc`
+  - fix a bug when running PID with unequal set size.
+
 ## \[1.0.8\]
 
 ### Added
@@ -89,7 +147,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - We implement related-batch programmable OPRFs introduced in the CGS22 paper.
   - We implement single-query OPRF introduced in the RA17 paper.
 - `mpc4j-s2pc-pso`
-  - We implement two circuit PSI protocols (without associated payload) introduced in the PRTY19 and CGS22 paper.
+  - We implement two circuit PSI protocols (without associated payload) introduced in the PSTY19 and CGS22 paper.
 
 ### Fixed
 

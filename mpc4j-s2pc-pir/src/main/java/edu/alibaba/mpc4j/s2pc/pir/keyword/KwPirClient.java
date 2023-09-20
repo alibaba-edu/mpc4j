@@ -20,10 +20,12 @@ public interface KwPirClient extends TwoPartyPto {
      *
      * @param kwPirParams       keyword PIR params.
      * @param serverElementSize server element size.
+     * @param maxRetrievalSize  max retrieval size.
      * @param valueByteLength   value byte length.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(KwPirParams kwPirParams, int serverElementSize, int valueByteLength) throws MpcAbortException;
+    void init(KwPirParams kwPirParams, int serverElementSize, int maxRetrievalSize, int valueByteLength)
+        throws MpcAbortException;
 
     /**
      * client initializes protocol.

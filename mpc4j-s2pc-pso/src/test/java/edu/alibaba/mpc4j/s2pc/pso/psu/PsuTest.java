@@ -7,8 +7,7 @@ import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfsPsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19OptPsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19OriPsuConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22PkePsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22SkePsuConfig;
 import org.apache.commons.lang3.time.StopWatch;
@@ -100,15 +99,10 @@ public class PsuTest extends AbstractTwoPartyPtoTest {
             PsuFactory.PsuType.GMR21.name() + " (silent)",
             new Gmr21PsuConfig.Builder(true).build(),
         });
-        // KRTW19_OPT
+        // KRTW19
         configurations.add(new Object[]{
-            PsuFactory.PsuType.KRTW19_OPT.name(),
-            new Krtw19OptPsuConfig.Builder().build(),
-        });
-        // KRTW19_ORI
-        configurations.add(new Object[]{
-            PsuFactory.PsuType.KRTW19_ORI.name(),
-            new Krtw19OriPsuConfig.Builder().build(),
+            PsuFactory.PsuType.KRTW19.name(),
+            new Krtw19PsuConfig.Builder().build(),
         });
 
         return configurations;

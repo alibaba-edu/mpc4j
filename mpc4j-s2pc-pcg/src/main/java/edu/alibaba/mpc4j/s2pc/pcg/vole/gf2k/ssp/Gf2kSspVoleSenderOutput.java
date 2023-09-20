@@ -1,14 +1,14 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 
 /**
- * Single single-point GF2K VOLE sender output.
+ * Single single-point GF2K-VOLE sender output.
  * <p>
  * The sender gets (x, t) with t = q + Δ·x, where Δ and q is owned by the receiver, and only the α-th x is non-zero.
  * </p>
@@ -39,20 +39,18 @@ public class Gf2kSspVoleSenderOutput implements PcgPartyOutput {
      * @return a sender output.
      */
     public static Gf2kSspVoleSenderOutput create(int alpha, byte[] x, byte[][] ts) {
-        Gf2kSspVoleSenderOutput receiverOutput = new Gf2kSspVoleSenderOutput();
-        assert ts.length > 0 : "# of t must be greater than 0: " + ts.length;
-        assert alpha >= 0 && alpha < ts.length : "α must be in range [0, " + ts.length + "): " + alpha;
-        receiverOutput.alpha = alpha;
-        assert x.length == CommonConstants.BLOCK_BYTE_LENGTH
-            : "x must be in range [0, 2^" + CommonConstants.BLOCK_BIT_LENGTH + "): " + Hex.toHexString(x);
-        receiverOutput.x = BytesUtils.clone(x);
-        receiverOutput.ts = Arrays.stream(ts)
-            .peek(t -> {
-                assert t.length == CommonConstants.BLOCK_BYTE_LENGTH
-                    : "t must be in range [0, 2^" + CommonConstants.BLOCK_BIT_LENGTH + "): " + Hex.toHexString(t);
-            })
+        Gf2kSspVoleSenderOutput senderOutput = new Gf2kSspVoleSenderOutput();
+        MathPreconditions.checkPositive("num", ts.length);
+        MathPreconditions.checkNonNegativeInRange("α", alpha, ts.length);
+        senderOutput.alpha = alpha;
+        MathPreconditions.checkEqual("x.length", "λ in bytes", x.length, CommonConstants.BLOCK_BYTE_LENGTH);
+        senderOutput.x = BytesUtils.clone(x);
+        senderOutput.ts = Arrays.stream(ts)
+            .peek(t ->
+                MathPreconditions.checkEqual("t.length", "λ in bytes", t.length, CommonConstants.BLOCK_BYTE_LENGTH)
+            )
             .toArray(byte[][]::new);
-        return receiverOutput;
+        return senderOutput;
     }
 
     /**
@@ -72,19 +70,33 @@ public class Gf2kSspVoleSenderOutput implements PcgPartyOutput {
     }
 
     /**
-     * Gets x.
-     *
-     * @return x.
+     * Gets x[α].
+     * @return x[α].
      */
-    public byte[] getX() {
+    public byte[] getAlphaX() {
         return x;
     }
 
     /**
-     * Gets t.
+     * Gets the assigned x.
      *
-     * @param index the index.
-     * @return t.
+     * @param index index.
+     * @return the assigned x, where x is non-zero when index = α.
+     */
+    public byte[] getX(int index) {
+        MathPreconditions.checkNonNegativeInRange("index", index, ts.length);
+        if (index == alpha) {
+            return BytesUtils.clone(x);
+        } else {
+            return new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        }
+    }
+
+    /**
+     * Gets the assigned t.
+     *
+     * @param index index.
+     * @return the assigned t.
      */
     public byte[] getT(int index) {
         return ts[index];

@@ -15,7 +15,7 @@ using namespace std;
 #ifndef MPC3J_NATIVE_FHE_APSI_H
 #define MPC3J_NATIVE_FHE_APSI_H
 
-vector<Ciphertext> compute_encrypted_powers(const EncryptionParameters& parms, vector<Ciphertext> query, vector<vector<uint32_t>> parent_powers,
+[[maybe_unused]] vector<Ciphertext> compute_encrypted_powers(const EncryptionParameters& parms, vector<Ciphertext> query, vector<vector<uint32_t>> parent_powers,
                                             vector<uint32_t> source_power_index, uint32_t ps_low_power, const RelinKeys& relin_keys);
 
 Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts, const PublicKey& public_key);
@@ -27,5 +27,16 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
                                  uint32_t ps_low_power, const RelinKeys& relin_keys);
 
 Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers, vector<Plaintext> coeff_plaintexts);
+
+Ciphertext ucpsi_polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers,
+                                       vector<Plaintext> coeff_plaintexts, const PublicKey& public_key);
+
+Ciphertext ucpsi_polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphertext> encrypted_powers,
+                                       vector<Plaintext> coeff_plaintexts, uint32_t ps_low_power, const RelinKeys& relin_keys,
+                                       const PublicKey& public_key);
+
+vector<Ciphertext> ucpsi_compute_encrypted_powers(const EncryptionParameters& parms, vector<Ciphertext> query,
+                                                  vector<vector<uint32_t>> parent_powers, vector<uint32_t> source_power_index,
+                                                  uint32_t ps_low_power, const RelinKeys& relin_keys);
 
 #endif //MPC3J_NATIVE_FHE_APSI_H

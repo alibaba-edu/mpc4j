@@ -99,17 +99,19 @@ There are many research results related to base OT. We adjust some results in in
 - Chou, Tung, and Claudio Orlandi. The Simplest Protocol for Oblivious Transfer. LATINCRYPT 2015, Springer International Publishing, pp. 40-58.
 - Naor, Moni, and Benny Pinkas. Efficient Oblivious Transfer Protocols. SODA 2001, ACM, pp. 448-457.
 
-### OT Extension and Silent OT
+### OT Extension, Silent OT, and VOLE
 
-We implement some OT Extension (OTE) and Silent OT protocols. Note that currently, we have not updated our maliciously secure implementations based on "SoftSpokenOT: Communication – Computation Tradeoffs in OT Extension (CRYPTO 2022)", which introduce malicious security flaw in some of the existing protocols.
+We implement some OT Extension (OTE) and Silent OT protocols.
 
-- Couteau, Geoffroy, Peter Rindal, and Srinivasan Raghuraman. Silver: Silent VOLE and Oblivious Transfer from Hardness of Decoding Structured LDPC Codes. CRYPTO 2021, Part III, Cham: Springer International Publishing, pp. 502-534.
+- Couteau, Geoffroy, Peter Rindal, and Srinivasan Raghuraman. Silver: Silent VOLE and Oblivious Transfer from Hardness of Decoding Structured LDPC Codes. CRYPTO 2021, Part III, Cham: Springer International Publishing, pp. 502-534. (**Warning: Silver is not secure so that you need to use other silent OT. See paper "Correlated Pseudorandomness from Expand-Accumulate Codes" (CRYPTO 2022) and paper "Expand-Convolute Codes for Pseudorandom Correlation Generators from LPN" (CRYPTO 2023) for more details.**)
 - Yang, Kang, Chenkai Weng, Xiao Lan, Jiang Zhang, and Xiao Wang. Ferret: Fast Extension for Correlated OT with Small Communication. CCS 2020, ACM, pp. 1607-1626.
 - Orrù, Michele, Emmanuela Orsini, and Peter Scholl. Actively Secure 1-out-of-N OT Extension with Application to Private Set Intersection. CT-RSA 2017, Springer International Publishing, pp. 381-396.
-- Keller, Marcel, Emmanuela Orsini, and Peter Scholl. Actively Secure OT Extension with Pptimal Overhead. CRYPTO 2015, Part I, Berlin, Heidelberg: Springer Berlin Heidelberg, pp. 724-741.
+- Keller, Marcel, Emmanuela Orsini, and Peter Scholl. Actively Secure OT Extension with Pptimal Overhead. CRYPTO 2015, Part I, Berlin, Heidelberg: Springer Berlin Heidelberg, pp. 724-741. Note that we fix the malicious security flaw introduced in the paper "SoftSpokenOT: Communication – Computation Tradeoffs in OT Extension (CRYPTO 2022)".
 - Kolesnikov, Vladimir, and Ranjit Kumaresan. Improved OT Extension for Transferring Short Secrets. CRYPTO 2013, Part II, Springer Berlin Heidelberg, pp. 54-70.
 - Asharov, Gilad, Yehuda Lindell, Thomas Schneider, and Michael Zohner. More Efficient Oblivious Transfer and Extensions for Faster Secure Computation. CCS 2013, ACM, pp. 535-548.
 - Ishai, Yuval, Joe Kilian, Kobbi Nissim, and Erez Petrank. Extending Oblivious Transfers Efficiently. CRYPTO 2003, Springer Berlin Heidelberg, pp. 145-161.
+- Keller, Marcel, Emmanuela Orsini, and Peter Scholl. MASCOT: Faster Malicious Arithmetic Secure Computation with Oblivious Transfer. CCS 2016, pp. 830-842.
+- Weng, Chenkai, Kang Yang, Jonathan Katz, and Xiao Wang. Wolverine: Fast, Scalable, and Communication-Efficient Zero-Knowledge Proofs for Boolean and Arithmetic Circuits. S\&P 2021, IEEE, pp. 1074-1091.
 
 ### Multiplication Triple
 
@@ -118,7 +120,7 @@ We implement some OT Extension (OTE) and Silent OT protocols. Note that currentl
 
 ## Private Information Retrieval
 
-We implement some Private Information Retrieval (PIR) protocols. We note that there are parameter adjustments and re-implementations for some of the protocols so that the results can run in a more robust manner. All protocols are implemented based on [SEAL](https://github.com/microsoft/SEAL) (instead of [NFLlib](https://github.com/quarkslab/NFLlib)).
+We implement some Private Information Retrieval (PIR) protocols. We note that there are parameter adjustments and re-implementations for some protocols so that the results can run in a more robust manner. All protocols are implemented based on [SEAL](https://github.com/microsoft/SEAL) (instead of [NFLlib](https://github.com/quarkslab/NFLlib)).
 
 ### Index PIR
 
@@ -142,22 +144,35 @@ We implement Keyword PIR (also known as Labeled PSI) in `mpc4j-s2pc-pir` and unb
 - Chen, Hao, Kim Laine, and Peter Rindal. Fast Private Set Intersection from Homomorphic Encryption. CCS 2017, ACM, pp. 1243-1255.
 - Ahmad, Ishtiyaque, Divyakant Agrawal, Amr El Abbadi, and Trinabh Gupta. Pantheon: Private Retrieval from Public Key-Value Store. VLDB 2022, pp. 643-656.
 
+### Client-preprocessing PIR
+
+- Zhou, Mingxun, Andrew Park, Elaine Shi, and Wenting Zheng. Piano: Extremely Simple, Single-Server PIR with Sublinear Server Computation. To appear in S\&P 2024.
+- Mughees, Muhammad Haris, I. Sun, and Ling Ren. Simple and Practical Amortized Sublinear Private Information Retrieval. Cryptology ePrint Archive (2023).
+
 ## Private Set Operation
 
 We implement Private Set Operations in `mpc4j-s2pc-pso` and `mpc4j-s2pc-pjc`.
 
 ### Oblivious PRF and Private Set Intersection
 
+- Raghuraman, Srinivasan, and Peter Rindal. Blazing Fast PSI from Improved OKVS and Subfield VOLE. CCS 2022, pp. 2505-2517.
+- Rindal, Peter, and Phillipp Schoppmann. VOLE-PSI: Fast OPRF and Circuit-PSI from Vector-OLE. EUROCRYPT 2021, Cham: Springer International Publishing, pp. 901-930.
+- Rosulek, Mike, and Ni Trieu. Compact and Malicious Private Set Intersection for Small Sets. CCS 2021, pp. 1166-1181.
+- Pinkas, Benny, Mike Rosulek, Ni Trieu, and Avishay Yanai. PSI from PaXoS: Fast, Malicious Private Set Intersection. EUROCRYPT 2020, Cham: Springer International Publishing, pp. 739-767.
 - Chase, Melissa, and Peihan Miao. Private Set Intersection in the Internet Setting from Lightweight Oblivious PRF. CRYPTO 2020, Part III, Springer International Publishing, pp. 34-63.
+- Pinkas, Benny, Mike Rosulek, Ni Trieu, and Avishay Yanai. SpOT-light: Lightweight Private Set Intersection from Sparse OT Extension. CRYPTO 2019, Part III, Springer International Publishing, pp. 401-431.
 - Resende, Amanda C. Davi, and Diego F. Aranha. Faster Unbalanced Private Set Intersection. FC 2018, Springer Berlin Heidelberg, pp. 203-221.
 - Albrecht, Martin R., Christian Rechberger, Thomas Schneider, Tyge Tiessen, and Michael Zohner. Ciphers for MPC and FHE. EUROCRYPT 2015, Part I, Springer Berlin Heidelberg, pp. 430-454.
 - Kolesnikov, Vladimir, Ranjit Kumaresan, Mike Rosulek, and Ni Trieu. Efficient Batched Oblivious PRF with Applications to Private Set Intersection. CCS 2016, ACM, pp. 818-829.
+- Pinkas, Benny, Thomas Schneider, and Michael Zohner. Faster Private Set Intersection based on OT Extension. USENIX Security 2014, pp. 797-812.
+- Dong, Changyu, Liqun Chen, and Zikai Wen. When Private Set Intersection Meets Big Data: an Efficient and Scalable Protocol. CCS 2013, pp. 789-800.
 - (PSI version) Huberman, Bernardo A., Matt Franklin, and Tad Hogg. Enhancing Privacy and Trust in Electronic Communities. EC 1999, ACM, pp. 78-86.
 
 ### Circuit PSI
 
 - Pinkas, Benny, Thomas Schneider, Oleksandr Tkachenko, and Avishay Yanai. Efficient Circuit-Based PSI with Linear Communication. EUROCRYPT 2019, Part III, Springer International Publishing, pp. 122-153.
 - Chandran, Nishanth, Divya Gupta, and Akash Shah. Circuit-PSI with Linear Complexity via Relaxed Batch OPPRF. PETS 2022, no. 1, pp. 353-372.
+- 
 
 ### Private Set Union and Private ID
 

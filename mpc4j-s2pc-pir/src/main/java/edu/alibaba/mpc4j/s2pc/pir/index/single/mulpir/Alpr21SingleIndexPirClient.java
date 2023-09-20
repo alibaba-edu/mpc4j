@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
 import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
@@ -56,6 +57,7 @@ public class Alpr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(SingleIndexPirParams indexPirParams, int serverElementSize, int elementBitLength) {
+        setInitInput(serverElementSize, elementBitLength);
         assert (indexPirParams instanceof Alpr21SingleIndexPirParams);
         params = (Alpr21SingleIndexPirParams) indexPirParams;
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -78,7 +80,8 @@ public class Alpr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(int serverElementSize, int elementBitLength) {
-        params = Alpr21SingleIndexPirParams.DEFAULT_PARAMS;
+        setInitInput(serverElementSize, elementBitLength);
+        setDefaultParams();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
@@ -134,15 +137,14 @@ public class Alpr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public List<byte[]> clientSetup(int serverElementSize, int elementBitLength) {
-        if (params == null) {
-            params = Alpr21SingleIndexPirParams.DEFAULT_PARAMS;
-        }
         int maxPartitionBitLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength();
-        setInitInput(serverElementSize, elementBitLength, maxPartitionBitLength);
+        partitionBitLength = Math.min(maxPartitionBitLength, elementBitLength);
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        partitionSize = CommonUtils.getUnitNum(elementBitLength, partitionBitLength);
         elementSizeOfPlaintext = PirUtils.elementSizeOfPlaintext(
             partitionByteLength, params.getPolyModulusDegree(), params.getPlainModulusBitLength()
         );
-        int plaintextSize = (int) Math.ceil((double) this.num / elementSizeOfPlaintext);
+        int plaintextSize = CommonUtils.getUnitNum(serverElementSize, elementSizeOfPlaintext);
         dimensionSize = PirUtils.computeDimensionLength(plaintextSize, params.getDimension());
         return generateKeyPair();
     }
@@ -159,6 +161,11 @@ public class Alpr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public byte[] decodeResponse(List<byte[]> response, int index) throws MpcAbortException {
+        return decodeResponse(response, index, elementBitLength);
+    }
+
+    @Override
+    public byte[] decodeResponse(List<byte[]> response, int index, int elementBitLength) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(response.size() == partitionSize);
         ZlDatabase[] databases = new ZlDatabase[partitionSize];
         IntStream intStream = IntStream.range(0, partitionSize);
@@ -174,6 +181,11 @@ public class Alpr21SingleIndexPirClient extends AbstractSingleIndexPirClient {
             databases[partitionIndex] = ZlDatabase.create(partitionBitLength, new byte[][]{partitionBytes});
         });
         return NaiveDatabase.createFromZl(elementBitLength, databases).getBytesData(0);
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Alpr21SingleIndexPirParams.DEFAULT_PARAMS;
     }
 
     /**

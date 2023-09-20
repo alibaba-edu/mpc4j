@@ -25,17 +25,13 @@ import java.util.stream.IntStream;
 public class ZpTreePolyEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZpTreePolyEfficiencyTest.class);
     /**
-     * l取值
+     * l
      */
-    private static final int[] L_ARRAY = new int[] {40, 128, 256, 512};
+    private static final int[] L_ARRAY = new int[] {128, 256};
     /**
-     * 点数量取值
+     * point num
      */
-    private static final int[] POINT_NUM_ARRAY = new int[] {10, 20, 30, 40, 50};
-    /**
-     * log(n)
-     */
-    private static final int LOG_N = 6;
+    private static final int[] POINT_NUM_ARRAY = new int[] {1 << 8, 1 << 9, 1 << 10};
     /**
      * 时间输出格式
      */
@@ -71,8 +67,8 @@ public class ZpTreePolyEfficiencyTest {
 
     @Test
     public void testEfficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            "                type", "         l", "  # points", "    log(n)",
+        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "                type", "         l", "  # points",
             "PIter.(ms)", " Iter.(ms)", "FIter.(ms)", "PEval.(ms)", " Eval.(ms)", "FEval.(ms)"
         );
         for (int l : L_ARRAY) {
@@ -83,7 +79,6 @@ public class ZpTreePolyEfficiencyTest {
     }
 
     private void testEfficiency(int l, int pointNum) {
-        int n = 1 << LOG_N;
         BigInteger prime = ZpManager.getPrime(l);
         // 创建插值点
         BigInteger[] xArray = IntStream.range(0, pointNum)
@@ -96,22 +91,21 @@ public class ZpTreePolyEfficiencyTest {
             ZpPoly zpPoly = ZpPolyFactory.createInstance(type, l);
             // 插值时间
             STOP_WATCH.start();
-            IntStream.range(0, n).forEach(index -> zpPoly.interpolate(pointNum, xArray, yArray));
+            zpPoly.interpolate(pointNum, xArray, yArray);
             STOP_WATCH.stop();
-            double interpolateTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n / 1000;
+            double interpolateTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / 1000;
             STOP_WATCH.reset();
             // 求值时间
             BigInteger[] coefficients = zpPoly.interpolate(pointNum, xArray, yArray);
             STOP_WATCH.start();
-            IntStream.range(0, n).forEach(index -> zpPoly.evaluate(coefficients, xArray));
-            double evaluateTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n / 1000;
+            zpPoly.evaluate(coefficients, xArray);
+            double evaluateTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / 1000;
             STOP_WATCH.reset();
 
-            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
                 StringUtils.leftPad(String.valueOf(l), 10),
                 StringUtils.leftPad(String.valueOf(pointNum), 10),
-                StringUtils.leftPad(String.valueOf(LOG_N), 10),
                 StringUtils.leftPad("-", 10),
                 StringUtils.leftPad("-", 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(interpolateTime), 10),
@@ -121,57 +115,41 @@ public class ZpTreePolyEfficiencyTest {
             );
         }
         for (ZpPolyFactory.ZpTreePolyType type : ZP_TREE_POLY_TYPES) {
-            ZpTreePoly zpTreePoly = ZpPolyFactory.createInstance(type, l);
-            // 插值时间
-            double prepareInterpolateTime = 0;
-            double interpolateTime = 0;
-            for (int i = 0; i < n; i++) {
-                STOP_WATCH.start();
-                zpTreePoly.prepareInterpolateBinaryTree(xArray);
-                STOP_WATCH.stop();
-                prepareInterpolateTime += STOP_WATCH.getTime(TimeUnit.MICROSECONDS);
-                STOP_WATCH.reset();
-                STOP_WATCH.start();
-                zpTreePoly.interpolate(yArray);
-                zpTreePoly.destroyInterpolateBinaryTree();
-                STOP_WATCH.stop();
-                interpolateTime += STOP_WATCH.getTime(TimeUnit.MICROSECONDS);
-                STOP_WATCH.reset();
-            }
+            ZpTreePoly zpTreePoly = ZpPolyFactory.createTreeInstance(type, l);
+            STOP_WATCH.start();
+            zpTreePoly.prepareInterpolateBinaryTree(xArray);
+            STOP_WATCH.stop();
+            double prepareInterpolateTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / 1000;
+            STOP_WATCH.reset();
+            STOP_WATCH.start();
+            zpTreePoly.interpolate(yArray);
+            zpTreePoly.destroyInterpolateBinaryTree();
+            STOP_WATCH.stop();
+            double interpolateTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / 1000;
+            STOP_WATCH.reset();
             double fullInterpolateTime = prepareInterpolateTime + interpolateTime;
-            prepareInterpolateTime = prepareInterpolateTime / n / 1000;
-            interpolateTime = interpolateTime / n / 1000;
-            fullInterpolateTime = fullInterpolateTime / n / 1000;
             // 求值时间
             zpTreePoly.prepareInterpolateBinaryTree(xArray);
             BigInteger[] coefficients = zpTreePoly.interpolate(yArray);
             zpTreePoly.destroyInterpolateBinaryTree();
-            double prepareEvaluateTime = 0;
-            double evaluateTime = 0;
-            for (int i = 0; i < n; i++) {
-                STOP_WATCH.start();
-                zpTreePoly.prepareEvaluateBinaryTrees(xArray.length, xArray);
-                STOP_WATCH.stop();
-                prepareEvaluateTime += STOP_WATCH.getTime(TimeUnit.MICROSECONDS);
-                STOP_WATCH.reset();
-                STOP_WATCH.start();
-                zpTreePoly.evaluate(coefficients);
-                zpTreePoly.destroyEvaluateBinaryTree();
-                STOP_WATCH.stop();
-                evaluateTime += STOP_WATCH.getTime(TimeUnit.MICROSECONDS);
-                STOP_WATCH.reset();
-            }
+            STOP_WATCH.start();
+            zpTreePoly.prepareEvaluateBinaryTrees(xArray.length, xArray);
+            STOP_WATCH.stop();
+            double prepareEvaluateTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / 1000;
+            STOP_WATCH.reset();
+            STOP_WATCH.start();
+            zpTreePoly.evaluate(coefficients);
+            zpTreePoly.destroyEvaluateBinaryTree();
+            STOP_WATCH.stop();
+            double evaluateTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / 1000;
+            STOP_WATCH.reset();
             double fullEvaluateTime = prepareEvaluateTime + evaluateTime;
-            prepareEvaluateTime = prepareEvaluateTime / n / 1000;
-            evaluateTime = evaluateTime / n / 1000;
-            fullEvaluateTime = fullEvaluateTime / n / 1000;
             STOP_WATCH.reset();
 
-            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
                 StringUtils.leftPad(String.valueOf(l), 10),
                 StringUtils.leftPad(String.valueOf(pointNum), 10),
-                StringUtils.leftPad(String.valueOf(LOG_N), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(prepareInterpolateTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(interpolateTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(fullInterpolateTime), 10),

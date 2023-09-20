@@ -33,7 +33,7 @@ public class RankUtils {
         if (array.length == 1) {
             return new int[]{0};
         }
-        double[] copyArray = Arrays.copyOf(array, array.length);
+        double[] copyArray = DoubleUtils.clone(array);
         // 如果输入数据为[10.0, 5.9, 8.8, 0.2, 5.5, 8.8]，下面函数的输出结果为[3, 4, 1, 2, 5, 0]，即order[0]表示最小数所在的索引
         int[] order = QuickSort.sort(copyArray);
         // 为了变成正确的排序，需要构造"反查表"，同时处理数值类型取值结果相同的数据
@@ -55,7 +55,7 @@ public class RankUtils {
         if (array.length == 1) {
             return new int[]{0};
         }
-        double[] copyArray = Arrays.copyOf(array, array.length);
+        double[] copyArray = DoubleUtils.clone(array);
         // 如果输入数据为[10.0, 5.9, 8.8, 0.2, 5.5, 8.8]，下面函数的输出结果为[3, 4, 1, 2, 5, 0]，即order[0]表示最小数所在的索引
         int[] order = QuickSort.sort(copyArray);
         // 为了变成正确的排序，需要构造"反查表"，同时处理数值类型取值结果相同的数据
@@ -90,7 +90,7 @@ public class RankUtils {
         if (array.length == 1) {
             return new int[]{0};
         }
-        double[] copyArray = Arrays.copyOf(array, array.length);
+        double[] copyArray = DoubleUtils.clone(array);
         // 如果输入数据为[10.0, 5.9, 8.8, 0.2, 5.5, 8.8]，下面函数的输出结果为[3, 4, 1, 2, 5, 0]，即order[0]表示最小数所在的索引
         int[] order = QuickSort.sort(copyArray);
         // 为了变成正确的排序，需要构造"反查表"，同时处理数值类型取值结果相同的数据

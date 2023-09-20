@@ -66,7 +66,7 @@ public class Gf2eDokvsTest {
     public Gf2eDokvsTest(String name, Gf2eDokvsType type) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.type = type;
-        hashNum = Gf2eDokvsFactory.getHashNum(type);
+        hashNum = Gf2eDokvsFactory.getHashKeyNum(type);
     }
 
     @Test
@@ -77,7 +77,7 @@ public class Gf2eDokvsTest {
             Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, DEFAULT_L, moreKeys);
         });
         // try setting less keys
-        if (Gf2eDokvsFactory.getHashNum(type) > 0) {
+        if (Gf2eDokvsFactory.getHashKeyNum(type) > 0) {
             Assert.assertThrows(IllegalArgumentException.class, () -> {
                 byte[][] lessKeys = CommonUtils.generateRandomKeys(hashNum - 1, SECURE_RANDOM);
                 Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, DEFAULT_L, lessKeys);
@@ -113,6 +113,11 @@ public class Gf2eDokvsTest {
     }
 
     @Test
+    public void testParallelDefault() {
+        testDokvs(DEFAULT_N, DEFAULT_L, true);
+    }
+
+    @Test
     public void testSpecialL() {
         testDokvs(DEFAULT_N, DEFAULT_L - 1);
         testDokvs(DEFAULT_N, DEFAULT_L + 1);
@@ -131,6 +136,16 @@ public class Gf2eDokvsTest {
     @Test
     public void test3n() {
         testDokvs(3);
+    }
+
+    @Test
+    public void test8n() {
+        testDokvs(8);
+    }
+
+    @Test
+    public void test9n() {
+        testDokvs(9);
     }
 
     @Test
@@ -154,8 +169,15 @@ public class Gf2eDokvsTest {
     }
 
     @Test
-    public void testLog14n() {
-        testDokvs(1 << 14);
+    public void testLog16n() {
+        // we need to test n > (1 << 14) for cluster version
+        testDokvs(1 << 16);
+    }
+
+    @Test
+    public void testParallelLog16n() {
+        // we need to test n > (1 << 14) for cluster version
+        testDokvs(1 << 16, DEFAULT_L, true);
     }
 
     private void testDokvs(int n) {
@@ -163,13 +185,19 @@ public class Gf2eDokvsTest {
     }
 
     private void testDokvs(int n, int l) {
+        testDokvs(n, l, false);
+    }
+
+    private void testDokvs(int n, int l, boolean parallelEncode) {
         int byteL = CommonUtils.getByteLength(l);
         for (int round = 0; round < ROUND; round++) {
             byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
             Gf2eDokvs<ByteBuffer> dokvs = Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, n, l, keys);
+            dokvs.setParallelEncode(parallelEncode);
             Map<ByteBuffer, byte[]> keyValueMap = randomKeyValueMap(n, l);
             // non-doubly encode
             byte[][] nonDoublyStorage = dokvs.encode(keyValueMap, false);
+            Assert.assertEquals(Gf2eDokvsFactory.getM(EnvType.STANDARD, type, n), nonDoublyStorage.length);
             // parallel decode
             keyValueMap.keySet().stream().parallel().forEach(key -> {
                 byte[] value = keyValueMap.get(key);
@@ -178,6 +206,7 @@ public class Gf2eDokvsTest {
             });
             // doubly encode
             byte[][] doublyStorage = dokvs.encode(keyValueMap, true);
+            Assert.assertEquals(Gf2eDokvsFactory.getM(EnvType.STANDARD, type, n), nonDoublyStorage.length);
             // verify non-zero storage
             byte[] zero = new byte[byteL];
             Arrays.fill(zero, (byte) 0x00);

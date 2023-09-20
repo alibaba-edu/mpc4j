@@ -1,0 +1,17 @@
+# protocol type
+pto_type = PSI
+
+# element byte length
+element_byte_length = 16
+
+# parties log set size (log(n))
+server_log_set_size = 12,10
+client_log_set_size = 12,10
+
+# protocol name
+psi_pto_name = PRTY20
+
+# specific config
+security_model = SEMI_HONEST
+okvs_type = H3_NAIVE_CLUSTER_BLAZE_GCT
+append_string = _semi_honest_h3_naive_cluster_blaze_gct

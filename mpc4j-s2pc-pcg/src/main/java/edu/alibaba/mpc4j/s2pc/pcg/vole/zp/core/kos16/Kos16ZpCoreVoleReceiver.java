@@ -45,9 +45,9 @@ public class Kos16ZpCoreVoleReceiver extends AbstractZpCoreVoleReceiver {
      */
     boolean[] deltaBinary;
 
-    public Kos16ZpCoreVoleReceiver(Rpc senderRpc, Party receiverParty, Kos16ZpCoreVoleConfig config) {
-        super(Kos16ZpCoreVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
-        baseOtReceiver = BaseOtFactory.createReceiver(senderRpc, receiverParty, config.getBaseOtConfig());
+    public Kos16ZpCoreVoleReceiver(Rpc receiverRpc, Party senderParty, Kos16ZpCoreVoleConfig config) {
+        super(Kos16ZpCoreVolePtoDesc.getInstance(), receiverRpc, senderParty, config);
+        baseOtReceiver = BaseOtFactory.createReceiver(receiverRpc, senderParty, config.getBaseOtConfig());
         addSubPtos(baseOtReceiver);
     }
 

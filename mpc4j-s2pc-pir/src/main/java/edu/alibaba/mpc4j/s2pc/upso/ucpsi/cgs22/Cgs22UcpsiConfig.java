@@ -2,8 +2,8 @@ package edu.alibaba.mpc4j.s2pc.upso.ucpsi.cgs22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.s2pc.opf.psm.PsmConfig;
-import edu.alibaba.mpc4j.s2pc.opf.psm.PsmFactory;
+import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmConfig;
+import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmFactory;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.UcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.UrbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.upso.uopprf.urb.UrbopprfFactory;
@@ -24,12 +24,12 @@ public class Cgs22UcpsiConfig extends AbstractMultiPartyPtoConfig implements Ucp
     /**
      * private set membership config
      */
-    private final PsmConfig psmConfig;
+    private final PdsmConfig pdsmConfig;
 
     private Cgs22UcpsiConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.urbopprfConfig, builder.psmConfig);
+        super(SecurityModel.SEMI_HONEST, builder.urbopprfConfig, builder.pdsmConfig);
         urbopprfConfig = builder.urbopprfConfig;
-        psmConfig = builder.psmConfig;
+        pdsmConfig = builder.pdsmConfig;
     }
 
     @Override
@@ -41,8 +41,8 @@ public class Cgs22UcpsiConfig extends AbstractMultiPartyPtoConfig implements Ucp
         return urbopprfConfig;
     }
 
-    public PsmConfig getPsmConfig() {
-        return psmConfig;
+    public PdsmConfig getPsmConfig() {
+        return pdsmConfig;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Cgs22UcpsiConfig> {
@@ -53,11 +53,11 @@ public class Cgs22UcpsiConfig extends AbstractMultiPartyPtoConfig implements Ucp
         /**
          * private set membership config
          */
-        private PsmConfig psmConfig;
+        private PdsmConfig pdsmConfig;
 
         public Builder(SecurityModel securityModel, boolean silent) {
             urbopprfConfig = UrbopprfFactory.createDefaultConfig();
-            psmConfig = PsmFactory.createDefaultConfig(securityModel, silent);
+            pdsmConfig = PdsmFactory.createDefaultConfig(securityModel, silent);
         }
 
         public Builder setUrbopprfConfig(UrbopprfConfig urbopprfConfig) {
@@ -65,8 +65,8 @@ public class Cgs22UcpsiConfig extends AbstractMultiPartyPtoConfig implements Ucp
             return this;
         }
 
-        public Builder setPsmConfig(PsmConfig psmConfig) {
-            this.psmConfig = psmConfig;
+        public Builder setPsmConfig(PdsmConfig pdsmConfig) {
+            this.pdsmConfig = pdsmConfig;
             return this;
         }
 

@@ -41,7 +41,7 @@ public class Aaag22KwPirTest extends AbstractTwoPartyPtoTest {
     /**
      * server element size
      */
-    private static final int SERVER_MAP_SIZE = 1 << 18;
+    private static final int SERVER_MAP_SIZE = 1 << 16;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -89,7 +89,9 @@ public class Aaag22KwPirTest extends AbstractTwoPartyPtoTest {
         int retrievalSize = kwPirParams.maxRetrievalSize();
         List<Set<ByteBuffer>> randomSets = PirUtils.generateByteBufferSets(SERVER_MAP_SIZE, retrievalSize, REPEAT_TIME);
         // server key-value map
-        Map<ByteBuffer, ByteBuffer> keywordLabelMap = PirUtils.generateKeywordByteBufferLabelMap(randomSets.get(0), labelByteLength);
+        Map<ByteBuffer, ByteBuffer> keywordLabelMap = PirUtils.generateKeywordByteBufferLabelMap(
+            randomSets.get(0), labelByteLength
+        );
         // create instances
         Aaag22KwPirServer server = new Aaag22KwPirServer(firstRpc, secondRpc.ownParty(), config);
         Aaag22KwPirClient client = new Aaag22KwPirClient(secondRpc, firstRpc.ownParty(), config);
@@ -97,10 +99,15 @@ public class Aaag22KwPirTest extends AbstractTwoPartyPtoTest {
         server.setParallel(parallel);
         client.setParallel(parallel);
         KwPirParamsServerThread serverThread = new KwPirParamsServerThread(
-            server, kwPirParams, keywordLabelMap, labelByteLength, REPEAT_TIME
+            server, kwPirParams, keywordLabelMap, retrievalSize, labelByteLength, REPEAT_TIME
         );
         KwPirParamsClientThread clientThread = new KwPirParamsClientThread(
-            client, kwPirParams, Lists.newArrayList(randomSets.subList(1, REPEAT_TIME + 1)), SERVER_MAP_SIZE, labelByteLength
+            client,
+            kwPirParams,
+            Lists.newArrayList(randomSets.subList(1, REPEAT_TIME + 1)),
+            retrievalSize,
+            SERVER_MAP_SIZE,
+            labelByteLength
         );
         try {
             serverThread.start();

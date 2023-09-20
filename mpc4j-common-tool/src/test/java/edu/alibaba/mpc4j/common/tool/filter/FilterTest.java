@@ -45,16 +45,16 @@ public class FilterTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurationParams = new ArrayList<>();
 
-        // LPRST21_BLOOM_FILTER
-        configurationParams.add(new Object[]{FilterType.LPRST21_BLOOM_FILTER.name(), FilterType.LPRST21_BLOOM_FILTER,});
+        // DISTINCT_BLOOM_FILTER
+        configurationParams.add(new Object[]{FilterType.DISTINCT_BLOOM_FILTER.name(), FilterType.DISTINCT_BLOOM_FILTER,});
         // VACUUM_FILTER
         configurationParams.add(new Object[]{FilterType.VACUUM_FILTER.name(), FilterType.VACUUM_FILTER,});
         // CUCKOO_FILTER
         configurationParams.add(new Object[]{FilterType.CUCKOO_FILTER.name(), FilterType.CUCKOO_FILTER,});
         // SPARSE_BLOOM_FILTER
-        configurationParams.add(new Object[]{FilterType.SPARSE_BLOOM_FILTER.name(), FilterType.SPARSE_BLOOM_FILTER,});
+        configurationParams.add(new Object[]{FilterType.SPARSE_RANDOM_BLOOM_FILTER.name(), FilterType.SPARSE_RANDOM_BLOOM_FILTER,});
         // NAIVE_BLOOM_FILTER
-        configurationParams.add(new Object[]{FilterType.NAIVE_BLOOM_FILTER.name(), FilterType.NAIVE_BLOOM_FILTER,});
+        configurationParams.add(new Object[]{FilterType.NAIVE_RANDOM_BLOOM_FILTER.name(), FilterType.NAIVE_RANDOM_BLOOM_FILTER,});
         // SET_FILTER
         configurationParams.add(new Object[]{FilterType.SET_FILTER.name(), FilterType.SET_FILTER,});
 
@@ -71,27 +71,23 @@ public class FilterTest {
     @Test
     public void testIllegalInputs() {
         // try less keys
-        if (FilterFactory.getHashNum(type, DEFAULT_SIZE) > 0) {
+        if (FilterFactory.getHashKeyNum(type) > 0) {
             Assert.assertThrows(IllegalArgumentException.class, () -> {
-                byte[][] lessKeys = CommonUtils.generateRandomKeys(
-                    FilterFactory.getHashNum(type, DEFAULT_SIZE) - 1, SECURE_RANDOM
-                );
+                byte[][] lessKeys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type) - 1, SECURE_RANDOM);
                 FilterFactory.createFilter(EnvType.STANDARD, type, DEFAULT_SIZE, lessKeys);
             });
         }
         // try more keys
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] moreKeys = CommonUtils.generateRandomKeys(
-                FilterFactory.getHashNum(type, DEFAULT_SIZE) + 1, SECURE_RANDOM
-            );
+            byte[][] moreKeys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type) + 1, SECURE_RANDOM);
             FilterFactory.createFilter(EnvType.STANDARD, type, DEFAULT_SIZE, moreKeys);
         });
         // create filter with 0 elements
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashNum(type, 0), SECURE_RANDOM);
+            byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
             FilterFactory.createFilter(EnvType.STANDARD, type, 0, keys);
         });
-        byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashNum(type, DEFAULT_SIZE), SECURE_RANDOM);
+        byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
         // insert duplicated elements
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             Filter<ByteBuffer> filter = FilterFactory.createFilter(EnvType.STANDARD, type, DEFAULT_SIZE, keys);
@@ -117,7 +113,7 @@ public class FilterTest {
 
     private void testFilter(int maxSize) {
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashNum(type, maxSize), SECURE_RANDOM);
+            byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
             Filter<ByteBuffer> filter = FilterFactory.createFilter(EnvType.STANDARD, type, maxSize, keys);
             // start with empty filer
             Assert.assertEquals(0, filter.size());
@@ -135,7 +131,7 @@ public class FilterTest {
 
     @Test
     public void testSerialize() {
-        byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashNum(type, DEFAULT_SIZE), SECURE_RANDOM);
+        byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
         Filter<ByteBuffer> filter = FilterFactory.createFilter(EnvType.STANDARD, type, DEFAULT_SIZE, keys);
         // insert elements into the filter
         Set<ByteBuffer> items = generateRandomItems(DEFAULT_SIZE);

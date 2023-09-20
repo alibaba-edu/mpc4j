@@ -1,10 +1,8 @@
 package edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.crypto.matrix.okve.cuckootable.H2CuckooTableTcFinder;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.H2NaiveGctDokvsUtils;
 
 import java.security.SecureRandom;
 
@@ -24,45 +22,17 @@ import java.security.SecureRandom;
  * @date 2023/7/3
  */
 class H2TwoCoreGctGf2eDokvs<T> extends AbstractH2GctGf2eDokvs<T> {
-    /**
-     * left ε, i.e., ε_l.
-     */
-    private static final double LEFT_EPSILON = 2.4;
-    /**
-     * right ε, i.e., ε_r.
-     */
-    private static final double RIGHT_EPSILON = 1.4;
-
-    /**
-     * Gets left m. The result is shown in Table 2 of the paper.
-     *
-     * @param n number of key-value pairs.
-     * @return lm = ε_l * n, with lm % Byte.SIZE == 0.
-     */
-    static int getLm(int n) {
-        MathPreconditions.checkPositive("n", n);
-        return CommonUtils.getByteLength((int) Math.ceil(LEFT_EPSILON * n)) * Byte.SIZE;
-    }
-
-    /**
-     * Gets right m. The result is shown in the full version of the paper page 18.
-     *
-     * @param n number of key-value pairs.
-     * @return rm = ε_r * log(n) + λ, with rm % Byte.SIZE == 0.
-     */
-    static int getRm(int n) {
-        MathPreconditions.checkPositive("n", n);
-        return CommonUtils.getByteLength(
-            (int) Math.ceil(RIGHT_EPSILON * DoubleUtils.log2(n)) + CommonConstants.STATS_BIT_LENGTH
-        ) * Byte.SIZE;
-    }
 
     H2TwoCoreGctGf2eDokvs(EnvType envType, int n, int l, byte[][] keys) {
         this(envType, n, l, keys, new SecureRandom());
     }
 
     H2TwoCoreGctGf2eDokvs(EnvType envType, int n, int l, byte[][] keys, SecureRandom secureRandom) {
-        super(envType, n, getLm(n), getRm(n), l, keys, new H2CuckooTableTcFinder<>(), secureRandom);
+        super(
+            envType, n,
+            H2NaiveGctDokvsUtils.getLm(n), H2NaiveGctDokvsUtils.getRm(n),
+            l, keys, new H2CuckooTableTcFinder<>(), secureRandom
+        );
     }
 
     @Override

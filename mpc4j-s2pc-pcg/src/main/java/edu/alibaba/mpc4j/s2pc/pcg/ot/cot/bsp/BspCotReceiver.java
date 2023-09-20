@@ -5,39 +5,40 @@ import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 /**
- * BSP-COT接收方接口。
+ * Batched single-point COT receiver.
  *
  * @author Weiran Liu
  * @date 2022/02/03
  */
 public interface BspCotReceiver extends TwoPartyPto {
     /**
-     * 初始化协议。
+     * Inits the protocol.
      *
-     * @param maxBatchNum 最大批处理数量。
-     * @param maxNum      最大数量。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param maxBatchNum max batch num.
+     * @param maxEachNum  max num for each SSP-COT.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(int maxBatchNum, int maxNum) throws MpcAbortException;
+    void init(int maxBatchNum, int maxEachNum) throws MpcAbortException;
+
+    /**
+     * Executes the protocol.
+     *
+     * @param alphaArray α array.
+     * @param eachNum    num for each SSP-COT.
+     * @return receiver output.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    BspCotReceiverOutput receive(int[] alphaArray, int eachNum) throws MpcAbortException;
 
     /**
      * 执行协议。
      *
-     * @param alphaArray α数组。
-     * @param num        数量。
-     * @return 接收方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param alphaArray        α array.
+     * @param eachNum           num for each SSP-COT.
+     * @param preReceiverOutput pre-computed COT receiver output.
+     * @return receiver output.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    BspCotReceiverOutput receive(int[] alphaArray, int num) throws MpcAbortException;
-
-    /**
-     * 执行协议。
-     *
-     * @param alphaArray        α数组。
-     * @param num               数量。
-     * @param preReceiverOutput 预计算接收方输出。
-     * @return 接收方输出。
-     * @throws MpcAbortException 如果协议异常中止。
-     */
-    BspCotReceiverOutput receive(int[] alphaArray, int num, CotReceiverOutput preReceiverOutput) throws MpcAbortException;
+    BspCotReceiverOutput receive(int[] alphaArray, int eachNum, CotReceiverOutput preReceiverOutput)
+        throws MpcAbortException;
 }

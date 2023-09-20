@@ -35,7 +35,7 @@ public class Cmg21KwPirPtoDesc implements PtoDesc {
         /**
          * client send encryption params
          */
-        CLIENT_SEND_FHE_PARAMS,
+        CLIENT_SEND_PUBLIC_KEYS,
         /**
          * client send query
          */

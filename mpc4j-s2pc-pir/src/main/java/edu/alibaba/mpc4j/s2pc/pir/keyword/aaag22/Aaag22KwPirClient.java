@@ -50,18 +50,19 @@ public class Aaag22KwPirClient extends AbstractKwPirClient {
     }
 
     @Override
-    public void init(KwPirParams kwPirParams, int serverElementSize, int labelByteLength) throws MpcAbortException {
+    public void init(KwPirParams kwPirParams, int serverElementSize, int maxRetrievalSize, int labelByteLength)
+        throws MpcAbortException {
+        setInitInput(maxRetrievalSize, serverElementSize, labelByteLength);
+        logPhaseInfo(PtoState.INIT_BEGIN);
         assert (kwPirParams instanceof Aaag22KwPirParams);
         params = (Aaag22KwPirParams) kwPirParams;
+        assert maxRetrievalSize <= kwPirParams.maxRetrievalSize();
 
-        setInitInput(params.maxRetrievalSize(), serverElementSize, labelByteLength);
-        logPhaseInfo(PtoState.INIT_BEGIN);
-
-        DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
+        DataPacketHeader prfHashKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PRF_KEY.ordinal(), extraInfo,
             otherParty().getPartyId(), rpc.ownParty().getPartyId()
         );
-        List<byte[]> prfKeyPayload = rpc.receive(cuckooHashKeyHeader).getPayload();
+        List<byte[]> prfKeyPayload = rpc.receive(prfHashKeyHeader).getPayload();
 
         stopWatch.start();
         if (CommonUtils.getUnitNum(labelByteLength * Byte.SIZE, params.getPlainModulusSize()) % 2 == 1) {
@@ -86,15 +87,16 @@ public class Aaag22KwPirClient extends AbstractKwPirClient {
 
     @Override
     public void init(int maxRetrievalSize, int serverElementSize, int labelByteLength) throws MpcAbortException {
-        params = Aaag22KwPirParams.DEFAULT_PARAMS;
-        setInitInput(params.maxRetrievalSize(), serverElementSize, labelByteLength);
+        setInitInput(maxRetrievalSize, serverElementSize, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
+        params = Aaag22KwPirParams.DEFAULT_PARAMS;
+        assert maxRetrievalSize <= params.maxRetrievalSize();
 
-        DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
+        DataPacketHeader prfHashKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PRF_KEY.ordinal(), extraInfo,
             otherParty().getPartyId(), rpc.ownParty().getPartyId()
         );
-        List<byte[]> prfKeyPayload = rpc.receive(cuckooHashKeyHeader).getPayload();
+        List<byte[]> prfKeyPayload = rpc.receive(prfHashKeyHeader).getPayload();
 
         stopWatch.start();
         if (CommonUtils.getUnitNum(labelByteLength * Byte.SIZE, params.getPlainModulusSize()) % 2 == 1) {

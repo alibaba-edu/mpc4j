@@ -64,10 +64,6 @@ public class Cgs22UrbopprfSender extends AbstractUrbopprfSender {
      * garbled table
      */
     private byte[][] garbledTable;
-    /**
-     * sent garbled table
-     */
-    private boolean sent;
 
     public Cgs22UrbopprfSender(Rpc senderRpc, Party receiverParty, Cgs22UrbopprfConfig config) {
         super(Cgs22UrbopprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -75,7 +71,6 @@ public class Cgs22UrbopprfSender extends AbstractUrbopprfSender {
         addSubPtos(sqOprfSender);
         cuckooHashBinType = config.getCuckooHashBinType();
         d = config.getD();
-        sent = false;
     }
 
     @Override
@@ -84,9 +79,16 @@ public class Cgs22UrbopprfSender extends AbstractUrbopprfSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        sent = false;
         sqOprfKey = sqOprfSender.keyGen();
         generateGarbledTable();
+        // send garbled table keys
+        List<byte[]> garbledHashTableKeysPayload = Arrays.stream(garbledTableKeys).collect(Collectors.toList());
+        DataPacketHeader garbledHashTableKeysHeader = new DataPacketHeader(
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE_KEYS.ordinal(), extraInfo,
+            ownParty().getPartyId(), otherParty().getPartyId()
+        );
+        rpc.send(DataPacket.fromByteArrayList(garbledHashTableKeysHeader, garbledHashTableKeysPayload));
+        garbledTableKeys = null;
         // init oprf
         sqOprfSender.init(batchSize, sqOprfKey);
         stopWatch.stop();
@@ -102,30 +104,19 @@ public class Cgs22UrbopprfSender extends AbstractUrbopprfSender {
         setPtoInput();
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        if (!sent) {
-            stopWatch.start();
-            // send garbled table keys
-            List<byte[]> garbledHashTableKeysPayload = Arrays.stream(garbledTableKeys).collect(Collectors.toList());
-            DataPacketHeader garbledHashTableKeysHeader = new DataPacketHeader(
-                encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE_KEYS.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(garbledHashTableKeysHeader, garbledHashTableKeysPayload));
-            garbledTableKeys = null;
-            // send garbled table
-            List<byte[]> garbledTablePayload = Arrays.stream(garbledTable).collect(Collectors.toList());
-            DataPacketHeader garbledTableHeader = new DataPacketHeader(
-                encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(garbledTableHeader, garbledTablePayload));
-            garbledTable = null;
-            sent = true;
-            stopWatch.stop();
-            long garbledTableTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            logStepInfo(PtoState.PTO_STEP, 0, 1, garbledTableTime, "Sender sends GT");
-        }
+        stopWatch.start();
+        // send garbled table
+        List<byte[]> garbledTablePayload = Arrays.stream(garbledTable).collect(Collectors.toList());
+        DataPacketHeader garbledTableHeader = new DataPacketHeader(
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE.ordinal(), extraInfo,
+            ownParty().getPartyId(), otherParty().getPartyId()
+        );
+        rpc.send(DataPacket.fromByteArrayList(garbledTableHeader, garbledTablePayload));
+        garbledTable = null;
+        stopWatch.stop();
+        long garbledTableTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 0, 1, garbledTableTime, "Sender sends GT");
 
         stopWatch.start();
         sqOprfSender.oprf(batchSize);

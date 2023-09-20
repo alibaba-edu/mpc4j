@@ -38,6 +38,13 @@ public interface SingleIndexPirServer extends TwoPartyPto {
     void pir() throws MpcAbortException;
 
     /**
+     * get client query size.
+     *
+     * @return query size.
+     */
+    int getQuerySize();
+
+    /**
      * server handle client public keys.
      *
      * @param clientPublicKeysPayload client public key payload.
@@ -62,4 +69,18 @@ public interface SingleIndexPirServer extends TwoPartyPto {
      * @throws MpcAbortException the protocol failure aborts.
      */
     List<byte[]> generateResponse(List<byte[]> clientQuery, List<byte[][]> encodedDatabase) throws MpcAbortException;
+
+    /**
+     * server handle client query.
+     *
+     * @param clientQuery client query.
+     * @return server response.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    List<byte[]> generateResponse(List<byte[]> clientQuery) throws MpcAbortException;
+
+    /**
+     * set default params.
+     */
+    void setDefaultParams();
 }

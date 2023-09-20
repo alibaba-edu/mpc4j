@@ -22,7 +22,7 @@ public abstract class AbstractGf2kCoreVoleSender extends AbstractTwoPartyPto imp
     /**
      * the GF2K instance
      */
-    protected Gf2k gf2k;
+    protected final Gf2k gf2k;
     /**
      * l
      */
@@ -46,10 +46,10 @@ public abstract class AbstractGf2kCoreVoleSender extends AbstractTwoPartyPto imp
 
     protected AbstractGf2kCoreVoleSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, Gf2kCoreVoleConfig config) {
         super(ptoDesc, senderRpc, receiverParty, config);
+        gf2k = Gf2kFactory.createInstance(envType);
     }
 
     protected void setInitInput(int maxNum) {
-        gf2k = Gf2kFactory.createInstance(envType);
         l = gf2k.getL();
         byteL = gf2k.getByteL();
         MathPreconditions.checkPositive("maxNum", maxNum);

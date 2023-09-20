@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pjc.main.pmid;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.main.psu.PsuConfigUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidConfig;
@@ -51,7 +51,7 @@ public class PmidConfigUtils {
 
         return new Zcl22MpPmidConfig.Builder()
             .setMpOprfConfig(OprfFactory.createMpOprfDefaultConfig(SecurityModel.SEMI_HONEST))
-            .setSigmaOkvsType(OkvsType.H3_SINGLETON_GCT)
+            .setSigmaOkvsType(Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT)
             .setPsuConfig(psuConfig)
             .build();
     }
@@ -61,8 +61,8 @@ public class PmidConfigUtils {
         PsuConfig psuConfig = PsuConfigUtils.createPsuConfig(properties);
 
         return new Zcl22SloppyPmidConfig.Builder()
-            .setSloppyOkvsType(OkvsType.MEGA_BIN)
-            .setSigmaOkvsType(OkvsType.H3_SINGLETON_GCT)
+            .setSloppyOkvsType(Gf2eDokvsType.MEGA_BIN)
+            .setSigmaOkvsType(Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT)
             .setPsuConfig(psuConfig)
             .build();
     }

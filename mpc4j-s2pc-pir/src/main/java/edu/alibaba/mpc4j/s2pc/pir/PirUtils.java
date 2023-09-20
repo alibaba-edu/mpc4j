@@ -444,7 +444,7 @@ public class PirUtils {
      * @param input input.
      * @return bit length.
      */
-    public static int getBitLength(int input) {
+    public static int getBitLength(long input) {
         int count = 0;
         while (input != 0) {
             count++;
@@ -468,6 +468,39 @@ public class PirUtils {
     }
 
     /**
+     * rotate vector column.
+     *
+     * @param coeffs coeff vector.
+     * @return rotated coeff vector.
+     */
+    public static long[] rotateVectorCol(long[] coeffs) {
+        int rowSize = coeffs.length / 2;
+        long[] result = new long[coeffs.length];
+        IntStream.range(0, rowSize).forEach(i -> {
+            result[i] = coeffs[rowSize + i];
+            result[rowSize + i] = coeffs[i];
+        });
+        return result;
+    }
+
+    /**
+     * rotate vector column.
+     *
+     * @param coeffs coeff vector.
+     * @return rotated coeff vector.
+     */
+    public static long[] rotateVectorCol(long[] coeffs, int rotationAmount) {
+        int rowSize = coeffs.length / 2;
+        long[] result = new long[coeffs.length];
+        rotationAmount = rotationAmount % rowSize;
+        for (int i = 0; i < rowSize; i++) {
+            result[(i + rotationAmount) % rowSize] = coeffs[i];
+            result[(i + rotationAmount) % rowSize + rowSize] = coeffs[i + rowSize];
+        }
+        return result;
+    }
+
+    /**
      * plaintexts rotate.
      *
      * @param coeffs coefficients.
@@ -487,10 +520,12 @@ public class PirUtils {
      */
     public static long[] plaintextRotate(long[] coeffs, int offset) {
         int rowCount = coeffs.length / 2;
+        offset = offset % rowCount;
         long[] rotatedCoeffs = new long[coeffs.length];
-        IntStream.range(0, rowCount).forEach(j -> rotatedCoeffs[j] = coeffs[(rowCount - offset + j) % rowCount]);
-        IntStream.range(0, rowCount)
-            .forEach(j -> rotatedCoeffs[j + rowCount] = coeffs[(rowCount - offset + j) % rowCount + rowCount]);
+        for (int i = 0; i < rowCount; i++) {
+            rotatedCoeffs[(i + offset) % rowCount] = coeffs[i];
+            rotatedCoeffs[(i + offset) % rowCount + rowCount] = coeffs[i + rowCount];
+        }
         return rotatedCoeffs;
     }
 

@@ -83,7 +83,7 @@ public class Mk22SingleIndexPirParams implements SingleIndexPirParams {
      * default params
      */
     public static Mk22SingleIndexPirParams DEFAULT_PARAMS = new Mk22SingleIndexPirParams(
-        2, 16384, 21, EqualityType.CONSTANT_WEIGHT
+        2, 8192, 21, EqualityType.CONSTANT_WEIGHT
     );
 
     /**

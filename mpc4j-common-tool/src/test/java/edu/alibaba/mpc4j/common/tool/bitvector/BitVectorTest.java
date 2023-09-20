@@ -380,14 +380,14 @@ public class BitVectorTest {
 
     private void testSet(int bitNum, byte[] byteArray) {
         // set every position to 1
-        byte[] trueByteArray = Arrays.copyOf(byteArray, byteArray.length);
+        byte[] trueByteArray = BytesUtils.clone(byteArray);
         BitVector trueBitVector = BitVectorFactory.create(type, bitNum, trueByteArray);
         IntStream.range(0, bitNum).forEach(binaryIndex -> {
             trueBitVector.set(binaryIndex, true);
             Assert.assertTrue(trueBitVector.get(binaryIndex));
         });
         // set every position to 0
-        byte[] falseByteArray = Arrays.copyOf(byteArray, byteArray.length);
+        byte[] falseByteArray = BytesUtils.clone(byteArray);
         BitVector falseBitVector = BitVectorFactory.create(type, bitNum, falseByteArray);
         IntStream.range(0, bitNum).forEach(binaryIndex -> {
             falseBitVector.set(binaryIndex, false);

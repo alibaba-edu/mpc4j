@@ -12,9 +12,9 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.Okvs;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
@@ -54,7 +54,7 @@ public class Gmr21SloppyPidClient<T> extends AbstractPidParty<T> {
     /**
      * Sloppy的OKVS类型
      */
-    private final OkvsType sloppyOkvsType;
+    private final Gf2eDokvsType sloppyOkvsType;
     /**
      * 布谷鸟哈希类型
      */
@@ -147,7 +147,7 @@ public class Gmr21SloppyPidClient<T> extends AbstractPidParty<T> {
         secureRandom.nextBytes(clientPidPrfKey);
         List<byte[]> clientKeysPayload = new LinkedList<>();
         // 客户端PID的OKVS密钥
-        int sloppyOkvsHashKeyNum = OkvsFactory.getHashNum(sloppyOkvsType);
+        int sloppyOkvsHashKeyNum = Gf2eDokvsFactory.getHashKeyNum(sloppyOkvsType);
         clientOkvsHashKeys = IntStream.range(0, sloppyOkvsHashKeyNum)
             .mapToObj(keyIndex -> {
                 byte[] okvsKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
@@ -252,7 +252,7 @@ public class Gmr21SloppyPidClient<T> extends AbstractPidParty<T> {
     }
 
     private void initVariable() throws MpcAbortException {
-        pidByteLength = PidUtils.getPidByteLength(otherElementSetSize, otherElementSetSize);
+        pidByteLength = PidUtils.getPidByteLength(ownElementSetSize, otherElementSetSize);
         pidMap = HashFactory.createInstance(envType, pidByteLength);
         clientPidPrf = PrfFactory.createInstance(envType, pidByteLength);
         clientPidPrf.setKey(clientPidPrfKey);
@@ -340,12 +340,12 @@ public class Gmr21SloppyPidClient<T> extends AbstractPidParty<T> {
         Map<ByteBuffer, byte[]> clientOkvsKeyValueMap = IntStream.range(0, ownElementSetSize * cuckooHashNum)
             .boxed()
             .collect(Collectors.toMap(index -> clientOkvsKeyArray[index], index -> clientOkvsValueArray[index]));
-        Okvs<ByteBuffer> clientOkvs = OkvsFactory.createInstance(
+        Gf2eDokvs<ByteBuffer> clientOkvs = Gf2eDokvsFactory.createInstance(
             envType, sloppyOkvsType, ownElementSetSize * cuckooHashNum, pidByteLength * Byte.SIZE, clientOkvsHashKeys
         );
         // 编码可以并行处理
         clientOkvs.setParallelEncode(parallel);
-        byte[][] clientOkvsStorage = clientOkvs.encode(clientOkvsKeyValueMap);
+        byte[][] clientOkvsStorage = clientOkvs.encode(clientOkvsKeyValueMap, false);
         kbOprfKey = null;
         return Arrays.stream(clientOkvsStorage).collect(Collectors.toList());
     }
@@ -360,10 +360,10 @@ public class Gmr21SloppyPidClient<T> extends AbstractPidParty<T> {
     }
 
     private Map<ByteBuffer, T> handleServerOkvsPayload(List<byte[]> serverOkvsPayload) throws MpcAbortException {
-        int serverOkvsM = OkvsFactory.getM(sloppyOkvsType, otherElementSetSize * cuckooHashNum);
+        int serverOkvsM = Gf2eDokvsFactory.getM(envType, sloppyOkvsType, otherElementSetSize * cuckooHashNum);
         MpcAbortPreconditions.checkArgument(serverOkvsPayload.size() == serverOkvsM);
         byte[][] serverOkvsStorage = serverOkvsPayload.toArray(new byte[0][]);
-        Okvs<ByteBuffer> serverOkvs = OkvsFactory.createInstance(
+        Gf2eDokvs<ByteBuffer> serverOkvs = Gf2eDokvsFactory.createInstance(
             envType, sloppyOkvsType, otherElementSetSize * cuckooHashNum, pidByteLength * Byte.SIZE, serverOkvsHashKeys
         );
         IntStream clientBinIndexStream = IntStream.range(0, clientBinNum);

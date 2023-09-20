@@ -7,6 +7,9 @@ import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.aaag22.Aaag22KwPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.aaag22.Aaag22KwPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.aaag22.Aaag22KwPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.keyword.alpr21.Alpr21KwPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.keyword.alpr21.Alpr21KwPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.keyword.alpr21.Alpr21KwPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21.Cmg21KwPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21.Cmg21KwPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21.Cmg21KwPirServer;
@@ -37,6 +40,10 @@ public class KwPirFactory implements PtoFactory {
          * AAAG22
          */
         AAAG22,
+        /**
+         * ALPR21
+         */
+        ALPR21,
     }
 
     /**
@@ -54,6 +61,8 @@ public class KwPirFactory implements PtoFactory {
                 return new Cmg21KwPirServer(serverRpc, clientParty, (Cmg21KwPirConfig) config);
             case AAAG22:
                 return new Aaag22KwPirServer(serverRpc, clientParty, (Aaag22KwPirConfig) config);
+            case ALPR21:
+                return new Alpr21KwPirServer(serverRpc, clientParty, (Alpr21KwPirConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + KwPirType.class.getSimpleName() + ": " + type.name());
         }
@@ -74,6 +83,8 @@ public class KwPirFactory implements PtoFactory {
                 return new Cmg21KwPirClient(clientRpc, serverParty, (Cmg21KwPirConfig) config);
             case AAAG22:
                 return new Aaag22KwPirClient(clientRpc, serverParty, (Aaag22KwPirConfig) config);
+            case ALPR21:
+                return new Alpr21KwPirClient(clientRpc, serverParty, (Alpr21KwPirConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + KwPirType.class.getSimpleName() + ": " + type.name());
         }

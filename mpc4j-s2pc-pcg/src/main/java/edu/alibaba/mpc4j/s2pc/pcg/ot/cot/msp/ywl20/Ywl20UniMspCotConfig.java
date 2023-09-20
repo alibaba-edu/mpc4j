@@ -8,14 +8,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory.MspCotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotConfig;
 
 /**
- * YWL20-UNI-MSP-COT协议配置项。
+ * YWL20-UNI-MSP-COT config.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
 public class Ywl20UniMspCotConfig extends AbstractMultiPartyPtoConfig implements MspCotConfig {
     /**
-     * BSPCOT协议配置项
+     * BSP-COT config
      */
     private final BspCotConfig bspCotConfig;
 
@@ -24,6 +24,7 @@ public class Ywl20UniMspCotConfig extends AbstractMultiPartyPtoConfig implements
         bspCotConfig = builder.bspcotConfig;
     }
 
+    @Override
     public BspCotConfig getBspCotConfig() {
         return bspCotConfig;
     }
@@ -35,7 +36,7 @@ public class Ywl20UniMspCotConfig extends AbstractMultiPartyPtoConfig implements
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Ywl20UniMspCotConfig> {
         /**
-         * BSPCOT协议配置项
+         * BSP-COT config
          */
         private BspCotConfig bspcotConfig;
 

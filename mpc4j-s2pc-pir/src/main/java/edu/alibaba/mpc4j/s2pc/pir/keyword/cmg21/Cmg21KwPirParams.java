@@ -65,6 +65,18 @@ public class Cmg21KwPirParams implements KwPirParams {
      * max retrieval size
      */
     private final int maxRetrievalSize;
+    /**
+     * encryption params
+     */
+    private final byte[] encryptionParams;
+    /**
+     * item per ciphertext
+     */
+    private final int itemPerCiphertext;
+    /**
+     * ciphertext num
+     */
+    private final int ciphertextNum;
 
     private Cmg21KwPirParams(CuckooHashBinType cuckooHashBinType, int binNum, int maxPartitionSizePerBin,
                              int itemEncodedSlotSize, int psLowDegree, int[] queryPowers,
@@ -81,6 +93,9 @@ public class Cmg21KwPirParams implements KwPirParams {
         this.coeffModulusBits = coeffModulusBits;
         this.expectServerSize = expectServerSize;
         this.maxRetrievalSize = maxRetrievalSize;
+        this.itemPerCiphertext = polyModulusDegree / itemEncodedSlotSize;
+        this.ciphertextNum = binNum / itemPerCiphertext;
+        this.encryptionParams = Cmg21KwPirNativeUtils.genEncryptionParameters(polyModulusDegree, plainModulus, coeffModulusBits);
     }
 
     /**
@@ -315,7 +330,7 @@ public class Cmg21KwPirParams implements KwPirParams {
             });
         }
         for (int i = 0; i < itemEncodedSlotSize; i++) {
-            assert (encodedArray[i] < plainModulus);
+            assert encodedArray[i] < plainModulus;
         }
         return encodedArray;
     }
@@ -344,5 +359,17 @@ public class Cmg21KwPirParams implements KwPirParams {
             }
         }
         return encodedArray;
+    }
+
+    public byte[] getEncryptionParams() {
+        return encryptionParams;
+    }
+
+    public int getItemPerCiphertext() {
+        return itemPerCiphertext;
+    }
+
+    public int getCiphertextNum() {
+        return ciphertextNum;
     }
 }

@@ -6,10 +6,10 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtConfig;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory;
-import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiFactory;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfFactory;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.BopprfScpsiConfig;
 
 /**
  * PSTY19 server-payload circuit PSI config.
@@ -17,7 +17,7 @@ import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfFactory;
  * @author Weiran Liu
  * @date 2023/3/29
  */
-public class Psty19ScpsiConfig extends AbstractMultiPartyPtoConfig implements ScpsiConfig {
+public class Psty19ScpsiConfig extends AbstractMultiPartyPtoConfig implements BopprfScpsiConfig {
     /**
      * Batch OPPRF config
      */
@@ -48,14 +48,17 @@ public class Psty19ScpsiConfig extends AbstractMultiPartyPtoConfig implements Sc
         return CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
     }
 
+    @Override
     public BopprfConfig getBopprfConfig() {
         return bopprfConfig;
     }
 
+    @Override
     public PeqtConfig getPeqtConfig() {
         return peqtConfig;
     }
 
+    @Override
     public CuckooHashBinType getCuckooHashBinType() {
         return cuckooHashBinType;
     }
@@ -64,7 +67,7 @@ public class Psty19ScpsiConfig extends AbstractMultiPartyPtoConfig implements Sc
         /**
          * Batch OPPRF config
          */
-        private BopprfConfig bopprfConfig;
+        private final BopprfConfig bopprfConfig;
         /**
          * private equality test config
          */
@@ -74,15 +77,10 @@ public class Psty19ScpsiConfig extends AbstractMultiPartyPtoConfig implements Sc
          */
         private CuckooHashBinType cuckooHashBinType;
 
-        public Builder(SecurityModel securityModel, boolean silent) {
+        public Builder(boolean silent) {
             bopprfConfig = BopprfFactory.createDefaultConfig();
-            peqtConfig = PeqtFactory.createDefaultConfig(securityModel, silent);
+            peqtConfig = PeqtFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             cuckooHashBinType = CuckooHashBinType.NO_STASH_PSZ18_3_HASH;
-        }
-
-        public Builder setBopprfConfig(BopprfConfig bopprfConfig) {
-            this.bopprfConfig = bopprfConfig;
-            return this;
         }
 
         public Builder setPeqtConfig(PeqtConfig peqtConfig) {

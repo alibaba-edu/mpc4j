@@ -45,16 +45,16 @@ public class FilterEfficiencyTest {
      */
     private static final FilterType[] TYPES = new FilterType[]{
         FilterType.SET_FILTER,
-        FilterType.NAIVE_BLOOM_FILTER,
-        FilterType.LPRST21_BLOOM_FILTER,
-        FilterType.SPARSE_BLOOM_FILTER,
+        FilterType.NAIVE_RANDOM_BLOOM_FILTER,
+        FilterType.SPARSE_RANDOM_BLOOM_FILTER,
+        FilterType.DISTINCT_BLOOM_FILTER,
         FilterType.CUCKOO_FILTER,
         FilterType.VACUUM_FILTER,
     };
 
     @Test
     public void testEfficiency() {
-        LOGGER.info("{}\t{}\t{}", "                name", "    log(n)", "   time(s)");
+        LOGGER.info("{}\t{}\t{}", "                          name", "    log(n)", "   time(s)");
         testEfficiency(4);
         testEfficiency(8);
         testEfficiency(12);
@@ -65,7 +65,7 @@ public class FilterEfficiencyTest {
     private void testEfficiency(int logN) {
         int n = 1 << logN;
         for (FilterType type : TYPES) {
-            byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashNum(type, n), SECURE_RANDOM);
+            byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
             List<byte[]> items = IntStream.range(0, n)
                 .mapToObj(index -> {
                     byte[] item = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
@@ -81,7 +81,7 @@ public class FilterEfficiencyTest {
             STOP_WATCH.reset();
             LOGGER.info(
                 "{}\t{}\t{}",
-                StringUtils.leftPad(type.name(), 20),
+                StringUtils.leftPad(type.name(), 30),
                 StringUtils.leftPad(String.valueOf(logN), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(time), 10)
             );

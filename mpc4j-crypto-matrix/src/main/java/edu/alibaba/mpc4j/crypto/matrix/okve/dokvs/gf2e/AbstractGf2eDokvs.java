@@ -24,7 +24,7 @@ abstract class AbstractGf2eDokvs<T> implements Gf2eDokvs<T> {
     /**
      * m in byte
      */
-    final int byteM;
+    protected final int byteM;
     /**
      * bit length of values
      */
@@ -42,7 +42,7 @@ abstract class AbstractGf2eDokvs<T> implements Gf2eDokvs<T> {
      */
     protected boolean parallelEncode;
 
-    protected AbstractGf2eDokvs(int n, int m, int l) {
+    protected AbstractGf2eDokvs(int n, int m, int l, SecureRandom secureRandom) {
         MathPreconditions.checkPositive("n", n);
         this.n = n;
         // here we only need to require l > 0
@@ -54,7 +54,7 @@ abstract class AbstractGf2eDokvs<T> implements Gf2eDokvs<T> {
         Preconditions.checkArgument(m % Byte.SIZE == 0, "m must divide " + Byte.SIZE + ": " + m);
         this.m = m;
         byteM = m / Byte.SIZE;
-        secureRandom = new SecureRandom();
+        this.secureRandom = secureRandom;
         parallelEncode = false;
     }
 

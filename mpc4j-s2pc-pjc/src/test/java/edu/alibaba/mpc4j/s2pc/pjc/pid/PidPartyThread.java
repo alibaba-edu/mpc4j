@@ -5,26 +5,26 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import java.util.Set;
 
 /**
- * PID协议参与方线程。
+ * PID thread.
  *
  * @author Weiran Liu
  * @date 2022/01/21
  */
 class PidPartyThread extends Thread {
     /**
-     * 服务端
+     * party
      */
     private final PidParty<String> pidParty;
     /**
-     * 自己元素集合
+     * own element set
      */
     private final Set<String> ownElementSet;
     /**
-     * 对方元素数量
+     * other set size
      */
     private final int otherSetSize;
     /**
-     * PID输出结果
+     * PID
      */
     private PidPartyOutput<String> pidPartyOutput;
 

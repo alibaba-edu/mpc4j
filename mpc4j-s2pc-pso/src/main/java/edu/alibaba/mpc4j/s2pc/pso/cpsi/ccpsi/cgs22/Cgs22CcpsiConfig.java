@@ -6,8 +6,8 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.RbopprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.rb.RbopprfFactory;
-import edu.alibaba.mpc4j.s2pc.opf.psm.PsmConfig;
-import edu.alibaba.mpc4j.s2pc.opf.psm.PsmFactory;
+import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmConfig;
+import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmFactory;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiFactory;
 
@@ -25,16 +25,16 @@ public class Cgs22CcpsiConfig extends AbstractMultiPartyPtoConfig implements Ccp
     /**
      * private set membership config
      */
-    private final PsmConfig psmConfig;
+    private final PdsmConfig pdsmConfig;
     /**
      * cuckoo hash bin type
      */
     private final CuckooHashBinType cuckooHashBinType;
 
     private Cgs22CcpsiConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.rbopprfConfig, builder.psmConfig);
+        super(SecurityModel.SEMI_HONEST, builder.rbopprfConfig, builder.pdsmConfig);
         rbopprfConfig = builder.rbopprfConfig;
-        psmConfig = builder.psmConfig;
+        pdsmConfig = builder.pdsmConfig;
         cuckooHashBinType = builder.cuckooHashBinType;
     }
 
@@ -52,8 +52,8 @@ public class Cgs22CcpsiConfig extends AbstractMultiPartyPtoConfig implements Ccp
         return rbopprfConfig;
     }
 
-    public PsmConfig getPsmConfig() {
-        return psmConfig;
+    public PdsmConfig getPsmConfig() {
+        return pdsmConfig;
     }
 
     public CuckooHashBinType getCuckooHashBinType() {
@@ -68,15 +68,15 @@ public class Cgs22CcpsiConfig extends AbstractMultiPartyPtoConfig implements Ccp
         /**
          * private set membership config
          */
-        private PsmConfig psmConfig;
+        private PdsmConfig pdsmConfig;
         /**
          * cuckoo hash bin type
          */
         private CuckooHashBinType cuckooHashBinType;
 
-        public Builder(SecurityModel securityModel, boolean silent) {
+        public Builder(boolean silent) {
             rbopprfConfig = RbopprfFactory.createDefaultConfig();
-            psmConfig = PsmFactory.createDefaultConfig(securityModel, silent);
+            pdsmConfig = PdsmFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             cuckooHashBinType = CuckooHashBinType.NO_STASH_PSZ18_3_HASH;
         }
 
@@ -85,8 +85,8 @@ public class Cgs22CcpsiConfig extends AbstractMultiPartyPtoConfig implements Ccp
             return this;
         }
 
-        public Builder setPsmConfig(PsmConfig psmConfig) {
-            this.psmConfig = psmConfig;
+        public Builder setPsmConfig(PdsmConfig pdsmConfig) {
+            this.pdsmConfig = pdsmConfig;
             return this;
         }
 

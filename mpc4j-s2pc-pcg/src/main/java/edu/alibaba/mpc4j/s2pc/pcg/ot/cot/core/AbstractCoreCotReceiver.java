@@ -7,6 +7,7 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 
 /**
  * 核COT协议接收方。
@@ -42,7 +43,7 @@ public abstract class AbstractCoreCotReceiver extends AbstractTwoPartyPto implem
         checkInitialized();
         MathPreconditions.checkPositiveInRangeClosed("num", choices.length, maxNum);
         // 拷贝一份
-        this.choices = Arrays.copyOf(choices, choices.length);
+        this.choices = BinaryUtils.clone(choices);
         num = choices.length;
         extraInfo++;
     }

@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20;
 
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -26,46 +26,46 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiverOutput;
 
 /**
- * YWL20-NC-COT协议接收方。
+ * YWL20-NC-COT receiver.
  *
  * @author Weiran Liu
  * @date 2022/02/02
  */
 public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
     /**
-     * MSP-COT配置项
+     * MSP-COT config
      */
     private final MspCotConfig mspCotConfig;
     /**
-     * MSP-COT协议接收方
+     * MSP-COT receiver
      */
     private final MspCotReceiver mspCotReceiver;
     /**
-     * COT协议接收方
+     * core COT receiver
      */
     private final CoreCotReceiver coreCotReceiver;
     /**
-     * 迭代LPN参数k
+     * iteration LPN parameter k
      */
     private int iterationK;
     /**
-     * 迭代LPN参数n
+     * iteration LPN parameter n
      */
     private int iterationN;
     /**
-     * 迭代LPN参数t
+     * iteration LPN parameter t
      */
     private int iterationT;
     /**
-     * 迭代过程所需的k个COT协议接收方输出
+     * COT receiver output used in iteration
      */
     private CotReceiverOutput wCotReceiverOutput;
     /**
-     * MSP-COT协议所需的预计算COT数量
+     * COT num used in MSP-COT
      */
-    private int preCotSize;
+    private int rCotPreNum;
     /**
-     * MSP-COT协议所需的COT协议接收方输出
+     * COT receiver output used in MSP-COT
      */
     private CotReceiverOutput rCotReceiverOutput;
 
@@ -92,7 +92,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         iterationK = iterationLpnParams.getK();
         iterationN = iterationLpnParams.getN();
         iterationT = iterationLpnParams.getT();
-        // 初始化COT协议和MSPCOT协议
+        // init core COT and MSP-COT
         coreCotReceiver.init(initK);
         mspCotReceiver.init(iterationT, iterationN);
         stopWatch.stop();
@@ -101,7 +101,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         logStepInfo(PtoState.INIT_STEP, 1, 5, initTime);
 
         stopWatch.start();
-        // 得到初始化阶段的k个COT
+        // get k0 COT used in setup
         boolean[] choices = new boolean[initK];
         IntStream.range(0, initK).forEach(index -> choices[index] = secureRandom.nextBoolean());
         CotReceiverOutput wInitCotReceiverOutput = coreCotReceiver.receive(choices);
@@ -111,11 +111,10 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         logStepInfo(PtoState.INIT_STEP, 2, 5, kInitCotTime);
 
         stopWatch.start();
-        // 初始化矩阵A的种子
+        // get seed for matrix A used in setup
         byte[] matrixInitKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(matrixInitKey);
-        List<byte[]> matrixInitKeyPayload = new LinkedList<>();
-        matrixInitKeyPayload.add(matrixInitKey);
+        List<byte[]> matrixInitKeyPayload = Collections.singletonList(matrixInitKey);
         DataPacketHeader matrixInitKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_SETUP_KEY.ordinal(),
             ownParty().getPartyId(), otherParty().getPartyId()
@@ -128,7 +127,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         logStepInfo(PtoState.INIT_STEP, 3, 5, keyInitTime);
 
         stopWatch.start();
-        // 执行MSP-COT
+        // execute MSP-COT
         MspCotReceiverOutput rInitMspCotReceiverOutput = mspCotReceiver.receive(initT, initN);
         stopWatch.stop();
         long rInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -148,8 +147,8 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         );
         rCotReceiverOutput = CotReceiverOutput.create(initX, initZ);
         wCotReceiverOutput = rCotReceiverOutput.split(iterationK);
-        preCotSize = MspCotFactory.getPrecomputeNum(mspCotConfig, iterationT, iterationN);
-        rCotReceiverOutput.reduce(preCotSize);
+        rCotPreNum = MspCotFactory.getPrecomputeNum(mspCotConfig, iterationT, iterationN);
+        rCotReceiverOutput.reduce(rCotPreNum);
         stopWatch.stop();
         long extendInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -164,11 +163,10 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // 生成迭代矩阵A的种子
+        // get seed for matrix A used in iteration
         byte[] matrixKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(matrixKey);
-        List<byte[]> matrixKeyPayload = new LinkedList<>();
-        matrixKeyPayload.add(matrixKey);
+        List<byte[]> matrixKeyPayload = Collections.singletonList(matrixKey);
         DataPacketHeader matrixKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_ITERATION_LEY.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
@@ -181,7 +179,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         logStepInfo(PtoState.PTO_STEP, 1, 3, keyTime);
 
         stopWatch.start();
-        // 执行MSP-COT
+        // execute MSP-COT
         MspCotReceiverOutput rMspCotReceiverOutput = mspCotReceiver.receive(iterationT, iterationN, rCotReceiverOutput);
         stopWatch.stop();
         long rTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -199,10 +197,10 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         IntStream.range(0, iterationN).forEach(index ->
             BytesUtils.xori(z[index], rMspCotReceiverOutput.getRb(index))
         );
-        // 更新输出
+        // split COT output into k0 + MSP-COT + output
         CotReceiverOutput receiverOutput = CotReceiverOutput.create(x, z);
         wCotReceiverOutput = receiverOutput.split(iterationK);
-        rCotReceiverOutput = receiverOutput.split(preCotSize);
+        rCotReceiverOutput = receiverOutput.split(rCotPreNum);
         receiverOutput.reduce(num);
         stopWatch.stop();
         long extendTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

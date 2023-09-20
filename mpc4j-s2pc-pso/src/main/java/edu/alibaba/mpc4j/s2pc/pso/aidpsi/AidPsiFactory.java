@@ -7,14 +7,6 @@ import edu.alibaba.mpc4j.s2pc.pso.aidpsi.passive.Kmrs14ShAidPsiAider;
 import edu.alibaba.mpc4j.s2pc.pso.aidpsi.passive.Kmrs14ShAidPsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.aidpsi.passive.Kmrs14ShAidPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.aidpsi.passive.Kmrs14ShAidPsiServer;
-import edu.alibaba.mpc4j.s2pc.pso.psi.PsiClient;
-import edu.alibaba.mpc4j.s2pc.pso.psi.PsiConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory;
-import edu.alibaba.mpc4j.s2pc.pso.psi.PsiServer;
-import edu.alibaba.mpc4j.s2pc.pso.psi.hfh99.*;
-import edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16.Kkrt16PsiClient;
-import edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16.Kkrt16PsiConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psi.kkrt16.Kkrt16PsiServer;
 
 /**
  * aid PSI factory.

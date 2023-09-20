@@ -2,9 +2,10 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 
 /**
- * NTL GF(2^κ).
+ * NTL GF(2^128).
  *
  * @author Weiran Liu
  * @date 2022/4/27
@@ -20,8 +21,8 @@ class NtlGf2k extends AbstractGf2k {
     }
 
     @Override
-    public Gf2kFactory.Gf2kType getGf2kType() {
-        return Gf2kFactory.Gf2kType.NTL;
+    public Gf2kType getGf2kType() {
+        return Gf2kType.NTL;
     }
 
     @Override

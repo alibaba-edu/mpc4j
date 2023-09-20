@@ -1,12 +1,13 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pid;
 
 import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.bkms20.Bkms20ByteEccPidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.bkms20.Bkms20EccPidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21.Gmr21MpPidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21.Gmr21SloppyPidConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -24,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * PID协议测试。注意，PID参与方的输入集合大小至少大于1。
+ * PID protocol test.
  *
  * @author Weiran Liu
  * @date 2019/07/12
@@ -33,11 +34,11 @@ import java.util.concurrent.TimeUnit;
 public class PidTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(PidTest.class);
     /**
-     * 默认数量
+     * default size
      */
-    private static final int DEFAULT_SIZE = 1 << 10;
+    private static final int DEFAULT_SIZE = (1 << 10) - 2;
     /**
-     * 较大数量
+     * large size
      */
     private static final int LARGE_SIZE = 1 << 12;
 
@@ -52,22 +53,22 @@ public class PidTest extends AbstractTwoPartyPtoTest {
         });
         // GMR21_MP (JSZ22_SFC_PSU)
         configurations.add(new Object[] {
-            PidFactory.PidType.GMR21_MP.name() + " (JSZ22_SFC_PSU)",
+            PidFactory.PidType.GMR21_MP.name() + " (" + PsuType.JSZ22_SFC + ")",
             new Gmr21MpPidConfig.Builder().setPsuConfig(new Jsz22SfcPsuConfig.Builder(false).build()).build(),
         });
         // GMR21_SLOPPY (MEGA_BIN)
         configurations.add(new Object[] {
-            PidFactory.PidType.GMR21_SLOPPY.name() + " (MEGA_BIN)",
-            new Gmr21SloppyPidConfig.Builder().setSloppyOkvsType(OkvsType.MEGA_BIN).build(),
+            PidFactory.PidType.GMR21_SLOPPY.name() + " (" + Gf2eDokvsType.MEGA_BIN + ")",
+            new Gmr21SloppyPidConfig.Builder().setSloppyOkvsType(Gf2eDokvsType.MEGA_BIN).build(),
         });
         // GMR21_SLOPPY (H3_SINGLETON_GCT)
         configurations.add(new Object[] {
-            PidFactory.PidType.GMR21_SLOPPY.name() + " (H3_SINGLETON_GCT)",
-            new Gmr21SloppyPidConfig.Builder().setSloppyOkvsType(OkvsType.H3_SINGLETON_GCT).build(),
+            PidFactory.PidType.GMR21_SLOPPY.name() + " (" + Gf2eDokvsType.H3_SINGLETON_GCT + ")",
+            new Gmr21SloppyPidConfig.Builder().setSloppyOkvsType(Gf2eDokvsType.H3_SINGLETON_GCT).build(),
         });
         // GMR21_SLOPPY (JSZ22_SFC_PSU)
         configurations.add(new Object[] {
-            PidFactory.PidType.GMR21_SLOPPY.name() + " (JSZ22_SFC_PSU)",
+            PidFactory.PidType.GMR21_SLOPPY.name() + " (" + PsuType.JSZ22_SFC + ")",
             new Gmr21SloppyPidConfig.Builder().setPsuConfig(new Jsz22SfcPsuConfig.Builder(false).build()).build(),
         });
         // BKMS20_BYTE_ECC
@@ -100,35 +101,45 @@ public class PidTest extends AbstractTwoPartyPtoTest {
 
     @Test
     public void test2() {
-        testPid(2, false);
+        testPid(2, 2, false);
     }
 
     @Test
     public void test10() {
-        testPid(10, false);
+        testPid(10, 10, false);
     }
 
     @Test
     public void testDefault() {
-        testPid(DEFAULT_SIZE, false);
+        testPid(DEFAULT_SIZE, DEFAULT_SIZE, false);
     }
 
     @Test
     public void testParallelDefault() {
-        testPid(DEFAULT_SIZE, true);
+        testPid(DEFAULT_SIZE, DEFAULT_SIZE, true);
+    }
+
+    @Test
+    public void testSmallServerSize() {
+        testPid(10, DEFAULT_SIZE, false);
+    }
+
+    @Test
+    public void testLargeClientSize() {
+        testPid(DEFAULT_SIZE, 10, false);
     }
 
     @Test
     public void testLarge() {
-        testPid(LARGE_SIZE, false);
+        testPid(LARGE_SIZE, LARGE_SIZE, false);
     }
 
     @Test
     public void testParallelLarge() {
-        testPid(LARGE_SIZE, true);
+        testPid(LARGE_SIZE, LARGE_SIZE, true);
     }
 
-    private void testPid(int size, boolean parallel) {
+    private void testPid(int serverSize, int clientSize, boolean parallel) {
         PidParty<String> server = PidFactory.createServer(firstRpc, secondRpc.ownParty(), config);
         PidParty<String> client = PidFactory.createClient(secondRpc, firstRpc.ownParty(), config);
         server.setParallel(parallel);
@@ -137,9 +148,12 @@ public class PidTest extends AbstractTwoPartyPtoTest {
         server.setTaskId(randomTaskId);
         client.setTaskId(randomTaskId);
         try {
-            LOGGER.info("-----test {}，size = {}-----", server.getPtoDesc().getPtoName(), size);
+            LOGGER.info(
+                "-----test {}，server size = {}, client size = {}-----",
+                server.getPtoDesc().getPtoName(), serverSize, clientSize
+            );
             // generate sets
-            ArrayList<Set<String>> sets = PsoUtils.generateEqualStringSets("ID", 2, size);
+            ArrayList<Set<String>> sets = PsoUtils.generateStringSets("ID", serverSize, clientSize);
             Set<String> serverSet = sets.get(0);
             Set<String> clientSet = sets.get(1);
             PidPartyThread serverThread = new PidPartyThread(server, serverSet, clientSet.size());
@@ -169,29 +183,29 @@ public class PidTest extends AbstractTwoPartyPtoTest {
     private void assertOutput(Set<String> serverSet, Set<String> clientSet,
         PidPartyOutput<String> serverOutput, PidPartyOutput<String> clientOutput) {
         Assert.assertEquals(serverOutput.getPidByteLength(), clientOutput.getPidByteLength());
-        // 计算交集
+        // compute the intersection
         Set<String> intersection = new HashSet<>();
         serverSet.forEach(serverElement -> {
             if (clientSet.contains(serverElement)) {
                 intersection.add(serverElement);
             }
         });
-        // 计算并集
+        // compute the union
         Set<String> union = new HashSet<>(serverSet);
         union.addAll(clientSet);
-        // 得到PID集合
+        // get PIDs
         Set<ByteBuffer> serverPidSet = serverOutput.getPidSet();
         Set<ByteBuffer> clientPidSet = clientOutput.getPidSet();
-        // 查看PID数量
+        // verify PID num
         Assert.assertEquals(union.size(), serverPidSet.size());
         Assert.assertEquals(union.size(), clientPidSet.size());
-        // 验证PID映射数量
+        // verify PID map num
         Assert.assertEquals(serverSet.size(), serverOutput.getIdSet().size());
         Assert.assertEquals(clientSet.size(), clientOutput.getIdSet().size());
-        // 验证PID相等
+        // verify PID
         Assert.assertTrue(serverPidSet.containsAll(clientPidSet));
         Assert.assertTrue(clientPidSet.containsAll(serverPidSet));
-        // 计算PID交集
+        // compute PID intersection
         Set<String> intersectionSet = new HashSet<>();
         serverPidSet.forEach(pid -> {
             String serverId = serverOutput.getId(pid);

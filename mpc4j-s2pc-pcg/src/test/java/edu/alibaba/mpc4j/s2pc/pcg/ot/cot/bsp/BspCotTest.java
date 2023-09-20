@@ -14,6 +14,8 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory.BspCotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.ywl20.Ywl20MaBspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.ywl20.Ywl20ShBspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp.SspCotReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp.SspCotSenderOutput;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * BSP-COT协议测试。
+ * Batched single-point COT tests.
  *
  * @author Weiran Liu
  * @date 2022/01/24
@@ -31,19 +33,19 @@ import org.slf4j.LoggerFactory;
 public class BspCotTest extends AbstractTwoPartyPtoTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BspCotTest.class);
     /**
-     * 默认数量，设置为既不是偶数、也不是2^k格式的数量
+     * default each num, we select an odd number and not with the format 2^k
      */
-    private static final int DEFAULT_NUM = 9;
+    private static final int DEFAULT_EACH_NUM = 9;
     /**
-     * 较大数量
+     * large each num
      */
-    private static final int LARGE_NUM = 1 << 16;
+    private static final int LARGE_EACH_NUM = 1 << 16;
     /**
-     * 默认批处理数量，设置为既不是偶数、也不是2^k格式的数量
+     * default batch num,  we select an odd number and not with the format 2^k
      */
     private static final int DEFAULT_BATCH_NUM = 9;
     /**
-     * 较大批处理数量
+     * large batch num
      */
     private static final int LARGE_BATCH_NUM = 1 << 16;
 
@@ -64,7 +66,7 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
     }
 
     /**
-     * 协议类型
+     * config
      */
     private final BspCotConfig config;
 
@@ -75,105 +77,136 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
 
     @Test
     public void testFirstAlpha() {
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
-            .map(mIndex -> 0)
+        //noinspection UnnecessaryLocalVariable
+        int eachNum = DEFAULT_BATCH_NUM;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = DEFAULT_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> 0)
             .toArray();
-        testPto(alphaArray, DEFAULT_NUM, false);
+        testPto(alphaArray, eachNum, false);
     }
 
     @Test
     public void testLastAlpha() {
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
-            .map(mIndex -> DEFAULT_NUM - 1)
+        int eachNum = DEFAULT_BATCH_NUM;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = DEFAULT_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> eachNum - 1)
             .toArray();
-        testPto(alphaArray, DEFAULT_NUM, false);
+        testPto(alphaArray, eachNum, false);
     }
 
     @Test
-    public void test1Num() {
-        int num = 1;
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
-            .map(mIndex -> SECURE_RANDOM.nextInt(num))
+    public void test1EachNum() {
+        int eachNum = 1;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = DEFAULT_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, num, false);
+        testPto(alphaArray, eachNum, false);
     }
 
     @Test
-    public void test2Num() {
-        int num = 2;
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
-            .map(mIndex -> SECURE_RANDOM.nextInt(num))
+    public void test2EachNum() {
+        int eachNum = 2;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = DEFAULT_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, num, false);
+        testPto(alphaArray, eachNum, false);
     }
 
     @Test
     public void test1BatchNum() {
+        int eachNum = DEFAULT_EACH_NUM;
         int batchNum = 1;
         int[] alphaArray = IntStream.range(0, batchNum)
-            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, DEFAULT_NUM, false);
+        testPto(alphaArray, eachNum, false);
     }
 
     @Test
     public void test2BatchNum() {
+        int eachNum = DEFAULT_EACH_NUM;
         int batchNum = 2;
         int[] alphaArray = IntStream.range(0, batchNum)
-            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, DEFAULT_NUM, false);
+        testPto(alphaArray, eachNum, false);
     }
 
     @Test
     public void testDefault() {
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
-            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+        int eachNum = DEFAULT_EACH_NUM;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = DEFAULT_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, DEFAULT_NUM, false);
+        testPto(alphaArray, eachNum, false);
     }
 
     @Test
     public void testParallelDefault() {
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
-            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+        int eachNum = DEFAULT_EACH_NUM;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = DEFAULT_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, DEFAULT_NUM, true);
+        testPto(alphaArray, eachNum, true);
     }
 
     @Test
-    public void testLargeBatch() {
-        int[] alphaArray = IntStream.range(0, LARGE_BATCH_NUM)
-            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+    public void testLargeBatchNum() {
+        int eachNum = DEFAULT_EACH_NUM;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = LARGE_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, DEFAULT_NUM, false);
+        testPto(alphaArray, eachNum, false);
     }
 
     @Test
-    public void testParallelLargeBatch() {
-        int[] alphaArray = IntStream.range(0, LARGE_BATCH_NUM)
-            .map(mIndex -> SECURE_RANDOM.nextInt(DEFAULT_NUM))
+    public void testParallelLargeBatchNum() {
+        int eachNum = DEFAULT_EACH_NUM;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = LARGE_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, DEFAULT_NUM, true);
+        testPto(alphaArray, eachNum, true);
     }
 
     @Test
-    public void testLargeNum() {
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
-            .map(mIndex -> SECURE_RANDOM.nextInt(LARGE_NUM))
+    public void testLargeEachNum() {
+        int eachNum = LARGE_EACH_NUM;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = DEFAULT_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, LARGE_NUM, false);
+        testPto(alphaArray, eachNum, false);
     }
 
     @Test
-    public void testParallelLargeNum() {
-        int[] alphaArray = IntStream.range(0, DEFAULT_BATCH_NUM)
-            .map(mIndex -> SECURE_RANDOM.nextInt(LARGE_NUM))
+    public void testParallelLargeEachNum() {
+        int eachNum = LARGE_EACH_NUM;
+        //noinspection UnnecessaryLocalVariable
+        int batchNum = DEFAULT_BATCH_NUM;
+        int[] alphaArray = IntStream.range(0, batchNum)
+            .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
             .toArray();
-        testPto(alphaArray, LARGE_NUM, true);
+        testPto(alphaArray, eachNum, true);
     }
 
-    private void testPto(int[] alphaArray, int num, boolean parallel) {
+    private void testPto(int[] alphaArray, int eachNum, boolean parallel) {
         BspCotSender sender = BspCotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
         BspCotReceiver receiver = BspCotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
@@ -186,8 +219,8 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
             int batchNum = alphaArray.length;
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
-            BspCotSenderThread senderThread = new BspCotSenderThread(sender, delta, batchNum, num);
-            BspCotReceiverThread receiverThread = new BspCotReceiverThread(receiver, alphaArray, num);
+            BspCotSenderThread senderThread = new BspCotSenderThread(sender, delta, batchNum, eachNum);
+            BspCotReceiverThread receiverThread = new BspCotReceiverThread(receiver, alphaArray, eachNum);
             STOP_WATCH.start();
             // start
             senderThread.start();
@@ -201,7 +234,7 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
             // verify
             BspCotSenderOutput senderOutput = senderThread.getSenderOutput();
             BspCotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            assertOutput(batchNum, num, senderOutput, receiverOutput);
+            assertOutput(batchNum, eachNum, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();
@@ -219,23 +252,23 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
+        int eachNum = DEFAULT_EACH_NUM;
         int batchNum = DEFAULT_BATCH_NUM;
-        int num = DEFAULT_NUM;
         try {
             LOGGER.info("-----test {} (precompute) start-----", sender.getPtoDesc().getPtoName());
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
             int[] alphaArray = IntStream.range(0, batchNum)
-                .map(mIndex -> SECURE_RANDOM.nextInt(num))
+                .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
                 .toArray();
             CotSenderOutput preSenderOutput = CotTestUtils.genSenderOutput(
-                BspCotFactory.getPrecomputeNum(config, batchNum, num), delta, SECURE_RANDOM
+                BspCotFactory.getPrecomputeNum(config, batchNum, eachNum), delta, SECURE_RANDOM
             );
             CotReceiverOutput preReceiverOutput = CotTestUtils.genReceiverOutput(preSenderOutput, SECURE_RANDOM);
             BspCotSenderThread senderThread
-                = new BspCotSenderThread(sender, delta, alphaArray.length, num, preSenderOutput);
+                = new BspCotSenderThread(sender, delta, alphaArray.length, eachNum, preSenderOutput);
             BspCotReceiverThread receiverThread
-                = new BspCotReceiverThread(receiver, alphaArray, num, preReceiverOutput);
+                = new BspCotReceiverThread(receiver, alphaArray, eachNum, preReceiverOutput);
             STOP_WATCH.start();
             // start
             senderThread.start();
@@ -249,7 +282,7 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
             // verify
             BspCotSenderOutput senderOutput = senderThread.getSenderOutput();
             BspCotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            assertOutput(batchNum, num, senderOutput, receiverOutput);
+            assertOutput(batchNum, eachNum, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();
@@ -267,17 +300,17 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
+        int eachNum = DEFAULT_EACH_NUM;
         int batchNum = DEFAULT_BATCH_NUM;
-        int num = DEFAULT_NUM;
         try {
             LOGGER.info("-----test {} (reset Δ) start-----", sender.getPtoDesc().getPtoName());
             byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
             SECURE_RANDOM.nextBytes(delta);
             int[] alphaArray = IntStream.range(0, batchNum)
-                .map(mIndex -> SECURE_RANDOM.nextInt(num)).toArray();
+                .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum)).toArray();
             // first round
-            BspCotSenderThread senderThread = new BspCotSenderThread(sender, delta, alphaArray.length, num);
-            BspCotReceiverThread receiverThread = new BspCotReceiverThread(receiver, alphaArray, num);
+            BspCotSenderThread senderThread = new BspCotSenderThread(sender, delta, alphaArray.length, eachNum);
+            BspCotReceiverThread receiverThread = new BspCotReceiverThread(receiver, alphaArray, eachNum);
             STOP_WATCH.start();
             senderThread.start();
             receiverThread.start();
@@ -289,15 +322,15 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
             // verify
             BspCotSenderOutput senderOutput = senderThread.getSenderOutput();
             BspCotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            assertOutput(batchNum, num, senderOutput, receiverOutput);
+            assertOutput(batchNum, eachNum, senderOutput, receiverOutput);
             printAndResetRpc(firstTime);
             // second round, reset Δ
             SECURE_RANDOM.nextBytes(delta);
             alphaArray = IntStream.range(0, batchNum)
-                .map(mIndex -> SECURE_RANDOM.nextInt(num))
+                .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
                 .toArray();
-            senderThread = new BspCotSenderThread(sender, delta, alphaArray.length, num);
-            receiverThread = new BspCotReceiverThread(receiver, alphaArray, num);
+            senderThread = new BspCotSenderThread(sender, delta, alphaArray.length, eachNum);
+            receiverThread = new BspCotReceiverThread(receiver, alphaArray, eachNum);
             STOP_WATCH.start();
             senderThread.start();
             receiverThread.start();
@@ -309,7 +342,7 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
             // verify
             BspCotSenderOutput secondSenderOutput = senderThread.getSenderOutput();
             BspCotReceiverOutput secondReceiverOutput = receiverThread.getReceiverOutput();
-            assertOutput(batchNum, num, secondSenderOutput, secondReceiverOutput);
+            assertOutput(batchNum, eachNum, secondSenderOutput, secondReceiverOutput);
             // Δ should be different
             Assert.assertNotEquals(
                 ByteBuffer.wrap(secondSenderOutput.getDelta()), ByteBuffer.wrap(senderOutput.getDelta())
@@ -324,20 +357,22 @@ public class BspCotTest extends AbstractTwoPartyPtoTest {
         }
     }
 
-    private void assertOutput(int batchNum, int num,
+    private void assertOutput(int batchNum, int eachNum,
                               BspCotSenderOutput senderOutput, BspCotReceiverOutput receiverOutput) {
-        Assert.assertEquals(batchNum, senderOutput.getNum());
-        Assert.assertEquals(batchNum, receiverOutput.getNum());
+        Assert.assertEquals(batchNum, senderOutput.getBatchNum());
+        Assert.assertEquals(batchNum, receiverOutput.getBatchNum());
+        Assert.assertEquals(eachNum, senderOutput.getEachNum());
+        Assert.assertEquals(eachNum, receiverOutput.getEachNum());
         IntStream.range(0, batchNum).forEach(batchIndex -> {
-            SspCotSenderOutput sspcotSenderOutput = senderOutput.get(batchIndex);
-            SspCotReceiverOutput sspcotReceiverOutput = receiverOutput.get(batchIndex);
-            Assert.assertEquals(num, sspcotSenderOutput.getNum());
-            Assert.assertEquals(num, sspcotReceiverOutput.getNum());
-            IntStream.range(0, num).forEach(index -> {
-                if (index == sspcotReceiverOutput.getAlpha()) {
-                    Assert.assertArrayEquals(sspcotSenderOutput.getR1(index), sspcotReceiverOutput.getRb(index));
+            SspCotSenderOutput eachSenderOutput = senderOutput.get(batchIndex);
+            SspCotReceiverOutput eachReceiverOutput = receiverOutput.get(batchIndex);
+            Assert.assertEquals(eachNum, eachSenderOutput.getNum());
+            Assert.assertEquals(eachNum, eachReceiverOutput.getNum());
+            IntStream.range(0, eachNum).forEach(index -> {
+                if (index == eachReceiverOutput.getAlpha()) {
+                    Assert.assertArrayEquals(eachSenderOutput.getR1(index), eachReceiverOutput.getRb(index));
                 } else {
-                    Assert.assertArrayEquals(sspcotSenderOutput.getR0(index), sspcotReceiverOutput.getRb(index));
+                    Assert.assertArrayEquals(eachSenderOutput.getR0(index), eachReceiverOutput.getRb(index));
                 }
             });
         });

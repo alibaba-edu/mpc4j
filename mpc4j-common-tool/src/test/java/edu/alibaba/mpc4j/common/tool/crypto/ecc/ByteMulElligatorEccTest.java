@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory.ByteEccType;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -11,7 +12,7 @@ import java.security.SecureRandom;
 import java.util.*;
 
 /**
- * 支持Elligator的乘法字节椭圆曲线测试。
+ * Elligator byte multiplication ECC test.
  *
  * @author Weiran Liu
  * @date 2022/11/11
@@ -19,15 +20,15 @@ import java.util.*;
 @RunWith(Parameterized.class)
 public class ByteMulElligatorEccTest {
     /**
-     * 最大随机轮数
+     * max random round
      */
     private static final int MAX_RANDOM_ROUND = 1000;
     /**
-     * 随机状态
+     * random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
-     * 合法幂指数
+     * valid scalar
      */
     private static final byte[] CONSTANT_CLAMP_SCALAR = new byte[] {
         (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
@@ -39,7 +40,7 @@ public class ByteMulElligatorEccTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
-        // X25519_ELLIGATOR_CAFE
+
         configurations.add(new Object[]{
             ByteEccFactory.ByteEccType.X25519_ELLIGATOR_BC.name(), ByteEccFactory.ByteEccType.X25519_ELLIGATOR_BC,
         });
@@ -48,11 +49,11 @@ public class ByteMulElligatorEccTest {
     }
 
     /**
-     * 待测试的字节椭圆曲线类型
+     * type
      */
-    private final ByteEccFactory.ByteEccType byteEccType;
+    private final ByteEccType byteEccType;
 
-    public ByteMulElligatorEccTest(String name, ByteEccFactory.ByteEccType byteEccType) {
+    public ByteMulElligatorEccTest(String name, ByteEccType byteEccType) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.byteEccType = byteEccType;
     }

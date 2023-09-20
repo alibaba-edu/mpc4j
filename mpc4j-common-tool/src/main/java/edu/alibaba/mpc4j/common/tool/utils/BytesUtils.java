@@ -20,19 +20,34 @@ public class BytesUtils {
         // empty
     }
 
-    /**
-     * 调换字节的大小端表示，即如果输入为0b00000001，则输出为0b10000000。
-     *
-     * @param byteValue 给定的{@code byte}。
-     * @return 调换结果。
-     */
-    public static byte reverseBit(final byte byteValue) {
+    private static byte innerReverseBit(final byte byteValue) {
         byte copyByteValue = byteValue;
         int reverseByteValue = 0;
         for (int i = 0; i < Byte.SIZE; i++, copyByteValue >>= 1) {
             reverseByteValue = reverseByteValue << 1 | (copyByteValue & 1);
         }
         return (byte) reverseByteValue;
+    }
+
+    /**
+     * reverse bit array map
+     */
+    private static final byte[] REVERSE_BIT_ARRAY = new byte[1 << Byte.SIZE];
+
+    static {
+        for (int i = 0; i < (1 << Byte.SIZE); i++) {
+            REVERSE_BIT_ARRAY[i] = innerReverseBit((byte) i);
+        }
+    }
+
+    /**
+     * reverse bits in the given byte, e.g., if byte value is 0b00000001, then the reversed byte value is 0b10000000.
+     *
+     * @param byteValue the given byte.
+     * @return the reversed byte.
+     */
+    public static byte reverseBit(final byte byteValue) {
+        return REVERSE_BIT_ARRAY[(int) byteValue & 0xFF];
     }
 
     /**
@@ -363,7 +378,7 @@ public class BytesUtils {
      * @return x1 XOR x2。
      */
     public static byte[] xor(final byte[] x1, final byte[] x2) {
-        assert x1.length == x2.length;
+        assert x1.length == x2.length : "x1.length = " + x1.length + " must be equal to x2.length = " + x2.length;
         byte[] out = new byte[x1.length];
         for (int i = x1.length - 1; i >= 0; i--) {
             out[i] = (byte) (x1[i] ^ x2[i]);
@@ -393,7 +408,7 @@ public class BytesUtils {
      * @return x1 AND x2。
      */
     public static byte[] and(final byte[] x1, final byte[] x2) {
-        assert x1.length == x2.length;
+        assert x1.length == x2.length : "x1.length = " + x1.length + " must be equal to x2.length = " + x2.length;
         byte[] out = new byte[x1.length];
         for (int i = x1.length - 1; i >= 0; i--) {
             out[i] = (byte) (x1[i] & x2[i]);
@@ -409,7 +424,7 @@ public class BytesUtils {
      * @param x2 第二个字节数组。
      */
     public static void andi(byte[] x1, final byte[] x2) {
-        assert x1.length == x2.length;
+        assert x1.length == x2.length : "x1.length = " + x1.length + " must be equal to x2.length = " + x2.length;
         for (int i = x1.length - 1; i >= 0; i--) {
             x1[i] = (byte) (x1[i] & x2[i]);
         }
@@ -423,7 +438,7 @@ public class BytesUtils {
      * @return x1 OR x2。
      */
     public static byte[] or(final byte[] x1, final byte[] x2) {
-        assert x1.length == x2.length;
+        assert x1.length == x2.length : "x1.length = " + x1.length + " must be equal to x2.length = " + x2.length;
         byte[] out = new byte[x1.length];
         for (int i = x1.length - 1; i >= 0; i--) {
             out[i] = (byte) (x1[i] | x2[i]);
@@ -439,7 +454,7 @@ public class BytesUtils {
      * @param x2 第二个字节数组。
      */
     public static void ori(byte[] x1, final byte[] x2) {
-        assert x1.length == x2.length;
+        assert x1.length == x2.length : "x1.length = " + x1.length + " must be equal to x2.length = " + x2.length;
         for (int i = x1.length - 1; i >= 0; i--) {
             x1[i] = (byte) (x1[i] | x2[i]);
         }
@@ -476,31 +491,28 @@ public class BytesUtils {
     }
 
     /**
-     * 利用{@code byte[]}实现右移。
+     * shift right.
      *
-     * @param byteArray 字节数组。
-     * @param x         移动的比特长度。
-     * @return 右移结果。
+     * @param byteArray byte array.
+     * @param x         number of shift bits.
+     * @return result.
      */
     public static byte[] shiftRight(final byte[] byteArray, final int x) {
         assert x >= 0;
-        // 如果右移0位，直接返回原始结果
         if (x == 0) {
+            // x = 0, byte array is unchanged.
             return clone(byteArray);
         }
-        // 如果右移的位数超过了字节数组的比特长度，则返回全0字节数组
         if (x >= byteArray.length * Byte.SIZE) {
+            // x is so large that result must be all 0
             return new byte[byteArray.length];
         }
-        // 移动的比特数
         int binaryMove = x % Byte.SIZE;
-        // 移动的字节数
         int byteMove = (x - binaryMove) / Byte.SIZE;
-        // 构建结果数组
         byte[] shiftRightByteArray = new byte[byteArray.length];
-        // 先把需要移动的字节比特移动到位
+        // shift by bytes
         System.arraycopy(byteArray, 0, shiftRightByteArray, byteMove, byteArray.length - byteMove);
-        // 移动剩余的比特长度
+        // shift by bits
         if (binaryMove != 0) {
             binaryShiftRight(shiftRightByteArray, binaryMove);
         }
@@ -508,77 +520,70 @@ public class BytesUtils {
     }
 
     /**
-     * 利用{@code byte[]}实现右移，并将右移结果放置在{@code byte[]}中。
+     * in-place shift right.
      *
-     * @param byteArray 字节数组。
-     * @param x         移动的比特数。
+     * @param byteArray byte array.
+     * @param x         number of shift bits.
      */
     public static void shiftRighti(byte[] byteArray, final int x) {
         assert x >= 0;
-        // 如果右移0位，直接返回原始结果
         if (x == 0) {
+            // x = 0, byte array is unchanged.
             return;
         }
-        // 如果右移的位数超过了字节数组的比特长度，则返回全0字节数组
         if (x >= byteArray.length * Byte.SIZE) {
+            // x is so large that result must be all 0
             Arrays.fill(byteArray, (byte) 0x00);
         }
-        // 移动的比特数
         int binaryMove = x % Byte.SIZE;
-        // 移动的字节数
         int byteMove = (x - binaryMove) / Byte.SIZE;
-        // 先把需要移动的字节比特移动到位
+        // shift by bytes, note that we must clean higher bytes
         System.arraycopy(byteArray, 0, byteArray, byteMove, byteArray.length - byteMove);
-        // 移动剩余的比特长度
+        for (int i = 0; i < byteMove; i++) {
+            byteArray[i] = 0x00;
+        }
+        // shift by bits
         if (binaryMove != 0) {
             binaryShiftRight(byteArray, binaryMove);
         }
     }
 
-    /**
-     * 二进制右移。
-     *
-     * @param byteArray 字节数组。
-     * @param x         移动的比特数，要求0 <= {@code x} < {@code Byte.SIZE}。
-     */
     private static void binaryShiftRight(byte[] byteArray, final int x) {
+        assert x >= 0 && x < Byte.SIZE : "x must be in range [0, " + Byte.SIZE + ")";
         for (int i = byteArray.length - 1; i > 0; i--) {
-            // 当前位置右移后的字节
+            // shift current byte
             int currentByte = (byteArray[i] & 0xFF) >>> x;
-            // 上一个位置补充到当前位置的字节
-            int suppleByte = (byteArray[i - 1] & 0xFF) << (Byte.SIZE - x);
-            byteArray[i] = (byte) (currentByte | suppleByte);
+            // supply from next byte
+            int supplyByte = (byteArray[i - 1] & 0xFF) << (Byte.SIZE - x);
+            byteArray[i] = (byte) (currentByte | supplyByte);
         }
-        // 处理最后一个字节
+        // handle the last byte
         byteArray[0] = (byte) ((byteArray[0] & 0xFF) >>> x);
     }
 
     /**
-     * 利用{@code byte[]}实现左移。
+     * shift left.
      *
-     * @param byteArray 字节数组。
-     * @param x         移动的比特数。
-     * @return 左移结果。
+     * @param byteArray byte array.
+     * @param x         number of shift bits.
+     * @return result.
      */
     public static byte[] shiftLeft(final byte[] byteArray, final int x) {
         assert x >= 0;
-        // 如果左移0位，直接返回原始结果
         if (x == 0) {
+            // x = 0, byte array is unchanged.
             return clone(byteArray);
         }
-        // 如果左移的位数超过了字节数组的比特长度，则返回全0字节数组
         if (x >= byteArray.length * Byte.SIZE) {
+            // x is so large that result must be all 0
             return new byte[byteArray.length];
         }
-        // 移动的比特数
         int binaryMove = x % Byte.SIZE;
-        // 移动的字节数
         int byteMove = (x - binaryMove) / Byte.SIZE;
-        // 构建结果数组
         byte[] resultByteArray = new byte[byteArray.length];
-        // 先把需要移动的字节比特移动到位
+        // shift by bytes
         System.arraycopy(byteArray, byteMove, resultByteArray, 0, byteArray.length - byteMove);
-        // 移动剩余的比特长度
+        // shift by bits
         if (binaryMove != 0) {
             binaryShiftLeft(resultByteArray, binaryMove);
         }
@@ -586,49 +591,45 @@ public class BytesUtils {
     }
 
     /**
-     * 利用{@code byte[]}实现左移，并将左移结果放置在{@code byte[]}中。
+     * in-place shift left.
      *
-     * @param byteArray 字节数组。
-     * @param x         移动的比特数。
+     * @param byteArray byte array.
+     * @param x         number of shift bits.
      */
     public static void shiftLefti(byte[] byteArray, final int x) {
         assert x >= 0;
-        // 如果左移0位，直接返回原始结果
         if (x == 0) {
+            // x = 0, byte array is unchanged.
             return;
         }
-        // 如果左移的位数超过了字节数组的比特长度，则返回全0字节数组
         if (x >= byteArray.length * Byte.SIZE) {
+            // x is so large that result must be all 0
             Arrays.fill(byteArray, (byte) 0x00);
         }
-        // 移动的比特数
         int binaryMove = x % Byte.SIZE;
-        // 移动的字节数
         int byteMove = (x - binaryMove) / Byte.SIZE;
-        // 先把需要移动的字节比特移动到位
+        // shift by bytes, note that we must clean lower bytes
         System.arraycopy(byteArray, byteMove, byteArray, 0, byteArray.length - byteMove);
-        // 移动剩余的比特长度
+        for (int i = byteArray.length - byteMove; i < byteArray.length; i++) {
+            byteArray[i] = 0x00;
+        }
+        // shift by bits
         if (binaryMove != 0) {
             binaryShiftLeft(byteArray, binaryMove);
         }
     }
 
-    /**
-     * 二进制左移。
-     *
-     * @param byteArray 字节数组。
-     * @param x         移动的比特数，要求0 <= {@code x} < {@code Byte.SIZE}。
-     */
     private static void binaryShiftLeft(byte[] byteArray, final int x) {
+        assert x >= 0 && x < Byte.SIZE : "x must be in range [0, " + Byte.SIZE + ")";
         for (int i = 0; i < byteArray.length - 1; i++) {
-            // 当前位置左移后的字节
+            // shift current byte
             int currentByte = (byteArray[i] & 0xFF) << x;
-            // 下一个位置补充到当前位置的字节
-            int suppleByte = (byteArray[i + 1] & 0xFF) >> (Byte.SIZE - x);
-            // 两个结果合并
-            byteArray[i] = (byte) (currentByte | suppleByte);
+            // supply from next byte
+            int supplyByte = (byteArray[i + 1] & 0xFF) >> (Byte.SIZE - x);
+            // combine
+            byteArray[i] = (byte) (currentByte | supplyByte);
         }
-        // 处理最后一个字节
+        // handle last byte
         byteArray[byteArray.length - 1] = (byte) ((byteArray[byteArray.length - 1] & 0xFF) << x);
     }
 
@@ -647,6 +648,22 @@ public class BytesUtils {
             if (y[i]) {
                 xori(value, x[i]);
             }
+        }
+        return value;
+    }
+
+    /**
+     * Computes the inner product of x and y (positions labeled as 1).
+     *
+     * @param x           vector x.
+     * @param xByteLength x byte length.
+     * @param positions   vector y (positions labeled as 1).
+     * @return the inner product of x and y.
+     */
+    public static byte[] innerProduct(byte[][] x, int xByteLength, int[] positions) {
+        byte[] value = new byte[xByteLength];
+        for (int position : positions) {
+            BytesUtils.xori(value, x[position]);
         }
         return value;
     }

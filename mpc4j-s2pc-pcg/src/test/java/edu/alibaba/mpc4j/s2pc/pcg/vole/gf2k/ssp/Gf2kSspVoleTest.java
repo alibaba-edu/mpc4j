@@ -9,7 +9,8 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.Gf2kSspVoleFactory.Gf2kSspVoleType;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.wykw21.Wykw21Gf2kShSspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.wykw21.Wykw21MaGf2kSspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.ssp.wykw21.Wykw21ShGf2kSspVoleConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * Single single-point GF2K VOLE tests.
+ * Single single-point GF2K-VOLE tests.
  *
  * @author Weiran Liu
  * @date 2023/3/16
@@ -49,9 +50,13 @@ public class Gf2kSspVoleTest extends AbstractTwoPartyPtoTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
+        // WYKW21_MALICIOUS
+        configurations.add(new Object[]{
+            Gf2kSspVoleType.WYKW21_MALICIOUS.name(), new Wykw21MaGf2kSspVoleConfig.Builder().build(),
+        });
         // WYKW21_SEMI_HONEST
         configurations.add(new Object[]{
-            Gf2kSspVoleType.WYKW21_SEMI_HONEST.name(), new Wykw21Gf2kShSspVoleConfig.Builder().build(),
+            Gf2kSspVoleType.WYKW21_SEMI_HONEST.name(), new Wykw21ShGf2kSspVoleConfig.Builder().build(),
         });
 
         return configurations;
@@ -177,8 +182,7 @@ public class Gf2kSspVoleTest extends AbstractTwoPartyPtoTest {
                 Gf2kSspVoleFactory.getPrecomputeNum(config, num), delta, SECURE_RANDOM
             );
             Gf2kVoleSenderOutput preSenderOutput = Gf2kVoleTestUtils.genSenderOutput(preReceiverOutput, SECURE_RANDOM);
-            Gf2kSspVoleSenderThread senderThread
-                = new Gf2kSspVoleSenderThread(sender, alpha, num, preSenderOutput);
+            Gf2kSspVoleSenderThread senderThread = new Gf2kSspVoleSenderThread(sender, alpha, num, preSenderOutput);
             Gf2kSspVoleReceiverThread receiverThread = new Gf2kSspVoleReceiverThread(receiver, delta, num, preReceiverOutput);
             STOP_WATCH.start();
             senderThread.start();
@@ -264,17 +268,18 @@ public class Gf2kSspVoleTest extends AbstractTwoPartyPtoTest {
         IntStream.range(0, num).forEach(index -> {
             byte[] w = senderOutput.getT(index);
             byte[] v = receiverOutput.getQ(index);
+            byte[] u = senderOutput.getX(index);
+            byte[] delta = receiverOutput.getDelta();
+            byte[] vPrime = BytesUtils.clone(delta);
+            GF2K.muli(vPrime, u);
+            GF2K.addi(vPrime, v);
+            Assert.assertArrayEquals(w, vPrime);
             if (index == senderOutput.getAlpha()) {
-                // w = v + Δ · u
-                byte[] u = senderOutput.getX();
-                byte[] delta = receiverOutput.getDelta();
-                byte[] vPrime = BytesUtils.clone(delta);
-                GF2K.muli(vPrime, u);
-                GF2K.addi(vPrime, v);
-                Assert.assertArrayEquals(w, vPrime);
+                // u is non-zero
+                Assert.assertFalse(GF2K.isZero(u));
             } else {
-                // w = v
-                Assert.assertArrayEquals(w, v);
+                // u is zero
+                Assert.assertTrue(GF2K.isZero(u));
             }
         });
     }

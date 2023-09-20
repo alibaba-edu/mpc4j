@@ -24,10 +24,6 @@ public class Mr23BatchIndexPirConfig extends AbstractMultiPartyPtoConfig impleme
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Mr23BatchIndexPirConfig> {
 
-        public Builder() {
-            // empty
-        }
-
         @Override
         public Mr23BatchIndexPirConfig build() {
             return new Mr23BatchIndexPirConfig(this);

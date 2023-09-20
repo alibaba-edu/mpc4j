@@ -22,18 +22,7 @@ class Psty19CcpsiPtoDesc implements PtoDesc {
     /**
      * the protocol name
      */
-    private static final String PTO_NAME = "PRTY19-CCPSI";
-
-    /**
-     * the protocol step
-     */
-    enum PtoStep {
-        /**
-         * the client sends cuckoo hash keys
-         */
-        CLIENT_SEND_CUCKOO_HASH_KEYS,
-    }
-
+    private static final String PTO_NAME = "PSTY19-CCPSI";
     /**
      * the singleton mode
      */

@@ -4,23 +4,23 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.BytesField;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 
 /**
- * GF(2^128)有限域运算接口。
+ * GF(2^128) finite field.
  *
  * @author Weiran Liu
  * @date 2022/01/15
  */
 public interface Gf2k extends BytesField {
     /**
-     * Gets Gf2k type.
+     * Gets type.
      *
-     * @return the gf2k type.
+     * @return type.
      */
     Gf2kType getGf2kType();
 
     /**
-     * Gets the name.
+     * Gets name.
      *
-     * @return the name.
+     * @return name.
      */
     @Override
     default String getName() {

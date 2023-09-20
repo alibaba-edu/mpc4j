@@ -22,7 +22,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.ywl20.Ywl20MaBspCotPtoDesc.PtoStep;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.SspCotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp.SspCotSenderOutput;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -31,26 +31,26 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * YWL20-BSP-COT恶意安全协议发送方。
+ * malicious YWL20-BSP-COT sender.
  *
  * @author Weiran Liu
  * @date 2022/6/7
  */
 public class Ywl20MaBspCotSender extends AbstractBspCotSender {
     /**
-     * DPPRF协议配置项
+     * BP-DPPRF config
      */
     private final BpDpprfConfig bpDpprfConfig;
     /**
-     * 核COT协议发送方
+     * core COT
      */
     private final CoreCotSender coreCotSender;
     /**
-     * DPPRF协议发送方
+     * BP-DPPRF
      */
     private final BpDpprfSender bpDpprfSender;
     /**
-     * GF(2^128)运算接口
+     * GF(2^128) instance
      */
     private final Gf2k gf2k;
     /**
@@ -58,15 +58,15 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
      */
     private final Hash hash;
     /**
-     * COT发送方输出
+     * COT sender output
      */
     private CotSenderOutput cotSenderOutput;
     /**
-     * 验证COT协议发送方输出
+     * check COT sender output
      */
     private CotSenderOutput checkCotSenderOutput;
     /**
-     * 随机预言机
+     * random oracle
      */
     private Prf randomOracle;
 
@@ -82,16 +82,16 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
     }
 
     @Override
-    public void init(byte[] delta, int maxBatchNum, int maxNum) throws MpcAbortException {
-        setInitInput(delta, maxBatchNum, maxNum);
+    public void init(byte[] delta, int maxBatchNum, int maxEachNum) throws MpcAbortException {
+        setInitInput(delta, maxBatchNum, maxEachNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 协议执行过程要请求两次COT，一次用于DPPRF，一次是128个
-        int maxCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, maxBatchNum, maxNum)
+        // we need to request COT two times, one for DPPRF, one for λ
+        int maxCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, maxBatchNum, maxEachNum)
             + CommonConstants.BLOCK_BIT_LENGTH;
         coreCotSender.init(delta, maxCotNum);
-        bpDpprfSender.init(maxBatchNum, maxNum);
+        bpDpprfSender.init(maxBatchNum, maxEachNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -115,14 +115,14 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
     }
 
     @Override
-    public BspCotSenderOutput send(int batchNum, int num) throws MpcAbortException {
-        setPtoInput(batchNum, num);
+    public BspCotSenderOutput send(int batchNum, int eachNum) throws MpcAbortException {
+        setPtoInput(batchNum, eachNum);
         return send();
     }
 
     @Override
-    public BspCotSenderOutput send(int batchNum, int num, CotSenderOutput preSenderOutput) throws MpcAbortException {
-        setPtoInput(batchNum, num, preSenderOutput);
+    public BspCotSenderOutput send(int batchNum, int eachNum, CotSenderOutput preSenderOutput) throws MpcAbortException {
+        setPtoInput(batchNum, eachNum, preSenderOutput);
         cotSenderOutput = preSenderOutput;
         return send();
     }
@@ -132,7 +132,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
 
         stopWatch.start();
         // S send (extend, h) to F_COT, which returns q_i ∈ {0,1}^κ to S
-        int dpprfCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, batchNum, num);
+        int dpprfCotNum = BpDpprfFactory.getPrecomputeNum(bpDpprfConfig, batchNum, eachNum);
         if (cotSenderOutput == null) {
             cotSenderOutput = coreCotSender.send(dpprfCotNum + CommonConstants.BLOCK_BIT_LENGTH);
         } else {
@@ -147,7 +147,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
         logStepInfo(PtoState.PTO_STEP, 1, 4, cotTime);
 
         stopWatch.start();
-        BpDpprfSenderOutput bpDpprfSenderOutput = bpDpprfSender.puncture(batchNum, num, extendCotSenderOutput);
+        BpDpprfSenderOutput bpDpprfSenderOutput = bpDpprfSender.puncture(batchNum, eachNum, extendCotSenderOutput);
         stopWatch.stop();
         long dpprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -161,7 +161,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
                 // S sets v = (s_0^h,...,s_{n - 1}^h)
                 byte[][] vs = bpDpprfSenderOutput.getSpDpprfSenderOutput(batchIndex).getPrfKeys();
                 // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
-                for (int i = 0; i < num; i++) {
+                for (int i = 0; i < eachNum; i++) {
                     BytesUtils.xori(correlateByteArrays[batchIndex], vs[i]);
                 }
                 return SspCotSenderOutput.create(delta, vs);
@@ -185,7 +185,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> checkChoicePayload = rpc.receive(checkChoiceHeader).getPayload();
-        // 计算H'(V)
+        // compute H'(V)
         List<byte[]> actualCheckValuePayload = handleCheckChoicePayload(senderOutput, checkChoicePayload);
         DataPacketHeader actualHashValueHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_HASH_VALUE.ordinal(), extraInfo,
@@ -206,7 +206,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
         MpcAbortPreconditions.checkArgument(checkChoicePayload.size() == 1);
         byte[] xPrime = checkChoicePayload.remove(0);
         boolean[] xPrimeBinary = BinaryUtils.byteArrayToBinary(xPrime, CommonConstants.BLOCK_BIT_LENGTH);
-        // S computes \vec{y} := \vec{y}^* + \vec{x}·∆, Y := Σ_{i ∈ [κ]} (y[i]·X^i) ∈ F_{2^κ}，常数次运算，不需要并发
+        // S computes \vec{y} := \vec{y}^* + \vec{x}·∆, Y := Σ_{i ∈ [κ]} (y[i]·X^i) ∈ F_{2^κ}
         byte[] y = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         for (int checkIndex = 0; checkIndex < CommonConstants.BLOCK_BIT_LENGTH; checkIndex++) {
             // y[i] = y[i]^* + x[i]·∆
@@ -228,7 +228,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
         byte[][] vs = lIntStream
             .mapToObj(l -> {
                 byte[] v = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                for (int i = 0; i < num; i++) {
+                for (int i = 0; i < eachNum; i++) {
                     // samples uniform {χ_i}_{i ∈ [n]}
                     byte[] indexMessage = ByteBuffer.allocate(Long.BYTES + Integer.BYTES + Integer.BYTES)
                         .putLong(extraInfo).putInt(l).putInt(i).array();

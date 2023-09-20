@@ -12,9 +12,9 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.Okvs;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.AbstractPmidServer;
@@ -56,11 +56,11 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
     /**
      * Sloppy的OKVS类型
      */
-    private final OkvsType sloppyOkvsType;
+    private final Gf2eDokvsType sloppyOkvsType;
     /**
      * σ的OKVS类型
      */
-    private final OkvsType sigmaOkvsType;
+    private final Gf2eDokvsType sigmaOkvsType;
     /**
      * 布谷鸟哈希类型
      */
@@ -190,7 +190,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
         secureRandom.nextBytes(serverPidPrfKey);
         List<byte[]> serverKeysPayload = new LinkedList<>();
         // 服务端PID的OKVS密钥
-        int sloppyOkvsHashKeyNum = OkvsFactory.getHashNum(sloppyOkvsType);
+        int sloppyOkvsHashKeyNum = Gf2eDokvsFactory.getHashKeyNum(sloppyOkvsType);
         serverSloppyOkvsHashKeys = IntStream.range(0, sloppyOkvsHashKeyNum)
             .mapToObj(keyIndex -> {
                 byte[] okvsKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
@@ -200,7 +200,7 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
             })
             .toArray(byte[][]::new);
         // 服务端σ的OKVS密钥
-        int sigmaOkvsHashKeyNum = OkvsFactory.getHashNum(sigmaOkvsType);
+        int sigmaOkvsHashKeyNum = Gf2eDokvsFactory.getHashKeyNum(sigmaOkvsType);
         serverSigmaOkvsHashKeys = IntStream.range(0, sigmaOkvsHashKeyNum)
             .mapToObj(keyIndex -> {
                 byte[] serverSigmaOkvsHashKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
@@ -455,20 +455,20 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
         IntStream.range(0, serverSetSize * cuckooHashNum).forEach(index ->
             serverPidOkvsKeyValueMap.put(serverPidOkvsKeyArray[index], serverPidOkvsValueArray[index])
         );
-        Okvs<ByteBuffer> serverPidOkvs = OkvsFactory.createInstance(
+        Gf2eDokvs<ByteBuffer> serverPidOkvs = Gf2eDokvsFactory.createInstance(
             envType, sloppyOkvsType, serverSetSize * cuckooHashNum, pidByteLength * Byte.SIZE, serverSloppyOkvsHashKeys
         );
         // 编码可以并行处理
         serverPidOkvs.setParallelEncode(parallel);
-        byte[][] serverPidOkvsStorage = serverPidOkvs.encode(serverPidOkvsKeyValueMap);
+        byte[][] serverPidOkvsStorage = serverPidOkvs.encode(serverPidOkvsKeyValueMap, false);
         return Arrays.stream(serverPidOkvsStorage).collect(Collectors.toList());
     }
 
     private Map<ByteBuffer, T> handleClientPidOkvsPayload(List<byte[]> clientPidOkvsPayload) throws MpcAbortException {
-        int clientPidOkvsM = OkvsFactory.getM(sloppyOkvsType, clientSetSize * cuckooHashNum);
+        int clientPidOkvsM = Gf2eDokvsFactory.getM(envType, sloppyOkvsType, clientSetSize * cuckooHashNum);
         MpcAbortPreconditions.checkArgument(clientPidOkvsPayload.size() == clientPidOkvsM);
         byte[][] clientOkvsStorage = clientPidOkvsPayload.toArray(new byte[0][]);
-        Okvs<ByteBuffer> clientPidOkvs = OkvsFactory.createInstance(
+        Gf2eDokvs<ByteBuffer> clientPidOkvs = Gf2eDokvsFactory.createInstance(
             envType, sloppyOkvsType, clientSetSize * cuckooHashNum, pidByteLength * Byte.SIZE, clientSloppyOkvsHashKeys
         );
         IntStream serverBinIndexStream = IntStream.range(0, serverBinNum);
@@ -539,11 +539,11 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> clientSigmaOkvsPayload = rpc.receive(clientSigmaOkvsHeader).getPayload();
-        int clientSigmaOkvsM = OkvsFactory.getM(sigmaOkvsType, clientSetSize);
+        int clientSigmaOkvsM = Gf2eDokvsFactory.getM(envType, sigmaOkvsType, clientSetSize);
         MpcAbortPreconditions.checkArgument(clientSigmaOkvsPayload.size() == clientSigmaOkvsM);
         // 读取OKVS^B
         byte[][] clientSigmaOkvsStorage = clientSigmaOkvsPayload.toArray(new byte[0][]);
-        Okvs<ByteBuffer> clientSigmaOkvs = OkvsFactory.createInstance(
+        Gf2eDokvs<ByteBuffer> clientSigmaOkvs = Gf2eDokvsFactory.createInstance(
             envType, sigmaOkvsType, clientSetSize, sigmaOkvsValueByteLength * Byte.SIZE, clientSigmaOkvsHashKeys
         );
         // 初始化必要的参数
@@ -599,12 +599,12 @@ public class Zcl22SloppyPmidServer<T> extends AbstractPmidServer<T> {
                     return dx;
                 }
             ));
-        Okvs<ByteBuffer> serverSigmaOkvs = OkvsFactory.createInstance(
+        Gf2eDokvs<ByteBuffer> serverSigmaOkvs = Gf2eDokvsFactory.createInstance(
             envType, sigmaOkvsType, serverSetSize, sigmaOkvsValueByteLength * Byte.SIZE, serverSigmaOkvsHashKeys
         );
         // OKVS编码可以并行处理
         serverSigmaOkvs.setParallelEncode(parallel);
-        byte[][] serverSigmaOkvsStorage = serverSigmaOkvs.encode(serverSigmaKeyValueMap);
+        byte[][] serverSigmaOkvsStorage = serverSigmaOkvs.encode(serverSigmaKeyValueMap, false);
         List<byte[]> serverSigmaOkvsPayload = Arrays.stream(serverSigmaOkvsStorage).collect(Collectors.toList());
         DataPacketHeader serverSigmaOkvsHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_SIGMA_OKVS.ordinal(), extraInfo,

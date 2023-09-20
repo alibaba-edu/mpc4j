@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz22;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
@@ -26,6 +27,13 @@ public class Czz22ByteEccCwMqRpmtConfig extends AbstractMultiPartyPtoConfig impl
     @Override
     public MqRpmtFactory.MqRpmtType getPtoType() {
         return MqRpmtFactory.MqRpmtType.CZZ22_BYTE_ECC_CW;
+    }
+
+    @Override
+    public int getVectorLength(int serverElementSize, int clientElementSize) {
+        MathPreconditions.checkGreater("server_element_size", serverElementSize, 1);
+        MathPreconditions.checkGreater("client_element_size", clientElementSize, 1);
+        return serverElementSize;
     }
 
     public FilterType getFilterType() {

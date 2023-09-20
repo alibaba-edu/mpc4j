@@ -130,7 +130,7 @@ public class NaiveSparseBitMatrixTest {
         for (int round = 0; round < ROUND; round++) {
             boolean[] v = BinaryUtils.randomBinary(rows, SECURE_RANDOM);
             boolean[] t0 = BinaryUtils.randomBinary(columns, SECURE_RANDOM);
-            boolean[] t1 = Arrays.copyOf(t0, t0.length);
+            boolean[] t1 = BinaryUtils.clone(t0);
             NaiveSparseBitMatrix naiveSparseBitMatrix = NaiveSparseBitMatrix.createRandom(rows, columns, weight, SECURE_RANDOM);
             DenseBitMatrix denseBitMatrix = naiveSparseBitMatrix.toDense();
             naiveSparseBitMatrix.lmulAddi(v, t0);

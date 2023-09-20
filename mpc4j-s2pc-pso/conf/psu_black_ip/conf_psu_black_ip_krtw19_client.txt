@@ -15,7 +15,7 @@ own_name = client
 pto_type = PSU_BLACK_IP
 
 # 协议名称
-psu_pto_name = KRTW19_OPT
+psu_pto_name = KRTW19
 
 # 数据
 psu_black_ip_server_input = black_ip/blackip.txt

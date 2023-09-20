@@ -2,6 +2,8 @@ package edu.alibaba.mpc4j.s2pc.upso.ucpsi;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Set;
@@ -13,6 +15,7 @@ import java.util.Set;
  * @date 2023/4/18
  */
 public class UcpsiServerThread extends Thread {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UcpsiServerThread.class);
     /**
      * the server
      */
@@ -44,7 +47,16 @@ public class UcpsiServerThread extends Thread {
     public void run() {
         try {
             server.init(serverElementSet, clientElementSize);
+            LOGGER.info(
+                "Server: The Offline Communication costs {}MB", server.getRpc().getSendByteLength() * 1.0 / (1 << 20)
+            );
+            server.getRpc().reset();
+            server.getRpc().synchronize();
             serverOutput = server.psi();
+            LOGGER.info(
+                "Server: The Online Communication costs {}MB", server.getRpc().getSendByteLength() * 1.0 / (1 << 20)
+            );
+            server.getRpc().reset();
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

@@ -11,60 +11,60 @@ import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtServer;
 
 /**
- * Multi-Query RPMT协议工厂。
+ * Multi-Query RPMT factory.
  *
  * @author Weiran Liu
  * @date 2022/9/10
  */
 public class MqRpmtFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private MqRpmtFactory() {
         // empty
     }
 
     /**
-     * PSU协议类型。
+     * mq-RPMT type
      */
     public enum MqRpmtType {
         /**
-         * GMR21方案
+         * GMR21
          */
         GMR21,
         /**
-         * JSZ22置乱客户端方案
+         * JSZ22 (shuffle client)
          */
         JSZ22_SFC,
         /**
-         * ZCL22_PKE方案
+         * ZCL22 (PKE)
          */
         ZCL22_PKE,
         /**
-         * ZCL22_SKE方案
+         * ZCL22 (SKE)
          */
         ZCL22_SKE,
         /**
-         * CZZ22_BYTE_ECC_CW_PRF方案
+         * CZZ22_BYTE_ECC_CW_PRF
          */
         CZZ22_BYTE_ECC_CW,
         /**
-         * CZZ22_ECC_CW_PRF方案
+         * CZZ22_ECC_CW_PRF
          */
         CZZ22_ECC_CW,
         /**
-         * CZZ22_ECC_PO_PRF方案
+         * CZZ22_ECC_PO_PRF
          */
         CZZ22_ECC_PO,
     }
 
     /**
-     * 构建服务端。
+     * Create a server.
      *
-     * @param serverRpc   服务端通信接口。
-     * @param clientParty 客户端信息。
-     * @param config      配置项。
-     * @return 服务端。
+     * @param serverRpc   server RPC.
+     * @param clientParty client party.
+     * @param config      config.
+     * @return a server.
      */
     public static MqRpmtServer createServer(Rpc serverRpc, Party clientParty, MqRpmtConfig config) {
         MqRpmtType type = config.getPtoType();
@@ -84,12 +84,12 @@ public class MqRpmtFactory implements PtoFactory {
     }
 
     /**
-     * 构建客户端。
+     * Creates a client.
      *
-     * @param clientRpc   客户端通信接口。
-     * @param serverParty 服务端信息。
-     * @param config      配置项。
-     * @return 客户端。
+     * @param clientRpc   client RPC.
+     * @param serverParty server party.
+     * @param config      config.
+     * @return a client.
      */
     public static MqRpmtClient createClient(Rpc clientRpc, Party serverParty, MqRpmtConfig config) {
         MqRpmtType type = config.getPtoType();

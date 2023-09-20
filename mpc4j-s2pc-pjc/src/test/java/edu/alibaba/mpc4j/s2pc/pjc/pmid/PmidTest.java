@@ -1,10 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pmid;
 
 import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22.Zcl22MpPmidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22.Zcl22SloppyPmidConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -59,13 +60,13 @@ public class PmidTest extends AbstractTwoPartyPtoTest {
 
         // ZCL22_SLOPPY (MEGA_BIN)
         configurations.add(new Object[] {
-            PmidFactory.PmidType.ZCL22_SLOPPY.name() + " (MEGA_BIN)" ,
-            new Zcl22SloppyPmidConfig.Builder().setSigmaOkvsType(OkvsType.MEGA_BIN).build(),
+            PmidFactory.PmidType.ZCL22_SLOPPY.name() + " (" + Gf2eDokvsType.MEGA_BIN + ")" ,
+            new Zcl22SloppyPmidConfig.Builder().setSigmaOkvsType(Gf2eDokvsType.MEGA_BIN).build(),
         });
-        // ZCL22_SLOPPY (H3_SINGLETON_GCT)
+        // ZCL22_SLOPPY (H3_NAIVE_CLUSTER_BLAZE_GCT)
         configurations.add(new Object[] {
-            PmidFactory.PmidType.ZCL22_SLOPPY.name() + " (H3_SINGLETON_GCT)",
-            new Zcl22SloppyPmidConfig.Builder().setSigmaOkvsType(OkvsType.H3_SINGLETON_GCT).build(),
+            PmidFactory.PmidType.ZCL22_SLOPPY.name() + " (" + Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT + ")",
+            new Zcl22SloppyPmidConfig.Builder().setSigmaOkvsType(Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT).build(),
         });
         // ZCL22_SLOPPY (JSZ22_SFC_PSU)
         configurations.add(new Object[] {
@@ -74,17 +75,17 @@ public class PmidTest extends AbstractTwoPartyPtoTest {
         });
         // ZCL22_MP (MEGA_BIN)
         configurations.add(new Object[] {
-            PmidFactory.PmidType.ZCL22_MP.name() + " (MEGA_BIN)" ,
-            new Zcl22MpPmidConfig.Builder().setSigmaOkvsType(OkvsType.MEGA_BIN).build(),
+            PmidFactory.PmidType.ZCL22_MP.name() + " (" + Gf2eDokvsType.MEGA_BIN + ")" ,
+            new Zcl22MpPmidConfig.Builder().setSigmaOkvsType(Gf2eDokvsType.MEGA_BIN).build(),
         });
-        // ZCL22_MP (H3_SINGLETON_GCT)
+        // ZCL22_MP (H3_NAIVE_CLUSTER_BLAZE_GCT)
         configurations.add(new Object[] {
-            PmidFactory.PmidType.ZCL22_MP.name() + " (H3_SINGLETON_GCT)",
-            new Zcl22MpPmidConfig.Builder().setSigmaOkvsType(OkvsType.H3_SINGLETON_GCT).build(),
+            PmidFactory.PmidType.ZCL22_MP.name() + " (" + Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT + ")",
+            new Zcl22MpPmidConfig.Builder().setSigmaOkvsType(Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT).build(),
         });
         // ZCL22_MP (JSZ22_SFC_PSU)
         configurations.add(new Object[] {
-            PmidFactory.PmidType.ZCL22_MP.name() + " (JSZ22_SFC_PSU)",
+            PmidFactory.PmidType.ZCL22_MP.name() + " (" + PsuType.JSZ22_SFC + ")",
             new Zcl22MpPmidConfig.Builder().setPsuConfig(new Jsz22SfcPsuConfig.Builder(false).build()).build(),
         });
 

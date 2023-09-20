@@ -8,14 +8,14 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
 
 /**
- * BCG19-REG-MSP-COT协议配置项。
+ * BCG19-REG-MSP-COT config.
  *
  * @author Weiran Liu
  * @date 2022/01/25
  */
 public class Bcg19RegMspCotConfig extends AbstractMultiPartyPtoConfig implements MspCotConfig {
     /**
-     * BSP-COT协议配置项
+     * BSP-COT config
      */
     private final BspCotConfig bspCotConfig;
 
@@ -24,6 +24,7 @@ public class Bcg19RegMspCotConfig extends AbstractMultiPartyPtoConfig implements
         bspCotConfig = builder.bspcotConfig;
     }
 
+    @Override
     public BspCotConfig getBspCotConfig() {
         return bspCotConfig;
     }
@@ -35,7 +36,7 @@ public class Bcg19RegMspCotConfig extends AbstractMultiPartyPtoConfig implements
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Bcg19RegMspCotConfig> {
         /**
-         * BSPCOT协议配置项
+         * BSP-COT config
          */
         private BspCotConfig bspcotConfig;
 

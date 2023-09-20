@@ -65,7 +65,7 @@ clang: error: the clang compiler does not support '-march=native'
 Simply remove `-march=native` and rerun the above commands:
 
 ```shell
-cmake -S . -B build -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS_RELEASE="-O3" -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=native"
+cmake -S . -B build -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS_RELEASE="-O3" -DCMAKE_CXX_FLAGS_RELEASE="-O3"
 cmake --build build
 cmake --install build
 ```
@@ -86,7 +86,7 @@ Then, run the following command to compile and install SEAL v4.0.0.
 cd SEAL
 mkdir build
 cd build
-cmake .. -DCMAKE_CXX_COMPILER=/opt/rh/llvm-toolset-7/root/usr/bin/clang++ -DCMAKE_C_COMPILER=/opt/rh/llvm-toolset-7/root/usr/bin/clang -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-DNDEBUG -flto -O3" -DCMAKE_C_FLAGS_RELEASE="-DNDEBUG -flto -O3" -DSEAL_BUILD_BENCH=OFF -DSEAL_BUILD_EXAMPLES=OFF -DSEAL_BUILD_TESTS=OFF -DSEAL_USE_CXX17=ON -DSEAL_USE_INTRIN=ON -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=ON -DSEAL_THROW_ON_TRANSPARENT_CIPHERTEXT=ON
+cmake .. -DCMAKE_CXX_COMPILER=/opt/rh/llvm-toolset-7/root/usr/bin/clang++ -DCMAKE_C_COMPILER=/opt/rh/llvm-toolset-7/root/usr/bin/clang -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-DNDEBUG -flto -O3" -DCMAKE_C_FLAGS_RELEASE="-DNDEBUG -flto -O3" -DSEAL_BUILD_BENCH=OFF -DSEAL_BUILD_EXAMPLES=OFF -DSEAL_BUILD_TESTS=OFF -DSEAL_USE_CXX17=ON -DSEAL_USE_INTRIN=ON -DSEAL_USE_MSGSL=OFF -DSEAL_USE_ZLIB=ON -DSEAL_THROW_ON_TRANSPARENT_CIPHERTEXT=ON
 make
 sudo make install
 cd .. # return to the SEAL path

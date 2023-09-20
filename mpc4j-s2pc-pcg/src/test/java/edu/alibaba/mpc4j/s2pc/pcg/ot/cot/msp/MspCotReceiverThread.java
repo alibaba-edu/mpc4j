@@ -2,34 +2,32 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiverOutput;
 
 /**
- * MSP-COT协议接收方线程。
+ * MSP-COT receiver thread.
  *
  * @author Weiran Liu
  * @date 2022/01/24
  */
 class MspCotReceiverThread extends Thread {
     /**
-     * 接收方
+     * receiver
      */
     private final MspCotReceiver receiver;
     /**
-     * 多点索引值
+     * sparse num
      */
     private final int t;
     /**
-     * 数量
+     * num
      */
     private final int num;
     /**
-     * 预计算接收方输出
+     * pre-computed receiver output
      */
     private final CotReceiverOutput preReceiverOutput;
     /**
-     * 输出
+     * receiver output
      */
     private MspCotReceiverOutput receiverOutput;
 

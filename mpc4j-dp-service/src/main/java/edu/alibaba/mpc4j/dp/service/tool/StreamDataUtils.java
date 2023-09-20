@@ -28,7 +28,8 @@ public class StreamDataUtils {
      */
     public static Stream<String> obtainItemStream(String path) throws IOException {
         try {
-            return Files.lines(Paths.get(path))
+            // directly running return Files.lines(Paths.get(path)) may have problems on Windows due to wrong path
+            return Files.lines(Paths.get(new File(path).getAbsolutePath()))
                 // each line contains more items, split by " "
                 .map(line -> line.split(" "))
                 .flatMap(Arrays::stream);

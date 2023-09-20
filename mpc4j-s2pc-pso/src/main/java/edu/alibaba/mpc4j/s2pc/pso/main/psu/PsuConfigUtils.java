@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.main.psu;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.crypto.matrix.okve.ovdm.ecc.EccOvdmFactory.EccOvdmType;
 import edu.alibaba.mpc4j.crypto.matrix.okve.ovdm.gf2e.Gf2eOvdmFactory.Gf2eOvdmType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
@@ -23,8 +23,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfsPsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19OptPsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19OriPsuConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22PkePsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22SkePsuConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
@@ -54,10 +53,8 @@ public class PsuConfigUtils {
         String psuTypeString = PropertiesUtils.readString(properties, "psu_pto_name");
         PsuType psuType = PsuType.valueOf(psuTypeString);
         switch (psuType) {
-            case KRTW19_ORI:
-                return createKrtw19OriPsuConfig();
-            case KRTW19_OPT:
-                return createKrtw19OptPsuConfig();
+            case KRTW19:
+                return createKrtw19PsuConfig();
             case GMR21:
                 return generateGmr21PsuConfig(properties);
             case ZCL22_PKE:
@@ -73,15 +70,8 @@ public class PsuConfigUtils {
         }
     }
 
-    private static PsuConfig createKrtw19OriPsuConfig() {
-        return new Krtw19OriPsuConfig.Builder()
-            .setCoreCotConfig(CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST))
-            .setOkvsType(OkvsType.POLYNOMIAL)
-            .build();
-    }
-
-    private static Krtw19OptPsuConfig createKrtw19OptPsuConfig() {
-        return new Krtw19OptPsuConfig.Builder()
+    private static Krtw19PsuConfig createKrtw19PsuConfig() {
+        return new Krtw19PsuConfig.Builder()
             .setCoreCotConfig(CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST))
             .build();
     }
@@ -89,7 +79,7 @@ public class PsuConfigUtils {
     private static Gmr21PsuConfig generateGmr21PsuConfig(Properties properties) {
         boolean silentCot = PropertiesUtils.readBoolean(properties, "silent_cot", false);
         return new Gmr21PsuConfig.Builder(silentCot)
-            .setOkvsType(OkvsType.MEGA_BIN)
+            .setOkvsType(Gf2eDokvsType.MEGA_BIN)
             .build();
     }
 

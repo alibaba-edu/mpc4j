@@ -60,6 +60,7 @@ public class Ayaa21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(SingleIndexPirParams indexPirParams, int serverElementSize, int elementBitLength) {
+        setInitInput(serverElementSize, elementBitLength);
         assert (indexPirParams instanceof Ayaa21SingleIndexPirParams);
         params = (Ayaa21SingleIndexPirParams) indexPirParams;
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -82,7 +83,8 @@ public class Ayaa21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public void init(int serverElementSize, int elementBitLength) {
-        params = Ayaa21SingleIndexPirParams.DEFAULT_PARAMS;
+        setInitInput(serverElementSize, elementBitLength);
+        setDefaultParams();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
@@ -137,16 +139,14 @@ public class Ayaa21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public List<byte[]> clientSetup(int serverElementSize, int elementBitLength) {
-        if (params == null) {
-            params = Ayaa21SingleIndexPirParams.DEFAULT_PARAMS;
-        }
         int elementByteLength = CommonUtils.getByteLength(elementBitLength);
         isPadding = elementByteLength % 2 == 1;
         int maxPartitionBitLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength();
-        setInitInput(
-            serverElementSize, isPadding ? elementBitLength + Byte.SIZE : elementBitLength, maxPartitionBitLength
-        );
-        querySize = CommonUtils.getUnitNum(num, params.getPolyModulusDegree() / 2);
+        int paddingElementBitLength = isPadding ? elementBitLength + Byte.SIZE : elementBitLength;
+        partitionBitLength = Math.min(maxPartitionBitLength, paddingElementBitLength);
+        partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
+        partitionSize = CommonUtils.getUnitNum(paddingElementBitLength, partitionBitLength);
+        querySize = CommonUtils.getUnitNum(serverElementSize, params.getPolyModulusDegree() / 2);
         elementColumnLength = CommonUtils.getUnitNum(
             (partitionByteLength / 2) * Byte.SIZE, params.getPlainModulusBitLength()
         );
@@ -162,6 +162,11 @@ public class Ayaa21SingleIndexPirClient extends AbstractSingleIndexPirClient {
 
     @Override
     public byte[] decodeResponse(List<byte[]> response, int index) throws MpcAbortException {
+        return decodeResponse(response, index, elementBitLength);
+    }
+
+    @Override
+    public byte[] decodeResponse(List<byte[]> response, int index, int elementBitLength) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(response.size() == partitionSize);
         ZlDatabase[] databases = new ZlDatabase[partitionSize];
         IntStream intStream = IntStream.range(0, partitionSize);
@@ -183,15 +188,21 @@ public class Ayaa21SingleIndexPirClient extends AbstractSingleIndexPirClient {
             System.arraycopy(lowerBytes, 0, partitionBytes, partitionByteLength / 2, partitionByteLength / 2);
             databases[partitionIndex] = ZlDatabase.create(partitionByteLength * Byte.SIZE, new byte[][]{partitionBytes});
         });
-        byte[] temp = NaiveDatabase.createFromZl(elementBitLength, databases).getBytesData(0);
+        int paddingElementBitLength = isPadding ? elementBitLength + Byte.SIZE : elementBitLength;
+        byte[] temp = NaiveDatabase.createFromZl(paddingElementBitLength, databases).getBytesData(0);
         byte[] element;
         if (isPadding) {
-            element = new byte[CommonUtils.getByteLength(elementBitLength) - 1];
-            System.arraycopy(temp, 1, element, 0, CommonUtils.getByteLength(elementBitLength) - 1);
+            element = new byte[CommonUtils.getByteLength(paddingElementBitLength) - 1];
+            System.arraycopy(temp, 1, element, 0, CommonUtils.getByteLength(paddingElementBitLength) - 1);
         } else {
             element = temp;
         }
         return element;
+    }
+
+    @Override
+    public void setDefaultParams() {
+        params = Ayaa21SingleIndexPirParams.DEFAULT_PARAMS;
     }
 
     /**

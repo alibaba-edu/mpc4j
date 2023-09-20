@@ -49,7 +49,7 @@ public class Aaag22KwPirParams implements KwPirParams {
      */
     public int pirDbRowNum;
     /**
-     * keyword bit length
+     * keyword byte length
      */
     public int keywordPrfByteLength;
     /**

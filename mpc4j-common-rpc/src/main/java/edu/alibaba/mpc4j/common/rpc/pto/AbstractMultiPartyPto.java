@@ -410,13 +410,13 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
             case INIT_STEP:
                 info("{}{} {} init Step {}.{}/{}.{} ({}ms)",
                     ptoStepLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName(),
-                    stepIndex, stepIndex, subStepIndex, stepIndex, totalSubStepIndex, time
+                    stepIndex, subStepIndex, stepIndex, totalSubStepIndex, time
                 );
                 break;
             case PTO_STEP:
                 info("{}{} {} Step {}.{}/{}.{} ({}ms)",
                     ptoStepLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName(),
-                    stepIndex, stepIndex, subStepIndex, stepIndex, totalSubStepIndex, time
+                    stepIndex, subStepIndex, stepIndex, totalSubStepIndex, time
                 );
                 break;
             default:
@@ -433,13 +433,13 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
             case INIT_STEP:
                 info("{}{} {} init Step {}.{}/{}.{} ({}ms): {}",
                     ptoStepLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName(),
-                    stepIndex, stepIndex, subStepIndex, stepIndex, totalSubStepIndex, time, description
+                    stepIndex, subStepIndex, stepIndex, totalSubStepIndex, time, description
                 );
                 break;
             case PTO_STEP:
                 info("{}{} {} Step {}.{}/{}.{} ({}ms): {}",
                     ptoStepLogPrefix, getPtoDesc().getPtoName(), ownParty().getPartyName(),
-                    stepIndex, stepIndex, subStepIndex, stepIndex, totalSubStepIndex, time, description
+                    stepIndex, subStepIndex, stepIndex, totalSubStepIndex, time, description
                 );
                 break;
             default:

@@ -127,7 +127,7 @@ public class Czz22ByteEccCwMqRpmtServer extends AbstractMqRpmtServer {
         // 置乱顺序
         Collections.shuffle(peqtPayload, secureRandom);
         // 将元素插入到过滤器中
-        Filter<byte[]> filter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> filter = FilterFactory.createFilter(envType, filterType, clientElementSize, secureRandom);
         peqtPayload.forEach(filter::put);
         return filter.toByteArrayList();
     }

@@ -2,9 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -17,46 +15,45 @@ import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFa
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20.Ywl20UniMspCotPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.AbstractMspCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotSenderOutput;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 
 /**
- * YWL20-UNI-MSP-COT协议发送方。
+ * YWL20-UNI-MSP-COT sender.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
 public class Ywl20UniMspCotSender extends AbstractMspCotSender {
     /**
-     * 哈希函数数量
+     * hash num
      */
     private static final int HASH_NUM = IntCuckooHashBinFactory.getHashNum(Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE);
     /**
-     * BSP-COT协议发送方
+     * BSP-COT sender
      */
     private final BspCotSender bspCotSender;
     /**
-     * 预计算发送方输出
+     * pre-computed COT sender output
      */
     private CotSenderOutput cotSenderOutput;
     /**
-     * 桶数量
+     * bin num
      */
     private int m;
     /**
-     * 哈希桶
+     * hash bin
      */
     private SimpleIntHashBin intHashBin;
     /**
-     * 索引值位置映射
+     * position map
      */
-    private ArrayList<Map<Integer, Integer>> positionMaps;
-    /**
-     * BSP-COT协议发送方输出
-     */
-    private BspCotSenderOutput bspCotSenderOutput;
+    private ArrayList<TIntIntMap> positionMaps;
 
     public Ywl20UniMspCotSender(Rpc senderRpc, Party receiverParty, Ywl20UniMspCotConfig config) {
         super(Ywl20UniMspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -71,7 +68,7 @@ public class Ywl20UniMspCotSender extends AbstractMspCotSender {
 
         stopWatch.start();
         int maxBinNum = IntCuckooHashBinFactory.getBinNum(Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE, maxT);
-        // 原本应该设置为maxBinSize，但此值不与T成正比，最后考虑直接设置为HASH_NUM * maxN
+        // In theory, eachNum = maxBinSize. but for larger T, minSize can be small. So we set maxEachNum = HASH_NUM * maxNum
         bspCotSender.init(delta, maxBinNum, HASH_NUM * (maxNum + 1));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -97,13 +94,13 @@ public class Ywl20UniMspCotSender extends AbstractMspCotSender {
     private MspCotSenderOutput send() throws MpcAbortException {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        stopWatch.start();
-        // 接收哈希桶密钥，设置哈希桶
         DataPacketHeader hashKeysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), Ywl20UniMspCotPtoDesc.PtoStep.RECEIVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> hashKeysPayload = rpc.receive(hashKeysHeader).getPayload();
+
+        stopWatch.start();
         handleHashKeysPayload(hashKeysPayload);
         stopWatch.stop();
         long hashBinTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -112,6 +109,7 @@ public class Ywl20UniMspCotSender extends AbstractMspCotSender {
 
         stopWatch.start();
         // S sends (sp-extend, |B_j| + 1) to F_{SPCOT}
+        BspCotSenderOutput bspCotSenderOutput;
         if (cotSenderOutput == null) {
             bspCotSenderOutput = bspCotSender.send(m, intHashBin.maxBinSize() + 1);
         } else {
@@ -119,13 +117,12 @@ public class Ywl20UniMspCotSender extends AbstractMspCotSender {
             cotSenderOutput = null;
         }
         stopWatch.stop();
-        long bspcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long bspTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 2, 3, bspcotTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 3, bspTime);
 
         stopWatch.start();
-        // 计算输出结果
-        MspCotSenderOutput senderOutput = generateSenderOutput();
+        MspCotSenderOutput senderOutput = generateSenderOutput(bspCotSenderOutput);
         stopWatch.stop();
         long outputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -154,7 +151,7 @@ public class Ywl20UniMspCotSender extends AbstractMspCotSender {
                     .sorted()
                     .toArray();
                 // Define a function pos_j : B_j → [|Bj|] to map a value into its position in the j-th bucket B_j.
-                Map<Integer, Integer> positionMap = new HashMap<>(bin.length);
+                TIntIntMap positionMap = new TIntIntHashMap(bin.length);
                 for (int position = 0; position < bin.length; position++) {
                     positionMap.put(bin[position], position);
                 }
@@ -163,7 +160,7 @@ public class Ywl20UniMspCotSender extends AbstractMspCotSender {
             .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    private MspCotSenderOutput generateSenderOutput() {
+    private MspCotSenderOutput generateSenderOutput(BspCotSenderOutput bspCotSenderOutput) {
         // For each x ∈ [n]
         IntStream nIntStream = IntStream.range(0, num);
         nIntStream = parallel ? nIntStream.parallel() : nIntStream;
@@ -180,7 +177,6 @@ public class Ywl20UniMspCotSender extends AbstractMspCotSender {
             .toArray(byte[][]::new);
         intHashBin = null;
         positionMaps = null;
-        bspCotSenderOutput = null;
         return MspCotSenderOutput.create(delta, r0Array);
     }
 }

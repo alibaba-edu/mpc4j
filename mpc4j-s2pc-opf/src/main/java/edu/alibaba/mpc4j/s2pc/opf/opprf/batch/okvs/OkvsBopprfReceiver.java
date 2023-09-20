@@ -5,8 +5,9 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.Okvs;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.AbstractBopprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.okvs.OkvsBopprfPtoDesc.PtoStep;
@@ -31,9 +32,9 @@ public class OkvsBopprfReceiver extends AbstractBopprfReceiver {
      */
     private final OprfReceiver oprfReceiver;
     /**
-     * the OKVS type
+     * OKVS type
      */
-    private final OkvsFactory.OkvsType okvsType;
+    private final Gf2eDokvsType okvsType;
 
     public OkvsBopprfReceiver(Rpc receiverRpc, Party senderParty, OkvsBopprfConfig config) {
         super(OkvsBopprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
@@ -97,16 +98,16 @@ public class OkvsBopprfReceiver extends AbstractBopprfReceiver {
     private byte[][] handleOkvsPayload(OprfReceiverOutput oprfReceiverOutput,
                                        List<byte[]> okvsKeysPayload, List<byte[]> okvsPayload) throws MpcAbortException {
         // parse keys
-        MpcAbortPreconditions.checkArgument(okvsKeysPayload.size() == OkvsFactory.getHashNum(okvsType));
+        MpcAbortPreconditions.checkArgument(okvsKeysPayload.size() == Gf2eDokvsFactory.getHashKeyNum(okvsType));
         byte[][] okvsKeys = okvsKeysPayload.toArray(new byte[0][]);
         // The PRF maps (random) inputs to {0, 1}^l, we only need to set an empty key
         Prf prf = PrfFactory.createInstance(envType, byteL);
         prf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
         // parse OKVS storage
-        MpcAbortPreconditions.checkArgument(okvsPayload.size() == OkvsFactory.getM(okvsType, pointNum));
+        MpcAbortPreconditions.checkArgument(okvsPayload.size() == Gf2eDokvsFactory.getM(envType, okvsType, pointNum));
         byte[][] okvsStorage = okvsPayload.toArray(new byte[0][]);
         // compute PRF output
-        Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(envType, okvsType, pointNum, l, okvsKeys);
+        Gf2eDokvs<ByteBuffer> okvs = Gf2eDokvsFactory.createInstance(envType, okvsType, pointNum, l, okvsKeys);
         IntStream batchIntStream = IntStream.range(0, batchSize);
         batchIntStream = parallel ? batchIntStream.parallel() : batchIntStream;
         return batchIntStream

@@ -1,12 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.main.scpsi;
 
-import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiConfig;
-import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiFactory;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiFactory.ScpsiType;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.cgs22.Cgs22ScpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.psty19.Psty19ScpsiConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.rs21.Rs21ScpsiConfig;
 
 import java.util.Properties;
 
@@ -30,25 +29,19 @@ public class ScpsiConfigUtils {
      */
     public static ScpsiConfig createScpsiConfig(Properties properties) {
         String ptoTypeString = PropertiesUtils.readString(properties, "pto_name");
-        ScpsiFactory.ScpsiType scpsiType = ScpsiFactory.ScpsiType.valueOf(ptoTypeString);
+        ScpsiType scpsiType = ScpsiType.valueOf(ptoTypeString);
         boolean silent = PropertiesUtils.readBoolean(properties, "silent");
         switch (scpsiType) {
             case PSTY19:
-                return createPsty19ScpsiConfig(silent);
+                return new Psty19ScpsiConfig.Builder(silent).build();
             case CGS22:
-                return createCgs22ScpsiConfig(silent);
+                return new Cgs22ScpsiConfig.Builder(silent).build();
+            case RS21:
+                return new Rs21ScpsiConfig.Builder(silent).build();
             default:
                 throw new IllegalArgumentException(
-                    "Invalid " + PsuFactory.PsuType.class.getSimpleName() + ": " + scpsiType.name()
+                    "Invalid " + ScpsiType.class.getSimpleName() + ": " + scpsiType.name()
                 );
         }
-    }
-
-    private static ScpsiConfig createPsty19ScpsiConfig(boolean silent) {
-        return new Psty19ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, silent).build();
-    }
-
-    private static ScpsiConfig createCgs22ScpsiConfig(boolean silent) {
-        return new Cgs22ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, silent).build();
     }
 }

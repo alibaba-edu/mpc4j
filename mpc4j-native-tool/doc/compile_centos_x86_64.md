@@ -225,6 +225,19 @@ You can verify the result by running the following command and see if the Java i
 echo $JAVA_HOME
 ```
 
+### Compile and Install `mpc4j-native-fourq`
+
+Go to the path of `mpc4j-native-fourq`, and run the following command to compile and install `mpc4j-native-fourq`.
+
+```shell
+mkdir build
+cd build
+cmake .. 
+make 
+make test
+sudo make install
+```
+
 ### Compile `mpc4j-native-tool`
 
 Go to the path of `mpc4j-native-tool`, and run the following command to compile `mpc4j-native-tool`.
@@ -235,5 +248,3 @@ cd cmake-build-release
 cmake ..
 make
 ```
-
-## 

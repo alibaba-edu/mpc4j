@@ -13,9 +13,9 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.benes.BenesNetworkUtils;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.Okvs;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory.OkvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -57,9 +57,9 @@ public class Gmr21PsuServer extends AbstractPsuServer {
      */
     private final CoreCotSender coreCotSender;
     /**
-     * OKVS类型
+     * OKVS type
      */
-    private final OkvsType okvsType;
+    private final Gf2eDokvsType okvsType;
     /**
      * 布谷鸟哈希类型
      */
@@ -150,7 +150,7 @@ public class Gmr21PsuServer extends AbstractPsuServer {
         stopWatch.start();
         List<byte[]> keysPayload = new LinkedList<>();
         // 初始化OKVS密钥
-        int okvsHashKeyNum = OkvsFactory.getHashNum(okvsType);
+        int okvsHashKeyNum = Gf2eDokvsFactory.getHashKeyNum(okvsType);
         okvsHashKeys = IntStream.range(0, okvsHashKeyNum)
             .mapToObj(keyIndex -> {
                 byte[] okvsKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
@@ -187,7 +187,7 @@ public class Gmr21PsuServer extends AbstractPsuServer {
         rpc.send(DataPacket.fromByteArrayList(cuckooHashKeyHeader, cuckooHashKeyPayload));
         binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
         // 设置OKVS大小
-        okvsM = OkvsFactory.getM(okvsType, clientElementSize * cuckooHashNum);
+        okvsM = Gf2eDokvsFactory.getM(envType, okvsType, clientElementSize * cuckooHashNum);
         // 初始化PEQT哈希
         Hash peqtHash = HashFactory.createInstance(envType, Gmr21PsuPtoDesc.getPeqtByteLength(binNum));
         // 构造交换映射
@@ -313,7 +313,7 @@ public class Gmr21PsuServer extends AbstractPsuServer {
     private void handleOkvsPayload(List<byte[]> okvsPayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(okvsPayload.size() == okvsM);
         byte[][] storage = okvsPayload.toArray(new byte[0][]);
-        Okvs<ByteBuffer> okvs = OkvsFactory.createInstance(
+        Gf2eDokvs<ByteBuffer> okvs = Gf2eDokvsFactory.createInstance(
             envType, okvsType, clientElementSize * cuckooHashNum,
             Gmr21PsuPtoDesc.FINITE_FIELD_BYTE_LENGTH * Byte.SIZE, okvsHashKeys
         );

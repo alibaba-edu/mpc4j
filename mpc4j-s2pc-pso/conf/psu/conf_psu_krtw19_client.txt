@@ -1,0 +1,25 @@
+# 服务端信息
+server_name = server
+server_ip = 127.0.0.1
+server_port = 9002
+
+# 客户端信息
+client_name = client
+client_ip = 127.0.0.1
+client_port = 9003
+
+# 所属参与方
+own_name = client
+
+# 协议类型
+pto_type = PSU
+
+# 元素字节长度
+element_byte_length = 8
+
+# 对数集合大小（log(n)）
+server_log_set_size = 20,18,16,14
+client_log_set_size = 20,18,16,14
+
+# 协议名称
+psu_pto_name = KRTW19

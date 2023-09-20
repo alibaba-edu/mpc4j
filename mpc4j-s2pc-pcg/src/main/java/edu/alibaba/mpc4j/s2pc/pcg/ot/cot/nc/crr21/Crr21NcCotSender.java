@@ -14,7 +14,6 @@ import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.AbstractNcCotSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSenderOutput;
@@ -28,10 +27,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSenderOutput;
 
 public class Crr21NcCotSender extends AbstractNcCotSender {
     /**
-     * MSP-COT配置项
-     */
-    private final MspCotConfig mspCotConfig;
-    /**
      * MSP-COT协议发送方
      */
     private final MspCotSender mspCotSender;
@@ -43,14 +38,6 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
      * LPN参数t
      */
     private int iterationT;
-    /**
-     * MSP-COT协议所需的预计算COT数量
-     */
-    private int sCotPreSize;
-    /**
-     * MSP-COT协议所需的COT协议发送方输出
-     */
-    private CotSenderOutput sCotSenderOutput;
 
     /**
      * Silver编码类型
@@ -63,7 +50,6 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
 
     public Crr21NcCotSender(Rpc senderRpc, Party receiverParty, Crr21NcCotConfig config) {
         super(Crr21NcCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        mspCotConfig = config.getMspCotConfig();
         codeType = config.getCodeType();
         mspCotSender = MspCotFactory.createSender(senderRpc, receiverParty, config.getMspCotConfig());
         addSubPtos(mspCotSender);
@@ -73,8 +59,6 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
     public void init(byte[] delta, int num) throws MpcAbortException {
         setInitInput(delta, num);
         logPhaseInfo(PtoState.INIT_BEGIN);
-        // 重新初始化时需要清空之前存留的输出
-        sCotSenderOutput = null;
 
         stopWatch.start();
         // 初始化CRR21编码器
@@ -92,7 +76,6 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
         iterationN = lpnParams.getN();
         iterationT = lpnParams.getT();
         mspCotSender.init(delta, iterationT, iterationN);
-        sCotPreSize = MspCotFactory.getPrecomputeNum(mspCotConfig, iterationT, iterationN);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -108,9 +91,7 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
 
         stopWatch.start();
         // 执行MSPCOT
-        MspCotSenderOutput sMspCotSenderOutput = (sCotSenderOutput == null)
-            ? mspCotSender.send(iterationT, iterationN)
-            : mspCotSender.send(iterationT, iterationN, sCotSenderOutput);
+        MspCotSenderOutput sMspCotSenderOutput = mspCotSender.send(iterationT, iterationN);
         stopWatch.stop();
         long sTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -121,7 +102,6 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
         byte[][] y = ldpcCoder.transEncode(sMspCotSenderOutput.getR0Array());
         // 更新输出。
         CotSenderOutput senderOutput = CotSenderOutput.create(delta, y);
-        sCotSenderOutput = senderOutput.split(sCotPreSize);
         senderOutput.reduce(num);
         stopWatch.stop();
         long extendTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

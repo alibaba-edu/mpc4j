@@ -1,53 +1,31 @@
 package edu.alibaba.mpc4j.s2pc.pir.index.batch.naive;
 
-import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.SingleIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.single.fastpir.Ayaa21SingleIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.single.onionpir.Mcr21SingleIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.single.sealpir.Acls18SingleIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.single.xpir.Mbfk16SingleIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.single.simplepir.Hhcm23SimpleSingleIndexPirConfig;
 
 /**
- * naive batch index PIR config.
+ * Naive Batch PIR config.
  *
  * @author Liqiang Peng
- * @date 2023/3/7
+ * @date 2023/7/14
  */
 public class NaiveBatchIndexPirConfig extends AbstractMultiPartyPtoConfig implements BatchIndexPirConfig {
     /**
      * single index PIR config
      */
     private final SingleIndexPirConfig singleIndexPirConfig;
-    /**
-     * cuckoo hash type
-     */
-    private final IntCuckooHashBinFactory.IntCuckooHashBinType cuckooHashBinType;
 
     public NaiveBatchIndexPirConfig(Builder builder) {
         super(SecurityModel.MALICIOUS, builder.singleIndexPirConfig);
         singleIndexPirConfig = builder.singleIndexPirConfig;
-        // the root single PIR are limited to the following types
-        Preconditions.checkArgument(
-            (singleIndexPirConfig instanceof Ayaa21SingleIndexPirConfig) ||
-            (singleIndexPirConfig instanceof Mcr21SingleIndexPirConfig) ||
-            (singleIndexPirConfig instanceof Acls18SingleIndexPirConfig) ||
-            (singleIndexPirConfig instanceof Mbfk16SingleIndexPirConfig),
-            "Invalid " + SingleIndexPirConfig.class.getSimpleName() + ": "
-                + singleIndexPirConfig.getClass().getSimpleName());
-        cuckooHashBinType = builder.cuckooHashBinType;
     }
 
     public SingleIndexPirConfig getSingleIndexPirConfig() {
         return singleIndexPirConfig;
-    }
-
-    public IntCuckooHashBinFactory.IntCuckooHashBinType getCuckooHashBinType() {
-        return cuckooHashBinType;
     }
 
     @Override
@@ -60,23 +38,13 @@ public class NaiveBatchIndexPirConfig extends AbstractMultiPartyPtoConfig implem
          * single index PIR config
          */
         private SingleIndexPirConfig singleIndexPirConfig;
-        /**
-         * cuckoo hash
-         */
-        private IntCuckooHashBinFactory.IntCuckooHashBinType cuckooHashBinType;
 
         public Builder() {
-            singleIndexPirConfig = new Acls18SingleIndexPirConfig.Builder().build();
-            cuckooHashBinType = IntCuckooHashBinFactory.IntCuckooHashBinType.NO_STASH_NAIVE;
+            singleIndexPirConfig = new Hhcm23SimpleSingleIndexPirConfig.Builder().build();
         }
 
         public Builder setSingleIndexPirConfig(SingleIndexPirConfig singleIndexPirConfig) {
             this.singleIndexPirConfig = singleIndexPirConfig;
-            return this;
-        }
-
-        public Builder setCuckooHashBinType(IntCuckooHashBinFactory.IntCuckooHashBinType cuckooHashBinType) {
-            this.cuckooHashBinType = cuckooHashBinType;
             return this;
         }
 
@@ -86,3 +54,4 @@ public class NaiveBatchIndexPirConfig extends AbstractMultiPartyPtoConfig implem
         }
     }
 }
+

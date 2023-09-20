@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi;
 
-import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
@@ -11,6 +10,7 @@ import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.cgs22.Cgs22ScpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.psty19.Psty19ScpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.ScpsiFactory.ScpsiType;
+import edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi.rs21.Rs21ScpsiConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,70 +51,52 @@ public class ScpsiTest extends AbstractTwoPartyPtoTest {
      * element byte length
      */
     private static final int ELEMENT_BYTE_LENGTH = CommonUtils.getByteLength(ELEMENT_BIT_LENGTH);
+    /**
+     * cuckoo hash bin types
+     */
+    private static final CuckooHashBinType[] CUCKOO_HASH_BIN_TYPES = new CuckooHashBinType[] {
+        CuckooHashBinType.NO_STASH_PSZ18_3_HASH,
+        CuckooHashBinType.NAIVE_2_HASH,
+        CuckooHashBinType.NAIVE_4_HASH,
+    };
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
+        // RS21
+        for (CuckooHashBinType type : CUCKOO_HASH_BIN_TYPES) {
+            configurations.add(new Object[]{
+                ScpsiType.RS21.name() + " (silent, " + type.name() + ")",
+                new Rs21ScpsiConfig.Builder(true).setCuckooHashBinType(type).build(),
+            });
+            configurations.add(new Object[]{
+                ScpsiType.RS21.name() + " (direct, " + type.name() + ")",
+                new Rs21ScpsiConfig.Builder(false).setCuckooHashBinType(type).build(),
+            });
+        }
         // CGS22
-        configurations.add(new Object[]{
-            ScpsiType.CGS22.name() + " (silent)",
-            new Cgs22ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, true).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.CGS22.name() + " (direct)",
-            new Cgs22ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, false).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.CGS22.name() + " (2 hash, silent)",
-            new Cgs22ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_2_HASH).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.CGS22.name() + " (2 hash, direct)",
-            new Cgs22ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, false)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_2_HASH).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.CGS22.name() + " (4 hash, silent)",
-            new Cgs22ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_4_HASH).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.CGS22.name() + " (4 hash, direct)",
-            new Cgs22ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, false)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_4_HASH).build(),
-        });
-
+        for (CuckooHashBinType type : CUCKOO_HASH_BIN_TYPES) {
+            configurations.add(new Object[]{
+                ScpsiType.CGS22.name() + " (silent, " + type.name() + ")",
+                new Cgs22ScpsiConfig.Builder(true).setCuckooHashBinType(type).build(),
+            });
+            configurations.add(new Object[]{
+                ScpsiType.CGS22.name() + " (direct, " + type.name() + ")",
+                new Cgs22ScpsiConfig.Builder(false).setCuckooHashBinType(type).build(),
+            });
+        }
         // PSTY19
-        configurations.add(new Object[]{
-            ScpsiType.PSTY19.name() + " (silent)",
-            new Psty19ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, true).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.PSTY19.name() + " (direct)",
-            new Psty19ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, false).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.PSTY19.name() + " (2 hash, silent)",
-            new Psty19ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_2_HASH).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.PSTY19.name() + " (2 hash, direct)",
-            new Psty19ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, false)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_2_HASH).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.PSTY19.name() + " (4 hash, silent)",
-            new Psty19ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_4_HASH).build(),
-        });
-        configurations.add(new Object[]{
-            ScpsiType.PSTY19.name() + " (4 hash, direct)",
-            new Psty19ScpsiConfig.Builder(SecurityModel.SEMI_HONEST, false)
-                .setCuckooHashBinType(CuckooHashBinType.NAIVE_4_HASH).build(),
-        });
+        for (CuckooHashBinType type : CUCKOO_HASH_BIN_TYPES) {
+            configurations.add(new Object[]{
+                ScpsiType.PSTY19.name() + " (silent, " + type.name() + ")",
+                new Psty19ScpsiConfig.Builder(true).setCuckooHashBinType(type).build(),
+            });
+            configurations.add(new Object[]{
+                ScpsiType.PSTY19.name() + " (direct, " + type.name() + ")",
+                new Psty19ScpsiConfig.Builder(false).setCuckooHashBinType(type).build(),
+            });
+        }
 
         return configurations;
     }

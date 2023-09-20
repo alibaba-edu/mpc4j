@@ -316,6 +316,27 @@ public class Cmg21UpsiParams implements UpsiParams {
         16000000, 2048
     );
 
+    /**
+     * serve size 16 million, max client size 4096.
+     */
+    public static final Cmg21UpsiParams SERVER_16M_CLIENT_MAX_4096 = Cmg21UpsiParams.uncheckCreate(
+        CuckooHashBinType.NAIVE_3_HASH, 6552, 1304,
+        5,
+        44, new int[]{1, 3, 11, 18, 45, 225},
+        4079617, 8192, new int[]{56, 56, 56, 50},
+        16000000, 2048
+    );
+
+    /**
+     * serve size 16 million, max client size 11041.
+     */
+    public static final Cmg21UpsiParams SERVER_16M_CLIENT_MAX_11041 = Cmg21UpsiParams.uncheckCreate(
+        CuckooHashBinType.NAIVE_3_HASH, 16380, 1304,
+        5,
+        44, new int[]{1, 3, 11, 18, 45, 225},
+        4079617, 8192, new int[]{56, 56, 56, 50},
+        16000000, 2048
+    );
 
     /**
      * serve size 256 million, max client size 1024.

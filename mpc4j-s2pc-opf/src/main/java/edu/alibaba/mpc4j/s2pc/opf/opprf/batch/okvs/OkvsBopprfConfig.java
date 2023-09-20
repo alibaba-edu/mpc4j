@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.opf.opprf.batch.okvs;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
@@ -22,7 +22,7 @@ public class OkvsBopprfConfig extends AbstractMultiPartyPtoConfig implements Bop
     /**
      * OKVS type
      */
-    private final OkvsFactory.OkvsType okvsType;
+    private final Gf2eDokvsType okvsType;
 
     private OkvsBopprfConfig(Builder builder) {
         super(SecurityModel.SEMI_HONEST, builder.oprfConfig);
@@ -39,7 +39,7 @@ public class OkvsBopprfConfig extends AbstractMultiPartyPtoConfig implements Bop
         return oprfConfig;
     }
 
-    public OkvsFactory.OkvsType getOkvsType() {
+    public Gf2eDokvsType getOkvsType() {
         return okvsType;
     }
 
@@ -51,11 +51,11 @@ public class OkvsBopprfConfig extends AbstractMultiPartyPtoConfig implements Bop
         /**
          * OKVS type
          */
-        private OkvsFactory.OkvsType okvsType;
+        private Gf2eDokvsType okvsType;
 
         public Builder() {
             oprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
-            okvsType = OkvsFactory.OkvsType.H3_SINGLETON_GCT;
+            okvsType = Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT;
         }
 
         public Builder setOprfConfig(OprfConfig oprfConfig) {
@@ -63,7 +63,7 @@ public class OkvsBopprfConfig extends AbstractMultiPartyPtoConfig implements Bop
             return this;
         }
 
-        public Builder setOkvsType(OkvsFactory.OkvsType okvsType) {
+        public Builder setOkvsType(Gf2eDokvsType okvsType) {
             this.okvsType = okvsType;
             return this;
         }

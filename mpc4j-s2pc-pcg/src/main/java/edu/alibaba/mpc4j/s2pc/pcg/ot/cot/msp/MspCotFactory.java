@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.hashbin.MaxBinSizeUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotConfig;
@@ -17,40 +18,67 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotSender;
 
 /**
- * MSP-COT协议工厂。
+ * multi single-point COT factory.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
 public class MspCotFactory implements PtoFactory {
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private MspCotFactory() {
         // empty
     }
 
     /**
-     * 协议类型
+     * protocol type
      */
     public enum MspCotType {
         /**
-         * YWL20布谷鸟哈希协议
+         * YWL20 (unique index)
          */
         YWL20_UNI,
         /**
-         * YWL20规则索引值协议
+         * YWL20 (regular index)
          */
         BCG19_REG,
     }
 
     /**
-     * 构建发送方。
+     * Gets pre-computed num.
      *
-     * @param senderRpc     发送方通信接口。
-     * @param receiverParty 接收方信息。
-     * @param config        配置项。
-     * @return 发送方。
+     * @param config config.
+     * @param t      sparse num.
+     * @param num    num.
+     * @return pre-computed num.
+     */
+    public static int getPrecomputeNum(MspCotConfig config, int t, int num) {
+        MathPreconditions.checkPositive("num", num);
+        MathPreconditions.checkPositiveInRangeClosed("t", t, num);
+        MspCotType type = config.getPtoType();
+        switch (type) {
+            case BCG19_REG:
+                BspCotConfig bcg19BspCotConfig = config.getBspCotConfig();
+                return BspCotFactory.getPrecomputeNum(bcg19BspCotConfig, t, (int) Math.ceil((double) num / t));
+            case YWL20_UNI:
+                BspCotConfig ywl20BspCotConfig = config.getBspCotConfig();
+                int binNum = IntCuckooHashBinFactory.getBinNum(Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE, t);
+                int keyNum = IntCuckooHashBinFactory.getHashNum(Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE);
+                int maxBinSize = MaxBinSizeUtils.expectMaxBinSize(keyNum * num, binNum);
+                return BspCotFactory.getPrecomputeNum(ywl20BspCotConfig, binNum, maxBinSize + 1);
+            default:
+                throw new IllegalArgumentException("Invalid " + MspCotType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a sender.
+     *
+     * @param senderRpc     sender RPC.
+     * @param receiverParty receiver party.
+     * @param config        config.
+     * @return a sender.
      */
     public static MspCotSender createSender(Rpc senderRpc, Party receiverParty, MspCotConfig config) {
         MspCotType type = config.getPtoType();
@@ -65,12 +93,12 @@ public class MspCotFactory implements PtoFactory {
     }
 
     /**
-     * 构建接收方。
+     * Creates a receiver.
      *
-     * @param receiverRpc 接收方通信接口。
-     * @param senderParty 发送方信息。
-     * @param config      配置项。
-     * @return 接收方。
+     * @param receiverRpc receiver RPC.
+     * @param senderParty sender party.
+     * @param config      config.
+     * @return a receiver.
      */
     public static MspCotReceiver createReceiver(Rpc receiverRpc, Party senderParty, MspCotConfig config) {
         MspCotType type = config.getPtoType();
@@ -85,36 +113,10 @@ public class MspCotFactory implements PtoFactory {
     }
 
     /**
-     * 返回执行协议所需的预计算数量。
+     * Creates a default config.
      *
-     * @param config 配置项。
-     * @param t      稀疏点数量。
-     * @param num    数量。
-     * @return 预计算数量。
-     */
-    public static int getPrecomputeNum(MspCotConfig config, int t, int num) {
-        assert num > 0 && t > 0;
-        MspCotType type = config.getPtoType();
-        switch (type) {
-            case BCG19_REG:
-                BspCotConfig bcg19BspCotConfig = ((Bcg19RegMspCotConfig) config).getBspCotConfig();
-                return BspCotFactory.getPrecomputeNum(bcg19BspCotConfig, t, (int) Math.ceil((double) num / t));
-            case YWL20_UNI:
-                BspCotConfig ywl20BspCotConfig = ((Ywl20UniMspCotConfig) config).getBspCotConfig();
-                int binNum = IntCuckooHashBinFactory.getBinNum(Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE, t);
-                int keyNum = IntCuckooHashBinFactory.getHashNum(Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE);
-                int maxBinSize = MaxBinSizeUtils.expectMaxBinSize(keyNum * num, binNum);
-                return BspCotFactory.getPrecomputeNum(ywl20BspCotConfig, binNum, maxBinSize + 1);
-            default:
-                throw new IllegalArgumentException("Invalid " + MspCotType.class.getSimpleName() + ": " + type.name());
-        }
-    }
-
-    /**
-     * 创建默认协议配置项。
-     *
-     * @param securityModel 安全模型。
-     * @return 默认协议配置项。
+     * @param securityModel security model.
+     * @return a default config.
      */
     public static MspCotConfig createDefaultConfig(SecurityModel securityModel) {
         switch (securityModel) {

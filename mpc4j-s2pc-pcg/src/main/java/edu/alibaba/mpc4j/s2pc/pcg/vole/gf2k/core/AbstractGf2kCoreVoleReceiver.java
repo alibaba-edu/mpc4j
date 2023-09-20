@@ -20,7 +20,7 @@ public abstract class AbstractGf2kCoreVoleReceiver extends AbstractTwoPartyPto i
     /**
      * the GF2K instance
      */
-    protected Gf2k gf2k;
+    protected final Gf2k gf2k;
     /**
      * l
      */
@@ -44,10 +44,10 @@ public abstract class AbstractGf2kCoreVoleReceiver extends AbstractTwoPartyPto i
 
     protected AbstractGf2kCoreVoleReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, Gf2kCoreVoleConfig config) {
         super(ptoDesc, receiverRpc, senderParty, config);
+        gf2k = Gf2kFactory.createInstance(envType);
     }
 
     protected void setInitInput(byte[] delta, int maxNum) {
-        gf2k = Gf2kFactory.createInstance(envType);
         l = gf2k.getL();
         byteL = gf2k.getByteL();
         Preconditions.checkArgument(gf2k.validateRangeElement(delta), "Δ must be in range [0, 2^%s)", l);

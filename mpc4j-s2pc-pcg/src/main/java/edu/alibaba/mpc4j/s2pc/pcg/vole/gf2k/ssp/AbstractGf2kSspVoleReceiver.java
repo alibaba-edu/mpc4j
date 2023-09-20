@@ -7,13 +7,15 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleReceiverOutput;
 
 import java.util.Arrays;
 
 /**
- * abstract single single-point GF2K VOLE receiver.
+ * abstract GF2K-SSP-VOLE receiver.
  *
  * @author Weiran Liu
  * @date 2023/3/16
@@ -24,6 +26,10 @@ public abstract class AbstractGf2kSspVoleReceiver extends AbstractTwoPartyPto im
      */
     protected final Gf2kSspVoleConfig config;
     /**
+     * GF2K instance
+     */
+    protected final Gf2k gf2k;
+    /**
      * Δ
      */
     protected byte[] delta;
@@ -32,13 +38,14 @@ public abstract class AbstractGf2kSspVoleReceiver extends AbstractTwoPartyPto im
      */
     private int maxNum;
     /**
-     * 数量
+     * num
      */
     protected int num;
 
-    protected AbstractGf2kSspVoleReceiver(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, Gf2kSspVoleConfig config) {
-        super(ptoDesc, senderRpc, receiverParty, config);
+    protected AbstractGf2kSspVoleReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, Gf2kSspVoleConfig config) {
+        super(ptoDesc, receiverRpc, senderParty, config);
         this.config = config;
+        gf2k = Gf2kFactory.createInstance(envType);
     }
 
     protected void setInitInput(byte[] delta, int maxNum) {

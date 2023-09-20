@@ -11,7 +11,7 @@
 #include "defines.h"
 
 /**
- * GF(2^128)使用的模数为f(x) = x^128 + x^7 + x^2 + x + 1，NTL需要使用小端表示
+ * moduli polynomial for GF(2^128) is f(x) = x^128 + x^7 + x^2 + x + 1, NTL needs little-endian.
  */
 const u_int8_t GF2K_MIN_BYTES[BLOCK_BYTE_LENGTH + 1] = {
         0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

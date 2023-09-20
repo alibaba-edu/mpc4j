@@ -3,85 +3,84 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp;
 import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
 
 /**
- * MSP-COT协议接收方输出。
+ * multi single-point COT receiver output.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
 public class MspCotReceiverOutput implements PcgPartyOutput {
     /**
-     * α数组
+     * α array
      */
     private int[] alphaArray;
     /**
-     * Rb数组
+     * Rb array
      */
     private byte[][] rbArray;
 
     /**
-     * 创建接收方输出。
+     * Creates a receiver output.
      *
-     * @param alphaArray α数组。
-     * @param rbArray Rb数组。
-     * @return 接收方输出。
+     * @param alphaArray α array.
+     * @param rbArray    Rb array.
+     * @return a receiver output.
      */
     public static MspCotReceiverOutput create(int[] alphaArray, byte[][] rbArray) {
         MspCotReceiverOutput receiverOutput = new MspCotReceiverOutput();
-        assert alphaArray.length > 0;
-        assert rbArray.length > 0;
+        MathPreconditions.checkPositive("rbArray.length", rbArray.length);
+        int num = rbArray.length;
+        MathPreconditions.checkPositiveInRangeClosed("alphaArray.length", alphaArray.length, num);
         receiverOutput.alphaArray = Arrays.stream(alphaArray)
-            // 0 <= α_i < n
-            .peek(alpha -> {
-                assert alpha >= 0 && alpha < rbArray.length;
-            })
-            // 去重并排序
+            .peek(alpha -> MathPreconditions.checkNonNegativeInRange("α", alpha, num))
             .distinct()
             .sorted()
-            // IntStream的toArray()具有拷贝功能呢
             .toArray();
-        // 去重后的数量应等于去重前的数量
-        assert receiverOutput.alphaArray.length == alphaArray.length;
+        MathPreconditions.checkEqual(
+            "(distinct) alphaArray.length", "alphaArray.length",
+            receiverOutput.alphaArray.length, alphaArray.length
+        );
         receiverOutput.rbArray = Arrays.stream(rbArray)
-            .peek(rb -> {
-                assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH;
-            })
+            .peek(rb -> MathPreconditions.checkEqual(
+                "rb.length", "λ in bytes", rb.length, CommonConstants.BLOCK_BYTE_LENGTH
+            ))
             .toArray(byte[][]::new);
         return receiverOutput;
     }
 
     /**
-     * 私有构造函数。
+     * private constructor.
      */
     private MspCotReceiverOutput() {
         // empty
     }
 
     /**
-     * 返回α数组。
+     * Gets α array.
      *
-     * @return α数组。
+     * @return α array.
      */
     public int[] getAlphaArray() {
         return alphaArray;
     }
 
     /**
-     * 返回Rb。
+     * Gets the assigned Rb.
      *
-     * @param index 索引值。
-     * @return Rb。
+     * @param index index.
+     * @return the assigned Rb.
      */
     public byte[] getRb(int index) {
         return rbArray[index];
     }
 
     /**
-     * 返回Rb数组。
+     * Gets Rb array.
      *
-     * @return Rb数组。
+     * @return Rb array.
      */
     public byte[][] getRbArray() {
         return rbArray;

@@ -5,17 +5,15 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
  * Naive Batch Index PIR protocol description.
- * The client and the server perform B PIR instances, one for each bucket, to retrieve all the desired
- * entries. This framework is compatible with any single index PIR scheme.
  *
  * @author Liqiang Peng
- * @date 2023/3/7
+ * @date 2023/7/14
  */
 public class NaiveBatchIndexPirPtoDesc implements PtoDesc {
     /**
      * protocol ID
      */
-    private static final int PTO_ID = Math.abs((int) 2361093113454124451L);
+    private static final int PTO_ID = Math.abs((int) 1026969684665617736L);
     /**
      * protocol name
      */
@@ -26,21 +24,13 @@ public class NaiveBatchIndexPirPtoDesc implements PtoDesc {
      */
     enum PtoStep {
         /**
-         * server send cuckoo hash keys
+         * server send response
          */
-        SERVER_SEND_CUCKOO_HASH_KEYS,
+        SERVER_SEND_RESPONSE,
         /**
          * client send query
          */
         CLIENT_SEND_QUERY,
-        /**
-         * server send reply
-         */
-        SERVER_SEND_RESPONSE,
-        /**
-         * client send public keys
-         */
-        CLIENT_SEND_PUBLIC_KEYS,
     }
 
     /**

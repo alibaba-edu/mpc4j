@@ -268,7 +268,7 @@ public class Cmg21UpsiServer<T> extends AbstractUpsiServer<T> {
      * @throws MpcAbortException the protocol failure aborts.
      */
     private List<byte[]> computeResponse(List<long[][]> database, List<byte[]> queryList, byte[] encryptionParams,
-                                        byte[] relinKeys, int binSize) throws MpcAbortException {
+                                         byte[] relinKeys, int binSize) throws MpcAbortException {
         int ciphertextNum = params.getBinNum() / (params.getPolyModulusDegree() / params.getItemEncodedSlotSize());
         int partitionCount = CommonUtils.getUnitNum(binSize, params.getMaxPartitionSizePerBin());
         MpcAbortPreconditions.checkArgument(

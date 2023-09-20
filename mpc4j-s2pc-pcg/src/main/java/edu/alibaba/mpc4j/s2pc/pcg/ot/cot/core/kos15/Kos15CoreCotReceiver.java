@@ -6,12 +6,10 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64Factory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -23,7 +21,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.kos15.Kos15CoreCotPtoDesc.PtoStep;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -41,17 +39,13 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
      */
     private final BaseOtSender baseOtSender;
     /**
-     * GF(2^128)运算接口
+     * GF(2^64)运算接口
      */
-    private final Gf2k gf2k;
+    private final Gf64 gf64;
     /**
      * KDF-OT协议输出
      */
     private KdfOtSenderOutput kdfOtSenderOutput;
-    /**
-     * 随机预言机
-     */
-    private Prf randomOracle;
     /**
      * 扩展数量
      */
@@ -68,12 +62,21 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
      * 转置矩阵T
      */
     private TransBitMatrix tTransposeMatrix;
+    /**
+     * partition num
+     */
+    private int m;
+    /**
+     * bit length
+     */
+    private final int s;
 
     public Kos15CoreCotReceiver(Rpc receiverRpc, Party senderParty, Kos15CoreCotConfig config) {
         super(Kos15CoreCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtSender = BaseOtFactory.createSender(receiverRpc, senderParty, config.getBaseOtConfig());
         addSubPtos(baseOtSender);
-        gf2k = Gf2kFactory.createInstance(envType);
+        gf64 = Gf64Factory.createInstance(envType, config.getGf64Type());
+        s = gf64.getL();
     }
 
     @Override
@@ -87,22 +90,7 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.INIT_STEP, 1, 2, initTime);
-
-        stopWatch.start();
-        DataPacketHeader randomOracleKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_RANDOM_ORACLE_KEY.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> randomOracleKeyPayload = rpc.receive(randomOracleKeyHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(randomOracleKeyPayload.size() == 1);
-        // 设置随机预言机
-        randomOracle = PrfFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
-        randomOracle.setKey(randomOracleKeyPayload.remove(0));
-        stopWatch.stop();
-        long randomOracleTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.INIT_STEP, 2, 2, randomOracleTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
         logPhaseInfo(PtoState.INIT_END);
     }
@@ -124,8 +112,15 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 2, matrixTime);
 
+        DataPacketHeader chiPolynomialHeader = new DataPacketHeader(
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_CHI_POLYNOMIAL.ordinal(), extraInfo,
+            otherParty().getPartyId(), ownParty().getPartyId()
+        );
+        List<byte[]> chiPolynomialPayload = rpc.receive(chiPolynomialHeader).getPayload();
+        MpcAbortPreconditions.checkArgument(chiPolynomialPayload.size() == m);
+
         stopWatch.start();
-        List<byte[]> correlateCheckPayload = generateCorrelateCheckPayload();
+        List<byte[]> correlateCheckPayload = generateCorrelateCheckPayload(chiPolynomialPayload);
         DataPacketHeader correlateCheckHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_CHECK.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
@@ -143,8 +138,9 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
     }
 
     private List<byte[]> generateMatrixPayload() {
-        // l' = l + (κ + s)
-        extendNum = num + CommonConstants.BLOCK_BIT_LENGTH + CommonConstants.STATS_BIT_LENGTH;
+        // l' = l + s
+        m = CommonUtils.getUnitNum(num, s);
+        extendNum = (m + 1) * s;
         int extendByteNum = CommonUtils.getByteLength(extendNum);
         // 扩展选择比特向量
         extendChoices = new boolean[extendNum];
@@ -180,40 +176,40 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
             .collect(Collectors.toList());
     }
 
-    private List<byte[]> generateCorrelateCheckPayload() {
+    private List<byte[]> generateCorrelateCheckPayload(List<byte[]> chiPolynomial) {
+        List<byte[]> correlateCheckPayload = new ArrayList<>();
+        byte[][] xBlock = new byte[m + 1][];
+        for (int i = 0; i < m + 1; i++) {
+            boolean[] block = new boolean[s];
+            System.arraycopy(extendChoices, i * s, block, 0, s);
+            xBlock[i] = BinaryUtils.binaryToByteArray(block);
+        }
+        byte[] xPolynomial = gf64.createZero();
+        for (int i = 0; i < m; i++) {
+            gf64.muli(xBlock[i], chiPolynomial.get(i));
+            gf64.addi(xPolynomial, xBlock[i]);
+        }
+        gf64.addi(xPolynomial, xBlock[m]);
+        correlateCheckPayload.add(xPolynomial);
+        IntStream tMatrixIntStream = IntStream.range(0, CommonConstants.BLOCK_BIT_LENGTH);
+        tMatrixIntStream = parallel ? tMatrixIntStream.parallel() : tMatrixIntStream;
+        correlateCheckPayload.addAll(tMatrixIntStream.mapToObj(i -> {
+            byte[][] tBlock = new byte[m + 1][CommonUtils.getByteLength(s)];
+            ByteBuffer flattenColumn = ByteBuffer.wrap(tMatrix.getColumn(i));
+            for (int j = 0; j < m + 1; j++) {
+                flattenColumn.get(tBlock[j]);
+            }
+            byte[] ti = gf64.createZero();
+            for (int j = 0; j < m; j++) {
+                gf64.muli(tBlock[j], chiPolynomial.get(j));
+                gf64.addi(ti, tBlock[j]);
+            }
+            gf64.addi(ti, tBlock[m]);
+            return ti;
+        }).collect(Collectors.toList()));
         // 矩阵转置，得到t
         tTransposeMatrix = tMatrix.transpose();
         tMatrix = null;
-        byte[][] chiPolynomials = new byte[extendNum][];
-        byte[][] tPolynomials = new byte[extendNum][];
-        IntStream extendIndexIntStream = IntStream.range(0, extendNum);
-        extendIndexIntStream = parallel ? extendIndexIntStream.parallel() : extendIndexIntStream;
-        extendIndexIntStream.forEach(extendIndex -> {
-            // 调用随机预言的输入是ExtraInfo || extendIndex
-            byte[] indexMessage = ByteBuffer.allocate(Long.BYTES + Integer.BYTES)
-                .putLong(extraInfo).putInt(extendIndex).array();
-            // Sample (χ_1, ..., χ_{l'}) ← F_{Rand}(F_{2^κ}^{l'}).
-            chiPolynomials[extendIndex] = randomOracle.getBytes(indexMessage);
-            // t_j·χ_j
-            tPolynomials[extendIndex] = gf2k.mul(chiPolynomials[extendIndex], tTransposeMatrix.getColumn(extendIndex));
-        });
-        byte[] xPolynomial = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        // x = Σ_{j = 1}^{l'} (x_j · χ_j)
-        for (int extendIndex = 0; extendIndex < extendNum; extendIndex++) {
-            // 如果x_j = 1，则x = x + χ_j
-            if (extendChoices[extendIndex]) {
-                gf2k.addi(xPolynomial, chiPolynomials[extendIndex]);
-            }
-        }
-        // t = Σ_{j = 1}^{l'} (t_j · χ_j)
-        byte[] tPolynomial = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        for (int extendIndex = 0; extendIndex < extendNum; extendIndex++) {
-            gf2k.addi(tPolynomial, tPolynomials[extendIndex]);
-        }
-        List<byte[]> correlateCheckPayload = new LinkedList<>();
-        correlateCheckPayload.add(xPolynomial);
-        correlateCheckPayload.add(tPolynomial);
-
         return correlateCheckPayload;
     }
 

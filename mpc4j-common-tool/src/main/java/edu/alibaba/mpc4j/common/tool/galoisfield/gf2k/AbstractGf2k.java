@@ -11,18 +11,18 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import java.security.SecureRandom;
 
 /**
- * Abstract GF(2^κ) interface.
+ * abstract GF(2^128).
  *
  * @author Weiran Liu
  * @date 2023/2/17
  */
 abstract class AbstractGf2k implements Gf2k {
     /**
-     * l = λ (in bit length)
+     * l = 128 (in bit length)
      */
     private static final int L = CommonConstants.BLOCK_BIT_LENGTH;
     /**
-     * l = λ (in byte length)
+     * l = 128 (in byte length)
      */
     protected static final int BYTE_L = CommonConstants.BLOCK_BYTE_LENGTH;
     /**

@@ -10,10 +10,26 @@ extern "C" {
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils
  * Method:    genEncryptionParameters
- * Signature: (IJ[I)Ljava/util/List;
+ * Signature: (IJ[I)[B
  */
-JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils_genEncryptionParameters
+JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils_genEncryptionParameters
   (JNIEnv *, jclass, jint, jlong, jintArray);
+
+/*
+ * Class:     edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils
+ * Method:    keyGen
+ * Signature: ([B)Ljava/util/List;
+ */
+JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils_keyGen
+  (JNIEnv *, jclass, jbyteArray);
+
+/*
+ * Class:     edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils
+ * Method:    preprocessDatabase
+ * Signature: ([B[[JI)Ljava/util/List;
+ */
+JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils_preprocessDatabase
+  (JNIEnv *, jclass, jbyteArray, jobjectArray, jint);
 
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils
@@ -34,18 +50,18 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwP
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils
  * Method:    optComputeMatches
- * Signature: ([B[B[B[[JLjava/util/List;I)[B
+ * Signature: ([B[B[BLjava/util/List;Ljava/util/List;I)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils_optComputeMatches
-  (JNIEnv *, jclass, jbyteArray, jbyteArray, jbyteArray, jobjectArray, jobject, jint);
+  (JNIEnv *, jclass, jbyteArray, jbyteArray, jbyteArray, jobject, jobject, jint);
 
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils
  * Method:    naiveComputeMatches
- * Signature: ([B[B[[JLjava/util/List;)[B
+ * Signature: ([B[BLjava/util/List;Ljava/util/List;)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils_naiveComputeMatches
-  (JNIEnv *, jclass, jbyteArray, jbyteArray, jobjectArray, jobject);
+  (JNIEnv *, jclass, jbyteArray, jbyteArray, jobject, jobject);
 
 /*
  * Class:     edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils

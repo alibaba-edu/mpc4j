@@ -9,8 +9,9 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.OkvsFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.okvs.SparseOkvs;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.SparseGf2eDokvs;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
@@ -44,23 +45,19 @@ public class PirUbopprfSender extends AbstractUbopprfSender {
      */
     private final SqOprfSender sqOprfSender;
     /**
-     * the OKVS type
+     * OKVS type
      */
-    private final OkvsFactory.OkvsType okvsType;
+    private final Gf2eDokvsType okvsType;
     /**
      * single-query OPRF key
      */
     private SqOprfKey sqOprfKey;
     /**
-     * OKVS keys
-     */
-    private byte[][] okvsKeys;
-    /**
-     * okvs dense storage
+     * OKVS dense storage
      */
     private byte[][] okvsDenseStorage;
     /**
-     * okvs sparse storage
+     * OKVS sparse storage
      */
     private byte[][] okvsSparseStorage;
     /**
@@ -68,9 +65,9 @@ public class PirUbopprfSender extends AbstractUbopprfSender {
      */
     private final BatchIndexPirServer batchIndexPirServer;
     /**
-     * sparse okvs
+     * sparse OKVS
      */
-    SparseOkvs<ByteBuffer> okvs;
+    private SparseGf2eDokvs<ByteBuffer> sparseOkvs;
 
     public PirUbopprfSender(Rpc senderRpc, Party receiverParty, PirUbopprfConfig config) {
         super(getInstance(), senderRpc, receiverParty, config);
@@ -88,11 +85,18 @@ public class PirUbopprfSender extends AbstractUbopprfSender {
 
         stopWatch.start();
         sqOprfKey = sqOprfSender.keyGen();
-        okvsKeys = CommonUtils.generateRandomKeys(OkvsFactory.getHashNum(okvsType), secureRandom);
-        okvs = OkvsFactory.createSparseInstance(envType, okvsType, pointNum, l, okvsKeys);
+        byte[][] okvsKeys = CommonUtils.generateRandomKeys(Gf2eDokvsFactory.getHashKeyNum(okvsType), secureRandom);
+        sparseOkvs = Gf2eDokvsFactory.createSparseInstance(envType, okvsType, pointNum, l, okvsKeys);
         generateOkvs();
         // init oprf
         sqOprfSender.init(batchSize, sqOprfKey);
+        // send OKVS keys
+        List<byte[]> okvsKeysPayload = Arrays.stream(okvsKeys).collect(Collectors.toList());
+        DataPacketHeader okvsKeysHeader = new DataPacketHeader(
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_OKVS_KEYS.ordinal(), extraInfo,
+            ownParty().getPartyId(), otherParty().getPartyId()
+        );
+        rpc.send(DataPacket.fromByteArrayList(okvsKeysHeader, okvsKeysPayload));
         stopWatch.stop();
         long okvsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -100,7 +104,7 @@ public class PirUbopprfSender extends AbstractUbopprfSender {
 
         stopWatch.start();
         // init batch index PIR
-        batchIndexPirServer.init(NaiveDatabase.create(l, okvsSparseStorage), batchSize * okvs.sparsePositionNum());
+        batchIndexPirServer.init(NaiveDatabase.create(l, okvsSparseStorage), batchSize * sparseOkvs.maxSparsePositionNum());
         stopWatch.stop();
         long pirTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -115,14 +119,6 @@ public class PirUbopprfSender extends AbstractUbopprfSender {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // send OKVS keys
-        List<byte[]> okvsKeysPayload = Arrays.stream(okvsKeys).collect(Collectors.toList());
-        DataPacketHeader okvsKeysHeader = new DataPacketHeader(
-            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_OKVS_KEYS.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(okvsKeysHeader, okvsKeysPayload));
-        okvsKeys = null;
         // send OKVS dense storage
         List<byte[]> okvsPayload = Arrays.stream(okvsDenseStorage).collect(Collectors.toList());
         DataPacketHeader okvsHeader = new DataPacketHeader(
@@ -157,7 +153,7 @@ public class PirUbopprfSender extends AbstractUbopprfSender {
      * generate okvs.
      */
     private void generateOkvs() {
-        okvs.setParallelEncode(parallel);
+        sparseOkvs.setParallelEncode(parallel);
         // construct key-value map
         Map<ByteBuffer, byte[]> keyValueMap = new ConcurrentHashMap<>(pointNum);
         // The PRF maps (random) inputs to {0, 1}^l, we only need to set an empty key
@@ -180,12 +176,12 @@ public class PirUbopprfSender extends AbstractUbopprfSender {
                 keyValueMap.put(ByteBuffer.wrap(input), programOutput);
             }
         });
-        byte[][] okvsStorage = okvs.encode(keyValueMap);
-        okvsSparseStorage = IntStream.range(0, okvs.getM() - okvs.maxDensePositionNum())
+        byte[][] okvsStorage = sparseOkvs.encode(keyValueMap, false);
+        okvsSparseStorage = IntStream.range(0, sparseOkvs.sparsePositionRange())
             .mapToObj(i -> BytesUtils.clone(okvsStorage[i]))
             .toArray(byte[][]::new);
-        okvsDenseStorage = IntStream.range(0, okvs.maxDensePositionNum())
-            .mapToObj(i -> BytesUtils.clone(okvsStorage[i + okvs.getM() - okvs.maxDensePositionNum()]))
+        okvsDenseStorage = IntStream.range(0, sparseOkvs.densePositionRange())
+            .mapToObj(i -> BytesUtils.clone(okvsStorage[i + sparseOkvs.sparsePositionRange()]))
             .toArray(byte[][]::new);
     }
 }

@@ -67,4 +67,20 @@ public interface SingleIndexPirClient extends TwoPartyPto {
      * @throws MpcAbortException the protocol failure aborts.
      */
     byte[] decodeResponse(List<byte[]> serverResponse, int index) throws MpcAbortException;
+
+    /**
+     * Client decodes response.
+     *
+     * @param serverResponse   server response.
+     * @param index            retrieval index.
+     * @param elementBitLength element bit length.
+     * @return retrieval element.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    byte[] decodeResponse(List<byte[]> serverResponse, int index, int elementBitLength) throws MpcAbortException;
+
+    /**
+     * set default params.
+     */
+    void setDefaultParams();
 }

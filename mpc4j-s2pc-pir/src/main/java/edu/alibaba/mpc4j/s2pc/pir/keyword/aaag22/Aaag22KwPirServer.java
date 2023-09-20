@@ -69,13 +69,13 @@ public class Aaag22KwPirServer extends AbstractKwPirServer {
     }
 
     @Override
-    public void init(KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> serverKeywordLabelMap, int labelByteLength)
-        throws MpcAbortException {
-        setInitInput(serverKeywordLabelMap, labelByteLength);
+    public void init(KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> serverKeywordLabelMap, int maxRetrievalSize,
+                     int labelByteLength) throws MpcAbortException {
+        setInitInput(serverKeywordLabelMap, maxRetrievalSize, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
-
         assert (kwPirParams instanceof Aaag22KwPirParams);
         params = (Aaag22KwPirParams) kwPirParams;
+        assert maxRetrievalSize <= params.maxRetrievalSize();
 
         stopWatch.start();
         params.initPirParams(keywordSize, labelByteLength * Byte.SIZE);
@@ -132,11 +132,10 @@ public class Aaag22KwPirServer extends AbstractKwPirServer {
     @Override
     public void init(Map<ByteBuffer, ByteBuffer> serverKeywordLabelMap, int maxRetrievalSize, int labelByteLength)
         throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(maxRetrievalSize == 1);
-        setInitInput(serverKeywordLabelMap, labelByteLength);
+        setInitInput(serverKeywordLabelMap, maxRetrievalSize, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
-
         params = Aaag22KwPirParams.DEFAULT_PARAMS;
+        assert maxRetrievalSize <= params.maxRetrievalSize();
 
         stopWatch.start();
         params.initPirParams(keywordSize, labelByteLength * Byte.SIZE);

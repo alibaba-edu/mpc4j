@@ -39,10 +39,6 @@ public class Cgs22UrbopprfReceiver extends AbstractUrbopprfReceiver {
      */
     private final int d;
     /**
-     * sent OKVS
-     */
-    private boolean sent;
-    /**
      * bin num
      */
     private int binNum;
@@ -61,7 +57,6 @@ public class Cgs22UrbopprfReceiver extends AbstractUrbopprfReceiver {
         addSubPtos(sqOprfReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
         d = config.getD();
-        sent = false;
     }
 
     @Override
@@ -69,8 +64,24 @@ public class Cgs22UrbopprfReceiver extends AbstractUrbopprfReceiver {
         setInitInput(l, batchSize, pointNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
+        // receive garbled hash table keys
+        DataPacketHeader garbledTableKeysHeader = new DataPacketHeader(
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE_KEYS.ordinal(), extraInfo,
+            otherParty().getPartyId(), ownParty().getPartyId()
+        );
+        List<byte[]> garbledTableKeysPayload = rpc.receive(garbledTableKeysHeader).getPayload();
+
         stopWatch.start();
-        sent = false;
+        // parse garbled table keys
+        MpcAbortPreconditions.checkArgument(garbledTableKeysPayload.size() == d);
+        byte[][] garbledTableKeys = garbledTableKeysPayload.toArray(new byte[0][]);
+        binHashes = Arrays.stream(garbledTableKeys)
+            .map(key -> {
+                Prf prf = PrfFactory.createInstance(envType, Integer.BYTES);
+                prf.setKey(key);
+                return prf;
+            })
+            .toArray(Prf[]::new);
         // init oprf
         sqOprfReceiver.init(batchSize);
         stopWatch.stop();
@@ -86,41 +97,22 @@ public class Cgs22UrbopprfReceiver extends AbstractUrbopprfReceiver {
         setPtoInput(inputArray);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        if (!sent) {
-            // receive garbled hash table keys
-            DataPacketHeader garbledTableKeysHeader = new DataPacketHeader(
-                encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE_KEYS.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> garbledTableKeysPayload = rpc.receive(garbledTableKeysHeader).getPayload();
-            // receive Garbled Table
-            DataPacketHeader garbledTableHeader = new DataPacketHeader(
-                encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> garbledTablePayload = rpc.receive(garbledTableHeader).getPayload();
+        // receive Garbled Table
+        DataPacketHeader garbledTableHeader = new DataPacketHeader(
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE.ordinal(), extraInfo,
+            otherParty().getPartyId(), ownParty().getPartyId()
+        );
+        List<byte[]> garbledTablePayload = rpc.receive(garbledTableHeader).getPayload();
 
-            stopWatch.start();
-            // parse garbled table keys
-            MpcAbortPreconditions.checkArgument(garbledTableKeysPayload.size() == d);
-            byte[][] garbledTableKeys = garbledTableKeysPayload.toArray(new byte[0][]);
-            binHashes = Arrays.stream(garbledTableKeys)
-                .map(key -> {
-                    Prf prf = PrfFactory.createInstance(envType, Integer.BYTES);
-                    prf.setKey(key);
-                    return prf;
-                })
-                .toArray(Prf[]::new);
-            // Interpret hint as a garbled hash table GT.
-            binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, this.pointNum);
-            MpcAbortPreconditions.checkArgument(garbledTablePayload.size() == binNum);
-            garbledTable = garbledTablePayload.toArray(new byte[0][]);
-            sent = true;
-            stopWatch.stop();
-            long garbledTableTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            logStepInfo(PtoState.PTO_STEP, 0, 2, garbledTableTime, "Receiver handles GT");
-        }
+        stopWatch.start();
+        // Interpret hint as a garbled hash table GT.
+        binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, this.pointNum);
+        MpcAbortPreconditions.checkArgument(garbledTablePayload.size() == binNum);
+        garbledTable = garbledTablePayload.toArray(new byte[0][]);
+        stopWatch.stop();
+        long garbledTableTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 0, 2, garbledTableTime, "Receiver handles GT");
 
         stopWatch.start();
         // OPRF

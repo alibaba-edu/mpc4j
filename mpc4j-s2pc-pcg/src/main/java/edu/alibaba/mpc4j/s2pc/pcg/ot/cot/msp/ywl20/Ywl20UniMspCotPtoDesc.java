@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * YWL20-UNI-MSP-COT协议信息。此实现是下述论文图7的多点COT实现，使用了布谷鸟哈希，论文来源：
+ * YWL20-UNI-MSP-COT protocol description. The protocol is described in the following paper, Figure 7:
  * <p>
  * Yang, Kang, Chenkai Weng, Xiao Lan, Jiang Zhang, and Xiao Wang. Ferret: Fast extension for correlated OT with small
  * communication. CCS 2020, pp. 1607-1626. 2020.
@@ -15,31 +15,31 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
  */
 class Ywl20UniMspCotPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 6799413282773110363L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "YWL20_UNI_MSP_COT";
 
     /**
-     * 协议步骤
+     * protocol step
      */
     enum PtoStep {
         /**
-         * 接收方发送布谷鸟哈希密钥
+         * receiver sends cuckoo hash keys
          */
         RECEIVER_SEND_CUCKOO_HASH_KEYS,
     }
 
     /**
-     * 单例模式
+     * singleton mode
      */
     private static final Ywl20UniMspCotPtoDesc INSTANCE = new Ywl20UniMspCotPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private Ywl20UniMspCotPtoDesc() {
         // empty

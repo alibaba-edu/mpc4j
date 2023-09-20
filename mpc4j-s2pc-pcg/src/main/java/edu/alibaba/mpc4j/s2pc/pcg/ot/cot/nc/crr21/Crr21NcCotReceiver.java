@@ -14,7 +14,6 @@ import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.AbstractNcCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiverOutput;
@@ -28,10 +27,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiverOutput;
 
 public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
     /**
-     * MSP-COT配置项
-     */
-    private final MspCotConfig mspCotConfig;
-    /**
      * MSP-COT协议接收方
      */
     private final MspCotReceiver mspCotReceiver;
@@ -44,14 +39,6 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
      */
     private int iterationT;
     /**
-     * MSP-COT协议所需的预计算COT数量
-     */
-    private int preCotSize;
-    /**
-     * MSP-COT协议所需的COT协议接收方输出
-     */
-    private CotReceiverOutput rCotReceiverOutput;
-    /**
      * LDPC编码类型
      */
     private final LdpcCreatorUtils.CodeType codeType;
@@ -62,7 +49,6 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
 
     public Crr21NcCotReceiver(Rpc receiverRpc, Party senderParty, Crr21NcCotConfig config) {
         super(Crr21NcCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        mspCotConfig = config.getMspCotConfig();
         codeType = config.getCodeType();
         mspCotReceiver = MspCotFactory.createReceiver(receiverRpc, senderParty, config.getMspCotConfig());
         addSubPtos(mspCotReceiver);
@@ -72,10 +58,7 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
     public void init(int num) throws MpcAbortException {
         setInitInput(num);
         logPhaseInfo(PtoState.INIT_BEGIN);
-        // 重新初始化时需要清空之前存留的输出
-        rCotReceiverOutput = null;
 
-        // 初始化CRR21的编码器。
         stopWatch.start();
         LdpcCreator ldpcCreator = LdpcCreatorFactory
             .createLdpcCreator(codeType, LongUtils.ceilLog2(num, Crr21NcCotPtoDesc.MIN_LOG_N));
@@ -92,7 +75,6 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         iterationN = lpnParams.getN();
         iterationT = lpnParams.getT();
         mspCotReceiver.init(iterationT, iterationN);
-        preCotSize = MspCotFactory.getPrecomputeNum(mspCotConfig, iterationT, iterationN);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -108,9 +90,7 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
 
         stopWatch.start();
         // 执行MSP-COT
-        MspCotReceiverOutput rMspCotReceiverOutput = rCotReceiverOutput == null
-            ? mspCotReceiver.receive(iterationT, iterationN)
-            : mspCotReceiver.receive(iterationT, iterationN, rCotReceiverOutput);
+        MspCotReceiverOutput rMspCotReceiverOutput = mspCotReceiver.receive(iterationT, iterationN);
         stopWatch.stop();
         long rTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -128,7 +108,6 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         byte[][] extendZ = ldpcCoder.transEncode(initZ);
         // 更新输出。
         CotReceiverOutput receiverOutput = CotReceiverOutput.create(extendB, extendZ);
-        rCotReceiverOutput = receiverOutput.split(preCotSize);
         receiverOutput.reduce(num);
         stopWatch.stop();
         long extendTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

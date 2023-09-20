@@ -3,53 +3,53 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 import java.util.Arrays;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtReceiverOutput;
 
 /**
- * COT协议接收方输出。
+ * COT receiver output.
  *
  * @author Weiran Liu
  * @date 2021/12/26
  */
 public class CotReceiverOutput implements OtReceiverOutput, MergedPcgPartyOutput {
     /**
-     * 选择比特
+     * choice bits.
      */
     private boolean[] choices;
     /**
-     * Rb数组
+     * Rb array.
      */
     private byte[][] rbArray;
 
     /**
-     * 创建接收方输出。
+     * Creates a receiver output.
      *
-     * @param choices 选择比特数组。
-     * @param rbArray Rb数组。
-     * @return 接收方输出。
+     * @param choices choice bits.
+     * @param rbArray Rb array.
+     * @return a receiver output.
      */
     public static CotReceiverOutput create(boolean[] choices, byte[][] rbArray) {
         CotReceiverOutput receiverOutput = new CotReceiverOutput();
-        assert choices.length > 0 : "num must be greater than 0: " + choices.length;
+        MathPreconditions.checkPositive("num", choices.length);
         int num = choices.length;
-        assert rbArray.length == num : "# of Rb must be equal to " + num + ": " + rbArray.length;
+        MathPreconditions.checkEqual("num", "RbArray.length", num, rbArray.length);
         receiverOutput.choices = BinaryUtils.clone(choices);
         receiverOutput.rbArray = Arrays.stream(rbArray)
-            .peek(rb -> {
-                assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH
-                    : "rb byte length must be equal to " + CommonConstants.BLOCK_BYTE_LENGTH + ": " + rb.length;
-            })
+            .peek(rb ->
+                MathPreconditions.checkEqual("Rb.length", "λ in bytes", rb.length, CommonConstants.BLOCK_BYTE_LENGTH)
+            )
             .toArray(byte[][]::new);
 
         return receiverOutput;
     }
 
     /**
-     * 创建长度为0的接收方输出。
+     * Creates an empty receiver output.
      *
-     * @return 长度为0的接收方输出。
+     * @return an empty receiver output.
      */
     public static CotReceiverOutput createEmpty() {
         CotReceiverOutput receiverOutput = new CotReceiverOutput();
@@ -60,7 +60,7 @@ public class CotReceiverOutput implements OtReceiverOutput, MergedPcgPartyOutput
     }
 
     /**
-     * 私有构造函数。
+     * private constructor.
      */
     private CotReceiverOutput() {
         // empty
@@ -69,7 +69,7 @@ public class CotReceiverOutput implements OtReceiverOutput, MergedPcgPartyOutput
     @Override
     public CotReceiverOutput split(int splitNum) {
         int num = getNum();
-        assert splitNum > 0 && splitNum <= num : "split length must be in range (0, " + num + "]: " + splitNum;
+        MathPreconditions.checkPositiveInRangeClosed("splitNum", splitNum, num);
         // 拆分选择比特
         boolean[] subChoices = new boolean[splitNum];
         boolean[] remainChoices = new boolean[num - splitNum];
@@ -89,7 +89,7 @@ public class CotReceiverOutput implements OtReceiverOutput, MergedPcgPartyOutput
     @Override
     public void reduce(int reduceNum) {
         int num = getNum();
-        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        MathPreconditions.checkPositiveInRangeClosed("reduceNum", reduceNum, num);
         if (reduceNum < num) {
             // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
             boolean[] remainChoices = new boolean[reduceNum];

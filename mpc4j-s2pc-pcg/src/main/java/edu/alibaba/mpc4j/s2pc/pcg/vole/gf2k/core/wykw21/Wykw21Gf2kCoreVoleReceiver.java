@@ -51,9 +51,9 @@ public class Wykw21Gf2kCoreVoleReceiver extends AbstractGf2kCoreVoleReceiver {
      */
     private byte[] b;
 
-    public Wykw21Gf2kCoreVoleReceiver(Rpc senderRpc, Party receiverParty, Wykw21Gf2kCoreVoleConfig config) {
-        super(Wykw21Gf2kCoreVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
-        baseOtReceiver = BaseOtFactory.createReceiver(senderRpc, receiverParty, config.getBaseOtConfig());
+    public Wykw21Gf2kCoreVoleReceiver(Rpc receiverRpc, Party senderParty, Wykw21Gf2kCoreVoleConfig config) {
+        super(Wykw21Gf2kCoreVolePtoDesc.getInstance(), receiverRpc, senderParty, config);
+        baseOtReceiver = BaseOtFactory.createReceiver(receiverRpc, senderParty, config.getBaseOtConfig());
         addSubPtos(baseOtReceiver);
     }
 

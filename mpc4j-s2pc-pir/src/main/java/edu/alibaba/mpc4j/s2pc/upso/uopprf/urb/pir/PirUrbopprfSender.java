@@ -90,6 +90,14 @@ public class PirUrbopprfSender extends AbstractUrbopprfSender {
         stopWatch.start();
         sqOprfKey = sqOprfSender.keyGen();
         generateGarbledTable();
+        // send garbled table keys
+        List<byte[]> garbledHashTableKeysPayload = Arrays.stream(garbledTableKeys).collect(Collectors.toList());
+        DataPacketHeader garbledHashTableKeysHeader = new DataPacketHeader(
+            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE_KEYS.ordinal(), extraInfo,
+            ownParty().getPartyId(), otherParty().getPartyId()
+        );
+        rpc.send(DataPacket.fromByteArrayList(garbledHashTableKeysHeader, garbledHashTableKeysPayload));
+        garbledTableKeys = null;
         // init oprf
         sqOprfSender.init(batchSize, sqOprfKey);
         stopWatch.stop();
@@ -113,15 +121,6 @@ public class PirUrbopprfSender extends AbstractUrbopprfSender {
     public void opprf() throws MpcAbortException {
         setPtoInput();
         logPhaseInfo(PtoState.PTO_BEGIN);
-
-        // send garbled table keys
-        List<byte[]> garbledHashTableKeysPayload = Arrays.stream(garbledTableKeys).collect(Collectors.toList());
-        DataPacketHeader garbledHashTableKeysHeader = new DataPacketHeader(
-            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_GARBLED_TABLE_KEYS.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(garbledHashTableKeysHeader, garbledHashTableKeysPayload));
-        garbledTableKeys = null;
 
         stopWatch.start();
         batchIndexPirServer.pir();

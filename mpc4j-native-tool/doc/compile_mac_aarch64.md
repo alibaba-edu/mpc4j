@@ -122,6 +122,18 @@ echo $JAVA_HOME
 
 **NOTE:** If your terminal is `zsh` instead of `bash`, you should replace `.bash_profile` with `.zshrc` in the above commands.
 
+### Compile and Install `mpc4j-native-fourq`
+
+Go to the path of `mpc4j-native-fourq`, and run the following command to compile and install `mpc4j-native-fourq`.
+
+```shell
+mkdir build
+cd build
+cmake .. 
+make 
+make test
+sudo make install
+```
 
 ### Compile `mpc4j-native-tool`
 
@@ -133,5 +145,3 @@ cd cmake-build-release
 cmake ..
 make
 ```
-
-## 

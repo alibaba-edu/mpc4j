@@ -1,36 +1,38 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp;
 
-import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.s2pc.pcg.BatchPcgOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp.SspCotReceiverOutput;
 
 import java.util.Arrays;
 
 /**
- * BSP-COT协议接收方输出。
+ * Batched single-point COT receiver output.
  *
  * @author Weiran Liu
  * @date 2022/01/22
  */
-public class BspCotReceiverOutput implements PcgPartyOutput {
+public class BspCotReceiverOutput implements BatchPcgOutput {
     /**
-     * SSPCOT receiver output array
+     * SSP-COT receiver outputs
      */
     private SspCotReceiverOutput[] receiverOutputs;
     /**
-     * num for each SSPCOT receiver output
+     * num for each SSP-COT receiver output
      */
     private int eachNum;
 
     public static BspCotReceiverOutput create(SspCotReceiverOutput[] sspCotReceiverOutputs) {
         BspCotReceiverOutput receiverOutput = new BspCotReceiverOutput();
-        assert sspCotReceiverOutputs.length > 0;
-        // 取第一个输出的参数
+        MathPreconditions.checkPositive("num", sspCotReceiverOutputs.length);
+        // get each num
         receiverOutput.eachNum = sspCotReceiverOutputs[0].getNum();
-        // 设置其余输出
+        // set other outputs
         receiverOutput.receiverOutputs = Arrays.stream(sspCotReceiverOutputs)
             // 验证数量均为num
-            .peek(sspcotReceiverOutput -> {
-                assert sspcotReceiverOutput.getNum() == receiverOutput.eachNum;
-            })
+            .peek(iOutput ->
+                MathPreconditions.checkEqual("each num", "i-th num", receiverOutput.eachNum, iOutput.getNum())
+            )
             .toArray(SspCotReceiverOutput[]::new);
         return receiverOutput;
     }
@@ -43,26 +45,26 @@ public class BspCotReceiverOutput implements PcgPartyOutput {
     }
 
     /**
-     * Gets a single single-point COT.
+     * Gets the assigned SSP-COT receiver output.
      *
-     * @param index the index.
-     * @return a single single-point COT.
+     * @param index index.
+     * @return the assigned SSP-COT receiver output.
      */
     public SspCotReceiverOutput get(int index) {
         return receiverOutputs[index];
     }
 
     /**
-     * Gets num for each single single-point COT.
+     * Gets num for each SSP-COT receiver output.
      *
-     * @return num for each single single-point COT.
+     * @return num for each SSP-COT receiver output.
      */
     public int getEachNum() {
         return eachNum;
     }
 
     @Override
-    public int getNum() {
+    public int getBatchNum() {
         return receiverOutputs.length;
     }
 }
