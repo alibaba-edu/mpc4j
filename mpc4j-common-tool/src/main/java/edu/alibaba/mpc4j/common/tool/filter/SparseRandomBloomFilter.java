@@ -37,12 +37,18 @@ public class SparseRandomBloomFilter<T> extends AbstractBloomFilter<T> {
     private static final TIntIntMap SBF_BIT_LENGTH_INIT_MATRIX = new TIntIntHashMap();
 
     static {
-        SBF_BIT_LENGTH_INIT_MATRIX.put(8, 88031);
-        SBF_BIT_LENGTH_INIT_MATRIX.put(9, 159945);
-        SBF_BIT_LENGTH_INIT_MATRIX.put(10, 303464);
-        SBF_BIT_LENGTH_INIT_MATRIX.put(11, 579993);
-        SBF_BIT_LENGTH_INIT_MATRIX.put(12, 1120665);
-        SBF_BIT_LENGTH_INIT_MATRIX.put(13, 2181857);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(2, 7196);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(3, 9296);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(4, 12896);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(5, 19172);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(6, 30350);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(7, 50726);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(8, 88627);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(9, 160506);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(10, 302436);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(11, 578306);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(12, 1121959);
+        SBF_BIT_LENGTH_INIT_MATRIX.put(13, 2182857);
         SBF_BIT_LENGTH_INIT_MATRIX.put(14, 4270964);
         SBF_BIT_LENGTH_INIT_MATRIX.put(15, 8402960);
         SBF_BIT_LENGTH_INIT_MATRIX.put(16, 16579297);
@@ -63,11 +69,11 @@ public class SparseRandomBloomFilter<T> extends AbstractBloomFilter<T> {
      */
     public static int bitSize(int maxSize) {
         MathPreconditions.checkPositive("n", maxSize);
-        int nLogValue = Math.max(8, LongUtils.ceilLog2(maxSize));
+        int nLogValue = Math.max(2, LongUtils.ceilLog2(maxSize));
         if (nLogValue > MAX_LOG_N) {
             throw new IllegalArgumentException("n is greater than the max supported n = " + (1 << 23) + ": " + maxSize);
         }
-        return SBF_BIT_LENGTH_INIT_MATRIX.get(nLogValue);
+        return CommonUtils.getByteLength(SBF_BIT_LENGTH_INIT_MATRIX.get(nLogValue)) * Byte.SIZE;
     }
 
     /**
@@ -76,11 +82,17 @@ public class SparseRandomBloomFilter<T> extends AbstractBloomFilter<T> {
     private static final TIntIntMap HASH_NUM_INIT_MATRIX = new TIntIntHashMap();
 
     static {
-        HASH_NUM_INIT_MATRIX.put(8, 105);
-        HASH_NUM_INIT_MATRIX.put(9, 101);
-        HASH_NUM_INIT_MATRIX.put(10, 98);
-        HASH_NUM_INIT_MATRIX.put(11, 96);
-        HASH_NUM_INIT_MATRIX.put(12, 95);
+        HASH_NUM_INIT_MATRIX.put(2, 94);
+        HASH_NUM_INIT_MATRIX.put(3, 94);
+        HASH_NUM_INIT_MATRIX.put(4, 94);
+        HASH_NUM_INIT_MATRIX.put(5, 94);
+        HASH_NUM_INIT_MATRIX.put(6, 94);
+        HASH_NUM_INIT_MATRIX.put(7, 94);
+        HASH_NUM_INIT_MATRIX.put(8, 94);
+        HASH_NUM_INIT_MATRIX.put(9, 94);
+        HASH_NUM_INIT_MATRIX.put(10, 94);
+        HASH_NUM_INIT_MATRIX.put(11, 94);
+        HASH_NUM_INIT_MATRIX.put(12, 94);
         HASH_NUM_INIT_MATRIX.put(13, 92);
         HASH_NUM_INIT_MATRIX.put(14, 93);
         HASH_NUM_INIT_MATRIX.put(15, 91);
@@ -102,7 +114,7 @@ public class SparseRandomBloomFilter<T> extends AbstractBloomFilter<T> {
      */
     public static int getHashNum(int maxSize) {
         MathPreconditions.checkPositive("n", maxSize);
-        int nLogValue = Math.max(8, LongUtils.ceilLog2(maxSize));
+        int nLogValue = Math.max(2, LongUtils.ceilLog2(maxSize));
         if (nLogValue > MAX_LOG_N) {
             throw new IllegalArgumentException("n is greater than the max supported n = " + (1 << 23) + ": " + maxSize);
         }
