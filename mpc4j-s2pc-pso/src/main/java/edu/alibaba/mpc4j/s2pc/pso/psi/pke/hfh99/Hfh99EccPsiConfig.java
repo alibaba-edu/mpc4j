@@ -6,14 +6,14 @@ import edu.alibaba.mpc4j.s2pc.pso.psi.PsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory;
 
 /**
- * HFH99-椭圆曲线PSI协议配置项。
+ * HFH99-ecc PSI configure
  *
  * @author Weiran Liu
  * @date 2022/9/19
  */
 public class Hfh99EccPsiConfig extends AbstractMultiPartyPtoConfig implements PsiConfig {
     /**
-     * 是否压缩编码
+     * compress encode?
      */
     private final boolean compressEncode;
 
@@ -33,7 +33,7 @@ public class Hfh99EccPsiConfig extends AbstractMultiPartyPtoConfig implements Ps
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Hfh99EccPsiConfig> {
         /**
-         * 是否压缩编码
+         * compress encode?
          */
         private boolean compressEncode;
 

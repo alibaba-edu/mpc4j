@@ -185,6 +185,10 @@ public class PsiMain {
                            Set<ByteBuffer> serverElementSet, int clientSetSize,
                            PrintWriter printWriter) throws MpcAbortException {
         int serverSetSize = serverElementSet.size();
+        LOGGER.info(
+            "{}: serverSetSize = {}, clientSetSize = {}, parallel = {}",
+            serverRpc.ownParty().getPartyName(), serverSetSize, clientSetSize, parallel
+        );
         PsiServer<ByteBuffer> psiServer = PsiFactory.createServer(serverRpc, clientParty, config);
         psiServer.setTaskId(taskId);
         psiServer.setParallel(parallel);

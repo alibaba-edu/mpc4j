@@ -39,7 +39,7 @@ public abstract class AbstractSqOprfPsiServer<T> extends AbstractPsiServer<T> {
      */
     private final SqOprfSender sqOprfSender;
     /**
-     * 过滤器类型
+     * filter type
      */
     private final FilterType filterType;
     /**

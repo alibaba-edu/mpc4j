@@ -10,3 +10,10 @@ client_log_set_size = 12,10
 
 # protocol name
 psi_pto_name = PRTY19_FAST
+
+server_name = server
+server_ip = localhost
+server_port = 8090
+client_name = client
+client_ip = localhost
+client_port = 8091

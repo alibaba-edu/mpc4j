@@ -4,11 +4,11 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * HFH99-椭圆曲线PSI协议信息。下述论文最先提出了此协议：
+ * HFH99-PSI description. The protocol first comes from the following paper:
  * <p>
  * Huberman B A, Franklin M, Hogg T. Enhancing privacy and trust in electronic communities. FC 1999, Citeseer, pp. 78-86.
  * </p>
- * 下述论文最先提出了此协议的概念：
+ * The concept of this protocol first comes from the following paper:
  * <p>
  * C A Meadows. A more efficient cryptographic match-making protocol for use in the absence of a continuously available
  * third party. S&P 1986, IEEE, 1986, pp. 134–137.
@@ -19,28 +19,28 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
  */
 class Hfh99EccPsiPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 9036599447854733431L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "HFH99_ECC_PSI";
 
     /**
-     * 协议步骤
+     * protocol steps
      */
     enum PtoStep {
         /**
-         * 客户端发送H(Y)^β
+         * client sends H(Y)^β
          */
         CLIENT_SEND_HY_BETA,
         /**
-         * 服务端发送H(X)^α
+         * server sends H(X)^α
          */
         SERVER_SEND_HX_ALPHA,
         /**
-         * 服务端发送H(Y)^βα
+         * server sends H(Y)^βα
          */
         CLIENT_SEND_HY_BETA_ALPHA,
     }

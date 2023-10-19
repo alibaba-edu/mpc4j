@@ -96,6 +96,10 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      */
     private String ptoEndLogPrefix;
     /**
+     * display log level
+     */
+    private int displayLogLevel;
+    /**
      * the extra information
      */
     protected long extraInfo;
@@ -143,6 +147,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
         envType = config.getEnvType();
         secureRandom = new SecureRandom();
         parallel = false;
+        displayLogLevel = DISPLAY_LOG_LEVEL;
     }
 
     protected void addSubPtos(MultiPartyPto subPto) {
@@ -259,6 +264,15 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
     @Override
     public EnvType getEnvType() {
         return envType;
+    }
+
+    @Override
+    public void setDisplayLogLevel(int displayLogLevel) {
+        MathPreconditions.checkNonNegative("display_log_level", displayLogLevel);
+        this.displayLogLevel = displayLogLevel;
+        for (MultiPartyPto subPto : subPtos) {
+            subPto.setDisplayLogLevel(displayLogLevel);
+        }
     }
 
     /**
@@ -453,7 +467,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      * @param message the message string to be logged.
      */
     protected void info(String message) {
-        if (treeLevel < DISPLAY_LOG_LEVEL) {
+        if (treeLevel < displayLogLevel) {
             LOGGER.info(message);
         }
     }
@@ -467,7 +481,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      * @param arg1   the second argument.
      */
     protected void info(String format, Object arg0, Object arg1) {
-        if (treeLevel < DISPLAY_LOG_LEVEL) {
+        if (treeLevel < displayLogLevel) {
             LOGGER.info(format, arg0, arg1);
         }
     }
@@ -480,7 +494,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      * @param arguments a list of 3 or more arguments
      */
     protected void info(String format, Object... arguments) {
-        if (treeLevel < DISPLAY_LOG_LEVEL) {
+        if (treeLevel < displayLogLevel) {
             LOGGER.info(format, arguments);
         }
     }

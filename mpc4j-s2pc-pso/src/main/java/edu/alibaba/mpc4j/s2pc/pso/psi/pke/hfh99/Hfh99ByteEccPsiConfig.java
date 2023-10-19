@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psi.PsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory;
 
 /**
- * HFH99-字节椭圆曲线PSI协议配置项。
+ * HFH99-byte ecc PSI configure
  *
  * @author Weiran Liu
  * @date 2022/9/19

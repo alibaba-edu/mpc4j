@@ -44,18 +44,6 @@ public class Alpr21KwPirPtoDesc implements PtoDesc {
          * server send item response
          */
         SERVER_SEND_RESPONSE,
-        /**
-         * server send label response
-         */
-        SERVER_SEND_LABEL_RESPONSE,
-        /**
-         * client send blind
-         */
-        CLIENT_SEND_BLIND,
-        /**
-         * server send blind prf
-         */
-        SERVER_SEND_BLIND_PRF,
     }
 
     /**

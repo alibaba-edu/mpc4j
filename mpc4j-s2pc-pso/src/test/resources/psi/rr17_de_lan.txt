@@ -1,0 +1,23 @@
+# protocol type
+pto_type = PSI
+
+# element byte length
+element_byte_length = 16
+
+# parties log set size (log(n))
+server_log_set_size = 12,10
+client_log_set_size = 12,10
+
+# protocol name
+psi_pto_name = RR17_DE
+
+# specific config
+divParam = 4
+append_string = _lan
+
+server_name = server
+server_ip = localhost
+server_port = 8090
+client_name = client
+client_ip = localhost
+client_port = 8091

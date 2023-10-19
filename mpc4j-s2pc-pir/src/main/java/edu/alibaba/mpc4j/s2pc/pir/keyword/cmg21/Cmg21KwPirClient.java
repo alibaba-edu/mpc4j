@@ -117,7 +117,11 @@ public class Cmg21KwPirClient extends AbstractKwPirClient {
         if (maxRetrievalSize > 1) {
             params = Cmg21KwPirParams.SERVER_1M_CLIENT_MAX_4096;
         } else {
-            params = Cmg21KwPirParams.SERVER_1M_CLIENT_MAX_1;
+            if (serverElementSize <= (1 << 20)) {
+                params = Cmg21KwPirParams.SERVER_1M_CLIENT_MAX_1;
+            } else {
+                params = Cmg21KwPirParams.SERVER_16M_CLIENT_MAX_1;
+            }
         }
         setInitInput(maxRetrievalSize, serverElementSize, valueByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);

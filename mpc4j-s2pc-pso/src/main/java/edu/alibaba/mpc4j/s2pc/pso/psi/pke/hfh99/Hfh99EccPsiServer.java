@@ -20,26 +20,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * HFH99-椭圆曲线PSI协议服务端。
+ * HFH99-ecc PSI server
  *
  * @author Weiran Liu
  * @date 2022/9/19
  */
 public class Hfh99EccPsiServer<T> extends AbstractPsiServer<T> {
     /**
-     * 椭圆曲线
+     * ecc curve
      */
     private final Ecc ecc;
     /**
-     * 是否压缩编码
+     * compress encode?
      */
     private final boolean compressEncode;
     /**
-     * PEQT哈希函数
+     * PEQT hash function
      */
     private Hash peqtHash;
     /**
-     * 密钥
+     * server key
      */
     private BigInteger alpha;
 
@@ -55,7 +55,7 @@ public class Hfh99EccPsiServer<T> extends AbstractPsiServer<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 生成α
+        // generate α
         alpha = ecc.randomZn(secureRandom);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -73,7 +73,7 @@ public class Hfh99EccPsiServer<T> extends AbstractPsiServer<T> {
         stopWatch.start();
         int peqtByteLength = PsiUtils.getSemiHonestPeqtByteLength(serverElementSize, clientElementSize);
         peqtHash = HashFactory.createInstance(envType, peqtByteLength);
-        // 服务端计算并发送H(x)^α
+        // server computes and sends H(x)^α
         List<byte[]> hxAlphaPayload = generateHxAlphaPayload();
         DataPacketHeader hxAlphaHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_HX_ALPHA.ordinal(), extraInfo,
@@ -85,7 +85,7 @@ public class Hfh99EccPsiServer<T> extends AbstractPsiServer<T> {
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 2, hxAlphaTime);
 
-        // 服务端接收H(y)^β
+        // server receives H(y)^β
         DataPacketHeader hyBetaHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_HY_BETA.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
@@ -93,7 +93,7 @@ public class Hfh99EccPsiServer<T> extends AbstractPsiServer<T> {
         List<byte[]> hyBetaPayload = rpc.receive(hyBetaHeader).getPayload();
 
         stopWatch.start();
-        // 服务端计算并发送H(y)^βα
+        // server computes and sends H(y)^βα
         List<byte[]> peqtPayload = handleHyBetaPayload(hyBetaPayload);
         DataPacketHeader peqtHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_HY_BETA_ALPHA.ordinal(), extraInfo,

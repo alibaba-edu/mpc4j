@@ -131,6 +131,24 @@ public class MainPsiTest extends AbstractTwoPartyPtoTest {
         configurations.add(new Object[] {
             PsiType.CZZ22.name(), "psi/czz22.txt",
         });
+        // RR16
+        configurations.add(new Object[] {
+            PsiType.RR16.name(), "psi/rr16.txt",
+        });
+        // RR17_DE
+        configurations.add(new Object[] {
+            PsiType.RR17_DE.name(), "psi/rr17_de_lan.txt",
+        });
+        configurations.add(new Object[] {
+            PsiType.RR17_DE.name(), "psi/rr17_de_wan.txt",
+        });
+        // RR17_EC
+        configurations.add(new Object[] {
+            PsiType.RR17_EC.name(), "psi/rr17_ec_lan.txt",
+        });
+        configurations.add(new Object[] {
+            PsiType.RR17_EC.name(), "psi/rr17_ec_wan.txt",
+        });
 
         return configurations;
     }

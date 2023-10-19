@@ -118,6 +118,13 @@ public interface MultiPartyPto {
     String getPtoName();
 
     /**
+     * Sets display log level.
+     *
+     * @param displayLogLevel display log level.
+     */
+    void setDisplayLogLevel(int displayLogLevel);
+
+    /**
      * Checks if the protocol (and its sub-protocols) is initialized.
      *
      * @throws IllegalStateException if the protocol (or its sub-protocols) is not initialized.

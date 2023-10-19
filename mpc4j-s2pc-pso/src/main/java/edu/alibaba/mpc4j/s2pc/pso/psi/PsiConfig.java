@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory.PsiType;
 
 /**
- * PSI协议配置项。
+ * PSI protocol configure
  *
  * @author Weiran Liu
  * @date 2022/9/19

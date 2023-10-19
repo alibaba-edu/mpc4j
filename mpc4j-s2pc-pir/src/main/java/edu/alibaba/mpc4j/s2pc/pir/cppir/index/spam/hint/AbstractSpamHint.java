@@ -75,7 +75,7 @@ public abstract class AbstractSpamHint implements SpamHint {
             // 1 for "offset"
             .putShort((short) 1)
             .array();
-        return Math.abs(ByteBuffer.wrap(PRP.prp(prpInput)).getInt()) % chunkSize;
+        return Math.abs(ByteBuffer.wrap(PRP.prp(prpInput)).getInt() % chunkSize);
     }
 
     /**

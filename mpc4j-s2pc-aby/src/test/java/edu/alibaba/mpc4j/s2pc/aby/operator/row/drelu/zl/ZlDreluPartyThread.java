@@ -46,7 +46,10 @@ public class ZlDreluPartyThread extends Thread {
     @Override
     public void run() {
         try {
+            party.getRpc().synchronize();
             party.init(l, num);
+            party.getRpc().reset();
+            party.getRpc().synchronize();
             shareZ = party.drelu(shareX);
         } catch (MpcAbortException e) {
             e.printStackTrace();

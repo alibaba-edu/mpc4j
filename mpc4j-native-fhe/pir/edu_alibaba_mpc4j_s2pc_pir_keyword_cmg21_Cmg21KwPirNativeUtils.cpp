@@ -87,9 +87,6 @@ JNIEXPORT jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwP
     if (!context.first_context_data()->qualifiers().using_batching) {
         return env->ThrowNew(exception, "SEAL parameters do not support batching.");
     }
-    if (!context.using_keyswitching()) {
-        return env->ThrowNew(exception, "SEAL parameters do not support key switching.");
-    }
     KeyGenerator key_gen = KeyGenerator(context);
     const SecretKey &secret_key = key_gen.secret_key();
     RelinKeys relin_keys;

@@ -45,7 +45,10 @@ class MillionairePartyThread extends Thread {
     @Override
     public void run() {
         try {
+            party.getRpc().synchronize();
             party.init(l, num);
+            party.getRpc().reset();
+            party.getRpc().synchronize();
             zi = party.lt(l, inputs);
         } catch (MpcAbortException e) {
             e.printStackTrace();

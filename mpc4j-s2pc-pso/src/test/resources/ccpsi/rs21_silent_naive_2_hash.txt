@@ -1,0 +1,24 @@
+# protocol type
+pto_type = CCPSI
+
+# element byte length
+element_byte_length = 16
+
+# parties log set size (log(n))
+server_log_set_size = 12,10
+client_log_set_size = 12,10
+
+# protocol name
+circuit_psi_pto_name = RS21
+
+# specific config
+cuckoo_hash_bin_type = NAIVE_2_HASH
+silent = true
+append_string = _silent_naive_2_hash
+
+server_name = server
+server_ip = localhost
+server_port = 8090
+client_name = client
+client_ip = localhost
+client_port = 8091

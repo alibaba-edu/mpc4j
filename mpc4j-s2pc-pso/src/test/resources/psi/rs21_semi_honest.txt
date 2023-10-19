@@ -14,3 +14,10 @@ psi_pto_name = RS21
 # specific config
 security_model = SEMI_HONEST
 append_string = _semi_honest
+
+server_name = server
+server_ip = localhost
+server_port = 8090
+client_name = client
+client_ip = localhost
+client_port = 8091

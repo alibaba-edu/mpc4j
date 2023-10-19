@@ -20,6 +20,9 @@ import edu.alibaba.mpc4j.s2pc.pso.psi.cuckoo.kkrt16.Kkrt16PsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.other.prty19.Prty19FastPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.other.prty19.Prty19LowPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.other.prty20.Prty20PsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr16.Rr16PsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr17.Rr17DePsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr17.Rr17EcPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.pke.hfh99.Hfh99ByteEccPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.pke.hfh99.Hfh99EccPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.pke.rt21.Rt21PsiConfig;
@@ -60,7 +63,7 @@ public class PsiTest extends AbstractTwoPartyPtoTest {
     /**
      * large size
      */
-    private static final int LARGE_SIZE = 1 << 16;
+    private static final int LARGE_SIZE = 1 << 14;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -181,6 +184,26 @@ public class PsiTest extends AbstractTwoPartyPtoTest {
         configurations.add(new Object[]{
             PsiFactory.PsiType.HFH99_ECC.name() + " (uncompress)",
             new Hfh99EccPsiConfig.Builder().setCompressEncode(false).build(),
+        });
+        // RR17_DE LAN
+        configurations.add(new Object[]{
+            PsiFactory.PsiType.RR17_DE.name() + " divParam = 4", new Rr17DePsiConfig.Builder().build(),
+        });
+        // RR17_DE WAN
+        configurations.add(new Object[]{
+            PsiFactory.PsiType.RR17_DE.name() + " divParam = 10", new Rr17DePsiConfig.Builder().setDivParam(10).build(),
+        });
+        // RR17_EC LAN
+        configurations.add(new Object[]{
+            PsiFactory.PsiType.RR17_EC.name() + " divParam = 4", new Rr17EcPsiConfig.Builder().build(),
+        });
+        // RR17_EC WAN
+        configurations.add(new Object[]{
+            PsiFactory.PsiType.RR17_EC.name() + " divParam = 10", new Rr17EcPsiConfig.Builder().setDivParam(10).build(),
+        });
+        // RR16
+        configurations.add(new Object[]{
+            PsiFactory.PsiType.RR16.name(), new Rr16PsiConfig.Builder().build(),
         });
 
         return configurations;

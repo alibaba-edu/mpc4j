@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
+import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2k.Gf2kDokvsFactory.Gf2kDokvsType;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtConfig;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.batch.BopprfConfig;
@@ -68,7 +69,7 @@ public class Rs21CcpsiConfig extends AbstractMultiPartyPtoConfig implements Bopp
         /**
          * Batch OPPRF config
          */
-        private final BopprfConfig bopprfConfig;
+        private BopprfConfig bopprfConfig;
         /**
          * private equality test config
          */
@@ -88,6 +89,13 @@ public class Rs21CcpsiConfig extends AbstractMultiPartyPtoConfig implements Bopp
 
         public Builder setPeqtConfig(PeqtConfig peqtConfig) {
             this.peqtConfig = peqtConfig;
+            return this;
+        }
+
+        public Builder setOkveType(Gf2kDokvsType okvsType){
+            this.bopprfConfig = new OkvsBopprfConfig.Builder()
+                .setOprfConfig(new Rs21MpOprfConfig.Builder(SecurityModel.SEMI_HONEST).setOkvsType(okvsType).build())
+                .build();
             return this;
         }
 

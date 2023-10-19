@@ -6,28 +6,28 @@ import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import java.util.Set;
 
 /**
- * PSI协议客户端接口。
+ * PSI client interface
  *
  * @author Weiran Liu
  * @date 2022/9/19
  */
 public interface PsiClient<T> extends TwoPartyPto {
     /**
-     * 初始化协议。
+     * init protocol
      *
-     * @param maxClientElementSize 客户端最大元素数量。
-     * @param maxServerElementSize 服务端最大元素数量。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param maxClientElementSize max size of elements of client
+     * @param maxServerElementSize max size of elements of server
+     * @throws MpcAbortException If protocol aborts
      */
     void init(int maxClientElementSize, int maxServerElementSize) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * run protocol
      *
-     * @param clientElementSet  客户端元素集合。
-     * @param serverElementSize 服务端元素数量。
-     * @return 协议输出结果。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param clientElementSet  the set of client's elements
+     * @param serverElementSize the size of elements of server
+     * @return set intersection
+     * @throws MpcAbortException If protocol aborts
      */
     Set<T> psi(Set<T> clientElementSet, int serverElementSize) throws MpcAbortException;
 }

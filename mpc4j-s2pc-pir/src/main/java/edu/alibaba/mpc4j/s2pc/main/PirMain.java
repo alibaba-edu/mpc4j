@@ -3,8 +3,12 @@ package edu.alibaba.mpc4j.s2pc.main;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.main.batchindex.BatchIndexPirMain;
 import edu.alibaba.mpc4j.s2pc.main.ccpsi.CcpsiMain;
+import edu.alibaba.mpc4j.s2pc.main.payablepir.PayablePirMain;
 import edu.alibaba.mpc4j.s2pc.main.scpsi.ScpsiMain;
 import edu.alibaba.mpc4j.s2pc.main.ucpsi.UcpsiMain;
+import edu.alibaba.mpc4j.s2pc.main.cppir.index.SingleCpPirMain;
+import edu.alibaba.mpc4j.s2pc.main.cppir.keyword.SingleCpKsPirMain;
+import edu.alibaba.mpc4j.s2pc.main.kwpir.KwPirMain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +52,22 @@ public class PirMain {
             case BatchIndexPirMain.TASK_NAME:
                 BatchIndexPirMain batchIndexPirMain = new BatchIndexPirMain(properties);
                 batchIndexPirMain.run();
+                break;
+            case SingleCpPirMain.TASK_NAME:
+                SingleCpPirMain singleCpPirMain = new SingleCpPirMain(properties);
+                singleCpPirMain.run();
+                break;
+            case SingleCpKsPirMain.TASK_NAME:
+                SingleCpKsPirMain singleCpKsPirMain = new SingleCpKsPirMain(properties);
+                singleCpKsPirMain.run();
+                break;
+            case KwPirMain.TASK_NAME:
+                KwPirMain kwPirMain = new KwPirMain(properties);
+                kwPirMain.run();
+                break;
+            case PayablePirMain.TASK_NAME:
+                PayablePirMain payablePirMain = new PayablePirMain(properties);
+                payablePirMain.run();
                 break;
             default:
                 throw new IllegalArgumentException("Invalid task_type: " + taskType);

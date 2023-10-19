@@ -74,6 +74,10 @@ add_library(
         pir/edu_alibaba_mpc4j_s2pc_upso_ucpsi_sj23_peqt_Sj23PeqtUcpsiNativeUtils.cpp
         pir/edu_alibaba_mpc4j_s2pc_upso_ucpsi_sj23_pdsm_Sj23PdsmUcpsiNativeUtils.cpp)
 # 链接SEAL库
-target_link_libraries(mpc4j-native-fhe PUBLIC SEAL::seal_shared)
-#target_link_libraries(mpc4j-native-fhe PUBLIC SEAL::seal)
-
+if(TARGET SEAL::seal)
+    target_link_libraries(mpc4j-native-fhe PUBLIC SEAL::seal)
+elseif(TARGET SEAL::seal_shared)
+    target_link_libraries(mpc4j-native-fhe PUBLIC SEAL::seal_shared)
+else()
+    message(FATAL_ERROR "Cannot find target SEAL::seal or SEAL::seal_shared")
+endif()

@@ -15,3 +15,10 @@ psi_pto_name = RR22
 security_model = SEMI_HONEST
 okvs_type = H3_CLUSTER_BINARY_BLAZE_GCT
 append_string = _semi_honest_h3_cluster_binary_blaze_gct
+
+server_name = server
+server_ip = localhost
+server_port = 8090
+client_name = client
+client_ip = localhost
+client_port = 8091

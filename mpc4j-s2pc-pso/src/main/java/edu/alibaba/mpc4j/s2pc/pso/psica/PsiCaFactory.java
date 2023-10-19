@@ -9,6 +9,9 @@ import edu.alibaba.mpc4j.s2pc.pso.psica.cgt12.Cgt12EccPsiCaServer;
 import edu.alibaba.mpc4j.s2pc.pso.psica.ccpsi.CcPsiCaClient;
 import edu.alibaba.mpc4j.s2pc.pso.psica.ccpsi.CcPsiCaConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psica.ccpsi.CcPsiCaServer;
+import edu.alibaba.mpc4j.s2pc.pso.psica.gmr21.Gmr21PsiCaClient;
+import edu.alibaba.mpc4j.s2pc.pso.psica.gmr21.Gmr21PsiCaConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psica.gmr21.Gmr21PsiCaServer;
 import edu.alibaba.mpc4j.s2pc.pso.psica.hfh99.Hfh99EccPsiCaClient;
 import edu.alibaba.mpc4j.s2pc.pso.psica.hfh99.Hfh99EccPsiCaConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psica.hfh99.Hfh99EccPsiCaServer;
@@ -51,6 +54,10 @@ public class PsiCaFactory implements PtoFactory {
          * client-payload circuit PSI
          */
         CCPSI,
+        /**
+         * GMR21
+         */
+        GMR21,
     }
 
     /**
@@ -70,6 +77,8 @@ public class PsiCaFactory implements PtoFactory {
                 return new Cgt12EccPsiCaServer<>(serverRpc, clientParty, (Cgt12EccPsiCaConfig) config);
             case CCPSI:
                 return new CcPsiCaServer<>(serverRpc, clientParty, (CcPsiCaConfig) config);
+            case GMR21:
+                return new Gmr21PsiCaServer<>(serverRpc, clientParty, (Gmr21PsiCaConfig) config);
             case HFH99_BYTE_ECC:
             case CGR12_BYTE_ECC:
             default:
@@ -94,6 +103,8 @@ public class PsiCaFactory implements PtoFactory {
                 return new Cgt12EccPsiCaClient<>(clientRpc, serverParty, (Cgt12EccPsiCaConfig) config);
             case CCPSI:
                 return new CcPsiCaClient<>(clientRpc, serverParty, (CcPsiCaConfig) config);
+            case GMR21:
+                return new Gmr21PsiCaClient<>(clientRpc, serverParty, (Gmr21PsiCaConfig) config);
             case HFH99_BYTE_ECC:
             case CGR12_BYTE_ECC:
             default:

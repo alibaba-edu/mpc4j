@@ -31,6 +31,10 @@ import edu.alibaba.mpc4j.s2pc.pso.psi.other.prty19.*;
 import edu.alibaba.mpc4j.s2pc.pso.psi.other.prty20.Prty20PsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.psi.other.prty20.Prty20PsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.other.prty20.Prty20PsiServer;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr16.Rr16PsiClient;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr16.Rr16PsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr16.Rr16PsiServer;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr17.*;
 import edu.alibaba.mpc4j.s2pc.pso.psi.pke.hfh99.*;
 import edu.alibaba.mpc4j.s2pc.pso.psi.cuckoo.psz14.*;
 import edu.alibaba.mpc4j.s2pc.pso.psi.sqoprf.ra17.*;
@@ -124,6 +128,18 @@ public class PsiFactory implements PtoFactory {
          * RT21
          */
         RT21,
+        /**
+         * RR17 Dual Execution
+         */
+        RR17_DE,
+        /**
+         * RR17 Encode-Commit
+         */
+        RR17_EC,
+        /**
+         * RR16
+         */
+        RR16
     }
 
     /**
@@ -171,6 +187,12 @@ public class PsiFactory implements PtoFactory {
                 return new Rs21PsiServer<>(serverRpc, clientParty, (Rs21PsiConfig) config);
             case RR22:
                 return new Rr22PsiServer<>(serverRpc, clientParty, (Rr22PsiConfig) config);
+            case RR17_DE:
+                return new Rr17DePsiServer<>(serverRpc, clientParty, (Rr17DePsiConfig) config);
+            case RR17_EC:
+                return new Rr17EcPsiServer<>(serverRpc, clientParty, (Rr17EcPsiConfig) config);
+            case RR16:
+                return new Rr16PsiServer<>(serverRpc, clientParty, (Rr16PsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + PsiType.class.getSimpleName() + ": " + type.name());
         }
@@ -221,6 +243,12 @@ public class PsiFactory implements PtoFactory {
                 return new Rs21PsiClient<>(clientRpc, serverParty, (Rs21PsiConfig) config);
             case RR22:
                 return new Rr22PsiClient<>(clientRpc, serverParty, (Rr22PsiConfig) config);
+            case RR17_DE:
+                return new Rr17DePsiClient<>(clientRpc, serverParty, (Rr17DePsiConfig) config);
+            case RR17_EC:
+                return new Rr17EcPsiClient<>(clientRpc, serverParty, (Rr17EcPsiConfig) config);
+            case RR16:
+                return new Rr16PsiClient<>(clientRpc, serverParty, (Rr16PsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + PsiType.class.getSimpleName() + ": " + type.name());
         }

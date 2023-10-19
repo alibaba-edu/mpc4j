@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.H3NaiveGctDokvsUtils;
 import java.security.SecureRandom;
 
 /**
- * garbled cuckoo table with 2 hash functions. The non-doubly construction is from the following paper:
+ * garbled cuckoo table with 3 hash functions. The non-doubly construction is from the following paper:
  * <p>
  * Garimella G, Pinkas B, Rosulek M, et al. Oblivious Key-Value Stores and Amplification for Private Set Intersection.
  * CRYPTO 2021, Springer, Cham, 2021, pp. 395-425.

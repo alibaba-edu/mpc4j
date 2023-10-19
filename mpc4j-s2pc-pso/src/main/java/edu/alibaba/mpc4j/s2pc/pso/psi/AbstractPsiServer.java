@@ -10,30 +10,30 @@ import java.util.ArrayList;
 import java.util.Set;
 
 /**
- * PSI协议服务端。
+ * PSI abstract client
  *
  * @author Weiran Liu
  * @date 2022/9/19
  */
 public abstract class AbstractPsiServer<T> extends AbstractTwoPartyPto implements PsiServer<T> {
     /**
-     * 服务端最大元素数量
+     * the max size of server's elements
      */
     private int maxServerElementSize;
     /**
-     * 客户端最大元素数量
+     * the max size of client's elements
      */
     private int maxClientElementSize;
     /**
-     * 服务端元素数组
+     * the set of server's element
      */
     protected ArrayList<T> serverElementArrayList;
     /**
-     * 服务端元素数量
+     * the real input size of server
      */
     protected int serverElementSize;
     /**
-     * 客户端元素数量
+     * the real input size of client
      */
     protected int clientElementSize;
 

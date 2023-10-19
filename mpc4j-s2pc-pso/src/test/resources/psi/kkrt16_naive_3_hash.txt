@@ -14,3 +14,10 @@ psi_pto_name = KKRT16
 # specific config
 cuckoo_hash_bin_type = NAIVE_3_HASH
 append_string = _naive_3_hash
+
+server_name = server
+server_ip = localhost
+server_port = 8090
+client_name = client
+client_ip = localhost
+client_port = 8091

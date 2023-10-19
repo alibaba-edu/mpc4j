@@ -50,6 +50,6 @@ public class PsiUtils {
          * CM20 paper suggests log_2(Q_2 * n_2) + σ, where Q_2 is the maximal number of PRF queries for the adversary.
          * CM20 implementation assumes Q_2 = 2^64, i.e., log_2(n) + λ + 64.
          */
-        return CommonConstants.STATS_BYTE_LENGTH + 64 + LongUtils.ceilLog2(clientElementSize);
+        return CommonConstants.STATS_BYTE_LENGTH + CommonUtils.getByteLength(64 + LongUtils.ceilLog2(clientElementSize));
     }
 }

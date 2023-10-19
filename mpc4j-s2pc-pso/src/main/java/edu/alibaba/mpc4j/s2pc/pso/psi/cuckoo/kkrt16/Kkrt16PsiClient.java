@@ -28,50 +28,50 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * KKRT16-PSI客户端。
+ * KKRT16-PSI client
  *
  * @author Weiran Liu
  * @date 2022/9/20
  */
 public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
     /**
-     * OPRF接收方
+     * OPRF receiver
      */
     private final OprfReceiver oprfReceiver;
     /**
-     * 布谷鸟哈希类型
+     * The type of cuckoo hash
      */
     private final CuckooHashBinType cuckooHashBinType;
     /**
-     * 布谷鸟哈希函数数量
+     * The number of hash functions
      */
     private final int cuckooHashNum;
     /**
-     * PEQT哈希函数
+     * PEQT hash function
      */
     private Hash peqtHash;
     /**
-     * 哈希桶数量
+     * The number of cuckoo hash bin
      */
     private int binNum;
     /**
-     * 贮存区大小
+     * The maximum stash size of cuckoo hash
      */
     private int stashSize;
     /**
-     * 布谷鸟哈希
+     * Cuckoo hash bin
      */
     private CuckooHashBin<T> cuckooHashBin;
     /**
-     * 客户端布谷鸟哈希中元素的PRF结果
+     * The result of PRF of elements in client's cuckoo hash table
      */
     private ArrayList<byte[]> clientOprfArrayList;
     /**
-     * 服务端哈希桶中元素的PRF结果
+     * The result of PRF of elements in server's hash table
      */
     private ArrayList<Filter<byte[]>> serverBinPrfFilterArrayList;
     /**
-     * 服务端贮存区中元素的PRF结果
+     * The result of PRF of elements in server's stash
      */
     private ArrayList<Filter<byte[]>> serverStashPrfFilterArrayList;
 
@@ -139,7 +139,7 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
         logStepInfo(PtoState.PTO_STEP, 2, 3, oprfTime);
 
         stopWatch.start();
-        // 接收服务端哈希桶PRF过滤器
+        // receiving filter of PRF from server
         serverBinPrfFilterArrayList = new ArrayList<>(cuckooHashNum);
         serverBinPrfFilterArrayList.ensureCapacity(cuckooHashNum);
         for (int hashIndex = 0; hashIndex < cuckooHashNum; hashIndex++) {
@@ -151,7 +151,7 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
             extraInfo++;
             handleServerBinPrfPayload(serverBinPrfPayload);
         }
-        // 接受服务端贮存区PRF过滤器
+        // receiving filter of PRF of elements in stash from server
         serverStashPrfFilterArrayList = new ArrayList<>(stashSize);
         serverStashPrfFilterArrayList.ensureCapacity(stashSize);
         for (int stashIndex = 0; stashIndex < stashSize; stashIndex++) {
@@ -163,7 +163,7 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
             extraInfo++;
             handleServerStashPrfPayload(serverBinPrfPayload);
         }
-        // 求交集
+        // intersection
         Set<T> intersection = handleServerPrf();
         stopWatch.stop();
         long serverPrfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -183,7 +183,7 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
     }
 
     private byte[][] generateExtendElementByteArrays() {
-        // 前面是桶中的元素，后面的是贮存区中的元素
+        // The front elements come from hash bin, and the following is the elements in the stash.
         byte[][] extendElementByteArrays = new byte[binNum + stashSize][];
         IntStream.range(0, binNum).forEach(binIndex -> {
             HashBinEntry<T> hashBinEntry = cuckooHashBin.getHashBinEntry(binIndex);
@@ -220,12 +220,12 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
     }
 
     private Set<T> handleServerPrf() {
-        // 遍历布谷鸟哈希中的哈希桶
+        // handle all elements in the hash table
         Set<T> intersection = IntStream.range(0, binNum)
             .mapToObj(binIndex -> {
                 HashBinEntry<T> hashBinEntry = cuckooHashBin.getHashBinEntry(binIndex);
                 if (hashBinEntry.getHashIndex() == HashBinEntry.DUMMY_ITEM_HASH_INDEX) {
-                    // 虚拟节点，肯定不在交集中
+                    // dummy item
                     return null;
                 }
                 T element = hashBinEntry.getItem();
@@ -236,13 +236,13 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
             .filter(Objects::nonNull)
             .collect(Collectors.toSet());
         serverBinPrfFilterArrayList = null;
-        // 遍历贮存区的元素
+        // handle all elements in the stash
         ArrayList<HashBinEntry<T>> stash = cuckooHashBin.getStash();
         Set<T> stashIntersection = IntStream.range(0, cuckooHashBin.stashSize())
             .mapToObj(stashIndex -> {
                 HashBinEntry<T> hashBinEntry = stash.get(stashIndex);
                 if (hashBinEntry.getHashIndex() == HashBinEntry.DUMMY_ITEM_HASH_INDEX) {
-                    // 虚拟节点，肯定不在交集中
+                    // dummy item
                     return null;
                 }
                 T element = hashBinEntry.getItem();

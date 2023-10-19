@@ -46,7 +46,7 @@ public class ZlDreluTest extends AbstractTwoPartyPtoTest {
     /**
      * default Zl
      */
-    private static final Zl DEFAULT_ZL = ZlFactory.createInstance(EnvType.STANDARD, Integer.SIZE);
+    private static final Zl DEFAULT_ZL = ZlFactory.createInstance(EnvType.STANDARD, Double.SIZE);
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -55,7 +55,12 @@ public class ZlDreluTest extends AbstractTwoPartyPtoTest {
         // RRK+20
         configurations.add(new Object[]{
             ZlDreluFactory.ZlDreluType.RRK20.name(),
-            new Rrk20ZlDreluConfig.Builder().build()
+            new Rrk20ZlDreluConfig.Builder(false).build()
+        });
+
+        configurations.add(new Object[]{
+            ZlDreluFactory.ZlDreluType.RRK20.name() + " silent OT",
+            new Rrk20ZlDreluConfig.Builder(true).build()
         });
 
         return configurations;

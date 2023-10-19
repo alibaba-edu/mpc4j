@@ -4,11 +4,11 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * HFH99-字节椭圆曲线PSI协议信息。下述论文最先提出了此协议：
+ * HFH99-byte ecc PSI description. The protocol first comes from the following paper:
  * <p>
  * Huberman B A, Franklin M, Hogg T. Enhancing privacy and trust in electronic communities. FC 1999, Citeseer, pp. 78-86.
  * </p>
- * 下述论文最先提出了此协议的概念：
+ * The concept of this protocol first comes from the following paper:
  * <p>
  * C A Meadows. A more efficient cryptographic match-making protocol for use in the absence of a continuously available
  * third party. S&P 1986, IEEE, 1986, pp. 134–137.

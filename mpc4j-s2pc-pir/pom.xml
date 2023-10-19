@@ -23,6 +23,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-rpc</artifactId>
             <version>1.0.9</version>

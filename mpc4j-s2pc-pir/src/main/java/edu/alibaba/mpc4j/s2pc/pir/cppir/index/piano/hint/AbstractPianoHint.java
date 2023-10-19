@@ -77,7 +77,7 @@ public abstract class AbstractPianoHint implements PianoHint {
             .put(hintId)
             .putShort((short) chunkId)
             .array();
-        return Math.abs(ByteBuffer.wrap(PRP.prp(prpInput)).getInt()) % chunkSize;
+        return Math.abs(ByteBuffer.wrap(PRP.prp(prpInput)).getInt() % chunkSize);
     }
 
     @Override

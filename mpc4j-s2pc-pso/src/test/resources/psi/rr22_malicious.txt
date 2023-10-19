@@ -15,3 +15,10 @@ psi_pto_name = RR22
 security_model = MALICIOUS
 okvs_type = H3_CLUSTER_FIELD_BLAZE_GCT
 append_string = _malicious
+
+server_name = server
+server_ip = localhost
+server_port = 8090
+client_name = client
+client_ip = localhost
+client_port = 8091

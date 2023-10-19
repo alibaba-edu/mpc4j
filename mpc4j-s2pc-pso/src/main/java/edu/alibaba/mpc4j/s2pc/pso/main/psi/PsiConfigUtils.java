@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pso.main.psi;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
@@ -16,6 +17,9 @@ import edu.alibaba.mpc4j.s2pc.pso.psi.other.dcw13.Dcw13PsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.mpoprf.cm20.Cm20PsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.mqrpmt.czz22.Czz22PsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.mqrpmt.gmr21.Gmr21PsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr16.Rr16PsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr17.Rr17DePsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psi.other.rr17.Rr17EcPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.pke.hfh99.Hfh99ByteEccPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.pke.hfh99.Hfh99EccPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.cuckoo.kkrt16.Kkrt16PsiConfig;
@@ -54,7 +58,7 @@ public class PsiConfigUtils {
             case KKRT16:
                 return createKkrt16PsiConfig(properties);
             case CM20:
-                return createCm20PsiConfig();
+                return createCm20PsiConfig(properties);
             case RA17_ECC:
                 return createRa17EccPsiConfig();
             case RA17_BYTE_ECC:
@@ -64,7 +68,7 @@ public class PsiConfigUtils {
             case PRTY19_LOW:
                 return createPrty19LowPsiConfig(properties);
             case PRTY19_FAST:
-                return createPrty19FastPsiConfig();
+                return createPrty19FastPsiConfig(properties);
             case GMR21:
                 return createGmr21PsiConfig(properties);
             case CZZ22:
@@ -81,6 +85,12 @@ public class PsiConfigUtils {
                 return createRs21PsiConfig(properties);
             case RR22:
                 return createRr22PsiConfig(properties);
+            case RR16:
+                return createRr16PsiConfig();
+            case RR17_DE:
+                return createRr17DePsiConfig(properties);
+            case RR17_EC:
+                return createRr17EcPsiConfig(properties);
             default:
                 throw new IllegalArgumentException("Invalid " + PsiType.class.getSimpleName() + ": " + psiType.name());
         }
@@ -100,11 +110,19 @@ public class PsiConfigUtils {
             properties, "cuckoo_hash_bin_type", CuckooHashBinType.NO_STASH_NAIVE.toString()
         );
         CuckooHashBinType cuckooHashBinType = CuckooHashBinType.valueOf(cuckooHashTypeString);
-        return new Kkrt16PsiConfig.Builder().setCuckooHashBinType(cuckooHashBinType).build();
+        String filterTypeString = PropertiesUtils.readString(
+            properties, "filter_type", FilterType.SET_FILTER.toString()
+        );
+        FilterType filterType = FilterType.valueOf(filterTypeString);
+        return new Kkrt16PsiConfig.Builder().setCuckooHashBinType(cuckooHashBinType).setFilterType(filterType).build();
     }
 
-    private static PsiConfig createCm20PsiConfig() {
-        return new Cm20PsiConfig.Builder().build();
+    private static PsiConfig createCm20PsiConfig(Properties properties) {
+        String filterTypeString = PropertiesUtils.readString(
+            properties, "filter_type", FilterType.SET_FILTER.toString()
+        );
+        FilterType filterType = FilterType.valueOf(filterTypeString);
+        return new Cm20PsiConfig.Builder().setFilterType(filterType).build();
     }
 
     private static PsiConfig createRa17EccPsiConfig() {
@@ -124,7 +142,11 @@ public class PsiConfigUtils {
             properties, "security_model", SecurityModel.MALICIOUS.toString()
         );
         SecurityModel securityModel = SecurityModel.valueOf(securityModelString);
-        return new Prty20PsiConfig.Builder(securityModel).setPaxosType(okvsType).build();
+        String filterTypeString = PropertiesUtils.readString(
+            properties, "filter_type", FilterType.SET_FILTER.toString()
+        );
+        FilterType filterType = FilterType.valueOf(filterTypeString);
+        return new Prty20PsiConfig.Builder(securityModel).setPaxosType(okvsType).setFilterType(filterType).build();
     }
 
     private static PsiConfig createPrty19LowPsiConfig(Properties properties) {
@@ -135,8 +157,12 @@ public class PsiConfigUtils {
         return new Prty19LowPsiConfig.Builder().setOkvsType(okvsType).build();
     }
 
-    private static PsiConfig createPrty19FastPsiConfig() {
-        return new Prty19FastPsiConfig.Builder().build();
+    private static PsiConfig createPrty19FastPsiConfig(Properties properties) {
+        String filterTypeString = PropertiesUtils.readString(
+            properties, "filter_type", FilterType.SET_FILTER.toString()
+        );
+        FilterType filterType = FilterType.valueOf(filterTypeString);
+        return new Prty19FastPsiConfig.Builder().setFilterType(filterType).build();
     }
 
     private static PsiConfig createGmr21PsiConfig(Properties properties) {
@@ -169,7 +195,11 @@ public class PsiConfigUtils {
             properties, "security_model", SecurityModel.SEMI_HONEST.toString()
         );
         SecurityModel securityModel = SecurityModel.valueOf(securityModelString);
-        return new Rs21PsiConfig.Builder(securityModel).build();
+        String filterTypeString = PropertiesUtils.readString(
+            properties, "filter_type", FilterType.SET_FILTER.toString()
+        );
+        FilterType filterType = FilterType.valueOf(filterTypeString);
+        return new Rs21PsiConfig.Builder(securityModel).setFilterType(filterType).build();
     }
 
     private static PsiConfig createRr22PsiConfig(Properties properties) {
@@ -181,6 +211,27 @@ public class PsiConfigUtils {
             properties, "okvs_type", Gf2kDokvsType.H3_CLUSTER_FIELD_BLAZE_GCT.toString()
         );
         Gf2kDokvsType okvsType = Gf2kDokvsType.valueOf(okvsTypeString);
-        return new Rr22PsiConfig.Builder(securityModel, okvsType).build();
+        String filterTypeString = PropertiesUtils.readString(
+            properties, "filter_type", FilterType.SET_FILTER.toString()
+        );
+        FilterType filterType = FilterType.valueOf(filterTypeString);
+        return new Rr22PsiConfig.Builder(securityModel, okvsType).setFilterType(filterType).build();
     }
+
+    private static PsiConfig createRr17DePsiConfig(Properties properties) {
+        int divParam = PropertiesUtils.readInt(properties, "divParam");
+        String filterTypeString = PropertiesUtils.readString(
+            properties, "filter_type", FilterType.SET_FILTER.toString()
+        );
+        FilterType filterType = FilterType.valueOf(filterTypeString);
+        return new Rr17DePsiConfig.Builder().setDivParam(divParam).setFilterType(filterType).build();
+    }
+    private static PsiConfig createRr17EcPsiConfig(Properties properties) {
+        int divParam = PropertiesUtils.readInt(properties, "divParam");
+        return new Rr17EcPsiConfig.Builder().setDivParam(divParam).build();
+    }
+    private static PsiConfig createRr16PsiConfig() {
+        return new Rr16PsiConfig.Builder().build();
+    }
+
 }

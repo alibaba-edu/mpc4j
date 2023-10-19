@@ -13,6 +13,10 @@ import java.util.stream.IntStream;
  * @date 2021/06/19
  */
 public class BytesUtils {
+    static final byte[] BYTE_WITH_FIX_NUM_OF_ONE = new byte[]{
+        0, 1, 3, 7, 15, 31, 63, 127
+    };
+
     /**
      * 私有构造函数。
      */
@@ -158,8 +162,11 @@ public class BytesUtils {
         // 这里的bitLength指的是要保留多少个比特位，因此可以取到[0, byteArray.length * Byte.SIZE]
         assert bitLength >= 0 && bitLength <= byteArray.length * Byte.SIZE
             : "bitLength must be in range [0, " + byteArray.length * Byte.SIZE + "]: " + bitLength;
-        for (int binaryIndex = 0; binaryIndex < byteArray.length * Byte.SIZE - bitLength; binaryIndex++) {
-            BinaryUtils.setBoolean(byteArray, binaryIndex, false);
+        int resBitNum = bitLength & 7;
+        int zeroByteNum = (byteArray.length * Byte.SIZE - bitLength) >> 3;
+        Arrays.fill(byteArray, 0, zeroByteNum, (byte) 0x00);
+        if (resBitNum != 0) {
+            byteArray[zeroByteNum] &= BYTE_WITH_FIX_NUM_OF_ONE[resBitNum];
         }
     }
 
@@ -183,12 +190,15 @@ public class BytesUtils {
         // 这里的bitLength指的是要保留多少个比特位，因此可以取到[0, byteArray.length * Byte.SIZE]
         assert bitLength >= 0 && bitLength <= byteArray.length * Byte.SIZE
             : "bitLength must be in range [0, " + byteArray.length * Byte.SIZE + "]: " + bitLength;
-        for (int binaryIndex = 0; binaryIndex < byteArray.length * Byte.SIZE - bitLength; binaryIndex++) {
-            if (BinaryUtils.getBoolean(byteArray, binaryIndex)) {
+        int resBitNum = bitLength & 7;
+        int zeroByteNum = (byteArray.length * Byte.SIZE - bitLength) >> 3;
+        for (int byteIndex = 0; byteIndex < zeroByteNum; byteIndex++) {
+            if (byteArray[byteIndex] != 0) {
                 return false;
             }
         }
-        return true;
+        // 如果没有前面几位需要置为0的byte，或者前面若干位确实是0，则返回true
+        return resBitNum == 0 || (byteArray[zeroByteNum] & BYTE_WITH_FIX_NUM_OF_ONE[resBitNum]) == byteArray[zeroByteNum];
     }
 
     /**
@@ -205,14 +215,7 @@ public class BytesUtils {
         if (byteArray.length != byteLength) {
             return false;
         }
-        assert bitLength >= 0 && bitLength <= byteLength * Byte.SIZE
-            : "bitLength must be in range [0, " + byteLength * Byte.SIZE + "]: " + bitLength;
-        for (int binaryIndex = 0; binaryIndex < byteArray.length * Byte.SIZE - bitLength; binaryIndex++) {
-            if (BinaryUtils.getBoolean(byteArray, binaryIndex)) {
-                return false;
-            }
-        }
-        return true;
+        return isReduceByteArray(byteArray, bitLength);
     }
 
     /**
@@ -225,7 +228,9 @@ public class BytesUtils {
         int byteLength = CommonUtils.getByteLength(bitLength);
         byte[] vector = new byte[byteLength];
         Arrays.fill(vector, (byte) 0xFF);
-        BytesUtils.reduceByteArray(vector, bitLength);
+        if ((bitLength & 7) != 0) {
+            vector[0] = BYTE_WITH_FIX_NUM_OF_ONE[bitLength & 7];
+        }
         return vector;
     }
 
@@ -470,9 +475,12 @@ public class BytesUtils {
     public static byte[] not(final byte[] x, final int bitLength) {
         assert bitLength >= 0 && bitLength <= x.length * Byte.SIZE;
         byte[] ones = new byte[x.length];
-        Arrays.fill(ones, (byte) 0xff);
-        reduceByteArray(ones, bitLength);
-
+        int resBitNum = bitLength & 7;
+        int zeroByteNum = (x.length * Byte.SIZE - bitLength) >> 3;
+        Arrays.fill(ones, zeroByteNum, ones.length, (byte) 0xff);
+        if (resBitNum != 0) {
+            ones[zeroByteNum] = BYTE_WITH_FIX_NUM_OF_ONE[resBitNum];
+        }
         return BytesUtils.xor(x, ones);
     }
 
@@ -485,8 +493,12 @@ public class BytesUtils {
      */
     public static void noti(byte[] x, final int bitLength) {
         byte[] ones = new byte[x.length];
-        Arrays.fill(ones, (byte) 0xff);
-        reduceByteArray(ones, bitLength);
+        int resBitNum = bitLength & 7;
+        int zeroByteNum = (x.length * Byte.SIZE - bitLength) >> 3;
+        Arrays.fill(ones, zeroByteNum, ones.length, (byte) 0xff);
+        if (resBitNum != 0) {
+            ones[zeroByteNum] = BYTE_WITH_FIX_NUM_OF_ONE[resBitNum];
+        }
         xori(x, ones);
     }
 

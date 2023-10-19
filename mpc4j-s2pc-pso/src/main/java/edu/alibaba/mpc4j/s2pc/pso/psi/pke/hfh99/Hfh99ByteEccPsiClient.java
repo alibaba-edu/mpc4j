@@ -23,22 +23,22 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * HFH99-字节椭圆曲线PSI协议客户端。
+ * HFH99-byte ecc PSI client
  *
  * @author Weiran Liu
  * @date 2022/9/19
  */
 public class Hfh99ByteEccPsiClient<T> extends AbstractPsiClient<T> {
     /**
-     * 字节椭圆曲线
+     * byte ecc
      */
     private final ByteMulEcc byteMulEcc;
     /**
-     * PEQT哈希函数
+     * PEQT hash function
      */
     private Hash peqtHash;
     /**
-     * 客户端密钥β
+     * The key of client: β
      */
     private byte[] beta;
 
@@ -53,7 +53,7 @@ public class Hfh99ByteEccPsiClient<T> extends AbstractPsiClient<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 生成β
+        // generate β
         beta = byteMulEcc.randomScalar(secureRandom);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -71,7 +71,7 @@ public class Hfh99ByteEccPsiClient<T> extends AbstractPsiClient<T> {
         stopWatch.start();
         int peqtByteLength = PsiUtils.getSemiHonestPeqtByteLength(serverElementSize, clientElementSize);
         peqtHash = HashFactory.createInstance(envType, peqtByteLength);
-        // 客户端计算并发送H(y)^β
+        // client computes and sends H(y)^β
         List<byte[]> hyBetaPayload = generateHyBetaPayload();
         DataPacketHeader hyBetaHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_HY_BETA.ordinal(), extraInfo,
@@ -83,7 +83,7 @@ public class Hfh99ByteEccPsiClient<T> extends AbstractPsiClient<T> {
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 2, hyBetaTime);
 
-        // 客户端接收H(x)^α
+        // client receives H(x)^α
         DataPacketHeader hxAlphaHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_HX_ALPHA.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
@@ -91,9 +91,9 @@ public class Hfh99ByteEccPsiClient<T> extends AbstractPsiClient<T> {
         List<byte[]> hxAlphaPayload = rpc.receive(hxAlphaHeader).getPayload();
 
         stopWatch.start();
-        // 客户端计算H(H(x)^αβ)
+        // compute H(H(x)^αβ)
         Set<ByteBuffer> peqtSet = handleHxAlphaPayload(hxAlphaPayload);
-        // 客户端接收H(H(y)^βα)
+        // receives H(H(y)^βα)
         DataPacketHeader peqtHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_HY_BETA_ALPHA.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()

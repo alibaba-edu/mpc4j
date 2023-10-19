@@ -1,0 +1,24 @@
+# protocol type
+pto_type = CCPSI
+
+# element byte length
+element_byte_length = 16
+
+# parties log set size (log(n))
+server_log_set_size = 12,10
+client_log_set_size = 12,10
+
+# protocol name
+circuit_psi_pto_name = CGS22
+
+# specific config
+cuckoo_hash_bin_type = NO_STASH_PSZ18_3_HASH
+silent = false
+append_string = _no_silent_no_stash_psz18_3_hash
+
+server_name = server
+server_ip = localhost
+server_port = 8090
+client_name = client
+client_ip = localhost
+client_port = 8091

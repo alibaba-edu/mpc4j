@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pir.cppir.index.spam.hint;
 
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.spam.SpamSingleIndexCpPirUtils;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.spam.SpamSingleCpPirUtils;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -24,7 +24,7 @@ public abstract class AbstractRandomCutoffSpamHint extends AbstractSpamHint {
     /**
      * we use optimization when n >= 2^18
      */
-    private static final int CUTOFF_CHUNK_NUM = SpamSingleIndexCpPirUtils.getChunkNum(1 << 18);
+    private static final int CUTOFF_CHUNK_NUM = SpamSingleCpPirUtils.getChunkNum(1 << 18);
     /**
      * the cutoff ^v
      */

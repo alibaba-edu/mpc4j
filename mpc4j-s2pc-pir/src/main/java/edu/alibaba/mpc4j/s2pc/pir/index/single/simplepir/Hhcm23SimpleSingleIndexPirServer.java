@@ -79,6 +79,7 @@ public class Hhcm23SimpleSingleIndexPirServer extends AbstractSingleIndexPirServ
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(hintPayloadHeader, hintPayload));
+        hint = null;
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -108,6 +109,7 @@ public class Hhcm23SimpleSingleIndexPirServer extends AbstractSingleIndexPirServ
             rpc.ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(hintPayloadHeader, hintPayload));
+        hint = null;
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

@@ -29,44 +29,44 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * KKRT16-PSI服务端。
+ * KKRT16-PSI server
  *
  * @author Weiran Liu
  * @date 2022/9/20
  */
 public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
     /**
-     * OPRF发送方
+     * OPRF sender
      */
     private final OprfSender oprfSender;
     /**
-     * 布谷鸟哈希类型
+     * OPRF senderOutput
+     */
+    private OprfSenderOutput oprfSenderOutput;
+    /**
+     * The type of cuckoo hash
      */
     private final CuckooHashBinType cuckooHashBinType;
     /**
-     * 布谷鸟哈希函数数量
+     * The number of hash functions
      */
     private final int cuckooHashNum;
     /**
-     * 过滤器类型
+     * The type of filter
      */
     private final FilterType filterType;
     /**
-     * PEQT哈希函数
+     * PEQT hash function
      */
     private Hash peqtHash;
     /**
-     * 布谷鸟哈希桶所用的哈希函数
+     * The hash functions used in cuckoo hash
      */
     private Prf[] binHashes;
     /**
-     * 布谷鸟哈希桶个数
+     * The bin number of cuckoo hash
      */
     private int binNum;
-    /**
-     * OPRF发送方输出
-     */
-    private OprfSenderOutput oprfSenderOutput;
 
     public Kkrt16PsiServer(Rpc serverRpc, Party clientParty, Kkrt16PsiConfig config) {
         super(Kkrt16PsiPtoDesc.getInstance(), serverRpc, clientParty, config);
@@ -107,7 +107,7 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
         peqtHash = HashFactory.createInstance(envType, peqtByteLength);
         binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, clientElementSize);
         int stashSize = CuckooHashBinFactory.getStashSize(cuckooHashBinType, clientElementSize);
-        // 接收布谷鸟哈希密钥
+        // receiving the keys of cuckoo hash
         DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
@@ -127,7 +127,7 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
         logStepInfo(PtoState.PTO_STEP, 2, 3, oprfTime);
 
         stopWatch.start();
-        // 发送服务端哈希桶PRF过滤器
+        // sending the filter of PRFs in server's hash table
         for (int hashIndex = 0; hashIndex < cuckooHashNum; hashIndex++) {
             List<byte[]> serverBinPrfPayload = generateBinPrfPayload(hashIndex);
             DataPacketHeader serverBinPrfHeader = new DataPacketHeader(
@@ -137,7 +137,7 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
             rpc.send(DataPacket.fromByteArrayList(serverBinPrfHeader, serverBinPrfPayload));
             extraInfo++;
         }
-        // 发送服务端贮存区PRF过滤器
+        // sending the filter of PRFs in server's stash
         for (int stashIndex = 0; stashIndex < stashSize; stashIndex++) {
             List<byte[]> serverStashPrfPayload = generateStashPrfPayload(stashIndex);
             DataPacketHeader serverStashPrfHeader = new DataPacketHeader(
@@ -184,7 +184,7 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
             })
             .collect(Collectors.toList());
         Collections.shuffle(binPrfList, secureRandom);
-        // 构建过滤器
+        // constructing filter
         Filter<byte[]> binPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         binPrfList.forEach(binPrfFilter::put);
         return binPrfFilter.toByteArrayList();
@@ -201,7 +201,7 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
                 return peqtHash.digestToBytes(stashPrf);
             }).collect(Collectors.toList());
         Collections.shuffle(serverStashPrfList, secureRandom);
-        // 构建过滤器
+        // constructing filter
         Filter<byte[]> stashPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         serverStashPrfList.forEach(stashPrfFilter::put);
         return stashPrfFilter.toByteArrayList();

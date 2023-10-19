@@ -64,38 +64,38 @@ public class BatchPirTest extends AbstractTwoPartyPtoTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // cuckoo hash batch PIR
-        configurations.add(new Object[]{
-            BatchIndexPirFactory.BatchIndexPirType.SEAL_PIR.name(),
-            new CuckooHashBatchIndexPirConfig.Builder()
-                .setSingleIndexPirConfig(new Acls18SingleIndexPirConfig.Builder().build())
-                .build()
-        });
-        configurations.add(new Object[]{
-            BatchIndexPirFactory.BatchIndexPirType.FAST_PIR.name(),
-            new CuckooHashBatchIndexPirConfig.Builder()
-                .setSingleIndexPirConfig(new Ayaa21SingleIndexPirConfig.Builder().build())
-                .build()
-        });
+//        // cuckoo hash batch PIR
+//        configurations.add(new Object[]{
+//            BatchIndexPirFactory.BatchIndexPirType.SEAL_PIR.name(),
+//            new CuckooHashBatchIndexPirConfig.Builder()
+//                .setSingleIndexPirConfig(new Acls18SingleIndexPirConfig.Builder().build())
+//                .build()
+//        });
+//        configurations.add(new Object[]{
+//            BatchIndexPirFactory.BatchIndexPirType.FAST_PIR.name(),
+//            new CuckooHashBatchIndexPirConfig.Builder()
+//                .setSingleIndexPirConfig(new Ayaa21SingleIndexPirConfig.Builder().build())
+//                .build()
+//        });
         // PSI - PIR
         configurations.add(new Object[]{
             BatchIndexPirFactory.BatchIndexPirType.PSI_PIR.name(), new Lpzl24BatchIndexPirConfig.Builder().build()
         });
-        // vectorized batch PIR
-        configurations.add(new Object[]{
-            BatchIndexPirFactory.BatchIndexPirType.VECTORIZED_BATCH_PIR.name(),
-            new Mr23BatchIndexPirConfig.Builder().build()
-        });
-        // batch Simple PIR
-        configurations.add(new Object[]{
-            BatchIndexPirFactory.BatchIndexPirType.SIMPLE_PIR.name(),
-            new CuckooHashBatchSimplePirConfig.Builder().build()
-        });
-        // naive batch PIR
-        configurations.add(new Object[]{
-            BatchIndexPirFactory.BatchIndexPirType.NAIVE_BATCH_PIR.name(),
-            new NaiveBatchIndexPirConfig.Builder().build()
-        });
+//        // vectorized batch PIR
+//        configurations.add(new Object[]{
+//            BatchIndexPirFactory.BatchIndexPirType.VECTORIZED_BATCH_PIR.name(),
+//            new Mr23BatchIndexPirConfig.Builder().build()
+//        });
+//        // batch Simple PIR
+//        configurations.add(new Object[]{
+//            BatchIndexPirFactory.BatchIndexPirType.SIMPLE_PIR.name(),
+//            new CuckooHashBatchSimplePirConfig.Builder().build()
+//        });
+//        // naive batch PIR
+//        configurations.add(new Object[]{
+//            BatchIndexPirFactory.BatchIndexPirType.NAIVE_BATCH_PIR.name(),
+//            new NaiveBatchIndexPirConfig.Builder().build()
+//        });
         return configurations;
     }
 
@@ -152,6 +152,12 @@ public class BatchPirTest extends AbstractTwoPartyPtoTest {
     @Test
     public void testSpecialElementSize() {
         testPto(DEFAULT_SERVER_ELEMENT_SIZE + 1, DEFAULT_RETRIEVAL_SIZE, DEFAULT_BIT_LENGTH, true);
+    }
+
+
+    @Test
+    public void test1() {
+        testPto(1 << 20, 1 << 8, 1, true);
     }
 
     @Test

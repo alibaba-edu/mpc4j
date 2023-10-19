@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pso.psica.cgt12.Cgt12EccPsiCaConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psica.ccpsi.CcPsiCaConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psica.gmr21.Gmr21PsiCaConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psica.hfh99.Hfh99EccPsiCaConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -76,7 +77,11 @@ public class PsiCaTest extends AbstractTwoPartyPtoTest {
             PsiCaFactory.PsiCaType.CCPSI.name() + " (silent)",
             new CcPsiCaConfig.Builder(true).build(),
         });
-
+        // GMR21
+        configurations.add(new Object[]{
+            PsiCaFactory.PsiCaType.GMR21.name() + " (silent)",
+            new Gmr21PsiCaConfig.Builder(false).build(),
+        });
         return configurations;
     }
 

@@ -81,8 +81,7 @@ public class ZlDreluFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-                return new Rrk20ZlDreluConfig.Builder()
-                        .build();
+                return new Rrk20ZlDreluConfig.Builder(silent).build();
             case COVERT:
             case MALICIOUS:
             default:
