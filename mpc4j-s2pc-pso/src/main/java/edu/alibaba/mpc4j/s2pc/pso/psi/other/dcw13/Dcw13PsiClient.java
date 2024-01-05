@@ -12,10 +12,10 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.common.tool.filter.DistinctBloomFilter;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.DistinctGbfGf2eDokvs;
+import edu.alibaba.mpc4j.common.structure.filter.DistinctBloomFilter;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.DistinctGbfGf2eDokvs;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
@@ -136,7 +136,7 @@ public class Dcw13PsiClient<T> extends AbstractPsiClient<T> {
         List<byte[]> serverPrfFilterPayload = rpc.receive(serverPrfFilterHeader).getPayload();
 
         stopWatch.start();
-        Filter<byte[]> serverPrfFilter = FilterFactory.createFilter(envType, serverPrfFilterPayload);
+        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, serverPrfFilterPayload);
         Set<T> intersection = IntStream.range(0, clientElementSize)
             .mapToObj(elementIndex -> {
                 T y = clientElementArrayList.get(elementIndex);

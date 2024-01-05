@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteMulEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.AbstractMqRpmtServer;
 
 import java.nio.ByteBuffer;
@@ -127,8 +127,8 @@ public class Czz22ByteEccCwMqRpmtServer extends AbstractMqRpmtServer {
         // 置乱顺序
         Collections.shuffle(peqtPayload, secureRandom);
         // 将元素插入到过滤器中
-        Filter<byte[]> filter = FilterFactory.createFilter(envType, filterType, clientElementSize, secureRandom);
+        Filter<byte[]> filter = FilterFactory.load(envType, filterType, clientElementSize, secureRandom);
         peqtPayload.forEach(filter::put);
-        return filter.toByteArrayList();
+        return filter.save();
     }
 }

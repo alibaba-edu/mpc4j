@@ -4,6 +4,10 @@
 
 ## Basic Tools
 
+### FHE
+
+We provide an pure-Java implemeantion of BFV scheme. The implementation can be seen as a pure-Java version of [SEAL](https://github.com/microsoft/SEAL). See `mpc4j-crypto-fhe` for details.
+
 ### Filter
 
 Besides Bloom Filter, we implement some filter algorithms in `mpc4j-common-tool`, including Cuckoo Filter and Vacuum Filter. We plan to implement Morton Filter but without any timeline.
@@ -146,7 +150,7 @@ We implement Keyword PIR (also known as Labeled PSI) in `mpc4j-s2pc-pir` and unb
 
 ### Client-preprocessing PIR
 
-- Zhou, Mingxun, Andrew Park, Elaine Shi, and Wenting Zheng. Piano: Extremely Simple, Single-Server PIR with Sublinear Server Computation. To appear in S\&P 2024.
+- Zhou, Mingxun, Andrew Park, Elaine Shi, and Wenting Zheng. Piano: Extremely Simple, Single-Server PIR with Sublinear Server Computation. S\&P 2024.
 - Mughees, Muhammad Haris, I. Sun, and Ling Ren. Simple and Practical Amortized Sublinear Private Information Retrieval. Cryptology ePrint Archive (2023).
 
 ## Private Set Operation

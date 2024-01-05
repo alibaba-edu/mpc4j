@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.main;
 
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
-import edu.alibaba.mpc4j.s2pc.main.batchindex.BatchIndexPirMain;
 import edu.alibaba.mpc4j.s2pc.main.ccpsi.CcpsiMain;
 import edu.alibaba.mpc4j.s2pc.main.payablepir.PayablePirMain;
 import edu.alibaba.mpc4j.s2pc.main.scpsi.ScpsiMain;
@@ -48,10 +47,6 @@ public class PirMain {
             case CcpsiMain.TASK_NAME:
                 CcpsiMain ccpsiMain = new CcpsiMain(properties);
                 ccpsiMain.run();
-                break;
-            case BatchIndexPirMain.TASK_NAME:
-                BatchIndexPirMain batchIndexPirMain = new BatchIndexPirMain(properties);
-                batchIndexPirMain.run();
                 break;
             case SingleCpPirMain.TASK_NAME:
                 SingleCpPirMain singleCpPirMain = new SingleCpPirMain(properties);

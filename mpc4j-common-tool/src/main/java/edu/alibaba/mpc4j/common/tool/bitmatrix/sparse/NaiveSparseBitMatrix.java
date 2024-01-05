@@ -109,6 +109,15 @@ public class NaiveSparseBitMatrix implements SparseBitMatrix {
     }
 
     /**
+     * Gets parallel operations.
+     *
+     * @return parallel operations.
+     */
+    public boolean getParallel() {
+        return parallel;
+    }
+
+    /**
      * Sets parallel operations.
      *
      * @param parallel parallel operations.

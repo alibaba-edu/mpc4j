@@ -12,13 +12,13 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
-import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvs;
-import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.pso.psi.AbstractPsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.psi.pke.rt21.Rt21PsiPtoDesc.PtoStep;
 
@@ -212,7 +212,7 @@ public class Rt21PsiClient<T> extends AbstractPsiClient<T> {
     }
 
     private Set<T> handlePeqtPayload(byte[][] kArray, List<byte[]> peqtPayload) {
-        Filter<byte[]> peqtFilter = FilterFactory.createFilter(envType, peqtPayload);
+        Filter<byte[]> peqtFilter = FilterFactory.load(envType, peqtPayload);
         IntStream clientElementIntStream = IntStream.range(0, clientElementSize);
         clientElementIntStream = parallel ? clientElementIntStream.parallel() : clientElementIntStream;
         return clientElementIntStream

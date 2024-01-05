@@ -65,14 +65,13 @@ add_library(
         tfhe/util.cpp
         tfhe/util.h
         pir/edu_alibaba_mpc4j_s2pc_pir_index_single_vectorizedpir_Mr23SingleIndexPirNativeUtils.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_index_batch_psipir_Lpzl24BatchIndexPirNativeUtils.cpp
         pir/edu_alibaba_mpc4j_s2pc_pir_index_batch_vectorizedpir_Mr23BatchIndexPirNativeUtils.cpp
         pir/edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils.cpp
         pir/edu_alibaba_mpc4j_s2pc_pir_index_single_mulpir_Alpr21SingleIndexPirNativeUtils.cpp
         pir/edu_alibaba_mpc4j_s2pc_pir_index_single_constantweightpir_Mk22SingleIndexPirNativeUtils.cpp
         pir/edu_alibaba_mpc4j_s2pc_pir_keyword_aaag22_Aaag22KwPirNativeUtils.cpp
         pir/edu_alibaba_mpc4j_s2pc_upso_ucpsi_sj23_peqt_Sj23PeqtUcpsiNativeUtils.cpp
-        pir/edu_alibaba_mpc4j_s2pc_upso_ucpsi_sj23_pdsm_Sj23PdsmUcpsiNativeUtils.cpp)
+        pir/edu_alibaba_mpc4j_s2pc_upso_ucpsi_sj23_pdsm_Sj23PdsmUcpsiNativeUtils.cpp pir/edu_alibaba_mpc4j_work_psipir_Lpzl24BatchPirNativeUtils.cpp)
 # 链接SEAL库
 if(TARGET SEAL::seal)
     target_link_libraries(mpc4j-native-fhe PUBLIC SEAL::seal)

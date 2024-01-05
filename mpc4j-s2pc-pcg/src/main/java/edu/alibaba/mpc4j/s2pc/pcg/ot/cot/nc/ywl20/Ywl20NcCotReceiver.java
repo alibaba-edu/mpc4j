@@ -12,8 +12,8 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.lpn.llc.LocalLinearCoder;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
+import edu.alibaba.mpc4j.common.structure.lpn.primal.LocalLinearCoder;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
@@ -120,7 +120,8 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(matrixInitKeyHeader, matrixInitKeyPayload));
-        LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, matrixInitKey, parallel);
+        LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, matrixInitKey);
+        matrixInitA.setParallel(parallel);
         stopWatch.stop();
         long keyInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -136,12 +137,12 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
 
         stopWatch.start();
         // x = u * A + e
-        boolean[] initX = matrixInitA.binaryEncode(wInitCotReceiverOutput.getChoices());
+        boolean[] initX = matrixInitA.encode(wInitCotReceiverOutput.getChoices());
         for (int eIndex : rInitMspCotReceiverOutput.getAlphaArray()) {
             initX[eIndex] = !initX[eIndex];
         }
         // z = w * A + r
-        byte[][] initZ = matrixInitA.gf2eEncode(wInitCotReceiverOutput.getRbArray());
+        byte[][] initZ = matrixInitA.encode(wInitCotReceiverOutput.getRbArray());
         IntStream.range(0, initN).forEach(index ->
             BytesUtils.xori(initZ[index], rInitMspCotReceiverOutput.getRb(index))
         );
@@ -172,7 +173,8 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(matrixKeyHeader, matrixKeyPayload));
-        LocalLinearCoder matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey, parallel);
+        LocalLinearCoder matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey);
+        matrixA.setParallel(parallel);
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -188,12 +190,12 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
 
         stopWatch.start();
         // x = u * A + e
-        boolean[] x = matrixA.binaryEncode(wCotReceiverOutput.getChoices());
+        boolean[] x = matrixA.encode(wCotReceiverOutput.getChoices());
         for (int eIndex : rMspCotReceiverOutput.getAlphaArray()) {
             x[eIndex] = !x[eIndex];
         }
         // z = w * A + r
-        byte[][] z = matrixA.gf2eEncode(wCotReceiverOutput.getRbArray());
+        byte[][] z = matrixA.encode(wCotReceiverOutput.getRbArray());
         IntStream.range(0, iterationN).forEach(index ->
             BytesUtils.xori(z[index], rMspCotReceiverOutput.getRb(index))
         );

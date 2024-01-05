@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.crr21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorUtils;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorUtils.SilverCodeType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotConfig;
@@ -23,12 +23,12 @@ public class Crr21NcCotConfig extends AbstractMultiPartyPtoConfig implements NcC
     /**
      * LDPC类型
      */
-    private final LdpcCreatorUtils.CodeType codeType;
+    private final SilverCodeType silverCodeType;
 
     private Crr21NcCotConfig(Builder builder) {
         super(SecurityModel.MALICIOUS, builder.mspcotConfig);
         mspCotConfig = builder.mspcotConfig;
-        codeType = builder.codeType;
+        silverCodeType = builder.silverCodeType;
     }
 
     public MspCotConfig getMspCotConfig() {
@@ -45,8 +45,8 @@ public class Crr21NcCotConfig extends AbstractMultiPartyPtoConfig implements NcC
         return 1 << Crr21NcCotPtoDesc.MAX_LOG_N;
     }
 
-    public LdpcCreatorUtils.CodeType getCodeType() {
-        return codeType;
+    public SilverCodeType getCodeType() {
+        return silverCodeType;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Crr21NcCotConfig> {
@@ -57,11 +57,11 @@ public class Crr21NcCotConfig extends AbstractMultiPartyPtoConfig implements NcC
         /**
          * LDPC类型
          */
-        private LdpcCreatorUtils.CodeType codeType;
+        private SilverCodeType silverCodeType;
 
         public Builder(SecurityModel securityModel) {
             mspcotConfig = new Bcg19RegMspCotConfig.Builder(securityModel).build();
-            codeType = LdpcCreatorUtils.CodeType.SILVER_5;
+            silverCodeType = SilverCodeType.SILVER_5;
         }
 
         public Builder setMspCotConfig(MspCotConfig mspcotConfig) {
@@ -69,8 +69,8 @@ public class Crr21NcCotConfig extends AbstractMultiPartyPtoConfig implements NcC
             return this;
         }
 
-        public Builder setCodeType(LdpcCreatorUtils.CodeType codeType) {
-            this.codeType = codeType;
+        public Builder setCodeType(SilverCodeType silverCodeType) {
+            this.silverCodeType = silverCodeType;
             return this;
         }
 

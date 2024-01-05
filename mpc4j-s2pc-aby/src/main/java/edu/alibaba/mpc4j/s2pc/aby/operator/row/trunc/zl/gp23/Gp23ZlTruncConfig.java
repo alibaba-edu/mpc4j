@@ -48,15 +48,25 @@ public class Gp23ZlTruncConfig extends AbstractMultiPartyPtoConfig implements Zl
         /**
          * Z2 circuit config.
          */
-        private final Z2cConfig z2cConfig;
+        private Z2cConfig z2cConfig;
         /**
          * cot protocol config.
          */
-        private final CotConfig cotConfig;
+        private CotConfig cotConfig;
 
         public Builder(boolean silent) {
             z2cConfig = Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             cotConfig = CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        }
+
+        public Builder setZ2cConfig(Z2cConfig z2cConfig) {
+            this.z2cConfig = z2cConfig;
+            return this;
+        }
+
+        public Builder setCotConfig(CotConfig cotConfig) {
+            this.cotConfig = cotConfig;
+            return this;
         }
 
         @Override

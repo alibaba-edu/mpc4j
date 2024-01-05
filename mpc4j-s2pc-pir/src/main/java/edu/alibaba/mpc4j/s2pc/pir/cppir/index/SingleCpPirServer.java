@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pir.cppir.index;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
-import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
+import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
 
 /**
  * Single client-specific preprocessing PIR server.

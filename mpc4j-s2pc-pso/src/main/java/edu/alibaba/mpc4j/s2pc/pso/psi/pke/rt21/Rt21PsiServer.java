@@ -13,13 +13,13 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
-import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvs;
-import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory;
-import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.pso.psi.AbstractPsiServer;
 import edu.alibaba.mpc4j.s2pc.pso.psi.pke.rt21.Rt21PsiPtoDesc.PtoStep;
 
@@ -193,8 +193,8 @@ public class Rt21PsiServer<T> extends AbstractPsiServer<T> {
             .collect(Collectors.toList());
         Collections.shuffle(serverPeqtList, secureRandom);
         // create filter
-        Filter<byte[]> peqtFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> peqtFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
         serverPeqtList.forEach(peqtFilter::put);
-        return peqtFilter.toByteArrayList();
+        return peqtFilter.save();
     }
 }

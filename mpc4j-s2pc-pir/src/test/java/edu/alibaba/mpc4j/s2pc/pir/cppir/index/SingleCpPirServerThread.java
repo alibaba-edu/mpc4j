@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pir.cppir.index;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
+import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

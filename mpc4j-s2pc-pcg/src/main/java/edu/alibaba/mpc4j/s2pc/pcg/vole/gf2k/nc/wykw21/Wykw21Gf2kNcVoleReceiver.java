@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
-import edu.alibaba.mpc4j.common.tool.lpn.llc.LocalLinearCoder;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
+import edu.alibaba.mpc4j.common.structure.lpn.primal.LocalLinearCoder;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleReceiver;
@@ -117,7 +117,8 @@ public class Wykw21Gf2kNcVoleReceiver extends AbstractGf2kNcVoleReceiver {
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(matrixInitKeyHeader, matrixInitKeyPayload));
-        LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, matrixInitKey, parallel);
+        LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, matrixInitKey);
+        matrixInitA.setParallel(parallel);
         stopWatch.stop();
         long keyInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -133,7 +134,7 @@ public class Wykw21Gf2kNcVoleReceiver extends AbstractGf2kNcVoleReceiver {
 
         stopWatch.start();
         // y = v * A + s
-        byte[][] initY = matrixInitA.gf2eEncode(vInitVoleReceiverOutput.getQ());
+        byte[][] initY = matrixInitA.encode(vInitVoleReceiverOutput.getQ());
         IntStream.range(0, initN).forEach(index ->
             gf2k.addi(initY[index], bInitMspVoleReceiverOutput.getQ(index))
         );
@@ -164,7 +165,8 @@ public class Wykw21Gf2kNcVoleReceiver extends AbstractGf2kNcVoleReceiver {
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(matrixKeyHeader, matrixKeyPayload));
-        LocalLinearCoder matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey, parallel);
+        LocalLinearCoder matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey);
+        matrixA.setParallel(parallel);
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -180,7 +182,7 @@ public class Wykw21Gf2kNcVoleReceiver extends AbstractGf2kNcVoleReceiver {
 
         stopWatch.start();
         // y = v * A + s
-        byte[][] y = matrixA.gf2eEncode(vVoleReceiverOutput.getQ());
+        byte[][] y = matrixA.encode(vVoleReceiverOutput.getQ());
         IntStream.range(0, iterationN).forEach(index ->
             gf2k.addi(y[index], bMspVoleReceiverOutput.getQ(index))
         );

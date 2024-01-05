@@ -21,7 +21,7 @@ public class Mr23BatchIndexPirPtoDesc implements PtoDesc {
     /**
      * protocol name
      */
-    private static final String PTO_NAME = "VECTORIZED_BATCH_PIR";
+    private static final String PTO_NAME = "MR23_BATCH_PIR";
 
     /**
      * protocol step

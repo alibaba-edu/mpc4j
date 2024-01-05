@@ -8,6 +8,8 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -210,10 +212,10 @@ public class SimpleIntHashBinTest {
     }
 
     private int[] randomItems(int size) {
-        Set<Integer> itemSet = new HashSet<>(size);
+        TIntSet itemSet = new TIntHashSet(size);
         while (itemSet.size() < size) {
             itemSet.add(Math.abs(HashBinTestUtils.SECURE_RANDOM.nextInt()));
         }
-        return itemSet.stream().mapToInt(item -> item).toArray();
+        return itemSet.toArray();
     }
 }

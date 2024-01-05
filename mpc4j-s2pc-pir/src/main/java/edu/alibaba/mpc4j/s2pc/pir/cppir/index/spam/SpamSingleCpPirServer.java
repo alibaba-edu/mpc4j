@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
+import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractSingleCpPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.spam.SpamSingleCpPirDesc.PtoStep;
 

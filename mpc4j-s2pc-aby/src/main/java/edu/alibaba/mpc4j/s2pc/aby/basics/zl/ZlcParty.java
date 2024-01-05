@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.circuit.zl.MpcZlParty;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
-import edu.alibaba.mpc4j.crypto.matrix.vector.ZlVector;
+import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 
 import java.util.Arrays;
 

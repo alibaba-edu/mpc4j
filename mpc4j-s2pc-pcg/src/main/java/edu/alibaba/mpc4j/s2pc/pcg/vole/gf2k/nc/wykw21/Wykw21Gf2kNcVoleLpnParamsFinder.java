@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.wykw21;
 
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParamsChecker;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParamsChecker;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleFactory;

@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.psi.sqoprf.ra17;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.ra17.Ra17EccSqOprfConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory.PsiType;

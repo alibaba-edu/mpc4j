@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi;
 
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
 
 /**
  * filter-supported PSI config.

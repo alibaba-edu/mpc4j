@@ -5,7 +5,7 @@
     <parent>
         <artifactId>mpc4j</artifactId>
         <groupId>edu.alibaba</groupId>
-        <version>1.0.9</version>
+        <version>1.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -23,34 +23,40 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.openjdk.jol</groupId>
-            <artifactId>jol-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-rpc</artifactId>
-            <version>1.0.9</version>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
-            <artifactId>mpc4j-crypto-matrix</artifactId>
-            <version>1.0.9</version>
+            <artifactId>mpc4j-common-structure</artifactId>
+            <version>1.1.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-s2pc-aby</artifactId>
-            <version>1.0.9</version>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-s2pc-opf</artifactId>
-            <version>1.0.9</version>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-s2pc-pso</artifactId>
-            <version>1.0.9</version>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>edu.alibaba</groupId>
+            <artifactId>mpc4j-crypto-fhe</artifactId>
+            <version>1.1.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[1.1.0\]
+
+### Added
+
+- [important] `mpc4j-crypto-fhe`
+  - Create a new module `mpc4j-crypto-fhe` to add implementations for FHE.
+  - Implement BFV scheme. The implementation can be seen as a Pure-Java version of [SEAL](https://github.com/microsoft/SEAL).
+
+### Changed
+
+- [important] `mpc4j-common-structure`
+  - rename `mpc4j-crypto-matrix` to `mpc4j-common-structure` and re-organize codes. Move Filter and LPN from `mpc4j-common-tool` to `mpc4j-common-structure`.
+  - Update serialization methods for Filters to same communication costs. 
+
+- `mpc4j-common-tool`
+  - Optimize `reduceByteArray` in `BytesUtils`.
+- `mpc4j-s2pc-pir`
+  - Refine code for SimplePIR.
+
+### Fixed
+
+- `mpc4j-s2pc-opf`
+  - Fix a bug that OprfUtils generates wrong sets for unequal set size.
+- `mpc4j-s2pc-pir`
+  - Fix a security flow in the implementation of Labeled PSI (CCS 2021).
+- `mpc4j-s2pc-pso`
+  - Fix some bugs and refine codes for many PSI implementations. 
+
 ## \[1.0.9\]
 
 ### Added
@@ -14,7 +42,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Introduce a more efficient way of doing operations in GF128 field. The implementation is inspired by the blog [Reversing a Finite Filed Multiplication Optimizaion](https://blog.quarkslab.com/reversing-a-finite-field-multiplication-optimization.html).
   - Implement operations in GF64 field.
 - `mpc4j-common-matrix`
-  - Implement "Blazing Fast OKVS" introduced in the paper "Blazing Fast PSI from Improved OKVS and Subfield VOLE". The implementation is inspired by the open-soure code [VOLE-PSI](https://github.com/Visa-Research/volepsi).
+  - Implement "Blazing Fast OKVS" introduced in the paper "Blazing Fast PSI from Improved OKVS and Subfield VOLE". The implementation is inspired by the open-source code [VOLE-PSI](https://github.com/Visa-Research/volepsi).
   - Implement "band encoding OKVS" introduced in the paper "Near-Optimal Oblivious Key-Value Stores for Efficient PSI, PSU and Volume-Hiding Multi-Maps". We thank Joon Young Seo and Kevin Yeo for the offline discussion of some implementation details.
 - `mpc4j-s2pc-pcg`
   - Implement silent VOLE (both for semi-honest version and the malicious version) in GF128 field, using the technique introduced in the paper "Wolverine: Fast, Scalable, and Communication-Efficient Zero-Knowledge Proofs for Boolean and Arithmetic Circuits".

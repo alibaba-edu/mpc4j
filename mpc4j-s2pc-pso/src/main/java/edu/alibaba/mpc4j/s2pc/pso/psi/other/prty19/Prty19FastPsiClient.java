@@ -14,8 +14,8 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.TwoChoiceHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePoly;
@@ -225,8 +225,8 @@ public class Prty19FastPsiClient<T> extends AbstractPsiClient<T> {
         List<byte[]> serverPrf1Payload = rpc.receive(serverPrf1Header).getPayload();
 
         stopWatch.start();
-        Filter<byte[]> prf0Filter = FilterFactory.createFilter(envType, serverPrf0Payload);
-        Filter<byte[]> prf1Filter = FilterFactory.createFilter(envType, serverPrf1Payload);
+        Filter<byte[]> prf0Filter = FilterFactory.load(envType, serverPrf0Payload);
+        Filter<byte[]> prf1Filter = FilterFactory.load(envType, serverPrf1Payload);
         Set<T> intersection = IntStream.range(0, binNum)
             .mapToObj(binIndex -> IntStream.range(0, binSize)
                 .mapToObj(index -> {

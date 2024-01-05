@@ -10,7 +10,6 @@ import edu.alibaba.mpc4j.s2pc.aby.basics.z2.bea91.Bea91Z2cSender;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.rrg21.Rrg21Z2cConfig;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.rrg21.Rrg21Z2cReceiver;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.rrg21.Rrg21Z2cSender;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory;
 
 /**
  * Z2 circuit factory.
@@ -130,10 +129,9 @@ public class Z2cFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case TRUSTED_DEALER:
+                return new Bea91Z2cConfig.Builder(securityModel).build();
             case SEMI_HONEST:
-                return new Bea91Z2cConfig.Builder(securityModel)
-                    .setZ2MtgConfig(Z2MtgFactory.createDefaultConfig(securityModel, silent))
-                    .build();
+                return new Rrg21Z2cConfig.Builder().build();
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel);
         }

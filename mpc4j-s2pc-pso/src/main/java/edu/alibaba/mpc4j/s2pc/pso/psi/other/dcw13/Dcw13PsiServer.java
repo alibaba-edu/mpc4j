@@ -7,10 +7,10 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
-import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2e.DistinctGbfGf2eDokvs;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.DistinctGbfGf2eDokvs;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
@@ -119,9 +119,9 @@ public class Dcw13PsiServer<T> extends AbstractPsiServer<T> {
             .map(x -> peqtHash.digestToBytes(gbf.decode(storage, x)))
             .collect(Collectors.toList());
         Collections.shuffle(serverPrfs, secureRandom);
-        Filter<byte[]> serverPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
         serverPrfs.forEach(serverPrfFilter::put);
-        List<byte[]> serverPrfFilterPayload = serverPrfFilter.toByteArrayList();
+        List<byte[]> serverPrfFilterPayload = serverPrfFilter.save();
         DataPacketHeader serverPrfFilterHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PRF_FILTER.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()

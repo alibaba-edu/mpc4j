@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory.IntCuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntNoStashCuckooHashBin;
-import edu.alibaba.mpc4j.crypto.matrix.zl64.Zl64Matrix;
+import edu.alibaba.mpc4j.common.structure.matrix.zl64.Zl64Matrix;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.AbstractBatchIndexPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.simplepir.Hhcm23SimpleSingleIndexPirClient;
 import gnu.trove.list.TIntList;

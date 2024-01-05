@@ -8,8 +8,8 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
@@ -203,7 +203,7 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
 
     private void handleServerBinPrfPayload(List<byte[]> serverBinPrfPayload) throws MpcAbortException {
         try {
-            Filter<byte[]> serverBinPrfFilter = FilterFactory.createFilter(envType, serverBinPrfPayload);
+            Filter<byte[]> serverBinPrfFilter = FilterFactory.load(envType, serverBinPrfPayload);
             serverBinPrfFilterArrayList.add(serverBinPrfFilter);
         } catch (IllegalArgumentException e) {
             throw new MpcAbortException();
@@ -212,7 +212,7 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
 
     private void handleServerStashPrfPayload(List<byte[]> serverStashPrfPayload) throws MpcAbortException {
         try {
-            Filter<byte[]> serverStashPrfFilter = FilterFactory.createFilter(envType, serverStashPrfPayload);
+            Filter<byte[]> serverStashPrfFilter = FilterFactory.load(envType, serverStashPrfPayload);
             serverStashPrfFilterArrayList.add(serverStashPrfFilter);
         } catch (IllegalArgumentException e) {
             throw new MpcAbortException();

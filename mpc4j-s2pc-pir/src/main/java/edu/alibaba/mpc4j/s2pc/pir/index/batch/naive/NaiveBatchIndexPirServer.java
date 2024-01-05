@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pir.index.batch.naive;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
+import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.AbstractBatchIndexPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.SingleIndexPirFactory;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.SingleIndexPirServer;

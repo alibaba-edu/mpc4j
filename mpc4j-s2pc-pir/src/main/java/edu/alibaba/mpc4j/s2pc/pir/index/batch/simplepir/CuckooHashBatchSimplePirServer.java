@@ -10,10 +10,10 @@ import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFa
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
-import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
-import edu.alibaba.mpc4j.crypto.matrix.vector.Zl64Vector;
-import edu.alibaba.mpc4j.crypto.matrix.zl64.Zl64Matrix;
+import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
+import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
+import edu.alibaba.mpc4j.common.structure.vector.Zl64Vector;
+import edu.alibaba.mpc4j.common.structure.matrix.zl64.Zl64Matrix;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.AbstractBatchIndexPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.simplepir.Hhcm23SimpleSingleIndexPirServer;

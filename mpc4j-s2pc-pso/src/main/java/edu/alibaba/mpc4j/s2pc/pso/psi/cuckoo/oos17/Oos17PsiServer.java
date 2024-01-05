@@ -8,9 +8,9 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
@@ -167,9 +167,9 @@ public class Oos17PsiServer<T> extends AbstractPsiServer<T> {
             .map(x -> getBinPrf(x, hashIndex, lcotSenderOutput))
             .collect(Collectors.toList());
         Collections.shuffle(binPrfs, secureRandom);
-        Filter<byte[]> binPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> binPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
         binPrfs.forEach(binPrfFilter::put);
-        return binPrfFilter.toByteArrayList();
+        return binPrfFilter.save();
     }
 
 
@@ -194,9 +194,9 @@ public class Oos17PsiServer<T> extends AbstractPsiServer<T> {
             .map(x -> getStashPrf(x, stashIndex, lcotSenderOutput))
             .collect(Collectors.toList());
         Collections.shuffle(serverStashPrfList, secureRandom);
-        Filter<byte[]> stashPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> stashPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
         serverStashPrfList.forEach(stashPrfFilter::put);
-        return stashPrfFilter.toByteArrayList();
+        return stashPrfFilter.save();
     }
 
     private byte[] getStashPrf(T x, int stashIndex, LcotSenderOutput lcotSenderOutput) {

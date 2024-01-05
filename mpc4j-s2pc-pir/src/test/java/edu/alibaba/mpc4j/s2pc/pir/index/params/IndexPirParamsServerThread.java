@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pir.index.params;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
+import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.SingleIndexPirParams;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.SingleIndexPirServer;
 import org.slf4j.Logger;

@@ -6,11 +6,11 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCoder;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreator;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorFactory;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorUtils;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorUtils.SilverCodeType;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCoder;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreator;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.AbstractNcCotReceiver;
@@ -41,15 +41,15 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
     /**
      * LDPC编码类型
      */
-    private final LdpcCreatorUtils.CodeType codeType;
+    private final SilverCodeType silverCodeType;
     /**
      * LDPC编码器
      */
-    private LdpcCoder ldpcCoder;
+    private SilverCoder silverCoder;
 
     public Crr21NcCotReceiver(Rpc receiverRpc, Party senderParty, Crr21NcCotConfig config) {
         super(Crr21NcCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        codeType = config.getCodeType();
+        silverCodeType = config.getCodeType();
         mspCotReceiver = MspCotFactory.createReceiver(receiverRpc, senderParty, config.getMspCotConfig());
         addSubPtos(mspCotReceiver);
     }
@@ -60,11 +60,11 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        LdpcCreator ldpcCreator = LdpcCreatorFactory
-            .createLdpcCreator(codeType, LongUtils.ceilLog2(num, Crr21NcCotPtoDesc.MIN_LOG_N));
-        LpnParams lpnParams = ldpcCreator.getLpnParams();
-        ldpcCoder = ldpcCreator.createLdpcCoder();
-        ldpcCoder.setParallel(parallel);
+        SilverCodeCreator silverCodeCreator = SilverCodeCreatorFactory
+            .createInstance(silverCodeType, LongUtils.ceilLog2(num, Crr21NcCotPtoDesc.MIN_LOG_N));
+        LpnParams lpnParams = silverCodeCreator.getLpnParams();
+        silverCoder = silverCodeCreator.createCoder();
+        silverCoder.setParallel(parallel);
         stopWatch.stop();
         long encoderInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -102,10 +102,10 @@ public class Crr21NcCotReceiver extends AbstractNcCotReceiver {
         for (int eIndex : rMspCotReceiverOutput.getAlphaArray()) {
             initB[eIndex] = !initB[eIndex];
         }
-        boolean[] extendB = ldpcCoder.transEncode(initB);
+        boolean[] extendB = silverCoder.dualEncode(initB);
         // z = z * G^T。
         byte[][] initZ = rMspCotReceiverOutput.getRbArray();
-        byte[][] extendZ = ldpcCoder.transEncode(initZ);
+        byte[][] extendZ = silverCoder.dualEncode(initZ);
         // 更新输出。
         CotReceiverOutput receiverOutput = CotReceiverOutput.create(extendB, extendZ);
         receiverOutput.reduce(num);

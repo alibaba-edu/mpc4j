@@ -6,8 +6,8 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
-import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
-import edu.alibaba.mpc4j.crypto.matrix.database.ZlDatabase;
+import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
+import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.AbstractSingleIndexPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.SingleIndexPirParams;
 

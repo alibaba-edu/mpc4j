@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pir.index;
 
 import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
-import edu.alibaba.mpc4j.crypto.matrix.database.NaiveDatabase;
+import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.SingleIndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.constantweightpir.Mk22SingleIndexPirConfig;
@@ -45,6 +45,7 @@ public class IndexPirTest extends AbstractTwoPartyPtoTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
+
         // XPIR
         configurations.add(new Object[]{
             SingleIndexPirFactory.SingleIndexPirType.XPIR.name(),
@@ -70,7 +71,7 @@ public class IndexPirTest extends AbstractTwoPartyPtoTest {
             SingleIndexPirFactory.SingleIndexPirType.VECTORIZED_PIR.name(),
             new Mr23SingleIndexPirConfig.Builder().build()
         });
-        // Mul PIR
+        // MulPIR
         configurations.add(new Object[]{
             SingleIndexPirFactory.SingleIndexPirType.MUL_PIR.name(),
             new Alpr21SingleIndexPirConfig.Builder().build()

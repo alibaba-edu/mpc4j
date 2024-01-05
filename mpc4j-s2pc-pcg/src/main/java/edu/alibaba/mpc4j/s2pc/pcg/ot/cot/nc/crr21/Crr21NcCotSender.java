@@ -6,11 +6,11 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCoder;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreator;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorFactory;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorUtils;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorUtils.SilverCodeType;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCoder;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreator;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.AbstractNcCotSender;
@@ -42,15 +42,15 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
     /**
      * Silver编码类型
      */
-    private final LdpcCreatorUtils.CodeType codeType;
+    private final SilverCodeType silverCodeType;
     /**
      * CRR21的编码器
      */
-    private LdpcCoder ldpcCoder;
+    private SilverCoder silverCoder;
 
     public Crr21NcCotSender(Rpc senderRpc, Party receiverParty, Crr21NcCotConfig config) {
         super(Crr21NcCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        codeType = config.getCodeType();
+        silverCodeType = config.getCodeType();
         mspCotSender = MspCotFactory.createSender(senderRpc, receiverParty, config.getMspCotConfig());
         addSubPtos(mspCotSender);
     }
@@ -62,11 +62,11 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
 
         stopWatch.start();
         // 初始化CRR21编码器
-        LdpcCreator ldpcCreator = LdpcCreatorFactory
-            .createLdpcCreator(codeType, LongUtils.ceilLog2(num, Crr21NcCotPtoDesc.MIN_LOG_N));
-        LpnParams lpnParams = ldpcCreator.getLpnParams();
-        ldpcCoder = ldpcCreator.createLdpcCoder();
-        ldpcCoder.setParallel(parallel);
+        SilverCodeCreator silverCodeCreator = SilverCodeCreatorFactory
+            .createInstance(silverCodeType, LongUtils.ceilLog2(num, Crr21NcCotPtoDesc.MIN_LOG_N));
+        LpnParams lpnParams = silverCodeCreator.getLpnParams();
+        silverCoder = silverCodeCreator.createCoder();
+        silverCoder.setParallel(parallel);
         stopWatch.stop();
         long encoderInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -99,7 +99,7 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
 
         stopWatch.start();
         // y = v * G^T。
-        byte[][] y = ldpcCoder.transEncode(sMspCotSenderOutput.getR0Array());
+        byte[][] y = silverCoder.dualEncode(sMspCotSenderOutput.getR0Array());
         // 更新输出。
         CotSenderOutput senderOutput = CotSenderOutput.create(delta, y);
         senderOutput.reduce(num);

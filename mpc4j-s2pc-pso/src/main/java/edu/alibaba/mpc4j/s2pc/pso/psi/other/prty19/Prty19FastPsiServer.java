@@ -11,9 +11,9 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.TwoChoiceHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePoly;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePolyFactory;
@@ -260,9 +260,9 @@ public class Prty19FastPsiServer<T> extends AbstractPsiServer<T> {
             .collect(Collectors.toList());
         Collections.shuffle(serverElementPrfs, secureRandom);
         // create filter
-        Filter<byte[]> prfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> prfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
         serverElementPrfs.forEach(prfFilter::put);
-        return prfFilter.toByteArrayList();
+        return prfFilter.save();
     }
 }
 

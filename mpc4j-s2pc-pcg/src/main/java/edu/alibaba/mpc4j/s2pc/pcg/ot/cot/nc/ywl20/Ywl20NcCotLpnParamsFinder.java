@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20;
 
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParamsChecker;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParamsChecker;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;

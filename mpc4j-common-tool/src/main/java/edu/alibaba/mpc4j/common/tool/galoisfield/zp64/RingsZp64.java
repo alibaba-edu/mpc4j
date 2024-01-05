@@ -9,13 +9,13 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
  * @author Weiran Liu
  * @date 2022/7/7
  */
-class RingsZp64 extends AbstractZp64 {
+public class RingsZp64 extends AbstractZp64 {
     /**
      * the finite field
      */
     private final IntegersZp64 integersZp64;
 
-    RingsZp64(EnvType envType, long prime) {
+    public RingsZp64(EnvType envType, long prime) {
         super(envType, prime);
         integersZp64 = new IntegersZp64(prime);
     }

@@ -9,8 +9,8 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfReceiverOutput;
@@ -106,7 +106,7 @@ public abstract class AbstractMpOprfPsiClient<T> extends AbstractPsiClient<T> {
         List<byte[]> serverPrfFilterPayload = rpc.receive(serverPrfFilterHeader).getPayload();
 
         stopWatch.start();
-        Filter<byte[]> serverPrfFilter = FilterFactory.createFilter(envType, serverPrfFilterPayload);
+        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, serverPrfFilterPayload);
         Set<T> intersection = IntStream.range(0, clientElementSize)
             .mapToObj(elementIndex -> {
                 T element = clientElementArrayList.get(elementIndex);

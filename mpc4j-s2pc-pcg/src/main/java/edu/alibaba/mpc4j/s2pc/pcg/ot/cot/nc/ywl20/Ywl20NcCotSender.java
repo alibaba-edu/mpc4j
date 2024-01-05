@@ -6,8 +6,8 @@ import java.util.stream.IntStream;
 
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.lpn.llc.LocalLinearCoder;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
+import edu.alibaba.mpc4j.common.structure.lpn.primal.LocalLinearCoder;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
@@ -111,7 +111,8 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         List<byte[]> matrixInitKeyPayload = rpc.receive(matrixInitKeyHeader).getPayload();
         MpcAbortPreconditions.checkArgument(matrixInitKeyPayload.size() == 1);
         byte[] initKey = matrixInitKeyPayload.get(0);
-        LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, initKey, parallel);
+        LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, initKey);
+        matrixInitA.setParallel(parallel);
         stopWatch.stop();
         long keyInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -127,7 +128,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
 
         stopWatch.start();
         // y = v * A + s
-        byte[][] initY = matrixInitA.gf2eEncode(vInitCotSenderOutput.getR0Array());
+        byte[][] initY = matrixInitA.encode(vInitCotSenderOutput.getR0Array());
         IntStream.range(0, initN).forEach(index ->
             BytesUtils.xori(initY[index], sInitMspCotSenderOutput.getR0(index))
         );
@@ -157,7 +158,8 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         List<byte[]> matrixKeyPayload = rpc.receive(matrixKeyHeader).getPayload();
         MpcAbortPreconditions.checkArgument(matrixKeyPayload.size() == 1);
         byte[] matrixKey = matrixKeyPayload.get(0);
-        LocalLinearCoder matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey, parallel);
+        LocalLinearCoder matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey);
+        matrixA.setParallel(parallel);
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -173,7 +175,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
 
         stopWatch.start();
         // y = v * A + s
-        byte[][] y = matrixA.gf2eEncode(vCotSenderOutput.getR0Array());
+        byte[][] y = matrixA.encode(vCotSenderOutput.getR0Array());
         IntStream.range(0, iterationN).forEach(index ->
             BytesUtils.xori(y[index], sMspCotSenderOutput.getR0(index))
         );

@@ -7,9 +7,9 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
@@ -185,9 +185,9 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
             .collect(Collectors.toList());
         Collections.shuffle(binPrfList, secureRandom);
         // constructing filter
-        Filter<byte[]> binPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> binPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
         binPrfList.forEach(binPrfFilter::put);
-        return binPrfFilter.toByteArrayList();
+        return binPrfFilter.save();
     }
 
     private List<byte[]> generateStashPrfPayload(int stashIndex) {
@@ -202,8 +202,8 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
             }).collect(Collectors.toList());
         Collections.shuffle(serverStashPrfList, secureRandom);
         // constructing filter
-        Filter<byte[]> stashPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> stashPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
         serverStashPrfList.forEach(stashPrfFilter::put);
-        return stashPrfFilter.toByteArrayList();
+        return stashPrfFilter.save();
     }
 }

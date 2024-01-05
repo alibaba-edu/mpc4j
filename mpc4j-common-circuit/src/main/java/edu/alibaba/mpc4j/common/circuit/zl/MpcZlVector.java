@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.common.circuit.zl;
 
 import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
-import edu.alibaba.mpc4j.crypto.matrix.vector.ZlVector;
+import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 
 /**
  * MPC Zl Vector.

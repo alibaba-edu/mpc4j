@@ -9,8 +9,8 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.MaxBinSizeUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.PhaseHashBin;
@@ -209,9 +209,9 @@ public class Rr17DePsiServer<T> extends AbstractPsiServer<T> {
 
         Collections.shuffle(prfList, secureRandom);
         // constructing filter
-        Filter<byte[]> prfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize * binSize, secureRandom);
+        Filter<byte[]> prfFilter = FilterFactory.load(envType, filterType, serverElementSize * binSize, secureRandom);
         prfList.forEach(prfFilter::put);
-        return prfFilter.toByteArrayList();
+        return prfFilter.save();
     }
 
 }

@@ -2,11 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.crr21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
-import edu.alibaba.mpc4j.common.tool.lpn.ldpc.LdpcCreatorUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
+import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorUtils;
 
 /**
  * CRR21-NC-COT协议信息。论文来源：
@@ -61,9 +57,9 @@ class Crr21NcCotPtoDesc implements PtoDesc {
     /**
      * 单次输出支持的最小COT数量
      */
-    static final int MIN_LOG_N = LdpcCreatorUtils.MIN_LOG_N;
+    static final int MIN_LOG_N = SilverCodeCreatorUtils.MIN_LOG_N;
     /**
      * 单次输出支持的最大COT数量
      */
-    static final int MAX_LOG_N = LdpcCreatorUtils.MAX_LOG_N;
+    static final int MAX_LOG_N = SilverCodeCreatorUtils.MAX_LOG_N;
 }

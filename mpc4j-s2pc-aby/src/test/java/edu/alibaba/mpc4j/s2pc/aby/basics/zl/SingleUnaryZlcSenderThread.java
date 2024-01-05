@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.zl;
 import edu.alibaba.mpc4j.common.circuit.operator.UnaryAcOperator;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.crypto.matrix.vector.ZlVector;
+import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 
 /**
  * single Zl circuit sender thread for unary operator.

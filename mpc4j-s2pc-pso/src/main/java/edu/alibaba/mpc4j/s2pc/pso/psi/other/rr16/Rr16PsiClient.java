@@ -11,9 +11,9 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
-import edu.alibaba.mpc4j.common.tool.filter.SparseRandomBloomFilter;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.SparseRandomBloomFilter;
 import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ct.CoinTossFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ct.CoinTossParty;
@@ -203,7 +203,7 @@ public class Rr16PsiClient<T> extends AbstractPsiClient<T> {
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverPrfFilterPayload = rpc.receive(serverPrfFilterHeader).getPayload();
-        Filter<byte[]> serverPrfFilter = FilterFactory.createFilter(envType, serverPrfFilterPayload);
+        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, serverPrfFilterPayload);
         Set<T> intersection = IntStream.range(0, clientElementSize)
             .mapToObj(elementIndex -> {
                 T element = clientElementArrayList.get(elementIndex);

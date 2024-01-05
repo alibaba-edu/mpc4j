@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pso.main.ccpsi;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
-import edu.alibaba.mpc4j.crypto.matrix.okve.dokvs.gf2k.Gf2kDokvsFactory.Gf2kDokvsType;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k.Gf2kDokvsFactory.Gf2kDokvsType;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtConfig;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory.PeqtType;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.cgs22.Cgs22PeqtConfig;
@@ -29,7 +29,7 @@ public class CcpsiConfigUtils {
         // empty
     }
 
-    public static CcpsiConfig createCpsiConfig(Properties properties) {
+    public static CcpsiConfig createCcpsiConfig(Properties properties) {
         // read PSI type
         String cPsiTypeString = PropertiesUtils.readString(properties, "circuit_psi_pto_name");
         CcpsiType psiType = CcpsiType.valueOf(cPsiTypeString);

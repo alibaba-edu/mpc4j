@@ -11,10 +11,10 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory.FilterType;
-import edu.alibaba.mpc4j.common.tool.filter.SparseRandomBloomFilter;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
+import edu.alibaba.mpc4j.common.structure.filter.SparseRandomBloomFilter;
 import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ct.CoinTossFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ct.CoinTossParty;
@@ -175,9 +175,9 @@ public class Rr16PsiServer<T> extends AbstractPsiServer<T> {
 
         // construct the filter
         stopWatch.start();
-        Filter<byte[]> serverPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
         serverPrfs.forEach(serverPrfFilter::put);
-        List<byte[]> serverPrfFilterPayload = serverPrfFilter.toByteArrayList();
+        List<byte[]> serverPrfFilterPayload = serverPrfFilter.save();
         DataPacketHeader serverPrfFilterHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), Rr16PsiPtoDesc.PtoStep.SERVER_SEND_PRFS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()

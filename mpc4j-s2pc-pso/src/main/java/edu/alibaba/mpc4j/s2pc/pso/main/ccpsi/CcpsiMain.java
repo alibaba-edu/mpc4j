@@ -96,7 +96,7 @@ public class CcpsiMain {
         int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
         // 读取特殊参数
         LOGGER.info("{} read PTO config", serverRpc.ownParty().getPartyName());
-        CcpsiConfig config = CcpsiConfigUtils.createCpsiConfig(properties);
+        CcpsiConfig config = CcpsiConfigUtils.createCcpsiConfig(properties);
         // 生成输入文件
         LOGGER.info("{} generate warm-up element files", serverRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
@@ -244,7 +244,7 @@ public class CcpsiMain {
         int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
         // 读取特殊参数
         LOGGER.info("{} read PTO config", clientRpc.ownParty().getPartyName());
-        CcpsiConfig config = CcpsiConfigUtils.createCpsiConfig(properties);
+        CcpsiConfig config = CcpsiConfigUtils.createCcpsiConfig(properties);
         // 生成输入文件
         LOGGER.info("{} generate warm-up element files", clientRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);

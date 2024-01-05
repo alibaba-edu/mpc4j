@@ -7,14 +7,16 @@
     <groupId>edu.alibaba</groupId>
     <artifactId>mpc4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.9</version>
+    <version>1.1.0</version>
     <modules>
+        <module>mpc4j-common-circuit</module>
         <module>mpc4j-common-data</module>
         <module>mpc4j-common-jnagmp</module>
-        <module>mpc4j-crypto-matrix</module>
         <module>mpc4j-common-rpc</module>
         <module>mpc4j-common-sampler</module>
+        <module>mpc4j-common-structure</module>
         <module>mpc4j-common-tool</module>
+        <module>mpc4j-crypto-fhe</module>
         <module>mpc4j-crypto-phe</module>
         <module>mpc4j-dp-cdp</module>
         <module>mpc4j-dp-ldp</module>
@@ -26,7 +28,7 @@
         <module>mpc4j-s2pc-pso</module>
         <module>mpc4j-s2pc-pjc</module>
         <module>mpc4j-sml-opboost</module>
-        <module>mpc4j-common-circuit</module>
+        <module>mpc4j-work-psipir</module>
     </modules>
 
     <properties>
@@ -45,7 +47,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>31.1-jre</version>
+                <version>32.1.3-jre</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
             <dependency>

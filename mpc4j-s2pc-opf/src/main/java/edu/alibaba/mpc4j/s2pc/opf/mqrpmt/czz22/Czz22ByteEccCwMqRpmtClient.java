@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteMulEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.common.tool.filter.Filter;
-import edu.alibaba.mpc4j.common.tool.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.structure.filter.Filter;
+import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.AbstractMqRpmtClient;
 
 import java.nio.ByteBuffer;
@@ -133,7 +133,7 @@ public class Czz22ByteEccCwMqRpmtClient extends AbstractMqRpmtClient {
 
     private boolean[] handlePeqtPayload(List<byte[]> peqtPayload, ByteBuffer[] clientPeqtArray) throws MpcAbortException {
         try {
-            Filter<byte[]> filter = FilterFactory.createFilter(envType, peqtPayload);
+            Filter<byte[]> filter = FilterFactory.load(envType, peqtPayload);
             boolean[] containVector = new boolean[serverElementSize];
             IntStream.range(0, serverElementSize).forEach(serverElementIndex -> {
                 if (filter.mightContain(clientPeqtArray[serverElementIndex].array())) {

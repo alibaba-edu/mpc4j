@@ -64,7 +64,7 @@ void compose_to_ciphertext(const EncryptionParameters& parms, vector<Plaintext>:
                         ct.data(poly_index)[coeff_mod_index * coeff_count + c] += ((*pt_iter)[c] << shift);
                     }
                 }
-                ++pt_iter;
+                ++pt_iter; // pt_iter 很快指向会出问题的
                 shift += pt_bits_per_coeff;
             }
         }

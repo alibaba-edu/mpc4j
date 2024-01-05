@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.lpn.LpnParams;
+import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;

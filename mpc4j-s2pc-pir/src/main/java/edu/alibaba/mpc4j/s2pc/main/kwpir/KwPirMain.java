@@ -15,6 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirFactory;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirServer;
 import org.apache.commons.lang3.time.StopWatch;
 import org.bouncycastle.util.encoders.Hex;
+import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -257,7 +258,7 @@ public class KwPirMain {
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         String tab = "Party ID\tServer Set Size\tQuery Number\tIs Parallel\tThread Num"
             + "\tInit Time(ms)\tInit DataPacket Num\tInit Payload Bytes(B)\tInit Send Bytes(B)"
-            + "\tPto  Time(ms)\tPto  DataPacket Num\tPto  Payload Bytes(B)\tPto  Send Bytes(B)";
+            + "\tPto  Time(ms)\tPto  DataPacket Num\tPto  Payload Bytes(B)\tPto  Send Bytes(B)\tMemory";
         printWriter.println(tab);
         LOGGER.info("{} ready for run", clientRpc.ownParty().getPartyName());
         clientRpc.connect();
@@ -340,6 +341,7 @@ public class KwPirMain {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
+        long memory = GraphLayout.parseInstance(client).totalSize();
         long initDataPacketNum = client.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = client.getRpc().getPayloadByteLength();
         long initSendByteLength = client.getRpc().getSendByteLength();
@@ -364,7 +366,8 @@ public class KwPirMain {
             + "\t" + client.getParallel()
             + "\t" + ForkJoinPool.getCommonPoolParallelism()
             + "\t" + initTime + "\t" + initDataPacketNum + "\t" + initPayloadByteLength + "\t" + initSendByteLength
-            + "\t" + ptoTime + "\t" + ptoDataPacketNum + "\t" + ptoPayloadByteLength + "\t" + ptoSendByteLength;
+            + "\t" + ptoTime + "\t" + ptoDataPacketNum + "\t" + ptoPayloadByteLength + "\t" + ptoSendByteLength
+            + "\t" + memory;
         printWriter.println(info);
         client.getRpc().synchronize();
         client.getRpc().reset();
