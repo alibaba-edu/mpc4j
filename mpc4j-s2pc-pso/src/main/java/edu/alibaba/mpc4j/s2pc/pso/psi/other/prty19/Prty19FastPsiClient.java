@@ -71,7 +71,7 @@ public class Prty19FastPsiClient<T> extends AbstractPsiClient<T> {
     public Prty19FastPsiClient(Rpc clientRpc, Party serverParty, Prty19FastPsiConfig config) {
         super(Prty19FastPsiPtoDesc.getInstance(), clientRpc, serverParty, config);
         coreCotSender = CoreCotFactory.createSender(clientRpc, serverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
     }
 
     @Override

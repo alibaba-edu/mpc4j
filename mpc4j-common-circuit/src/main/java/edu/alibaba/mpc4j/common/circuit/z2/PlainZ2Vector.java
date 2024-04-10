@@ -1,9 +1,11 @@
 package edu.alibaba.mpc4j.common.circuit.z2;
 
 import edu.alibaba.mpc4j.common.circuit.MpcVector;
+import edu.alibaba.mpc4j.common.circuit.z2.utils.Z2VectorUtils;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -88,6 +90,18 @@ public class PlainZ2Vector implements MpcZ2Vector {
     }
 
     /**
+     * merge inputs by padding zeros to make each input full
+     *
+     * @param vectors merge data
+     */
+    public static PlainZ2Vector mergeWithPadding(PlainZ2Vector[] vectors) {
+        assert vectors.length > 0 : "merged vector length must be greater than 0";
+        BitVector mergeBit = BitVectorFactory.mergeWithPadding(Arrays.stream(vectors)
+            .map(PlainZ2Vector::getBitVector).toArray(BitVector[]::new));
+        return create(mergeBit);
+    }
+
+    /**
      * the bit vector
      */
     private BitVector bitVector;
@@ -107,6 +121,17 @@ public class PlainZ2Vector implements MpcZ2Vector {
     @Override
     public BitVector getBitVector() {
         return bitVector;
+    }
+
+    @Override
+    public BitVector[] getBitVectors() {
+        return new BitVector[]{bitVector};
+    }
+
+    @Override
+    public void setBitVectors(BitVector[] data){
+        assert data.length == 1;
+        bitVector = data[0];
     }
 
     @Override
@@ -142,5 +167,37 @@ public class PlainZ2Vector implements MpcZ2Vector {
     public void merge(MpcVector other) {
         PlainZ2Vector that = (PlainZ2Vector) other;
         bitVector.merge(that.getBitVector());
+    }
+
+    @Override
+    public void reverseBits(){
+        this.bitVector.reverseBits();
+    }
+
+    @Override
+    public PlainZ2Vector[] splitWithPadding(int[] bitNums) {
+        BitVector[] splitBitVectors = getBitVector().uncheckSplitWithPadding(bitNums);
+        return Arrays.stream(splitBitVectors).map(PlainZ2Vector::create).toArray(PlainZ2Vector[]::new);
+    }
+
+    @Override
+    public MpcZ2Vector extendBitsWithSkip(int destBitLen, int skipLen) {
+        byte[] destByte = Z2VectorUtils.extendBitsWithSkip(this.bitVector, destBitLen, skipLen);
+        return PlainZ2Vector.create(destBitLen, destByte);
+    }
+
+    @Override
+    public MpcZ2Vector[] getBitsWithSkip(int totalBitNum, int skipLen) {
+        byte[][] res = Z2VectorUtils.getBitsWithSkip(this.bitVector, totalBitNum, skipLen);
+        return Arrays.stream(res).map(x -> PlainZ2Vector.create(totalBitNum, x)).toArray(PlainZ2Vector[]::new);
+    }
+
+    @Override
+    public MpcZ2Vector getPointsWithFixedSpace(int startPos, int num, int skipLen){
+        return PlainZ2Vector.create(bitVector.getBitsByInterval(startPos, num, skipLen));
+    }
+
+    public void andi(PlainZ2Vector plainZ2Vector) {
+        bitVector.andi(plainZ2Vector.bitVector);
     }
 }

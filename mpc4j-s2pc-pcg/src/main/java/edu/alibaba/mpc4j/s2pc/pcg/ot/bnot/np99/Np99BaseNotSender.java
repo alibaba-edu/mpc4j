@@ -37,7 +37,7 @@ public class Np99BaseNotSender extends AbstractBaseNotSender {
     public Np99BaseNotSender(Rpc senderRpc, Party receiverParty, Np99BaseNotConfig config) {
         super(Np99BaseNotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         baseOtSender = BaseOtFactory.createSender(senderRpc, receiverParty, config.getBaseOtConfig());
-        addSubPtos(baseOtSender);
+        addSubPto(baseOtSender);
     }
 
     @Override

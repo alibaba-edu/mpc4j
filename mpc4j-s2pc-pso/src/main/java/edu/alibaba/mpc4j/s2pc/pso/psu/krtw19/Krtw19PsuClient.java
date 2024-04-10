@@ -87,11 +87,11 @@ public class Krtw19PsuClient extends AbstractPsuClient {
     public Krtw19PsuClient(Rpc clientRpc, Party serverParty, Krtw19PsuConfig config) {
         super(Krtw19PsuPtoDesc.getInstance(), clientRpc, serverParty, config);
         rpmtOprfSender = OprfFactory.createOprfSender(clientRpc, serverParty, config.getRpmtOprfConfig());
-        addSubPtos(rpmtOprfSender);
+        addSubPto(rpmtOprfSender);
         peqtOprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getPeqtOprfConfig());
-        addSubPtos(peqtOprfReceiver);
+        addSubPto(peqtOprfReceiver);
         coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
         pipeSize = config.getPipeSize();
     }
 

@@ -51,17 +51,17 @@ public class Zlp23PayablePirServer extends AbstractPayablePirServer {
         super(getInstance(), serverRpc, clientParty, config);
         ecc = ByteEccFactory.createFullInstance(envType);
         kwPirServer = KwPirFactory.createServer(serverRpc, clientParty, config.getKwPirConfig());
-        addSubPtos(kwPirServer);
+        addSubPto(kwPirServer);
     }
 
     @Override
-    public void init(Map<ByteBuffer, ByteBuffer> keywordLabelMap, int labelByteLength) throws MpcAbortException {
+    public void init(Map<ByteBuffer, byte[]> keywordLabelMap, int labelByteLength) throws MpcAbortException {
         setInitInput(keywordLabelMap, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // encode map
-        Map<ByteBuffer, ByteBuffer> encodedMap = computeKeywordPrf(keywordLabelMap);
+        Map<ByteBuffer, byte[]> encodedMap = computeKeywordPrf(keywordLabelMap);
         kwPirServer.init(encodedMap, 1, labelByteLength);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -128,20 +128,19 @@ public class Zlp23PayablePirServer extends AbstractPayablePirServer {
      *
      * @return keyword prf.
      */
-    private Map<ByteBuffer, ByteBuffer> computeKeywordPrf(Map<ByteBuffer, ByteBuffer> keywordLabelMap) {
+    private Map<ByteBuffer, byte[]> computeKeywordPrf(Map<ByteBuffer, byte[]> keywordLabelMap) {
         alpha = BigIntegerUtils.randomPositive(ecc.getN(), secureRandom);
         Prg prg = PrgFactory.createInstance(envType, labelByteLength);
         Hash hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
         IntStream intStream = IntStream.range(0, keywordSize);
         intStream = parallel ? intStream.parallel() : intStream;
-        List<ByteBuffer> encodedLabel = intStream
+        List<byte[]> encodedLabel = intStream
             .mapToObj(i -> {
                 byte[] point = ecc.hashToCurve(keywordList.get(i).array());
                 byte[] prf = ecc.mul(point, alpha);
                 byte[] digest = hash.digestToBytes(prf);
                 byte[] extendedPrf = prg.extendToBytes(digest);
-                byte[] cipher = BytesUtils.xor(extendedPrf, keywordLabelMap.get(keywordList.get(i)).array());
-                return ByteBuffer.wrap(cipher);
+                return BytesUtils.xor(extendedPrf, keywordLabelMap.get(keywordList.get(i)));
             })
             .collect(Collectors.toList());
         return IntStream.range(0, keywordSize)

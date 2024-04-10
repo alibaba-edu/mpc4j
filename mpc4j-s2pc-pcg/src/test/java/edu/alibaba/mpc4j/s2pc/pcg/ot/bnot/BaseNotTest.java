@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.bnot;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.crypto.kyber.KyberEngineFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.co15.Co15BaseNotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.bnot.mr19.Mr19EccBaseNotConfig;
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
  * @date 2022/07/22
  */
 @RunWith(Parameterized.class)
-public class BaseNotTest extends AbstractTwoPartyPtoTest {
+public class BaseNotTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseNotTest.class);
     /**
      * 默认数量

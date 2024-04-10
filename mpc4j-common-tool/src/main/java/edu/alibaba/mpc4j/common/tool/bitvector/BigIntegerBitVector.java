@@ -1,5 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.bitvector;
 
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory.BitVectorType;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -7,6 +9,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -104,8 +107,8 @@ public class BigIntegerBitVector implements BitVector {
 
 
     @Override
-    public BitVectorFactory.BitVectorType getType() {
-        return BitVectorFactory.BitVectorType.BIGINTEGER_BIT_VECTOR;
+    public BitVectorType getType() {
+        return BitVectorType.BIGINTEGER_BIT_VECTOR;
     }
 
     @Override
@@ -302,5 +305,90 @@ public class BigIntegerBitVector implements BitVector {
             bitVectorString.insert(0, "0");
         }
         return bitVectorString.toString();
+    }
+
+    @Override
+    public void extendBitNum(int extendBitNum) {
+        assert bitNum <= extendBitNum;
+        bitNum = extendBitNum;
+        byteNum = CommonUtils.getByteLength(bitNum);
+    }
+
+    @Override
+    public BitVector padShiftLeft(int n) {
+        MathPreconditions.checkNonNegative("n", n);
+        return create(bitNum + n, bigInteger.shiftLeft(n));
+    }
+
+    @Override
+    public void fixShiftLefti(int n) {
+        MathPreconditions.checkNonNegative("n", n);
+        bigInteger = bigInteger.shiftLeft(n).and(BigInteger.ONE.shiftLeft(bitNum).subtract(BigInteger.ONE));
+    }
+
+    @Override
+    public BitVector reduceShiftRight(int n) {
+        MathPreconditions.checkNonNegativeInRangeClosed("n", n, bitNum);
+        return create(bitNum - n, bigInteger.shiftRight(n));
+    }
+
+    @Override
+    public void reduceShiftRighti(int n) {
+        MathPreconditions.checkNonNegativeInRangeClosed("n", n, bitNum);
+        bigInteger = bigInteger.shiftRight(n);
+        bitNum -= n;
+    }
+
+    @Override
+    public void fixShiftRighti(int n) {
+        MathPreconditions.checkNonNegativeInRangeClosed("n", n, bitNum);
+        bigInteger = bigInteger.shiftRight(n);
+    }
+
+    @Override
+    public void setBytes(byte[] source, int srcPos, int thisPos, int byteLength) {
+        MathPreconditions.checkNonNegative("srcPos", srcPos);
+        MathPreconditions.checkNonNegative("byteLength", byteLength);
+        MathPreconditions.checkLessOrEqual("srcPos + byteLength", srcPos + byteLength, source.length);
+        MathPreconditions.checkLessOrEqual("thisPos + byteLength", thisPos + byteLength, byteNum);
+        // convert to byte array, set, and covert back
+        byte[] origin = BigIntegerUtils.nonNegBigIntegerToByteArray(bigInteger, byteNum);
+        System.arraycopy(source, srcPos, origin, thisPos, byteLength);
+        bigInteger = BigIntegerUtils.byteArrayToNonNegBigInteger(origin);
+    }
+
+    @Override
+    public BitVector[] uncheckSplitWithPadding(int[] bitNums) {
+        BitVector[] res = new BitVector[bitNums.length];
+        byte[] src = getBytes();
+        int k = 0;
+        for (int i = 0; i < bitNums.length; i++) {
+            int byteNum = CommonUtils.getByteLength(bitNums[i]);
+            byte[] tmp = Arrays.copyOfRange(src, k, k + byteNum);
+            // we directly reduce tmp, since operations may occur in the merged form so that the padding may not be zero.
+            BytesUtils.reduceByteArray(tmp, bitNums[i]);
+            res[i] = create(bitNums[i], tmp);
+            k += byteNum;
+        }
+        // check that the bit vector is indeed merged by bitNums.
+        MathPreconditions.checkEqual("k", "byteLength", k, src.length);
+
+        return res;
+    }
+
+    @Override
+    public void reverseBits() {
+        byte[] bytes = this.getBytes();
+        byte[] res = BytesUtils.reverseBitArray(bytes);
+        int shiftNum = (this.bitNum() & 7) > 0 ? 8 - (this.bitNum() & 7) : 0;
+        if (shiftNum > 0) {
+            BytesUtils.shiftRighti(res, shiftNum);
+        }
+        bigInteger = BigIntegerUtils.byteArrayToNonNegBigInteger(res);
+    }
+
+    @Override
+    public boolean numOf1IsOdd() {
+        return (bigInteger.bitCount() & 1) == 1;
     }
 }

@@ -61,29 +61,29 @@ public class Gf2eDokvsTest {
     /**
      * number of hashes
      */
-    private final int hashNum;
+    private final int hashKeyNum;
 
     public Gf2eDokvsTest(String name, Gf2eDokvsType type) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.type = type;
-        hashNum = Gf2eDokvsFactory.getHashKeyNum(type);
+        hashKeyNum = Gf2eDokvsFactory.getHashKeyNum(type);
     }
 
     @Test
     public void testIllegalInputs() {
         // try setting more keys
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] moreKeys = CommonUtils.generateRandomKeys(hashNum + 1, SECURE_RANDOM);
+            byte[][] moreKeys = CommonUtils.generateRandomKeys(hashKeyNum + 1, SECURE_RANDOM);
             Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, DEFAULT_L, moreKeys);
         });
         // try setting less keys
         if (Gf2eDokvsFactory.getHashKeyNum(type) > 0) {
             Assert.assertThrows(IllegalArgumentException.class, () -> {
-                byte[][] lessKeys = CommonUtils.generateRandomKeys(hashNum - 1, SECURE_RANDOM);
+                byte[][] lessKeys = CommonUtils.generateRandomKeys(hashKeyNum - 1, SECURE_RANDOM);
                 Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, DEFAULT_L, lessKeys);
             });
         }
-        byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+        byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
         // try n = 0
         Assert.assertThrows(IllegalArgumentException.class, () ->
             Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, 0, DEFAULT_L, keys)
@@ -102,7 +102,7 @@ public class Gf2eDokvsTest {
 
     @Test
     public void testType() {
-        byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+        byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
         Gf2eDokvs<ByteBuffer> dokvs = Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, DEFAULT_L, keys);
         Assert.assertEquals(type, dokvs.getType());
     }
@@ -191,7 +191,7 @@ public class Gf2eDokvsTest {
     private void testDokvs(int n, int l, boolean parallelEncode) {
         int byteL = CommonUtils.getByteLength(l);
         for (int round = 0; round < ROUND; round++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
             Gf2eDokvs<ByteBuffer> dokvs = Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, n, l, keys);
             dokvs.setParallelEncode(parallelEncode);
             Map<ByteBuffer, byte[]> keyValueMap = randomKeyValueMap(n, l);

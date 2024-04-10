@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.circuit.z2.adder;
 
+import edu.alibaba.mpc4j.common.circuit.prefix.PrefixTreeFactory.PrefixTreeTypes;
 import edu.alibaba.mpc4j.common.circuit.z2.Z2IntegerCircuit;
 
 /**
@@ -24,10 +25,6 @@ public class AdderFactory {
          * Ripple carry adder.
          */
         RIPPLE_CARRY,
-        /**
-         * Serial adder using linear prefix network, which essentially gives a Ripple Carry Adder in pre-computation mode.
-         */
-        SERIAL,
         /**
          * Parallel prefix adder using Sklansky structure. The structure comes from the following paper:
          *
@@ -66,14 +63,12 @@ public class AdderFactory {
         switch (type) {
             case RIPPLE_CARRY:
                 return new RippleCarryAdder(circuit);
-            case SERIAL:
-                return new SerialAdder(circuit);
             case SKLANSKY:
-                return new SklanskyAdder(circuit);
+                return new ParallelPrefixAdder(circuit.getParty(), PrefixTreeTypes.SKLANSKY);
             case BRENT_KUNG:
-                return new BrentKungAdder(circuit);
+                return new ParallelPrefixAdder(circuit.getParty(), PrefixTreeTypes.BRENT_KUNG);
             case KOGGE_STONE:
-                return new KoggeStoneAdder(circuit);
+                return new ParallelPrefixAdder(circuit.getParty(), PrefixTreeTypes.KOGGE_STONE);
             default:
                 throw new IllegalArgumentException("Invalid " + AdderFactory.AdderTypes.class.getSimpleName() + ": " + type.name());
         }

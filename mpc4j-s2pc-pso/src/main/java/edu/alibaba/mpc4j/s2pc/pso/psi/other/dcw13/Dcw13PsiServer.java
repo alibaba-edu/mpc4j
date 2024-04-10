@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pso.psi.other.dcw13;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.DistinctGbfUtils;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
@@ -49,7 +50,7 @@ public class Dcw13PsiServer<T> extends AbstractPsiServer<T> {
     public Dcw13PsiServer(Rpc serverRpc, Party clientParty, Dcw13PsiConfig config) {
         super(Dcw13PsiPtoDesc.getInstance(), serverRpc, clientParty, config);
         coreCotSender = CoreCotFactory.createSender(serverRpc, clientParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
         filterType = config.getFilterType();
     }
 
@@ -61,14 +62,14 @@ public class Dcw13PsiServer<T> extends AbstractPsiServer<T> {
         stopWatch.start();
         // both parties need to insert elements into (G)BF.
         int maxN = Math.max(maxServerElementSize, maxClientElementSize);
-        int maxM = DistinctGbfGf2eDokvs.getM(maxN);
+        int maxM = DistinctGbfUtils.getM(maxN);
         // init GBF key
         DataPacketHeader gbfKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_GBF_KEY.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> gbfKeyPayload = rpc.receive(gbfKeyHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(gbfKeyPayload.size() == DistinctGbfGf2eDokvs.HASH_KEY_NUM);
+        MpcAbortPreconditions.checkArgument(gbfKeyPayload.size() == DistinctGbfUtils.HASH_KEY_NUM);
         gbfKey = gbfKeyPayload.get(0);
         // init core COT
         byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
@@ -93,7 +94,7 @@ public class Dcw13PsiServer<T> extends AbstractPsiServer<T> {
         Hash peqtHash = HashFactory.createInstance(envType, peqtByteLength);
         // init GBF
         int n = Math.max(serverElementSize, clientElementSize);
-        int m = DistinctGbfGf2eDokvs.getM(n);
+        int m = DistinctGbfUtils.getM(n);
         DistinctGbfGf2eDokvs<T> gbf = new DistinctGbfGf2eDokvs<>(
             envType, n, CommonConstants.BLOCK_BIT_LENGTH, gbfKey, secureRandom
         );

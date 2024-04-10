@@ -68,7 +68,7 @@ public class Nr04EccSqOprfSender extends AbstractSqOprfSender {
         zp = ZpFactory.createInstance(envType, ecc.getN());
         compressEncode = config.getCompressEncode();
         coreSender = CotFactory.createSender(senderRpc, receiverParty, config.getCotConfig());
-        addSubPtos(coreSender);
+        addSubPto(coreSender);
     }
 
     @Override

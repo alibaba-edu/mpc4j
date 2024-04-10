@@ -48,7 +48,7 @@ public class Alsz13CoreCotReceiver extends AbstractCoreCotReceiver {
     public Alsz13CoreCotReceiver(Rpc receiverRpc, Party senderParty, Alsz13CoreCotConfig config) {
         super(Alsz13CoreCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtSender = BaseOtFactory.createSender(receiverRpc, senderParty, config.getBaseOtConfig());
-        addSubPtos(baseOtSender);
+        addSubPto(baseOtSender);
     }
 
     @Override

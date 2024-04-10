@@ -34,7 +34,7 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
         super(ptoDesc, ownRpc, otherParty, config);
     }
 
-    protected void setInitInput(int updateBitNum) {
+    protected void setInitInput(long updateBitNum) {
         MathPreconditions.checkPositive("updateBitNum", updateBitNum);
         this.updateBitNum = updateBitNum;
         initState();
@@ -77,8 +77,9 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
     }
 
     @Override
-    public SquareZ2Vector create(BitVector bitVector) {
-        return SquareZ2Vector.create(bitVector, true);
+    public MpcZ2Vector create(boolean isPlain, BitVector... bitVector) {
+        MathPreconditions.checkEqual("bitVector.length", "1", bitVector.length, 1);
+        return SquareZ2Vector.create(bitVector[0], isPlain);
     }
 
     @Override
@@ -94,6 +95,19 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
     @Override
     public SquareZ2Vector createEmpty(boolean plain) {
         return SquareZ2Vector.createEmpty(plain);
+    }
+
+    @Override
+    public BitVector[] open(MpcZ2Vector[] xiArray) throws MpcAbortException{
+        BitVector[] res;
+        if(rpc.ownParty().getPartyId() == 0){
+            res = revealOwn(xiArray);
+            revealOther(xiArray);
+        }else{
+            revealOther(xiArray);
+            res = revealOwn(xiArray);
+        }
+        return res;
     }
 
     @Override

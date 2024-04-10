@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache.CacheCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotConfig;
@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
  * @date 2022/7/13
  */
 @RunWith(Parameterized.class)
-public class CotTest extends AbstractTwoPartyPtoTest {
+public class CotTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(CotTest.class);
     /**
      * default num

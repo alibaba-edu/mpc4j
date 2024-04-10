@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.bitmatrix.trans;
 
+import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory.TransBitMatrixType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
@@ -11,12 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
-import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * 布尔矩阵性能测试。
+ * efficiency tests for bit matrix transpose.
  *
  * @author Weiran Liu
  * @date 2022/7/26
@@ -25,36 +25,32 @@ import java.util.stream.IntStream;
 public class TransBitMatrixEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransBitMatrixEfficiencyTest.class);
     /**
-     * 随机状态
+     * random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
-     * 秒表
+     * stop watch
      */
     private static final StopWatch STOP_WATCH = new StopWatch();
     /**
-     * 较大行数/列数
+     * large log(n) for rows / columns
      */
     private static final int LOG_LARGE_N = 18;
     /**
-     * 较小行数/列数
+     * small log(n) for rows / columns
      */
     private static final int LOG_SMALL_N = 10;
     /**
-     * 次数输出格式
-     */
-    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("00");
-    /**
      * 测试类型
      */
-    private static final TransBitMatrixFactory.TransBitMatrixType[] TYPES = new TransBitMatrixFactory.TransBitMatrixType[] {
-        TransBitMatrixFactory.TransBitMatrixType.NAIVE,
-        TransBitMatrixFactory.TransBitMatrixType.EKLUNDH,
-        TransBitMatrixFactory.TransBitMatrixType.NATIVE,
-        TransBitMatrixFactory.TransBitMatrixType.NATIVE_SPLIT_ROW,
-        TransBitMatrixFactory.TransBitMatrixType.JDK_SPLIT_ROW,
-        TransBitMatrixFactory.TransBitMatrixType.NATIVE_SPLIT_COL,
-        TransBitMatrixFactory.TransBitMatrixType.JDK_SPLIT_COL,
+    private static final TransBitMatrixType[] TYPES = new TransBitMatrixType[] {
+        TransBitMatrixType.JDK,
+        TransBitMatrixType.EKLUNDH,
+        TransBitMatrixType.NATIVE,
+        TransBitMatrixType.NATIVE_SPLIT_ROW,
+        TransBitMatrixType.JDK_SPLIT_ROW,
+        TransBitMatrixType.NATIVE_SPLIT_COL,
+        TransBitMatrixType.JDK_SPLIT_COL,
     };
 
     @Test
@@ -78,12 +74,13 @@ public class TransBitMatrixEfficiencyTest {
             LOGGER.info(
                 "{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LongUtils.ceilLog2(rows)), 10),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LongUtils.ceilLog2(columns)), 10),
+                StringUtils.leftPad(String.valueOf(LongUtils.ceilLog2(rows)), 10),
+                StringUtils.leftPad(String.valueOf(LongUtils.ceilLog2(columns)), 10),
                 StringUtils.leftPad(String.valueOf(time), 10)
             );
             STOP_WATCH.reset();
         }
+        LOGGER.info(StringUtils.rightPad("", 60, '-'));
     }
 
     @Test
@@ -107,11 +104,12 @@ public class TransBitMatrixEfficiencyTest {
             LOGGER.info(
                 "{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LongUtils.ceilLog2(rows)), 10),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LongUtils.ceilLog2(columns)), 10),
+                StringUtils.leftPad(String.valueOf(LongUtils.ceilLog2(rows)), 10),
+                StringUtils.leftPad(String.valueOf(LongUtils.ceilLog2(columns)), 10),
                 StringUtils.leftPad(String.valueOf(time), 10)
             );
             STOP_WATCH.reset();
         }
+        LOGGER.info(StringUtils.rightPad("", 60, '-'));
     }
 }

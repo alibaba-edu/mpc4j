@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2Triple;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.alsz13.Alsz13Z2CoreMtgConfig;
@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/7/13
  */
 @RunWith(Parameterized.class)
-public class Z2CoreMtgTest extends AbstractTwoPartyPtoTest {
+public class Z2CoreMtgTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(Z2CoreMtgTest.class);
     /**
      * 默认数量

@@ -9,19 +9,34 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
     SEALContext context(parms);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
-    auto parms_id = get_parms_id_for_chain_idx(context, 1);
+    auto high_powers_parms_id = get_parms_id_for_chain_idx(context, 1);
+    auto low_powers_parms_id = get_parms_id_for_chain_idx(context, 2);
     uint32_t ps_high_degree = ps_low_power + 1;
     uint32_t degree = coeff_plaintexts.size() - 1;
     Ciphertext f_evaluated, cipher_temp, temp_in;
-    f_evaluated.resize(context, parms_id, 3);
+    f_evaluated.resize(context, high_powers_parms_id, 3);
     f_evaluated.is_ntt_form() = false;
     uint32_t ps_high_degree_powers = degree / ps_high_degree;
+    Plaintext plain_zero(parms.poly_modulus_degree());
+    plain_zero.set_zero();
+    Ciphertext cipher_zero1, cipher_zero2;
+    encryptor.encrypt(plain_zero, cipher_zero1);
+    evaluator.mod_switch_to_inplace(cipher_zero1, high_powers_parms_id);
+    evaluator.transform_to_ntt_inplace(cipher_zero1);
+    encryptor.encrypt(plain_zero, cipher_zero2);
+    evaluator.mod_switch_to_inplace(cipher_zero2, low_powers_parms_id);
+    evaluator.transform_to_ntt_inplace(cipher_zero2);
     // Calculate polynomial for i = 1,...,ps_high_degree_powers-1
     for (uint32_t i = 1; i < ps_high_degree_powers; i++) {
         // Evaluate inner polynomial. The free term is left out and added later on.
         // The evaluation result is stored in temp_in.
         for (uint32_t j = 1; j < ps_high_degree; j++) {
-            evaluator.multiply_plain(encrypted_powers[j - 1], coeff_plaintexts[j + i * ps_high_degree], cipher_temp);
+            if (coeff_plaintexts[j + i * ps_high_degree].is_zero()) {
+                cipher_temp = cipher_zero2;
+            } else {
+                evaluator.multiply_plain(encrypted_powers[j - 1], coeff_plaintexts[j + i * ps_high_degree],
+                                         cipher_temp);
+            }
             if (j == 1) {
                 temp_in = cipher_temp;
             } else {
@@ -30,7 +45,7 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
         }
         // Transform inner polynomial to coefficient form
         evaluator.transform_from_ntt_inplace(temp_in);
-        evaluator.mod_switch_to_inplace(temp_in, parms_id);
+        evaluator.mod_switch_to_inplace(temp_in, high_powers_parms_id);
         // The high powers are already in coefficient form
         evaluator.multiply_inplace(temp_in, encrypted_powers[i - 1 + ps_low_power]);
         evaluator.add_inplace(f_evaluated, temp_in);
@@ -40,9 +55,13 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
     // Once again, the free term will only be added later on.
     if (degree % ps_high_degree > 0 && ps_high_degree_powers > 0) {
         for (uint32_t i = 1; i <= degree % ps_high_degree; i++) {
-            evaluator.multiply_plain(encrypted_powers[i - 1],
-                                     coeff_plaintexts[ps_high_degree * ps_high_degree_powers + i],
-                                     cipher_temp);
+            if (coeff_plaintexts[ps_high_degree * ps_high_degree_powers + i].is_zero()) {
+                cipher_temp = cipher_zero2;
+            } else {
+                evaluator.multiply_plain(encrypted_powers[i - 1],
+                                         coeff_plaintexts[ps_high_degree * ps_high_degree_powers + i],
+                                         cipher_temp);
+            }
             if (i == 1) {
                 temp_in = cipher_temp;
             } else {
@@ -51,7 +70,7 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
         }
         // Transform inner polynomial to coefficient form
         evaluator.transform_from_ntt_inplace(temp_in);
-        evaluator.mod_switch_to_inplace(temp_in, parms_id);
+        evaluator.mod_switch_to_inplace(temp_in, high_powers_parms_id);
         // The high powers are already in coefficient form
         evaluator.multiply_inplace(temp_in, encrypted_powers[ps_high_degree_powers - 1 + ps_low_power]);
         evaluator.add_inplace(f_evaluated, temp_in);
@@ -64,15 +83,24 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
     // Done separately since there is no multiplication with a power of high-degree
     uint32_t length = ps_high_degree_powers == 0 ? degree : ps_low_power;
     for (uint32_t j = 1; j <= length; j++) {
-        evaluator.multiply_plain(encrypted_powers[j-1], coeff_plaintexts[j], cipher_temp);
+        if (coeff_plaintexts[j].is_zero()) {
+            cipher_temp = cipher_zero2;
+        } else {
+            evaluator.multiply_plain(encrypted_powers[j - 1], coeff_plaintexts[j], cipher_temp);
+        }
         evaluator.transform_from_ntt_inplace(cipher_temp);
-        evaluator.mod_switch_to_inplace(cipher_temp, parms_id);
+        evaluator.mod_switch_to_inplace(cipher_temp, high_powers_parms_id);
         evaluator.add_inplace(f_evaluated, cipher_temp);
     }
     // Add the constant coefficients of the inner polynomials multiplied by the respective powers of high-degree
     for (uint32_t i = 1; i < ps_high_degree_powers + 1; i++) {
-        evaluator.multiply_plain(encrypted_powers[i - 1 + ps_low_power], coeff_plaintexts[ps_high_degree * i], cipher_temp);
-        evaluator.mod_switch_to_inplace(cipher_temp, parms_id);
+        if (coeff_plaintexts[ps_high_degree * i].is_zero()) {
+            cipher_temp = cipher_zero2;
+        } else {
+            evaluator.multiply_plain(encrypted_powers[i - 1 + ps_low_power], coeff_plaintexts[ps_high_degree * i],
+                                     cipher_temp);
+        }
+        evaluator.mod_switch_to_inplace(cipher_temp, high_powers_parms_id);
         evaluator.add_inplace(f_evaluated, cipher_temp);
     }
     // Add the constant coefficient
@@ -235,9 +263,6 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
     }
     // Add the constant coefficient
     evaluator.add_plain_inplace(f_evaluated, coeff_plaintexts[0]);
-    while (f_evaluated.parms_id() != context.last_parms_id()) {
-        evaluator.mod_switch_to_next_inplace(f_evaluated);
-    }
     return f_evaluated;
 }
 
@@ -251,8 +276,17 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
     Ciphertext f_evaluated, cipher_temp, temp_in;
     f_evaluated.resize(context, parms_id, 3);
     f_evaluated.is_ntt_form() = false;
+    Plaintext plain_zero(parms.poly_modulus_degree());
+    plain_zero.set_zero();
+    Ciphertext cipher_zero;
+    encryptor.encrypt(plain_zero, cipher_zero);
+    evaluator.transform_to_ntt_inplace(cipher_zero);
     for (uint32_t i = 1; i <= degree; i++) {
-        evaluator.multiply_plain(encrypted_powers[i-1], coeff_plaintexts[i], cipher_temp);
+        if (coeff_plaintexts[i].is_zero()) {
+            cipher_temp = cipher_zero;
+        } else {
+            evaluator.multiply_plain(encrypted_powers[i - 1], coeff_plaintexts[i], cipher_temp);
+        }
         if (i == 1) {
             temp_in = cipher_temp;
         } else {
@@ -265,9 +299,6 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
         evaluator.add_plain_inplace(f_evaluated, coeff_plaintexts[0]);
     } else {
         encryptor.encrypt(coeff_plaintexts[0], f_evaluated);
-    }
-    while (f_evaluated.parms_id() != context.last_parms_id()) {
-        evaluator.mod_switch_to_next_inplace(f_evaluated);
     }
     return f_evaluated;
 }
@@ -319,9 +350,6 @@ Ciphertext polynomial_evaluation(const EncryptionParameters& parms, vector<Ciphe
     // Add the constant coefficient
     evaluator.transform_from_ntt(temp_in, f_evaluated);
     evaluator.add_plain_inplace(f_evaluated, coeff_plaintexts[0]);
-    while (f_evaluated.parms_id() != context.last_parms_id()) {
-        evaluator.mod_switch_to_next_inplace(f_evaluated);
-    }
     return f_evaluated;
 }
 

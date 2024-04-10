@@ -46,7 +46,7 @@ public class Kos16Zp64CoreVoleReceiver extends AbstractZp64CoreVoleReceiver {
     public Kos16Zp64CoreVoleReceiver(Rpc receiverRpc, Party senderParty, Kos16Zp64CoreVoleConfig config) {
         super(Kos16Zp64CoreVolePtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtReceiver = BaseOtFactory.createReceiver(receiverRpc, senderParty, config.getBaseOtConfig());
-        addSubPtos(baseOtReceiver);
+        addSubPto(baseOtReceiver);
     }
 
     @Override

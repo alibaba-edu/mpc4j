@@ -36,7 +36,7 @@ public class Pssw09SqOprfReceiver extends AbstractSqOprfReceiver {
     public Pssw09SqOprfReceiver(Rpc receiverRpc, Party senderParty, Pssw09SqOprfConfig config) {
         super(Pssw09SqOprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
         oprpReceiver = OprpFactory.createReceiver(receiverRpc, senderParty, config.getOprpConfig());
-        addSubPtos(oprpReceiver);
+        addSubPto(oprpReceiver);
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
     }
 

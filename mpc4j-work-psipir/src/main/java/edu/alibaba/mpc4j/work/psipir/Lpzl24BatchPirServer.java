@@ -13,8 +13,11 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
+import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
+import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64PolyFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.upso.UpsoUtils;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiParams;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiServer;
@@ -81,7 +84,7 @@ public class Lpzl24BatchPirServer extends AbstractBatchPirServer {
     public Lpzl24BatchPirServer(Rpc serverRpc, Party clientParty, Lpzl24BatchPirConfig config) {
         super(Lpzl24BatchPirPtoDesc.getInstance(), serverRpc, clientParty, config);
         upsiServer = new Cmg21UpsiServer<>(serverRpc, clientParty, (Cmg21UpsiConfig) config.getUpsiConfig());
-        addSubPtos(upsiServer);
+        addSubPto(upsiServer);
         ecc = ByteEccFactory.createFullInstance(envType);
     }
 
@@ -121,7 +124,7 @@ public class Lpzl24BatchPirServer extends AbstractBatchPirServer {
         }
         assert params != null;
         upsiServer.init(params);
-
+        Zp64Poly zp64Poly = Zp64PolyFactory.createInstance(envType, params.getPlainModulus());
         DataPacketHeader bfvParamsHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), rpc.ownParty().getPartyId()
@@ -139,7 +142,12 @@ public class Lpzl24BatchPirServer extends AbstractBatchPirServer {
         // complete hash bin
         List<List<HashBinEntry<ByteBuffer>>> hashBin = generateCompleteHashBin(elementPrf);
         // compute coefficients
-        List<long[][]> coeffs = upsiServer.encodeDatabase(hashBin, maxBinSize);
+        List<long[][]> coeffs = UpsoUtils.encodeDatabase(
+            zp64Poly, hashBin, maxBinSize, params.getPlainModulus(), params.getMaxPartitionSizePerBin(),
+            params.getItemEncodedSlotSize(), params.getItemPerCiphertext(), params.getBinNum(),
+            params.getCiphertextNum(), params.getPolyModulusDegree(), parallel
+        );
+        hashBin.clear();
         IntStream intStream = IntStream.range(0, coeffs.size());
         intStream = parallel ? intStream.parallel() : intStream;
         plaintexts = intStream
@@ -195,7 +203,9 @@ public class Lpzl24BatchPirServer extends AbstractBatchPirServer {
         );
 
         stopWatch.start();
-        int[][] powerDegree = upsiServer.computePowerDegree();
+        int[][] powerDegree = UpsoUtils.computePowerDegree(
+            upsiServer.params.getPsLowDegree(), upsiServer.params.getQueryPowers(), upsiServer.params.getMaxPartitionSizePerBin()
+        );
         List<byte[]> ciphertextPowers = computeQueryPowers(queryPayload, powerDegree);
         List<byte[]> response = computeResponse(ciphertextPowers, powerDegree);
         DataPacketHeader keywordResponseHeader = new DataPacketHeader(

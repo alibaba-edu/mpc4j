@@ -10,7 +10,7 @@ import java.util.List;
  * @author Liqiang Peng
  * @date 2022/11/4
  */
-class Cmg21KwPirNativeUtils {
+public class Cmg21KwPirNativeUtils {
 
     static {
         System.loadLibrary(CommonConstants.MPC4J_NATIVE_FHE_NAME);
@@ -28,7 +28,7 @@ class Cmg21KwPirNativeUtils {
      * @param coeffModulusBits  coeffs modulus bits.
      * @return encryption params.
      */
-    static native byte[] genEncryptionParameters(int polyModulusDegree, long plainModulus, int[] coeffModulusBits);
+    public static native byte[] genEncryptionParameters(int polyModulusDegree, long plainModulus, int[] coeffModulusBits);
 
     /**
      * generate keys.
@@ -36,7 +36,7 @@ class Cmg21KwPirNativeUtils {
      * @param encryptionParams encryption params.
      * @return key pair.
      */
-    static native List<byte[]> keyGen(byte[] encryptionParams);
+    public static native List<byte[]> keyGen(byte[] encryptionParams);
 
     /**
      * preprocess database.
@@ -46,7 +46,7 @@ class Cmg21KwPirNativeUtils {
      * @param psLowDegree          Paterson-Stockmeyer low degree.
      * @return plaintext in NTT form.
      */
-    static native List<byte[]> preprocessDatabase(byte[] encryptionParameters, long[][] coeffs, int psLowDegree);
+    public static native List<byte[]> preprocessDatabase(byte[] encryptionParameters, long[][] coeffs, int psLowDegree);
 
     /**
      * check the validity of encryption params.
@@ -74,9 +74,9 @@ class Cmg21KwPirNativeUtils {
      * @param psLowDegree      Paterson-Stockmeyer low degree.
      * @return encrypted query powers.
      */
-    static native List<byte[]> computeEncryptedPowers(byte[] encryptionParams, byte[] relinKeys,
-                                                      List<byte[]> encryptedQuery, int[][] parentPowers,
-                                                      int[] sourcePowers, int psLowDegree);
+    public static native List<byte[]> computeEncryptedPowers(byte[] encryptionParams, byte[] relinKeys,
+                                                             List<byte[]> encryptedQuery, int[][] parentPowers,
+                                                             int[] sourcePowers, int psLowDegree);
 
     /**
      * Paterson-Stockmeyer compute matches.
@@ -89,8 +89,8 @@ class Cmg21KwPirNativeUtils {
      * @param psLowDegree      Paterson-Stockmeyer low degree.
      * @return encrypted matches.
      */
-    static native byte[] optComputeMatches(byte[] encryptionParams, byte[] publicKey, byte[] relinKeys,
-                                           List<byte[]> plaintextPolys, List<byte[]> ciphertextPolys, int psLowDegree);
+    public static native byte[] optComputeMatches(byte[] encryptionParams, byte[] publicKey, byte[] relinKeys,
+                                                  List<byte[]> plaintextPolys, List<byte[]> ciphertextPolys, int psLowDegree);
 
     /**
      * naive method compute matches.
@@ -101,8 +101,8 @@ class Cmg21KwPirNativeUtils {
      * @param ciphertextPolys  ciphertexts.
      * @return encrypted matches.
      */
-    static native byte[] naiveComputeMatches(byte[] encryptionParams, byte[] publicKey, List<byte[]> plaintextPolys,
-                                             List<byte[]> ciphertextPolys);
+    public static native byte[] naiveComputeMatches(byte[] encryptionParams, byte[] publicKey, List<byte[]> plaintextPolys,
+                                                    List<byte[]> ciphertextPolys);
 
     /**
      * generate query.
@@ -113,8 +113,8 @@ class Cmg21KwPirNativeUtils {
      * @param plainQuery       plain query.
      * @return client query.
      */
-    static native List<byte[]> generateQuery(byte[] encryptionParams, byte[] publicKey, byte[] secretKey,
-                                             long[][] plainQuery);
+    public static native List<byte[]> generateQuery(byte[] encryptionParams, byte[] publicKey, byte[] secretKey,
+                                                    long[][] plainQuery);
 
     /**
      * decode server response.
@@ -124,5 +124,5 @@ class Cmg21KwPirNativeUtils {
      * @param secretKey         secret key.
      * @return retrieval result.
      */
-    static native long[] decodeReply(byte[] encryptionParams, byte[] secretKey, byte[] encryptedResponse);
+    public static native long[] decodeReply(byte[] encryptionParams, byte[] secretKey, byte[] encryptedResponse);
 }

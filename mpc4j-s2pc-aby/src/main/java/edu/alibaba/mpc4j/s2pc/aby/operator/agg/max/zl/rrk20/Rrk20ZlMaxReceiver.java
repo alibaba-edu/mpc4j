@@ -27,7 +27,7 @@ public class Rrk20ZlMaxReceiver extends AbstractZlMaxParty {
     public Rrk20ZlMaxReceiver(Rpc receiverRpc, Party senderParty, Rrk20ZlMaxConfig config) {
         super(Rrk20ZlMaxPtoDesc.getInstance(), receiverRpc, senderParty, config);
         zlGreaterReceiver = ZlGreaterFactory.createReceiver(receiverRpc, senderParty, config.getZlGreaterConfig());
-        addSubPtos(zlGreaterReceiver);
+        addSubPto(zlGreaterReceiver);
     }
 
     @Override

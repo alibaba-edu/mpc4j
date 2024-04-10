@@ -9,10 +9,7 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -116,12 +113,15 @@ public class MemoryRpc implements Rpc {
             "Party set does not contain Receiver ID = %s", header.getReceiverId()
         );
         List<byte[]> payload = dataPacket.getPayload();
+        // copy data, prevent potential bugs by modifying the original data that also affects send data, fixed by Feng Han
+        List<byte[]> copyPayload = payload.stream().map(each -> Arrays.copyOf(each, each.length)).collect(Collectors.toList());
+        DataPacket copyDataPacket = DataPacket.fromByteArrayList(dataPacket.getHeader(), copyPayload);
         // 先统计数据包大小，再发送数据包，否则可能会出现统计的时候数据包被其他线程修改，抛出并发异常
         dataPacketNum++;
-        payloadByteLength += payload.stream().mapToInt(data -> data.length).sum();
-        sendByteLength += payload.stream().mapToInt(data -> data.length).sum();
+        payloadByteLength += copyPayload.stream().mapToInt(data -> data.length).sum();
+        sendByteLength += copyPayload.stream().mapToInt(data -> data.length).sum();
         // 往dataPacketBuffer中放置数据包
-        dataPacketBuffer.put(dataPacket);
+        dataPacketBuffer.put(copyDataPacket);
     }
 
     @Override

@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.common.data.classification.BreastCancer;
 import edu.alibaba.mpc4j.common.data.classification.Iris;
 import edu.alibaba.mpc4j.common.data.classification.PenDigits;
 import edu.alibaba.mpc4j.common.data.classification.Weather;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractThreePartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractThreePartyMemoryRpcPto;
 import edu.alibaba.mpc4j.dp.ldp.LdpConfig;
 import edu.alibaba.mpc4j.sml.opboost.*;
 import ml.dmlc.xgboost4j.java.Booster;
@@ -42,7 +42,7 @@ import java.util.stream.IntStream;
  * @date 2021/10/09
  */
 @RunWith(Parameterized.class)
-public class OpXgBoostClsMultiSlaveTest extends AbstractThreePartyPtoTest {
+public class OpXgBoostClsMultiSlaveTest extends AbstractThreePartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpXgBoostClsMultiSlaveTest.class);
 
     static {

@@ -63,7 +63,7 @@ public class MainPidTest {
 
     @Test
     public void testGmr21MpZcl22Pke() throws Exception {
-        Properties properties = readConfig("pid/conf_pid_gmr21_mp_zcl22_pke.txt");
+        Properties properties = readConfig("pid/conf_pid_gmr21_mp_zcl23_pke.txt");
         runTest(new PidMain(properties));
     }
 
@@ -81,7 +81,7 @@ public class MainPidTest {
 
     @Test
     public void testGmr21SloppyZcl22Pke() throws Exception {
-        Properties properties = readConfig("pid/conf_pid_gmr21_sloppy_zcl22_pke.txt");
+        Properties properties = readConfig("pid/conf_pid_gmr21_sloppy_zcl23_pke.txt");
         runTest(new PidMain(properties));
     }
 

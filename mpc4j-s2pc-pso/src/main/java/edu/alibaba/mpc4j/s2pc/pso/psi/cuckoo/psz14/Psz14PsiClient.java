@@ -72,7 +72,7 @@ public class Psz14PsiClient<T> extends AbstractPsiClient<T> {
     public Psz14PsiClient(Rpc clientRpc, Party serverParty, Psz14PsiConfig config) {
         super(Psz14PsiPtoDesc.getInstance(), clientRpc, serverParty, config);
         lcotReceiver = LcotFactory.createReceiver(clientRpc, serverParty, config.getLcotConfig());
-        addSubPtos(lcotReceiver);
+        addSubPto(lcotReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }

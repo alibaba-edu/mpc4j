@@ -60,7 +60,7 @@ class BatchUnaryZ2cReceiverThread extends Thread {
             receiver.init(totalBitNum);
             // set inputs
             MpcZ2Vector[] xPlainMpcVectors = Arrays.stream(xVectors)
-                .map(receiver::create)
+                .map(each -> receiver.create(true, each))
                 .toArray(MpcZ2Vector[]::new);
             int[] bitNums = Arrays.stream(xVectors).mapToInt(BitVector::bitNum).toArray();
             MpcZ2Vector[] x1SecretMpcVectors = receiver.shareOther(bitNums);

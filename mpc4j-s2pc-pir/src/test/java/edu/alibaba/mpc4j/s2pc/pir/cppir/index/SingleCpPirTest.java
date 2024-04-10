@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pir.cppir.index;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
@@ -27,11 +27,11 @@ import java.util.stream.IntStream;
  * @date 2023/8/25
  */
 @RunWith(Parameterized.class)
-public class SingleCpPirTest extends AbstractTwoPartyPtoTest {
+public class SingleCpPirTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * default element bit length
      */
-    private static final int DEFAULT_L = 128;
+    private static final int DEFAULT_L = 32;
     /**
      * default database size
      */
@@ -112,12 +112,12 @@ public class SingleCpPirTest extends AbstractTwoPartyPtoTest {
 
     @Test
     public void testLargeValue() {
-        testPto(DEFAULT_N, 1 << 10, DEFAULT_QUERY_NUM, false);
+        testPto(DEFAULT_N, 1 << 6, DEFAULT_QUERY_NUM, false);
     }
 
     @Test
     public void testParallelLargeValue() {
-        testPto(DEFAULT_N, 1 << 10, DEFAULT_QUERY_NUM, true);
+        testPto(DEFAULT_N, 1 << 6, DEFAULT_QUERY_NUM, true);
     }
 
     @Test

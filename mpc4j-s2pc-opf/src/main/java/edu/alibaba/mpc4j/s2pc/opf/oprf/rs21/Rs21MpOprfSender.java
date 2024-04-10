@@ -57,7 +57,7 @@ public class Rs21MpOprfSender extends AbstractMpOprfSender {
     public Rs21MpOprfSender(Rpc senderRpc, Party receiverParty, Rs21MpOprfConfig config) {
         super(Rs21MpOprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
         gf2kNcVoleReceiver = Gf2kNcVoleFactory.createReceiver(senderRpc, receiverParty, config.getNcVoleConfig());
-        addSubPtos(gf2kNcVoleReceiver);
+        addSubPto(gf2kNcVoleReceiver);
         okvsType = config.getOkvsType();
         okvsKeyNum = Gf2kDokvsFactory.getHashKeyNum(okvsType);
         gf2k = Gf2kFactory.createInstance(envType);

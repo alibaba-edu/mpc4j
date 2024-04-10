@@ -4,6 +4,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.Arrays;
 
 /**
  * BytesUtils test.
@@ -192,6 +194,37 @@ public class BytesUtilsTest {
             BytesUtils.shiftRighti(actual, x);
             byte[] expect = BigIntegerUtils.nonNegBigIntegerToByteArray(dataBigInteger.shiftRight(x).and(and), data.length);
             Assert.assertArrayEquals(expect, actual);
+        }
+    }
+
+    @Test
+    public void testCreateReduceByteArray() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] data = new byte[10];
+        secureRandom.nextBytes(data);
+        BigInteger v = BigIntegerUtils.byteArrayToNonNegBigInteger(data);
+        for (int i = (data.length * Byte.SIZE) - 1; i > 0; i--) {
+            byte[] result = BytesUtils.createReduceByteArray(data, i);
+            Assert.assertEquals(CommonUtils.getByteLength(i), result.length);
+            BigInteger actual = BigIntegerUtils.byteArrayToNonNegBigInteger(result);
+            BigInteger expect = v.and(BigInteger.ONE.shiftLeft(i).subtract(BigInteger.ONE));
+            Assert.assertEquals(expect, actual);
+        }
+    }
+
+    @Test
+    public void testCopyByteArray() {
+        byte[] data = new byte[10];
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(data);
+        for (int length = 1; length < (data.length << 1); length++) {
+            byte[] result = BytesUtils.copyByteArray(data, length);
+            Assert.assertEquals(length, result.length);
+            int minLength = Math.min(length, data.length);
+            Assert.assertArrayEquals(
+                Arrays.copyOfRange(result, result.length - minLength, result.length),
+                Arrays.copyOfRange(data, data.length - minLength, data.length)
+            );
         }
     }
 }

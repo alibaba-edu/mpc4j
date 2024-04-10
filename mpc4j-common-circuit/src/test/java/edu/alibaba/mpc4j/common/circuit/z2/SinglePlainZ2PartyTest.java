@@ -75,10 +75,10 @@ public class SinglePlainZ2PartyTest {
         plainParty.init(bitNum);
         // generate x
         BitVector xVector = BitVectorFactory.createRandom(bitNum, SECURE_RANDOM);
-        MpcZ2Vector xPlainVector = plainParty.create(xVector);
+        MpcZ2Vector xPlainVector = plainParty.create(true, xVector);
         // generate y
         BitVector yVector = BitVectorFactory.createRandom(bitNum, SECURE_RANDOM);
-        MpcZ2Vector yPlainVector = plainParty.create(yVector);
+        MpcZ2Vector yPlainVector = plainParty.create(true, yVector);
         // create z
         BitVector zVector;
         MpcZ2Vector zPlainVector;
@@ -108,7 +108,7 @@ public class SinglePlainZ2PartyTest {
         plainParty.init(num);
         // generate x
         BitVector xVector = BitVectorFactory.createRandom(num, SECURE_RANDOM);
-        MpcZ2Vector xPlainVector = plainParty.create(xVector);
+        MpcZ2Vector xPlainVector = plainParty.create(true, xVector);
         // create z
         BitVector zVector;
         MpcZ2Vector zPlainVector;

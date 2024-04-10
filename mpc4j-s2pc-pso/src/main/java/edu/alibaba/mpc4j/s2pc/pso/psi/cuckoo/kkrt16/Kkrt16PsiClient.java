@@ -78,7 +78,7 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
     public Kkrt16PsiClient(Rpc clientRpc, Party serverParty, Kkrt16PsiConfig config) {
         super(Kkrt16PsiPtoDesc.getInstance(), clientRpc, serverParty, config);
         oprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getOprfConfig());
-        addSubPtos(oprfReceiver);
+        addSubPto(oprfReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }

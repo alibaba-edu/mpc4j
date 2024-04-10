@@ -100,8 +100,8 @@ public class Rr17EcPsiServer<T> extends AbstractPsiServer<T> {
         lcotSender = LcotFactory.createSender(serverRpc, clientParty, config.getLcotConfig());
         coinTossSender = CoinTossFactory.createSender(serverRpc, clientParty, config.getCoinTossConfig());
         divParam4PhaseHash = config.getDivParam4PhaseHash();
-        addSubPtos(lcotSender);
-        addSubPtos(coinTossSender);
+        addSubPto(lcotSender);
+        addSubPto(coinTossSender);
     }
 
     @Override

@@ -78,10 +78,10 @@ public class Ywl20MaSspCotReceiver extends AbstractSspCotReceiver {
     public Ywl20MaSspCotReceiver(Rpc receiverRpc, Party senderParty, Ywl20MaSspCotConfig config) {
         super(Ywl20MaSspCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(receiverRpc, senderParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
         spDpprfConfig = config.getSpDpprfConfig();
         spDpprfReceiver = SpDpprfFactory.createReceiver(receiverRpc, senderParty, spDpprfConfig);
-        addSubPtos(spDpprfReceiver);
+        addSubPto(spDpprfReceiver);
         gf2k = Gf2kFactory.createInstance(envType);
         hash = HashFactory.createInstance(envType, 2 * CommonConstants.BLOCK_BYTE_LENGTH);
     }

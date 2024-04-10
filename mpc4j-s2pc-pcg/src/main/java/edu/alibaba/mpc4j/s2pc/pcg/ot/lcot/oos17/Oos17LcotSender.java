@@ -61,7 +61,7 @@ public class Oos17LcotSender extends AbstractLcotSender {
     public Oos17LcotSender(Rpc senderRpc, Party receiverParty, Oos17LcotConfig config) {
         super(Oos17LcotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(senderRpc, receiverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
     }
 
     @Override

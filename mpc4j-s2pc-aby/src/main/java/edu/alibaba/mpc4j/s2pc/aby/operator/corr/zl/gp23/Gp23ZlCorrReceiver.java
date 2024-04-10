@@ -51,9 +51,9 @@ public class Gp23ZlCorrReceiver extends AbstractZlCorrParty {
     public Gp23ZlCorrReceiver(Rpc receiverRpc, Party senderParty, Gp23ZlCorrConfig config) {
         super(getInstance(), receiverRpc, senderParty, config);
         z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, config.getZ2cConfig());
-        addSubPtos(z2cReceiver);
+        addSubPto(z2cReceiver);
         cotReceiver = CotFactory.createReceiver(receiverRpc, senderParty, config.getCotConfig());
-        addSubPtos(cotReceiver);
+        addSubPto(cotReceiver);
     }
 
     @Override

@@ -61,7 +61,7 @@ public class Nr04EccSqOprfReceiver extends AbstractSqOprfReceiver {
     public Nr04EccSqOprfReceiver(Rpc receiverRpc, Party senderParty, Nr04EccSqOprfConfig config) {
         super(Nr04EccSqOprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
         cotReceiver = CotFactory.createReceiver(receiverRpc, senderParty, config.getCotConfig());
-        addSubPtos(cotReceiver);
+        addSubPto(cotReceiver);
         ecc = EccFactory.createInstance(envType);
         zp = ZpFactory.createInstance(envType, ecc.getN());
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);

@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k;
 
 import cc.redberry.rings.linear.LinearSolver;
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.H3GctDokvsUtils;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
@@ -94,26 +95,7 @@ abstract class AbstractH3FieldGctGf2kDokvs<T> extends AbstractGf2kDokvs<T> imple
 
     @Override
     public int[] sparsePositions(T key) {
-        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        int[] sparsePositions = IntUtils.byteArrayToIntArray(hl.getBytes(keyBytes));
-        // we now use the method provided in VOLE-PSI to get distinct hash indexes
-        sparsePositions[0] = Math.abs(sparsePositions[0] % lm);
-        sparsePositions[1] = Math.abs(sparsePositions[1] % (lm - 1));
-        sparsePositions[2] = Math.abs(sparsePositions[2] % (lm - 2));
-
-        int min = Math.min(sparsePositions[0], sparsePositions[1]);
-        int max = sparsePositions[0] + sparsePositions[1] - min;
-        if (max == sparsePositions[1]) {
-            sparsePositions[1]++;
-            max++;
-        }
-        if (sparsePositions[2] >= min) {
-            sparsePositions[2]++;
-        }
-        if (sparsePositions[2] >= max) {
-            sparsePositions[2]++;
-        }
-        return sparsePositions;
+        return H3GctDokvsUtils.sparsePositions(hl, key, lm);
     }
 
     @Override

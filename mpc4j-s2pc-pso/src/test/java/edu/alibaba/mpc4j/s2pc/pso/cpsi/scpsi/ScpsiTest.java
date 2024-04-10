@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.cpsi.scpsi;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/1/30
  */
 @RunWith(Parameterized.class)
-public class ScpsiTest extends AbstractTwoPartyPtoTest {
+public class ScpsiTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScpsiTest.class);
     /**
      * default size

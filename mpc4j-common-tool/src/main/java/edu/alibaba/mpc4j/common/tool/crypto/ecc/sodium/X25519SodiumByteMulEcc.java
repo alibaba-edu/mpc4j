@@ -40,11 +40,11 @@ public class X25519SodiumByteMulEcc implements ByteMulEcc {
     }
 
     /**
-     * 哈希函数
+     * hash used in hash_to_curve
      */
     private final Hash hash;
 
-    public X25519SodiumByteMulEcc() {
+    private X25519SodiumByteMulEcc() {
         hash = HashFactory.createInstance(HashFactory.HashType.JDK_SHA256, X25519ByteEccUtils.POINT_BYTES);
         X25519ByteEccUtils.precomputeBase();
     }
@@ -111,5 +111,19 @@ public class X25519SodiumByteMulEcc implements ByteMulEcc {
     @Override
     public int scalarByteLength() {
         return X25519ByteEccUtils.SCALAR_BYTES;
+    }
+
+    /**
+     * singleton mode
+     */
+    private static final X25519SodiumByteMulEcc INSTANCE = new X25519SodiumByteMulEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static X25519SodiumByteMulEcc getInstance() {
+        return INSTANCE;
     }
 }

@@ -26,11 +26,7 @@ import java.util.stream.Stream;
  * @author Weiran Liu
  * @date 2023/8/3
  */
-public class H2NaiveClusterBlazeGctGf2eDokvs<T> extends AbstractH2ClusterBlazeGctGf2eDokvs<T> {
-    /**
-     * type
-     */
-    private static final Gf2eDokvsType TYPE = Gf2eDokvsType.H2_NAIVE_CLUSTER_BLAZE_GCT;
+class H2NaiveClusterBlazeGctGf2eDokvs<T> extends AbstractH2ClusterBlazeGctGf2eDokvs<T> {
 
     H2NaiveClusterBlazeGctGf2eDokvs(EnvType envType, int n, int l, byte[][] keys) {
         this(envType, n, l, keys, new SecureRandom());
@@ -52,7 +48,7 @@ public class H2NaiveClusterBlazeGctGf2eDokvs<T> extends AbstractH2ClusterBlazeGc
 
     @Override
     public Gf2eDokvsType getType() {
-        return TYPE;
+        return Gf2eDokvsType.H2_NAIVE_CLUSTER_BLAZE_GCT;
     }
 
     @Override

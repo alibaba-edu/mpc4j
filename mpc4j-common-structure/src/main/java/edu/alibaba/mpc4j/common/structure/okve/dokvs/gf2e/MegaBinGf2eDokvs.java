@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
@@ -154,8 +155,8 @@ public class MegaBinGf2eDokvs<T> implements Gf2eDokvs<T> {
     }
 
     @Override
-    public Gf2eDokvsFactory.Gf2eDokvsType getType() {
-        return Gf2eDokvsFactory.Gf2eDokvsType.MEGA_BIN;
+    public Gf2eDokvsType getType() {
+        return Gf2eDokvsType.MEGA_BIN;
     }
 
     @Override

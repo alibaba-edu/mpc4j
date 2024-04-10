@@ -15,8 +15,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipher;
 import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipherFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
-import edu.alibaba.mpc4j.common.tool.polynomial.power.PowerNode;
-import edu.alibaba.mpc4j.common.tool.polynomial.power.PowerUtils;
+import edu.alibaba.mpc4j.common.tool.polynomial.power.PowersDag;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64PolyFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
@@ -26,6 +25,8 @@ import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.AbstractKwPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirParams;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21.Cmg21KwPirPtoDesc.PtoStep;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -99,7 +100,7 @@ public class Cmg21KwPirServer extends AbstractKwPirServer {
     }
 
     @Override
-    public void init(KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> keywordLabelMap, int maxRetrievalSize,
+    public void init(KwPirParams kwPirParams, Map<ByteBuffer, byte[]> keywordLabelMap, int maxRetrievalSize,
                      int labelByteLength) throws MpcAbortException {
         setInitInput(keywordLabelMap, maxRetrievalSize, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -119,7 +120,7 @@ public class Cmg21KwPirServer extends AbstractKwPirServer {
         stopWatch.start();
         // generate prf
         List<ByteBuffer> keywordPrfs = computeKeywordPrf();
-        Map<ByteBuffer, ByteBuffer> prfLabelMap = IntStream.range(0, keywordSize)
+        Map<ByteBuffer, byte[]> prfLabelMap = IntStream.range(0, keywordSize)
             .boxed()
             .collect(Collectors.toMap(keywordPrfs::get, i -> keywordLabelMap.get(keywordList.get(i)), (a, b) -> b));
         stopWatch.stop();
@@ -154,7 +155,7 @@ public class Cmg21KwPirServer extends AbstractKwPirServer {
     }
 
     @Override
-    public void init(Map<ByteBuffer, ByteBuffer> keywordLabelMap, int maxRetrievalSize, int labelByteLength)
+    public void init(Map<ByteBuffer, byte[]> keywordLabelMap, int maxRetrievalSize, int labelByteLength)
         throws MpcAbortException {
         MathPreconditions.checkPositive("maxRetrievalSize", maxRetrievalSize);
         if (maxRetrievalSize > 1) {
@@ -182,7 +183,7 @@ public class Cmg21KwPirServer extends AbstractKwPirServer {
         stopWatch.start();
         // generate prf
         List<ByteBuffer> keywordPrfs = computeKeywordPrf();
-        Map<ByteBuffer, ByteBuffer> prfLabelMap = IntStream.range(0, keywordSize)
+        Map<ByteBuffer, byte[]> prfLabelMap = IntStream.range(0, keywordSize)
             .boxed()
             .collect(Collectors.toMap(keywordPrfs::get, i -> keywordLabelMap.get(keywordList.get(i)), (a, b) -> b));
         stopWatch.stop();
@@ -377,7 +378,7 @@ public class Cmg21KwPirServer extends AbstractKwPirServer {
      *
      * @param prfMap prf map.
      */
-    private void encodeDatabase(Map<ByteBuffer, ByteBuffer> prfMap, List<List<HashBinEntry<ByteBuffer>>> hashBins) {
+    private void encodeDatabase(Map<ByteBuffer, byte[]> prfMap, List<List<HashBinEntry<ByteBuffer>>> hashBins) {
         Zp64Poly zp64Poly = Zp64PolyFactory.createInstance(envType, params.getPlainModulus());
         int itemPerCiphertext = params.getItemPerCiphertext();
         int itemEncodedSlotSize = params.getItemEncodedSlotSize();
@@ -436,7 +437,7 @@ public class Cmg21KwPirServer extends AbstractKwPirServer {
                             byte[] iv = new byte[ivByteLength];
                             secureRandom.nextBytes(iv);
                             byte[] extendedIv = BytesUtils.paddingByteArray(iv, CommonConstants.BLOCK_BYTE_LENGTH);
-                            byte[] plaintextLabel = prfMap.get(entry.getItem()).array();
+                            byte[] plaintextLabel = prfMap.get(entry.getItem());
                             byte[] extendedCipherLabel = streamCipher.ivEncrypt(keyBytes, extendedIv, plaintextLabel);
                             byte[] ciphertextLabel = new byte[ivByteLength + labelByteLength];
                             System.arraycopy(extendedCipherLabel, CommonConstants.BLOCK_BYTE_LENGTH - ivByteLength, ciphertextLabel, 0, ivByteLength + labelByteLength);
@@ -535,29 +536,29 @@ public class Cmg21KwPirServer extends AbstractKwPirServer {
         int partitionCount = CommonUtils.getUnitNum(binSize, params.getMaxPartitionSizePerBin());
         int[][] powerDegree;
         if (params.getPsLowDegree() > 0) {
-            Set<Integer> innerPowersSet = new HashSet<>();
-            Set<Integer> outerPowersSet = new HashSet<>();
-            for (int i = 0; i < params.getQueryPowers().length; i++) {
+            int queryPowerNum = params.getQueryPowers().length;
+            TIntSet innerPowersSet = new TIntHashSet(queryPowerNum);
+            TIntSet outerPowersSet = new TIntHashSet(queryPowerNum);
+            for (int i = 0; i < queryPowerNum; i++) {
                 if (params.getQueryPowers()[i] <= params.getPsLowDegree()) {
                     innerPowersSet.add(params.getQueryPowers()[i]);
                 } else {
                     outerPowersSet.add(params.getQueryPowers()[i] / (params.getPsLowDegree() + 1));
                 }
             }
-            PowerNode[] innerPowerNodes = PowerUtils.computePowers(innerPowersSet, params.getPsLowDegree());
-            PowerNode[] outerPowerNodes = PowerUtils.computePowers(
-                outerPowersSet, params.getMaxPartitionSizePerBin() / (params.getPsLowDegree() + 1));
-            powerDegree = new int[innerPowerNodes.length + outerPowerNodes.length][2];
-            int[][] innerPowerNodesDegree = Arrays.stream(innerPowerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
-            int[][] outerPowerNodesDegree = Arrays.stream(outerPowerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
+            PowersDag innerPowersDag = new PowersDag(innerPowersSet, params.getPsLowDegree());
+            PowersDag outerPowersDag = new PowersDag(
+                outerPowersSet, params.getMaxPartitionSizePerBin() / (params.getPsLowDegree() + 1)
+            );
+            powerDegree = new int[innerPowersDag.upperBound() + outerPowersDag.upperBound()][2];
+            int[][] innerPowerNodesDegree = innerPowersDag.getDag();
+            int[][] outerPowerNodesDegree = outerPowersDag.getDag();
             System.arraycopy(innerPowerNodesDegree, 0, powerDegree, 0, innerPowerNodesDegree.length);
             System.arraycopy(outerPowerNodesDegree, 0, powerDegree, innerPowerNodesDegree.length, outerPowerNodesDegree.length);
         } else {
-            Set<Integer> sourcePowersSet = Arrays.stream(params.getQueryPowers())
-                .boxed()
-                .collect(Collectors.toCollection(HashSet::new));
-            PowerNode[] powerNodes = PowerUtils.computePowers(sourcePowersSet, params.getMaxPartitionSizePerBin());
-            powerDegree = Arrays.stream(powerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
+            TIntSet sourcePowersSet = new TIntHashSet(params.getQueryPowers());
+            PowersDag powersDag = new PowersDag(sourcePowersSet, params.getMaxPartitionSizePerBin());
+            powerDegree = powersDag.getDag();
         }
         int labelPartitionCount = CommonUtils.getUnitNum((labelByteLength + ivByteLength) * Byte.SIZE,
             (PirUtils.getBitLength(params.getPlainModulus()) - 1) * params.getItemEncodedSlotSize());

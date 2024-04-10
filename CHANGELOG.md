@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[1.1.1\]
+
+### Added
+
+- [important] Create a new module `mpc4j-crypto-simd`, introduce Vector API to implement SIMD operations for bit matrix transpose. However, this requires to develop `mpc4j` using JDK 17 or later.
+- Create a new module `mpc4j-crypto-algs`, implement order-preserving encryption (EUROCRYPT 2009).
+- Create a new module `mpc4j-s3pc-abb3`, start to implement honest-majority three-party protocols.
+- Now `mpc4j` automatically compresses equal-length data packet for `NettyRpc`.
+- Implement Waksman networks.
+- Implement unbalanced private set union proposed in CCS 2023.
+
+### Changed
+
+- update the package format so that now `mpc4j` allows many sub-protocols. 
+- update the implementation of `BandLinearSolver`. Now the implementation only needs linear memory cost.
+- re-organize OKVS implementation, remove many unnecessary codes.
+
+### Fixed
+
+- Fix a bug that `FileRpc` wrongly counts the communication cost.
+- Fix a bug that reports `invalid pointer` when running examples. The bug comes from MCL. Considering the fact the OpenSSL also provides asm implementations for ECC, we now remove MCL.
+
 ## \[1.1.0\]
 
 ### Added

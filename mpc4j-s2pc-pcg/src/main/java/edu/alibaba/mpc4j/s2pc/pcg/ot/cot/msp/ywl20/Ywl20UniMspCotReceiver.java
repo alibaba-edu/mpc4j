@@ -69,7 +69,7 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
     public Ywl20UniMspCotReceiver(Rpc senderRpc, Party receiverParty, Ywl20UniMspCotConfig config) {
         super(Ywl20UniMspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         bspCotReceiver = BspCotFactory.createReceiver(senderRpc, receiverParty, config.getBspCotConfig());
-        addSubPtos(bspCotReceiver);
+        addSubPto(bspCotReceiver);
     }
 
     @Override

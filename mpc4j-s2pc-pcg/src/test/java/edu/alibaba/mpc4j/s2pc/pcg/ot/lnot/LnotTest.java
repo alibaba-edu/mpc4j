@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory.LnotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.direct.DirectLnotConfig;
 import org.junit.Assert;
@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
  * @date 2023/4/13
  */
 @RunWith(Parameterized.class)
-public class LnotTest extends AbstractTwoPartyPtoTest {
+public class LnotTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(LnotTest.class);
     /**
      * default l

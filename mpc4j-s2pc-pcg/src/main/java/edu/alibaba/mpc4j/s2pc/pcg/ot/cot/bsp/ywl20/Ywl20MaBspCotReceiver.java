@@ -78,10 +78,10 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
     public Ywl20MaBspCotReceiver(Rpc receiverRpc, Party senderParty, Ywl20MaBspCotConfig config) {
         super(Ywl20MaBspCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(receiverRpc, senderParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
         bpDpprfConfig = config.getBpDpprfConfig();
         bpDpprfReceiver = BpDpprfFactory.createReceiver(receiverRpc, senderParty, bpDpprfConfig);
-        addSubPtos(bpDpprfReceiver);
+        addSubPto(bpDpprfReceiver);
         gf2k = Gf2kFactory.createInstance(envType);
         hash = HashFactory.createInstance(envType, 2 * CommonConstants.BLOCK_BYTE_LENGTH);
     }

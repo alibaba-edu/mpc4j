@@ -110,10 +110,10 @@ class BatchDyadicZ2cSenderThread extends Thread {
             sender.init(totalBitNum);
             // set inputs
             MpcZ2Vector[] xPlainMpcVectors = Arrays.stream(xVectors)
-                .map(sender::create)
+                .map(each -> sender.create(true, each))
                 .toArray(MpcZ2Vector[]::new);
             MpcZ2Vector[] yPlainMpcVectors = Arrays.stream(yVectors)
-                .map(sender::create)
+                .map(each -> sender.create(true, each))
                 .toArray(MpcZ2Vector[]::new);
             MpcZ2Vector[] x0SecretMpcVectors = sender.shareOwn(xVectors);
             int[] bitNums = Arrays.stream(yVectors).mapToInt(BitVector::bitNum).toArray();

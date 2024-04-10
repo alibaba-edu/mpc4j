@@ -51,9 +51,9 @@ public class Gp23ZlTruncReceiver extends AbstractZlTruncParty {
     public Gp23ZlTruncReceiver(Rpc receiverRpc, Party senderParty, Gp23ZlTruncConfig config) {
         super(getInstance(), receiverRpc, senderParty, config);
         z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, config.getZ2cConfig());
-        addSubPtos(z2cReceiver);
+        addSubPto(z2cReceiver);
         cotReceiver = CotFactory.createReceiver(receiverRpc, senderParty, config.getCotConfig());
-        addSubPtos(cotReceiver);
+        addSubPto(cotReceiver);
     }
 
     @Override

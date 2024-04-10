@@ -33,9 +33,9 @@ public class Cgs22OpprfPdsmSender extends AbstractPdsmSender {
     public Cgs22OpprfPdsmSender(Rpc senderRpc, Party receiverParty, Cgs22OpprfPdsmConfig config) {
         super(Cgs22OpprfPdsmPtoDesc.getInstance(), senderRpc, receiverParty, config);
         bopprfSender = BopprfFactory.createSender(senderRpc, receiverParty, config.getBopprfConfig());
-        addSubPtos(bopprfSender);
+        addSubPto(bopprfSender);
         peqtSender = PeqtFactory.createSender(senderRpc, receiverParty, config.getPeqtConfig());
-        addSubPtos(peqtSender);
+        addSubPto(peqtSender);
     }
 
     @Override

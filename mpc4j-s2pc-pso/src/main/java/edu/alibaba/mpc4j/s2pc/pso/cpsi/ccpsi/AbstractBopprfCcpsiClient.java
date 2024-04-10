@@ -62,9 +62,9 @@ public abstract class AbstractBopprfCcpsiClient<T> extends AbstractCcpsiClient<T
     public AbstractBopprfCcpsiClient(PtoDesc ptoDesc, Rpc serverRpc, Party clientParty, BopprfCcpsiConfig config) {
         super(ptoDesc, serverRpc, clientParty, config);
         bopprfReceiver = BopprfFactory.createReceiver(serverRpc, clientParty, config.getBopprfConfig());
-        addSubPtos(bopprfReceiver);
+        addSubPto(bopprfReceiver);
         peqtReceiver = PeqtFactory.createSender(serverRpc, clientParty, config.getPeqtConfig());
-        addSubPtos(peqtReceiver);
+        addSubPto(peqtReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
         hashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }

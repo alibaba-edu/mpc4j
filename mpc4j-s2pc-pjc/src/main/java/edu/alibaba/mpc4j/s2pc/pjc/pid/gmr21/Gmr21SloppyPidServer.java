@@ -115,11 +115,11 @@ public class Gmr21SloppyPidServer<T> extends AbstractPidParty<T> {
     public Gmr21SloppyPidServer(Rpc serverRpc, Party clientParty, Gmr21SloppyPidConfig config) {
         super(Gmr21SloppyPidPtoDesc.getInstance(), serverRpc, clientParty, config);
         oprfReceiver = OprfFactory.createOprfReceiver(serverRpc, clientParty, config.getOprfConfig());
-        addSubPtos(oprfReceiver);
+        addSubPto(oprfReceiver);
         oprfSender = OprfFactory.createOprfSender(serverRpc, clientParty, config.getOprfConfig());
-        addSubPtos(oprfSender);
+        addSubPto(oprfSender);
         psuServer = PsuFactory.createServer(serverRpc, clientParty, config.getPsuConfig());
-        addSubPtos(psuServer);
+        addSubPto(psuServer);
         sloppyOkvsType = config.getSloppyOkvsType();
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);

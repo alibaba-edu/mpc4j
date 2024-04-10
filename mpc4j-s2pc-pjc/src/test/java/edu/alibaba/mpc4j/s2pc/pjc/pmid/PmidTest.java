@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pmid;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.zcl22.Zcl22MpPmidConfig;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * @date 2022/08/26
  */
 @RunWith(Parameterized.class)
-public class PmidTest extends AbstractTwoPartyPtoTest {
+public class PmidTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(PmidTest.class);
     /**
      * 默认数量

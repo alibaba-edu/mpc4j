@@ -5,8 +5,6 @@ import edu.alibaba.mpc4j.common.tool.utils.BigDecimalUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-import static edu.alibaba.mpc4j.common.tool.utils.BigDecimalUtils.STRUCTURE_SCALE;
-
 /**
  * fingerprint utilities.
  *
@@ -42,8 +40,8 @@ public class FingerprintUtils {
         int step = 1;
         // binary search
         boolean doubling = true;
-        while (probability.compareTo(BigDecimalUtils.STAT_NEG_PROBABILITY) > 0 || step > 1) {
-            if (probability.compareTo(BigDecimalUtils.STAT_NEG_PROBABILITY) > 0) {
+        while (probability.compareTo(BigDecimalUtils.STATS_NEG_PROG) > 0 || step > 1) {
+            if (probability.compareTo(BigDecimalUtils.STATS_NEG_PROG) > 0) {
                 // we need to increase l
                 if (doubling) {
                     step = Math.max(1, step * 2);
@@ -76,7 +74,7 @@ public class FingerprintUtils {
         int exp = (int) Math.ceil((double) m / w);
         // (1 - 2^{-l})^{M / w}
         return BigDecimal.ONE.subtract(
-            BigDecimal.ONE.subtract(BigDecimalUtils.HALF.setScale(STRUCTURE_SCALE, RoundingMode.HALF_UP).pow(l)).pow(exp)
+            BigDecimal.ONE.subtract(BigDecimalUtils.HALF.setScale(BigDecimalUtils.PRECISION, RoundingMode.HALF_UP).pow(l)).pow(exp)
         );
     }
 }

@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.agg.hamming;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/11/23
  */
 @RunWith(Parameterized.class)
-public class HammingTest extends AbstractTwoPartyPtoTest {
+public class HammingTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(HammingTest.class);
     /**
      * 默认运算数量

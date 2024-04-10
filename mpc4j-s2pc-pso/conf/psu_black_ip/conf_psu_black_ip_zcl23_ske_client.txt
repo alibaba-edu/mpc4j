@@ -1,0 +1,22 @@
+# 服务端信息
+server_name = server
+server_ip = 127.0.0.1
+server_port = 9002
+
+# 客户端信息
+client_name = client
+client_ip = 127.0.0.1
+client_port = 9003
+
+# 所属参与方
+own_name = client
+
+# 协议类型
+pto_type = PSU_BLACK_IP
+
+# 协议名称
+psu_pto_name = ZCL23_SKE
+
+# 数据
+psu_black_ip_server_input = black_ip/blackip.txt
+psu_black_ip_client_input = black_ip/oldip.txt

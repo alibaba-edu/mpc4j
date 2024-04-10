@@ -59,7 +59,7 @@ public class Gmr21OsnSender extends AbstractOsnSender {
     public Gmr21OsnSender(Rpc senderRpc, Party receiverParty, Gmr21OsnConfig config) {
         super(Gmr21OsnPtoDesc.getInstance(), senderRpc, receiverParty, config);
         cotSender = CotFactory.createSender(senderRpc, receiverParty, config.getCotConfig());
-        addSubPtos(cotSender);
+        addSubPto(cotSender);
     }
 
     @Override

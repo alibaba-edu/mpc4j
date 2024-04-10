@@ -44,7 +44,7 @@ public abstract class AbstractKwPirServer extends AbstractTwoPartyPto implements
         super(ptoDesc, serverRpc, clientParty, config);
     }
 
-    protected void setInitInput(Map<ByteBuffer, ByteBuffer> keywordLabelMap, int maxRetrievalSize, int labelByteLength) {
+    protected void setInitInput(Map<ByteBuffer, byte[]> keywordLabelMap, int maxRetrievalSize, int labelByteLength) {
         MathPreconditions.checkPositive("labelByteLength", labelByteLength);
         this.labelByteLength = labelByteLength;
         byte[] botElementByteArray = new byte[CommonConstants.STATS_BYTE_LENGTH];
@@ -52,10 +52,10 @@ public abstract class AbstractKwPirServer extends AbstractTwoPartyPto implements
         botElementByteBuffer = ByteBuffer.wrap(botElementByteArray);
         MathPreconditions.checkPositive("keywordNum", keywordLabelMap.size());
         keywordSize = keywordLabelMap.size();
-        Iterator<Entry<ByteBuffer, ByteBuffer>> iterator = keywordLabelMap.entrySet().iterator();
+        Iterator<Entry<ByteBuffer, byte[]>> iterator = keywordLabelMap.entrySet().iterator();
         keywordList = new ArrayList<>();
         while (iterator.hasNext()) {
-            Entry<ByteBuffer, ByteBuffer> entry = iterator.next();
+            Entry<ByteBuffer, byte[]> entry = iterator.next();
             ByteBuffer item = entry.getKey();
             Preconditions.checkArgument(!item.equals(botElementByteBuffer), "xi must not equal ⊥");
             keywordList.add(item);

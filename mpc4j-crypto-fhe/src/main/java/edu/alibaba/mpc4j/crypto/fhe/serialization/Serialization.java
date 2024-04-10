@@ -23,9 +23,9 @@ public class Serialization {
      */
     public static ComprModeType COMPR_MODE_DEFAULT = ComprModeType.ZSTD;
     /**
-     * The magic value indicating a Microsoft SEAL header.
+     * The magic value indicating a Microsoft SEAL header. SEAL uses '0xA15E' while we use a different '0xA15F'.
      */
-    public static final short SEAL_MAGIC = (short) 0xA15E;
+    public static final short SEAL_MAGIC = (short) 0xA15F;
     /**
      * The size in bytes of the SEALHeader.
      */

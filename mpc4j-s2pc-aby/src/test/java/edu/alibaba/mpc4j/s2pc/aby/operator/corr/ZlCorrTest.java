@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.corr;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/10/2
  */
 @RunWith(Parameterized.class)
-public class ZlCorrTest extends AbstractTwoPartyPtoTest {
+public class ZlCorrTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZlCorrTest.class);
     /**
      * default num

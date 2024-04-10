@@ -26,7 +26,7 @@ public class Cgs22NaivePdsmSender extends AbstractPdsmSender {
     public Cgs22NaivePdsmSender(Rpc senderRpc, Party receiverParty, Cgs22NaivePdsmConfig config) {
         super(Cgs22NaivePdsmPtoDesc.getInstance(), senderRpc, receiverParty, config);
         pesmSender = PesmFactory.createSender(senderRpc, receiverParty, config.getPesmConfig());
-        addSubPtos(pesmSender);
+        addSubPto(pesmSender);
     }
 
     @Override

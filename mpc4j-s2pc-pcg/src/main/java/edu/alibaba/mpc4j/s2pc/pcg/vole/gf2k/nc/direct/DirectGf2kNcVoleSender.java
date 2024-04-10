@@ -27,7 +27,7 @@ public class DirectGf2kNcVoleSender extends AbstractGf2kNcVoleSender {
     public DirectGf2kNcVoleSender(Rpc senderRpc, Party receiverParty, DirectGf2kNcVoleConfig config) {
         super(DirectGf2kNcVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreVoleSender = Gf2kCoreVoleFactory.createSender(senderRpc, receiverParty, config.getCoreVoleConfig());
-        addSubPtos(coreVoleSender);
+        addSubPto(coreVoleSender);
     }
 
     @Override

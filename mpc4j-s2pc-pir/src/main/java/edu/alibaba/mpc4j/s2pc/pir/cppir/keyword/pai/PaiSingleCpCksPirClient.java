@@ -76,7 +76,7 @@ public class PaiSingleCpCksPirClient<T> extends AbstractSingleCpKsPirClient<T> {
     public PaiSingleCpCksPirClient(Rpc clientRpc, Party serverParty, PaiSingleCpCksPirConfig config) {
         super(PaiSingleCpCksPirDesc.getInstance(), clientRpc, serverParty, config);
         sqOprfReceiver = SqOprfFactory.createReceiver(clientRpc, serverParty, config.getSqOprfConfig());
-        addSubPtos(sqOprfReceiver);
+        addSubPto(sqOprfReceiver);
         byteFullEcc = ByteEccFactory.createFullInstance(envType);
         streamCipher = StreamCipherFactory.createInstance(envType);
     }

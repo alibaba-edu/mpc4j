@@ -1,12 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractThreePartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractThreePartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.pcg.aid.AiderThread;
 import edu.alibaba.mpc4j.s2pc.pcg.aid.TrustDealAider;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2Triple;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.core.aid.AidZ2CoreMtgConfig;
-import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * @author Weiran Liu
  * @date 2023/5/20
  */
-public class Z2CoreMtgAidTest extends AbstractThreePartyPtoTest {
+public class Z2CoreMtgAidTest extends AbstractThreePartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(Z2CoreMtgAidTest.class);
     /**
      * default num

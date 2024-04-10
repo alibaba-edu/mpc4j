@@ -57,7 +57,7 @@ public class Cgs22RbopprfSender extends AbstractRbopprfSender {
     public Cgs22RbopprfSender(Rpc senderRpc, Party receiverParty, Cgs22RbopprfConfig config) {
         super(Cgs22RbopprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
         oprfSender = OprfFactory.createOprfSender(senderRpc, receiverParty, config.getOprfConfig());
-        addSubPtos(oprfSender);
+        addSubPto(oprfSender);
         cuckooHashBinType = config.getCuckooHashBinType();
         d = config.getD();
     }

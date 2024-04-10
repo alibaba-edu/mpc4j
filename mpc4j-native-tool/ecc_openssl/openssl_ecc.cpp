@@ -42,7 +42,7 @@ jobject openssl_precompute(JNIEnv *env, int curveIndex, jstring jPointString) {
     auto *windowHandler = new WindowMethod(curveIndex, point, openssl_point_bit_length[curveIndex], OPENSSL_WIN_SIZE);
     EC_POINT_free(point);
     BN_CTX_free(ctx);
-    return (*env).NewDirectByteBuffer(windowHandler, 0);
+    return (*env).NewDirectByteBuffer(windowHandler, 8);
 }
 
 void openssl_destroy_precompute(JNIEnv *env, jobject jWindowHandler) {

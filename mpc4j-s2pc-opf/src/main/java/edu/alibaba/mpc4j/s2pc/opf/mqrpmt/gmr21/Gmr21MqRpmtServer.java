@@ -3,13 +3,13 @@ package edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.benes.BenesNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
+import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
@@ -103,11 +103,11 @@ public class Gmr21MqRpmtServer extends AbstractMqRpmtServer {
     public Gmr21MqRpmtServer(Rpc serverRpc, Party clientParty, Gmr21MqRpmtConfig config) {
         super(Gmr21MqRpmtPtoDesc.getInstance(), serverRpc, clientParty, config);
         cuckooHashOprfReceiver = OprfFactory.createOprfReceiver(serverRpc, clientParty, config.getCuckooHashOprfConfig());
-        addSubPtos(cuckooHashOprfReceiver);
+        addSubPto(cuckooHashOprfReceiver);
         osnReceiver = OsnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
-        addSubPtos(osnReceiver);
+        addSubPto(osnReceiver);
         peqtOprfSender = OprfFactory.createOprfSender(serverRpc, clientParty, config.getPeqtOprfConfig());
-        addSubPtos(peqtOprfSender);
+        addSubPto(peqtOprfSender);
         okvsType = config.getOkvsType();
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
@@ -284,7 +284,7 @@ public class Gmr21MqRpmtServer extends AbstractMqRpmtServer {
     }
 
     private void handleOsnReceiverOutput(OsnPartyOutput osnReceiverOutput) {
-        Vector<byte[]> tPiVector = BenesNetworkUtils.permutation(permutationMap, tVector);
+        Vector<byte[]> tPiVector = PermutationNetworkUtils.permutation(permutationMap, tVector);
         tVector = null;
         aPrimeArray = IntStream.range(0, binNum)
             .mapToObj(index -> {
@@ -300,7 +300,7 @@ public class Gmr21MqRpmtServer extends AbstractMqRpmtServer {
         // 求并集的时候服务端发给客户端的是交换后的数据顺序
         Vector<Integer> permutedIndexVector = IntStream.range(0, binNum).boxed()
             .collect(Collectors.toCollection(Vector::new));
-        permutedIndexVector = BenesNetworkUtils.permutation(permutationMap, permutedIndexVector);
+        permutedIndexVector = PermutationNetworkUtils.permutation(permutationMap, permutedIndexVector);
         int[] permutedIndexArray = permutedIndexVector.stream().mapToInt(permutedIndex -> permutedIndex).toArray();
         IntStream binIndexIntStream = IntStream.range(0, binNum);
         binIndexIntStream = parallel ? binIndexIntStream.parallel() : binIndexIntStream;

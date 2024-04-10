@@ -39,7 +39,6 @@ public class EccConsistencyTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
         // SEC_P256_K1
-        configurations.add(new Object[] {"SecP256k1 (BC v.s. MCL)", EccType.SEC_P256_K1_BC, EccType.SEC_P256_K1_MCL});
         configurations.add(new Object[] {"SecP256k1 (BC v.s. MCL)", EccType.SEC_P256_K1_BC, EccType.SEC_P256_K1_OPENSSL});
         // SEC_P256_R1
         configurations.add(new Object[] {"SecP256r1 (BC v.s. OpenSSL)", EccType.SEC_P256_R1_OPENSSL, EccType.SEC_P256_R1_OPENSSL});

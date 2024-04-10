@@ -4,6 +4,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -159,7 +160,7 @@ public class CombinedBitVector implements BitVector {
 
     @Override
     public void reduce(int bitNum) {
-        innerBitVectorToBigIntegerBitVector();
+//        innerBitVectorToBigIntegerBitVector();
         innerBitVector.reduce(bitNum);
     }
 
@@ -243,5 +244,56 @@ public class CombinedBitVector implements BitVector {
     @Override
     public String toString() {
         return innerBitVector.toString();
+    }
+
+    @Override
+    public void extendBitNum(int extendBitNum) {
+        innerBitVector.extendBitNum(extendBitNum);
+    }
+
+    @Override
+    public BitVector padShiftLeft(int n) {
+        return innerBitVector.padShiftLeft(n);
+    }
+
+    @Override
+    public void fixShiftLefti(int n) {
+        innerBitVector.fixShiftLefti(n);
+    }
+
+    @Override
+    public BitVector reduceShiftRight(int n) {
+        return innerBitVector.reduceShiftRight(n);
+    }
+
+    @Override
+    public void reduceShiftRighti(int n) {
+        innerBitVector.reduceShiftRighti(n);
+    }
+
+    @Override
+    public void fixShiftRighti(int n) {
+        innerBitVector.fixShiftRighti(n);
+    }
+
+    @Override
+    public void setBytes(byte[] source, int srcPos, int thisPos, int byteLength) {
+        innerBitVector.setBytes(source, srcPos, thisPos, byteLength);
+    }
+
+    @Override
+    public BitVector[] uncheckSplitWithPadding(int[] bitNums) {
+        BitVector[] res = innerBitVector.uncheckSplitWithPadding(bitNums);
+        return Arrays.stream(res).map(CombinedBitVector::create).toArray(BitVector[]::new);
+    }
+
+    @Override
+    public void reverseBits() {
+        innerBitVector.reverseBits();
+    }
+
+    @Override
+    public boolean numOf1IsOdd() {
+        return innerBitVector.numOf1IsOdd();
     }
 }

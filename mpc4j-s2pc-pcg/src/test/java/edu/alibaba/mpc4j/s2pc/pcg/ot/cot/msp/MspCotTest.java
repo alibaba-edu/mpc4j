@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * @date 2022/01/24
  */
 @RunWith(Parameterized.class)
-public class MspCotTest extends AbstractTwoPartyPtoTest {
+public class MspCotTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(MspCotTest.class);
     /**
      * default sparse num

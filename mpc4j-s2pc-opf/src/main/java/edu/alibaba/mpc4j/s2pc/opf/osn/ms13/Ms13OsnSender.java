@@ -68,7 +68,7 @@ public class Ms13OsnSender extends AbstractOsnSender {
     public Ms13OsnSender(Rpc senderRpc, Party receiverParty, Ms13OsnConfig config) {
         super(Ms13OsnPtoDesc.getInstance(), senderRpc, receiverParty, config);
         cotSender = CotFactory.createSender(senderRpc, receiverParty, config.getCotConfig());
-        addSubPtos(cotSender);
+        addSubPto(cotSender);
     }
 
     @Override

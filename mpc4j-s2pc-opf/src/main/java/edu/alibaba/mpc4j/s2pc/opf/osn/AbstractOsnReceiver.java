@@ -7,9 +7,9 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.benes.BenesNetwork;
-import edu.alibaba.mpc4j.common.tool.benes.BenesNetworkFactory;
-import edu.alibaba.mpc4j.common.tool.benes.BenesNetworkUtils;
+import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
+import edu.alibaba.mpc4j.common.tool.network.benes.BenesNetwork;
+import edu.alibaba.mpc4j.common.tool.network.benes.BenesNetworkFactory;
 
 import java.util.Arrays;
 
@@ -73,8 +73,8 @@ public abstract class AbstractOsnReceiver extends AbstractTwoPartyPto implements
     protected void setInitInput(int maxN) {
         MathPreconditions.checkGreater("maxN", maxN, 1);
         this.maxN = maxN;
-        maxLevel = BenesNetworkUtils.getLevel(maxN);
-        maxWidth = BenesNetworkUtils.getWidth(maxN);
+        maxLevel = PermutationNetworkUtils.getLevel(maxN);
+        maxWidth = PermutationNetworkUtils.getMaxWidth(maxN);
         maxSwitchNum = maxLevel * maxWidth;
         initState();
     }
@@ -84,7 +84,7 @@ public abstract class AbstractOsnReceiver extends AbstractTwoPartyPto implements
         MathPreconditions.checkGreaterOrEqual("byteLength", byteLength, CommonConstants.STATS_BYTE_LENGTH);
         this.byteLength = byteLength;
         Preconditions.checkArgument(
-            BenesNetworkUtils.validPermutation(permutationMap),
+            PermutationNetworkUtils.validPermutation(permutationMap),
             "permutation map is invalid: %s", Arrays.toString(permutationMap)
         );
         MathPreconditions.checkGreater("n", permutationMap.length, 1);
@@ -92,7 +92,7 @@ public abstract class AbstractOsnReceiver extends AbstractTwoPartyPto implements
         n = permutationMap.length;
         benesNetwork = BenesNetworkFactory.createInstance(envType, permutationMap);
         level = benesNetwork.getLevel();
-        width = benesNetwork.getWidth();
+        width = benesNetwork.getMaxWidth();
         switchNum = level * width;
         extraInfo++;
     }

@@ -65,7 +65,7 @@ public class Prty19LowPsiClient<T> extends AbstractPsiClient<T> {
     public Prty19LowPsiClient(Rpc clientRpc, Party serverParty, Prty19LowPsiConfig config) {
         super(Prty19LowPsiPtoDesc.getInstance(), clientRpc, serverParty, config);
         coreCotSender = CoreCotFactory.createSender(clientRpc, serverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
         okvsType = config.getOkvsType();
         okvsKeyNum = Gf2eDokvsFactory.getHashKeyNum(okvsType);
     }

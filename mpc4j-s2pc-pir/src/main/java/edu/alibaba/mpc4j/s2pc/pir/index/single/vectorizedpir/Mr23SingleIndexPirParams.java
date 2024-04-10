@@ -69,7 +69,7 @@ public class Mr23SingleIndexPirParams implements SingleIndexPirParams {
      * default params
      */
     public static Mr23SingleIndexPirParams DEFAULT_PARAMS = new Mr23SingleIndexPirParams(
-        8192, 22
+        8192, 28
     );
 
     @Override

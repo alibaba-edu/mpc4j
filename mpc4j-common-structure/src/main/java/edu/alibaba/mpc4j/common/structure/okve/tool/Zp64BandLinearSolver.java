@@ -95,16 +95,16 @@ public class Zp64BandLinearSolver {
      * only allow
      * <p> m (number of columns) >= n (number of rows) </p>
      *
-     * @param ss  starting positions of lhs.
-     * @param w   the band width.
-     * @param lhs the lhs of the system.
-     * @param rhs the rhs of the system.
+     * @param ss       starting positions of lhs.
+     * @param w        the band width.
+     * @param lhs      the lhs of the system.
+     * @param rhs      the rhs of the system.
+     * @param nColumns the number of columns.
      * @return the information for row Echelon form.
      */
-    private RowEchelonFormInfo rowEchelonForm(int w, int[] ss, long[][] lhs, long[] rhs) {
+    private RowEchelonFormInfo rowEchelonForm(int w, int[] ss, long[][] lhs, long[] rhs, int nColumns) {
         // verification is done in the input phase
         int nRows = ss.length;
-        int nColumns = lhs[0].length;
         TIntSet maxLisColumns = new TIntHashSet(nRows);
         // sort the rows of the system (A, b) by s[i]
         sort(ss, lhs, rhs);
@@ -116,16 +116,21 @@ public class Zp64BandLinearSolver {
             int row = iColumn - nZeroColumns;
             int max = row;
             // if the current pivot is 0, then search for leftmost 1 in row i.
-            if (zp64.isZero(lhs[row][iColumn])) {
+            if (zp64.isZero(getValue(w, ss[row], lhs[row], iColumn))) {
                 // There can be many candidate rows. Since s_i is ordered, once we find an invalid row, we can break.
                 for (int iRow = row + 1; iRow < nRows && iColumn >= ss[iRow] && iColumn < ss[iRow] + w; ++iRow) {
-                    if (!zp64.isZero(lhs[iRow][iColumn])) {
+                    if (!zp64.isZero(getValue(w, ss[iRow], lhs[iRow], iColumn))) {
                         max = iRow;
                         break;
                     }
                 }
                 // We swap rows in the implementation. We change the starting position to ensure ss is correct.
                 if (ss[row] < ss[max]) {
+                    long[] temp = new long[lhs[row].length];
+                    for (int i = 0; i < lhs[row].length - (ss[max] - ss[row]); i++) {
+                        temp[i] = lhs[row][ss[max] - ss[row]];
+                    }
+                    lhs[row] = Arrays.copyOf(temp, lhs[row].length);
                     ss[row] = ss[max];
                 }
                 ArraysUtil.swap(ss, row, max);
@@ -133,7 +138,7 @@ public class Zp64BandLinearSolver {
                 ArraysUtil.swap(rhs, row, max);
             }
             // if we cannot find one, it means this column is free, nothing to do on this column
-            if (zp64.isZero(lhs[row][iColumn])) {
+            if (zp64.isZero(getValue(w, ss[row], lhs[row], iColumn))) {
                 ++nZeroColumns;
                 to = Math.min(nRows + nZeroColumns, nColumns);
                 continue;
@@ -142,11 +147,14 @@ public class Zp64BandLinearSolver {
             maxLisColumns.add(iColumn);
             // forward Gaussian elimination, since s_i is ordered, once we find an invalid row, we can break.
             for (int iRow = row + 1; iRow < nRows && iColumn >= ss[iRow] && iColumn < ss[iRow] + w; ++iRow) {
-                long alpha = zp64.div(lhs[iRow][iColumn], lhs[row][iColumn]);
+                long alpha = zp64.div(getValue(w, ss[iRow], lhs[iRow], iColumn), getValue(w, ss[row], lhs[row], iColumn));
                 rhs[iRow] = zp64.sub(rhs[iRow], zp64.mul(rhs[row], alpha));
                 if (!zp64.isZero(alpha)) {
                     for (int iCol = iColumn; iCol >= ss[iRow] && iCol < ss[iRow] + w; ++iCol) {
-                        lhs[iRow][iCol] = zp64.sub(lhs[iRow][iCol], zp64.mul(alpha, lhs[row][iCol]));
+                        long temp = zp64.sub(
+                            getValue(w, ss[iRow], lhs[iRow], iCol), zp64.mul(alpha, getValue(w, ss[row], lhs[row], iCol))
+                        );
+                        lhs[iRow][iCol - ss[iRow]] = temp;
                     }
                 }
             }
@@ -221,16 +229,12 @@ public class Zp64BandLinearSolver {
         Arrays.stream(lhBands).forEach(row -> MathPreconditions.checkEqual("row.length", "w", row.length, w));
         // 0 <= s_i <= m - w
         Arrays.stream(ss).forEach(si -> MathPreconditions.checkNonNegativeInRangeClosed("s[i]", si, nColumns - w));
-        // create A based on the band, the initial value is 0
-        long[][] lhs = new long[nRows][nColumns];
-        for (int iRow = 0; iRow < nRows; iRow++) {
-            System.arraycopy(lhBands[iRow], 0, lhs[iRow], ss[iRow], w);
-        }
+        // treat the band as A, the initial value is 0
         if (nRows == 1) {
-            return solveOneRow(w, ss[0], lhs[0], rhs[0], result, isFull);
+            return solveOneRow(w, ss[0], lhBands[0], rhs[0], result, isFull);
         }
         // if n > 1, transform lsh to Echelon form.
-        RowEchelonFormInfo info = rowEchelonForm(w, ss, lhs, rhs);
+        RowEchelonFormInfo info = rowEchelonForm(w, ss, lhBands, rhs, nColumns);
         int nUnderDetermined = info.getZeroColumnNum();
         Arrays.fill(result, zp64.createZero());
         // for determined system, free and full solution are the same
@@ -238,17 +242,16 @@ public class Zp64BandLinearSolver {
             for (int i = nRows - 1; i >= 0; i--) {
                 long sum = 0L;
                 for (int j = i + 1; j < ss[i] + w; j++) {
-                    sum = zp64.add(sum, zp64.mul(result[j], lhs[i][j]));
+                    sum = zp64.add(sum, zp64.mul(result[j], getValue(w, ss[i], lhBands[i], j)));
                 }
-                result[i] = zp64.div(zp64.sub(rhs[i], sum), lhs[i][i]);
+                result[i] = zp64.div(zp64.sub(rhs[i], sum), getValue(w, ss[i], lhBands[i], i));
             }
             return Consistent;
         }
-        return solveUnderDeterminedRows(w, ss, lhs, rhs, result, info, isFull);
+        return solveUnderDeterminedRows(w, ss, lhBands, rhs, result, info, isFull);
     }
 
-    private SystemInfo solveOneRow(int w, int s0, long[] lh0,
-                                   long rh0, long[] result, boolean isFull) {
+    private SystemInfo solveOneRow(int w, int s0, long[] lh0, long rh0, long[] result, boolean isFull) {
         int nColumns = result.length;
         // when n = 1, then the linear system only has one equation a[0]x[0] + ... + a[m]x[m] = b[0]
         if (nColumns == 1) {
@@ -272,7 +275,7 @@ public class Zp64BandLinearSolver {
         // find the first non-zero a[t]
         int firstNonZeroColumn = -1;
         for (int iColumn = s0; iColumn >= s0 && iColumn < s0 + w; ++iColumn) {
-            if (!zp64.isZero(lh0[iColumn])) {
+            if (!zp64.isZero(getValue(w, s0, lh0, iColumn))) {
                 firstNonZeroColumn = iColumn;
                 break;
             }
@@ -301,14 +304,14 @@ public class Zp64BandLinearSolver {
                     }
                     // for i != t, set random x[i]
                     result[i] = zp64.createNonZeroRandom(secureRandom);
-                    if (!zp64.isZero(lh0[i])) {
+                    if (!zp64.isZero(getValue(w, s0, lh0, i))) {
                         // a[i] != 0, b[0] = b[0] - a[i] * x[i].
-                        rh0 = zp64.sub(rh0, zp64.mul(lh0[i], result[i]));
+                        rh0 = zp64.sub(rh0, zp64.mul(getValue(w, s0, lh0, i), result[i]));
                     }
                 }
             }
             // set x[t] = b[0] / a[0]
-            result[firstNonZeroColumn] = zp64.div(rh0, lh0[firstNonZeroColumn]);
+            result[firstNonZeroColumn] = zp64.div(rh0, getValue(w, s0, lh0, firstNonZeroColumn));
             return Consistent;
         }
     }
@@ -325,7 +328,7 @@ public class Zp64BandLinearSolver {
         for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
             // find pivot row and swap
             iRow = iColumn - nZeroColumns;
-            if (zp64.isZero(lhs[iRow][iColumn])) {
+            if (zp64.isZero(getValue(w, ss[iRow], lhs[iRow], iColumn))) {
                 if (iColumn == (nColumns - 1) && !zp64.isZero(rhs[iRow])) {
                     return Inconsistent;
                 }
@@ -335,11 +338,10 @@ public class Zp64BandLinearSolver {
                 continue;
             }
             // scale current row, that is, make lhs[iRow][iColumn] = 1, and scale other entries in this row.
-            long[] row = lhs[iRow];
-            long val = row[iColumn];
+            long val = getValue(w, ss[iRow], lhs[iRow], iColumn);
             long valInv = zp64.inv(val);
             for (int i = iColumn; i < ss[iRow] + w; i++) {
-                row[i] = zp64.mul(valInv, row[i]);
+                lhs[iRow][i - ss[iRow]] = zp64.mul(valInv, getValue(w, ss[iRow], lhs[iRow], i));
             }
             rhs[iRow] = zp64.mul(rhs[iRow], valInv);
             // here we cannot scale all rows before, otherwise the procedure is O(n^2). For example:
@@ -347,7 +349,7 @@ public class Zp64BandLinearSolver {
             // | 0 1 1 0 0 0 0 | (reduce last row) | 0 1 1 1 0 0 0 | The first row is no longer a band vector.
             // | 0 0 1 1 0 0 0 |                   | 0 0 1 0 0 0 0 |
             // | 0 0 0 1 0 0 0 |                   | 0 0 0 1 0 0 0 |
-            if (!zp64.isZero(rhs[iRow]) && zp64.isZero(lhs[iRow][iColumn])) {
+            if (!zp64.isZero(rhs[iRow]) && zp64.isZero(getValue(w, ss[iRow], lhs[iRow], iColumn))) {
                 return Inconsistent;
             }
             // label that column and its corresponding row for the solution b[row].
@@ -380,10 +382,27 @@ public class Zp64BandLinearSolver {
             int iResultRow = nzRows.get(i);
             long tempResult = rhs[iResultRow];
             for (int j = ss[iResultRow]; j < ss[iResultRow] + w; j++) {
-                tempResult = zp64.sub(tempResult, zp64.mul(lhs[iResultRow][j], result[j]));
+                tempResult = zp64.sub(tempResult, zp64.mul(getValue(w, ss[iResultRow], lhs[iResultRow], j), result[j]));
             }
             result[iResultColumn] = tempResult;
         }
         return Consistent;
+    }
+
+    /**
+     * Returns the zp64 element in long array with given index and offset.
+     *
+     * @param w     the band width.
+     * @param s0    starting positions of lhs.
+     * @param array the byte array.
+     * @param index the index.
+     * @return the zp64 element.
+     */
+    private long getValue(int w, int s0, long[] array, int index) {
+        if (index >= (w + s0) || index < s0) {
+            return 0;
+        } else {
+            return array[index - s0];
+        }
     }
 }

@@ -155,7 +155,7 @@ public class FileRpc implements Rpc {
             for (byte[] byteArray : payload) {
                 payloadByteLength += byteArray.length;
                 String payloadString = Base64.getEncoder().encodeToString(byteArray);
-                sendByteLength = payloadString.getBytes(StandardCharsets.UTF_8).length;
+                sendByteLength += payloadString.getBytes(StandardCharsets.UTF_8).length;
                 payloadPrintWriter.println(payloadString);
             }
             payloadPrintWriter.close();

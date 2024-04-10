@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
@@ -29,7 +29,7 @@ import java.util.stream.IntStream;
  * @date 2022/06/10
  */
 @RunWith(Parameterized.class)
-public class ZpCoreVoleTest extends AbstractTwoPartyPtoTest {
+public class ZpCoreVoleTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZpCoreVoleTest.class);
     /**
      * default num

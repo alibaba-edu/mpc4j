@@ -43,7 +43,7 @@ public class KwPirParamsClientThread extends Thread {
     /**
      * retrieval result
      */
-    private final List<Map<ByteBuffer, ByteBuffer>> retrievalResults;
+    private final List<Map<ByteBuffer, byte[]>> retrievalResults;
     /**
      * server element size
      */
@@ -65,7 +65,7 @@ public class KwPirParamsClientThread extends Thread {
         retrievalResults = new ArrayList<>(repeatTime);
     }
 
-    public Map<ByteBuffer, ByteBuffer> getRetrievalResult(int index) {
+    public Map<ByteBuffer, byte[]> getRetrievalResult(int index) {
         return retrievalResults.get(index);
     }
 

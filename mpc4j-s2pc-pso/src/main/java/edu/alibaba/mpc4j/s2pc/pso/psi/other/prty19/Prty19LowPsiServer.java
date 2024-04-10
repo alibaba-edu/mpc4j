@@ -72,7 +72,7 @@ public class Prty19LowPsiServer<T> extends AbstractPsiServer<T> {
     public Prty19LowPsiServer(Rpc serverRpc, Party clientParty, Prty19LowPsiConfig config) {
         super(Prty19LowPsiPtoDesc.getInstance(), serverRpc, clientParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(serverRpc, clientParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
         okvsType = config.getOkvsType();
         okvsKeyNum = Gf2eDokvsFactory.getHashKeyNum(okvsType);
         filterType = config.getFilterType();

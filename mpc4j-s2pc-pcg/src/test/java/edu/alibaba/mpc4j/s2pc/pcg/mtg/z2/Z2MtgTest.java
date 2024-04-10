@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory.Z2MtgType;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.impl.offline.OfflineZ2MtgConfig;
 import org.junit.Test;
@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * @date 2022/02/08
  */
 @RunWith(Parameterized.class)
-public class Z2MtgTest extends AbstractTwoPartyPtoTest {
+public class Z2MtgTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(Z2MtgTest.class);
     /**
      * default num

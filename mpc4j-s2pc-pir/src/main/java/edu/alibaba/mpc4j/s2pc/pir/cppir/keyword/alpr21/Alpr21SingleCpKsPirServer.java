@@ -89,9 +89,9 @@ public class Alpr21SingleCpKsPirServer<T> extends AbstractSingleCpKsPirServer<T>
     public Alpr21SingleCpKsPirServer(Rpc serverRpc, Party clientParty, Alpr21SingleCpKsPirConfig config) {
         super(Alpr21SingleCpKsPirDesc.getInstance(), serverRpc, clientParty, config);
         singleCpPirServer = SingleCpPirFactory.createServer(serverRpc, clientParty, config.getIndexCpPirConfig());
-        addSubPtos(singleCpPirServer);
+        addSubPto(singleCpPirServer);
         sqOprfSender = SqOprfFactory.createSender(serverRpc, clientParty, config.getSqOprfConfig());
-        addSubPtos(sqOprfSender);
+        addSubPto(sqOprfSender);
         cuckooHashBinType = config.getCuckooHashBinType();
         hashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
         hashByteLength = config.hashByteLength();

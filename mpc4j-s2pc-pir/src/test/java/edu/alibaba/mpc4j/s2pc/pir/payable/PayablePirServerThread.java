@@ -22,7 +22,7 @@ public class PayablePirServerThread extends Thread {
     /**
      * keyword label map
      */
-    private final Map<ByteBuffer, ByteBuffer> keywordLabelMap;
+    private final Map<ByteBuffer, byte[]> keywordLabelMap;
     /**
      * label byte length
      */
@@ -32,7 +32,7 @@ public class PayablePirServerThread extends Thread {
      */
     private boolean serverOutput;
 
-    PayablePirServerThread(PayablePirServer server, Map<ByteBuffer, ByteBuffer> keywordLabelMap, int labelByteLength) {
+    PayablePirServerThread(PayablePirServer server, Map<ByteBuffer, byte[]> keywordLabelMap, int labelByteLength) {
         this.server = server;
         this.keywordLabelMap = keywordLabelMap;
         this.labelByteLength = labelByteLength;

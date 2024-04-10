@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.z2;
 import edu.alibaba.mpc4j.common.circuit.operator.DyadicBcOperator;
 import edu.alibaba.mpc4j.common.circuit.operator.UnaryBcOperator;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractThreePartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractThreePartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.bea91.Bea91Z2cConfig;
@@ -29,7 +29,7 @@ import java.util.stream.IntStream;
  * @date 2023/6/26
  */
 @RunWith(Parameterized.class)
-public class BatchZ2cAidTest extends AbstractThreePartyPtoTest {
+public class BatchZ2cAidTest extends AbstractThreePartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(BatchZ2cAidTest.class);
     /**
      * default number of bits

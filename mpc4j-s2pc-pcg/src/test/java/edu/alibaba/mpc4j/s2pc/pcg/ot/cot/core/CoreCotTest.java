@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  * @date 2022/01/13
  */
 @RunWith(Parameterized.class)
-public class CoreCotTest extends AbstractTwoPartyPtoTest {
+public class CoreCotTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoreCotTest.class);
     /**
      * 默认数量

@@ -34,7 +34,7 @@ public class NaivePeqtSender extends AbstractPeqtParty {
     public NaivePeqtSender(Rpc senderRpc, Party receiverParty, NaivePeqtConfig config) {
         super(NaivePeqtPtoDesc.getInstance(), senderRpc, receiverParty, config);
         z2cSender = Z2cFactory.createSender(senderRpc, receiverParty, config.getZ2cConfig());
-        addSubPtos(z2cSender);
+        addSubPto(z2cSender);
         z2IntegerCircuit = new Z2IntegerCircuit(z2cSender);
     }
 

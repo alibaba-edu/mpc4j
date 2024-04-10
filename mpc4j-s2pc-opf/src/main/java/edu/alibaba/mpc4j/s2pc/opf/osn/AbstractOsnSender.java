@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.benes.BenesNetworkUtils;
+import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 
 import java.util.Vector;
 import java.util.stream.Collectors;
@@ -72,8 +72,8 @@ public abstract class AbstractOsnSender extends AbstractTwoPartyPto implements O
     protected void setInitInput(int maxN) {
         MathPreconditions.checkGreater("maxN", maxN, 1);
         this.maxN = maxN;
-        maxLevel = BenesNetworkUtils.getLevel(maxN);
-        maxWidth = BenesNetworkUtils.getWidth(maxN);
+        maxLevel = PermutationNetworkUtils.getLevel(maxN);
+        maxWidth = PermutationNetworkUtils.getMaxWidth(maxN);
         maxSwitchNum = maxLevel * maxWidth;
         initState();
     }
@@ -87,8 +87,8 @@ public abstract class AbstractOsnSender extends AbstractTwoPartyPto implements O
             .peek(input -> MathPreconditions.checkEqual("input.length", "byteLength", input.length, byteLength))
             .collect(Collectors.toCollection(Vector::new));
         n = inputVector.size();
-        level = BenesNetworkUtils.getLevel(n);
-        width = BenesNetworkUtils.getWidth(n);
+        level = PermutationNetworkUtils.getLevel(n);
+        width = PermutationNetworkUtils.getMaxWidth(n);
         switchNum = level * width;
         extraInfo++;
     }

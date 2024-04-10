@@ -28,5 +28,5 @@ public interface PayablePirClient extends TwoPartyPto {
      * @return corresponding value.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    ByteBuffer pir(ByteBuffer retrievalKey) throws MpcAbortException;
+    byte[] pir(ByteBuffer retrievalKey) throws MpcAbortException;
 }

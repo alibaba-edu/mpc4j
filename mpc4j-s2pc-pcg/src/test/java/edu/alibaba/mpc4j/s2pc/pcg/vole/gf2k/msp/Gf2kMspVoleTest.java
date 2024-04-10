@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
@@ -30,7 +30,7 @@ import java.util.stream.IntStream;
  * @date 2023/7/23
  */
 @RunWith(Parameterized.class)
-public class Gf2kMspVoleTest extends AbstractTwoPartyPtoTest {
+public class Gf2kMspVoleTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(Gf2kMspVoleTest.class);
     /**
      * GF2K

@@ -3,8 +3,11 @@ package edu.alibaba.mpc4j.common.rpc.impl;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
+import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpcManager;
+import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyRpcManager;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +25,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 通信接口测试。
+ * RPC unit test.
  *
  * @author Weiran Liu
  * @date 2021/12/10
@@ -32,20 +35,21 @@ public class RpcTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // MemoryRpc
-        configurationParams.add(new Object[] {"MemoryRpc", new MemoryRpcManager(3),});
-        // FileRpc
-        configurationParams.add(new Object[] {"FileRpc", new FileRpcManager(3),});
-        // NettyRpc
-        configurationParams.add(new Object[] {"NettyRpc", new NettyRpcManager(3, 8800),});
+        Collection<Object[]> configurations = new ArrayList<>();
 
-        return configurationParams;
+        // MemoryRpc
+        configurations.add(new Object[] {MemoryRpc.class.getSimpleName(), new MemoryRpcManager(3),});
+        // FileRpc
+        configurations.add(new Object[] {FileRpc.class.getSimpleName(), new FileRpcManager(3),});
+        // NettyRpc
+        configurations.add(new Object[] {NettyRpc.class.getSimpleName(), new NettyRpcManager(3, 8800),});
+
+        return configurations;
     }
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
-     * 待测试的通信接口管理器
+     * RPC manager
      */
     private final RpcManager rpcManager;
 
@@ -76,20 +80,18 @@ public class RpcTest {
     @Test
     public void testData() throws InterruptedException {
         int partyNum = rpcManager.getPartyNum();
-        // a random task ID
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
-        // 构建通信线程
         RpcDataThread[] threads = new RpcDataThread[partyNum];
-        // 初始化并启动每个RPC线程
+        // start RPC threads
         for (int partyId = 0; partyId < partyNum; partyId++) {
             threads[partyId] = new RpcDataThread(randomTaskId, rpcManager.getRpc(partyId));
             threads[partyId].start();
         }
-        // 等待线程停止
+        // join
         for (Thread thread : threads) {
             thread.join();
         }
-        // 空数据包验证
+        // empty data packet
         Set<DataPacket> emptySendDataPacketSet = new HashSet<>();
         Set<DataPacket> emptyReceivedDataPacketSet = new HashSet<>();
         for (RpcDataThread thread : threads) {
@@ -98,7 +100,7 @@ public class RpcTest {
         }
         Assert.assertTrue(emptySendDataPacketSet.containsAll(emptyReceivedDataPacketSet));
         Assert.assertTrue(emptyReceivedDataPacketSet.containsAll(emptySendDataPacketSet));
-        // 长度为0数据包验证
+        // length-0 data packet
         Set<DataPacket> zeroLengthSendDataPacketSet = new HashSet<>();
         Set<DataPacket> zeroLengthReceivedDataPacketSet = new HashSet<>();
         for (RpcDataThread thread : threads) {
@@ -107,7 +109,7 @@ public class RpcTest {
         }
         Assert.assertTrue(zeroLengthSendDataPacketSet.containsAll(zeroLengthReceivedDataPacketSet));
         Assert.assertTrue(zeroLengthReceivedDataPacketSet.containsAll(zeroLengthSendDataPacketSet));
-        // 单条数据包验证
+        // singleton data packet
         Set<DataPacket> singleSendDataPacketSet = new HashSet<>();
         Set<DataPacket> singleReceivedDataPacketSet = new HashSet<>();
         for (RpcDataThread thread : threads) {
@@ -116,7 +118,16 @@ public class RpcTest {
         }
         Assert.assertTrue(singleSendDataPacketSet.containsAll(singleReceivedDataPacketSet));
         Assert.assertTrue(singleReceivedDataPacketSet.containsAll(singleSendDataPacketSet));
-        // 额外信息数据包验证
+        // equal-length data packet
+        Set<DataPacket> equalLengthSendDataPacketSet = new HashSet<>();
+        Set<DataPacket> equalLengthReceivedDataPacketSet = new HashSet<>();
+        for (RpcDataThread thread : threads) {
+            equalLengthSendDataPacketSet.addAll(thread.getEqualLengthSendDataPacketSet());
+            equalLengthReceivedDataPacketSet.addAll(thread.getEqualLengthReceivedDataPacketSet());
+        }
+        Assert.assertTrue(equalLengthSendDataPacketSet.containsAll(equalLengthReceivedDataPacketSet));
+        Assert.assertTrue(equalLengthReceivedDataPacketSet.containsAll(equalLengthSendDataPacketSet));
+        // data packet with extra information
         Set<DataPacket> extraInfoSendDataPacketSet = new HashSet<>();
         Set<DataPacket> extraInfoReceivedDataPacketSet = new HashSet<>();
         for (RpcDataThread thread : threads) {
@@ -125,6 +136,10 @@ public class RpcTest {
         }
         Assert.assertTrue(extraInfoSendDataPacketSet.containsAll(extraInfoReceivedDataPacketSet));
         Assert.assertTrue(extraInfoReceivedDataPacketSet.containsAll(extraInfoSendDataPacketSet));
+        // verify the data in memory are different
+        DataPacket[] sendAll = extraInfoSendDataPacketSet.toArray(new DataPacket[0]);
+        sendAll[0].getPayload().get(0)[0] = (byte) (sendAll[0].getPayload().get(0)[0] + 1);
+        Assert.assertFalse(extraInfoReceivedDataPacketSet.contains(sendAll[0]));
         // take any data packet verification
         Set<DataPacket> takeAnySendDataPacketSet = new HashSet<>();
         Set<DataPacket> takeAnyReceivedDataPacketSet = new HashSet<>();

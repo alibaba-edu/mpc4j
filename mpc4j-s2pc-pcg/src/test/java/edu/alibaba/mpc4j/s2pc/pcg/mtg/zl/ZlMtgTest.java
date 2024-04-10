@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zl;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/02/08
  */
 @RunWith(Parameterized.class)
-public class ZlMtgTest extends AbstractTwoPartyPtoTest {
+public class ZlMtgTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZlMtgTest.class);
     /**
      * default num

@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pir.payable;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.payable.zlp23.Zlp23PayablePirConfig;
@@ -19,7 +19,7 @@ import java.util.*;
  * @date 2023/9/7
  */
 @RunWith(Parameterized.class)
-public class PayablePirTest extends AbstractTwoPartyPtoTest {
+public class PayablePirTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * short label byte length
      */
@@ -80,7 +80,7 @@ public class PayablePirTest extends AbstractTwoPartyPtoTest {
     public void testPir(int labelByteLength, PayablePirConfig config, boolean parallel) {
         List<Set<ByteBuffer>> randomSets = PirUtils.generateByteBufferSets(SERVER_MAP_SIZE, CLIENT_SET_SIZE, 1);
         ByteBuffer retrievalElement = new ArrayList<>(randomSets.get(1)).get(0);
-        Map<ByteBuffer, ByteBuffer> keywordLabelMap = PirUtils.generateKeywordByteBufferLabelMap(
+        Map<ByteBuffer, byte[]> keywordLabelMap = PirUtils.generateKeywordByteBufferLabelMap(
             randomSets.get(0), labelByteLength
         );
         // create instances
@@ -102,18 +102,13 @@ public class PayablePirTest extends AbstractTwoPartyPtoTest {
             Set<ByteBuffer> intersectionSet = new HashSet<>(randomSets.get(1));
             intersectionSet.retainAll(randomSets.get(0));
             boolean serverOutput = serverThread.getServerOutput();
-            ByteBuffer clientOutput = clientThread.getClientOutput();
+            byte[] clientOutput = clientThread.getClientOutput();
             if (intersectionSet.size() == 0) {
                 Assert.assertFalse(serverOutput);
                 Assert.assertNull(clientOutput);
-                System.out.println("key : " + Arrays.toString(retrievalElement.array()) + ", value : null");
             } else {
                 Assert.assertTrue(serverOutput);
-                Assert.assertEquals(clientOutput, keywordLabelMap.get(retrievalElement));
-                System.out.println(
-                    "key : " + Arrays.toString(retrievalElement.array()) +
-                        ", value : " + Arrays.toString(clientOutput.array())
-                );
+                Assert.assertArrayEquals(clientOutput, keywordLabelMap.get(retrievalElement));
             }
             // destroy
             new Thread(server::destroy).start();

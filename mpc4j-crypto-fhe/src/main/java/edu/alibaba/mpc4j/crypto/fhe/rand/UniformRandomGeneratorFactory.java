@@ -15,7 +15,7 @@ import java.util.Arrays;
  */
 public class UniformRandomGeneratorFactory {
     /**
-     * send length
+     * seed length
      */
     public static final int PRNG_SEED_UINT64_COUNT = 8;
     /**

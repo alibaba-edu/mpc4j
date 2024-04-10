@@ -35,7 +35,7 @@ public class Bcg19RegMspCotReceiver extends AbstractMspCotReceiver {
     public Bcg19RegMspCotReceiver(Rpc senderRpc, Party receiverParty, Bcg19RegMspCotConfig config) {
         super(Bcg19RegMspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         bspCotReceiver = BspCotFactory.createReceiver(senderRpc, receiverParty, config.getBspCotConfig());
-        addSubPtos(bspCotReceiver);
+        addSubPto(bspCotReceiver);
     }
 
     @Override

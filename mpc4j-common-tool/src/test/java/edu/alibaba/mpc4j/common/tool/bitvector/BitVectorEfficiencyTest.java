@@ -63,6 +63,8 @@ public class BitVectorEfficiencyTest {
         testEfficiency(1 << 8);
         testEfficiency(1 << 12);
         testEfficiency(1 << 16);
+        testEfficiency(1 << 18);
+        testEfficiency(1 << 19);
         testEfficiency(1 << 20);
     }
 

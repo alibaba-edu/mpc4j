@@ -79,7 +79,8 @@ public class SerializeUtils {
      * @return compressed data.
      */
     public static byte[] compressEqual(List<byte[]> origin, int length) {
-        MathPreconditions.checkPositive("length", length);
+        // we allow equal-size with length = 0
+        MathPreconditions.checkNonNegative("length", length);
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
@@ -105,7 +106,7 @@ public class SerializeUtils {
      * @return original data.
      */
     public static List<byte[]> decompressEqual(byte[] compressed, int length) {
-        MathPreconditions.checkPositive("length", length);
+        MathPreconditions.checkNonNegative("length", length);
         try {
             List<byte[]> origin = new LinkedList<>();
             // read data

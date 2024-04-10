@@ -1,10 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pso.main.psu;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory.EccDokvsType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
-import edu.alibaba.mpc4j.common.structure.okve.ovdm.ecc.EccOvdmFactory.EccOvdmType;
-import edu.alibaba.mpc4j.common.structure.okve.ovdm.gf2e.Gf2eOvdmFactory.Gf2eOvdmType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
@@ -24,8 +23,8 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfsPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19PsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22PkePsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22SkePsuConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.zcl23.Zcl23PkePsuConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.zcl23.Zcl23SkePsuConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 
 import java.util.Properties;
@@ -57,10 +56,10 @@ public class PsuConfigUtils {
                 return createKrtw19PsuConfig();
             case GMR21:
                 return generateGmr21PsuConfig(properties);
-            case ZCL22_PKE:
-                return createZcl22PkePsuConfig(properties);
-            case ZCL22_SKE:
-                return createZcl22SkePsuConfig(properties);
+            case ZCL23_PKE:
+                return createZcl23PkePsuConfig(properties);
+            case ZCL23_SKE:
+                return createZcl23SkePsuConfig(properties);
             case JSZ22_SFC:
                 return createJsz22SfcPsuConfig(properties);
             case JSZ22_SFS:
@@ -83,7 +82,7 @@ public class PsuConfigUtils {
             .build();
     }
 
-    private static Zcl22SkePsuConfig createZcl22SkePsuConfig(Properties properties) {
+    private static Zcl23SkePsuConfig createZcl23SkePsuConfig(Properties properties) {
         boolean offlineZ2Mtg = PropertiesUtils.readBoolean(properties, "offline_z2_mtg", true);
         if (offlineZ2Mtg) {
             Z2MtgConfig offlineZ2MtgConfig = new OfflineZ2MtgConfig.Builder(SecurityModel.SEMI_HONEST).build();
@@ -93,30 +92,30 @@ public class PsuConfigUtils {
             OprpConfig offlineOprpConfig = new LowMcOprpConfig.Builder(SecurityModel.SEMI_HONEST)
                 .setZ2cConfig(offlineZ2cConfig)
                 .build();
-            return new Zcl22SkePsuConfig.Builder(SecurityModel.SEMI_HONEST)
+            return new Zcl23SkePsuConfig.Builder(SecurityModel.SEMI_HONEST)
                 .setCoreCotConfig(CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST))
                 .setOprpConfig(offlineOprpConfig)
                 .setBcConfig(offlineZ2cConfig)
-                .setGf2eOvdmType(Gf2eOvdmType.H3_SINGLETON_GCT)
+                .setGf2eDokvsType(Gf2eDokvsType.H3_SINGLETON_GCT)
                 .build();
         } else {
-            return new Zcl22SkePsuConfig.Builder(SecurityModel.SEMI_HONEST)
+            return new Zcl23SkePsuConfig.Builder(SecurityModel.SEMI_HONEST)
                 .setCoreCotConfig(CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST))
                 .setOprpConfig(OprpFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true))
                 .setBcConfig(Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true))
-                .setGf2eOvdmType(Gf2eOvdmType.H3_SINGLETON_GCT)
+                .setGf2eDokvsType(Gf2eDokvsType.H3_SINGLETON_GCT)
                 .build();
         }
     }
 
-    private static Zcl22PkePsuConfig createZcl22PkePsuConfig(Properties properties) {
+    private static Zcl23PkePsuConfig createZcl23PkePsuConfig(Properties properties) {
         // 是否使用压缩编码
         boolean compressEncode = PropertiesUtils.readBoolean(properties, "compress_encode", true);
 
-        return new Zcl22PkePsuConfig.Builder()
+        return new Zcl23PkePsuConfig.Builder()
             .setCoreCotConfig(CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST))
             .setCompressEncode(compressEncode)
-            .setEccOvdmType(EccOvdmType.H3_SINGLETON_GCT)
+            .setEccDokvsType(EccDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT)
             .build();
     }
 

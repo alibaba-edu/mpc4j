@@ -49,7 +49,7 @@ public class Kmrs14ShAidPsiClient<T> extends AbstractAidPsiParty<T> {
     public Kmrs14ShAidPsiClient(Rpc clientRpc, Party serverParty, Party aiderParty, Kmrs14ShAidPsiConfig config) {
         super(Kmrs14ShAidPsiPtoDesc.getInstance(), clientRpc, serverParty, aiderParty, config);
         coinTossReceiver = CoinTossFactory.createReceiver(clientRpc, serverParty, config.getCoinTossConfig());
-        addSubPtos(coinTossReceiver);
+        addSubPto(coinTossReceiver);
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
         prp = PrpFactory.createInstance(envType);
     }

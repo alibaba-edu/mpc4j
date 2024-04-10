@@ -6,7 +6,7 @@ package edu.alibaba.mpc4j.common.structure.okve.cuckootable;
  * CRYPTO 2021, Springer, Cham, 2021, pp. 395-425.
  *
  * 注意，虽然原始论文要求3哈希-布谷鸟图中每条边对应的顶点应不一致，但如果每条边对应的定点有重复，影响的只是2-core图中边的数量。因此，实际实现
- * 中我们不要求3哈希-布谷鸟图中每条边对应的定点必须不同，但利用3哈希-布谷鸟图构造OKVS、OVDM等代数结构时再要求这一点。
+ * 中我们不要求3哈希-布谷鸟图中每条边对应的定点必须不同，但利用3哈希-布谷鸟图构造DOKVS时会要求这一点。
  *
  * 原始论文边对应定点不一致的要求来自于第4.1节的脚注4：
  * The hyperedge is sampled uniformly at random from all subsets of 3 different nodes in the graph. We simplify the

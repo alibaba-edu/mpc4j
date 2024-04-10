@@ -14,6 +14,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgParty;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2Triple;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,22 +35,22 @@ public class Bea91Z2cSender extends AbstractZ2cParty {
     public Bea91Z2cSender(Rpc senderRpc, Party receiverParty, Bea91Z2cConfig config) {
         super(Bea91Z2cPtoDesc.getInstance(), senderRpc, receiverParty, config);
         mtgSender = Z2MtgFactory.createSender(senderRpc, receiverParty, config.getMtgConfig());
-        addSubPtos(mtgSender);
+        addSubPto(mtgSender);
     }
 
     public Bea91Z2cSender(Rpc senderRpc, Party receiverParty, Party aiderParty, Bea91Z2cConfig config) {
         super(Bea91Z2cPtoDesc.getInstance(), senderRpc, receiverParty, config);
         mtgSender = Z2MtgFactory.createSender(senderRpc, receiverParty, aiderParty, config.getMtgConfig());
-        addSubPtos(mtgSender);
+        addSubPto(mtgSender);
     }
 
     @Override
-    public void init(int updateBitNum) throws MpcAbortException {
+    public void init(long updateBitNum) throws MpcAbortException {
         setInitInput(updateBitNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        mtgSender.init(updateBitNum);
+        mtgSender.init((int) updateBitNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -182,6 +183,26 @@ public class Bea91Z2cSender extends AbstractZ2cParty {
             logPhaseInfo(PtoState.PTO_END, "xor");
             return z0SquareVector;
         }
+    }
+
+    @Override
+    public void xori(MpcZ2Vector x1, MpcZ2Vector y1) throws MpcAbortException {
+        SquareZ2Vector x1SquareVector = (SquareZ2Vector) x1;
+        SquareZ2Vector y1SquareVector = (SquareZ2Vector) y1;
+        assert !(x1.isPlain() && (!y1.isPlain()));
+        setDyadicOperatorInput(x1SquareVector, y1SquareVector);
+
+        x1.getBitVector().xori(y1.getBitVector());
+    }
+
+    @Override
+    public void noti(MpcZ2Vector xi) {
+        xi.getBitVectors()[0].noti();
+    }
+
+    @Override
+    public SquareZ2Vector[] setPublicValues(BitVector[] data) {
+        return Arrays.stream(data).map(each -> SquareZ2Vector.create(each.copy(), false)).toArray(SquareZ2Vector[]::new);
     }
 
     @Override

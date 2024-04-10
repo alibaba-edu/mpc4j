@@ -66,10 +66,10 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
     public Ywl20NcCotSender(Rpc senderRpc, Party receiverParty, Ywl20NcCotConfig config) {
         super(Ywl20NcCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
         mspCotConfig = config.getMspCotConfig();
         mspCotSender = MspCotFactory.createSender(senderRpc, receiverParty, config.getMspCotConfig());
-        addSubPtos(mspCotSender);
+        addSubPto(mspCotSender);
     }
 
     @Override

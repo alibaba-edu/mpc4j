@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.base;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.crypto.kyber.KyberEngineFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory.BaseOtType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.co15.Co15BaseOtConfig;
@@ -29,7 +29,7 @@ import java.util.stream.IntStream;
  * @date 2019/07/12
  */
 @RunWith(Parameterized.class)
-public class BaseOtTest extends AbstractTwoPartyPtoTest {
+public class BaseOtTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseOtTest.class);
     /**
      * 默认数量

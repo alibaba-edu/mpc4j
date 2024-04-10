@@ -35,7 +35,7 @@ public class Bcg19RegMspCotSender extends AbstractMspCotSender {
     public Bcg19RegMspCotSender(Rpc senderRpc, Party receiverParty, Bcg19RegMspCotConfig config) {
         super(Bcg19RegMspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         bspCotSender = BspCotFactory.createSender(senderRpc, receiverParty, config.getBspCotConfig());
-        addSubPtos(bspCotSender);
+        addSubPto(bspCotSender);
     }
 
     @Override

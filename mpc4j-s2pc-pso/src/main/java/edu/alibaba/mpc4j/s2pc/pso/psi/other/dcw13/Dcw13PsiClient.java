@@ -6,6 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.DistinctGbfUtils;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
@@ -48,7 +49,7 @@ public class Dcw13PsiClient<T> extends AbstractPsiClient<T> {
     public Dcw13PsiClient(Rpc clientRpc, Party serverParty, Dcw13PsiConfig config) {
         super(Dcw13PsiPtoDesc.getInstance(), clientRpc, serverParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
     }
 
     @Override
@@ -59,7 +60,7 @@ public class Dcw13PsiClient<T> extends AbstractPsiClient<T> {
         stopWatch.start();
         // both parties need to insert elements into (G)BF.
         int maxN = Math.max(maxServerElementSize, maxClientElementSize);
-        int maxM = DistinctGbfGf2eDokvs.getM(maxN);
+        int maxM = DistinctGbfUtils.getM(maxN);
         int maxBfM = DistinctBloomFilter.bitSize(maxN);
         assert maxM == maxBfM : "GBF max(M) must be equal to BF max(M) (" + maxBfM + "): " + maxM;
         // init GBF key

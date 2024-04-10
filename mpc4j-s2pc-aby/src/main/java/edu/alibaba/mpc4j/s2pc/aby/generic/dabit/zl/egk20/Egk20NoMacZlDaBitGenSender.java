@@ -40,17 +40,17 @@ public class Egk20NoMacZlDaBitGenSender extends AbstractZlDaBitGenParty {
     public Egk20NoMacZlDaBitGenSender(Rpc senderPpc, Party receiverParty, Egk20NoMacZlDaBitGenConfig config) {
         super(Egk20NoMacZlDaBitGenPtoDesc.getInstance(), senderPpc, receiverParty, config);
         zlcSender = ZlcFactory.createSender(senderPpc, receiverParty, config.getZlcConfig());
-        addSubPtos(zlcSender);
+        addSubPto(zlcSender);
         z2cSender = Z2cFactory.createSender(senderPpc, receiverParty, config.getZ2cConfig());
-        addSubPtos(z2cSender);
+        addSubPto(z2cSender);
     }
 
     public Egk20NoMacZlDaBitGenSender(Rpc senderPpc, Party receiverParty, Party aiderParty, Egk20NoMacZlDaBitGenConfig config) {
         super(Egk20NoMacZlDaBitGenPtoDesc.getInstance(), senderPpc, receiverParty, config);
         zlcSender = ZlcFactory.createSender(senderPpc, receiverParty, aiderParty, config.getZlcConfig());
-        addSubPtos(zlcSender);
+        addSubPto(zlcSender);
         z2cSender = Z2cFactory.createSender(senderPpc, receiverParty, aiderParty, config.getZ2cConfig());
-        addSubPtos(z2cSender);
+        addSubPto(z2cSender);
     }
 
     @Override

@@ -38,9 +38,9 @@ public class Rrk20MillionaireReceiver extends AbstractMillionaireParty {
     public Rrk20MillionaireReceiver(Rpc receiverRpc, Party senderParty, Rrk20MillionaireConfig config) {
         super(Rrk20MillionairePtoDesc.getInstance(), receiverRpc, senderParty, config);
         lnotReceiver = LnotFactory.createReceiver(receiverRpc, senderParty, config.getLnotConfig());
-        addSubPtos(lnotReceiver);
+        addSubPto(lnotReceiver);
         z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, config.getZ2cConfig());
-        addSubPtos(z2cReceiver);
+        addSubPto(z2cReceiver);
     }
 
     @Override

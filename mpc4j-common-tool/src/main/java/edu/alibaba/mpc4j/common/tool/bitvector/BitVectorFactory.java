@@ -1,6 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.bitvector;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -247,5 +249,20 @@ public class BitVectorFactory {
         }
         assert mergeBitVector.bitNum() == 0 : "merged vector must remain 0 bits: " + mergeBitVector.bitNum();
         return bitVectors;
+    }
+
+    /**
+     * Merges vectors by treating the length of each bit vector to Byte.SIZE * bitNum (padding zeros when necessary).
+     * <p></p>
+     * This is more efficient since we can directly copy in bytes without shifting.
+     *
+     * @param vectors bit vectors.
+     * @return the merged bit vector.
+     */
+    public static BitVector mergeWithPadding(BitVector[] vectors) {
+        ByteBuffer buffer = ByteBuffer.allocate(Arrays.stream(vectors).mapToInt(BitVector::byteNum).sum());
+        Arrays.stream(vectors).forEach(x -> buffer.put(x.getBytes()));
+        byte[] resBytes = buffer.array();
+        return create(resBytes.length << 3, resBytes);
     }
 }

@@ -83,11 +83,11 @@ public class Gmr21PsiCaClient<T> extends AbstractPsiCaClient<T> {
     public Gmr21PsiCaClient(Rpc clientRpc, Party serverParty, Gmr21PsiCaConfig config) {
         super(Gmr21PsiCaPtoDesc.getInstance(), clientRpc, serverParty, config);
         cuckooHashOprfSender = OprfFactory.createOprfSender(clientRpc, serverParty, config.getCuckooHashOprfConfig());
-        addSubPtos(cuckooHashOprfSender);
+        addSubPto(cuckooHashOprfSender);
         osnSender = OsnFactory.createSender(clientRpc, serverParty, config.getOsnConfig());
-        addSubPtos(osnSender);
+        addSubPto(osnSender);
         peqtOprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getPeqtOprfConfig());
-        addSubPtos(peqtOprfReceiver);
+        addSubPto(peqtOprfReceiver);
         okvsType = config.getOkvsType();
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);

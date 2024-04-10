@@ -46,10 +46,10 @@ public class CacheCotReceiver extends AbstractCotReceiver {
         super(CacheCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         NcCotConfig ncCotConfig = config.getNcCotConfig();
         ncCotReceiver = NcCotFactory.createReceiver(receiverRpc, senderParty, ncCotConfig);
-        addSubPtos(ncCotReceiver);
+        addSubPto(ncCotReceiver);
         maxBaseNum = ncCotConfig.maxNum();
         preCotReceiver = PreCotFactory.createReceiver(receiverRpc, senderParty, config.getPreCotConfig());
-        addSubPtos(preCotReceiver);
+        addSubPto(preCotReceiver);
     }
 
     @Override

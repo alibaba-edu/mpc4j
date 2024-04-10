@@ -38,7 +38,7 @@ public class Pssw09SqOprfSender extends AbstractSqOprfSender {
     public Pssw09SqOprfSender(Rpc senderRpc, Party receiverParty, Pssw09SqOprfConfig config) {
         super(Pssw09SqOprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
         oprpSender = OprpFactory.createSender(senderRpc, receiverParty, config.getOprpConfig());
-        addSubPtos(oprpSender);
+        addSubPto(oprpSender);
     }
 
     @Override

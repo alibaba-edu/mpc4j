@@ -2,7 +2,6 @@ package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.bc.*;
-import edu.alibaba.mpc4j.common.tool.crypto.ecc.mcl.SecP256k1MclEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.openssl.SecP256k1OpensslEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.openssl.SecP256r1OpensslEcc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.openssl.Sm2P256v1OpensslEcc;
@@ -26,10 +25,6 @@ public class EccFactory {
      * 椭圆曲线枚举类
      */
     public enum EccType {
-        /**
-         * MCL实现的SecP256k1
-         */
-        SEC_P256_K1_MCL,
         /**
          * OpenSSL实现的SecP256k1
          */
@@ -72,24 +67,22 @@ public class EccFactory {
      */
     public static Ecc createInstance(EccType eccType) {
         switch (eccType) {
-            case SEC_P256_K1_MCL:
-                return new SecP256k1MclEcc();
             case SEC_P256_K1_OPENSSL:
-                return new SecP256k1OpensslEcc();
+                return SecP256k1OpensslEcc.getInstance();
             case SEC_P256_K1_BC:
-                return new SecP256k1BcEcc();
+                return SecP256k1BcEcc.getInstance();
             case SEC_P256_R1_OPENSSL:
-                return new SecP256r1OpensslEcc();
+                return SecP256r1OpensslEcc.getInstance();
             case SEC_P256_R1_BC:
-                return new SecP256r1BcEcc();
+                return SecP256r1BcEcc.getInstance();
             case SM2_P256_V1_OPENSSL:
-                return new Sm2P256v1OpensslEcc();
+                return Sm2P256v1OpensslEcc.getInstance();
             case SM2_P256_V1_BC:
-                return new Sm2P256v1BcEcc();
+                return Sm2P256v1BcEcc.getInstance();
             case CURVE25519_BC:
-                return new Curve25519BcEcc();
+                return Curve25519BcEcc.getInstance();
             case ED25519_BC:
-                return new Ed25519BcEcc();
+                return Ed25519BcEcc.getInstance();
             default:
                 throw new IllegalArgumentException("Invalid " + EccType.class.getSimpleName() + ": " + eccType.name());
         }
@@ -104,7 +97,7 @@ public class EccFactory {
     public static Ecc createInstance(EnvType envType) {
         switch (envType) {
             case STANDARD:
-                return createInstance(EccType.SEC_P256_K1_MCL);
+                return createInstance(EccType.SEC_P256_R1_OPENSSL);
             case STANDARD_JDK:
                 return createInstance(EccType.SEC_P256_K1_BC);
             case INLAND:

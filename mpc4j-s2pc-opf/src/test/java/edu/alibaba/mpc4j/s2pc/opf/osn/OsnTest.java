@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.opf.osn;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.benes.BenesNetworkUtils;
+import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.opf.osn.gmr21.Gmr21OsnConfig;
 import edu.alibaba.mpc4j.s2pc.opf.osn.ms13.Ms13OsnConfig;
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
  * @date 2022/02/10
  */
 @RunWith(Parameterized.class)
-public class OsnTest extends AbstractTwoPartyPtoTest {
+public class OsnTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(OsnTest.class);
     /**
      * 默认批处理数量
@@ -181,7 +181,7 @@ public class OsnTest extends AbstractTwoPartyPtoTest {
         Assert.assertEquals(senderOutput.getN(), n);
         Assert.assertEquals(receiverOutput.getN(), n);
         Assert.assertEquals(senderOutput.getByteLength(), receiverOutput.getByteLength());
-        Vector<ByteBuffer> expectOutputs = BenesNetworkUtils.permutation(permutationMap, inputVector).stream()
+        Vector<ByteBuffer> expectOutputs = PermutationNetworkUtils.permutation(permutationMap, inputVector).stream()
             .map(ByteBuffer::wrap)
             .collect(Collectors.toCollection(Vector::new));
         Vector<ByteBuffer> actualOutputs = IntStream.range(0, n)

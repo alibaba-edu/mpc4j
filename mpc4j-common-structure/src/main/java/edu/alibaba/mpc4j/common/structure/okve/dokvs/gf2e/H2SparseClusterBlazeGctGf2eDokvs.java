@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.H2ClusterBlazeGctDokvsUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
@@ -23,11 +24,7 @@ import java.util.stream.Stream;
  * @author Weiran Liu
  * @date 2023/8/3
  */
-class H2SparseClusterBlazeGctGf2eDokvs<T> extends AbstractH2ClusterBlazeGctGf2eDokvs<T> implements SparseConstantGf2eDokvs<T> {
-    /**
-     * type
-     */
-    private static final Gf2eDokvsType TYPE = Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT;
+class H2SparseClusterBlazeGctGf2eDokvs<T> extends AbstractH2ClusterBlazeGctGf2eDokvs<T> implements SparseGf2eDokvs<T> {
 
     H2SparseClusterBlazeGctGf2eDokvs(EnvType envType, int n, int l, byte[][] keys) {
         this(envType, n, l, keys, new SecureRandom());
@@ -36,7 +33,6 @@ class H2SparseClusterBlazeGctGf2eDokvs<T> extends AbstractH2ClusterBlazeGctGf2eD
     H2SparseClusterBlazeGctGf2eDokvs(EnvType envType, int n, int l, byte[][] keys, SecureRandom secureRandom) {
         super(envType, n, l, keys, secureRandom);
     }
-
 
     @Override
     public int[] positions(T key) {
@@ -55,7 +51,7 @@ class H2SparseClusterBlazeGctGf2eDokvs<T> extends AbstractH2ClusterBlazeGctGf2eD
 
     @Override
     public int sparsePositionNum() {
-        return SPARSE_HASH_NUM;
+        return H2ClusterBlazeGctDokvsUtils.SPARSE_HASH_NUM;
     }
 
     @Override
@@ -85,7 +81,7 @@ class H2SparseClusterBlazeGctGf2eDokvs<T> extends AbstractH2ClusterBlazeGctGf2eD
 
     @Override
     public Gf2eDokvsType getType() {
-        return TYPE;
+        return Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT;
     }
 
     @Override

@@ -120,7 +120,7 @@ public class Aaag22KwPirClient extends AbstractKwPirClient {
     }
 
     @Override
-    public Map<ByteBuffer, ByteBuffer> pir(Set<ByteBuffer> retrievalKeySet) throws MpcAbortException {
+    public Map<ByteBuffer, byte[]> pir(Set<ByteBuffer> retrievalKeySet) throws MpcAbortException {
         setPtoInput(retrievalKeySet);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
@@ -152,7 +152,7 @@ public class Aaag22KwPirClient extends AbstractKwPirClient {
         List<byte[]> responsePayload = rpc.receive(responseHeader).getPayload();
 
         stopWatch.start();
-        Map<ByteBuffer, ByteBuffer> pirResult = handleResponse(responsePayload);
+        Map<ByteBuffer, byte[]> pirResult = handleResponse(responsePayload);
         stopWatch.stop();
         long decodeResponseTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -168,7 +168,7 @@ public class Aaag22KwPirClient extends AbstractKwPirClient {
      * @param responsePayload response payload.
      * @return retrieval result map.
      */
-    private Map<ByteBuffer, ByteBuffer> handleResponse(List<byte[]> responsePayload) throws MpcAbortException {
+    private Map<ByteBuffer, byte[]> handleResponse(List<byte[]> responsePayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(responsePayload.size() == 1);
         byte[] response = responsePayload.get(0);
         int slotCount = params.getPolyModulusDegree() / 2;
@@ -181,9 +181,9 @@ public class Aaag22KwPirClient extends AbstractKwPirClient {
                 items[i + params.pirColumnNumPerObj / 2] = coeffs[index + i + slotCount];
             }
             byte[] bytes = PirUtils.convertCoeffsToBytes(items, params.getPlainModulusSize());
-            HashMap<ByteBuffer, ByteBuffer> result = new HashMap<>(1);
+            HashMap<ByteBuffer, byte[]> result = new HashMap<>(1);
             int start = isPadding ? params.getPlainModulusSize() / Byte.SIZE : 0;
-            result.put(retrievalKeyList.get(0), ByteBuffer.wrap(BytesUtils.clone(bytes, start, valueByteLength)));
+            result.put(retrievalKeyList.get(0), BytesUtils.clone(bytes, start, valueByteLength));
             return result;
         } else {
             return new HashMap<>(0);

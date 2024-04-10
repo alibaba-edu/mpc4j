@@ -15,42 +15,32 @@ import java.security.SecureRandom;
  */
 public interface MultiPartyPto {
     /**
-     * Sets the task ID.
+     * Sets task ID. Only root protocol can set and all sub-protocols are set automatically.
      *
-     * @param taskId the task ID.
+     * @param taskId task ID.
      */
     void setTaskId(int taskId);
 
     /**
-     * Gets the task ID.
+     * Gets task ID.
      *
-     * @return the task ID.
+     * @return task ID.
      */
     int getTaskId();
 
     /**
-     * Sets the encoded task ID.
+     * Sets encoded task ID. This is intended for internally use. Do not call this manually.
      *
-     * @param taskId       the task ID.
-     * @param parentTreeId the parent tree ID.
+     * @param taskId task ID.
      */
-    void setEncodeTaskId(int taskId, int parentTreeId);
+    void setEncodeTaskId(int taskId);
 
     /**
-     * Adds the tree level.
+     * Updates protocol path. This is intended for internally use. Do not call this manually.
      *
-     * @param rowLevel     row level.
-     * @param taskId       the task ID.
-     * @param parentTreeId the parent tree ID.
+     * @param ptoPath protocol path.
      */
-    void addTreeLevel(int rowLevel, int taskId, int parentTreeId);
-
-    /**
-     * Gets the encoded task ID.
-     *
-     * @return the encoded task ID.
-     */
-    long getEncodeTaskId();
+    void updatePtoPath(int[] ptoPath);
 
     /**
      * Gets the invoked rpc instance.
@@ -111,14 +101,7 @@ public interface MultiPartyPto {
     EnvType getEnvType();
 
     /**
-     * Gets the protocol name.
-     *
-     * @return the protocol name.
-     */
-    String getPtoName();
-
-    /**
-     * Sets display log level.
+     * Sets display log level. Only root protocol can set and all sub-protocols are set automatically.
      *
      * @param displayLogLevel display log level.
      */

@@ -74,26 +74,26 @@ public class MainPsuTest {
     }
 
     @Test
-    public void testZcl22Pke() throws Exception {
-        Properties properties = readConfig("psu/conf_psu_zcl22_pke.txt");
+    public void testZcl23Pke() throws Exception {
+        Properties properties = readConfig("psu/conf_psu_zcl23_pke.txt");
         runTest(new PsuMain(properties));
     }
 
     @Test
-    public void testZcl22PkeCompressFalse() throws Exception {
-        Properties properties = readConfig("psu/conf_psu_zcl22_pke_compress_false.txt");
+    public void testZcl23PkeCompressFalse() throws Exception {
+        Properties properties = readConfig("psu/conf_psu_zcl23_pke_compress_false.txt");
         runTest(new PsuMain(properties));
     }
 
     @Test
-    public void testZcl22Ske() throws Exception {
-        Properties properties = readConfig("psu/conf_psu_zcl22_ske.txt");
+    public void testZcl23Ske() throws Exception {
+        Properties properties = readConfig("psu/conf_psu_zcl23_ske.txt");
         runTest(new PsuMain(properties));
     }
 
     @Test
-    public void testZcl22SkeOfflineFalse() throws Exception {
-        Properties properties = readConfig("psu/conf_psu_zcl22_ske_offline_false.txt");
+    public void testZcl23SkeOfflineFalse() throws Exception {
+        Properties properties = readConfig("psu/conf_psu_zcl23_ske_offline_false.txt");
         runTest(new PsuMain(properties));
     }
 

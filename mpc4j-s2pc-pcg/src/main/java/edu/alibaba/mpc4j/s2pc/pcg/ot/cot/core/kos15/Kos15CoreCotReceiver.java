@@ -74,7 +74,7 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
     public Kos15CoreCotReceiver(Rpc receiverRpc, Party senderParty, Kos15CoreCotConfig config) {
         super(Kos15CoreCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtSender = BaseOtFactory.createSender(receiverRpc, senderParty, config.getBaseOtConfig());
-        addSubPtos(baseOtSender);
+        addSubPto(baseOtSender);
         gf64 = Gf64Factory.createInstance(envType, config.getGf64Type());
         s = gf64.getL();
     }

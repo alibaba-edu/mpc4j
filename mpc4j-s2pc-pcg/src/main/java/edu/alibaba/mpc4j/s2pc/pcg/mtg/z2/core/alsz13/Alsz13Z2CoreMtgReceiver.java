@@ -56,9 +56,9 @@ public class Alsz13Z2CoreMtgReceiver extends AbstractZ2CoreMtgParty {
     public Alsz13Z2CoreMtgReceiver(Rpc receiverRpc, Party senderParty, Alsz13Z2CoreMtgConfig config) {
         super(Alsz13Z2CoreMtgPtoDesc.getInstance(), receiverRpc, senderParty, config);
         ncCotReceiver = NcCotFactory.createReceiver(receiverRpc, senderParty, config.getNcCotConfig());
-        addSubPtos(ncCotReceiver);
+        addSubPto(ncCotReceiver);
         ncCotSender = NcCotFactory.createSender(receiverRpc, senderParty, config.getNcCotConfig());
-        addSubPtos(ncCotSender);
+        addSubPto(ncCotSender);
     }
 
     @Override

@@ -41,7 +41,7 @@ public abstract class AbstractSqOprfPsiClient<T> extends AbstractPsiClient<T> {
     public AbstractSqOprfPsiClient(PtoDesc ptoDesc, Rpc clientRpc, Party serverParty, SqOprfPsiConfig config) {
         super(ptoDesc, clientRpc, serverParty, config);
         sqOprfReceiver = SqOprfFactory.createReceiver(clientRpc, serverParty, config.getSqOprfConfig());
-        addSubPtos(sqOprfReceiver);
+        addSubPto(sqOprfReceiver);
     }
 
     @Override

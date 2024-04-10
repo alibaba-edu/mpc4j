@@ -43,18 +43,18 @@ public class Egk20ZlEdaBitGenSender extends AbstractZlEdaBitGenParty {
     public Egk20ZlEdaBitGenSender(Rpc senderPpc, Party receiverParty, Egk20ZlEdaBitGenConfig config) {
         super(Egk20ZlEdaBitGenPtoDesc.getInstance(), senderPpc, receiverParty, config);
         zlcSender = ZlcFactory.createSender(senderPpc, receiverParty, config.getZlcConfig());
-        addSubPtos(zlcSender);
+        addSubPto(zlcSender);
         z2cSender = Z2cFactory.createSender(senderPpc, receiverParty, config.getZ2cConfig());
-        addSubPtos(z2cSender);
+        addSubPto(z2cSender);
         z2IntegerCircuit = new Z2IntegerCircuit(z2cSender);
     }
 
     public Egk20ZlEdaBitGenSender(Rpc senderPpc, Party receiverParty, Party aiderParty, Egk20ZlEdaBitGenConfig config) {
         super(Egk20ZlEdaBitGenPtoDesc.getInstance(), senderPpc, receiverParty, config);
         zlcSender = ZlcFactory.createSender(senderPpc, receiverParty, aiderParty, config.getZlcConfig());
-        addSubPtos(zlcSender);
+        addSubPto(zlcSender);
         z2cSender = Z2cFactory.createSender(senderPpc, receiverParty, aiderParty, config.getZ2cConfig());
-        addSubPtos(z2cSender);
+        addSubPto(z2cSender);
         z2IntegerCircuit = new Z2IntegerCircuit(z2cSender);
     }
 

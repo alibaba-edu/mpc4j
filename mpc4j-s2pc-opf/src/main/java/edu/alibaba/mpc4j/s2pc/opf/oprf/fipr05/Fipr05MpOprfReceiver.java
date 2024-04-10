@@ -28,7 +28,7 @@ public class Fipr05MpOprfReceiver extends AbstractMpOprfReceiver {
     public Fipr05MpOprfReceiver(Rpc receiverRpc, Party senderParty, Fipr05MpOprfConfig config) {
         super(Fipr05MpOprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
         sqOprfReceiver = SqOprfFactory.createReceiver(receiverRpc, senderParty, config.getSqOprfConfig());
-        addSubPtos(sqOprfReceiver);
+        addSubPto(sqOprfReceiver);
     }
 
     @Override

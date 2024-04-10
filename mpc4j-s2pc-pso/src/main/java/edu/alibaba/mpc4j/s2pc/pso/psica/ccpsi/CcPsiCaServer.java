@@ -36,9 +36,9 @@ public class CcPsiCaServer<T> extends AbstractPsiCaServer<T> {
         super(CcPsiCaPtoDesc.getInstance(), serverRpc, clientParty, config);
         ccpsiConfig = config.getCcpsiConfig();
         ccpsiServer = CcpsiFactory.createServer(serverRpc, clientParty, ccpsiConfig);
-        addSubPtos(ccpsiServer);
+        addSubPto(ccpsiServer);
         hammingSender = HammingFactory.createSender(serverRpc, clientParty, config.getHammingConfig());
-        addSubPtos(hammingSender);
+        addSubPto(hammingSender);
     }
 
     @Override

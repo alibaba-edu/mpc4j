@@ -204,6 +204,9 @@ jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativ
     auto low_powers_parms_id = get_parms_id_for_chain_idx(context, 2);
     vector<Plaintext> plaintexts = deserialize_plaintexts(env, database_coeffs, context);
     Ciphertext f_evaluated = polynomial_evaluation(parms, query_powers, plaintexts, ps_low_power, relin_keys, public_key);
+    while (f_evaluated.parms_id() != context.last_parms_id()) {
+        evaluator.mod_switch_to_next_inplace(f_evaluated);
+    }
     try_clear_irrelevant_bits(parms, f_evaluated);
     return serialize_ciphertext(env, f_evaluated);
 }
@@ -220,6 +223,9 @@ jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativ
     auto parms_id = get_parms_id_for_chain_idx(context, 1);
     vector<Plaintext> plaintexts = deserialize_plaintexts(env, database_coeffs, context);
     Ciphertext f_evaluated = polynomial_evaluation(parms, query_powers, plaintexts, public_key);
+    while (f_evaluated.parms_id() != context.last_parms_id()) {
+        evaluator.mod_switch_to_next_inplace(f_evaluated);
+    }
     try_clear_irrelevant_bits(parms, f_evaluated);
     return serialize_ciphertext(env, f_evaluated);
 }

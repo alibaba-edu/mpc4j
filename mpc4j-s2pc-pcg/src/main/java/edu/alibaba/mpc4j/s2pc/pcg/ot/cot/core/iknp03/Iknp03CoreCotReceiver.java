@@ -49,7 +49,7 @@ public class Iknp03CoreCotReceiver extends AbstractCoreCotReceiver {
     public Iknp03CoreCotReceiver(Rpc receiverRpc, Party senderParty, Iknp03CoreCotConfig config) {
         super(Iknp03CoreCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtSender = BaseOtFactory.createSender(receiverRpc, senderParty, config.getBaseOtConfig());
-        addSubPtos(baseOtSender);
+        addSubPto(baseOtSender);
     }
 
     @Override

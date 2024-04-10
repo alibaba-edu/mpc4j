@@ -45,5 +45,5 @@ public interface KwPirClient extends TwoPartyPto {
      * @return key value map.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    Map<ByteBuffer, ByteBuffer> pir(Set<ByteBuffer> retrievalKeySet) throws MpcAbortException;
+    Map<ByteBuffer, byte[]> pir(Set<ByteBuffer> retrievalKeySet) throws MpcAbortException;
 }

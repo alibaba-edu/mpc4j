@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.sml.opboost.xgboost;
 import biz.k11i.xgboost.Predictor;
 import edu.alibaba.mpc4j.common.data.DataFrameUtils;
 import edu.alibaba.mpc4j.common.data.DatasetManager;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
 import edu.alibaba.mpc4j.dp.ldp.LdpConfig;
 import edu.alibaba.mpc4j.sml.opboost.OpBoostSlave;
@@ -39,7 +39,7 @@ import java.util.*;
  * @date 2021/10/08
  */
 @RunWith(Parameterized.class)
-public class OpXgBoostRegSingleSlaveTest extends AbstractTwoPartyPtoTest {
+public class OpXgBoostRegSingleSlaveTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpXgBoostRegSingleSlaveTest.class);
 
     static {

@@ -91,7 +91,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
     public Cm20MpOprfReceiver(Rpc receiverRpc, Party senderParty, Cm20MpOprfConfig config) {
         super(Cm20MpOprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreCotSender = CoreCotFactory.createSender(receiverRpc, senderParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
         h1 = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH * 2);
     }
 

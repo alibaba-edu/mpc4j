@@ -50,10 +50,10 @@ public class Ywl20ShBspCotReceiver extends AbstractBspCotReceiver {
     public Ywl20ShBspCotReceiver(Rpc receiverRpc, Party senderParty, Ywl20ShBspCotConfig config) {
         super(Ywl20ShBspCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(receiverRpc, senderParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
         bpDpprfConfig = config.getBpDpprfConfig();
         bpDpprfReceiver = BpDpprfFactory.createReceiver(receiverRpc, senderParty, bpDpprfConfig);
-        addSubPtos(bpDpprfReceiver);
+        addSubPto(bpDpprfReceiver);
     }
 
     @Override

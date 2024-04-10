@@ -40,9 +40,9 @@ public class CacheLnotReceiver extends AbstractLnotReceiver {
     public CacheLnotReceiver(Rpc receiverRpc, Party senderParty, CacheLnotConfig config) {
         super(CacheLnotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         ncLnotReceiver = NcLnotFactory.createReceiver(receiverRpc, senderParty, config.getNcLnotConfig());
-        addSubPtos(ncLnotReceiver);
+        addSubPto(ncLnotReceiver);
         preLnotReceiver = PreLnotFactory.createReceiver(receiverRpc, senderParty, config.getPreLnotConfig());
-        addSubPtos(preLnotReceiver);
+        addSubPto(preLnotReceiver);
     }
 
     @Override

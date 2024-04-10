@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pir.keyword.params;
 
 import com.google.common.collect.Lists;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.naive.NaiveBatchIndexPirConfig;
@@ -26,7 +26,7 @@ import java.util.*;
  * @date 2023/7/14
  */
 @RunWith(Parameterized.class)
-public class Alpr21KwPirTest extends AbstractTwoPartyPtoTest {
+public class Alpr21KwPirTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * repeat time
      */
@@ -114,7 +114,7 @@ public class Alpr21KwPirTest extends AbstractTwoPartyPtoTest {
 
     public void testPir(Alpr21KwPirParams kwPirParams, int retrievalSize, Alpr21KwPirConfig config, boolean parallel) {
         List<Set<ByteBuffer>> randomSets = PirUtils.generateByteBufferSets(SERVER_MAP_SIZE, retrievalSize, REPEAT_TIME);
-        Map<ByteBuffer, ByteBuffer> keywordLabelMap = PirUtils.generateKeywordByteBufferLabelMap(
+        Map<ByteBuffer, byte[]> keywordLabelMap = PirUtils.generateKeywordByteBufferLabelMap(
             randomSets.get(0), DEFAULT_LABEL_BYTE_LENGTH
         );
         // create instances
@@ -143,9 +143,9 @@ public class Alpr21KwPirTest extends AbstractTwoPartyPtoTest {
             for (int index = 0; index < REPEAT_TIME; index++) {
                 Set<ByteBuffer> intersectionSet = new HashSet<>(randomSets.get(index + 1));
                 intersectionSet.retainAll(randomSets.get(0));
-                Map<ByteBuffer, ByteBuffer> pirResult = clientThread.getRetrievalResult(index);
+                Map<ByteBuffer, byte[]> pirResult = clientThread.getRetrievalResult(index);
                 Assert.assertEquals(intersectionSet.size(), pirResult.size());
-                pirResult.forEach((key, value) -> Assert.assertEquals(value, keywordLabelMap.get(key)));
+                pirResult.forEach((key, value) -> Assert.assertArrayEquals(value, keywordLabelMap.get(key)));
             }
             // destroy
             new Thread(server::destroy).start();

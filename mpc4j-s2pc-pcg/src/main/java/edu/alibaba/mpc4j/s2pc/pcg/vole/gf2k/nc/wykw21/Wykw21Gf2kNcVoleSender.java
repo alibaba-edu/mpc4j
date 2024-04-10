@@ -65,10 +65,10 @@ public class Wykw21Gf2kNcVoleSender extends AbstractGf2kNcVoleSender {
     public Wykw21Gf2kNcVoleSender(Rpc senderRpc, Party receiverParty, Wykw21Gf2kNcVoleConfig config) {
         super(Wykw21Gf2kNcVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreVoleSender = Gf2kCoreVoleFactory.createSender(senderRpc, receiverParty, config.getCoreVoleConfig());
-        addSubPtos(coreVoleSender);
+        addSubPto(coreVoleSender);
         mspVoleConfig = config.getMspVoleConfig();
         mspVoleSender = Gf2kMspVoleFactory.createSender(senderRpc, receiverParty, config.getMspVoleConfig());
-        addSubPtos(mspVoleSender);
+        addSubPto(mspVoleSender);
     }
 
     @Override

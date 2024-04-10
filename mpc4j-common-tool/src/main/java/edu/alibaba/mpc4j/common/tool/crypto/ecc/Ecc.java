@@ -162,11 +162,11 @@ public interface Ecc {
     /**
      * Computes the inner-product of the binary array with the EC point array.
      *
-     * @param binary the binary array.
      * @param ps     the EC point array.
+     * @param binary the binary array.
      * @return the inner product result.
      */
-    default ECPoint innerProduct(boolean[] binary, ECPoint[] ps) {
+    default ECPoint innerProduct(ECPoint[] ps, boolean[] binary) {
         assert binary.length > 0 && ps.length > 0;
         assert binary.length == ps.length;
         ECPoint innerProduct = getInfinity();
@@ -176,6 +176,21 @@ public interface Ecc {
             }
         }
         return innerProduct;
+    }
+
+    /**
+     * Computes the inner-product of zp vector and positions.
+     *
+     * @param ps        the EC point vector.
+     * @param positions positions.
+     * @return the inner product.
+     */
+    default ECPoint innerProduct(ECPoint[] ps, int[] positions) {
+        ECPoint value = getInfinity();
+        for (int position : positions) {
+            value = add(value, ps[position]);
+        }
+        return value;
     }
 
     /**

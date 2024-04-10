@@ -65,11 +65,11 @@ public class Gmr21MpPidClient<T> extends AbstractPidParty<T> {
     public Gmr21MpPidClient(Rpc clientRpc, Party serverParty, Gmr21MpPidConfig config) {
         super(Gmr21MpPidPtoDesc.getInstance(), clientRpc, serverParty, config);
         mpOprfReceiver = OprfFactory.createMpOprfReceiver(clientRpc, serverParty, config.getMpOprfConfig());
-        addSubPtos(mpOprfReceiver);
+        addSubPto(mpOprfReceiver);
         mpOprfSender = OprfFactory.createMpOprfSender(clientRpc, serverParty, config.getMpOprfConfig());
-        addSubPtos(mpOprfSender);
+        addSubPto(mpOprfSender);
         psuClient = PsuFactory.createClient(clientRpc, serverParty, config.getPsuConfig());
-        addSubPtos(psuClient);
+        addSubPto(psuClient);
     }
 
     @Override

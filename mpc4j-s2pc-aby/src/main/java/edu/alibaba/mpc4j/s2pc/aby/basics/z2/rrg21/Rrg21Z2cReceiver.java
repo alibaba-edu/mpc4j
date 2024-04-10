@@ -14,6 +14,7 @@ import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.rrg21.Rrg21Z2cPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.*;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,22 +49,22 @@ public class Rrg21Z2cReceiver extends AbstractZ2cParty {
         super(Rrg21Z2cPtoDesc.getInstance(), receiverRpc, senderParty, config);
         CotConfig cotConfig = config.getCotConfig();
         cotReceiver = CotFactory.createReceiver(receiverRpc, senderParty, cotConfig);
-        addSubPtos(cotReceiver);
+        addSubPto(cotReceiver);
         cotSender = CotFactory.createSender(receiverRpc, senderParty, cotConfig);
-        addSubPtos(cotSender);
+        addSubPto(cotSender);
     }
 
     @Override
-    public void init(int updateBitNum) throws MpcAbortException {
+    public void init(long updateBitNum) throws MpcAbortException {
         setInitInput(updateBitNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
         // since storing many COT outputs would lead to memory exception, here we generate COT when necessary
-        cotReceiver.init(updateBitNum);
+        cotReceiver.init((int) updateBitNum);
         byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(delta);
-        cotSender.init(delta, updateBitNum);
+        cotSender.init(delta, (int) updateBitNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -199,6 +200,31 @@ public class Rrg21Z2cReceiver extends AbstractZ2cParty {
             logPhaseInfo(PtoState.PTO_END, "xor");
             return z1SquareVector;
         }
+    }
+
+    @Override
+    public void xori(MpcZ2Vector x1, MpcZ2Vector y1) throws MpcAbortException {
+        SquareZ2Vector x1SquareVector = (SquareZ2Vector) x1;
+        SquareZ2Vector y1SquareVector = (SquareZ2Vector) y1;
+        assert !(x1.isPlain() && (!y1.isPlain()));
+        setDyadicOperatorInput(x1SquareVector, y1SquareVector);
+
+        if(x1.isPlain() || (!y1.isPlain())){
+            x1.getBitVector().xori(y1.getBitVector());
+        }
+    }
+
+    @Override
+    public void noti(MpcZ2Vector xi) {
+        if(xi.isPlain()){
+            xi.getBitVectors()[0].noti();
+        }
+    }
+
+    @Override
+    public SquareZ2Vector[] setPublicValues(BitVector[] data) {
+        return Arrays.stream(data).map(each ->
+            SquareZ2Vector.create(BitVectorFactory.createZeros(each.bitNum()), false)).toArray(SquareZ2Vector[]::new);
     }
 
     @Override

@@ -59,8 +59,8 @@ public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
         mqRpmtServer = MqRpmtFactory.createServer(serverRpc, clientParty, config.getMqRpmtConfig());
         mqRpmtConfig = config.getMqRpmtConfig();
         coreCotSender = CoreCotFactory.createSender(serverRpc,clientParty,config.getCoreCotConfig());
-        addSubPtos(mqRpmtServer);
-        addSubPtos(coreCotSender);
+        addSubPto(mqRpmtServer);
+        addSubPto(coreCotSender);
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
     }
 

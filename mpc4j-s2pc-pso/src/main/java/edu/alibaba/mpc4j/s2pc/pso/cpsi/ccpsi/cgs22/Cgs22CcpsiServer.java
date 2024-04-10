@@ -80,9 +80,9 @@ public class Cgs22CcpsiServer<T> extends AbstractCcpsiServer<T> {
         RbopprfConfig rbopprfConfig = config.getRbopprfConfig();
         rbopprfSender = RbopprfFactory.createSender(clientRpc, senderParty, rbopprfConfig);
         d = rbopprfConfig.getD();
-        addSubPtos(rbopprfSender);
+        addSubPto(rbopprfSender);
         pdsmReceiver = PdsmFactory.createReceiver(clientRpc, senderParty, config.getPsmConfig());
-        addSubPtos(pdsmReceiver);
+        addSubPto(pdsmReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
         hashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }

@@ -41,9 +41,9 @@ public class Wykw21ShGf2kSspVoleReceiver extends AbstractGf2kSspVoleReceiver {
     public Wykw21ShGf2kSspVoleReceiver(Rpc receiverRpc, Party senderParty, Wykw21ShGf2kSspVoleConfig config) {
         super(Wykw21ShGf2kSspVolePtoDesc.getInstance(), receiverRpc, senderParty, config);
         gf2kCoreVoleReceiver = Gf2kCoreVoleFactory.createReceiver(receiverRpc, senderParty, config.getGf2kCoreVoleConfig());
-        addSubPtos(gf2kCoreVoleReceiver);
+        addSubPto(gf2kCoreVoleReceiver);
         spDpprfSender = SpDpprfFactory.createSender(receiverRpc, senderParty, config.getSpDpprfConfig());
-        addSubPtos(spDpprfSender);
+        addSubPto(spDpprfSender);
     }
 
     @Override

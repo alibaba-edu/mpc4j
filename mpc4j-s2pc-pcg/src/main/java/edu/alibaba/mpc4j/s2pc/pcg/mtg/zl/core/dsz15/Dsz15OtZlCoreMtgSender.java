@@ -74,9 +74,9 @@ public class Dsz15OtZlCoreMtgSender extends AbstractZlCoreMtgParty {
     public Dsz15OtZlCoreMtgSender(Rpc senderRpc, Party receiverParty, Dsz15OtZlCoreMtgConfig config) {
         super(Dsz15OtZlCoreMtgPtoDesc.getInstance(), senderRpc, receiverParty, config);
         cotReceiver = CotFactory.createReceiver(senderRpc, receiverParty, config.getCotConfig());
-        addSubPtos(cotReceiver);
+        addSubPto(cotReceiver);
         cotSender = CotFactory.createSender(senderRpc, receiverParty, config.getCotConfig());
-        addSubPtos(cotSender);
+        addSubPto(cotSender);
         // each bit of a and b can be shifted to reduce the communication cost
         shiftTable = IntStream.range(0, l).map(i -> l - 1 - i).toArray();
         prgs = IntStream.range(0, l)

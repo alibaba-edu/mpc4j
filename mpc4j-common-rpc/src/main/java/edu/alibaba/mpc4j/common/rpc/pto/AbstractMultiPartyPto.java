@@ -5,11 +5,9 @@ import edu.alibaba.mpc4j.common.rpc.PartyState;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,21 +26,9 @@ import java.util.Set;
 public abstract class AbstractMultiPartyPto implements MultiPartyPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(MultiPartyPto.class);
     /**
-     * display log level.
+     * default display log level
      */
-    private static final int DISPLAY_LOG_LEVEL = 2;
-    /**
-     * maximal number of sub-protocols. Note that some protocols would have many levels (e.g., PSU based on SKE).
-     */
-    protected static final int MAX_SUB_PROTOCOL_NUM = 4;
-    /**
-     * maximal tree level
-     */
-    protected static final int MAX_TREE_LEVEL = (int) Math.floor(Math.log(Integer.MAX_VALUE) / Math.log(MAX_SUB_PROTOCOL_NUM + 1));
-    /**
-     * the PRF used to extend the task ID.
-     */
-    protected final Prf taskIdPrf;
+    private static final int DEFAULT_DISPLAY_LOG_LEVEL = 2;
     /**
      * protocol description.
      */
@@ -64,21 +50,13 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      */
     private final List<MultiPartyPto> subPtos;
     /**
-     * tree level
+     * pto path
      */
-    private int treeLevel;
-    /**
-     * row level
-     */
-    private int rowLevel;
+    private int[] ptoPath;
     /**
      * task ID
      */
     private int taskId;
-    /**
-     * the tree ID
-     */
-    private int treeId;
     /**
      * encode task ID
      */
@@ -90,7 +68,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
     /**
      * the log prefix for each step
      */
-    private String ptoStepLogPrefix;
+    protected String ptoStepLogPrefix;
     /**
      * the log prefix for ending a task
      */
@@ -129,16 +107,11 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
         this.ptoDesc = ptoDesc;
         this.rpc = rpc;
         this.otherParties = otherParties;
-        // 为了保证所有平台都能够使用，这里强制要求用JDK的Prf
-        taskIdPrf = PrfFactory.createInstance(PrfFactory.PrfType.JDK_AES_CBC, Long.BYTES);
-        taskIdPrf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
         stopWatch = new StopWatch();
-        subPtos = new ArrayList<>(MAX_SUB_PROTOCOL_NUM);
-        treeLevel = 0;
-        rowLevel = 0;
-        treeId = 0;
+        subPtos = new ArrayList<>();
+        ptoPath = new int[]{0};
         taskId = 0;
-        encodeTaskId = 0L;
+        updateEncodeId();
         ptoBeginLogPrefix = "↘";
         ptoStepLogPrefix = "    ↓";
         ptoEndLogPrefix = "↙";
@@ -147,31 +120,39 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
         envType = config.getEnvType();
         secureRandom = new SecureRandom();
         parallel = false;
-        displayLogLevel = DISPLAY_LOG_LEVEL;
+        displayLogLevel = DEFAULT_DISPLAY_LOG_LEVEL;
     }
 
-    protected void addSubPtos(MultiPartyPto subPto) {
-        int rowLevel = subPtos.size();
+    private void updateEncodeId() {
+        int hashCode = Math.abs(new HashCodeBuilder().append(ptoPath).hashCode());
+        encodeTaskId = ((long) hashCode << Integer.SIZE) + taskId;
+    }
+
+    protected void addSubPto(MultiPartyPto subPto) {
+        int subPtoIndex = subPtos.size();
         subPtos.add(subPto);
-        MathPreconditions.checkLessOrEqual("# of sub-protocols", subPtos.size(), MAX_SUB_PROTOCOL_NUM);
-        subPto.addTreeLevel(rowLevel, taskId, treeId);
+        int ptoPathLength = ptoPath.length;
+        int[] subPtoPath = new int[ptoPathLength + 1];
+        System.arraycopy(ptoPath, 0, subPtoPath, 0, ptoPathLength);
+        subPtoPath[ptoPathLength] = subPtoIndex;
+        subPto.updatePtoPath(subPtoPath);
     }
 
     @Override
-    public void addTreeLevel(int rowLevel, int taskId, int parentTreeId) {
-        MathPreconditions.checkNonNegativeInRange("rowLevel", rowLevel, MAX_SUB_PROTOCOL_NUM);
-        treeLevel++;
-        MathPreconditions.checkNonNegativeInRange("treeLevel", treeLevel, MAX_TREE_LEVEL);
-        this.rowLevel = rowLevel;
-        this.taskId = taskId;
-        treeId = (int) Math.pow(MAX_SUB_PROTOCOL_NUM, treeLevel) * (rowLevel + 1) + parentTreeId;
-        encodeTaskId = (((long) treeId) << Integer.SIZE) + taskId;
+    public void updatePtoPath(int[] ptoPath) {
+        // we cannot find a way to verify that this is called internally.
+        this.ptoPath = ptoPath;
+        updateEncodeId();
         ptoBeginLogPrefix = "    " + ptoBeginLogPrefix;
         ptoStepLogPrefix = "    " + ptoStepLogPrefix;
         ptoEndLogPrefix = "    " + ptoEndLogPrefix;
         // set sub-protocols
+        int ptoPathLength = ptoPath.length;
         for (int subPtoIndex = 0; subPtoIndex < subPtos.size(); subPtoIndex++) {
-            subPtos.get(subPtoIndex).addTreeLevel(subPtoIndex, taskId, treeId);
+            int[] subPtoPath = new int[ptoPathLength + 1];
+            System.arraycopy(ptoPath, 0, subPtoPath, 0, ptoPathLength);
+            subPtoPath[ptoPathLength] = subPtoIndex;
+            subPtos.get(subPtoIndex).updatePtoPath(subPtoPath);
         }
     }
 
@@ -179,43 +160,31 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
     public void setTaskId(int taskId) {
         // taskId >= 0
         MathPreconditions.checkNonNegative("taskId", taskId);
-        // only the root protocol (treeId = 0) can set the task ID.
-        MathPreconditions.checkEqual("treeId", "0", treeId, 0);
-
+        // only the root protocol can set task ID.
+        MathPreconditions.checkEqual("ptoPath.length", "1", ptoPath.length, 1);
         this.taskId = taskId;
-        encodeTaskId = (((long) treeId) << Integer.SIZE) + taskId;
+        updateEncodeId();
         // set sub-protocols
         for (MultiPartyPto subPto : subPtos) {
-            subPto.setEncodeTaskId(taskId, treeId);
+            subPto.setEncodeTaskId(taskId);
+        }
+    }
+
+    @Override
+    public void setEncodeTaskId(int taskId) {
+        // this can be only called internally.
+        MathPreconditions.checkGreater("ptoPath.length", ptoPath.length, 1);
+        this.taskId = taskId;
+        updateEncodeId();
+        // set sub-protocols
+        for (MultiPartyPto subPto : subPtos) {
+            subPto.setEncodeTaskId(taskId);
         }
     }
 
     @Override
     public int getTaskId() {
         return taskId;
-    }
-
-    @Override
-    public void setEncodeTaskId(int taskId, int parentTreeId) {
-        // taskId >= 0
-        MathPreconditions.checkNonNegative("taskId", taskId);
-        // parentTreeId >= 0
-        MathPreconditions.checkNonNegative("treeId", treeId);
-        // tree level must be greater than 0, so that it is not the root protocol
-        MathPreconditions.checkPositive("treeLevel", treeLevel);
-
-        this.taskId = taskId;
-        treeId = (int) Math.pow(MAX_SUB_PROTOCOL_NUM, treeLevel) * (rowLevel + 1) + parentTreeId;
-        encodeTaskId = (((long) treeId) << Integer.SIZE) + taskId;
-        // set sub-protocols
-        for (MultiPartyPto subPto : subPtos) {
-            subPto.setEncodeTaskId(taskId, treeId);
-        }
-    }
-
-    @Override
-    public long getEncodeTaskId() {
-        return encodeTaskId;
     }
 
     @Override
@@ -226,11 +195,6 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
     @Override
     public PtoDesc getPtoDesc() {
         return ptoDesc;
-    }
-
-    @Override
-    public String getPtoName() {
-        return ptoDesc.getPtoName();
     }
 
     @Override
@@ -268,7 +232,10 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
 
     @Override
     public void setDisplayLogLevel(int displayLogLevel) {
+        // display_log_level >= 0
         MathPreconditions.checkNonNegative("display_log_level", displayLogLevel);
+        // only the root protocol can set task ID.
+        MathPreconditions.checkEqual("ptoPath.length", "1", ptoPath.length, 1);
         this.displayLogLevel = displayLogLevel;
         for (MultiPartyPto subPto : subPtos) {
             subPto.setDisplayLogLevel(displayLogLevel);
@@ -467,7 +434,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      * @param message the message string to be logged.
      */
     protected void info(String message) {
-        if (treeLevel < displayLogLevel) {
+        if (ptoPath.length <= displayLogLevel) {
             LOGGER.info(message);
         }
     }
@@ -481,7 +448,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      * @param arg1   the second argument.
      */
     protected void info(String format, Object arg0, Object arg1) {
-        if (treeLevel < displayLogLevel) {
+        if (ptoPath.length <= displayLogLevel) {
             LOGGER.info(format, arg0, arg1);
         }
     }
@@ -494,7 +461,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      * @param arguments a list of 3 or more arguments
      */
     protected void info(String format, Object... arguments) {
-        if (treeLevel < displayLogLevel) {
+        if (ptoPath.length <= displayLogLevel) {
             LOGGER.info(format, arguments);
         }
     }

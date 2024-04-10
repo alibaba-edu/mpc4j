@@ -29,7 +29,7 @@ public class PayablePirClientThread extends Thread {
     /**
      * client output
      */
-    private ByteBuffer clientOutput;
+    private byte[] clientOutput;
     /**
      * server element size
      */
@@ -42,7 +42,7 @@ public class PayablePirClientThread extends Thread {
         this.labelByteLength = labelByteLength;
     }
 
-    public ByteBuffer getClientOutput() {
+    public byte[] getClientOutput() {
         return clientOutput;
     }
 

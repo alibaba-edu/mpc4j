@@ -22,7 +22,7 @@ import java.util.stream.IntStream;
 import static edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirPtoDesc.*;
 
 /**
- * vectorized batch index PIR server.
+ * Vectorized Batch PIR server.
  *
  * @author Liqiang Peng
  * @date 2023/3/7
@@ -131,8 +131,12 @@ public class Mr23BatchIndexPirServer extends AbstractBatchIndexPirServer {
             }
             previousIdx += offset;
             rotateDbCols(i);
-            encodedDatabase.add(Mr23BatchIndexPirNativeUtils.preprocessDatabase(params.getEncryptionParams(), db[i]));
         }
+        IntStream intStream = IntStream.range(0, serverNum);
+        intStream = parallel ? intStream.parallel() : intStream;
+        encodedDatabase = intStream
+            .mapToObj(i -> Mr23BatchIndexPirNativeUtils.preprocessDatabase(params.getEncryptionParams(), db[i]))
+            .collect(Collectors.toList());
         stopWatch.stop();
         long encodeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

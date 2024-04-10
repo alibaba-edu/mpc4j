@@ -1,34 +1,41 @@
-// 定义proto文件符合proto3语法。
+// define proto using proto3 syntax.
 syntax = "proto3";
-// 用该proto文件生成的Java文件的包路径。
+// package name for the generated Java file
 option java_package = "edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf";
-// 用该proto文件生成的Java文件的文件名。
+// class name for the generated Java file
 option java_outer_classname = "NettyRpcProtobuf";
 
 message DataPacketProto {
-    // 协议由两部分组成：head、payload，分别由HeaderProto和PayloadProto定义。
+    // data packet contains 3 types: head, type, payload, defined by HeaderProto, TypeProto, PayloadProto, respectively.
     HeaderProto headerProto = 1;
-    PayloadProto payloadProto = 2;
+    TypeProto typeProto = 2;
+    PayloadProto payloadProto = 3;
 
-    // 定义head
+    // define header
     message HeaderProto {
-        // 任务ID
-        int64 taskId = 1;
-        // 协议ID
+        // encode task ID
+        int64 encodeTaskId = 1;
+        // protocol ID
         int32 ptoId = 2;
-        // 步骤ID
+        // step ID
         int32 stepId = 3;
-        // 补充信息
+        // extra information
         int64 extraInfo = 4;
-        // 发送方ID
+        // sender ID
         int32 senderId = 5;
-        // 接收方ID
+        // receiver ID
         int32 receiverId = 6;
     }
 
-    // 定义payload
+    // define type
+    message TypeProto {
+        // type ID
+        int32 typeId = 1;
+    }
+
+    // define payload
     message PayloadProto {
-        // repeated表示可以存在多个（类似数组）
+        // repeated means having multiple instance (like array)
         repeated bytes payloadBytes = 1;
     }
 }

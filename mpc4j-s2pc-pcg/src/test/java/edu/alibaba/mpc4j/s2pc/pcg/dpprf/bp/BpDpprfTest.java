@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.bp.BpDpprfFactory.BpDpprfType;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.sp.SpDpprfReceiverOutput;
@@ -29,7 +29,7 @@ import java.util.stream.IntStream;
  * @date 2022/8/16
  */
 @RunWith(Parameterized.class)
-public class BpDpprfTest extends AbstractTwoPartyPtoTest {
+public class BpDpprfTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(BpDpprfTest.class);
     /**
      * default α bound, the bound is not even, and not in format 2^k

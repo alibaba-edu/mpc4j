@@ -153,6 +153,7 @@ jobject JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_batch_vectorizedpir_Mr23Ba
         while (i.parms_id() != context.last_parms_id()) {
             evaluator.mod_switch_to_next_inplace(i);
         }
+        try_clear_irrelevant_bits(parms, i);
     }
     return serialize_ciphertexts(env, merged_result);
 }

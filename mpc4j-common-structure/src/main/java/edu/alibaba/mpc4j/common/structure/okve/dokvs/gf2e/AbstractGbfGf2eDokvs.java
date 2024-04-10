@@ -1,18 +1,17 @@
 package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.DistinctGbfUtils;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
 import java.security.SecureRandom;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -32,36 +31,13 @@ import java.util.stream.Stream;
  */
 abstract class AbstractGbfGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements SparseGf2eDokvs<T> {
     /**
-     * Garbled Bloom Filter needs λ hashes
-     */
-    protected static final int SPARSE_HASH_NUM = CommonConstants.STATS_BIT_LENGTH;
-    /**
-     * we only need to use one hash key
-     */
-    public static final int HASH_KEY_NUM = 1;
-
-    /**
-     * Gets m for the given n.
-     *
-     * @param n number of key-value pairs.
-     * @return m.
-     */
-    public static int getM(int n) {
-        MathPreconditions.checkPositive("n", n);
-        // m = n / ln(2) * σ, flooring so that m % Byte.SIZE = 0.
-        return CommonUtils.getByteLength(
-            (int) Math.ceil(n * CommonConstants.STATS_BIT_LENGTH / Math.log(2))
-        ) * Byte.SIZE;
-    }
-
-    /**
      * hashes
      */
     protected final Prf hash;
 
     AbstractGbfGf2eDokvs(EnvType envType, int n, int l, byte[] key, SecureRandom secureRandom) {
-        super(n, getM(n), l, secureRandom);
-        hash = PrfFactory.createInstance(envType, Integer.BYTES * SPARSE_HASH_NUM);
+        super(n, DistinctGbfUtils.getM(n), l, secureRandom);
+        hash = PrfFactory.createInstance(envType, Integer.BYTES * DistinctGbfUtils.SPARSE_HASH_NUM);
         hash.setKey(key);
     }
 
@@ -71,8 +47,8 @@ abstract class AbstractGbfGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements S
     }
 
     @Override
-    public int maxSparsePositionNum() {
-        return SPARSE_HASH_NUM;
+    public int sparsePositionNum() {
+        return DistinctGbfUtils.SPARSE_HASH_NUM;
     }
 
     @Override
@@ -91,13 +67,9 @@ abstract class AbstractGbfGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements S
         MathPreconditions.checkLessOrEqual("key-value size", keyValueMap.size(), n);
         keyValueMap.values().forEach(x -> Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(x, byteL, l)));
         Set<T> keySet = keyValueMap.keySet();
-        Map<T, int[]> sparsePositionsMap = new ConcurrentHashMap<>(keySet.size());
         Stream<T> keyStream = keySet.stream();
         keyStream = parallelEncode ? keyStream.parallel() : keyStream;
-        keyStream.forEach(key -> {
-            int[] sparsePositions = sparsePositions(key);
-            sparsePositionsMap.put(key, sparsePositions);
-        });
+        Map<T, int[]> sparsePositionsMap = keyStream.collect(Collectors.toMap(key -> key, this::sparsePositions));
         // compute positions for all keys, create shares.
         byte[][] storage = new byte[m][];
         for (T key : keySet) {

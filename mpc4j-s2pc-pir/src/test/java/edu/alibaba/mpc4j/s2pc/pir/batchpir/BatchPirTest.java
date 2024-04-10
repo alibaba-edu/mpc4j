@@ -1,26 +1,25 @@
 package edu.alibaba.mpc4j.s2pc.pir.batchpir;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirServer;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.cuckoohash.CuckooHashBatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.naive.NaiveBatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.simplepir.CuckooHashBatchSimplePirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.labelpsi.Cmg21BatchIndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.single.fastpir.Ayaa21SingleIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.single.sealpir.Acls18SingleIndexPirConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * batch PIR test.
@@ -29,7 +28,7 @@ import java.util.*;
  * @date 2023/3/9
  */
 @RunWith(Parameterized.class)
-public class BatchPirTest extends AbstractTwoPartyPtoTest {
+public class BatchPirTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * default bit length
      */
@@ -63,33 +62,15 @@ public class BatchPirTest extends AbstractTwoPartyPtoTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // cuckoo hash batch PIR
-        configurations.add(new Object[]{
-            BatchIndexPirFactory.BatchIndexPirType.SEAL_PIR.name(),
-            new CuckooHashBatchIndexPirConfig.Builder()
-                .setSingleIndexPirConfig(new Acls18SingleIndexPirConfig.Builder().build())
-                .build()
-        });
-        configurations.add(new Object[]{
-            BatchIndexPirFactory.BatchIndexPirType.FAST_PIR.name(),
-            new CuckooHashBatchIndexPirConfig.Builder()
-                .setSingleIndexPirConfig(new Ayaa21SingleIndexPirConfig.Builder().build())
-                .build()
-        });
         // vectorized batch PIR
         configurations.add(new Object[]{
             BatchIndexPirFactory.BatchIndexPirType.VECTORIZED_BATCH_PIR.name(),
             new Mr23BatchIndexPirConfig.Builder().build()
         });
-        // batch Simple PIR
+        // CMG21 batch PIR
         configurations.add(new Object[]{
-            BatchIndexPirFactory.BatchIndexPirType.SIMPLE_PIR.name(),
-            new CuckooHashBatchSimplePirConfig.Builder().build()
-        });
-        // naive batch PIR
-        configurations.add(new Object[]{
-            BatchIndexPirFactory.BatchIndexPirType.NAIVE_BATCH_PIR.name(),
-            new NaiveBatchIndexPirConfig.Builder().build()
+            BatchIndexPirFactory.BatchIndexPirType.LABEL_PSI.name(),
+            new Cmg21BatchIndexPirConfig.Builder().build()
         });
         return configurations;
     }
@@ -102,11 +83,6 @@ public class BatchPirTest extends AbstractTwoPartyPtoTest {
     public BatchPirTest(String name, BatchIndexPirConfig config) {
         super(name);
         this.config = config;
-    }
-
-    @Test
-    public void test1BitLength() {
-        testPto(1 << 10, 1 << 2, 10, true);
     }
 
     @Test

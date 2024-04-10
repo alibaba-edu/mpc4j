@@ -4,6 +4,7 @@ import cc.redberry.rings.linear.LinearSolver;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.structure.okve.cuckootable.CuckooTableTcFinder;
 import edu.alibaba.mpc4j.common.structure.okve.cuckootable.H2CuckooTableTcFinder;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.H2GctDokvsUtils;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
@@ -13,17 +14,18 @@ import edu.alibaba.mpc4j.common.structure.okve.cuckootable.CuckooTableSingletonT
 import edu.alibaba.mpc4j.common.structure.okve.cuckootable.H2CuckooTable;
 import edu.alibaba.mpc4j.common.structure.okve.tool.BinaryLinearSolver;
 import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * abstract DOKVS using garbled cuckoo table with 2 hash functions. The non-doubly construction is from the following
@@ -46,15 +48,7 @@ import java.util.stream.Stream;
  * @author Weiran Liu
  * @date 2023/7/3
  */
-abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements SparseConstantGf2eDokvs<T> {
-    /**
-     * number of sparse hashes
-     */
-    static final int SPARSE_HASH_NUM = 2;
-    /**
-     * number of hash keys
-     */
-    static int HASH_KEY_NUM = 2;
+abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements SparseGf2eDokvs<T> {
     /**
      * left m, i.e., sparse part.
      */
@@ -82,11 +76,11 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
     /**
      * key -> h1
      */
-    private Map<T, Integer> dataH1Map;
+    private TObjectIntMap<T> dataH1Map;
     /**
      * key -> h2
      */
-    private Map<T, Integer> dataH2Map;
+    private TObjectIntMap<T> dataH2Map;
     /**
      * key -> hr
      */
@@ -95,10 +89,10 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
     AbstractH2GctGf2eDokvs(EnvType envType, int n, int lm, int rm, int l,
                            byte[][] keys, CuckooTableTcFinder<T> tcFinder, SecureRandom secureRandom) {
         super(n, lm + rm, l, secureRandom);
-        MathPreconditions.checkEqual("keys.length", "hash_num", keys.length, HASH_KEY_NUM);
+        MathPreconditions.checkEqual("keys.length", "hash_num", keys.length, H2GctDokvsUtils.HASH_KEY_NUM);
         this.lm = lm;
         this.rm = rm;
-        hl = PrfFactory.createInstance(envType, Integer.BYTES * SPARSE_HASH_NUM);
+        hl = PrfFactory.createInstance(envType, Integer.BYTES * H2GctDokvsUtils.SPARSE_HASH_NUM);
         hl.setKey(keys[0]);
         hr = PrfFactory.createInstance(envType, rm / Byte.SIZE);
         hr.setKey(keys[1]);
@@ -113,20 +107,12 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
 
     @Override
     public int[] sparsePositions(T key) {
-        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        int[] sparsePositions = IntUtils.byteArrayToIntArray(hl.getBytes(keyBytes));
-        // we now use the method provided in VOLE-PSI to get distinct hash indexes
-        sparsePositions[0] = Math.abs(sparsePositions[0] % lm);
-        sparsePositions[1] = Math.abs(sparsePositions[1] % (lm - 1));
-        if (sparsePositions[1] >= sparsePositions[0]) {
-            sparsePositions[1]++;
-        }
-        return sparsePositions;
+        return H2GctDokvsUtils.sparsePositions(hl, key, lm);
     }
 
     @Override
     public int sparsePositionNum() {
-        return SPARSE_HASH_NUM;
+        return H2GctDokvsUtils.SPARSE_HASH_NUM;
     }
 
     @Override
@@ -167,12 +153,10 @@ abstract class AbstractH2GctGf2eDokvs<T> extends AbstractGf2eDokvs<T> implements
         // construct maps
         Set<T> keySet = keyValueMap.keySet();
         int keySize = keySet.size();
-        dataH1Map = new ConcurrentHashMap<>(keySize);
-        dataH2Map = new ConcurrentHashMap<>(keySize);
-        dataHrMap = new ConcurrentHashMap<>(keySize);
-        Stream<T> keyStream = keySet.stream();
-        keyStream = parallelEncode ? keyStream.parallel() : keyStream;
-        keyStream.forEach(key -> {
+        dataH1Map = new TObjectIntHashMap<>(keySize);
+        dataH2Map = new TObjectIntHashMap<>(keySize);
+        dataHrMap = new HashMap<>(keySize);
+        keySet.forEach(key -> {
             int[] sparsePositions = sparsePositions(key);
             boolean[] binaryDensePositions = binaryDensePositions(key);
             dataH1Map.put(key, sparsePositions[0]);

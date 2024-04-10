@@ -1,13 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21;
 
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
-import edu.alibaba.mpc4j.common.tool.polynomial.power.PowerNode;
-import edu.alibaba.mpc4j.common.tool.polynomial.power.PowerUtils;
+import edu.alibaba.mpc4j.common.tool.polynomial.power.PowersDag;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -59,32 +57,31 @@ public class Cmg21KwPirParamsChecker {
             : "MaxRetrievalSize must be in range (0, " + maxItemSize + "]: " + params.maxRetrievalSize();
         int[][] parentPowers;
         if (params.getPsLowDegree() > 0) {
-            Set<Integer> innerPowersSet = new HashSet<>();
-            Set<Integer> outerPowersSet = new HashSet<>();
-            IntStream.range(0, params.getQueryPowers().length).forEach(i -> {
+            int queryPowerNum = params.getQueryPowers().length;
+            TIntSet innerPowersSet = new TIntHashSet(queryPowerNum);
+            TIntSet outerPowersSet = new TIntHashSet(queryPowerNum);
+            IntStream.range(0, queryPowerNum).forEach(i -> {
                 if (params.getQueryPowers()[i] <= params.getPsLowDegree()) {
                     innerPowersSet.add(params.getQueryPowers()[i]);
                 } else {
                     outerPowersSet.add(params.getQueryPowers()[i] / (params.getPsLowDegree() + 1));
                 }
             });
-            PowerNode[] innerPowerNodes = PowerUtils.computePowers(innerPowersSet, params.getPsLowDegree());
-            PowerNode[] outerPowerNodes = PowerUtils.computePowers(
+            PowersDag innerPowersDag = new PowersDag(innerPowersSet, params.getPsLowDegree());
+            PowersDag outerPowersDag = new PowersDag(
                 outerPowersSet, params.getMaxPartitionSizePerBin() / (params.getPsLowDegree() + 1)
             );
-            parentPowers = new int[innerPowerNodes.length + outerPowerNodes.length][2];
-            int[][] innerPowerNodesDegree = Arrays.stream(innerPowerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
-            int[][] outerPowerNodesDegree = Arrays.stream(outerPowerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
+            parentPowers = new int[innerPowersDag.upperBound() + outerPowersDag.upperBound()][2];
+            int[][] innerPowerNodesDegree = innerPowersDag.getDag();
+            int[][] outerPowerNodesDegree = outerPowersDag.getDag();
             System.arraycopy(innerPowerNodesDegree, 0, parentPowers, 0, innerPowerNodesDegree.length);
             System.arraycopy(
                 outerPowerNodesDegree, 0, parentPowers, innerPowerNodesDegree.length, outerPowerNodesDegree.length
             );
         } else {
-            Set<Integer> sourcePowersSet = Arrays.stream(params.getQueryPowers())
-                .boxed()
-                .collect(Collectors.toCollection(HashSet::new));
-            PowerNode[] powerNodes = PowerUtils.computePowers(sourcePowersSet, params.getMaxPartitionSizePerBin());
-            parentPowers = Arrays.stream(powerNodes).map(PowerNode::toIntArray).toArray(int[][]::new);
+            TIntSet sourcePowersSet = new TIntHashSet(params.getQueryPowers());
+            PowersDag powersDag = new PowersDag(sourcePowersSet, params.getMaxPartitionSizePerBin());
+            parentPowers = powersDag.getDag();
         }
         return Cmg21KwPirNativeUtils.checkSealParams(
             params.getPolyModulusDegree(), params.getPlainModulus(), params.getCoeffModulusBits(), parentPowers,

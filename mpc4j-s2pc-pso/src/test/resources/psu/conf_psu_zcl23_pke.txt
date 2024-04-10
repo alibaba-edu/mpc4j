@@ -1,0 +1,12 @@
+# 协议类型
+pto_type = PSU
+
+# 元素字节长度
+element_byte_length = 8
+
+# 对数集合大小（log(n)）
+server_log_set_size = 12,10
+client_log_set_size = 12,10
+
+# 协议名称
+psu_pto_name = ZCL23_PKE

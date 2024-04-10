@@ -151,7 +151,7 @@ public class Cmg21KwPirClient extends AbstractKwPirClient {
     }
 
     @Override
-    public Map<ByteBuffer, ByteBuffer> pir(Set<ByteBuffer> retrievalKeySet) throws MpcAbortException {
+    public Map<ByteBuffer, byte[]> pir(Set<ByteBuffer> retrievalKeySet) throws MpcAbortException {
         setPtoInput(retrievalKeySet);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
@@ -203,7 +203,7 @@ public class Cmg21KwPirClient extends AbstractKwPirClient {
         List<byte[]> valueResponsePayload = rpc.receive(valueResponseHeader).getPayload();
 
         stopWatch.start();
-        Map<ByteBuffer, ByteBuffer> pirResult = handleResponse(
+        Map<ByteBuffer, byte[]> pirResult = handleResponse(
             keyResponsePayload, valueResponsePayload, prfKeyMap, cuckooHashBin
         );
         stopWatch.stop();
@@ -224,7 +224,7 @@ public class Cmg21KwPirClient extends AbstractKwPirClient {
      * @return retrieval result map.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    private Map<ByteBuffer, ByteBuffer> handleResponse(List<byte[]> keyResponse, List<byte[]> valueResponse,
+    private Map<ByteBuffer, byte[]> handleResponse(List<byte[]> keyResponse, List<byte[]> valueResponse,
                                                        Map<ByteBuffer, ByteBuffer> prfKeyMap,
                                                        CuckooHashBin<ByteBuffer> cuckooHashBin)
         throws MpcAbortException {
@@ -267,11 +267,11 @@ public class Cmg21KwPirClient extends AbstractKwPirClient {
      * @param prfKeyMap           prf key map.
      * @return PIR result.
      */
-    private Map<ByteBuffer, ByteBuffer> recoverPirResult(List<long[]> decryptedKeyReply,
+    private Map<ByteBuffer, byte[]> recoverPirResult(List<long[]> decryptedKeyReply,
                                                          List<long[]> decryptedValueReply,
                                                          Map<ByteBuffer, ByteBuffer> prfKeyMap,
                                                          CuckooHashBin<ByteBuffer> cuckooHashBin) {
-        Map<ByteBuffer, ByteBuffer> resultMap = new HashMap<>(retrievalKeySize);
+        Map<ByteBuffer, byte[]> resultMap = new HashMap<>(retrievalKeySize);
         int itemPartitionNum = decryptedKeyReply.size() / params.getCiphertextNum();
         int labelPartitionNum = CommonUtils.getUnitNum((valueByteLength + ivByteLength) * Byte.SIZE,
             (LongUtils.ceilLog2(params.getPlainModulus()) - 1) * params.getItemEncodedSlotSize());
@@ -313,7 +313,7 @@ public class Cmg21KwPirClient extends AbstractKwPirClient {
                         byte[] plaintextLabel = streamCipher.ivDecrypt(keyBytes, paddingCipher);
                         resultMap.put(
                             prfKeyMap.get(cuckooHashBin.getHashBinEntry(hashBinIndex).getItem()),
-                            ByteBuffer.wrap(plaintextLabel)
+                            plaintextLabel
                         );
                         j = j + params.getItemEncodedSlotSize() - 1;
                     }

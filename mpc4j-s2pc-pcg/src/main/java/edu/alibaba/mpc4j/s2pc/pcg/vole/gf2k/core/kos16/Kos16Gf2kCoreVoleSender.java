@@ -48,7 +48,7 @@ public class Kos16Gf2kCoreVoleSender extends AbstractGf2kCoreVoleSender {
     public Kos16Gf2kCoreVoleSender(Rpc senderRpc, Party receiverParty, Kos16Gf2kCoreVoleConfig config) {
         super(Kos16Gf2kCoreVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
         baseOtSender = BaseOtFactory.createSender(senderRpc, receiverParty, config.getBaseOtConfig());
-        addSubPtos(baseOtSender);
+        addSubPto(baseOtSender);
     }
 
     @Override

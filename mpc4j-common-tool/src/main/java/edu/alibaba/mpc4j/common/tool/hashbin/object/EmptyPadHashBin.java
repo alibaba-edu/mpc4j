@@ -58,11 +58,7 @@ public class EmptyPadHashBin<T> implements HashBin<T> {
     /**
      * 集合桶，用于快速判断桶中是否包含指定的元素
      */
-    private final ArrayList<Set<HashBinEntry<T>>> setBins;
-    /**
-     * 元素哈希位置映射
-     */
-    private final Map<T, int[]> itemBinIndexesMap;
+    private final Set<T> setBin;
 
     /**
      * 初始化简单哈希桶。
@@ -109,11 +105,8 @@ public class EmptyPadHashBin<T> implements HashBin<T> {
                 return bin;
             })
             .collect(Collectors.toCollection(ArrayList::new));
-        setBins = IntStream.range(0, binNum)
-            .mapToObj(binIndex -> new HashSet<HashBinEntry<T>>(maxBinSize))
-            .collect(Collectors.toCollection(ArrayList::new));
+        setBin = new HashSet<>(maxItemSize);
         // 初始化元素哈希映射
-        itemBinIndexesMap = new HashMap<>(maxItemSize);
         itemSize = 0;
         paddingItemSize = 0;
         insertedItems = false;
@@ -154,24 +147,20 @@ public class EmptyPadHashBin<T> implements HashBin<T> {
         assert items.size() <= maxItemSize;
         itemSize = 0;
         for (T item : items) {
+            if (!setBin.add(item)) {
+                clear();
+                throw new IllegalArgumentException("Inserted items contain duplicate item: " + item);
+            }
             // 遍历所有的哈希函数，对插入的元素求哈希，并插入到对应的桶中
             int[] binIndexes = Arrays.stream(hashes)
                 .mapToInt(hash -> hash.getInteger(ObjectUtils.objectToByteArray(item), binNum))
                 .toArray();
-            itemBinIndexesMap.put(item, binIndexes);
             for (int hashIndex = 0; hashIndex < hashes.length; hashIndex++) {
                 HashBinEntry<T> hashBinEntry = HashBinEntry.fromRealItem(hashIndex, item);
                 // 桶添加元素
                 ArrayList<HashBinEntry<T>> bin = bins.get(binIndexes[hashIndex]);
-                Set<HashBinEntry<T>> setBin = setBins.get(binIndexes[hashIndex]);
-                if (setBin.add(hashBinEntry)) {
-                    bin.add(hashBinEntry);
-                    itemSize++;
-                } else {
-                    clear();
-                    // 如果没有成功在哈希桶中插入元素，意味着输入的数据中包含重复元素
-                    throw new IllegalArgumentException("Inserted items contain duplicate item: " + item);
-                }
+                bin.add(hashBinEntry);
+                itemSize++;
             }
         }
         assert itemSize == items.size() * hashes.length;
@@ -197,23 +186,9 @@ public class EmptyPadHashBin<T> implements HashBin<T> {
         return itemSize;
     }
 
-    /**
-     * 返回元素所在桶的位置。
-     *
-     * @param item 元素。
-     * @return 元素所在桶的位置。
-     */
-    public int[] getItemBinIndexes(T item) {
-        assert insertedItems && itemBinIndexesMap.containsKey(item);
-        return itemBinIndexesMap.get(item);
-    }
-
     @Override
     public boolean contains(T item) {
-        // 只要第0个哈希所对应的BinHashItem在简单哈希里面，就意味着简单哈希包含此元素
-        HashBinEntry<T> hashBinEntry = HashBinEntry.fromRealItem(0, item);
-        int binIndex = hashes[0].getInteger(hashBinEntry.getItemByteArray(), binNum);
-        return setBins.get(binIndex).contains(hashBinEntry);
+        return setBin.contains(item);
     }
 
     @Override
@@ -244,24 +219,21 @@ public class EmptyPadHashBin<T> implements HashBin<T> {
      */
     public void insertPaddingItems(T emptyItem) {
         assert (insertedItems && !insertedPaddingItems);
+        if (setBin.contains(emptyItem)) {
+            throw new IllegalArgumentException(String.format("bin already contains empty item %s", emptyItem));
+        }
         // 桶中插入随机元素
         paddingItemSize = 0;
         IntStream.range(0, binNum).forEach(binIndex -> {
-            Set<HashBinEntry<T>> setBin = setBins.get(binIndex);
+            // insert empty item
             HashBinEntry<T> emptyHashBinEntry = HashBinEntry.fromEmptyItem(emptyItem);
-            if (setBin.contains(emptyHashBinEntry)) {
-                throw new IllegalArgumentException(String.format(
-                    "bin[%s] already contains empty item %s", binIndex, emptyItem
-                ));
-            }
-            // 在列表桶中插入空元素
             ArrayList<HashBinEntry<T>> bin = bins.get(binIndex);
-            // 如果相应的桶没满，则一直填充到满
+            // insert until the bin is full
             while (bin.size() < maxBinSize) {
-                bin.add(HashBinEntry.fromEmptyItem(emptyItem));
+                bin.add(emptyHashBinEntry);
                 paddingItemSize++;
             }
-            // 对桶进行随机置换
+            // shuffle bin
             Collections.shuffle(bin);
         });
         insertedPaddingItems = true;
@@ -288,11 +260,8 @@ public class EmptyPadHashBin<T> implements HashBin<T> {
         for (List<HashBinEntry<T>> bin : bins) {
             bin.clear();
         }
-        // 清空哈希桶中的元素
-        for (Set<HashBinEntry<T>> setBin : setBins) {
-            setBin.clear();
-        }
-        itemBinIndexesMap.clear();
+        // clear set bin
+        setBin.clear();
         itemSize = 0;
         paddingItemSize = 0;
         insertedItems = false;

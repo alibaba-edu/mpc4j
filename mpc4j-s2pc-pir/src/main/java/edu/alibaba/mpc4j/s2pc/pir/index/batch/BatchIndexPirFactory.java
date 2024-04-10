@@ -2,10 +2,14 @@ package edu.alibaba.mpc4j.s2pc.pir.index.batch;
 
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.cuckoohash.CuckooHashBatchIndexPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.cuckoohash.CuckooHashBatchIndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.cuckoohash.CuckooHashBatchIndexPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.labelpsi.Cmg21BatchIndexPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.labelpsi.Cmg21BatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.index.batch.labelpsi.Cmg21BatchIndexPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.naive.NaiveBatchIndexPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.naive.NaiveBatchIndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.index.batch.naive.NaiveBatchIndexPirServer;
@@ -74,6 +78,10 @@ public class BatchIndexPirFactory implements PtoFactory {
          * Constant Weight PIR
          */
         CONSTANT_WEIGHT_PIR,
+        /**
+         * label PSI
+         */
+        LABEL_PSI,
     }
 
     /**
@@ -101,6 +109,8 @@ public class BatchIndexPirFactory implements PtoFactory {
                 return new CuckooHashBatchSimplePirServer(serverRpc, clientParty, (CuckooHashBatchSimplePirConfig) config);
             case NAIVE_BATCH_PIR:
                 return new NaiveBatchIndexPirServer(serverRpc, clientParty, (NaiveBatchIndexPirConfig) config);
+            case LABEL_PSI:
+                return new Cmg21BatchIndexPirServer(serverRpc, clientParty, (Cmg21BatchIndexPirConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + BatchIndexPirType.class.getSimpleName() + ": " + type.name());
         }
@@ -131,8 +141,28 @@ public class BatchIndexPirFactory implements PtoFactory {
                 return new CuckooHashBatchSimplePirClient(clientRpc, serverParty, (CuckooHashBatchSimplePirConfig) config);
             case NAIVE_BATCH_PIR:
                 return new NaiveBatchIndexPirClient(clientRpc, serverParty, (NaiveBatchIndexPirConfig) config);
+            case LABEL_PSI:
+                return new Cmg21BatchIndexPirClient(clientRpc, serverParty, (Cmg21BatchIndexPirConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + BatchIndexPirType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * 创建默认配置项。
+     *
+     * @param securityModel 安全模型。
+     * @return 默认配置项。
+     */
+    public static BatchIndexPirConfig createDefaultConfig(SecurityModel securityModel) {
+        switch (securityModel) {
+            case IDEAL:
+            case SEMI_HONEST:
+                return new Mr23BatchIndexPirConfig.Builder().build();
+            case COVERT:
+            case MALICIOUS:
+            default:
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

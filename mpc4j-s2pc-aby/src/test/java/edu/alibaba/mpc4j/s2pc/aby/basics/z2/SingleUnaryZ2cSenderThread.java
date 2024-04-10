@@ -73,7 +73,7 @@ class SingleUnaryZ2cSenderThread extends Thread {
         try {
             sender.init(bitNum);
             // set inputs
-            MpcZ2Vector xPlainMpcVector = sender.create(xVector);
+            MpcZ2Vector xPlainMpcVector = sender.create(true, xVector);
             MpcZ2Vector x0SecretMpcVector = sender.shareOwn(xVector);
             MpcZ2Vector z0PlainMpcVector, z0SecretMpcVector;
             //noinspection SwitchStatementWithTooFewBranches

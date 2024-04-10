@@ -39,7 +39,7 @@ public class DirectLnotReceiver extends AbstractLnotReceiver {
     public DirectLnotReceiver(Rpc receiverRpc, Party senderParty, DirectLnotConfig config) {
         super(DirectLnotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         lcotReceiver = LcotFactory.createReceiver(receiverRpc, senderParty, config.getLcotConfig());
-        addSubPtos(lcotReceiver);
+        addSubPto(lcotReceiver);
         kdf = KdfFactory.createInstance(envType);
     }
 

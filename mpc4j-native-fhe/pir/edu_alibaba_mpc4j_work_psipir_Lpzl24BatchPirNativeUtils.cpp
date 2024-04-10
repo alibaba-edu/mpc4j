@@ -107,6 +107,9 @@ jbyteArray JNICALL Java_edu_alibaba_mpc4j_work_psipir_Lpzl24BatchPirNativeUtils_
     vector<Ciphertext> query_powers = deserialize_ciphertexts(env, query_list, context);
     vector<Plaintext> plaintexts = deserialize_plaintexts(env, database_coeffs, context);
     Ciphertext f_evaluated = polynomial_evaluation(parms, query_powers, plaintexts, ps_low_power, relin_keys);
+    while (f_evaluated.parms_id() != context.last_parms_id()) {
+        evaluator.mod_switch_to_next_inplace(f_evaluated);
+    }
     return serialize_ciphertext(env, f_evaluated);
 }
 
@@ -121,6 +124,9 @@ jbyteArray JNICALL Java_edu_alibaba_mpc4j_work_psipir_Lpzl24BatchPirNativeUtils_
     vector<Ciphertext> query_powers = deserialize_ciphertexts(env, query_list, context);
     vector<Plaintext> plaintexts = deserialize_plaintexts(env, database_coeffs, context);
     Ciphertext f_evaluated = polynomial_evaluation(parms, query_powers, plaintexts);
+    while (f_evaluated.parms_id() != context.last_parms_id()) {
+        evaluator.mod_switch_to_next_inplace(f_evaluated);
+    }
     return serialize_ciphertext(env, f_evaluated);
 }
 

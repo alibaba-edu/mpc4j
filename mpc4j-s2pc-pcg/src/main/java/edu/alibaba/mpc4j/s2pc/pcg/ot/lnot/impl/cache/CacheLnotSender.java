@@ -40,9 +40,9 @@ public class CacheLnotSender extends AbstractLnotSender {
     public CacheLnotSender(Rpc senderRpc, Party receiverParty, CacheLnotConfig config) {
         super(CacheLnotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         ncLnotSender = NcLnotFactory.createSender(senderRpc, receiverParty, config.getNcLnotConfig());
-        addSubPtos(ncLnotSender);
+        addSubPto(ncLnotSender);
         preLnotSender = PreLnotFactory.createSender(senderRpc, receiverParty, config.getPreLnotConfig());
-        addSubPtos(preLnotSender);
+        addSubPto(preLnotSender);
     }
 
     @Override

@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * VECTORIZED_BATCH_PIR protocol description. The protocol comes from the following paper:
+ * Vectorized batch PIR protocol description. The protocol comes from the following paper:
  * <p>
  * Muhammad Haris Mughees and Ling Ren. Vectorized Batch Private Information Retrieval.
  * To appear in 44th IEEE Symposium on Security and Privacy, 2023.

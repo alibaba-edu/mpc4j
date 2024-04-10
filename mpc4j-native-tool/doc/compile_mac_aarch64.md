@@ -15,9 +15,13 @@ brew install cmake
 
 ### GMP
 
-Please **DO NOT** install GMP via `homebrew`. This is because MCL relies on GMP under aarch64. Instead, install GMP in C++ with versions higher than 6.2.1.
+We highly recommand installing GMP via `homebrew`:
 
-Download the source code of GMP 6.2.1.
+```shell
+brew install gmp
+```
+
+Alternatively, you can install GMP by downloading the source code of GMP 6.2.1.
 
 ```shell
 wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.xz
@@ -63,24 +67,16 @@ cd .. # return to the ntl-11.5.1 path
 cd .. # return to the original path
 ```
 
-### MCL
-
-Download the source code of  [MCL v1.61](https://github.com/herumi/mcl/releases/tag/v1.61). 
+If NTL complains about not finding GMP, add `NTL_GMP_LIP=on GMP_PREFIX=/opt/homebrew` after the command `./configure SHARED=on CXXFLAGS=-O3`. That is, the whole procedure is:
 
 ```shell
-git clone -b v1.61 https://github.com/herumi/mcl.git
-```
-
-MCL currently does not have specific assembly optimizations for aarch64 platforms. Therefore, we need to remove assembly language support when compiling MCL. Compile and install MCL as follows.
-
-```shell
-cd mcl
-mkdir build
-cd build
-cmake .. -DMCL_USE_ASM=OFF # remove assembly language support
+cd ntl-11.5.1
+cd src
+./configure SHARED=on CXXFLAGS=-O3 NTL_GMP_LIP=on GMP_PREFIX=/opt/homebrew # Must compile NTL as a shared library
 make
+make check
 sudo make install
-cd .. # return to the build path
+cd .. # return to the ntl-11.5.1 path
 cd .. # return to the original path
 ```
 
@@ -94,7 +90,7 @@ brew install libsodium
 
 ### JDK and JAVA_HOME
 
-Since we need to compile `mpc4j-native-tool` with the help of `jni.h`, you need to install Java Development Tool (JDK) instead of Java Runtime Environment (JRE). We recommend installing JDK from [oracle.com](https://www.oracle.com/java/technologies/downloads/).
+Since we need to compile `mpc4j-native-tool` with the help of `jni.h`, you need to install Java Development Tool (JDK) instead of Java Runtime Environment (JRE). JDK 17 (or later) is needed for development. We recommend installing JDK from [oracle.com](https://www.oracle.com/java/technologies/downloads/).
 
 By default, Java will be installed under the path like `/Library/Java/JavaVirtualMachines/jdk-XX.X.X.jdk/Contents/Home` or `/Users/USERNAME/Library/Java/JavaVirtualMachines/JDK_NAME/Contents/Home`. After you find the Java installation path, run the following command to open `bash_profile`.
 

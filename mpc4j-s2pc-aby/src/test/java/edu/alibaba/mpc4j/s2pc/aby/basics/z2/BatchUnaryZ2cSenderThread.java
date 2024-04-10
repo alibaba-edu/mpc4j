@@ -76,7 +76,7 @@ class BatchUnaryZ2cSenderThread extends Thread {
             sender.init(totalBitNum);
             // set inputs
             MpcZ2Vector[] xPlainMpcVectors = Arrays.stream(xVectors)
-                .map(sender::create)
+                .map(each -> sender.create(true, each))
                 .toArray(MpcZ2Vector[]::new);
             MpcZ2Vector[] x0SecretMpcVectors = sender.shareOwn(xVectors);
             MpcZ2Vector[] z0PlainMpcVectors, z0SecretMpcVectors;

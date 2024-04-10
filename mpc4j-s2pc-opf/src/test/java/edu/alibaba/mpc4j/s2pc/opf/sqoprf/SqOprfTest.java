@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.opf.sqoprf;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory.SqOprfType;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.nr04.Nr04EccSqOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.pssw09.Pssw09SqOprfConfig;
@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
  * @date 2023/4/11
  */
 @RunWith(Parameterized.class)
-public class SqOprfTest extends AbstractTwoPartyPtoTest {
+public class SqOprfTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqOprfTest.class);
     /**
      * the default batch size

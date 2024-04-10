@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.H2BlazeGctDokvsUtils;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.H2NaiveGctDokvsUtils;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.H3BlazeGctDovsUtils;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.H3NaiveGctDokvsUtils;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.*;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
@@ -66,10 +63,6 @@ public class Gf2eDokvsFactory {
          */
         DISTINCT_GBF,
         /**
-         * random garbled bloom filter
-         */
-        RANDOM_GBF,
-        /**
          * MegaBin
          */
         MEGA_BIN,
@@ -99,7 +92,7 @@ public class Gf2eDokvsFactory {
             case H2_SPARSE_CLUSTER_BLAZE_GCT:
                 return new H2SparseClusterBlazeGctGf2eDokvs<>(envType, n, l, keys);
             case H3_SINGLETON_GCT:
-                return new H3SingletonGctGfe2Dokvs<>(envType, n, l, keys);
+                return new H3SingletonGctGf2eDokvs<>(envType, n, l, keys);
             case H3_BLAZE_GCT:
                 return new H3BlazeGctGf2eDokvs<>(envType, n, l, keys);
             case H3_NAIVE_CLUSTER_BLAZE_GCT:
@@ -108,8 +101,6 @@ public class Gf2eDokvsFactory {
                 return new H3SparseClusterBlazeGctGf2eDokvs<>(envType, n, l, keys);
             case DISTINCT_GBF:
                 return new DistinctGbfGf2eDokvs<>(envType, n, l, keys[0]);
-            case RANDOM_GBF:
-                return new RandomGbfGf2eDokvs<>(envType, n, l, keys[0]);
             case MEGA_BIN:
                 return new MegaBinGf2eDokvs<>(envType, n, l, keys);
             default:
@@ -135,7 +126,6 @@ public class Gf2eDokvsFactory {
             case H3_NAIVE_CLUSTER_BLAZE_GCT:
             case H3_SPARSE_CLUSTER_BLAZE_GCT:
             case DISTINCT_GBF:
-            case RANDOM_GBF:
                 return true;
             case MEGA_BIN:
                 return false;
@@ -168,7 +158,7 @@ public class Gf2eDokvsFactory {
             case H2_SPARSE_CLUSTER_BLAZE_GCT:
                 return new H2SparseClusterBlazeGctGf2eDokvs<>(envType, n, l, keys);
             case H3_SINGLETON_GCT:
-                return new H3SingletonGctGfe2Dokvs<>(envType, n, l, keys);
+                return new H3SingletonGctGf2eDokvs<>(envType, n, l, keys);
             case H3_BLAZE_GCT:
                 return new H3BlazeGctGf2eDokvs<>(envType, n, l, keys);
             case H3_NAIVE_CLUSTER_BLAZE_GCT:
@@ -177,8 +167,6 @@ public class Gf2eDokvsFactory {
                 return new H3SparseClusterBlazeGctGf2eDokvs<>(envType, n, l, keys);
             case DISTINCT_GBF:
                 return new DistinctGbfGf2eDokvs<>(envType, n, l, keys[0]);
-            case RANDOM_GBF:
-                return new RandomGbfGf2eDokvs<>(envType, n, l, keys[0]);
             default:
                 throw new IllegalArgumentException("Invalid " + Gf2eDokvsType.class.getSimpleName() + ": " + type.name());
         }
@@ -200,7 +188,6 @@ public class Gf2eDokvsFactory {
             case H3_BLAZE_GCT:
             case H3_SPARSE_CLUSTER_BLAZE_GCT:
             case DISTINCT_GBF:
-            case RANDOM_GBF:
                 return true;
             case H2_NAIVE_CLUSTER_BLAZE_GCT:
             case H3_NAIVE_CLUSTER_BLAZE_GCT:
@@ -233,15 +220,13 @@ public class Gf2eDokvsFactory {
             case H2_SPARSE_CLUSTER_BLAZE_GCT:
                 return new H2SparseClusterBlazeGctGf2eDokvs<>(envType, n, l, keys);
             case H3_SINGLETON_GCT:
-                return new H3SingletonGctGfe2Dokvs<>(envType, n, l, keys);
+                return new H3SingletonGctGf2eDokvs<>(envType, n, l, keys);
             case H3_BLAZE_GCT:
                 return new H3BlazeGctGf2eDokvs<>(envType, n, l, keys);
             case H3_SPARSE_CLUSTER_BLAZE_GCT:
                 return new H3SparseClusterBlazeGctGf2eDokvs<>(envType, n, l, keys);
             case DISTINCT_GBF:
                 return new DistinctGbfGf2eDokvs<>(envType, n, l, keys[0]);
-            case RANDOM_GBF:
-                return new RandomGbfGf2eDokvs<>(envType, n, l, keys[0]);
             default:
                 throw new IllegalArgumentException("Invalid " + Gf2eDokvsType.class.getSimpleName() + ": " + type.name());
         }
@@ -258,19 +243,18 @@ public class Gf2eDokvsFactory {
             case H2_TWO_CORE_GCT:
             case H2_SINGLETON_GCT:
             case H2_BLAZE_GCT:
-                return AbstractH2GctGf2eDokvs.HASH_KEY_NUM;
+                return H2GctDokvsUtils.HASH_KEY_NUM;
             case H2_NAIVE_CLUSTER_BLAZE_GCT:
             case H2_SPARSE_CLUSTER_BLAZE_GCT:
-                return AbstractH2ClusterBlazeGctGf2eDokvs.HASH_KEY_NUM;
+                return H2ClusterBlazeGctDokvsUtils.HASH_KEY_NUM;
             case H3_SINGLETON_GCT:
             case H3_BLAZE_GCT:
-                return AbstractH3GctGf2eDokvs.HASH_KEY_NUM;
+                return H3GctDokvsUtils.HASH_KEY_NUM;
             case H3_NAIVE_CLUSTER_BLAZE_GCT:
             case H3_SPARSE_CLUSTER_BLAZE_GCT:
-                return AbstractH3ClusterBlazeGctGf2eDokvs.HASH_KEY_NUM;
+                return H3ClusterBlazeGctDokvsUtils.HASH_KEY_NUM;
             case DISTINCT_GBF:
-            case RANDOM_GBF:
-                return AbstractGbfGf2eDokvs.HASH_KEY_NUM;
+                return DistinctGbfUtils.HASH_KEY_NUM;
             case MEGA_BIN:
                 return MegaBinGf2eDokvs.HASH_KEY_NUM;
             default:
@@ -296,17 +280,16 @@ public class Gf2eDokvsFactory {
                 return H2BlazeGctDokvsUtils.getLm(n) + H2BlazeGctDokvsUtils.getRm(n);
             case H2_NAIVE_CLUSTER_BLAZE_GCT:
             case H2_SPARSE_CLUSTER_BLAZE_GCT:
-                return AbstractH2ClusterBlazeGctGf2eDokvs.getM(n);
+                return H2ClusterBlazeGctDokvsUtils.getM(n);
             case H3_SINGLETON_GCT:
                 return H3NaiveGctDokvsUtils.getLm(n) + H3NaiveGctDokvsUtils.getRm(n);
             case H3_BLAZE_GCT:
                 return H3BlazeGctDovsUtils.getLm(n) + H3BlazeGctDovsUtils.getRm(n);
             case H3_NAIVE_CLUSTER_BLAZE_GCT:
             case H3_SPARSE_CLUSTER_BLAZE_GCT:
-                return AbstractH3ClusterBlazeGctGf2eDokvs.getM(n);
+                return H3ClusterBlazeGctDokvsUtils.getM(n);
             case DISTINCT_GBF:
-            case RANDOM_GBF:
-                return AbstractGbfGf2eDokvs.getM(n);
+                return DistinctGbfUtils.getM(n);
             case MEGA_BIN:
                 return MegaBinGf2eDokvs.getM(envType, n);
             default:

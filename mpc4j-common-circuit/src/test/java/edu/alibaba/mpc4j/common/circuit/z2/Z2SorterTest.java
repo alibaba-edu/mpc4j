@@ -63,6 +63,10 @@ public class Z2SorterTest {
      * the config
      */
     private final Z2CircuitConfig config;
+    /**
+     * stop watch
+     */
+    private final StopWatch stopWatch;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -84,6 +88,7 @@ public class Z2SorterTest {
     public Z2SorterTest(String name, Z2CircuitConfig config) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.config = config;
+        stopWatch = new StopWatch();
     }
 
     @Test
@@ -93,10 +98,10 @@ public class Z2SorterTest {
     }
 
     public void testConstant(int l) {
-        long[][] longXs = IntStream.range(0, DEFAULT_SORTED_NUM).mapToObj(index -> IntStream.range(0, DEFAULT_NUM)
+        long[][] xs = IntStream.range(0, DEFAULT_SORTED_NUM).mapToObj(index -> IntStream.range(0, DEFAULT_NUM)
             .mapToLong(i -> index)
             .toArray()).toArray(long[][]::new);
-        testPto(true, l, longXs);
+        testPto(l, xs);
         LOGGER.info("------------------------------");
     }
 
@@ -138,40 +143,45 @@ public class Z2SorterTest {
     }
 
     private void testRandom(int l, int num, int numOfSorted) {
-        long[][] longXs = IntStream.range(0, numOfSorted).mapToObj(index -> IntStream.range(0, num)
-            .mapToLong(i -> LongUtils.randomNonNegative(1L << (l - 1), SECURE_RANDOM))
-            .toArray()).toArray(long[][]::new);
-        testPto(false, l, longXs);
+        long[][] xs = IntStream.range(0, numOfSorted)
+            .mapToObj(index -> IntStream.range(0, num)
+                .mapToLong(i -> LongUtils.randomNonNegative(1L << (l - 1), SECURE_RANDOM))
+                .toArray()
+            )
+            .toArray(long[][]::new);
+        testPto(l, xs);
         LOGGER.info("------------------------------");
     }
 
-
-    private void testPto(boolean constant, int l, long[][] longXs) {
-        int num = longXs[0].length;
-        int numOfSorted = longXs.length;
-        if (constant) {
-            LOGGER.info("test constant ({}), l = {}, num = {}, num of sorted elements = {}", Z2IntegerOperator.SORT, l, num, numOfSorted);
-        } else {
-            LOGGER.info("test random ({}), l = {}, num = {}, num of sorted elements = {}", Z2IntegerOperator.SORT, l, num, numOfSorted);
-        }
+    private void testPto(int l, long[][] xs) {
+        int num = xs[0].length;
+        int numOfSorted = xs.length;
+        LOGGER.info("l = {}, num = {}, num of sorted elements = {}", l, num, numOfSorted);
         // partition
-        PlainZ2Vector[][] xPlainZ2Vectors = IntStream.range(0, numOfSorted).mapToObj(index -> {
-            Zl64Database zl64Xs = Zl64Database.create(l, longXs[index]);
-            BitVector[] xBitVector = zl64Xs.bitPartition(EnvType.STANDARD, false);
-            return Arrays.stream(xBitVector).map(PlainZ2Vector::create).toArray(PlainZ2Vector[]::new);
-        }).toArray(PlainZ2Vector[][]::new);
+        PlainZ2Vector[][] xPlainZ2Vectors = IntStream.range(0, numOfSorted)
+            .mapToObj(index -> {
+                Zl64Database zl64Xs = Zl64Database.create(l, xs[index]);
+                BitVector[] xBitVector = zl64Xs.bitPartition(EnvType.STANDARD, false);
+                return Arrays.stream(xBitVector).map(PlainZ2Vector::create).toArray(PlainZ2Vector[]::new);
+            })
+            .toArray(PlainZ2Vector[][]::new);
         // init the protocol
         PlainZ2cParty party = new PlainZ2cParty();
-        Z2IntegerCircuitParty partyThread = new Z2IntegerCircuitParty(party, Z2IntegerOperator.SORT, xPlainZ2Vectors, null, config);
-        StopWatch stopWatch = new StopWatch();
+        Z2IntegerCircuitParty partyThread = new Z2IntegerCircuitParty(
+            party, Z2IntegerOperator.SORT, xPlainZ2Vectors, null, config
+        );
         // execute the circuit
         stopWatch.start();
         partyThread.run();
         stopWatch.stop();
         stopWatch.reset();
         // verify
-        BitVector[][] z = IntStream.range(0, numOfSorted).mapToObj(i -> Arrays.stream(xPlainZ2Vectors[i]).map(MpcZ2Vector::getBitVector).toArray(BitVector[]::new)).toArray(BitVector[][]::new);
-        long[][] longZs = IntStream.range(0, numOfSorted).mapToObj(i -> Zl64Database.create(EnvType.STANDARD, false, z[i]).getData()).toArray(long[][]::new);
-        Z2CircuitTestUtils.assertSortOutput(l, longXs, longZs);
+        BitVector[][] z = IntStream.range(0, numOfSorted)
+            .mapToObj(i -> Arrays.stream(xPlainZ2Vectors[i]).map(MpcZ2Vector::getBitVector).toArray(BitVector[]::new))
+            .toArray(BitVector[][]::new);
+        long[][] longZs = IntStream.range(0, numOfSorted)
+            .mapToObj(i -> Zl64Database.create(EnvType.STANDARD, false, z[i]).getData())
+            .toArray(long[][]::new);
+        Z2CircuitTestUtils.assertSortOutput(l, xs, longZs);
     }
 }

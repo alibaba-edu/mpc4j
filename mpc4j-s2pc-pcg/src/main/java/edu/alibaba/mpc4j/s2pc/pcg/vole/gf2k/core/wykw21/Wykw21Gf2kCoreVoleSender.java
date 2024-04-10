@@ -62,7 +62,7 @@ public class Wykw21Gf2kCoreVoleSender extends AbstractGf2kCoreVoleSender {
     public Wykw21Gf2kCoreVoleSender(Rpc senderRpc, Party receiverParty, Wykw21Gf2kCoreVoleConfig config) {
         super(Wykw21Gf2kCoreVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
         baseOtSender = BaseOtFactory.createSender(senderRpc, receiverParty, config.getBaseOtConfig());
-        addSubPtos(baseOtSender);
+        addSubPto(baseOtSender);
     }
 
     @Override

@@ -72,11 +72,11 @@ public class Jsz22SfcPsuClient extends AbstractPsuClient {
     public Jsz22SfcPsuClient(Rpc clientRpc, Party serverParty, Jsz22SfcPsuConfig config) {
         super(Jsz22SfcPsuPtoDesc.getInstance(), clientRpc, serverParty, config);
         osnSender = OsnFactory.createSender(clientRpc, serverParty, config.getOsnConfig());
-        addSubPtos(osnSender);
+        addSubPto(osnSender);
         oprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getOprfConfig());
-        addSubPtos(oprfReceiver);
+        addSubPto(oprfReceiver);
         coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }

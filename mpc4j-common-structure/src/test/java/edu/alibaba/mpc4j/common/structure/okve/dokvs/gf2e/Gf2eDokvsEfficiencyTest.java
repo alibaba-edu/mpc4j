@@ -52,8 +52,8 @@ public class Gf2eDokvsEfficiencyTest {
     @Test
     public void testEfficiency() {
         LOGGER.info(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            "                          name", "      logN", "         m", "        lm", "        rm", "  parallel",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "                          name", "         m", "        lm", "        rm", "  parallel",
             " encode(s)", " decode(s)", "dEncode(s)", "dDecode(s)"
         );
         testEfficiency(8);
@@ -120,9 +120,8 @@ public class Gf2eDokvsEfficiencyTest {
                 rm = "-";
             }
             LOGGER.info(
-                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 30),
-                StringUtils.leftPad(String.valueOf(logN), 10),
                 StringUtils.leftPad(String.valueOf(dokvs.getM()), 10),
                 StringUtils.leftPad(lm, 10),
                 StringUtils.leftPad(rm, 10),

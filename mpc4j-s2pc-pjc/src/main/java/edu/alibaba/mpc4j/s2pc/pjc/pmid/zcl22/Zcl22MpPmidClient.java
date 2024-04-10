@@ -94,11 +94,11 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
     public Zcl22MpPmidClient(Rpc serverRpc, Party clientParty, Zcl22MpPmidConfig config) {
         super(Zcl22MpPmidPtoDesc.getInstance(), serverRpc, clientParty, config);
         mpOprfReceiver = OprfFactory.createMpOprfReceiver(serverRpc, clientParty, config.getMpOprfConfig());
-        addSubPtos(mpOprfReceiver);
+        addSubPto(mpOprfReceiver);
         mpOprfSender = OprfFactory.createMpOprfSender(serverRpc, clientParty, config.getMpOprfConfig());
-        addSubPtos(mpOprfSender);
+        addSubPto(mpOprfSender);
         psuClient = PsuFactory.createClient(serverRpc, clientParty, config.getPsuConfig());
-        addSubPtos(psuClient);
+        addSubPto(psuClient);
         sigmaOkvsType = config.getSigmaOkvsType();
     }
 

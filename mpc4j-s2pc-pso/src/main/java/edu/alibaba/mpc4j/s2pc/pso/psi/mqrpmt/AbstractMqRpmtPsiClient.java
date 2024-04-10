@@ -58,8 +58,8 @@ public abstract class AbstractMqRpmtPsiClient<T> extends AbstractPsiClient<T> {
         mqRpmtClient = MqRpmtFactory.createClient(clientRpc, serverParty, config.getMqRpmtConfig());
         mqRpmtConfig = config.getMqRpmtConfig();
         coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
-        addSubPtos(mqRpmtClient);
-        addSubPtos(coreCotReceiver);
+        addSubPto(mqRpmtClient);
+        addSubPto(coreCotReceiver);
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
     }
 

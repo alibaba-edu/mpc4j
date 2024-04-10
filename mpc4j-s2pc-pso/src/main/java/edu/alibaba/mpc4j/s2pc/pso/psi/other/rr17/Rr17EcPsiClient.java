@@ -108,8 +108,8 @@ public class Rr17EcPsiClient<T> extends AbstractPsiClient<T> {
         lcotReceiver = LcotFactory.createReceiver(clientRpc, serverParty, config.getLcotConfig());
         coinTossReceiver = CoinTossFactory.createReceiver(clientRpc, serverParty, config.getCoinTossConfig());
         divParam4PhaseHash = config.getDivParam4PhaseHash();
-        addSubPtos(lcotReceiver);
-        addSubPtos(coinTossReceiver);
+        addSubPto(lcotReceiver);
+        addSubPto(coinTossReceiver);
     }
 
     @Override

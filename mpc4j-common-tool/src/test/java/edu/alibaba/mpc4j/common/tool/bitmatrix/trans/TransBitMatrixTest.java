@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.stream.IntStream;
 
 /**
- * 布尔矩阵测试类。
+ * unit tests for bit matrix transpose.
  *
  * @author Weiran Liu
  * @date 2021/11/29
@@ -26,53 +26,45 @@ import java.util.stream.IntStream;
 @RunWith(Parameterized.class)
 public class TransBitMatrixTest {
     /**
-     * 随机状态
+     * random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Parameterized.Parameters(name="{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // 朴素布尔矩阵
-        configurationParams.add(new Object[] {TransBitMatrixType.NAIVE.name(), TransBitMatrixType.NAIVE, });
-        // Eklundh布尔矩阵
-        configurationParams.add(new Object[] {TransBitMatrixType.EKLUNDH.name(), TransBitMatrixType.EKLUNDH, });
-        // 本地布尔矩阵
-        configurationParams.add(new Object[] {TransBitMatrixType.NATIVE.name(), TransBitMatrixType.NATIVE, });
-        // Java行切分布尔矩阵
-        configurationParams.add(new Object[] {TransBitMatrixType.JDK_SPLIT_ROW.name(), TransBitMatrixType.JDK_SPLIT_ROW, });
-        // 最优行切分布尔矩阵
-        configurationParams.add(new Object[] {TransBitMatrixType.NATIVE_SPLIT_ROW.name(), TransBitMatrixType.NATIVE_SPLIT_ROW, });
-        // Java列切分布尔矩阵
-        configurationParams.add(new Object[] {TransBitMatrixType.JDK_SPLIT_COL.name(), TransBitMatrixType.JDK_SPLIT_COL, });
-        // 最优列切分布尔矩阵
-        configurationParams.add(new Object[] {TransBitMatrixType.NATIVE_SPLIT_COL.name(), TransBitMatrixType.NATIVE_SPLIT_COL, });
-        return configurationParams;
+        Collection<Object[]> configurations = new ArrayList<>();
+
+        for (TransBitMatrixType type : TransBitMatrixType.values()) {
+            configurations.add(new Object[] {type.name(), type, });
+        }
+
+        return configurations;
     }
 
     /**
-     * 待测试的布尔矩阵类型
+     * type
      */
-    private final TransBitMatrixType transBitMatrixType;
+    private final TransBitMatrixType type;
 
-    public TransBitMatrixTest(String name, TransBitMatrixType transBitMatrixType) {
+    public TransBitMatrixTest(String name, TransBitMatrixType type) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
-        this.transBitMatrixType = transBitMatrixType;
+        this.type = type;
     }
 
     @Test
-    public void testBitMatrixType() {
+    public void testType() {
         TransBitMatrix a = TransBitMatrixFactory.createInstance(
-            transBitMatrixType, CommonConstants.BLOCK_BIT_LENGTH, CommonConstants.BLOCK_BIT_LENGTH
+            type, CommonConstants.BLOCK_BIT_LENGTH, CommonConstants.BLOCK_BIT_LENGTH
         );
-        Assert.assertEquals(transBitMatrixType, a.getTransBitMatrixType());
-        // 转置后类型仍然一致
+        Assert.assertEquals(type, a.getTransBitMatrixType());
+        // same type after transpose
         TransBitMatrix b = a.transpose();
-        Assert.assertEquals(transBitMatrixType, b.getTransBitMatrixType());
+        Assert.assertEquals(type, b.getTransBitMatrixType());
     }
 
     /**
-     * 1*1固定矩阵：
+     * (1 × 1)
+     *
      * 1    -->     1
      */
     private static final int ROWS_MATRIX_1X1 = 1;
@@ -90,7 +82,8 @@ public class TransBitMatrixTest {
     }
 
     /**
-     * 8*8固定矩阵：
+     * (8 × 8)
+     *
      * 00000001         00000000
      * 00000011         00000011
      * 00000111         00000111
@@ -129,7 +122,7 @@ public class TransBitMatrixTest {
     }
 
     /**
-     * 4*8固定矩阵：
+     * (4 × 8)
      *                  1111
      *                  0111
      * 10000001         0011
@@ -164,7 +157,7 @@ public class TransBitMatrixTest {
     }
 
     /**
-     * 5*7固定矩阵：
+     * (5 × 7)
      *                  01111
      * 0000000          00111
      * 1000000          00011
@@ -198,13 +191,13 @@ public class TransBitMatrixTest {
     }
 
     /**
-     * 8*16固定矩阵：
+     * (8 × 16)
      *
      * 0011111111111111     00000000
      * 0001111111111110     00000000
      * 0000111111111100     10000000
      * 0000011111111000     11000000
-     * 0000001111110000`--> 11100000
+     * 0000001111110000 --> 11100000
      * 0000000111100000     11110000
      * 0000000011000000     11111000
      * 0000000001000000     11111100
@@ -254,9 +247,8 @@ public class TransBitMatrixTest {
     }
 
     /**
-     * 1025行，129列
+     * (1025 × 129)
      *
-     *   (128个0)          (1025个1)
      *  100...000       111......111
      *  100...000       000......000
      *      .     -->       ...
@@ -289,16 +281,16 @@ public class TransBitMatrixTest {
     }
 
     private void testBitMatrix(int rows, int columns, byte[][] rowMatrix, byte[][] columnMatrix) {
-        TransBitMatrix a = TransBitMatrixFactory.createInstance(transBitMatrixType, rows, columns);
+        TransBitMatrix a = TransBitMatrixFactory.createInstance(type, rows, columns);
         for (int columnIndex = 0; columnIndex < columns; columnIndex++) {
             a.setColumn(columnIndex, columnMatrix[columnIndex]);
         }
-        // 转置
+        // transpose
         TransBitMatrix b = a.transpose();
         for (int bColumnIndex = 0; bColumnIndex < rows; bColumnIndex++) {
             Assert.assertArrayEquals(rowMatrix[bColumnIndex], b.getColumn(bColumnIndex));
         }
-        // 再转置
+        // transpose again
         TransBitMatrix aPrime = b.transpose();
         for (int aColumnIndex = 0; aColumnIndex < columns; aColumnIndex++) {
             Assert.assertArrayEquals(columnMatrix[aColumnIndex], aPrime.getColumn(aColumnIndex));
@@ -316,7 +308,7 @@ public class TransBitMatrixTest {
     }
 
     private void testRandomBitMatrix(int rows, int columns) {
-        TransBitMatrix a = TransBitMatrixFactory.createInstance(transBitMatrixType, rows, columns);
+        TransBitMatrix a = TransBitMatrixFactory.createInstance(type, rows, columns);
         int rowBytes = CommonUtils.getByteLength(rows);
         IntStream.range(0, columns).forEach(columnIndex -> {
             byte[] column = new byte[rowBytes];
@@ -324,25 +316,25 @@ public class TransBitMatrixTest {
             BytesUtils.reduceByteArray(column, rows);
             a.setColumn(columnIndex, column);
         });
-        // 验证补0结果
+        // verify padding 0
         for (int aColumnIndex = 0; aColumnIndex < columns; aColumnIndex++) {
             Assert.assertTrue(BytesUtils.isReduceByteArray(a.getColumn(aColumnIndex), rows));
         }
-        // 转置
+        // transpose
         TransBitMatrix b = a.transpose();
-        // 验证补0结果
+        // verify padding 0
         for (int bColumnIndex = 0; bColumnIndex < rows; bColumnIndex++) {
             Assert.assertTrue(BytesUtils.isReduceByteArray(b.getColumn(bColumnIndex), columns));
         }
-        // 验证相等性
+        // verify equality
         for (int rowIndex = 0; rowIndex < rows; rowIndex++) {
             for (int columnIndex = 0; columnIndex < columns; columnIndex++) {
                 Assert.assertEquals(a.get(rowIndex, columnIndex), b.get(columnIndex, rowIndex));
             }
         }
-        // 二次转置
+        // transpose again
         TransBitMatrix aPrime = b.transpose();
-        // 验证相等性
+        // verify equality
         for (int columnIndex = 0; columnIndex < columns; columnIndex++) {
             Assert.assertArrayEquals(a.getColumn(columnIndex), aPrime.getColumn(columnIndex));
         }

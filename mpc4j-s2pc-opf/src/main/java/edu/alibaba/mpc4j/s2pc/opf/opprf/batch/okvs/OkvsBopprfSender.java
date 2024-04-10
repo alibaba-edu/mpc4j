@@ -48,7 +48,7 @@ public class OkvsBopprfSender extends AbstractBopprfSender {
     public OkvsBopprfSender(Rpc senderRpc, Party receiverParty, OkvsBopprfConfig config) {
         super(OkvsBopprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
         oprfSender = OprfFactory.createOprfSender(senderRpc, receiverParty, config.getOprfConfig());
-        addSubPtos(oprfSender);
+        addSubPto(oprfSender);
         okvsType = config.getOkvsType();
     }
 

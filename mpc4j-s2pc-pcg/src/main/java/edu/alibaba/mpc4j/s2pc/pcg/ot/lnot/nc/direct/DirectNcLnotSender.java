@@ -35,7 +35,7 @@ public class DirectNcLnotSender extends AbstractNcLnotSender {
     public DirectNcLnotSender(Rpc senderRpc, Party receiverParty, DirectNcLnotConfig config) {
         super(DirectNcLnotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         lcotSender = LcotFactory.createSender(senderRpc, receiverParty, config.getLcotConfig());
-        addSubPtos(lcotSender);
+        addSubPto(lcotSender);
         kdf = KdfFactory.createInstance(envType);
     }
 

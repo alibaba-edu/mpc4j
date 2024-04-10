@@ -55,11 +55,60 @@ public class ByteEccFactory {
          * Cafe实现的Ristretto
          */
         RISTRETTO_CAFE,
-
         /**
-         * FourQlib 实现的 FourQ
+         * FourQ
          */
         FOUR_Q,
+    }
+
+    /**
+     * Returns if the given ByteEccType is a ByteMulEcc.
+     *
+     * @param byteEccType the given ByteEccType.
+     * @return true if it is a ByteMulEcc; false otherwise.
+     */
+    public static boolean isByteMulEcc(ByteEccType byteEccType) {
+        switch (byteEccType) {
+            case ED25519_SODIUM:
+            case ED25519_BC:
+            case ED25519_CAFE:
+            case RISTRETTO_CAFE:
+            case FOUR_Q:
+            case X25519_SODIUM:
+            case X25519_BC:
+                return true;
+            case X25519_ELLIGATOR_BC:
+                return false;
+            default:
+                throw new IllegalArgumentException(
+                    "Invalid " + ByteEccType.class.getSimpleName() + ": " + byteEccType.name()
+                );
+        }
+    }
+
+    /**
+     * Returns if the given ByteEccType is a ByteFullEcc.
+     *
+     * @param byteEccType the given ByteEccType.
+     * @return true if it is a ByteFullEcc; false otherwise.
+     */
+    public static boolean isByteFullEcc(ByteEccType byteEccType) {
+        switch (byteEccType) {
+            case ED25519_SODIUM:
+            case ED25519_BC:
+            case ED25519_CAFE:
+            case RISTRETTO_CAFE:
+            case FOUR_Q:
+                return true;
+            case X25519_SODIUM:
+            case X25519_BC:
+            case X25519_ELLIGATOR_BC:
+                return false;
+            default:
+                throw new IllegalArgumentException(
+                    "Invalid " + ByteEccType.class.getSimpleName() + ": " + byteEccType.name()
+                );
+        }
     }
 
     /**
@@ -71,15 +120,15 @@ public class ByteEccFactory {
     public static ByteFullEcc createFullInstance(ByteEccType byteEccType) {
         switch (byteEccType) {
             case ED25519_SODIUM:
-                return new Ed25519SodiumByteFullEcc();
+                return Ed25519SodiumByteFullEcc.getInstance();
             case ED25519_BC:
-                return new Ed25519BcByteFullEcc();
+                return Ed25519BcByteFullEcc.getInstance();
             case ED25519_CAFE:
-                return new Ed25519CafeByteFullEcc();
+                return Ed25519CafeByteFullEcc.getInstance();
             case RISTRETTO_CAFE:
-                return new RistrettoCafeByteFullEcc();
+                return RistrettoCafeByteFullEcc.getInstance();
             case FOUR_Q:
-                return new FourqByteFullEcc();
+                return FourqByteFullEcc.getInstance();
             default:
                 throw new IllegalArgumentException(
                     "Invalid " + ByteEccType.class.getSimpleName() + ": " + byteEccType.name()
@@ -115,19 +164,19 @@ public class ByteEccFactory {
     public static ByteMulEcc createMulInstance(ByteEccType byteEccType) {
         switch (byteEccType) {
             case X25519_SODIUM:
-                return new X25519SodiumByteMulEcc();
+                return X25519SodiumByteMulEcc.getInstance();
             case X25519_BC:
-                return new X25519BcByteMulEcc();
+                return X25519BcByteMulEcc.getInstance();
             case ED25519_SODIUM:
-                return new Ed25519SodiumByteFullEcc();
+                return Ed25519SodiumByteFullEcc.getInstance();
             case ED25519_BC:
-                return new Ed25519BcByteFullEcc();
+                return Ed25519BcByteFullEcc.getInstance();
             case ED25519_CAFE:
-                return new Ed25519CafeByteFullEcc();
+                return Ed25519CafeByteFullEcc.getInstance();
             case RISTRETTO_CAFE:
-                return new RistrettoCafeByteFullEcc();
+                return RistrettoCafeByteFullEcc.getInstance();
             case FOUR_Q:
-                return new FourqByteFullEcc();
+                return FourqByteFullEcc.getInstance();
             default:
                 throw new IllegalArgumentException(
                     "Invalid " + ByteEccType.class.getSimpleName() + ": " + byteEccType.name()
@@ -164,7 +213,7 @@ public class ByteEccFactory {
         //noinspection SwitchStatementWithTooFewBranches
         switch (byteEccType) {
             case X25519_ELLIGATOR_BC:
-                return new X25519BcByteMulElligatorEcc();
+                return X25519BcByteMulElligatorEcc.getInstance();
             default:
                 throw new IllegalArgumentException(
                     "Invalid " + ByteEccType.class.getSimpleName() + ": " + byteEccType.name()

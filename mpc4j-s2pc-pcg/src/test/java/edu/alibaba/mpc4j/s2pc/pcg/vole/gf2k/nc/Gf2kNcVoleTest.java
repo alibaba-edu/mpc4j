@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleSenderOutput;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/7/24
  */
 @RunWith(Parameterized.class)
-public class Gf2kNcVoleTest extends AbstractTwoPartyPtoTest {
+public class Gf2kNcVoleTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(Gf2kNcVoleTest.class);
     /**
      * default num

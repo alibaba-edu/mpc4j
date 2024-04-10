@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/5/23
  */
 @RunWith(Parameterized.class)
-public class ZlDreluTest extends AbstractTwoPartyPtoTest {
+public class ZlDreluTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZlDreluTest.class);
     /**
      * default num

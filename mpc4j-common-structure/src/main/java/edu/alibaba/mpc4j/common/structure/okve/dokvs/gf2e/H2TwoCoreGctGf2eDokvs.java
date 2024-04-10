@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
 import edu.alibaba.mpc4j.common.structure.okve.cuckootable.H2CuckooTableTcFinder;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.H2NaiveGctDokvsUtils;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 
 import java.security.SecureRandom;
@@ -36,7 +37,7 @@ class H2TwoCoreGctGf2eDokvs<T> extends AbstractH2GctGf2eDokvs<T> {
     }
 
     @Override
-    public Gf2eDokvsFactory.Gf2eDokvsType getType() {
-        return Gf2eDokvsFactory.Gf2eDokvsType.H2_TWO_CORE_GCT;
+    public Gf2eDokvsType getType() {
+        return Gf2eDokvsType.H2_TWO_CORE_GCT;
     }
 }

@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
  * @date 2023/5/24
  */
 @RunWith(Parameterized.class)
-public class ZlMaxTest extends AbstractTwoPartyPtoTest {
+public class ZlMaxTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZlMaxTest.class);
     /**
      * default num

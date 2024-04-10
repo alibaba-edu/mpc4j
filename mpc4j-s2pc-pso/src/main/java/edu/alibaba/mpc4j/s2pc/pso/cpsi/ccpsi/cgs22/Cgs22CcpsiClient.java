@@ -69,10 +69,10 @@ public class Cgs22CcpsiClient<T> extends AbstractCcpsiClient<T> {
         super(Cgs22CcpsiPtoDesc.getInstance(), serverRpc, clientParty, config);
         RbopprfConfig rbopprfConfig = config.getRbopprfConfig();
         rbopprfReceiver = RbopprfFactory.createReceiver(serverRpc, clientParty, rbopprfConfig);
-        addSubPtos(rbopprfReceiver);
+        addSubPto(rbopprfReceiver);
         d = rbopprfConfig.getD();
         pdsmSender = PdsmFactory.createSender(serverRpc, clientParty, config.getPsmConfig());
-        addSubPtos(pdsmSender);
+        addSubPto(pdsmSender);
         cuckooHashBinType = config.getCuckooHashBinType();
         hashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }

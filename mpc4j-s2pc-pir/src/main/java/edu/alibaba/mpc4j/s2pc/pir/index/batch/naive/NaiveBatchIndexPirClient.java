@@ -31,7 +31,7 @@ public class NaiveBatchIndexPirClient extends AbstractBatchIndexPirClient {
     public NaiveBatchIndexPirClient(Rpc clientRpc, Party serverParty, NaiveBatchIndexPirConfig config) {
         super(getInstance(), clientRpc, serverParty, config);
         client = SingleIndexPirFactory.createClient(clientRpc, serverParty, config.getSingleIndexPirConfig());
-        addSubPtos(client);
+        addSubPto(client);
     }
 
     @Override

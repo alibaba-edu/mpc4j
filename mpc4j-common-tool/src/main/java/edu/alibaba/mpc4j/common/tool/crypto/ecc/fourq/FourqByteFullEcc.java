@@ -29,7 +29,7 @@ public class FourqByteFullEcc implements ByteFullEcc {
      */
     private final Hash hash;
 
-    public FourqByteFullEcc() {
+    private FourqByteFullEcc() {
         hash = HashFactory.createInstance(HashFactory.HashType.JDK_SHA256, FourqByteEccUtils.POINT_BYTES);
     }
 
@@ -197,4 +197,17 @@ public class FourqByteFullEcc implements ByteFullEcc {
 
     private native byte[] nativeHashToCurve(byte[] message);
 
+    /**
+     * singleton mode
+     */
+    private static final FourqByteFullEcc INSTANCE = new FourqByteFullEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static FourqByteFullEcc getInstance() {
+        return INSTANCE;
+    }
 }

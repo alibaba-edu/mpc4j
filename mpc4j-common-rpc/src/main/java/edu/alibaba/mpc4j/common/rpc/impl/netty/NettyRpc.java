@@ -5,9 +5,16 @@ import com.google.protobuf.ByteString;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto.HeaderProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto.PayloadProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto.TypeProto;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketBuffer;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
+import edu.alibaba.mpc4j.common.rpc.utils.PayloadType;
+import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
+import edu.alibaba.mpc4j.common.tool.utils.SerializeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,6 +173,8 @@ public class NettyRpc implements Rpc {
     @Override
     public void send(DataPacket dataPacket) {
         DataPacketHeader header = dataPacket.getHeader();
+        PayloadType payloadType = dataPacket.getPayloadType();
+        List<byte[]> payload = dataPacket.getPayload();
         Preconditions.checkArgument(
             ownPartyId == header.getSenderId(), "Sender ID must be %s", ownPartyId
         );
@@ -173,28 +182,46 @@ public class NettyRpc implements Rpc {
             partyIdHashMap.containsKey(header.getReceiverId()),
             "Party set does not contain Receiver ID = %s", header.getReceiverId()
         );
-        // 打包数据包head
-        NettyRpcProtobuf.DataPacketProto.HeaderProto headerProto = NettyRpcProtobuf.DataPacketProto.HeaderProto
-            .newBuilder()
-            .setTaskId(header.getEncodeTaskId())
+        // package header
+        HeaderProto headerProto = HeaderProto.newBuilder()
+            .setEncodeTaskId(header.getEncodeTaskId())
             .setPtoId(header.getPtoId())
             .setStepId(header.getStepId())
             .setExtraInfo(header.getExtraInfo())
             .setSenderId(header.getSenderId())
             .setReceiverId(header.getReceiverId())
             .build();
-        // 打包数据包payload
-        List<ByteString> payloadByteStringList = dataPacket.getPayload().stream()
-            .map(ByteString::copyFrom)
-            .collect(Collectors.toList());
-        NettyRpcProtobuf.DataPacketProto.PayloadProto payloadProto = NettyRpcProtobuf.DataPacketProto.PayloadProto
-            .newBuilder()
+        // package type
+        TypeProto typeProto = TypeProto.newBuilder()
+            .setTypeId(payloadType.ordinal())
+            .build();
+        // package payload
+        List<ByteString> payloadByteStringList;
+        switch (payloadType) {
+            case NORMAL:
+            case EMPTY:
+            case SINGLETON:
+                payloadByteStringList = payload.stream()
+                    .map(ByteString::copyFrom)
+                    .collect(Collectors.toList());
+                break;
+            case EQUAL_SIZE:
+                int length = dataPacket.getEqualLength();
+                payloadByteStringList = new LinkedList<>();
+                payloadByteStringList.add(ByteString.copyFrom(IntUtils.intToByteArray(length)));
+                payloadByteStringList.add(ByteString.copyFrom(SerializeUtils.compressEqual(payload, length)));
+                break;
+            default:
+                throw new IllegalStateException("Invalid " + PayloadType.class.getSimpleName() + ": " + payloadType);
+        }
+        PayloadProto payloadProto = PayloadProto.newBuilder()
             .addAllPayloadBytes(payloadByteStringList)
             .build();
-        // 将head和payload打包成整体
-        NettyRpcProtobuf.DataPacketProto dataPacketProto = NettyRpcProtobuf.DataPacketProto
+        // package data packet
+        DataPacketProto dataPacketProto = NettyRpcProtobuf.DataPacketProto
             .newBuilder()
             .setHeaderProto(headerProto)
+            .setTypeProto(typeProto)
             .setPayloadProto(payloadProto)
             .build();
         payloadByteLength += dataPacket.getPayload().stream().mapToInt(data -> data.length).sum();

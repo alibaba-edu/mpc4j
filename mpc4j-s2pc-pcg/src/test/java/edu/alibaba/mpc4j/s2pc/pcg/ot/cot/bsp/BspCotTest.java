@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * @date 2022/01/24
  */
 @RunWith(Parameterized.class)
-public class BspCotTest extends AbstractTwoPartyPtoTest {
+public class BspCotTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(BspCotTest.class);
     /**
      * default each num, we select an odd number and not with the format 2^k

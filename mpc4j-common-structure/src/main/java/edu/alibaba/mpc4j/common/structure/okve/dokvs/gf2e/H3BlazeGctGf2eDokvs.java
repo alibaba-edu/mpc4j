@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.H3BlazeGctDovsUtils;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 
 import java.security.SecureRandom;
@@ -30,7 +31,7 @@ class H3BlazeGctGf2eDokvs<T> extends AbstractH3GctGf2eDokvs<T> {
     }
 
     @Override
-    public Gf2eDokvsFactory.Gf2eDokvsType getType() {
-        return Gf2eDokvsFactory.Gf2eDokvsType.H3_BLAZE_GCT;
+    public Gf2eDokvsType getType() {
+        return Gf2eDokvsType.H3_BLAZE_GCT;
     }
 }

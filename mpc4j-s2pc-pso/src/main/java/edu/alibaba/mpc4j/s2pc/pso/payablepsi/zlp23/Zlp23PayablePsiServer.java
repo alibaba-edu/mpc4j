@@ -67,11 +67,11 @@ public class Zlp23PayablePsiServer<T> extends AbstractPayablePsiServer<T> {
     public Zlp23PayablePsiServer(Rpc serverRpc, Party clientParty, Zlp23PayablePsiConfig config) {
         super(getInstance(), serverRpc, clientParty, config);
         sqOprfSender = SqOprfFactory.createSender(serverRpc, clientParty, config.getSqOprfConfig());
-        addSubPtos(sqOprfSender);
+        addSubPto(sqOprfSender);
         osnSender = OsnFactory.createSender(serverRpc, clientParty, config.getOsnConfig());
-        addSubPtos(osnSender);
+        addSubPto(osnSender);
         sqOprfReceiver = SqOprfFactory.createReceiver(serverRpc, clientParty, config.getSqOprfConfig());
-        addSubPtos(sqOprfReceiver);
+        addSubPto(sqOprfReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
     }
 

@@ -19,11 +19,11 @@ import java.security.SecureRandom;
  */
 public class RistrettoCafeByteFullEcc implements ByteFullEcc {
     /**
-     * 哈希函数，Ristretto底层用Edwards表示。
+     * hash used in hash_to_curve
      */
     private final Hash hash;
 
-    public RistrettoCafeByteFullEcc() {
+    private RistrettoCafeByteFullEcc() {
         hash = HashFactory.createInstance(HashFactory.HashType.BC_SHA3_512, Ed25519ByteEccUtils.POINT_BYTES * 2);
     }
 
@@ -177,5 +177,19 @@ public class RistrettoCafeByteFullEcc implements ByteFullEcc {
     @Override
     public int scalarByteLength() {
         return Ed25519ByteEccUtils.SCALAR_BYTES;
+    }
+
+    /**
+     * singleton mode
+     */
+    private static final RistrettoCafeByteFullEcc INSTANCE = new RistrettoCafeByteFullEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static RistrettoCafeByteFullEcc getInstance() {
+        return INSTANCE;
     }
 }

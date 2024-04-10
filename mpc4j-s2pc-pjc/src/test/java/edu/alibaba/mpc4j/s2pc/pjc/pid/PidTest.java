@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pjc.pid;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.bkms20.Bkms20ByteEccPidConfig;
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2019/07/12
  */
 @RunWith(Parameterized.class)
-public class PidTest extends AbstractTwoPartyPtoTest {
+public class PidTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(PidTest.class);
     /**
      * default size

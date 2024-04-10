@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.core;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.Zp64MtgTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.Zp64Triple;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.zp64.core.rss19.Rss19Zp64CoreMtgConfig;
@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/9/7
  */
 @RunWith(Parameterized.class)
-public class Zp64CoreMtgTest extends AbstractTwoPartyPtoTest {
+public class Zp64CoreMtgTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(Zp64CoreMtgTest.class);
     /**
      * 默认数量

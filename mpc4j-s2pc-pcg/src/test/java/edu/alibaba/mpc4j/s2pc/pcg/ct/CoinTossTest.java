@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ct;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ct.CoinTossFactory.CoinTossType;
@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
  * @date 2023/5/5
  */
 @RunWith(Parameterized.class)
-public class CoinTossTest extends AbstractTwoPartyPtoTest {
+public class CoinTossTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoinTossTest.class);
     /**
      * default num

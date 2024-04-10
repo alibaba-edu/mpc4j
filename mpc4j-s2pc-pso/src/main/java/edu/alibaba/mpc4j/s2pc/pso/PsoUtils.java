@@ -232,11 +232,16 @@ public class PsoUtils {
     public static void generateBytesInputFiles(int serverSetSize, int clientSetSize, int elementByteLength)
         throws IOException {
         assert elementByteLength >= CommonConstants.STATS_BYTE_LENGTH;
+        File inputFolder = new File(getFileFolderName());
+        if (!inputFolder.exists()) {
+            boolean success = inputFolder.mkdir();
+            assert success;
+        }
         File serverInputFile = new File(getBytesFileName(BYTES_SERVER_PREFIX, serverSetSize, elementByteLength));
         File clientInputFile = new File(getBytesFileName(BYTES_CLIENT_PREFIX, clientSetSize, elementByteLength));
 
         if (serverInputFile.exists() && clientInputFile.exists()) {
-            // 文件都存在，跳过生成阶段
+            // skip if file exists
             return;
         }
         LOGGER.info("Lost some / all files, generate byte[] set files.");
@@ -270,7 +275,16 @@ public class PsoUtils {
         clientFileWriter.close();
     }
 
+    /**
+     * Gets the input folder name.
+     *
+     * @return input folder name.
+     */
+    public static String getFileFolderName() {
+        return "temp" + File.separator;
+    }
+
     public static String getBytesFileName(String prefix, int setSize, int elementByteLength) {
-        return prefix + "_" + (elementByteLength * Byte.SIZE) + "_" + setSize + ".input";
+        return getFileFolderName() + prefix + "_" + (elementByteLength * Byte.SIZE) + "_" + setSize + ".input";
     }
 }

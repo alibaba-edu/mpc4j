@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/9/19
  */
 @RunWith(Parameterized.class)
-public class PsiTest extends AbstractTwoPartyPtoTest {
+public class PsiTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(PsiTest.class);
     /**
      * default size

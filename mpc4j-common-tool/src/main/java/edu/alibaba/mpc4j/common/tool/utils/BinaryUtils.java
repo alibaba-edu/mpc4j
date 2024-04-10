@@ -127,6 +127,41 @@ public class BinaryUtils {
     }
 
     /**
+     * Converts {@code byte[]} to {@code boolean[]} without checking {@code byte[]} containing at most bitLength bits.
+     *
+     * @param byteArray given {@code byte[]}.
+     * @param bitLength bit length.
+     * @return result.
+     */
+    public static boolean[] uncheckByteArrayToBinary(final byte[] byteArray, int bitLength) {
+        assert bitLength >= 0 && bitLength <= byteArray.length * Byte.SIZE
+            : "bitLength must be in range [0, " + byteArray.length * Byte.SIZE + "]: " + bitLength;
+        if (byteArray.length == 0) {
+            // byteArray.length = 0 implies bitLength = 0
+            return new boolean[0];
+        }
+        int targetByteLength = CommonUtils.getByteLength(bitLength);
+        // direct conversion
+        boolean[] directBinary = new boolean[targetByteLength * Byte.SIZE];
+        int offset = byteArray.length - targetByteLength;
+        for (int byteIndex = 0; byteIndex < targetByteLength; byteIndex++) {
+            int startBinaryIndex = byteIndex * Byte.SIZE;
+            for (int index = 0; index < Byte.SIZE; index++) {
+                directBinary[startBinaryIndex + index] = ((byteArray[byteIndex + offset] & BYTE_BOOLEAN_TRUE_TABLE[index]) != 0);
+            }
+        }
+        if (bitLength == directBinary.length) {
+            // directly return result
+            return directBinary;
+        } else {
+            // return truncated result
+            boolean[] resultBinary = new boolean[bitLength];
+            System.arraycopy(directBinary, directBinary.length - resultBinary.length, resultBinary, 0, resultBinary.length);
+            return resultBinary;
+        }
+    }
+
+    /**
      * 将{@code boolean[]}转换为{@code byte[]}，大端表示。此转换要求{@code boolean[]}的长度可以被{@code Byte.SIZE}整除。
      *
      * @param binary 待转换的{@code boolean[]}。

@@ -86,7 +86,7 @@ public class Prty19FastPsiServer<T> extends AbstractPsiServer<T> {
     public Prty19FastPsiServer(Rpc serverRpc, Party clientParty, Prty19FastPsiConfig config) {
         super(Prty19FastPsiPtoDesc.getInstance(), serverRpc, clientParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(serverRpc, clientParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
         filterType = config.getFilterType();
     }
 

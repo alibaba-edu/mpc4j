@@ -74,7 +74,7 @@ public class Psz14PsiServer<T> extends AbstractPsiServer<T> {
     public Psz14PsiServer(Rpc serverRpc, Party clientParty, Psz14PsiConfig config) {
         super(Psz14PsiPtoDesc.getInstance(), serverRpc, clientParty, config);
         lcotSender = LcotFactory.createSender(serverRpc, clientParty, config.getLcotConfig());
-        addSubPtos(lcotSender);
+        addSubPto(lcotSender);
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
         filterType = config.getFilterType();

@@ -5,6 +5,12 @@ import java.security.SecureRandom;
 
 /**
  * 全功能字节椭圆曲线接口。
+ * <p></p>
+ * One may think that we need to add a similar precompute / destroy_precompute functionality to support fixed-point
+ * multiplication. We have tried that but the efficiency result shows that precompute fixed-point multiplication has
+ * similar performance compared with direct multiplication. We believe the reason is that for a specific ECC, the
+ * underlying implementation has done many optimizations so that the gap between addition and multiplication is very
+ * similar.
  *
  * @author Weiran Liu
  * @date 2022/9/1

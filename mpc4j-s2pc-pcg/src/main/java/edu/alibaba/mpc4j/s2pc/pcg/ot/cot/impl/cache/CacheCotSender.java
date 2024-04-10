@@ -46,10 +46,10 @@ public class CacheCotSender extends AbstractCotSender {
         super(CacheCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         NcCotConfig ncCotConfig = config.getNcCotConfig();
         ncCotSender = NcCotFactory.createSender(senderRpc, receiverParty, ncCotConfig);
-        addSubPtos(ncCotSender);
+        addSubPto(ncCotSender);
         maxBaseNum = ncCotConfig.maxNum();
         preCotSender = PreCotFactory.createSender(senderRpc, receiverParty, config.getPreCotConfig());
-        addSubPtos(preCotSender);
+        addSubPto(preCotSender);
     }
 
     @Override

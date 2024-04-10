@@ -21,9 +21,9 @@ public class TransBitMatrixFactory {
      */
     public enum TransBitMatrixType {
         /**
-         * 朴素转置布尔矩阵
+         * JDK transpose
          */
-        NAIVE,
+        JDK,
         /**
          * Eklundh转置布尔矩阵
          */
@@ -60,8 +60,8 @@ public class TransBitMatrixFactory {
      */
     public static TransBitMatrix createInstance(TransBitMatrixType type, int rows, int columns) {
         switch (type) {
-            case NAIVE:
-                return new NaiveTransBitMatrix(rows, columns);
+            case JDK:
+                return new JdkTransBitMatrix(rows, columns);
             case EKLUNDH:
                 return new EklundhTransBitMatrix(rows, columns);
             case NATIVE:
@@ -75,7 +75,7 @@ public class TransBitMatrixFactory {
             case NATIVE_SPLIT_COL:
                 return new NativeSplitColTransBitMatrix(rows, columns);
             default:
-                throw new IllegalArgumentException("Invalid BitMatrixType: " + type.name());
+                throw new IllegalArgumentException("Invalid " + TransBitMatrixType.class.getSimpleName() + ": " + type.name());
         }
     }
 
@@ -113,10 +113,10 @@ public class TransBitMatrixFactory {
                         return createInstance(TransBitMatrixType.JDK_SPLIT_COL, rows, columns);
                     }
                 } else {
-                    return createInstance(TransBitMatrixType.NAIVE, rows, columns);
+                    return createInstance(TransBitMatrixType.JDK, rows, columns);
                 }
             default:
-                throw new IllegalArgumentException("Invalid EnvType: " + envType.name());
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }
     }
 }

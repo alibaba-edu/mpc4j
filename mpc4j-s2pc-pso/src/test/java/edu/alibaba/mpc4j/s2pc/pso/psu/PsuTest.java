@@ -1,15 +1,15 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfsPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.Krtw19PsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22PkePsuConfig;
-import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.Zcl22SkePsuConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.zcl23.Zcl23PkePsuConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.zcl23.Zcl23SkePsuConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/02/15
  */
 @RunWith(Parameterized.class)
-public class PsuTest extends AbstractTwoPartyPtoTest {
+public class PsuTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(PsuTest.class);
     /**
      * 默认数量
@@ -81,13 +81,13 @@ public class PsuTest extends AbstractTwoPartyPtoTest {
         });
         // ZCL22_PKE
         configurations.add(new Object[]{
-            PsuFactory.PsuType.ZCL22_PKE.name(),
-            new Zcl22PkePsuConfig.Builder().build(),
+            PsuFactory.PsuType.ZCL23_PKE.name(),
+            new Zcl23PkePsuConfig.Builder().build(),
         });
         // ZCL22_SKE
         configurations.add(new Object[]{
-            PsuFactory.PsuType.ZCL22_SKE.name(),
-            new Zcl22SkePsuConfig.Builder(SecurityModel.SEMI_HONEST).build(),
+            PsuFactory.PsuType.ZCL23_SKE.name(),
+            new Zcl23SkePsuConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
         // GMR21 (direct)
         configurations.add(new Object[]{

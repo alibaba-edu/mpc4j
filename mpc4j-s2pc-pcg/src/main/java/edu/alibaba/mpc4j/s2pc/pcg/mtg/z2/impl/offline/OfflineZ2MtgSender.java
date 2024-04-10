@@ -44,7 +44,7 @@ public class OfflineZ2MtgSender extends AbstractZ2MtgParty {
         super(OfflineZ2MtgPtoDesc.getInstance(), senderRpc, receiverParty, config);
         Z2CoreMtgConfig coreMtgConfig = config.getCoreMtgConfig();
         coreMtgSender = Z2CoreMtgFactory.createSender(senderRpc, receiverParty, coreMtgConfig);
-        addSubPtos(coreMtgSender);
+        addSubPto(coreMtgSender);
         maxBaseNum = coreMtgConfig.maxNum();
     }
 
@@ -52,7 +52,7 @@ public class OfflineZ2MtgSender extends AbstractZ2MtgParty {
         super(OfflineZ2MtgPtoDesc.getInstance(), senderRpc, receiverParty, config);
         Z2CoreMtgConfig coreMtgConfig = config.getCoreMtgConfig();
         coreMtgSender = Z2CoreMtgFactory.createSender(senderRpc, receiverParty, aiderParty, coreMtgConfig);
-        addSubPtos(coreMtgSender);
+        addSubPto(coreMtgSender);
         maxBaseNum = coreMtgConfig.maxNum();
     }
 

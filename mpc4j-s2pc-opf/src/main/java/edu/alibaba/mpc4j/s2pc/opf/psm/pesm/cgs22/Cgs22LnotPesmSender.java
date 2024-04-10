@@ -44,9 +44,9 @@ public class Cgs22LnotPesmSender extends AbstractPesmSender {
     public Cgs22LnotPesmSender(Rpc senderRpc, Party receiverParty, Cgs22LnotPesmConfig config) {
         super(Cgs22LnotPesmPtoDesc.getInstance(), senderRpc, receiverParty, config);
         z2cSender = Z2cFactory.createSender(senderRpc, receiverParty, config.getZ2cConfig());
-        addSubPtos(z2cSender);
+        addSubPto(z2cSender);
         lnotSender = LnotFactory.createSender(senderRpc, receiverParty, config.getLnotConfig());
-        addSubPtos(lnotSender);
+        addSubPto(lnotSender);
     }
 
     @Override

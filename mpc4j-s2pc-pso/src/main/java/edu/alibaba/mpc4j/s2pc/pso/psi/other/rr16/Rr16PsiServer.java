@@ -78,8 +78,8 @@ public class Rr16PsiServer<T> extends AbstractPsiServer<T> {
         super(Rr16PsiPtoDesc.getInstance(), serverRpc, clientParty, config);
         coreCotSender = CoreCotFactory.createSender(serverRpc, clientParty, config.getCoreCotConfig());
         ctSender = CoinTossFactory.createSender(serverRpc, clientParty, config.getCoinTossConfig());
-        addSubPtos(coreCotSender);
-        addSubPtos(ctSender);
+        addSubPto(coreCotSender);
+        addSubPto(ctSender);
         filterType = config.getFilterType();
     }
 

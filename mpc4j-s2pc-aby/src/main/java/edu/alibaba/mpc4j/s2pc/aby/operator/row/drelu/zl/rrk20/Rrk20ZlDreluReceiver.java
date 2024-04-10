@@ -48,9 +48,9 @@ public class Rrk20ZlDreluReceiver extends AbstractZlDreluParty {
     public Rrk20ZlDreluReceiver(Rpc receiverRpc, Party senderParty, Rrk20ZlDreluConfig config) {
         super(Rrk20ZlDreluPtoDesc.getInstance(), receiverRpc, senderParty, config);
         millionaireReceiver = MillionaireFactory.createReceiver(receiverRpc, senderParty, config.getMillionaireConfig());
-        addSubPtos(millionaireReceiver);
+        addSubPto(millionaireReceiver);
         z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, config.getZ2cConfig());
-        addSubPtos(z2cReceiver);
+        addSubPto(z2cReceiver);
     }
 
     @Override

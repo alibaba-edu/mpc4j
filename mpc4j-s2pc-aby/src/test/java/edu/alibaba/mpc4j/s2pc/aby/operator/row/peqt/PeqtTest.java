@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.PeqtFactory.PeqtType;
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/4/14
  */
 @RunWith(Parameterized.class)
-public class PeqtTest extends AbstractTwoPartyPtoTest {
+public class PeqtTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeqtTest.class);
     /**
      * default num

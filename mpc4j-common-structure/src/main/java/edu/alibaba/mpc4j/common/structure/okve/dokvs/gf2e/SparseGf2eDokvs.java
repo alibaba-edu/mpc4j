@@ -25,11 +25,11 @@ public interface SparseGf2eDokvs<T> extends BinaryGf2eDokvs<T> {
     int[] sparsePositions(T key);
 
     /**
-     * Gets the maximal sparse num.
+     * Gets the sparse num.
      *
-     * @return the maximal sparse num.
+     * @return the sparse num.
      */
-    int maxSparsePositionNum();
+    int sparsePositionNum();
 
     /**
      * Gets the dense positions.
@@ -53,7 +53,7 @@ public interface SparseGf2eDokvs<T> extends BinaryGf2eDokvs<T> {
      */
     @Override
     default int maxPositionNum() {
-        return maxSparsePositionNum() + densePositionRange();
+        return sparsePositionNum() + densePositionRange();
     }
 
     /**

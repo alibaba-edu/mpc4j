@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
@@ -25,10 +26,6 @@ import java.util.stream.Stream;
  * @date 2023/7/10
  */
 class H3NaiveClusterBlazeGctGf2eDokvs<T> extends AbstractH3ClusterBlazeGctGf2eDokvs<T> {
-    /**
-     * type
-     */
-    private static final Gf2eDokvsFactory.Gf2eDokvsType TYPE = Gf2eDokvsFactory.Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT;
 
     H3NaiveClusterBlazeGctGf2eDokvs(EnvType envType, int n, int l, byte[][] keys) {
         this(envType, n, l, keys, new SecureRandom());
@@ -49,8 +46,8 @@ class H3NaiveClusterBlazeGctGf2eDokvs<T> extends AbstractH3ClusterBlazeGctGf2eDo
     }
 
     @Override
-    public Gf2eDokvsFactory.Gf2eDokvsType getType() {
-        return TYPE;
+    public Gf2eDokvsType getType() {
+        return Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT;
     }
 
     @Override

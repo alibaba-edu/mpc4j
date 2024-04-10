@@ -47,7 +47,7 @@ public class Kk13OptLcotReceiver extends AbstractLcotReceiver {
     public Kk13OptLcotReceiver(Rpc receiverRpc, Party senderParty, Kk13OptLcotConfig config) {
         super(Kk13OptLcotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreCotSender = CoreCotFactory.createSender(receiverRpc, senderParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
     }
 
     @Override

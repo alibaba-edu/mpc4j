@@ -39,7 +39,7 @@ public class Bcp13ShHammingSender extends AbstractHammingParty {
     public Bcp13ShHammingSender(Rpc senderRpc, Party receiverParty, Bcp13ShHammingConfig config) {
         super(Bcp13ShHammingPtoDesc.getInstance(), senderRpc, receiverParty, config);
         cotSender = CotFactory.createSender(senderRpc, receiverParty, config.getCotConfig());
-        addSubPtos(cotSender);
+        addSubPto(cotSender);
     }
 
     @Override

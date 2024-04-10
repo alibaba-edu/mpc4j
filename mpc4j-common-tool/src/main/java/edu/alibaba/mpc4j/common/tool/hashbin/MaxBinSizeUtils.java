@@ -8,8 +8,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 
-import static edu.alibaba.mpc4j.common.tool.utils.BigDecimalUtils.STRUCTURE_SCALE;
-
 /**
  * 哈希桶工具类。
  *
@@ -215,14 +213,14 @@ public class MaxBinSizeUtils {
         int k = Math.max(1, n / b);
         // 先计算一轮溢出概率，如果上来满足要求，则直接返回k
         BigDecimal probability = exactProbability(n, b, k);
-        if (probability.compareTo(BigDecimalUtils.STAT_NEG_PROBABILITY) <= 0) {
+        if (probability.compareTo(BigDecimalUtils.STATS_NEG_PROG) <= 0) {
             return k;
         }
         int step = 1;
         // 应用二分查找算法找到最接近给定统计安全常数的桶大小
         boolean doubling = true;
-        while (probability.compareTo(BigDecimalUtils.STAT_NEG_PROBABILITY) > 0 || step > 1) {
-            if (probability.compareTo(BigDecimalUtils.STAT_NEG_PROBABILITY) > 0) {
+        while (probability.compareTo(BigDecimalUtils.STATS_NEG_PROG) > 0 || step > 1) {
+            if (probability.compareTo(BigDecimalUtils.STATS_NEG_PROG) > 0) {
                 // 如果当前溢出概率大于要求溢出概率，意味着桶的大小设置得太小，需要增加
                 if (doubling) {
                     step = Math.max(1, step * 2);
@@ -257,7 +255,7 @@ public class MaxBinSizeUtils {
         // q
         BigDecimal binBigDecimal = BigDecimal.valueOf(b);
         // 1 / q
-        BigDecimal binInverseBigDecimal = BigDecimal.ONE.setScale(STRUCTURE_SCALE, RoundingMode.HALF_DOWN)
+        BigDecimal binInverseBigDecimal = BigDecimal.ONE.setScale(BigDecimalUtils.PRECISION, RoundingMode.HALF_DOWN)
             .divide(binBigDecimal, RoundingMode.HALF_UP);
         // 1 - 1 / q
         BigDecimal oneMinusBinInverseBigDecimal = BigDecimal.ONE.subtract(binInverseBigDecimal);

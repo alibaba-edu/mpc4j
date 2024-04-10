@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.pre;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotSenderOutput;
@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
  * @date 2023/4/11
  */
 @RunWith(Parameterized.class)
-public class PreLnotTest extends AbstractTwoPartyPtoTest {
+public class PreLnotTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreLnotTest.class);
     /**
      * the default num

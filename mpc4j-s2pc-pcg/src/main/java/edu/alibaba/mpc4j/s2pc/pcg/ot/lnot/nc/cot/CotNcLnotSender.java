@@ -46,7 +46,7 @@ public class CotNcLnotSender extends AbstractNcLnotSender {
         super(CotNcLnotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         NcCotConfig ncCotConfig = config.getNcCotConfig();
         ncCotSender = NcCotFactory.createSender(senderRpc, receiverParty, ncCotConfig);
-        addSubPtos(ncCotSender);
+        addSubPto(ncCotSender);
         maxCotBaseNum = ncCotConfig.maxNum();
     }
 

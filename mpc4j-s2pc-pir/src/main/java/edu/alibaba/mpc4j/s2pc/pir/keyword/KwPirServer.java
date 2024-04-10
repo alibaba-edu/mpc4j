@@ -22,7 +22,7 @@ public interface KwPirServer extends TwoPartyPto {
      * @param valueByteLength  value byte length.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> keyValueMap, int maxRetrievalSize,
+    void init(KwPirParams kwPirParams, Map<ByteBuffer, byte[]> keyValueMap, int maxRetrievalSize,
               int valueByteLength) throws MpcAbortException;
 
     /**
@@ -33,7 +33,7 @@ public interface KwPirServer extends TwoPartyPto {
      * @param valueByteLength  value byte length.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(Map<ByteBuffer, ByteBuffer> keyValueMap, int maxRetrievalSize, int valueByteLength)
+    void init(Map<ByteBuffer, byte[]> keyValueMap, int maxRetrievalSize, int valueByteLength)
         throws MpcAbortException;
 
     /**

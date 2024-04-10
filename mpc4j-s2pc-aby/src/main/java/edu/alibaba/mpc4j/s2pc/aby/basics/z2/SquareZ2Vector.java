@@ -2,12 +2,15 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.z2;
 
 import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2Vector;
+import edu.alibaba.mpc4j.common.circuit.z2.utils.Z2VectorUtils;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 /**
  * Square Z2 vector ([x]). The share is of the form: x = x_0 ⊕ x_1.
@@ -148,8 +151,47 @@ public class SquareZ2Vector implements MpcZ2Vector {
     }
 
     @Override
+    public void reverseBits() {
+        bitVector.reverseBits();
+    }
+
+    @Override
+    public SquareZ2Vector[] splitWithPadding(int[] bitNums) {
+        BitVector[] splitBitVectors = getBitVector().uncheckSplitWithPadding(bitNums);
+        return Arrays.stream(splitBitVectors).map(each -> create(each, plain)).toArray(SquareZ2Vector[]::new);
+    }
+
+    @Override
+    public SquareZ2Vector extendBitsWithSkip(int destBitLen, int skipLen) {
+        byte[] destByte = Z2VectorUtils.extendBitsWithSkip(this.bitVector, destBitLen, skipLen);
+        return create(destBitLen, destByte, plain);
+    }
+
+    @Override
+    public SquareZ2Vector[] getBitsWithSkip(int totalBitNum, int skipLen) {
+        byte[][] res0 = Z2VectorUtils.getBitsWithSkip(bitVector, totalBitNum, skipLen);
+        return Arrays.stream(res0).map(bytes -> create(totalBitNum, bytes, plain)).toArray(SquareZ2Vector[]::new);
+    }
+
+    @Override
+    public SquareZ2Vector getPointsWithFixedSpace(int startPos, int num, int skipLen) {
+        return create(bitVector.getBitsByInterval(startPos, num, skipLen), plain);
+    }
+
+    @Override
     public BitVector getBitVector() {
         return bitVector;
+    }
+
+    @Override
+    public BitVector[] getBitVectors() {
+        return new BitVector[]{bitVector};
+    }
+
+    @Override
+    public void setBitVectors(BitVector... data) {
+        MathPreconditions.checkEqual("data.length", "1", data.length, 1);
+        this.bitVector = data[0];
     }
 
     @Override

@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.opf.opprf.rb;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.opf.opprf.OpprfTestUtils;
@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
  * @date 2023/3/26
  */
 @RunWith(Parameterized.class)
-public class RbopprfTest extends AbstractTwoPartyPtoTest {
+public class RbopprfTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(RbopprfTest.class);
     /**
      * default l

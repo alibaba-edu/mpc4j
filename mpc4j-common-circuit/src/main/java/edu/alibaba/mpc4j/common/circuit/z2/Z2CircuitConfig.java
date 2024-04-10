@@ -3,6 +3,8 @@ package edu.alibaba.mpc4j.common.circuit.z2;
 import edu.alibaba.mpc4j.common.circuit.CircuitConfig;
 import edu.alibaba.mpc4j.common.circuit.z2.adder.AdderFactory;
 import edu.alibaba.mpc4j.common.circuit.z2.multiplier.MultiplierFactory;
+import edu.alibaba.mpc4j.common.circuit.z2.psorter.PsorterFactory;
+import edu.alibaba.mpc4j.common.circuit.z2.psorter.PsorterFactory.SorterTypes;
 import edu.alibaba.mpc4j.common.circuit.z2.sorter.SorterFactory;
 
 /**
@@ -24,11 +26,16 @@ public class Z2CircuitConfig implements CircuitConfig {
      * Sorter type.
      */
     private SorterFactory.SorterTypes sorterType;
+    /**
+     * Permutable Sorter type.
+     */
+    private final SorterTypes pSorterType;
 
     private Z2CircuitConfig(Builder builder) {
         setAdderType(builder.adderType);
         setMultiplierType(builder.multiplierType);
         setSorterType(builder.sorterType);
+        this.pSorterType = builder.pSorterType;
     }
 
     public AdderFactory.AdderTypes getAdderType() {
@@ -50,6 +57,9 @@ public class Z2CircuitConfig implements CircuitConfig {
     public SorterFactory.SorterTypes getSorterType() {
         return sorterType;
     }
+    public PsorterFactory.SorterTypes getPsorterType() {
+        return pSorterType;
+    }
 
     public void setSorterType(SorterFactory.SorterTypes sorterType) {
         this.sorterType = sorterType;
@@ -68,11 +78,16 @@ public class Z2CircuitConfig implements CircuitConfig {
          * Sorter type.
          */
         private SorterFactory.SorterTypes sorterType;
+        /**
+         * Permutable Sorter type.
+         */
+        private PsorterFactory.SorterTypes pSorterType;
 
         public Builder() {
             adderType = AdderFactory.AdderTypes.RIPPLE_CARRY;
             multiplierType = MultiplierFactory.MultiplierTypes.SHIFT_ADD;
             sorterType = SorterFactory.SorterTypes.BITONIC;
+            pSorterType = PsorterFactory.SorterTypes.BITONIC;
         }
 
         public Builder setAdderType(AdderFactory.AdderTypes adderType) {
@@ -87,6 +102,11 @@ public class Z2CircuitConfig implements CircuitConfig {
 
         public Builder setSorterType(SorterFactory.SorterTypes sorterType) {
             this.sorterType = sorterType;
+            return this;
+        }
+
+        public Builder setPsorterType(PsorterFactory.SorterTypes pSorterType) {
+            this.pSorterType = pSorterType;
             return this;
         }
 

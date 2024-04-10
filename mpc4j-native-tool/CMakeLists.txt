@@ -166,29 +166,6 @@ else()
     endif()
 endif()
 
-# 引入MCL，如果使用find_library，不知为何会找到libntl，因此这里使用绝对位置
-if(NOT DEFINED MCL_ROOT_DIR)
-    set(MCL_ROOT_DIR ${DEFAULT_DIR})
-endif()
-find_path(MCL_INCLUDE_DIR
-        NAMES mcl/bn.h
-        HINTS ENV MCL_ROOT_DIR
-        PATH_SUFFIXES include
-        DOC "The directory containing the mcl include files"
-        )
-set(MCL_LIBRARY ${MCL_ROOT_DIR}/lib/libmcl.a)
-if (MCL_INCLUDE_DIR AND MCL_LIBRARY)
-    set(MCL_FOUND TRUE)
-endif()
-if(MCL_FOUND)
-    include_directories(${MCL_INCLUDE_DIR})
-    message(STATUS "MCL_INCLUDE_DIRS: ${MCL_INCLUDE_DIR}")
-    message(STATUS "MCL_LIBRARY_PATH: ${MCL_LIBRARY}")
-else()
-    if(MCL_FIND_REQUIRED)
-        message(FATAL_ERROR "Could not find MCL")
-    endif()
-endif()
 # 引入 FouQlib
 if(NOT DEFINED FOURQ_ROOT_DIR)
     set(FOURQ_ROOT_DIR ${DEFAULT_DIR})
@@ -248,8 +225,6 @@ add_library(
         crypto/blake3/blake3_avx512_x86-64_unix.S
         crypto/blake3/blake3_neon.c
         crypto/edu_alibaba_mpc4j_common_tool_crypto_prp_NativeAesPrp.cpp
-        benes_network/edu_alibaba_mpc4j_common_tool_benes_NativeBenesNetwork.cpp
-        benes_network/benes_network.cpp
         bit_matrix_trans/edu_alibaba_mpc4j_common_tool_bitmatrix_trans_NativeTransBitMatrix.cpp
         ntl_poly/edu_alibaba_mpc4j_common_tool_polynomial_gf2e_NtlNativeGf2ePoly.cpp
         ntl_poly/ntl_gf2x.cpp
@@ -260,8 +235,6 @@ add_library(
         gf64/edu_alibaba_mpc4j_common_tool_galoisfield_gf64_NtlGf64.cpp
         ntl_poly/ntl_zp64.cpp
         ntl_poly/edu_alibaba_mpc4j_common_tool_polynomial_zp64_NtlZp64Poly.cpp
-        ecc_mcl/mcl_ecc.cpp
-        ecc_mcl/edu_alibaba_mpc4j_common_tool_crypto_ecc_mcl_SecP256k1MclNativeEcc.cpp
         ecc_openssl/openssl_bit_iterator.hpp
         ecc_openssl/openssl_window_method.hpp
         ecc_openssl/openssl_ecc.cpp
@@ -275,6 +248,10 @@ add_library(
         ntl_poly/edu_alibaba_mpc4j_common_tool_polynomial_zp_NtlTreeZpPoly.cpp
         ntl_poly/ntl_zp_util.cpp
         ecc_fourq/edu_alibaba_mpc4j_common_tool_crypto_ecc_fourq_FourqByteFullEcc.cpp
+        network/benes_newtork.cpp
+        network/waksman_network.cpp
+        network/edu_alibaba_mpc4j_common_tool_network_benes_NativeBenesNetwork.cpp
+        network/edu_alibaba_mpc4j_common_tool_network_waksman_NativeWaksmanNetwork.cpp
 )
 
 target_include_directories(
@@ -291,6 +268,5 @@ target_link_libraries(
         ${GMP_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}
         ${LIBSODIUM_LIBRARY}
-        ${MCL_LIBRARY}
         ${FOURQ_LIBRARY}
 )

@@ -73,9 +73,9 @@ public abstract class AbstractBopprfScpsiClient<T> extends AbstractScpsiClient<T
     protected AbstractBopprfScpsiClient(PtoDesc ptoDesc, Rpc clientRpc, Party senderParty, BopprfScpsiConfig config) {
         super(ptoDesc, clientRpc, senderParty, config);
         bopprfSender = BopprfFactory.createSender(clientRpc, senderParty, config.getBopprfConfig());
-        addSubPtos(bopprfSender);
+        addSubPto(bopprfSender);
         peqtReceiver = PeqtFactory.createReceiver(clientRpc, senderParty, config.getPeqtConfig());
-        addSubPtos(peqtReceiver);
+        addSubPto(peqtReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }

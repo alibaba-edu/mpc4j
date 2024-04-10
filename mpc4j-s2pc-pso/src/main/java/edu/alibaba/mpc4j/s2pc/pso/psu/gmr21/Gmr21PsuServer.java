@@ -12,10 +12,10 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.benes.BenesNetworkUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
+import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -112,13 +112,13 @@ public class Gmr21PsuServer extends AbstractPsuServer {
     public Gmr21PsuServer(Rpc serverRpc, Party clientParty, Gmr21PsuConfig config) {
         super(Gmr21PsuPtoDesc.getInstance(), serverRpc, clientParty, config);
         cuckooHashOprfReceiver = OprfFactory.createOprfReceiver(serverRpc, clientParty, config.getCuckooHashOprfConfig());
-        addSubPtos(cuckooHashOprfReceiver);
+        addSubPto(cuckooHashOprfReceiver);
         osnReceiver = OsnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
-        addSubPtos(osnReceiver);
+        addSubPto(osnReceiver);
         peqtOprfSender = OprfFactory.createOprfSender(serverRpc, clientParty, config.getPeqtOprfConfig());
-        addSubPtos(peqtOprfSender);
+        addSubPto(peqtOprfSender);
         coreCotSender = CoreCotFactory.createSender(serverRpc, clientParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
         okvsType = config.getOkvsType();
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
@@ -258,7 +258,7 @@ public class Gmr21PsuServer extends AbstractPsuServer {
         // 求并集的时候服务端发给客户端的是交换后的数据顺序
         Vector<Integer> permutedIndexVector = IntStream.range(0, binNum).boxed()
             .collect(Collectors.toCollection(Vector::new));
-        permutedIndexVector = BenesNetworkUtils.permutation(permutationMap, permutedIndexVector);
+        permutedIndexVector = PermutationNetworkUtils.permutation(permutationMap, permutedIndexVector);
         int[] permutedIndexArray = permutedIndexVector.stream().mapToInt(permutedIndex -> permutedIndex).toArray();
         // 加密数据
         CotSenderOutput cotSenderOutput = coreCotSender.send(binNum);
@@ -336,7 +336,7 @@ public class Gmr21PsuServer extends AbstractPsuServer {
 
     private void handleOsnReceiverOutput(OsnPartyOutput osnReceiverOutput) {
         // 交换ts
-        Vector<byte[]> tPiVector = BenesNetworkUtils.permutation(permutationMap, tVector);
+        Vector<byte[]> tPiVector = PermutationNetworkUtils.permutation(permutationMap, tVector);
         tVector = null;
         aPrimeArray = IntStream.range(0, binNum)
             .mapToObj(index -> {

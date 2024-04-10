@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.aby.generic.edabit.zl;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/5/18
  */
 @RunWith(Parameterized.class)
-public class ZlEdaBitGenTest extends AbstractTwoPartyPtoTest {
+public class ZlEdaBitGenTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZlEdaBitGenTest.class);
     /**
      * default num

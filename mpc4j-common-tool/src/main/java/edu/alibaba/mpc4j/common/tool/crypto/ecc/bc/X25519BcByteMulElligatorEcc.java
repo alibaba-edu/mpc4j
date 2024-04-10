@@ -16,7 +16,7 @@ import java.security.SecureRandom;
  */
 public class X25519BcByteMulElligatorEcc implements ByteMulElligatorEcc {
 
-    public X25519BcByteMulElligatorEcc() {
+    private X25519BcByteMulElligatorEcc() {
         // empty
     }
 
@@ -66,5 +66,19 @@ public class X25519BcByteMulElligatorEcc implements ByteMulElligatorEcc {
     @Override
     public int scalarByteLength() {
         return X25519ByteEccUtils.SCALAR_BYTES;
+    }
+
+    /**
+     * singleton mode
+     */
+    private static final X25519BcByteMulElligatorEcc INSTANCE = new X25519BcByteMulElligatorEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static X25519BcByteMulElligatorEcc getInstance() {
+        return INSTANCE;
     }
 }

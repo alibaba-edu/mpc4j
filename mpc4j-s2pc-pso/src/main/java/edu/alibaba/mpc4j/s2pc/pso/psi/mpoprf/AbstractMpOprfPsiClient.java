@@ -51,7 +51,7 @@ public abstract class AbstractMpOprfPsiClient<T> extends AbstractPsiClient<T> {
         super(ptoDesc, clientRpc, serverParty, config);
         securityModel = config.getSecurityModel();
         mpOprfReceiver = OprfFactory.createMpOprfReceiver(clientRpc, serverParty, config.getMpOprfConfig());
-        addSubPtos(mpOprfReceiver);
+        addSubPto(mpOprfReceiver);
     }
 
     @Override

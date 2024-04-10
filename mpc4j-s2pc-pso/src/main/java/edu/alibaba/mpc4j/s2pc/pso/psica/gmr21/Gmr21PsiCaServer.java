@@ -4,13 +4,13 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.benes.BenesNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
+import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
@@ -105,11 +105,11 @@ public class Gmr21PsiCaServer<T> extends AbstractPsiCaServer<T> {
     public Gmr21PsiCaServer(Rpc serverRpc, Party clientParty, Gmr21PsiCaConfig config) {
         super(Gmr21PsiCaPtoDesc.getInstance(), serverRpc, clientParty, config);
         cuckooHashOprfReceiver = OprfFactory.createOprfReceiver(serverRpc, clientParty, config.getCuckooHashOprfConfig());
-        addSubPtos(cuckooHashOprfReceiver);
+        addSubPto(cuckooHashOprfReceiver);
         osnReceiver = OsnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
-        addSubPtos(osnReceiver);
+        addSubPto(osnReceiver);
         peqtOprfSender = OprfFactory.createOprfSender(serverRpc, clientParty, config.getPeqtOprfConfig());
-        addSubPtos(peqtOprfSender);
+        addSubPto(peqtOprfSender);
         okvsType = config.getOkvsType();
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
@@ -302,7 +302,7 @@ public class Gmr21PsiCaServer<T> extends AbstractPsiCaServer<T> {
 
     private void handleOsnReceiverOutput(OsnPartyOutput osnReceiverOutput) {
         // 交换ts
-        Vector<byte[]> tPiVector = BenesNetworkUtils.permutation(permutationMap, tVector);
+        Vector<byte[]> tPiVector = PermutationNetworkUtils.permutation(permutationMap, tVector);
         tVector = null;
         aPrimeArray = IntStream.range(0, binNum)
             .mapToObj(index -> {

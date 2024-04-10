@@ -104,7 +104,35 @@ public interface BigIntegerRing {
      * @param binaryVector  the binary vector.
      * @return the inner product.
      */
-    BigInteger innerProduct(final BigInteger[] elementVector, final boolean[] binaryVector);
+    default BigInteger innerProduct(final BigInteger[] elementVector, final boolean[] binaryVector) {
+        assert elementVector.length == binaryVector.length
+            : "element vector length must be equal to binary vector length = "
+            + binaryVector.length + ": " + binaryVector.length;
+        BigInteger value = BigInteger.ZERO;
+        for (int i = 0; i < elementVector.length; i++) {
+            validateElement(elementVector[i]);
+            if (binaryVector[i]) {
+                value = add(value, elementVector[i]);
+            }
+        }
+        return value;
+    }
+
+    /**
+     * Computes the inner-product of zp vector and positions.
+     *
+     * @param elementVector the element vector.
+     * @param positions  positions.
+     * @return the inner product.
+     */
+    default BigInteger innerProduct(final BigInteger[] elementVector, final int[] positions) {
+        BigInteger value = BigInteger.ZERO;
+        for (int position : positions) {
+            validateElement(elementVector[position]);
+            value = add(value, elementVector[position]);
+        }
+        return value;
+    }
 
     /**
      * Creates a zero element.

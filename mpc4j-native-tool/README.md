@@ -8,7 +8,6 @@
 
 - [GMP](https://gmplib.org/): An efficient library for operations with arbitrary precision integers, rationals, and floating-point numbers.
 - [NTL](https://libntl.org/): A high-performance, portable C++ library providing data structures and algorithms for manipulating signed, arbitrary length integers and for vectors, matrices, and polynomials over the integers and finite fields, developed by [Victor Shoup](https://shoup.net/).
-- [MCL](https://github.com/herumi/mcl): A portable and fast pairing-based cryptography library. MCL also includes fast Elliptic Curve implementations. 
 - [libsodium](https://doc.libsodium.org/): A modern, easy-to-use software library for encryption, decryption, signatures, password hashing, and more. libsodium includes efficient X25519 and Ed25519 implementations. 
 - [FourQlib](https://github.com/microsoft/FourQlib): An library that implements essential elliptic curve and cryptographic functions based on FourQ, a high-security, high-performance elliptic curve that targets the 128-bit security level. The original FourQlib does not support macOS. We update some codes in FourQlib so that now it supports macOS. See `README.md` in `mpc4j-native-fourq` on how to compile and install FourQlib. 
 
@@ -29,9 +28,8 @@ We do not provide a "one-time" script to automatically install all dependencies 
 
 - [GMP](https://gmplib.org/): Tested on 6.2.0 / 6.2.1, depending on whether you meet problems like `GMP version check (6.2.0/6.2.1)` when installing NTL.
 - [NTL](https://libntl.org): Tested on 11.5.1. You can further introduce [GF2X](https://gitlab.inria.fr/gf2x/gf2x) for more efficient operations in a Galois Field. Since the installation procedure for [GF2X](https://gitlab.inria.fr/gf2x/gf2x) is rather complicated, we use NTL by default.
-- [MCL](https://github.com/herumi/mcl): Tested on 1.6.1. Feel free to contact us if you meet problems when using a higher version.
 - [libsodium](https://doc.libsodium.org/): Tested on 1.0.18. Feel free to contact us if you meet problems when using a higher version.
-- JDK: You must install Java Development Tool (JDK) instead of Java Runtime Environment (JRE). We recommend installing JDK from [oracle.com](https://www.oracle.com/java/technologies/downloads/). Then, you need to config the environment variable `JAVA_HOME`. When executing `echo $JAVA_HOME`, the installing path should be displayed.
+- JDK: JDK 17 (or later) is needed for development. You must install Java Development Tool (JDK) instead of Java Runtime Environment (JRE). We recommend installing JDK from [oracle.com](https://www.oracle.com/java/technologies/downloads/). Then, you need to config the environment variable `JAVA_HOME`. When executing `echo $JAVA_HOME`, the installing path should be displayed.
 
 ### Compile `mpc4j-native-tool`
 
@@ -55,7 +53,7 @@ cmake ..
 make
 ```
 
-If you install GMP, NTL, libsodium, and MCL on other paths, you can execute `cmake` by specifying the dependency paths like `LIBNAME_ROOT_DIR`. For example, if you install GMP on `YOUR_GMP_PATH`, run `cmake` like the following:
+If you install GMP, NTL, and libsodium on other paths, you can execute `cmake` by specifying the dependency paths like `LIBNAME_ROOT_DIR`. For example, if you install GMP on `YOUR_GMP_PATH`, run `cmake` like the following:
 
 ```shell
 cmake .. -DGMP_ROOT_DIR=YOUR_GMP_PATH

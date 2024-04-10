@@ -73,10 +73,10 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
     public Ywl20MaBspCotSender(Rpc senderRpc, Party receiverParty, Ywl20MaBspCotConfig config) {
         super(Ywl20MaBspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
         bpDpprfConfig = config.getBpDpprfConfig();
         bpDpprfSender = BpDpprfFactory.createSender(senderRpc, receiverParty, bpDpprfConfig);
-        addSubPtos(bpDpprfSender);
+        addSubPto(bpDpprfSender);
         gf2k = Gf2kFactory.createInstance(envType);
         hash = HashFactory.createInstance(envType, 2 * CommonConstants.BLOCK_BYTE_LENGTH);
     }

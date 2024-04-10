@@ -28,28 +28,15 @@ public class ZlVector implements RingVector {
      */
     public static ZlVector merge(ZlVector[] vectors) {
         MathPreconditions.checkPositive("vectors.length", vectors.length);
-        ZlVector mergeVector = ZlVector.createEmpty(vectors[0].getZl());
-        for (ZlVector vector : vectors) {
-            MathPreconditions.checkPositive("vector.num", vector.getNum());
-            mergeVector.merge(vector);
+        int len = Arrays.stream(vectors).mapToInt(ZlVector::getNum).sum();
+        BigInteger[] mergeElements = new BigInteger[len];
+        for (int i = 0, pos = 0; i < vectors.length; i++) {
+            Preconditions.checkArgument(vectors[i].zl.equals(vectors[0].getZl()));
+            MathPreconditions.checkPositive("vector.num", vectors[i].getNum());
+            System.arraycopy(vectors[i].elements, 0, mergeElements, pos, vectors[i].elements.length);
+            pos += vectors[i].elements.length;
         }
-        return mergeVector;
-    }
-
-    /**
-     * splits the vector.
-     *
-     * @param mergeVector the merged vector.
-     * @param nums        nums for each of the split vector.
-     * @return the split vectors.
-     */
-    public static ZlVector[] split(ZlVector mergeVector, int[] nums) {
-        ZlVector[] vectors = new ZlVector[nums.length];
-        for (int index = 0; index < nums.length; index++) {
-            vectors[index] = mergeVector.split(nums[index]);
-        }
-        MathPreconditions.checkEqual("final mergeVector.num", "0", mergeVector.getNum(), 0);
-        return vectors;
+        return ZlVector.create(vectors[0].getZl(), mergeElements);
     }
 
     /**
@@ -210,8 +197,7 @@ public class ZlVector implements RingVector {
         ZlVector that = (ZlVector) other;
         checkInputs(that);
         int num = getNum();
-        IntStream indexIntStream = IntStream.range(0, num);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
+        IntStream indexIntStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
         BigInteger[] results = indexIntStream
             .mapToObj(index -> zl.add(this.elements[index], that.elements[index]))
             .toArray(BigInteger[]::new);
@@ -223,16 +209,14 @@ public class ZlVector implements RingVector {
         ZlVector that = (ZlVector) other;
         checkInputs(that);
         int num = getNum();
-        IntStream indexIntStream = IntStream.range(0, num);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
+        IntStream indexIntStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
         indexIntStream.forEach(index -> this.elements[index] = zl.add(this.elements[index], that.elements[index]));
     }
 
     @Override
     public ZlVector neg() {
         int num = getNum();
-        IntStream indexIntStream = IntStream.range(0, num);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
+        IntStream indexIntStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
         BigInteger[] results = indexIntStream
             .mapToObj(index -> zl.neg(elements[index]))
             .toArray(BigInteger[]::new);
@@ -242,8 +226,7 @@ public class ZlVector implements RingVector {
     @Override
     public void negi() {
         int num = getNum();
-        IntStream indexIntStream = IntStream.range(0, num);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
+        IntStream indexIntStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
         indexIntStream.forEach(index -> elements[index] = zl.neg(elements[index]));
     }
 
@@ -252,8 +235,7 @@ public class ZlVector implements RingVector {
         ZlVector that = (ZlVector) other;
         checkInputs(that);
         int num = getNum();
-        IntStream indexIntStream = IntStream.range(0, num);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
+        IntStream indexIntStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
         BigInteger[] results = indexIntStream
             .mapToObj(index -> zl.sub(this.elements[index], that.elements[index]))
             .toArray(BigInteger[]::new);
@@ -265,8 +247,7 @@ public class ZlVector implements RingVector {
         ZlVector that = (ZlVector) other;
         checkInputs(that);
         int num = getNum();
-        IntStream indexIntStream = IntStream.range(0, num);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
+        IntStream indexIntStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
         indexIntStream.forEach(index -> this.elements[index] = zl.sub(this.elements[index], that.elements[index]));
     }
 
@@ -275,8 +256,7 @@ public class ZlVector implements RingVector {
         ZlVector that = (ZlVector) other;
         checkInputs(that);
         int num = getNum();
-        IntStream indexIntStream = IntStream.range(0, num);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
+        IntStream indexIntStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
         BigInteger[] results = indexIntStream
             .mapToObj(index -> zl.mul(this.elements[index], that.elements[index]))
             .toArray(BigInteger[]::new);
@@ -288,14 +268,31 @@ public class ZlVector implements RingVector {
         ZlVector that = (ZlVector) other;
         checkInputs(that);
         int num = getNum();
-        IntStream indexIntStream = IntStream.range(0, num);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
+        IntStream indexIntStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
         indexIntStream.forEach(index -> this.elements[index] = zl.mul(this.elements[index], that.elements[index]));
     }
 
     private void checkInputs(ZlVector that) {
         Preconditions.checkArgument(this.zl.equals(that.zl));
         MathPreconditions.checkEqual("this.num", "that.num", this.getNum(), that.getNum());
+    }
+
+    /**
+     * splits the vector.
+     *
+     * @param nums        nums for each of the split vector.
+     * @return the split vectors.
+     */
+    public ZlVector[] split(int[] nums) {
+        int num = this.getNum();
+        MathPreconditions.checkEqual("sum(nums)", "mergeVector.getNum()", Arrays.stream(nums).sum(), num);
+        BigInteger[][] spRes = new BigInteger[nums.length][];
+        for (int i = 0, startPos = 0; i < nums.length; i++) {
+            spRes[i] = Arrays.copyOfRange(this.elements, startPos, startPos + nums[i]);
+            startPos += nums[i];
+        }
+        this.elements = new BigInteger[0];
+        return Arrays.stream(spRes).map(x -> ZlVector.create(this.getZl(), x)).toArray(ZlVector[]::new);
     }
 
     /**

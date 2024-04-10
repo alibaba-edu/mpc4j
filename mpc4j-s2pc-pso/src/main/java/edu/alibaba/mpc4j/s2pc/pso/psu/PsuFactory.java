@@ -9,7 +9,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuServer;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.*;
 import edu.alibaba.mpc4j.s2pc.pso.psu.krtw19.*;
-import edu.alibaba.mpc4j.s2pc.pso.psu.zcl22.*;
+import edu.alibaba.mpc4j.s2pc.pso.psu.zcl23.*;
 
 /**
  * PSU factory.
@@ -46,13 +46,13 @@ public class PsuFactory implements PtoFactory {
          */
         JSZ22_SFS,
         /**
-         * ZCL22_PKE方案
+         * ZCL23_PKE方案
          */
-        ZCL22_PKE,
+        ZCL23_PKE,
         /**
-         * ZCL22_SKE方案
+         * ZCL23_SKE方案
          */
-        ZCL22_SKE,
+        ZCL23_SKE,
     }
 
     /**
@@ -70,10 +70,10 @@ public class PsuFactory implements PtoFactory {
                 return new Krtw19PsuServer(serverRpc, clientParty, (Krtw19PsuConfig) config);
             case GMR21:
                 return new Gmr21PsuServer(serverRpc, clientParty, (Gmr21PsuConfig) config);
-            case ZCL22_SKE:
-                return new Zcl22SkePsuServer(serverRpc, clientParty, (Zcl22SkePsuConfig) config);
-            case ZCL22_PKE:
-                return new Zcl22PkePsuServer(serverRpc, clientParty, (Zcl22PkePsuConfig) config);
+            case ZCL23_SKE:
+                return new Zcl23SkePsuServer(serverRpc, clientParty, (Zcl23SkePsuConfig) config);
+            case ZCL23_PKE:
+                return new Zcl23PkePsuServer(serverRpc, clientParty, (Zcl23PkePsuConfig) config);
             case JSZ22_SFC:
                 return new Jsz22SfcPsuServer(serverRpc, clientParty, (Jsz22SfcPsuConfig) config);
             case JSZ22_SFS:
@@ -98,10 +98,10 @@ public class PsuFactory implements PtoFactory {
                 return new Krtw19PsuClient(clientRpc, serverParty, (Krtw19PsuConfig) config);
             case GMR21:
                 return new Gmr21PsuClient(clientRpc, serverParty, (Gmr21PsuConfig) config);
-            case ZCL22_SKE:
-                return new Zcl22SkePsuClient(clientRpc, serverParty, (Zcl22SkePsuConfig) config);
-            case ZCL22_PKE:
-                return new Zcl22PkePsuClient(clientRpc, serverParty, (Zcl22PkePsuConfig) config);
+            case ZCL23_SKE:
+                return new Zcl23SkePsuClient(clientRpc, serverParty, (Zcl23SkePsuConfig) config);
+            case ZCL23_PKE:
+                return new Zcl23PkePsuClient(clientRpc, serverParty, (Zcl23PkePsuConfig) config);
             case JSZ22_SFC:
                 return new Jsz22SfcPsuClient(clientRpc, serverParty, (Jsz22SfcPsuConfig) config);
             case JSZ22_SFS:

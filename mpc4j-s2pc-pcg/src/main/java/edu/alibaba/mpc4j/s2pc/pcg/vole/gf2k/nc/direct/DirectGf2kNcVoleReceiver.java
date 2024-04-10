@@ -26,7 +26,7 @@ public class DirectGf2kNcVoleReceiver extends AbstractGf2kNcVoleReceiver {
     public DirectGf2kNcVoleReceiver(Rpc receiverRpc, Party senderParty, DirectGf2kNcVoleConfig config) {
         super(DirectGf2kNcVolePtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreVoleReceiver = Gf2kCoreVoleFactory.createReceiver(receiverRpc, senderParty, config.getCoreVoleConfig());
-        addSubPtos(coreVoleReceiver);
+        addSubPto(coreVoleReceiver);
     }
 
     @Override

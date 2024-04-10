@@ -56,7 +56,7 @@ public abstract class AbstractMpOprfPsiServer<T> extends AbstractPsiServer<T> {
         super(ptoDesc, serverRpc, clientParty, config);
         securityModel = config.getSecurityModel();
         mpOprfSender = OprfFactory.createMpOprfSender(serverRpc, clientParty, config.getMpOprfConfig());
-        addSubPtos(mpOprfSender);
+        addSubPto(mpOprfSender);
         filterType = config.getFilterType();
     }
 

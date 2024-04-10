@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.payablepsi;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pso.payablepsi.zlp23.Zlp23PayablePsiConfig;
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/9/15
  */
 @RunWith(Parameterized.class)
-public class PayablePsiTest extends AbstractTwoPartyPtoTest {
+public class PayablePsiTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(PayablePsiTest.class);
     /**
      * default size

@@ -52,12 +52,13 @@ public class Alpr21KwPirClient extends AbstractKwPirClient {
     public Alpr21KwPirClient(Rpc clientRpc, Party serverParty, Alpr21KwPirConfig config) {
         super(Alpr21KwPirPtoDesc.getInstance(), clientRpc, serverParty, config);
         indexPirClient = BatchIndexPirFactory.createClient(clientRpc, serverParty, config.getBatchIndexPirConfig());
-        addSubPtos(indexPirClient);
+        addSubPto(indexPirClient);
         cuckooHashBinType = config.getCuckooHashBinType();
     }
 
     @Override
-    public void init(KwPirParams kwPirParams, int serverElementSize, int maxRetrievalSize, int labelByteLength) throws MpcAbortException {
+    public void init(KwPirParams kwPirParams, int serverElementSize, int maxRetrievalSize, int labelByteLength)
+        throws MpcAbortException {
         setInitInput(maxRetrievalSize, serverElementSize, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
         assert (kwPirParams instanceof Alpr21KwPirParams);
@@ -126,7 +127,7 @@ public class Alpr21KwPirClient extends AbstractKwPirClient {
     }
 
     @Override
-    public Map<ByteBuffer, ByteBuffer> pir(Set<ByteBuffer> retrievalKeySet) throws MpcAbortException {
+    public Map<ByteBuffer, byte[]> pir(Set<ByteBuffer> retrievalKeySet) throws MpcAbortException {
         setPtoInput(retrievalKeySet);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
@@ -134,7 +135,7 @@ public class Alpr21KwPirClient extends AbstractKwPirClient {
         List<ByteBuffer> prfOutput = computePrf();
         List<Integer> indexList = computeIndex(prfOutput);
         Map<Integer, byte[]> retrievalMap = indexPirClient.pir(indexList);
-        Map<ByteBuffer, ByteBuffer> pirResult = handleResponse(retrievalMap, prfOutput);
+        Map<ByteBuffer, byte[]> pirResult = handleResponse(retrievalMap, prfOutput);
         stopWatch.stop();
         long oprfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -151,8 +152,8 @@ public class Alpr21KwPirClient extends AbstractKwPirClient {
      * @param keyPrf       key prf.
      * @return retrieval result map.
      */
-    private Map<ByteBuffer, ByteBuffer> handleResponse(Map<Integer, byte[]> retrievalMap, List<ByteBuffer> keyPrf) {
-        Map<ByteBuffer, ByteBuffer> result = new HashMap<>(retrievalKeySize);
+    private Map<ByteBuffer, byte[]> handleResponse(Map<Integer, byte[]> retrievalMap, List<ByteBuffer> keyPrf) {
+        Map<ByteBuffer, byte[]> result = new HashMap<>(retrievalKeySize);
         retrievalMap.forEach((index, item) -> {
             try {
                 MpcAbortPreconditions.checkArgument(item.length == params.truncationByteLength + valueByteLength);
@@ -165,7 +166,7 @@ public class Alpr21KwPirClient extends AbstractKwPirClient {
                 if (ByteBuffer.wrap(retrievalKeyBytes).equals(ByteBuffer.wrap(localKeyBytes))) {
                     result.put(
                         retrievalKeyList.get(i),
-                        ByteBuffer.wrap(BytesUtils.clone(item, params.truncationByteLength, valueByteLength))
+                        BytesUtils.clone(item, params.truncationByteLength, valueByteLength)
                     );
                 }
             });

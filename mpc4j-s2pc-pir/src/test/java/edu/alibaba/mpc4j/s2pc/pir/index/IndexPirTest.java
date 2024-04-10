@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pir.index;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.index.single.SingleIndexPirConfig;
@@ -32,7 +32,7 @@ import java.util.Collection;
  * @date 2022/8/26
  */
 @RunWith(Parameterized.class)
-public class IndexPirTest extends AbstractTwoPartyPtoTest {
+public class IndexPirTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * default element bit length
      */

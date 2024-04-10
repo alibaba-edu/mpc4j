@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.opf.psm.pesm;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.opf.psm.pesm.PesmFactory.PesmType;
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/7/22
  */
 @RunWith(Parameterized.class)
-public class PesmTest extends AbstractTwoPartyPtoTest {
+public class PesmTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(PesmTest.class);
     /**
      * default num

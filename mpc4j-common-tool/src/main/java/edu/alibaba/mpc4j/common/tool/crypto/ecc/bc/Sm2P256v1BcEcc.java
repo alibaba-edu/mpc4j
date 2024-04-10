@@ -14,18 +14,32 @@ import org.bouncycastle.math.ec.ECPoint;
  */
 public class Sm2P256v1BcEcc extends AbstractEcc {
     /**
-     * 哈希到椭圆曲线所用的哈希函数
+     * hash used in hash_to_curve
      */
     private final Hash hash;
 
-    public Sm2P256v1BcEcc() {
+    private Sm2P256v1BcEcc() {
         super(EccFactory.EccType.SM2_P256_V1_BC, "sm2p256v1");
-        // 初始化哈希函数，国产椭圆曲线，使用SM3
+        // initialize the hash function with SM3, same as in OpenSSL
         hash = HashFactory.createInstance(HashFactory.HashType.BC_SM3, 32);
     }
 
     @Override
     public ECPoint hashToCurve(byte[] data) {
         return hashToCurve(data, hash);
+    }
+
+    /**
+     * singleton mode
+     */
+    private static final Sm2P256v1BcEcc INSTANCE = new Sm2P256v1BcEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static Sm2P256v1BcEcc getInstance() {
+        return INSTANCE;
     }
 }

@@ -1,11 +1,12 @@
 package edu.alibaba.mpc4j.s2pc.pir;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
-import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,54 +40,6 @@ public class PirUtils {
      */
     private PirUtils() {
         // empty
-    }
-
-    /**
-     * generate random string sets.
-     *
-     * @param serverSetSize server set size.
-     * @param clientSetSize client set size.
-     * @param repeatTime    repeat time.
-     * @return string sets.
-     */
-    public static List<Set<String>> generateStringSets(int serverSetSize, int clientSetSize, int repeatTime) {
-        assert serverSetSize >= 1 : "server must have at least 1 elements";
-        assert clientSetSize >= 1 : "client must have at least 1 elements";
-        assert repeatTime >= 1 : "repeat time must be greater than or equal to 1: " + repeatTime;
-        // create server set
-        Set<String> serverSet = IntStream.range(0, serverSetSize)
-            .mapToObj(index -> "ID_" + index)
-            .collect(Collectors.toSet());
-        List<String> serverList = new ArrayList<>(serverSet);
-        // create client set
-        List<Set<String>> clientSets = IntStream.range(0, repeatTime)
-            .mapToObj(repeatIndex -> {
-                if (clientSetSize > 1) {
-                    int matchedItemSize = clientSetSize / 2;
-                    Set<String> clientSet = new HashSet<>(clientSetSize);
-                    for (int index = 0; index < matchedItemSize; index++) {
-                        clientSet.add(serverList.get(index));
-                    }
-                    for (int index = matchedItemSize; index < clientSetSize; index++) {
-                        clientSet.add("ID_" + index + "_DISTINCT");
-                    }
-                    return clientSet;
-                } else {
-                    Set<String> clientSet = new HashSet<>(clientSetSize);
-                    int index = SECURE_RANDOM.nextInt(serverSetSize);
-                    if (SECURE_RANDOM.nextBoolean()) {
-                        clientSet.add(serverList.get(index));
-                    } else {
-                        clientSet.add("ID_" + index + "_DISTINCT");
-                    }
-                    return clientSet;
-                }
-            })
-            .collect(Collectors.toCollection(ArrayList::new));
-        List<Set<String>> results = new ArrayList<>(2);
-        results.add(serverSet);
-        results.addAll(clientSets);
-        return results;
     }
 
     /**
@@ -144,26 +97,7 @@ public class PirUtils {
      * @param labelByteLength label byte length.
      * @return keyword label map.
      */
-    public static Map<String, ByteBuffer> generateKeywordLabelMap(Set<String> keywordSet, int labelByteLength) {
-        return keywordSet.stream()
-            .collect(Collectors.toMap(
-                keyword -> keyword,
-                keyword -> {
-                    byte[] label = new byte[labelByteLength];
-                    SECURE_RANDOM.nextBytes(label);
-                    return ByteBuffer.wrap(label);
-                }
-            ));
-    }
-
-    /**
-     * generate keyword label map.
-     *
-     * @param keywordSet      keyword set.
-     * @param labelByteLength label byte length.
-     * @return keyword label map.
-     */
-    public static Map<ByteBuffer, ByteBuffer> generateKeywordByteBufferLabelMap(Set<ByteBuffer> keywordSet,
+    public static Map<ByteBuffer, byte[]> generateKeywordByteBufferLabelMap(Set<ByteBuffer> keywordSet,
                                                                                 int labelByteLength) {
         return keywordSet.stream()
             .collect(Collectors.toMap(
@@ -171,7 +105,7 @@ public class PirUtils {
                 keyword -> {
                     byte[] label = new byte[labelByteLength];
                     SECURE_RANDOM.nextBytes(label);
-                    return ByteBuffer.wrap(label);
+                    return label;
                 }
             ));
     }
@@ -243,8 +177,7 @@ public class PirUtils {
      * @param elementBitLength element bit length.
      * @throws IOException create files failed.
      */
-    public static void generateBytesInputFiles(int setSize, int elementBitLength)
-        throws IOException {
+    public static void generateBytesInputFiles(int setSize, int elementBitLength) throws IOException {
         MathPreconditions.checkPositive("elementBitLength", elementBitLength);
         File serverInputFile = new File(getServerFileName(BYTES_SERVER_PREFIX, setSize, elementBitLength));
         if (serverInputFile.exists()) {
@@ -483,34 +416,6 @@ public class PirUtils {
     }
 
     /**
-     * rotate vector column.
-     *
-     * @param coeffs coeff vector.
-     * @return rotated coeff vector.
-     */
-    public static long[] rotateVectorCol(long[] coeffs, int rotationAmount) {
-        int rowSize = coeffs.length / 2;
-        long[] result = new long[coeffs.length];
-        rotationAmount = rotationAmount % rowSize;
-        for (int i = 0; i < rowSize; i++) {
-            result[(i + rotationAmount) % rowSize] = coeffs[i];
-            result[(i + rotationAmount) % rowSize + rowSize] = coeffs[i + rowSize];
-        }
-        return result;
-    }
-
-    /**
-     * plaintexts rotate.
-     *
-     * @param coeffs coefficients.
-     * @param offset offset.
-     * @return rotated plaintexts.
-     */
-    public static long[][] plaintextRotate(long[][] coeffs, int offset) {
-        return Arrays.stream(coeffs).map(coeff -> plaintextRotate(coeff, offset)).toArray(long[][]::new);
-    }
-
-    /**
      * plaintext rotate.
      *
      * @param coeffs coefficients.
@@ -602,25 +507,24 @@ public class PirUtils {
     }
 
     /**
-     * Find smallest l, m such that l*m >= N * d and d divides l, where d is
-     * the number of Z_p elements per DB entry determined by bit-length and p, and m >= lower_bound_m.
+     * compute powers.
      *
-     * @param num         database size.
-     * @param d           Z_p element num.
-     * @param mLowerBound lower bound of m.
-     * @return l and m.
+     * @param zp64      zp64.
+     * @param base      base.
+     * @param exponents exponents.
+     * @return powers.
      */
-    public static int[] approxSquareDatabaseDims(int num, int d, int mLowerBound) {
-        int[] dims = approxSquareDatabaseDims(num, d);
-        if (dims[1] >= mLowerBound) {
-            return dims;
+    public static long[][] computePowers(Zp64 zp64, long[] base, int[] exponents) {
+        long[][] result = new long[exponents.length][];
+        assert exponents[0] == 1;
+        result[0] = base;
+        for (int i = 1; i < exponents.length; i++) {
+            long[] temp = new long[base.length];
+            for (int j = 0; j < base.length; j++) {
+                temp[j] = zp64.pow(base[j], exponents[i]);
+            }
+            result[i] = temp;
         }
-        dims[1] = mLowerBound;
-        dims[0] = CommonUtils.getUnitNum(d * num, dims[1]);
-        int rem = dims[0] % d;
-        if (rem != 0) {
-            dims[0] += d - rem;
-        }
-        return dims;
+        return result;
     }
 }

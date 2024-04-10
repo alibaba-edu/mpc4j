@@ -15,18 +15,32 @@ import org.bouncycastle.math.ec.ECPoint;
  */
 public class SecP256k1BcEcc extends AbstractEcc {
     /**
-     * 哈希到椭圆曲线所用的哈希函数
+     * hash used in hash_to_curve
      */
     private final Hash hash;
 
-    public SecP256k1BcEcc() {
+    private SecP256k1BcEcc() {
         super(EccFactory.EccType.SEC_P256_K1_BC, "secp256k1");
-        // 初始化哈希函数，为与MCL兼容，必须使用SHA256
+        // initialize the hash function with SHA256, same as in MCL
         hash = HashFactory.createInstance(HashType.JDK_SHA256, 32);
     }
 
     @Override
     public ECPoint hashToCurve(byte[] data) {
         return hashToCurve(data, hash);
+    }
+
+    /**
+     * singleton mode
+     */
+    private static final SecP256k1BcEcc INSTANCE = new SecP256k1BcEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static SecP256k1BcEcc getInstance() {
+        return INSTANCE;
     }
 }

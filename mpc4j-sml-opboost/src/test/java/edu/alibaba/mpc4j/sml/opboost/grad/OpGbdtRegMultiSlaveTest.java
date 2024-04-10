@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.sml.opboost.grad;
 
 import edu.alibaba.mpc4j.common.data.DataFrameUtils;
 import edu.alibaba.mpc4j.common.data.DatasetManager;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractThreePartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractThreePartyMemoryRpcPto;
 import edu.alibaba.mpc4j.dp.ldp.LdpConfig;
 import edu.alibaba.mpc4j.sml.opboost.OpBoostSlave;
 import edu.alibaba.mpc4j.sml.opboost.OpBoostSlaveConfig;
@@ -35,7 +35,7 @@ import java.util.stream.IntStream;
  * @date 2022/4/29
  */
 @RunWith(Parameterized.class)
-public class OpGbdtRegMultiSlaveTest extends AbstractThreePartyPtoTest {
+public class OpGbdtRegMultiSlaveTest extends AbstractThreePartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpGbdtRegMultiSlaveTest.class);
 
     static {

@@ -48,9 +48,9 @@ public class Ywl20SpDpprfReceiver extends AbstractSpDpprfReceiver {
     public Ywl20SpDpprfReceiver(Rpc receiverRpc, Party senderParty, Ywl20SpDpprfConfig config) {
         super(Ywl20SpDpprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(receiverRpc, senderParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
         preCotReceiver = PreCotFactory.createReceiver(receiverRpc, senderParty, config.getPreCotConfig());
-        addSubPtos(preCotReceiver);
+        addSubPto(preCotReceiver);
     }
 
     @Override

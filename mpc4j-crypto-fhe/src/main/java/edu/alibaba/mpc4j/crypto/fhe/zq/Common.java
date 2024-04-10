@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.crypto.fhe.zq;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
+import java.util.stream.IntStream;
 
 /**
  * Some common arithmetic computation.
@@ -52,9 +53,10 @@ public class Common {
      * @return a byte array.
      */
     public static byte[] uint64ArrayToByteArray(long[] uint64Array, int uint64Count) {
-        // See https://stackoverflow.com/questions/61844613/java-native-method-to-convert-long-array-to-byte-array for the solution.
+        // See https://stackoverflow.com/questions/61844613/java-native-method-to-convert-long-array-to-byte-array
+        // However, further tests show that the following method is faster
         ByteBuffer byteBuffer = ByteBuffer.allocate(uint64Count * Common.BYTES_PER_UINT64);
-        byteBuffer.asLongBuffer().put(uint64Array, 0, uint64Count);
+        IntStream.range(0, uint64Count).forEach(index -> byteBuffer.putLong(uint64Array[index]));
         return byteBuffer.array();
     }
 

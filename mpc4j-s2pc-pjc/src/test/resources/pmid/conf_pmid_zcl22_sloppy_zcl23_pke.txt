@@ -1,0 +1,19 @@
+# 协议类型
+pto_type = PMID
+
+# 对数集合大小（log(n)）
+# 两方都为集合
+non_side_log_set_size = 12,10
+# 一方为集合，一方为多集合
+one_side_log_set_size = 12,10
+# 两方都为多集合
+two_side_log_set_size = 12,10
+
+# max(u)
+max_u = 2
+
+# 协议名称
+pmid_pto_name = ZCL22_SLOPPY
+
+# PSU类型
+psu_pto_name = ZCL23_PKE

@@ -94,16 +94,16 @@ public class ZpBandLinearSolver {
      * only allow
      * <p> m (number of columns) >= n (number of rows) </p>
      *
-     * @param ss  starting positions of lhs.
-     * @param w   the band width.
-     * @param lhs the lhs of the system.
-     * @param rhs the rhs of the system.
+     * @param ss       starting positions of lhs.
+     * @param w        the band width.
+     * @param lhs      the lhs of the system.
+     * @param rhs      the rhs of the system.
+     * @param nColumns the number of columns.
      * @return the information for row Echelon form.
      */
-    private RowEchelonFormInfo rowEchelonForm(int w, int[] ss, BigInteger[][] lhs, BigInteger[] rhs) {
+    private RowEchelonFormInfo rowEchelonForm(int w, int[] ss, BigInteger[][] lhs, BigInteger[] rhs, int nColumns) {
         // verification is done in the input phase
         int nRows = ss.length;
-        int nColumns = lhs[0].length;
         TIntSet maxLisColumns = new TIntHashSet(nRows);
         // sort the rows of the system (A, b) by s[i]
         sort(ss, lhs, rhs);
@@ -115,16 +115,21 @@ public class ZpBandLinearSolver {
             int row = iColumn - nZeroColumns;
             int max = row;
             // if the current pivot is 0, then search for leftmost 1 in row i.
-            if (zp.isZero(lhs[row][iColumn])) {
+            if (zp.isZero(getValue(w, ss[row], lhs[row], iColumn))) {
                 // There can be many candidate rows. Since s_i is ordered, once we find an invalid row, we can break.
                 for (int iRow = row + 1; iRow < nRows && iColumn >= ss[iRow] && iColumn < ss[iRow] + w; ++iRow) {
-                    if (!zp.isZero(lhs[iRow][iColumn])) {
+                    if (!zp.isZero(getValue(w, ss[iRow], lhs[iRow], iColumn))) {
                         max = iRow;
                         break;
                     }
                 }
                 // We swap rows in the implementation. We change the starting position to ensure ss is correct.
                 if (ss[row] < ss[max]) {
+                    BigInteger[] temp = new BigInteger[lhs[row].length];
+                    for (int i = 0; i < lhs[row].length - (ss[max] - ss[row]); i++) {
+                        temp[i] = lhs[row][ss[max] - ss[row]];
+                    }
+                    lhs[row] = Arrays.copyOf(temp, lhs[row].length);
                     ss[row] = ss[max];
                 }
                 ArraysUtil.swap(ss, row, max);
@@ -132,7 +137,7 @@ public class ZpBandLinearSolver {
                 ArraysUtil.swap(rhs, row, max);
             }
             // if we cannot find one, it means this column is free, nothing to do on this column
-            if (zp.isZero(lhs[row][iColumn])) {
+            if (zp.isZero(getValue(w, ss[row], lhs[row], iColumn))) {
                 ++nZeroColumns;
                 to = Math.min(nRows + nZeroColumns, nColumns);
                 continue;
@@ -141,11 +146,14 @@ public class ZpBandLinearSolver {
             maxLisColumns.add(iColumn);
             // forward Gaussian elimination, since s_i is ordered, once we find an invalid row, we can break.
             for (int iRow = row + 1; iRow < nRows && iColumn >= ss[iRow] && iColumn < ss[iRow] + w; ++iRow) {
-                BigInteger alpha = zp.div(lhs[iRow][iColumn], lhs[row][iColumn]);
+                BigInteger alpha = zp.div(getValue(w, ss[iRow], lhs[iRow], iColumn), getValue(w, ss[row], lhs[row], iColumn));
                 rhs[iRow] = zp.sub(rhs[iRow], zp.mul(rhs[row], alpha));
                 if (!zp.isZero(alpha)) {
                     for (int iCol = iColumn; iCol >= ss[iRow] && iCol < ss[iRow] + w; ++iCol) {
-                        lhs[iRow][iCol] = zp.sub(lhs[iRow][iCol], zp.mul(alpha, lhs[row][iCol]));
+                        BigInteger temp = zp.sub(
+                            getValue(w, ss[iRow], lhs[iRow], iCol), zp.mul(alpha, getValue(w, ss[row], lhs[row], iCol))
+                        );
+                        lhs[iRow][iCol - ss[iRow]] = temp;
                     }
                 }
             }
@@ -220,22 +228,12 @@ public class ZpBandLinearSolver {
         Arrays.stream(lhBands).forEach(row -> MathPreconditions.checkEqual("row.length", "w", row.length, w));
         // 0 <= s_i <= m - w
         Arrays.stream(ss).forEach(si -> MathPreconditions.checkNonNegativeInRangeClosed("s[i]", si, nColumns - w));
-        // create A based on the band
-        BigInteger[][] lhs = new BigInteger[nRows][nColumns];
-        for (int iRow = 0; iRow < nRows; iRow++) {
-            for (int iColumn = 0; iColumn < nColumns; iColumn++) {
-                lhs[iRow][iColumn] = zp.createZero();
-            }
-        }
-        for (int iRow = 0; iRow < nRows; iRow++) {
-            System.arraycopy(lhBands[iRow], 0, lhs[iRow], ss[iRow], w);
-        }
-
+        // treat the band as A, the initial value is 0
         if (nRows == 1) {
-            return solveOneRow(w, ss[0], lhs[0], rhs[0], result, isFull);
+            return solveOneRow(w, ss[0], lhBands[0], rhs[0], result, isFull);
         }
         // if n > 1, transform lsh to Echelon form.
-        RowEchelonFormInfo info = rowEchelonForm(w, ss, lhs, rhs);
+        RowEchelonFormInfo info = rowEchelonForm(w, ss, lhBands, rhs, nColumns);
         int nUnderDetermined = info.getZeroColumnNum();
         Arrays.fill(result, zp.createZero());
         // for determined system, free and full solution are the same
@@ -243,13 +241,13 @@ public class ZpBandLinearSolver {
             for (int i = nRows - 1; i >= 0; i--) {
                 BigInteger sum = BigInteger.ZERO;
                 for (int j = i + 1; j < ss[i] + w; j++) {
-                    sum = zp.add(sum, zp.mul(result[j], lhs[i][j]));
+                    sum = zp.add(sum, zp.mul(result[j], getValue(w, ss[i], lhBands[i], j)));
                 }
-                result[i] = zp.div(zp.sub(rhs[i], sum), lhs[i][i]);
+                result[i] = zp.div(zp.sub(rhs[i], sum), getValue(w, ss[i], lhBands[i], i));
             }
             return Consistent;
         }
-        return solveUnderDeterminedRows(w, ss, lhs, rhs, result, info, isFull);
+        return solveUnderDeterminedRows(w, ss, lhBands, rhs, result, info, isFull);
     }
 
     private SystemInfo solveOneRow(int w, int s0, BigInteger[] lh0,
@@ -277,7 +275,7 @@ public class ZpBandLinearSolver {
         // find the first non-zero a[t]
         int firstNonZeroColumn = -1;
         for (int iColumn = s0; iColumn >= s0 && iColumn < s0 + w; ++iColumn) {
-            if (!zp.isZero(lh0[iColumn])) {
+            if (!zp.isZero(getValue(w, s0, lh0, iColumn))) {
                 firstNonZeroColumn = iColumn;
                 break;
             }
@@ -306,14 +304,14 @@ public class ZpBandLinearSolver {
                     }
                     // for i != t, set random x[i]
                     result[i] = zp.createNonZeroRandom(secureRandom);
-                    if (!zp.isZero(lh0[i])) {
+                    if (!zp.isZero(getValue(w, s0, lh0, i))) {
                         // a[i] != 0, b[0] = b[0] - a[i] * x[i].
-                        rh0 = zp.sub(rh0, zp.mul(lh0[i], result[i]));
+                        rh0 = zp.sub(rh0, zp.mul(getValue(w, s0, lh0, i), result[i]));
                     }
                 }
             }
             // set x[t] = b[0] / a[0]
-            result[firstNonZeroColumn] = zp.div(rh0, lh0[firstNonZeroColumn]);
+            result[firstNonZeroColumn] = zp.div(rh0, getValue(w, s0, lh0, firstNonZeroColumn));
             return Consistent;
         }
     }
@@ -330,7 +328,7 @@ public class ZpBandLinearSolver {
         for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
             // find pivot row and swap
             iRow = iColumn - nZeroColumns;
-            if (zp.isZero(lhs[iRow][iColumn])) {
+            if (zp.isZero(getValue(w, ss[iRow], lhs[iRow], iColumn))) {
                 if (iColumn == (nColumns - 1) && !zp.isZero(rhs[iRow])) {
                     return Inconsistent;
                 }
@@ -340,11 +338,10 @@ public class ZpBandLinearSolver {
                 continue;
             }
             // scale current row, that is, make lhs[iRow][iColumn] = 1, and scale other entries in this row.
-            BigInteger[] row = lhs[iRow];
-            BigInteger val = row[iColumn];
+            BigInteger val = getValue(w, ss[iRow], lhs[iRow], iColumn);
             BigInteger valInv = zp.inv(val);
             for (int i = iColumn; i < ss[iRow] + w; i++) {
-                row[i] = zp.mul(valInv, row[i]);
+                lhs[iRow][i - ss[iRow]] = zp.mul(valInv, getValue(w, ss[iRow], lhs[iRow], i));
             }
             rhs[iRow] = zp.mul(rhs[iRow], valInv);
             // here we cannot scale all rows before, otherwise the procedure is O(n^2). For example:
@@ -352,7 +349,7 @@ public class ZpBandLinearSolver {
             // | 0 1 1 0 0 0 0 | (reduce last row) | 0 1 1 1 0 0 0 | The first row is no longer a band vector.
             // | 0 0 1 1 0 0 0 |                   | 0 0 1 0 0 0 0 |
             // | 0 0 0 1 0 0 0 |                   | 0 0 0 1 0 0 0 |
-            if (!zp.isZero(rhs[iRow]) && zp.isZero(lhs[iRow][iColumn])) {
+            if (!zp.isZero(rhs[iRow]) && zp.isZero(getValue(w, ss[iRow], lhs[iRow], iColumn))) {
                 return Inconsistent;
             }
             // label that column and its corresponding row for the solution b[row].
@@ -385,10 +382,27 @@ public class ZpBandLinearSolver {
             int iResultRow = nzRows.get(i);
             BigInteger tempResult = rhs[iResultRow];
             for (int j = ss[iResultRow]; j < ss[iResultRow] + w; j++) {
-                tempResult = zp.sub(tempResult, zp.mul(lhs[iResultRow][j], result[j]));
+                tempResult = zp.sub(tempResult, zp.mul(getValue(w, ss[iResultRow], lhs[iResultRow], j), result[j]));
             }
             result[iResultColumn] = tempResult;
         }
         return Consistent;
+    }
+
+    /**
+     * Returns the zp element in BigInteger array with given index and offset.
+     *
+     * @param w     the band width.
+     * @param s0    starting positions of lhs.
+     * @param array the byte array.
+     * @param index the index.
+     * @return the zp element.
+     */
+    private BigInteger getValue(int w, int s0, BigInteger[] array, int index) {
+        if (index >= (w + s0) || index < s0) {
+            return BigInteger.ZERO;
+        } else {
+            return array[index - s0];
+        }
     }
 }

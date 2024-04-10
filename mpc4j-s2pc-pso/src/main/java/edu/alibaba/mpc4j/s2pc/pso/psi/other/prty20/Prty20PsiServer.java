@@ -74,7 +74,7 @@ public class Prty20PsiServer<T> extends AbstractPsiServer<T> {
     public Prty20PsiServer(Rpc serverRpc, Party clientParty, Prty20PsiConfig config) {
         super(Prty20PsiPtoDesc.getInstance(), serverRpc, clientParty, config);
         lcotSender = LcotFactory.createSender(serverRpc, clientParty, config.getLcotConfig());
-        addSubPtos(lcotSender);
+        addSubPto(lcotSender);
         securityModel = config.getSecurityModel();
         paxosType = config.getPaxosType();
         paxosKeyNum = Gf2eDokvsFactory.getHashKeyNum(paxosType);

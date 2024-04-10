@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psica;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pso.psica.cgt12.Cgt12EccPsiCaConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psica.ccpsi.CcPsiCaConfig;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/4/23
  */
 @RunWith(Parameterized.class)
-public class PsiCaTest extends AbstractTwoPartyPtoTest {
+public class PsiCaTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(edu.alibaba.mpc4j.s2pc.pso.psi.PsiTest.class);
     /**
      * default size

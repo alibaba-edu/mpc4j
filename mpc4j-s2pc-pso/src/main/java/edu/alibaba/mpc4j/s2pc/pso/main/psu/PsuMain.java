@@ -105,7 +105,7 @@ public class PsuMain {
         }
         LOGGER.info("{} create result file", serverRpc.ownParty().getPartyName());
         // 创建统计结果文件
-        String filePath = PTO_TYPE_NAME
+        String filePath = PsoUtils.getFileFolderName() + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
             + "_" + elementByteLength * Byte.SIZE
             + "_" + serverRpc.ownParty().getPartyId()
@@ -259,7 +259,7 @@ public class PsuMain {
         }
         // 创建统计结果文件
         LOGGER.info("{} create result file", clientRpc.ownParty().getPartyName());
-        String filePath = PTO_TYPE_NAME
+        String filePath = PsoUtils.getFileFolderName() + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
             + "_" + elementByteLength * Byte.SIZE
             + "_" + clientRpc.ownParty().getPartyId()

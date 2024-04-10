@@ -88,8 +88,8 @@ public class Rr16PsiClient<T> extends AbstractPsiClient<T> {
         super(Rr16PsiPtoDesc.getInstance(), clientRpc, serverParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
         ctReceiver = CoinTossFactory.createReceiver(clientRpc, serverParty, config.getCoinTossConfig());
-        addSubPtos(coreCotReceiver);
-        addSubPtos(ctReceiver);
+        addSubPto(coreCotReceiver);
+        addSubPto(ctReceiver);
     }
 
     @Override

@@ -65,11 +65,6 @@ public class Z2AdderTest {
                 AdderFactory.AdderTypes.RIPPLE_CARRY + " (ripple-carry adder)",
                 new Z2CircuitConfig.Builder().setAdderType(AdderFactory.AdderTypes.RIPPLE_CARRY).build()
         });
-        // Serial adder
-        configurations.add(new Object[]{
-                AdderFactory.AdderTypes.SERIAL + " (serial adder)",
-                new Z2CircuitConfig.Builder().setAdderType(AdderFactory.AdderTypes.SERIAL).build()
-        });
         // Sklansky adder
         configurations.add(new Object[]{
                 AdderFactory.AdderTypes.SKLANSKY + " (sklansky adder)",
@@ -101,11 +96,11 @@ public class Z2AdderTest {
 
     public void testConstant(int l) {
         long[] longXs = IntStream.range(0, DEFAULT_NUM)
-                .mapToLong(i -> i)
-                .toArray();
+            .mapToLong(i -> i)
+            .toArray();
         long[] longYs = IntStream.range(0, DEFAULT_NUM)
-                .mapToLong(i -> DEFAULT_NUM / 2 + i)
-                .toArray();
+            .mapToLong(i -> DEFAULT_NUM / 2 + i)
+            .toArray();
         testPto(true, l, longXs, longYs);
         LOGGER.info("------------------------------");
     }
@@ -137,11 +132,11 @@ public class Z2AdderTest {
 
     private void testRandom(int l, int num) {
         long[] longXs = IntStream.range(0, num)
-                .mapToLong(i -> LongUtils.randomNonNegative(1L << (l - 1), SECURE_RANDOM))
-                .toArray();
+            .mapToLong(i -> LongUtils.randomNonNegative(1L << (l - 1), SECURE_RANDOM))
+            .toArray();
         long[] longYs = IntStream.range(0, num)
-                .mapToLong(i -> LongUtils.randomNonNegative(1L << (l - 1), SECURE_RANDOM))
-                .toArray();
+            .mapToLong(i -> LongUtils.randomNonNegative(1L << (l - 1), SECURE_RANDOM))
+            .toArray();
         testPto(false, l, longXs, longYs);
         LOGGER.info("------------------------------");
     }

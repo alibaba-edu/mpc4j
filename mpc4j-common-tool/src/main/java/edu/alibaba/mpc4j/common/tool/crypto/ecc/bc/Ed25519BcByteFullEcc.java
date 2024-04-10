@@ -19,11 +19,11 @@ import java.security.SecureRandom;
  */
 public class Ed25519BcByteFullEcc implements ByteFullEcc {
     /**
-     * 哈希函数
+     * hash used in hash_to_curve
      */
     private final Hash hash;
 
-    public Ed25519BcByteFullEcc() {
+    private Ed25519BcByteFullEcc() {
         hash = HashFactory.createInstance(HashFactory.HashType.JDK_SHA256, Ed25519ByteEccUtils.POINT_BYTES);
         Ed25519ByteEccUtils.precomputeBase();
     }
@@ -183,5 +183,19 @@ public class Ed25519BcByteFullEcc implements ByteFullEcc {
     @Override
     public int scalarByteLength() {
         return Ed25519ByteEccUtils.SCALAR_BYTES;
+    }
+
+    /**
+     * singleton mode
+     */
+    private static final Ed25519BcByteFullEcc INSTANCE = new Ed25519BcByteFullEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static Ed25519BcByteFullEcc getInstance() {
+        return INSTANCE;
     }
 }

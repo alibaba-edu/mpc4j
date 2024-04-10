@@ -39,9 +39,9 @@ public class Cgs22LnotPesmReceiver extends AbstractPesmReceiver {
     public Cgs22LnotPesmReceiver(Rpc senderRpc, Party receiverParty, Cgs22LnotPesmConfig config) {
         super(Cgs22LnotPesmPtoDesc.getInstance(), senderRpc, receiverParty, config);
         bcReceiver = Z2cFactory.createReceiver(senderRpc, receiverParty, config.getZ2cConfig());
-        addSubPtos(bcReceiver);
+        addSubPto(bcReceiver);
         lnotReceiver = LnotFactory.createReceiver(senderRpc, receiverParty, config.getLnotConfig());
-        addSubPtos(lnotReceiver);
+        addSubPto(lnotReceiver);
     }
 
     @Override

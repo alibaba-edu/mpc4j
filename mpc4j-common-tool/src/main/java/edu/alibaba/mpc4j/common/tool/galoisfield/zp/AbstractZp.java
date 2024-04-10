@@ -113,21 +113,6 @@ abstract class AbstractZp implements Zp {
     }
 
     @Override
-    public BigInteger innerProduct(final BigInteger[] elementVector, final boolean[] binaryVector) {
-        assert elementVector.length == binaryVector.length
-            : "element vector length must be equal to binary vector length = "
-            + binaryVector.length + ": " + binaryVector.length;
-        BigInteger value = BigInteger.ZERO;
-        for (int i = 0; i < elementVector.length; i++) {
-            validateElement(elementVector[i]);
-            if (binaryVector[i]) {
-                value = add(value, elementVector[i]);
-            }
-        }
-        return value;
-    }
-
-    @Override
     public BigInteger createZero() {
         return BigInteger.ZERO;
     }

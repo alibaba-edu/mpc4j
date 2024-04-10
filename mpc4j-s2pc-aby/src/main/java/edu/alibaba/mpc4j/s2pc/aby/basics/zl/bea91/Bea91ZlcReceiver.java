@@ -35,13 +35,13 @@ public class Bea91ZlcReceiver extends AbstractZlcParty {
     public Bea91ZlcReceiver(Rpc receiverRpc, Party senderParty, Bea91ZlcConfig config) {
         super(Bea91ZlcPtoDesc.getInstance(), receiverRpc, senderParty, config);
         mtgReceiver = ZlMtgFactory.createReceiver(receiverRpc, senderParty, config.getMtgConfig());
-        addSubPtos(mtgReceiver);
+        addSubPto(mtgReceiver);
     }
 
     public Bea91ZlcReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, Bea91ZlcConfig config) {
         super(Bea91ZlcPtoDesc.getInstance(), receiverRpc, senderParty, config);
         mtgReceiver = ZlMtgFactory.createReceiver(receiverRpc, senderParty, aiderParty, config.getMtgConfig());
-        addSubPtos(mtgReceiver);
+        addSubPto(mtgReceiver);
     }
 
     @Override

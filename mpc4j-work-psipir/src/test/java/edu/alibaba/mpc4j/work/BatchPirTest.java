@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.work;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.work.psipir.Lpzl24BatchPirConfig;
@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
  * @date 2023/3/9
  */
 @RunWith(Parameterized.class)
-public class BatchPirTest extends AbstractTwoPartyPtoTest {
+public class BatchPirTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * small server element size
      */

@@ -4,6 +4,8 @@ import edu.alibaba.mpc4j.common.circuit.z2.adder.Adder;
 import edu.alibaba.mpc4j.common.circuit.z2.adder.AdderFactory;
 import edu.alibaba.mpc4j.common.circuit.z2.multiplier.Multiplier;
 import edu.alibaba.mpc4j.common.circuit.z2.multiplier.MultiplierFactory;
+import edu.alibaba.mpc4j.common.circuit.z2.psorter.Psorter;
+import edu.alibaba.mpc4j.common.circuit.z2.psorter.PsorterFactory;
 import edu.alibaba.mpc4j.common.circuit.z2.sorter.Sorter;
 import edu.alibaba.mpc4j.common.circuit.z2.sorter.SorterFactory;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
@@ -31,6 +33,10 @@ public class Z2IntegerCircuit extends AbstractZ2Circuit {
      * sorter.
      */
     private final Sorter sorter;
+    /**
+     * psorter.
+     */
+    private final Psorter pSorter;
 
     public Z2IntegerCircuit(MpcZ2cParty party) {
         this(party, new Z2CircuitConfig.Builder().build());
@@ -42,6 +48,7 @@ public class Z2IntegerCircuit extends AbstractZ2Circuit {
         this.adder = AdderFactory.createAdder(config.getAdderType(), this);
         this.multiplier = MultiplierFactory.createMultiplier(config.getMultiplierType(), this);
         this.sorter = SorterFactory.createSorter(config.getSorterType(), this);
+        this.pSorter = PsorterFactory.createPsorter(config.getPsorterType(), this);
     }
 
     /**
@@ -140,7 +147,7 @@ public class Z2IntegerCircuit extends AbstractZ2Circuit {
     }
 
     /**
-     * x ≤ y.
+     * x ≤ y. compare for data without sign bit, which means the values of data in [0, 2^l - 1];
      *
      * @param xiArray xi array.
      * @param yiArray yi array.
@@ -149,13 +156,21 @@ public class Z2IntegerCircuit extends AbstractZ2Circuit {
      */
     public MpcZ2Vector leq(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) throws MpcAbortException {
         checkInputs(xiArray, yiArray);
-        MpcZ2Vector[] result = sub(xiArray, yiArray);
-        return result[0];
+        MpcZ2Vector[] result = sub(yiArray, xiArray);
+        return mux(new MpcZ2Vector[]{party.not(result[0])} , new MpcZ2Vector[]{yiArray[0]}, party.xor(xiArray[0], yiArray[0]))[0];
     }
 
     public void sort(MpcZ2Vector[][] xiArray) throws MpcAbortException {
         Arrays.stream(xiArray).forEach(this::checkInputs);
         sorter.sort(xiArray);
+    }
+
+    public MpcZ2Vector[] psort(MpcZ2Vector[][] xiArrays, MpcZ2Vector[][] payloadArrays, PlainZ2Vector dir, boolean needPermutation, boolean needStable) throws MpcAbortException {
+        Arrays.stream(xiArrays).forEach(this::checkInputs);
+        if(payloadArrays != null){
+            Arrays.stream(payloadArrays).forEach(this::checkInputs);
+        }
+        return pSorter.sort(xiArrays, payloadArrays, dir, needPermutation, needStable);
     }
 
     public Adder getAdder() {

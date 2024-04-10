@@ -51,7 +51,7 @@ public class Ms13OsnReceiver extends AbstractOsnReceiver {
     public Ms13OsnReceiver(Rpc receiverRpc, Party senderParty, Ms13OsnConfig config) {
         super(Ms13OsnPtoDesc.getInstance(), receiverRpc, senderParty, config);
         cotReceiver = CotFactory.createReceiver(receiverRpc, senderParty, config.getCotConfig());
-        addSubPtos(cotReceiver);
+        addSubPto(cotReceiver);
     }
 
     @Override
@@ -90,7 +90,13 @@ public class Ms13OsnReceiver extends AbstractOsnReceiver {
         stopWatch.start();
         CotReceiverOutput[] cotReceiverOutputs = new CotReceiverOutput[level];
         for (int levelIndex = 0; levelIndex < level; levelIndex++) {
-            cotReceiverOutputs[levelIndex] = cotReceiver.receive(benesNetwork.getNetworkLevel(levelIndex));
+            boolean[] binaryGates = new boolean[width];
+            byte[] gates = benesNetwork.getGates(levelIndex);
+            for (int widthIndex = 0; widthIndex < width; widthIndex++) {
+                // we treat 2 as 0
+                binaryGates[widthIndex] = (gates[widthIndex] == 1);
+            }
+            cotReceiverOutputs[levelIndex] = cotReceiver.receive(binaryGates);
         }
         handleCotReceiverOutputs(cotReceiverOutputs);
         stopWatch.stop();
@@ -194,7 +200,7 @@ public class Ms13OsnReceiver extends AbstractOsnReceiver {
             for (int i = 0; i < subN - 1; i += 2) {
                 // 输入导线遮蔽值
                 int widthIndex = permIndex + i / 2;
-                int leftS = benesNetwork.getNetworkLevel(levelIndex)[widthIndex] ? 1 : 0;
+                int leftS = benesNetwork.getGates(levelIndex)[widthIndex] == 1 ? 1 : 0;
                 byte[] inputMask0 = subShareInputs.elementAt(i);
                 byte[] inputMask1 = subShareInputs.elementAt(i + 1);
                 // 计算输出导线遮蔽值，左侧Benes网络要交换输出导线的位置
@@ -243,7 +249,7 @@ public class Ms13OsnReceiver extends AbstractOsnReceiver {
             // 求解Benes网络右侧
             for (int i = 0; i < subN - 1; i += 2) {
                 int widthIndex = permIndex + i / 2;
-                int rightS = benesNetwork.getNetworkLevel(levelIndex + subLevel - 1)[widthIndex] ? 1 : 0;
+                int rightS = benesNetwork.getGates(levelIndex + subLevel - 1)[widthIndex] == 1 ? 1 : 0;
                 for (int j = 0; j < 2; j++) {
                     int x = rightCycleShift((i | j) ^ rightS, subLogN);
                     if (x < subN / 2) {
@@ -273,7 +279,7 @@ public class Ms13OsnReceiver extends AbstractOsnReceiver {
                                               byte[][][] correction0s, byte[][][] corrections1s) {
         // 输出导线遮蔽值
         int singleLevelIndex = (subLogN == 1) ? levelIndex : levelIndex + 1;
-        int s = benesNetwork.getNetworkLevel(singleLevelIndex)[permIndex] ? 1 : 0;
+        int s = benesNetwork.getGates(singleLevelIndex)[permIndex] == 1 ? 1 : 0;
         // 输入导线遮蔽值
         byte[] inputMask0 = subShareInputs.elementAt(s);
         byte[] inputMask1 = subShareInputs.elementAt(1 - s);
@@ -287,7 +293,7 @@ public class Ms13OsnReceiver extends AbstractOsnReceiver {
     private void handleTripleSwitchCorrection(int levelIndex, int permIndex, Vector<byte[]> subShareInputs,
                                               byte[][][] correction0s, byte[][][] corrections1s) {
         // 第一组输出导线遮蔽值
-        int s0 = benesNetwork.getNetworkLevel(levelIndex)[permIndex] ? 1 : 0;
+        int s0 = benesNetwork.getGates(levelIndex)[permIndex] == 1 ? 1 : 0;
         // 第一组输入导线遮蔽值
         byte[] inputMask00 = subShareInputs.elementAt(s0);
         byte[] inputMask01 = subShareInputs.elementAt(1 - s0);
@@ -299,7 +305,7 @@ public class Ms13OsnReceiver extends AbstractOsnReceiver {
 
         // 第二组输出导线遮蔽值
         int levelIndex1 = levelIndex + 1;
-        int s1 = benesNetwork.getNetworkLevel(levelIndex1)[permIndex] ? 1 : 0;
+        int s1 = benesNetwork.getGates(levelIndex1)[permIndex] == 1 ? 1 : 0;
         // 第二组输入导线遮蔽值
         byte[] inputMask10 = subShareInputs.elementAt(1 + s1);
         byte[] inputMask11 = subShareInputs.elementAt(2 - s1);
@@ -311,7 +317,7 @@ public class Ms13OsnReceiver extends AbstractOsnReceiver {
 
         // 第三组输出导线遮蔽值
         int levelIndex2 = levelIndex + 2;
-        int s2 = benesNetwork.getNetworkLevel(levelIndex2)[permIndex] ? 1 : 0;
+        int s2 = benesNetwork.getGates(levelIndex2)[permIndex] == 1 ? 1 : 0;
         // 第三组输入导线遮蔽值
         byte[] inputMask20 = subShareInputs.elementAt(s2);
         byte[] inputMask21 = subShareInputs.elementAt(1 - s2);
@@ -323,7 +329,7 @@ public class Ms13OsnReceiver extends AbstractOsnReceiver {
     }
 
     private byte[][] getOutputMasks(int levelIndex, int widthIndex, byte[][][] correction0s, byte[][][] correction1s) {
-        byte[] choiceCorrection = benesNetwork.getNetworkLevel(levelIndex)[widthIndex] ?
+        byte[] choiceCorrection = benesNetwork.getGates(levelIndex)[widthIndex] == 1 ?
             correction1s[levelIndex][widthIndex] : correction0s[levelIndex][widthIndex];
         byte[] choiceMessage = switchWireExtendKeys[levelIndex][widthIndex];
         BytesUtils.xori(choiceMessage, choiceCorrection);

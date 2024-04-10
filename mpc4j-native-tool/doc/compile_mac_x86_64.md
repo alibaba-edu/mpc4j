@@ -69,27 +69,6 @@ cd .. # return to the ntl-11.5.1 path
 cd .. # return to the original path
 ```
 
-### MCL
-
-Download [MCL v1.61](https://github.com/herumi/mcl/releases/tag/v1.61).
-
-```shell
-git clone -b v1.61 https://github.com/herumi/mcl.git
-```
-
-Compile and install MCL.
-
-```shell
-cd mcl
-mkdir build
-cd build
-cmake ..
-make
-sudo make install
-cd .. # return to the build path
-cd .. # return to the original path
-```
-
 ### libsodium
 
 You need to install libsodium via `homebrew`: 
@@ -100,7 +79,7 @@ brew install libsodium
 
 ### JDK and JAVA_HOME
 
-Since we need to compile `mpc4j-native-tool` with the help of `jni.h`, you need to install Java Development Tool (JDK) instead of Java Runtime Environment (JRE). We recommend installing JDK from [oracle.com](https://www.oracle.com/java/technologies/downloads/).
+Since we need to compile `mpc4j-native-tool` with the help of `jni.h`, you need to install Java Development Tool (JDK) instead of Java Runtime Environment (JRE). JDK 17 (or later) is needed for development. We recommend installing JDK from [oracle.com](https://www.oracle.com/java/technologies/downloads/).
 
 By default, Java will be installed under the path like `/Library/Java/JavaVirtualMachines/jdk-XX.X.X.jdk/Contents/Home` or `/Users/USERNAME/Library/Java/JavaVirtualMachines/JDK_NAME/Contents/Home`. After you find the Java installation path, run the following command to open `bash_profile`.
 

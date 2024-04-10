@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.zl;
 import edu.alibaba.mpc4j.common.circuit.operator.DyadicAcOperator;
 import edu.alibaba.mpc4j.common.circuit.operator.UnaryAcOperator;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
@@ -30,7 +30,7 @@ import java.util.stream.IntStream;
  * @date 2022/12/27
  */
 @RunWith(Parameterized.class)
-public class BatchZlcTest extends AbstractTwoPartyPtoTest {
+public class BatchZlcTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(BatchZlcTest.class);
     /**
      * default num

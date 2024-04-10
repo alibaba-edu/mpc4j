@@ -56,7 +56,7 @@ public class Cm20MpOprfSender extends AbstractMpOprfSender {
     public Cm20MpOprfSender(Rpc senderRpc, Party receiverParty, Cm20MpOprfConfig config) {
         super(Cm20MpOprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(senderRpc, receiverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
     }
 
     @Override

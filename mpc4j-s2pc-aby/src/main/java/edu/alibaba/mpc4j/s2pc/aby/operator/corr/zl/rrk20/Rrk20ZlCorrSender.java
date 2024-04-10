@@ -51,9 +51,9 @@ public class Rrk20ZlCorrSender extends AbstractZlCorrParty {
     public Rrk20ZlCorrSender(Rpc senderRpc, Party receiverParty, Rrk20ZlCorrConfig config) {
         super(getInstance(), senderRpc, receiverParty, config);
         dreluSender = ZlDreluFactory.createSender(senderRpc, receiverParty, config.getZlDreluConfig());
-        addSubPtos(dreluSender);
+        addSubPto(dreluSender);
         lnotSender = LnotFactory.createSender(senderRpc, receiverParty, config.getLnotConfig());
-        addSubPtos(lnotSender);
+        addSubPto(lnotSender);
     }
 
     @Override

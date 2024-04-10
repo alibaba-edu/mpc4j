@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.mtg.z2;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractThreePartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractThreePartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.pcg.aid.AiderThread;
 import edu.alibaba.mpc4j.s2pc.pcg.aid.TrustDealAider;
 import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory.Z2MtgType;
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/5/20
  */
 @RunWith(Parameterized.class)
-public class Z2MtgAidTest extends AbstractThreePartyPtoTest {
+public class Z2MtgAidTest extends AbstractThreePartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(Z2MtgAidTest.class);
     /**
      * default num

@@ -89,11 +89,11 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
     public Jsz22SfsPsuServer(Rpc serverRpc, Party clientParty, Jsz22SfsPsuConfig config) {
         super(Jsz22SfsPsuPtoDesc.getInstance(), serverRpc, clientParty, config);
         firstOsnSender = OsnFactory.createSender(serverRpc, clientParty, config.getOsnConfig());
-        addSubPtos(firstOsnSender);
+        addSubPto(firstOsnSender);
         oprfReceiver = OprfFactory.createOprfReceiver(serverRpc, clientParty, config.getOprfConfig());
-        addSubPtos(oprfReceiver);
+        addSubPto(oprfReceiver);
         secondOsnReceiver = OsnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
-        addSubPtos(secondOsnReceiver);
+        addSubPto(secondOsnReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
     }
 

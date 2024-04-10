@@ -140,27 +140,6 @@ cd .. # return to ntl-11.5.1
 cd .. # return to the original path
 ```
 
-### MCL
-
-Download the source code of [MCL v1.61](https://github.com/herumi/mcl/releases/tag/v1.61). 
-
-```shell
-git clone -b v1.61 https://github.com/herumi/mcl.git
-```
-
-Run the following command to compile and install MCL.
-
-```shell
-cd mcl
-mkdir build
-cd build
-cmake ..
-make
-sudo make install
-cd .. # return to the build path
-cd .. # return to the original path
-```
-
 ### libsodium
 
 Download the latest version of libsodium. Currently, the latest version is [1.0.18](https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz).
@@ -188,11 +167,11 @@ cd .. # return to the original path
 
 ### JDK and JAVA_HOME
 
-Since we need to compile `mpc4j-native-tool` with the help of `jni.h`, you need to install Java Development Tool (JDK) instead of Java Runtime Environment (JRE). We recommend installing JDK from [oracle.com](https://www.oracle.com/java/technologies/downloads/). You can directly install JDK by the following command.
+Since we need to compile `mpc4j-native-tool` with the help of `jni.h`, you need to install Java Development Tool (JDK) instead of Java Runtime Environment (JRE).  JDK 17 (or later) is needed for development. We recommend installing JDK from [oracle.com](https://www.oracle.com/java/technologies/downloads/). You can directly install JDK by the following command.
 
 ```shell
 yum search java # You can get a candidate version of Java that you can install
-sudo yum install java-1.8.0-openjdk-devel.x86_64 # install JDK (the name with "devel"), here we install JDK 8
+sudo yum install java-17-openjdk # install JDK (the name with "devel"), here we install JDK 17
 ```
 
 You can find the Java installation path by the following command.

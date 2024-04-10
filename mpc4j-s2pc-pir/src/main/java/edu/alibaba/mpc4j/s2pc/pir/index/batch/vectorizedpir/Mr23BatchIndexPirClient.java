@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 import static edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirPtoDesc.*;
 
 /**
- * vectorized batch Index PIR client.
+ * Vectorized Batch PIR client.
  *
  * @author Liqiang Peng
  * @date 2023/3/7
@@ -207,7 +207,6 @@ public class Mr23BatchIndexPirClient extends AbstractBatchIndexPirClient {
                 }
             }
         }
-        assert (binIndex.size() == binNum && binIndexRetrievalIndexMap.size() == retrievalSize);
         return binIndex;
     }
 

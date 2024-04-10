@@ -95,8 +95,8 @@ public class BinaryBandLinearSolver {
     private RowEchelonFormInfo rowEchelonForm(int w, int nColumns, int[] ss, byte[][] lhs, byte[][] rhs) {
         // verification is done in the input phase
         int nRows = ss.length;
-        int nByteColumns = CommonUtils.getByteLength(nColumns);
-        int nOffsetColumns = nByteColumns * Byte.SIZE - nColumns;
+        int wByteColumns = CommonUtils.getByteLength(w);
+        int wOffsetColumns = wByteColumns * Byte.SIZE - w;
         TIntSet maxLisColumns = new TIntHashSet(nRows);
         // sort the rows of the system (A, b) by s[i]
         sort(ss, lhs, rhs);
@@ -108,16 +108,17 @@ public class BinaryBandLinearSolver {
             int row = iColumn - nZeroColumns;
             int max = row;
             // if the current pivot is 0, then search for leftmost 1 in row i.
-            if (!BinaryUtils.getBoolean(lhs[row], iColumn + nOffsetColumns)) {
+            if (!getBooleanValue(w, ss[row], lhs[row], iColumn, wOffsetColumns)) {
                 // There can be many candidate rows. Since s_i is ordered, once we find an invalid row, we can break.
                 for (int iRow = row + 1; iRow < nRows && iColumn >= ss[iRow] && iColumn < ss[iRow] + w; ++iRow) {
-                    if (BinaryUtils.getBoolean(lhs[iRow], iColumn + nOffsetColumns)) {
+                    if (getBooleanValue(w, ss[iRow], lhs[iRow], iColumn, wOffsetColumns)) {
                         max = iRow;
                         break;
                     }
                 }
                 // We swap rows in the implementation. We change the starting position to ensure ss is correct.
                 if (ss[row] < ss[max]) {
+                    BytesUtils.shiftLefti(lhs[row], ss[max] - ss[row]);
                     ss[row] = ss[max];
                 }
                 ArraysUtil.swap(ss, row, max);
@@ -125,7 +126,7 @@ public class BinaryBandLinearSolver {
                 ArraysUtil.swap(rhs, row, max);
             }
             // if we cannot find one, it means this column is free, nothing to do on this column
-            if (!BinaryUtils.getBoolean(lhs[row], iColumn + nOffsetColumns)) {
+            if (!getBooleanValue(w, ss[row], lhs[row], iColumn, wOffsetColumns)) {
                 ++nZeroColumns;
                 to = Math.min(nRows + nZeroColumns, nColumns);
                 continue;
@@ -134,15 +135,11 @@ public class BinaryBandLinearSolver {
             maxLisColumns.add(iColumn);
             // forward Gaussian elimination, since s_i is ordered, once we find an invalid row, we can break.
             for (int iRow = row + 1; iRow < nRows && iColumn >= ss[iRow] && iColumn < ss[iRow] + w; ++iRow) {
-                boolean alpha = BinaryUtils.getBoolean(lhs[iRow], iColumn + nOffsetColumns);
+                boolean alpha = getBooleanValue(w, ss[iRow], lhs[iRow], iColumn, wOffsetColumns);
                 if (alpha) {
                     BytesUtils.xori(rhs[iRow], rhs[row]);
-                    int iBytesCol = (iColumn + nOffsetColumns) / Byte.SIZE;
-                    int sByteColumn = (nOffsetColumns + ss[iRow]) / Byte.SIZE;
-                    int swByteColumn = CommonUtils.getByteLength(nOffsetColumns + ss[iRow] + w);
-                    for (; iBytesCol >= sByteColumn && iBytesCol < swByteColumn; ++iBytesCol) {
-                        lhs[iRow][iBytesCol] = (byte) (lhs[iRow][iBytesCol] ^ lhs[row][iBytesCol]);
-                    }
+                    byte[] temp = BytesUtils.shiftLeft(lhs[row], ss[iRow] - ss[row]);
+                    BytesUtils.xori(lhs[iRow], temp);
                 }
             }
         }
@@ -220,28 +217,22 @@ public class BinaryBandLinearSolver {
         );
         // 0 <= s_i <= m - w
         Arrays.stream(ss).forEach(si -> MathPreconditions.checkNonNegativeInRangeClosed("s[i]", si, nColumns - w));
-        int nByteColumns = CommonUtils.getByteLength(nColumns);
-        int nOffsetColumns = nByteColumns * Byte.SIZE - nColumns;
         // create A based on the band
-        byte[][] lhs = new byte[nRows][nByteColumns];
-        for (int iRow = 0; iRow < nRows; iRow++) {
-            // copy to right-hand side, i.e., | _ _ _ X X X |, then shift left
-            System.arraycopy(lhBands[iRow], 0, lhs[iRow], nByteColumns - byteW, byteW);
-            BytesUtils.shiftLefti(lhs[iRow], nColumns - ss[iRow] - w);
-        }
         if (nRows == 1) {
-            return solveOneRow(w, ss[0], lhs[0], rhs[0], result, isFull);
+            return solveOneRow(w, ss[0], lhBands[0], rhs[0], result, isFull);
         }
         // if n > 1, transform lsh to Echelon form.
-        RowEchelonFormInfo info = rowEchelonForm(w, nColumns, ss, lhs, rhs);
+        RowEchelonFormInfo info = rowEchelonForm(w, nColumns, ss, lhBands, rhs);
         int nUnderDetermined = info.getZeroColumnNum();
         Arrays.fill(result, createZero());
+        int wByteColumns = CommonUtils.getByteLength(w);
+        int wOffsetColumns = wByteColumns * Byte.SIZE - w;
         // for determined system, free and full solution are the same
         if (nUnderDetermined == 0 && nColumns == nRows) {
             for (int i = nColumns - 1; i >= 0; i--) {
                 byte[] sum = createZero();
                 for (int j = i + 1; j < ss[i] + w; j++) {
-                    if (BinaryUtils.getBoolean(lhs[i], nOffsetColumns + j)) {
+                    if (getBooleanValue(w, ss[i], lhBands[i], j, wOffsetColumns)) {
                         addi(sum, result[j]);
                     }
                 }
@@ -249,7 +240,7 @@ public class BinaryBandLinearSolver {
             }
             return Consistent;
         }
-        return solveUnderDeterminedRows(w, ss, lhs, rhs, result, info, isFull);
+        return solveUnderDeterminedRows(w, ss, lhBands, rhs, result, info, isFull);
     }
 
     private SystemInfo solveOneRow(int w, int s0, byte[] lh0, byte[] rh0,
@@ -257,6 +248,8 @@ public class BinaryBandLinearSolver {
         int nColumns = result.length;
         int nByteColumns = CommonUtils.getByteLength(nColumns);
         int nOffsetColumns = nByteColumns * Byte.SIZE - nColumns;
+        int wByteColumns = CommonUtils.getByteLength(w);
+        int wOffsetColumns = wByteColumns * Byte.SIZE - w;
         // when n = 1, then the linear system only has one equation a[0]x[0] + ... + a[m]x[m] = b[0]
         if (nColumns == 1) {
             // if m = 1, then we directly compute a[0]x[0] = b[0]
@@ -279,7 +272,7 @@ public class BinaryBandLinearSolver {
         // find the first non-zero a[t]
         int firstNonZeroColumn = -1;
         for (int iColumn = s0; iColumn >= s0 && iColumn < s0 + w; ++iColumn) {
-            if (BinaryUtils.getBoolean(lh0, nOffsetColumns + iColumn)) {
+            if (getBooleanValue(w, s0, lh0, iColumn, wOffsetColumns)) {
                 firstNonZeroColumn = iColumn;
                 break;
             }
@@ -308,7 +301,7 @@ public class BinaryBandLinearSolver {
                     }
                     // for i != t, set random x[i]
                     result[i] = createNonZeroRandom();
-                    if (BinaryUtils.getBoolean(lh0, nOffsetColumns + i)) {
+                    if (getBooleanValue(w, s0, lh0, i, wOffsetColumns)) {
                         // a[i] != 0, b[0] = b[0] - a[i] * x[i] = b[0] - x[i].
                         subi(rh0, result[i]);
                     }
@@ -324,8 +317,8 @@ public class BinaryBandLinearSolver {
                                                 byte[][] result, RowEchelonFormInfo info, boolean isFull) {
         int nRows = lhs.length;
         int nColumns = result.length;
-        int nByteColumns = CommonUtils.getByteLength(nColumns);
-        int nOffsetColumns = nByteColumns * Byte.SIZE - nColumns;
+        int wByteColumns = CommonUtils.getByteLength(w);
+        int wOffsetColumns = wByteColumns * Byte.SIZE - w;
         // back substitution in case of under-determined system
         TIntArrayList nzColumns = new TIntArrayList(), nzRows = new TIntArrayList();
         // number of zero columns
@@ -334,7 +327,7 @@ public class BinaryBandLinearSolver {
         for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
             // find pivot row and swap
             iRow = iColumn - nZeroColumns;
-            if (!BinaryUtils.getBoolean(lhs[iRow], nOffsetColumns + iColumn)) {
+            if (!getBooleanValue(w, ss[iRow], lhs[iRow], iColumn, wOffsetColumns)) {
                 if (iColumn == (nColumns - 1) && !isZero(rhs[iRow])) {
                     return Inconsistent;
                 }
@@ -352,7 +345,7 @@ public class BinaryBandLinearSolver {
             // | 0 1 1 0 0 0 0 | (reduce last row) | 0 1 1 1 0 0 0 | The first row is no longer a band vector.
             // | 0 0 1 1 0 0 0 |                   | 0 0 1 0 0 0 0 |
             // | 0 0 0 1 0 0 0 |                   | 0 0 0 1 0 0 0 |
-            if (!isZero(rhs[iRow]) && !BinaryUtils.getBoolean(lhs[iRow], nOffsetColumns + iColumn)) {
+            if (!isZero(rhs[iRow]) && !getBooleanValue(w, ss[iRow], lhs[iRow], iColumn, wOffsetColumns)) {
                 return Inconsistent;
             }
             // label that column and its corresponding row for the solution b[row].
@@ -385,7 +378,7 @@ public class BinaryBandLinearSolver {
             int iResultRow = nzRows.get(i);
             byte[] tempResult = BytesUtils.clone(rhs[iResultRow]);
             for (int j = ss[iResultRow]; j < ss[iResultRow] + w; j++) {
-                if (BinaryUtils.getBoolean(lhs[iResultRow], j + nOffsetColumns)) {
+                if (getBooleanValue(w, ss[iResultRow], lhs[iResultRow], j, wOffsetColumns)) {
                     subi(tempResult, result[j]);
                 }
             }
@@ -394,14 +387,30 @@ public class BinaryBandLinearSolver {
         return Consistent;
     }
 
+    /**
+     * Whether the element is zero.
+     *
+     * @param element the element.
+     * @return true if the element is zero, otherwise false.
+     */
     private boolean isZero(byte[] element) {
         return Arrays.equals(zeroElement, element);
     }
 
+    /**
+     * Creates zero element.
+     *
+     * @return zero.
+     */
     private byte[] createZero() {
         return new byte[byteL];
     }
 
+    /**
+     * Creates non zero random element.
+     *
+     * @return non zero random element.
+     */
     private byte[] createNonZeroRandom() {
         byte[] element;
         do {
@@ -410,15 +419,52 @@ public class BinaryBandLinearSolver {
         return element;
     }
 
+    /**
+     * Adds the element q to p.
+     *
+     * @param p the element to overwrite.
+     * @param q the other element.
+     */
     private void addi(byte[] p, byte[] q) {
         BytesUtils.xori(p, q);
     }
 
+    /**
+     * Subtracts the element q from p.
+     *
+     * @param p the element p.
+     * @param q the element q.
+     * @return p minus q.
+     */
     private byte[] sub(byte[] p, byte[] q) {
         return BytesUtils.xor(p, q);
     }
 
+    /**
+     * Subtracts the element q from p.
+     *
+     * @param p the element p and to overwrite.
+     * @param q the element q.
+     */
     private void subi(byte[] p, byte[] q) {
         BytesUtils.xori(p, q);
+    }
+
+    /**
+     * Returns the boolean value in byte array with given index and offset.
+     *
+     * @param w      the band width.
+     * @param s0     starting positions of lhs.
+     * @param array  the byte array.
+     * @param index  the index.
+     * @param offset the offset.
+     * @return the boolean value.
+     */
+    private boolean getBooleanValue(int w, int s0, byte[] array, int index, int offset) {
+        if (index < s0 || index >= w + s0) {
+            return false;
+        } else {
+            return BinaryUtils.getBoolean(array, offset + index - s0);
+        }
     }
 }

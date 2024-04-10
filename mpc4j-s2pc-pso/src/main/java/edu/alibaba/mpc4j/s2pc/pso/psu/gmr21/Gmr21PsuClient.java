@@ -90,13 +90,13 @@ public class Gmr21PsuClient extends AbstractPsuClient {
     public Gmr21PsuClient(Rpc clientRpc, Party serverParty, Gmr21PsuConfig config) {
         super(Gmr21PsuPtoDesc.getInstance(), clientRpc, serverParty, config);
         cuckooHashOprfSender = OprfFactory.createOprfSender(clientRpc, serverParty, config.getCuckooHashOprfConfig());
-        addSubPtos(cuckooHashOprfSender);
+        addSubPto(cuckooHashOprfSender);
         osnSender = OsnFactory.createSender(clientRpc, serverParty, config.getOsnConfig());
-        addSubPtos(osnSender);
+        addSubPto(osnSender);
         peqtOprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getPeqtOprfConfig());
-        addSubPtos(peqtOprfReceiver);
+        addSubPto(peqtOprfReceiver);
         coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
         okvsType = config.getOkvsType();
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);

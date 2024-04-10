@@ -14,18 +14,32 @@ import org.bouncycastle.math.ec.ECPoint;
  */
 public class Curve25519BcEcc extends AbstractEcc {
     /**
-     * 哈希到椭圆曲线所用的哈希函数
+     * hash used in hash_to_curve
      */
     private final Hash hash;
 
-    public Curve25519BcEcc() {
+    private Curve25519BcEcc() {
         super(EccFactory.EccType.CURVE25519_BC, "curve25519");
-        // 初始化哈希函数，为与MCL兼容，必须使用SHA256
+        // initialize the hash function with SHA256
         hash = HashFactory.createInstance(HashFactory.HashType.JDK_SHA256, 32);
     }
 
     @Override
     public ECPoint hashToCurve(byte[] data) {
         return hashToCurve(data, hash);
+    }
+
+    /**
+     * singleton mode
+     */
+    private static final Curve25519BcEcc INSTANCE = new Curve25519BcEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static Curve25519BcEcc getInstance() {
+        return INSTANCE;
     }
 }

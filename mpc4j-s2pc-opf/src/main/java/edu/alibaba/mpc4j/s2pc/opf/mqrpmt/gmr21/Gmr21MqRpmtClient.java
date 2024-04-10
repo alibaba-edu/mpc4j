@@ -81,11 +81,11 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
     public Gmr21MqRpmtClient(Rpc clientRpc, Party serverParty, Gmr21MqRpmtConfig config) {
         super(Gmr21MqRpmtPtoDesc.getInstance(), clientRpc, serverParty, config);
         cuckooHashOprfSender = OprfFactory.createOprfSender(clientRpc, serverParty, config.getCuckooHashOprfConfig());
-        addSubPtos(cuckooHashOprfSender);
+        addSubPto(cuckooHashOprfSender);
         osnSender = OsnFactory.createSender(clientRpc, serverParty, config.getOsnConfig());
-        addSubPtos(osnSender);
+        addSubPto(osnSender);
         peqtOprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getPeqtOprfConfig());
-        addSubPtos(peqtOprfReceiver);
+        addSubPto(peqtOprfReceiver);
         okvsType = config.getOkvsType();
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);

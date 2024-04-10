@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.z2;
 import edu.alibaba.mpc4j.common.circuit.operator.DyadicBcOperator;
 import edu.alibaba.mpc4j.common.circuit.operator.UnaryBcOperator;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.bea91.Bea91Z2cConfig;
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/02/14
  */
 @RunWith(Parameterized.class)
-public class SingleZ2cTest extends AbstractTwoPartyPtoTest {
+public class SingleZ2cTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleZ2cTest.class);
     /**
      * default number of bits

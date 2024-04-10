@@ -27,7 +27,7 @@ public class DirectNcCotReceiver extends AbstractNcCotReceiver {
     public DirectNcCotReceiver(Rpc receiverRpc, Party senderParty, DirectNcCotConfig config) {
         super(DirectNcCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(receiverRpc, senderParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
     }
 
     @Override

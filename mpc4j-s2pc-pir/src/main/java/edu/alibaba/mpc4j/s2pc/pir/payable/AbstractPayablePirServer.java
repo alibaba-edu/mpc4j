@@ -1,11 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pir.payable;
 
-import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 import java.nio.ByteBuffer;
@@ -36,15 +34,15 @@ public abstract class AbstractPayablePirServer extends AbstractTwoPartyPto imple
         super(ptoDesc, serverRpc, clientParty, config);
     }
 
-    protected void setInitInput(Map<ByteBuffer, ByteBuffer> keywordLabelMap, int labelByteLength) {
+    protected void setInitInput(Map<ByteBuffer, byte[]> keywordLabelMap, int labelByteLength) {
         MathPreconditions.checkPositive("labelByteLength", labelByteLength);
         this.labelByteLength = labelByteLength;
         MathPreconditions.checkPositive("keywordNum", keywordLabelMap.size());
         keywordSize = keywordLabelMap.size();
-        Iterator<Entry<ByteBuffer, ByteBuffer>> iterator = keywordLabelMap.entrySet().iterator();
+        Iterator<Entry<ByteBuffer, byte[]>> iterator = keywordLabelMap.entrySet().iterator();
         keywordList = new ArrayList<>();
         while (iterator.hasNext()) {
-            Entry<ByteBuffer, ByteBuffer> entry = iterator.next();
+            Entry<ByteBuffer, byte[]> entry = iterator.next();
             ByteBuffer item = entry.getKey();
             keywordList.add(item);
         }

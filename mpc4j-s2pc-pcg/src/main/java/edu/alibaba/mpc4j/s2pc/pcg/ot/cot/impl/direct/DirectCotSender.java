@@ -26,7 +26,7 @@ public class DirectCotSender extends AbstractCotSender {
     public DirectCotSender(Rpc senderRpc, Party receiverParty, DirectCotConfig config) {
         super(DirectCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
     }
 
     @Override

@@ -8,6 +8,8 @@ Multi-Party Computation for Java (`mpc4j`) is an efficient and easy-to-use Secur
 
 We note that `mpc4j` is mainly focused on research and `mpc4j` assumes a very strong system model. Specifically, `mpc4j` assumes never-crash nodes with a fully synchronized network. In practice, crash-recovery nodes with a partially synchronized network would be a reasonable system model. Aside from the system model, `mpc4j` tries to integrate tools that are suitable to be used in the production environment. We emphasize that additional engineering problems need to be solved if you want to develop your own MPC/DP applications. A reasonable solution would be to implement communication APIs on your own, develop protocols by calling tools in `mpc4j`, and referring protocol implementations in `mpc4j` as a prototype.
 
+From version 1.1.1, one needs to use JDK 17 (or later) to develop and compile `mpc4j`, but all modules except `mpc4j-crypto-simd` can be executed using JDK 8 (or later).
+
 ### Features
 
 `mpc4j` has the following features:
@@ -21,10 +23,11 @@ We note that `mpc4j` is mainly focused on research and `mpc4j` assumes a very st
 `mpc4j` is mainly developed by Weiran Liu. Feel free to contact me at [liuweiran900217@gmail.com](mailto:liuweiran900217@gmail.com). 
 
 - The submodules involving Fully Homomorphic Encryption (FHE) are mainly developed by an anonymous author Anon\_Trent, [Liqiang Peng](mailto:shelleyatsun@gmail.com) and [Qixian Zhou](https://github.com/qxzhou1010). 
+- The submodules involving secure three-party computations are mainly developed by [Feng Han](hf1996@mail.ustc.edu.cn).
 - The submodules involving Vector Oblivious Linear Evaluation (VOLE) are mainly developed by [Hanwen Feng](mailto:hanw.feng94@gmail.com).
 - The components of TFHE are developed by [Zhen Gu](mailto:thuguz15@gmail.com) of Computing Technology Lab (CTL) in Damo, Alibaba. The rest of their TFHE implementation by extending SEAL will be later released in their FHE library.
 - The FourQ-related implementations and mobile PSI-friendly OPRF (i.e., single-query OPRF) are developed by [Qixian Zhou](https://github.com/qxzhou1010). 
-- The submodules for circuits and operations based on the Boolean/arithmetic circuits are mainly developed by [Li Peng](mailto:pengli_email@163.com).
+- The submodules for circuits and operations based on the Boolean/arithmetic circuits are mainly developed by [Li Peng](mailto:pengli_email@163.com) and [Feng Han](hf1996@mail.ustc.edu.cn).
 
 ### Who Uses `mpc4j`
 
@@ -34,8 +37,9 @@ Currently, [DataTrust](https://dp.alibaba.com/product/datatrust) is powered by `
 
 ## Some Implementations of our Works
 
-If you want to test and evaluate our protocol implementations, compile and run the corresponding jar file with the config file. For example, if you want to run implementations related to PSU in the package `mpc4j-s2pc-pso`, you can first find example config files located in `conf/psu` in `mpc4j-s2pc-pso`, and then run `java -jar mpc4j-s2pc-pso-X.X.X-jar-with-dependencies.jar conf_file_name.txt` separately on two platforms with direct network connections (using the network channel assigned in config files) or on two terminals in one platform (using local network 127.0.0.1). Note that **you need first to run the server and then run the client. **The server and the client implicitly synchronize before running the protocol, and the first step is the client sends something like "hello" to the server. If the server is offline at that time, the program will get stuck.
+If you want to test and evaluate our protocol implementations, compile and run the corresponding jar file with the config file. For example, if you want to run implementations related to PSU in the package `mpc4j-s2pc-pso`, you can first find example config files located in `conf/psu` in `mpc4j-s2pc-pso`, and then run `java -jar mpc4j-s2pc-pso-X.X.X-jar-with-dependencies.jar conf_file_name.txt` separately on two platforms with direct network connections (using the network channel assigned in config files) or on two terminals in one platform (using local network 127.0.0.1). Note that **you need first to run the server and then run the client.** The server and the client implicitly synchronize before running the protocol, and the first step is the client sends something like "hello" to the server. If the server is offline at that time, the program will get stuck.
 
+- Our paper ["Unbalanced Circuit-PSI from Oblivious Key-Value Retrieval"](https://eprint.iacr.org/2023/1636) was accepted to USENIX Security 2024. Package `ucpsi` in `mpc4j-s2pc-upso` contains the implementation of this paper. The configuration files are under `conf/ucpsi` in `mpc4j-s2pc-upso`.
 - Our paper ["Private Set Operations from Multi-Query Reverse Private Membership Test"](https://eprint.iacr.org/2022/652.pdf) was accepted to PKC 2024. Aside from the C/C++ implementation in [Kunlun](https:// github.com/yuchen1024/Kunlun/mpc.), package `mqrpmt` in `mpc4j-s2pc-opf` contains the implementation of communicative OPRF. 
 - Our paper ["Local Differentially Private Heavy Hitter Detection in Data Streams with Bounded Memory"](https://arxiv.org/pdf/2311.16062.pdf) was accepted to SIGMOD 2024. Package `heavyhitter` in `mpc4j-dp-service` contains the implementation of this paper. The configuration files are under `conf` in `mpc4j-dp-service`.
 - Our paper ["Efficient Private Multiset ID Protocols"](https://eprint.iacr.org/2023/986.pdf) was accepted to ICICS 2023. Package `pmid` in `mpc4j-s2pc-pso` contains the implementation of this paper. The configuration files are under `conf/pmid` in `mpc4j-s2pc-pso`.
@@ -90,6 +94,7 @@ Here are some libraries that inspire our implementations.
 - [PantheonPIR](https://github.com/ishtiyaque/Pantheon), [SimplePIR](https://github.com/ahenzinger/simplepir), [MulPIR](https://github.com/OpenMined/PIR), [Constant-weight PIR](https://github.com/rasoulam/constant-weight-pir), [FastPIR](https://github.com/ishtiyaque/FastPIR), [Onion-PIR](https://github.com/mhmughees/Onion-PIR), [SealPIR,](https://github.com/microsoft/SealPIR) and [XPIR](https://github.com/XPIR-team/XPIR): We understand many details for implementing PIR schemes. We re-implement some protocols based on [SEAL](https://github.com/microsoft/SEAL) instead of [NFLlib](https://github.com/quarkslab/NFLlib), since we found we cannot compile NFLlib on Macbook M1 with `aarch64`.
 - [VOLE-PSI](https://github.com/Visa-Research/volepsi): VOLE-PSI implements the protocols described in "VOLE-PSI: Fast OPRF and Circuit-PSI from Vector-OLE" and "Blazing Fast PSI from Improved OKVS and Subfield VOLE". We understand how to implement "Blazing fast OKVS" and many details of how to refine our implementation.
 - [Piano-PIR](https://github.com/pianopir/Piano-PIR): This is a prototype implementation of the Piano private information retrieval(PIR) algorithm that allows a client to access a database without the server knowing the querying index. We understand many details of the implementation.
+- [jope](https://github.com/ssavvides/jope): A POC implementation of Order-preserving encryption in Java based on the work described in: "Order-Preserving Symmetric Encryption", Alexandra Boldyreva, Nathan Chenette, Younho Lee and Adam O’Neill. Based on its code, we introduce and implement OPE in `mpc4j`.
 
 ## Acknowledge
 
@@ -111,7 +116,7 @@ This library is licensed under Apache License 2.0.
 
 ### C/C++ Modules
 
-Most of the codes are in Java, except for very efficient implementations in C/C++. You need [OpenSSL](https://www.openssl.org/), [GMP](https://gmplib.org/), [NTL](https://libntl.org/) , [MCL](https://github.com/herumi/mcl), [libsodium](https://doc.libsodium.org/installation), and FourQ that we rewrite (in `mpc4j-native-fourq`) to compile `mpc4j-native-tool` and [SEAL 4.0.0](https://github.com/microsoft/SEAL) to compile `mpc4j-native-fhe`. Please see README.md in `mpc4j-native-fourq`, `mpc4j-native-cool` and `mpc4j-native-fhe` on how to install C/C++ dependencies.
+Most of the codes are in Java, except for very efficient implementations in C/C++. You need [OpenSSL](https://www.openssl.org/), [GMP](https://gmplib.org/), [NTL](https://libntl.org/), [libsodium](https://doc.libsodium.org/installation), and FourQ that we rewrite (in `mpc4j-native-fourq`) to compile `mpc4j-native-tool` and [SEAL 4.0.0](https://github.com/microsoft/SEAL) to compile `mpc4j-native-fhe`. Please see README.md in `mpc4j-native-fourq`, `mpc4j-native-cool` and `mpc4j-native-fhe` on how to install C/C++ dependencies.
 
 After successfully installing C/C++ library `mpc4j-native-fourq` and obtaining the compiled C/C++ libraries (named `libmpc4j-native-tool` and `libmpc4j-native-fhe`, respectively), you need to assign the native library location when running `mpc4j` using `-Djava.library.path`.
 
@@ -189,13 +194,7 @@ After successfully installing `mpc4j-native-fourq`, compiling `mpc4j-native-tool
 
 We thank [Qixian Zhou](https://github.com/qxzhou1010) for writing a guideline demonstrating configuring the development environment on macOS (x86_64). We believe this guideline can also be used for other platforms, e.g., macOS (M1), Ubuntu, and CentOS. Here are the steps:
 
-1. Follow any guidelines to install JDK 8 and IntelliJ IDEA. If you successfully install JDK8, you can obtain similar information in the terminal when executing `java -version`.
-
-```text
-java version "1.8.0_301"
-Java(TM) SE Runtime Environment (build 1.9.0_301-b09)
-Java HotSpot(TM) 64-Bit Server VM (build 25.301-b09, mixed mode)
-```
+1. Follow any guidelines to install JDK 17 and IntelliJ IDEA. If you successfully install JDK17, you can obtain similar information in the terminal when executing `java -version`.
 
 2. Clone `mpc4j` source code using `git clone https://github.com/alibaba-edu/mpc4j.git`.
 
@@ -238,9 +237,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.301-b09, mixed mode)
 
 ### Possible Missions
 
-- Provide more documentation.
 - Translate JavaDoc and comments in English.
-- We are still adjusting our implementations on many Private Set Intersection protocols. We will soon release the source code whenever available.
 - More secure two-party computation (2PC) protocol implementations.
 - More secure three-party computation (3PC) protocol implementations. Specifically, release the source code of our paper "Scape: Scalable Collaborative Analytics System on Private Database with Malicious Security" accepted at [ICDE 2022](https://ieeexplore.ieee.org/document/9835540/). 
 - More differentially private algorithms and protocols, especially for the Shuffle Model implementations of our paper ["Privacy Enhancement via Dummy Points in the Shuffle Model."](https://arxiv.org/abs/2009.13738)

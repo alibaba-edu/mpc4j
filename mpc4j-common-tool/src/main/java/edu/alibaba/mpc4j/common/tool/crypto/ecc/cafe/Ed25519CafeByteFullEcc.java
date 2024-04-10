@@ -23,7 +23,7 @@ public class Ed25519CafeByteFullEcc implements ByteFullEcc {
      */
     private final Hash hash;
 
-    public Ed25519CafeByteFullEcc() {
+    private Ed25519CafeByteFullEcc() {
         hash = HashFactory.createInstance(HashFactory.HashType.JDK_SHA256, Ed25519ByteEccUtils.POINT_BYTES);
     }
 
@@ -179,5 +179,19 @@ public class Ed25519CafeByteFullEcc implements ByteFullEcc {
     @Override
     public int scalarByteLength() {
         return Ed25519ByteEccUtils.SCALAR_BYTES;
+    }
+
+    /**
+     * singleton mode
+     */
+    private static final Ed25519CafeByteFullEcc INSTANCE = new Ed25519CafeByteFullEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static Ed25519CafeByteFullEcc getInstance() {
+        return INSTANCE;
     }
 }

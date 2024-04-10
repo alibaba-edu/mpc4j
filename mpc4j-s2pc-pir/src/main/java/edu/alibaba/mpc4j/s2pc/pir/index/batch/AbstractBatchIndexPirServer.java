@@ -7,6 +7,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 /**
  * abstract batch index PIR server.

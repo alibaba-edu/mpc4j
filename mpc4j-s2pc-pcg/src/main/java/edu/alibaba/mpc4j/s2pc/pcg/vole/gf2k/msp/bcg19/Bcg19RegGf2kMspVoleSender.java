@@ -34,7 +34,7 @@ public class Bcg19RegGf2kMspVoleSender extends AbstractGf2kMspVoleSender {
     public Bcg19RegGf2kMspVoleSender(Rpc senderRpc, Party receiverParty, Bcg19RegGf2kMspVoleConfig config) {
         super(Bcg19RegGf2kMspVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
         gf2kBspVoleSender = Gf2kBspVoleFactory.createSender(senderRpc, receiverParty, config.getGf2kBspVoleConfig());
-        addSubPtos(gf2kBspVoleSender);
+        addSubPto(gf2kBspVoleSender);
     }
 
     @Override

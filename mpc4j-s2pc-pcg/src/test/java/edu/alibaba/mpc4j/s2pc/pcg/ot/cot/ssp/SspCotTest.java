@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.ssp;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
  * @date 2023/7/19
  */
 @RunWith(Parameterized.class)
-public class SspCotTest extends AbstractTwoPartyPtoTest {
+public class SspCotTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(SspCotTest.class);
     /**
      * default num, the num is not even, and not in format 2^k

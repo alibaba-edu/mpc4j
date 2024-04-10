@@ -44,28 +44,26 @@ public class EccTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
+        Collection<Object[]> configurations = new ArrayList<>();
 
-        // SEC_P256_K1_MCL
-        configurationParams.add(new Object[]{EccType.SEC_P256_K1_MCL.name(), EccType.SEC_P256_K1_MCL,});
         // SEC_P256_K1_OPENSSL
-        configurationParams.add(new Object[]{EccType.SEC_P256_K1_OPENSSL.name(), EccType.SEC_P256_K1_OPENSSL,});
+        configurations.add(new Object[]{EccType.SEC_P256_K1_OPENSSL.name(), EccType.SEC_P256_K1_OPENSSL,});
         // SEC_P256_K1_BC
-        configurationParams.add(new Object[]{EccType.SEC_P256_K1_BC.name(), EccType.SEC_P256_K1_BC,});
+        configurations.add(new Object[]{EccType.SEC_P256_K1_BC.name(), EccType.SEC_P256_K1_BC,});
         // SEC_P256_R1_OPENSSL
-        configurationParams.add(new Object[]{EccType.SEC_P256_R1_OPENSSL.name(), EccType.SEC_P256_R1_OPENSSL,});
+        configurations.add(new Object[]{EccType.SEC_P256_R1_OPENSSL.name(), EccType.SEC_P256_R1_OPENSSL,});
         // SEC_P256_R1_BC
-        configurationParams.add(new Object[]{EccType.SEC_P256_R1_BC.name(), EccType.SEC_P256_R1_BC,});
+        configurations.add(new Object[]{EccType.SEC_P256_R1_BC.name(), EccType.SEC_P256_R1_BC,});
         // SM2_P256_V1_OPENSSL
-        configurationParams.add(new Object[]{EccType.SM2_P256_V1_OPENSSL.name(), EccType.SM2_P256_V1_OPENSSL,});
+        configurations.add(new Object[]{EccType.SM2_P256_V1_OPENSSL.name(), EccType.SM2_P256_V1_OPENSSL,});
         // SM2_P256_V1_BC
-        configurationParams.add(new Object[]{EccType.SM2_P256_V1_BC.name(), EccType.SM2_P256_V1_BC,});
+        configurations.add(new Object[]{EccType.SM2_P256_V1_BC.name(), EccType.SM2_P256_V1_BC,});
         // CURVE_25519_BC
-        configurationParams.add(new Object[]{EccType.CURVE25519_BC.name(), EccType.CURVE25519_BC,});
+        configurations.add(new Object[]{EccType.CURVE25519_BC.name(), EccType.CURVE25519_BC,});
         // ED_25519_BC
-        configurationParams.add(new Object[]{EccType.ED25519_BC.name(), EccType.ED25519_BC,});
+        configurations.add(new Object[]{EccType.ED25519_BC.name(), EccType.ED25519_BC,});
 
-        return configurationParams;
+        return configurations;
     }
 
     /**
@@ -84,12 +82,12 @@ public class EccTest {
         // hash data with length = 0
         Assert.assertThrows(AssertionError.class, () -> ecc.hashToCurve(new byte[0]));
         // inner product with 0 element
-        Assert.assertThrows(AssertionError.class, () -> ecc.innerProduct(new boolean[0], new ECPoint[0]));
+        Assert.assertThrows(AssertionError.class, () -> ecc.innerProduct(new ECPoint[0], new boolean[0]));
         // inner product with different length
         Assert.assertThrows(AssertionError.class, () -> {
             ECPoint[] points = new ECPoint[]{ecc.getG()};
             boolean[] binary = new boolean[2];
-            ecc.innerProduct(binary, points);
+            ecc.innerProduct(points, binary);
         });
     }
 
@@ -266,10 +264,10 @@ public class EccTest {
         ECPoint[] gs = IntStream.range(0, num).mapToObj(index -> g).toArray(ECPoint[]::new);
         boolean[] binary = new boolean[num];
         // 全0加
-        Assert.assertEquals(ecc.getInfinity(), ecc.innerProduct(binary, gs));
+        Assert.assertEquals(ecc.getInfinity(), ecc.innerProduct(gs, binary));
         // 全1加
         Arrays.fill(binary, true);
-        Assert.assertEquals(ecc.multiply(g, BigInteger.valueOf(num)), ecc.innerProduct(binary, gs));
+        Assert.assertEquals(ecc.multiply(g, BigInteger.valueOf(num)), ecc.innerProduct(gs, binary));
     }
 
     @Test

@@ -52,7 +52,7 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
         super(Crr21NcCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         silverCodeType = config.getCodeType();
         mspCotSender = MspCotFactory.createSender(senderRpc, receiverParty, config.getMspCotConfig());
-        addSubPtos(mspCotSender);
+        addSubPto(mspCotSender);
     }
 
     @Override

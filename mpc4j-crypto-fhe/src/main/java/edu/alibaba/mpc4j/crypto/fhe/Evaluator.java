@@ -724,7 +724,7 @@ public class Evaluator {
         for (int j = 0; j < steps; j++) {
             for (int k = 0; k < baseSize; k++) {
                 long[] temp = new long[n];
-                // c_1 mod q_i, c2_2 mod q_i in NTT form, compute c_1 * c_2 mod q_i
+                // c_1 mod q_i, c_2 mod q_i in NTT form, compute c_1 * c_2 mod q_i
                 PolyArithmeticSmallMod.dyadicProductCoeffMod(
                     in1, shiftedIn1Iter + j * n * baseSize + k * n,
                     in2, (shiftedReversedIn2Iter - j * n * baseSize) + k * n,
@@ -2293,7 +2293,7 @@ public class Evaluator {
     }
 
     private void switchKeyInplace(Ciphertext encrypted, long[] targetIter, int pos, int targetN, int targetK,
-                                  KswitchKeys kswitchKeys, int keySwitchKyesIndex) {
+                                  KswitchKeys kswitchKeys, int keySwitchKeysIndex) {
         ParmsId parmsId = encrypted.parmsId();
         ContextData contextData = context.getContextData(parmsId);
         EncryptionParameters parms = contextData.parms();
@@ -2317,8 +2317,8 @@ public class Evaluator {
             throw new IllegalArgumentException("parameter mismatch");
         }
 
-        if (keySwitchKyesIndex >= kswitchKeys.data().length) {
-            throw new ArrayIndexOutOfBoundsException("keySwitchKyesIndex");
+        if (keySwitchKeysIndex >= kswitchKeys.data().length) {
+            throw new ArrayIndexOutOfBoundsException("keySwitchKeysIndex");
         }
         if (scheme.equals(SchemeType.BFV) && encrypted.isNttForm()) {
             throw new IllegalArgumentException("BFV encrypted cannot be in NTT form");
@@ -2348,7 +2348,7 @@ public class Evaluator {
         }
 
         // Prepare input
-        PublicKey[] keyVector = kswitchKeys.data()[keySwitchKyesIndex];
+        PublicKey[] keyVector = kswitchKeys.data()[keySwitchKeysIndex];
         int keyComponentCount = keyVector[0].data().size();
 
         // Check only the used component in KSwitchKeys.

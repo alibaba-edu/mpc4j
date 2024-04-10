@@ -67,7 +67,7 @@ public class Oos17PsiClient<T> extends AbstractPsiClient<T> {
     public Oos17PsiClient(Rpc clientRpc, Party serverParty, Oos17PsiConfig config) {
         super(Oos17PsiPtoDesc.getInstance(), clientRpc, serverParty, config);
         lcotReceiver = LcotFactory.createReceiver(clientRpc, serverParty, config.getLcotConfig());
-        addSubPtos(lcotReceiver);
+        addSubPto(lcotReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
         cuckooHashNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType);
     }

@@ -63,7 +63,7 @@ public class PaiSingleCpCksPirServer<T> extends AbstractSingleCpKsPirServer<T> {
     public PaiSingleCpCksPirServer(Rpc serverRpc, Party clientParty, PaiSingleCpCksPirConfig config) {
         super(PaiSingleCpCksPirDesc.getInstance(), serverRpc, clientParty, config);
         sqOprfSender = SqOprfFactory.createSender(serverRpc, clientParty, config.getSqOprfConfig());
-        addSubPtos(sqOprfSender);
+        addSubPto(sqOprfSender);
         byteFullEcc = ByteEccFactory.createFullInstance(envType);
     }
 

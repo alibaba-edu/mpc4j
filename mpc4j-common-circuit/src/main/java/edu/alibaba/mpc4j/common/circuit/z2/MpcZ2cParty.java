@@ -1,7 +1,12 @@
 package edu.alibaba.mpc4j.common.circuit.z2;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
+
+import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * MPC Z2 Circuit Party.
@@ -10,14 +15,21 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
  * @date 2023/4/20
  */
 public interface MpcZ2cParty {
+    /**
+     * get parallel setting
+     *
+     * @return status
+     */
+    boolean getParallel();
 
     /**
-     * Creates a (plain) vector with assigned value.
+     * Creates a vector with assigned value, and specify whether it is shared
      *
      * @param bitVector assigned value.
+     * @param isPlain   whether this vector is plaintext or not
      * @return a vector.
      */
-    MpcZ2Vector create(BitVector bitVector);
+    MpcZ2Vector create(boolean isPlain, BitVector... bitVector);
 
     /**
      * Creates a (plain) all-one vector.
@@ -98,7 +110,7 @@ public interface MpcZ2cParty {
      * @param updateBitNum total number of bits for updates.
      * @throws MpcAbortException if the protocol is abort.
      */
-    void init(int updateBitNum) throws MpcAbortException;
+    void init(long updateBitNum) throws MpcAbortException;
 
     /**
      * Shares its own vector.
@@ -106,7 +118,7 @@ public interface MpcZ2cParty {
      * @param xi the vector to be shared.
      * @return the shared vector.
      */
-    MpcZ2Vector shareOwn(BitVector xi);
+    MpcZ2Vector shareOwn(BitVector xi) throws MpcAbortException;
 
     /**
      * Shares its own vectors。
@@ -114,7 +126,7 @@ public interface MpcZ2cParty {
      * @param xiArray the vectors to be shared.
      * @return the shared vectors.
      */
-    MpcZ2Vector[] shareOwn(BitVector[] xiArray);
+    MpcZ2Vector[] shareOwn(BitVector[] xiArray) throws MpcAbortException;
 
     /**
      * Shares other's vector.
@@ -133,6 +145,14 @@ public interface MpcZ2cParty {
      * @throws MpcAbortException the protocol failure aborts.
      */
     MpcZ2Vector[] shareOther(int[] bitNums) throws MpcAbortException;
+
+    /**
+     * Open the vector to all computing parties
+     *
+     * @param xiArray the data to be opened
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    BitVector[] open(MpcZ2Vector[] xiArray) throws MpcAbortException;
 
     /**
      * Reveals its own vector.
@@ -197,6 +217,15 @@ public interface MpcZ2cParty {
     MpcZ2Vector xor(MpcZ2Vector xi, MpcZ2Vector yi) throws MpcAbortException;
 
     /**
+     * XOR operation. the result stored in xi
+     *
+     * @param xi xi.
+     * @param yi yi.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    void xori(MpcZ2Vector xi, MpcZ2Vector yi) throws MpcAbortException;
+
+    /**
      * Vector XOR operation.
      *
      * @param xiArray xi array.
@@ -205,6 +234,20 @@ public interface MpcZ2cParty {
      * @throws MpcAbortException the protocol failure aborts.
      */
     MpcZ2Vector[] xor(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) throws MpcAbortException;
+
+    /**
+     * XOR operation. the result stored in xi
+     *
+     * @param xi xi.
+     * @param yi yi.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    default void xori(MpcZ2Vector[] xi, MpcZ2Vector[] yi) throws MpcAbortException{
+        MathPreconditions.checkEqual("xi.length", "yi.length", xi.length, yi.length);
+        for(int i = 0; i < xi.length; i++){
+            xori(xi[i], yi[i]);
+        }
+    }
 
     /**
      * OR operation.
@@ -234,6 +277,14 @@ public interface MpcZ2cParty {
      * @throws MpcAbortException the protocol failure aborts.
      */
     MpcZ2Vector not(MpcZ2Vector xi) throws MpcAbortException;
+
+    /**
+     * NOT operation.
+     *
+     * @param xi xi.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    void noti(MpcZ2Vector xi) throws MpcAbortException;
 
     /**
      * Vector NOT operation.
@@ -292,5 +343,32 @@ public interface MpcZ2cParty {
      */
     default MpcZ2Vector[] eq(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) throws MpcAbortException {
         return not(xor(xiArray, yiArray));
+    }
+
+    /**
+     * set public values into shared value
+     *
+     * @param data the vectors.
+     * @return the shared vector.
+     */
+    MpcZ2Vector[] setPublicValues(BitVector[] data);
+
+    /**
+     * splits the vector with padding each vector into a vec with bit length % 8 = 0
+     *
+     * @param vectors the vectors.
+     * @return the merged vector.
+     */
+    default MpcZ2Vector mergeWithPadding(MpcZ2Vector[] vectors) {
+        assert vectors.length > 0 : "merged vector length must be greater than 0";
+        boolean plain = vectors[0].isPlain();
+        BitVector[][] all = Arrays.stream(vectors).map(x -> {
+            assert x.isPlain() == plain;
+            return x.getBitVectors();
+        }).toArray(BitVector[][]::new);
+        BitVector[] mergeBits = IntStream.range(0, all[0].length).mapToObj(i ->
+            BitVectorFactory.mergeWithPadding(Arrays.stream(all).map(x -> x[i]).toArray(BitVector[]::new))
+        ).toArray(BitVector[]::new);
+        return create(plain, mergeBits);
     }
 }

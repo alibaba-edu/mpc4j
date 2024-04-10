@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotSenderOutput;
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/4/11
  */
 @RunWith(Parameterized.class)
-public class NcLnotTest extends AbstractTwoPartyPtoTest {
+public class NcLnotTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(NcLnotTest.class);
     /**
      * default l

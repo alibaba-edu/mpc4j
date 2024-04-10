@@ -9,6 +9,7 @@ import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * CM20-MP-OPRF utilities.
@@ -72,7 +73,7 @@ public class Cm20MpOprfUtils {
     private static BigDecimal calBaseNegl(final int n, int w) {
         // 对于任意i \in [1, w], j \in [1, n]，都有Pr[D_i[j] = 1] = (1 - 1 / m)^{n_2}
         BigDecimal pBigDecimal = BigDecimal.valueOf(Math.pow(1 - 1.0 / n, n))
-            .setScale(BigDecimalUtils.PRECISION, BigDecimalUtils.ROUNDING_MODE);
+            .setScale(BigDecimalUtils.PRECISION, RoundingMode.HALF_UP);
         BigDecimal negl = BigDecimal.ZERO;
         for (int k = 0; k <= CommonConstants.BLOCK_BIT_LENGTH - 1; k++) {
             negl = negl.add(pBigDecimal.pow(k)
@@ -85,7 +86,7 @@ public class Cm20MpOprfUtils {
     private static BigDecimal calMaliciousNegl(long n, int w) {
         // negl = (1 / 2 + 1 / (2n))^w
         return BigDecimalUtils.HALF
-            .add(BigDecimalUtils.HALF.divide(BigDecimal.valueOf(n), BigDecimalUtils.ROUNDING_MODE))
+            .add(BigDecimalUtils.HALF.divide(BigDecimal.valueOf(n), RoundingMode.HALF_UP))
             .pow(w);
     }
 }

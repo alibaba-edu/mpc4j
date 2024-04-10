@@ -11,7 +11,7 @@ import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory.Trans
 class JdkSplitColTransBitMatrix extends AbstractSplitColTransBitMatrix {
 
     JdkSplitColTransBitMatrix(int rows, int columns) {
-        super(TransBitMatrixType.NAIVE, rows, columns);
+        super(TransBitMatrixType.JDK, rows, columns);
     }
 
     @Override

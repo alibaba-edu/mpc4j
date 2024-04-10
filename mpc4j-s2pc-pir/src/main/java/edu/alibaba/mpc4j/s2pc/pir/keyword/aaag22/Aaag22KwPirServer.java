@@ -69,7 +69,7 @@ public class Aaag22KwPirServer extends AbstractKwPirServer {
     }
 
     @Override
-    public void init(KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> serverKeywordLabelMap, int maxRetrievalSize,
+    public void init(KwPirParams kwPirParams, Map<ByteBuffer, byte[]> serverKeywordLabelMap, int maxRetrievalSize,
                      int labelByteLength) throws MpcAbortException {
         setInitInput(serverKeywordLabelMap, maxRetrievalSize, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -83,7 +83,7 @@ public class Aaag22KwPirServer extends AbstractKwPirServer {
             isPadding = true;
         }
         List<ByteBuffer> keywordPrf = computeKeywordPrf();
-        Map<ByteBuffer, ByteBuffer> keywordPrfLabelMap = IntStream.range(0, keywordSize)
+        Map<ByteBuffer, byte[]> keywordPrfLabelMap = IntStream.range(0, keywordSize)
             .boxed()
             .collect(Collectors.toMap(
                 keywordPrf::get, i -> serverKeywordLabelMap.get(keywordList.get(i)), (a, b) -> b)
@@ -130,7 +130,7 @@ public class Aaag22KwPirServer extends AbstractKwPirServer {
     }
 
     @Override
-    public void init(Map<ByteBuffer, ByteBuffer> serverKeywordLabelMap, int maxRetrievalSize, int labelByteLength)
+    public void init(Map<ByteBuffer, byte[]> serverKeywordLabelMap, int maxRetrievalSize, int labelByteLength)
         throws MpcAbortException {
         setInitInput(serverKeywordLabelMap, maxRetrievalSize, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -143,7 +143,7 @@ public class Aaag22KwPirServer extends AbstractKwPirServer {
             isPadding = true;
         }
         List<ByteBuffer> keywordPrf = computeKeywordPrf();
-        Map<ByteBuffer, ByteBuffer> keywordPrfLabelMap = IntStream.range(0, keywordSize)
+        Map<ByteBuffer, byte[]> keywordPrfLabelMap = IntStream.range(0, keywordSize)
             .boxed()
             .collect(Collectors.toMap(
                 keywordPrf::get, i -> serverKeywordLabelMap.get(keywordList.get(i)), (a, b) -> b)
@@ -295,7 +295,7 @@ public class Aaag22KwPirServer extends AbstractKwPirServer {
      * @param keywordPrfLabelMap keyword prf label map.
      * @return encoded label.
      */
-    private List<byte[]> encodeLabel(List<ByteBuffer> keywordPrf, Map<ByteBuffer, ByteBuffer> keywordPrfLabelMap) {
+    private List<byte[]> encodeLabel(List<ByteBuffer> keywordPrf, Map<ByteBuffer, byte[]> keywordPrfLabelMap) {
         long[][] labelCoeffs = new long[params.pirDbRowNum][params.getPolyModulusDegree()];
         for (int i = 0; i < params.pirDbRowNum; i++) {
             for (int j = 0; j < params.getPolyModulusDegree(); j++) {
@@ -304,7 +304,7 @@ public class Aaag22KwPirServer extends AbstractKwPirServer {
         }
         int slotCount = params.getPolyModulusDegree() / 2;
         for (int i = 0; i < keywordSize; i++) {
-            byte[] label = keywordPrfLabelMap.get(keywordPrf.get(i)).array();
+            byte[] label = keywordPrfLabelMap.get(keywordPrf.get(i));
             if (isPadding) {
                 label = BytesUtils.paddingByteArray(label, label.length + 2);
                 label[0] = 0x01;

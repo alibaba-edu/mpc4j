@@ -55,12 +55,12 @@ public class Alpr21KwPirServer extends AbstractKwPirServer {
     public Alpr21KwPirServer(Rpc serverRpc, Party clientParty, Alpr21KwPirConfig config) {
         super(Alpr21KwPirPtoDesc.getInstance(), serverRpc, clientParty, config);
         indexPirServer = BatchIndexPirFactory.createServer(serverRpc, clientParty, config.getBatchIndexPirConfig());
-        addSubPtos(indexPirServer);
+        addSubPto(indexPirServer);
         cuckooHashBinType = config.getCuckooHashBinType();
     }
 
     @Override
-    public void init(KwPirParams kwPirParams, Map<ByteBuffer, ByteBuffer> serverKeywordLabelMap, int maxRetrievalSize,
+    public void init(KwPirParams kwPirParams, Map<ByteBuffer, byte[]> serverKeywordLabelMap, int maxRetrievalSize,
                      int labelByteLength) throws MpcAbortException {
         setInitInput(serverKeywordLabelMap, maxRetrievalSize, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -71,7 +71,7 @@ public class Alpr21KwPirServer extends AbstractKwPirServer {
         // compute keyword prf
         stopWatch.start();
         List<ByteBuffer> keywordPrf = computeKeywordPrf();
-        Map<ByteBuffer, ByteBuffer> prfLabelMap = IntStream.range(0, keywordSize)
+        Map<ByteBuffer, byte[]> prfLabelMap = IntStream.range(0, keywordSize)
             .boxed()
             .collect(
                 Collectors.toMap(keywordPrf::get, i -> serverKeywordLabelMap.get(keywordList.get(i)), (a, b) -> b)
@@ -105,7 +105,7 @@ public class Alpr21KwPirServer extends AbstractKwPirServer {
     }
 
     @Override
-    public void init(Map<ByteBuffer, ByteBuffer> serverKeywordLabelMap, int maxRetrievalSize, int labelByteLength)
+    public void init(Map<ByteBuffer, byte[]> serverKeywordLabelMap, int maxRetrievalSize, int labelByteLength)
         throws MpcAbortException {
         setInitInput(serverKeywordLabelMap, maxRetrievalSize, labelByteLength);
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -115,7 +115,7 @@ public class Alpr21KwPirServer extends AbstractKwPirServer {
         // compute keyword prf
         stopWatch.start();
         List<ByteBuffer> keywordPrf = computeKeywordPrf();
-        Map<ByteBuffer, ByteBuffer> prfLabelMap = IntStream.range(0, keywordSize)
+        Map<ByteBuffer, byte[]> prfLabelMap = IntStream.range(0, keywordSize)
             .boxed()
             .collect(
                 Collectors.toMap(keywordPrf::get, i -> serverKeywordLabelMap.get(keywordList.get(i)), (a, b) -> b)
@@ -188,7 +188,7 @@ public class Alpr21KwPirServer extends AbstractKwPirServer {
      * @param prfLabelMap keyword prf label map.
      * @return database.
      */
-    private NaiveDatabase generateCuckooHashBin(List<ByteBuffer> keywordPrf, Map<ByteBuffer, ByteBuffer> prfLabelMap) {
+    private NaiveDatabase generateCuckooHashBin(List<ByteBuffer> keywordPrf, Map<ByteBuffer, byte[]> prfLabelMap) {
         byte[] botElementByteArray = new byte[params.keywordPrfByteLength];
         Arrays.fill(botElementByteArray, (byte) 0xFF);
         botElementByteBuffer = ByteBuffer.wrap(botElementByteArray);
@@ -202,7 +202,7 @@ public class Alpr21KwPirServer extends AbstractKwPirServer {
             ByteBuffer item = cuckooHashBin.getHashBinEntry(i).getItem();
             byte[] value = new byte[labelByteLength];
             if (prfLabelMap.get(item) != null) {
-                value = prfLabelMap.get(item).array();
+                value = prfLabelMap.get(item);
             } else {
                 secureRandom.nextBytes(value);
             }

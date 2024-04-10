@@ -2,7 +2,6 @@ package edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
@@ -160,7 +159,6 @@ public class CuckooHashBinParamsTest {
     }
 
     private void testLogNum(int logNum) {
-        MathPreconditions.checkInRangeClosed("logNum", logNum, 1, 7);
         int[] binNumArray;
         switch (hashNum) {
             case 3:

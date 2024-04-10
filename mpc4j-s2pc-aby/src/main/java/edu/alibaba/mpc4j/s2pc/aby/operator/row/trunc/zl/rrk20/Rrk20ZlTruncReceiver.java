@@ -45,9 +45,9 @@ public class Rrk20ZlTruncReceiver extends AbstractZlTruncParty {
     public Rrk20ZlTruncReceiver(Rpc receiverRpc, Party senderParty, Rrk20ZlTruncConfig config) {
         super(getInstance(), receiverRpc, senderParty, config);
         dreluReceiver = ZlDreluFactory.createReceiver(receiverRpc, senderParty, config.getZlDreluConfig());
-        addSubPtos(dreluReceiver);
+        addSubPto(dreluReceiver);
         lnotReceiver = LnotFactory.createReceiver(receiverRpc, senderParty, config.getLnotConfig());
-        addSubPtos(lnotReceiver);
+        addSubPto(lnotReceiver);
     }
 
     @Override

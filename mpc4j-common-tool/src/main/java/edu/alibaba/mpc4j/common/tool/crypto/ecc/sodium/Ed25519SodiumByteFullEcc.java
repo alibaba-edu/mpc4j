@@ -25,11 +25,11 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
     }
 
     /**
-     * 哈希函数
+     * hash used in hash_to_curve
      */
     private final Hash hash;
 
-    public Ed25519SodiumByteFullEcc() {
+    private Ed25519SodiumByteFullEcc() {
         hash = HashFactory.createInstance(HashFactory.HashType.JDK_SHA256, Ed25519ByteEccUtils.POINT_BYTES);
         Ed25519ByteEccUtils.precomputeBase();
     }
@@ -185,5 +185,19 @@ public class Ed25519SodiumByteFullEcc implements ByteFullEcc {
     @Override
     public int scalarByteLength() {
         return Ed25519ByteEccUtils.SCALAR_BYTES;
+    }
+
+    /**
+     * singleton mode
+     */
+    private static final Ed25519SodiumByteFullEcc INSTANCE = new Ed25519SodiumByteFullEcc();
+
+    /**
+     * Gets the instance.
+     *
+     * @return the instance.
+     */
+    public static Ed25519SodiumByteFullEcc getInstance() {
+        return INSTANCE;
     }
 }

@@ -60,7 +60,7 @@ public class Kkrt16OriOprfSender extends AbstractOprfSender {
     public Kkrt16OriOprfSender(Rpc senderRpc, Party receiverParty, Kkrt16OriOprfConfig config) {
         super(Kkrt16OriOprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotReceiver = CoreCotFactory.createReceiver(senderRpc, receiverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotReceiver);
+        addSubPto(coreCotReceiver);
     }
 
     @Override

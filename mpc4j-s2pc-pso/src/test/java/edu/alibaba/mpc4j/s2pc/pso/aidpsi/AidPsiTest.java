@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.aidpsi;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractThreePartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractThreePartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.pso.aidpsi.AidPsiFactory.AidPsiType;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.pso.aidpsi.passive.Kmrs14ShAidPsiConfig;
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/5/8
  */
 @RunWith(Parameterized.class)
-public class AidPsiTest extends AbstractThreePartyPtoTest {
+public class AidPsiTest extends AbstractThreePartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(AidPsiTest.class);
     /**
      * default size

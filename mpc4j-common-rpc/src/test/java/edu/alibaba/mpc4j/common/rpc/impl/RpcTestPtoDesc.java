@@ -24,23 +24,27 @@ class RpcTestPtoDesc implements PtoDesc {
      */
     enum PtoStep {
         /**
-         * 空数据包
+         * empty
          */
         EMPTY,
         /**
-         * 长度为0的数据包
+         * length = 0
          */
         ZERO_LENGTH,
         /**
-         * 单条数据
+         * singleton
          */
-        SINGLE,
+        SINGLETON,
         /**
-         * 带额外信息
+         * equal-length
+         */
+        EQUAL_LENGTH,
+        /**
+         * extra information
          */
         EXTRA_INFO,
         /**
-         * 任取数据包
+         * take-any
          */
         TAKE_ANY,
     }

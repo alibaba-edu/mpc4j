@@ -50,7 +50,7 @@ public abstract class AbstractSqOprfPsiServer<T> extends AbstractPsiServer<T> {
     public AbstractSqOprfPsiServer(PtoDesc ptoDesc, Rpc serverRpc, Party clientParty, SqOprfPsiConfig config) {
         super(ptoDesc, serverRpc, clientParty, config);
         sqOprfSender = SqOprfFactory.createSender(serverRpc, clientParty, config.getSqOprfConfig());
-        addSubPtos(sqOprfSender);
+        addSubPto(sqOprfSender);
         filterType = config.getFilterType();
     }
 

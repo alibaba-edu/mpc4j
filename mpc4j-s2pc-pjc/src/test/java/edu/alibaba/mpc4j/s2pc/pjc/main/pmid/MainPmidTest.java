@@ -39,13 +39,13 @@ public class MainPmidTest {
 
     @Test
     public void testZcl22MpZcl22Pke() throws Exception {
-        Properties properties = readConfig("pmid/conf_pmid_zcl22_mp_zcl22_pke.txt");
+        Properties properties = readConfig("pmid/conf_pmid_zcl22_mp_zcl23_pke.txt");
         runTest(new PmidMain(properties));
     }
 
     @Test
     public void testZcl22MpZcl22PkeCompressFalse() throws Exception {
-        Properties properties = readConfig("pmid/conf_pmid_zcl22_mp_zcl22_pke_compress_false.txt");
+        Properties properties = readConfig("pmid/conf_pmid_zcl22_mp_zcl23_pke_compress_false.txt");
         runTest(new PmidMain(properties));
     }
 
@@ -57,13 +57,13 @@ public class MainPmidTest {
 
     @Test
     public void testZcl22SloppyZcl22Pke() throws Exception {
-        Properties properties = readConfig("pmid/conf_pmid_zcl22_sloppy_zcl22_pke.txt");
+        Properties properties = readConfig("pmid/conf_pmid_zcl22_sloppy_zcl23_pke.txt");
         runTest(new PmidMain(properties));
     }
 
     @Test
     public void testZcl22SloppyZcl22PkeCompressFalse() throws Exception {
-        Properties properties = readConfig("pmid/conf_pmid_zcl22_sloppy_zcl22_pke_compress_false.txt");
+        Properties properties = readConfig("pmid/conf_pmid_zcl22_sloppy_zcl23_pke_compress_false.txt");
         runTest(new PmidMain(properties));
     }
 

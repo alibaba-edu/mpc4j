@@ -44,7 +44,7 @@ public class CacheZ2MtgReceiver extends AbstractZ2MtgParty {
         super(CacheZ2MtgPtoDesc.getInstance(), receiverRpc, senderParty, config);
         Z2CoreMtgConfig coreMtgConfig = config.getCoreMtgConfig();
         coreMtgReceiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderParty, coreMtgConfig);
-        addSubPtos(coreMtgReceiver);
+        addSubPto(coreMtgReceiver);
         maxBaseNum = coreMtgConfig.maxNum();
     }
 
@@ -52,7 +52,7 @@ public class CacheZ2MtgReceiver extends AbstractZ2MtgParty {
         super(CacheZ2MtgPtoDesc.getInstance(), receiverRpc, senderParty, config);
         Z2CoreMtgConfig coreMtgConfig = config.getCoreMtgConfig();
         coreMtgReceiver = Z2CoreMtgFactory.createReceiver(receiverRpc, senderParty, aiderParty, coreMtgConfig);
-        addSubPtos(coreMtgReceiver);
+        addSubPto(coreMtgReceiver);
         maxBaseNum = coreMtgConfig.maxNum();
     }
 

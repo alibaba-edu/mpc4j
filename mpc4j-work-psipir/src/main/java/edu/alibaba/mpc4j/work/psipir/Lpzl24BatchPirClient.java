@@ -62,7 +62,7 @@ public class Lpzl24BatchPirClient extends AbstractBatchPirClient {
     public Lpzl24BatchPirClient(Rpc clientRpc, Party serverParty, Lpzl24BatchPirConfig config) {
         super(getInstance(), clientRpc, serverParty, config);
         upsiClient = new Cmg21UpsiClient<>(clientRpc, serverParty, (Cmg21UpsiConfig) config.getUpsiConfig());
-        addSubPtos(upsiClient);
+        addSubPto(upsiClient);
         ecc = ByteEccFactory.createFullInstance(envType);
     }
 

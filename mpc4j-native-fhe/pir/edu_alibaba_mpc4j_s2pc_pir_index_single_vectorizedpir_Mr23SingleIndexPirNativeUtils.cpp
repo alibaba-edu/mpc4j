@@ -15,7 +15,7 @@ jbyteArray JNICALL Java_edu_alibaba_mpc4j_s2pc_pir_index_single_vectorizedpir_Mr
     EncryptionParameters parms = EncryptionParameters(scheme_type::bfv);
     parms.set_poly_modulus_degree(poly_modulus_degree);
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, plain_modulus_size));
-    parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, {55, 55, 48, 60}));
+    parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, {42, 58, 58, 60}));
     SEALContext context = SEALContext(parms);
     jclass exception = env->FindClass("java/lang/Exception");
     if (!context.parameters_set()) {

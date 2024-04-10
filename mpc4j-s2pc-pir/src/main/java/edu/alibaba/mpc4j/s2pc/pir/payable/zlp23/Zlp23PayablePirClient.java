@@ -15,7 +15,6 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirFactory;
-import edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21.Cmg21KwPirParams;
 import edu.alibaba.mpc4j.s2pc.pir.payable.AbstractPayablePirClient;
 
 import java.math.BigInteger;
@@ -50,7 +49,7 @@ public class Zlp23PayablePirClient extends AbstractPayablePirClient {
         super(getInstance(), clientRpc, serverParty, config);
         ecc = ByteEccFactory.createFullInstance(envType);
         kwPirClient = KwPirFactory.createClient(clientRpc, serverParty, config.getKwPirConfig());
-        addSubPtos(kwPirClient);
+        addSubPto(kwPirClient);
     }
 
     @Override
@@ -69,13 +68,13 @@ public class Zlp23PayablePirClient extends AbstractPayablePirClient {
     }
 
     @Override
-    public ByteBuffer pir(ByteBuffer retrievalKey) throws MpcAbortException {
+    public byte[] pir(ByteBuffer retrievalKey) throws MpcAbortException {
         setPtoInput(retrievalKey);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         // run MP-OPRF
         stopWatch.start();
-        Map<ByteBuffer, ByteBuffer> pirResult = kwPirClient.pir(Collections.singleton(retrievalKey));
+        Map<ByteBuffer, byte[]> pirResult = kwPirClient.pir(Collections.singleton(retrievalKey));
         MpcAbortPreconditions.checkArgument(pirResult.size() <= 1);
         stopWatch.stop();
         long kwPirTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -97,7 +96,7 @@ public class Zlp23PayablePirClient extends AbstractPayablePirClient {
         logStepInfo(PtoState.PTO_STEP, 2, 3, oprfTime, "Client executes OPRF");
 
         stopWatch.start();
-        ByteBuffer result = null;
+        byte[] result = null;
         if (pirResult.size() == 1) {
             DataPacketHeader blindPrfHeader = new DataPacketHeader(
                 encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_BLIND_PRF.ordinal(), extraInfo,
@@ -138,13 +137,12 @@ public class Zlp23PayablePirClient extends AbstractPayablePirClient {
      * @param blindPrf blind element PRF.
      * @return element PRF.
      */
-    private ByteBuffer handleBlindPrf(byte[] blindPrf, ByteBuffer encryptedLabel) {
+    private byte[] handleBlindPrf(byte[] blindPrf, byte[] encryptedLabel) {
         byte[] elementPrf = ecc.mul(blindPrf, inverseBeta);
         Prg prg = PrgFactory.createInstance(envType, valueByteLength);
         Hash hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
         byte[] digest = hash.digestToBytes(elementPrf);
         byte[] extendedPrf = prg.extendToBytes(digest);
-        byte[] label = BytesUtils.xor(extendedPrf, encryptedLabel.array());
-        return ByteBuffer.wrap(label);
+        return BytesUtils.xor(extendedPrf, encryptedLabel);
     }
 }

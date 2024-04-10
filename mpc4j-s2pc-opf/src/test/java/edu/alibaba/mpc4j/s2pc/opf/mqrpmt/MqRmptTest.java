@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.opf.mqrpmt;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.opf.OpfUtils;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtConfig;
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
  * @date 2022/09/10
  */
 @RunWith(Parameterized.class)
-public class MqRmptTest extends AbstractTwoPartyPtoTest {
+public class MqRmptTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(MqRmptTest.class);
     /**
      * default size

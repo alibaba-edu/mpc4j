@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pir.cppir.keyword;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.SingleCpPirFactory.SingleCpPirType;
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
  * @date 2023/9/14
  */
 @RunWith(Parameterized.class)
-public class SingleCpKsPirTest extends AbstractTwoPartyPtoTest {
+public class SingleCpKsPirTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * default element bit length
      */

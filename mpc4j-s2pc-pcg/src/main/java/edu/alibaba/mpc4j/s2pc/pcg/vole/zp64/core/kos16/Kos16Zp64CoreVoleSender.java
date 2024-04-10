@@ -49,7 +49,7 @@ public class Kos16Zp64CoreVoleSender extends AbstractZp64CoreVoleSender {
     public Kos16Zp64CoreVoleSender(Rpc senderRpc, Party receiverParty, Kos16Zp64CoreVoleConfig config) {
         super(Kos16Zp64CoreVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
         baseOtSender = BaseOtFactory.createSender(senderRpc, receiverParty, config.getBaseOtConfig());
-        addSubPtos(baseOtSender);
+        addSubPto(baseOtSender);
     }
 
     @Override

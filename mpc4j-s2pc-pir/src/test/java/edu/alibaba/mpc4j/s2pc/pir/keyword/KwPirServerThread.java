@@ -22,7 +22,7 @@ public class KwPirServerThread extends Thread {
     /**
      * keyword label map
      */
-    private final Map<ByteBuffer, ByteBuffer> keywordLabelMap;
+    private final Map<ByteBuffer, byte[]> keywordLabelMap;
     /**
      * retrieval size
      */
@@ -36,7 +36,7 @@ public class KwPirServerThread extends Thread {
      */
     private final int repeatTime;
 
-    KwPirServerThread(KwPirServer server, Map<ByteBuffer, ByteBuffer> keywordLabelMap, int retrievalSize,
+    KwPirServerThread(KwPirServer server, Map<ByteBuffer, byte[]> keywordLabelMap, int retrievalSize,
                       int labelByteLength, int repeatTime) {
         this.server = server;
         this.keywordLabelMap = keywordLabelMap;

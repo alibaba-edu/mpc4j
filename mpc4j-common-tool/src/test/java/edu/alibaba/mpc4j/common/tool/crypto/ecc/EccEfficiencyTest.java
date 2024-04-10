@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory.ByteEccType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory.EccType;
-import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.bouncycastle.math.ec.ECPoint;
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * 椭圆曲线性能测试。
+ * ECC efficiency test.
  *
  * @author Weiran Liu
  * @date 2022/4/19
@@ -28,30 +28,29 @@ import java.util.stream.IntStream;
 public class EccEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(EccEfficiencyTest.class);
     /**
-     * log(n)
+     * log(n) for most operations
      */
     private static final int LOG_N = 10;
     /**
-     * 次数输出格式
+     * log(n) for addition
      */
-    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("00");
+    private static final int ADD_LOG_N = 12;
     /**
-     * 输出格式
+     * time format
      */
     private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.0000");
     /**
-     * 随机状态
+     * random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
-     * 秒表
+     * stop watch
      */
     private static final StopWatch STOP_WATCH = new StopWatch();
     /**
-     * 椭圆曲线测试类型
+     * ECC type
      */
-    private static final EccType[] ECC_TYPES = new EccType[] {
-        EccType.SEC_P256_K1_MCL,
+    private static final EccType[] ECC_TYPES = new EccType[]{
         EccType.SEC_P256_K1_OPENSSL,
         EccType.SEC_P256_K1_BC,
         EccType.SEC_P256_R1_OPENSSL,
@@ -63,9 +62,9 @@ public class EccEfficiencyTest {
     };
 
     /**
-     * 字节椭圆曲线测试类型
+     * Byte ECC type
      */
-    private static final ByteEccFactory.ByteEccType[] BYTE_MUL_ECC_TYPES = new ByteEccFactory.ByteEccType[] {
+    private static final ByteEccFactory.ByteEccType[] BYTE_MUL_ECC_TYPES = new ByteEccFactory.ByteEccType[]{
         ByteEccFactory.ByteEccType.X25519_SODIUM,
         ByteEccFactory.ByteEccType.X25519_BC,
         ByteEccFactory.ByteEccType.ED25519_SODIUM,
@@ -76,13 +75,14 @@ public class EccEfficiencyTest {
     @Test
     public void testEfficiency() {
         LOGGER.info(
-            "{}\t{}\t{}\t{}\t{}\t{}",
-            "                name", "    log(n)", "  Hash(ms)", "RndPt.(ms)", " Mul.(ms)", "PMul.(ms)"
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "                name", "  Hash(ms)", "RndPt.(ms)", " Add.(ms)", " Mul.(ms)", "Pre.(ms)", "PMul.(ms)"
         );
         int n = 1 << LOG_N;
+        int addN = 1 << ADD_LOG_N;
         for (EccType type : ECC_TYPES) {
             Ecc ecc = EccFactory.createInstance(type);
-            // 生成随机消息
+            // generate random messages
             byte[][] messages = IntStream.range(0, n)
                 .mapToObj(index -> {
                     byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
@@ -90,59 +90,73 @@ public class EccEfficiencyTest {
                     return message;
                 })
                 .toArray(byte[][]::new);
-            // 预热
+
+            // warmup
             Arrays.stream(messages).forEach(ecc::hashToCurve);
-            // 单次调用HashToCurve
+
+            // hash
             STOP_WATCH.start();
             Arrays.stream(messages).forEach(ecc::hashToCurve);
             STOP_WATCH.stop();
-            double hashToCurveTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
+            String hashToCurveTime = TIME_DECIMAL_FORMAT.format((double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n);
             STOP_WATCH.reset();
-            // 单次生成随机数
+
+            // random point
             STOP_WATCH.start();
             IntStream.range(0, n).forEach(index -> ecc.randomPoint(SECURE_RANDOM));
             STOP_WATCH.stop();
-            double randomPointTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
+            String randomPointTime = TIME_DECIMAL_FORMAT.format((double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n);
             STOP_WATCH.reset();
 
-            // 生成一个非生成元的点
-            BigInteger gr = BigIntegerUtils.randomPositive(ecc.getN(), SECURE_RANDOM);
-            ECPoint h = ecc.multiply(ecc.getG(), gr);
-            // 生成幂指数
-            BigInteger[] rs = IntStream.range(0, n)
-                .mapToObj(index -> BigIntegerUtils.randomPositive(ecc.getN(), SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            // 单次幂运算
+            // generate two random points for addition
+            ECPoint[] h1s = IntStream.range(0, addN).mapToObj(index -> ecc.randomPoint(SECURE_RANDOM)).toArray(ECPoint[]::new);
+            ECPoint[] h2s = IntStream.range(0, addN).mapToObj(index -> ecc.randomPoint(SECURE_RANDOM)).toArray(ECPoint[]::new);
             STOP_WATCH.start();
-            Arrays.stream(rs).forEach(r -> ecc.multiply(h, r));
+            IntStream.range(0, addN).forEach(index -> ecc.add(h1s[index], h2s[index]));
             STOP_WATCH.stop();
-            double multiplyTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
+            String addTime = TIME_DECIMAL_FORMAT.format((double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / addN);
             STOP_WATCH.reset();
 
-            // 预计算
+            // generate random points and random scalars for multiplication
+            ECPoint[] hs = IntStream.range(0, n).mapToObj(index -> ecc.randomPoint(SECURE_RANDOM)).toArray(ECPoint[]::new);
+            BigInteger[] rs = IntStream.range(0, n).mapToObj(index -> ecc.randomZn(SECURE_RANDOM)).toArray(BigInteger[]::new);
+            STOP_WATCH.start();
+            IntStream.range(0, n).forEach(index -> ecc.multiply(hs[index], rs[index]));
+            STOP_WATCH.stop();
+            String multiplyTime = TIME_DECIMAL_FORMAT.format((double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n);
+            STOP_WATCH.reset();
+
+            // generate a random point for pre-computation
+            ECPoint h = ecc.randomPoint(SECURE_RANDOM);
+            // precompute
+            STOP_WATCH.start();
             ecc.precompute(h);
-            // 预计算单次幂运算
+            STOP_WATCH.stop();
+            String precomputeTime = String.valueOf(STOP_WATCH.getTime(TimeUnit.MILLISECONDS));
+            STOP_WATCH.reset();
+            // fix-point multiplication
             STOP_WATCH.start();
             Arrays.stream(rs).forEach(r -> ecc.multiply(h, r));
             STOP_WATCH.stop();
-            double precomputeMultiplyTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
+            String fixMultiplyTime = TIME_DECIMAL_FORMAT.format((double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n);
             STOP_WATCH.reset();
-            STOP_WATCH.reset();
-            // 销毁预计算
+            // destroy precompute
             ecc.destroyPrecompute(h);
+
             LOGGER.info(
-                "{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(hashToCurveTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(randomPointTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(multiplyTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(precomputeMultiplyTime), 10)
+                StringUtils.leftPad(hashToCurveTime, 10),
+                StringUtils.leftPad(randomPointTime, 10),
+                StringUtils.leftPad(addTime, 10),
+                StringUtils.leftPad(multiplyTime, 10),
+                StringUtils.leftPad(precomputeTime, 10),
+                StringUtils.leftPad(fixMultiplyTime, 10)
             );
         }
-        for (ByteEccFactory.ByteEccType type : BYTE_MUL_ECC_TYPES) {
+        for (ByteEccType type : BYTE_MUL_ECC_TYPES) {
             ByteMulEcc byteMulEcc = ByteEccFactory.createMulInstance(type);
-            // 生成随机消息
+            // generate random messages
             byte[][] messages = IntStream.range(0, n)
                 .mapToObj(index -> {
                     byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
@@ -150,42 +164,55 @@ public class EccEfficiencyTest {
                     return message;
                 })
                 .toArray(byte[][]::new);
-            // 预热
+
+            // warmup
             Arrays.stream(messages).forEach(byteMulEcc::hashToCurve);
-            // 单次调用HashToCurve
+
+            // hash
             STOP_WATCH.start();
             Arrays.stream(messages).forEach(byteMulEcc::hashToCurve);
             STOP_WATCH.stop();
-            double hashToCurveTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
+            String hashToCurveTime = TIME_DECIMAL_FORMAT.format((double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n);
             STOP_WATCH.reset();
-            // 单次生成随机数
+
+            // random point
             STOP_WATCH.start();
             IntStream.range(0, n).forEach(index -> byteMulEcc.randomPoint(SECURE_RANDOM));
             STOP_WATCH.stop();
-            double randomPointTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
+            String randomPointTime = TIME_DECIMAL_FORMAT.format((double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n);
             STOP_WATCH.reset();
 
-            // 生成一个非生成元的点
-            byte[] hr = byteMulEcc.randomScalar(SECURE_RANDOM);
-            byte[] h = byteMulEcc.mul(byteMulEcc.getG(), hr);
-            // 生成幂指数
-            byte[][] rs = IntStream.range(0, n)
-                .mapToObj(index -> byteMulEcc.randomScalar(SECURE_RANDOM))
-                .toArray(byte[][]::new);
-            // 单次幂运算
+            String addTime = "--";
+            if (ByteEccFactory.isByteFullEcc(type)) {
+                ByteFullEcc byteFullEcc = (ByteFullEcc) byteMulEcc;
+                // generate two random points for addition
+                byte[][] h1s = IntStream.range(0, addN).mapToObj(index -> byteMulEcc.randomPoint(SECURE_RANDOM)).toArray(byte[][]::new);
+                byte[][] h2s = IntStream.range(0, addN).mapToObj(index -> byteMulEcc.randomPoint(SECURE_RANDOM)).toArray(byte[][]::new);
+                STOP_WATCH.start();
+                IntStream.range(0, addN).forEach(index -> byteFullEcc.add(h1s[index], h2s[index]));
+                STOP_WATCH.stop();
+                addTime = TIME_DECIMAL_FORMAT.format((double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / addN);
+                STOP_WATCH.reset();
+            }
+
+            // generate random points and random scalars for multiplication
+            byte[][] hs = IntStream.range(0, n).mapToObj(index -> byteMulEcc.randomPoint(SECURE_RANDOM)).toArray(byte[][]::new);
+            byte[][] rs = IntStream.range(0, n).mapToObj(index -> byteMulEcc.randomScalar(SECURE_RANDOM)).toArray(byte[][]::new);
             STOP_WATCH.start();
-            Arrays.stream(rs).forEach(r -> byteMulEcc.mul(h, r));
+            IntStream.range(0, n).forEach(index -> byteMulEcc.mul(hs[index], rs[index]));
             STOP_WATCH.stop();
-            double mulTime = (double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n;
+            String multiplyTime = TIME_DECIMAL_FORMAT.format((double) STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / n);
             STOP_WATCH.reset();
+
             LOGGER.info(
-                "{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad("(B) " + type.name(), 20),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(hashToCurveTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(randomPointTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(mulTime), 10),
-                StringUtils.leftPad("    --    ", 10)
+                StringUtils.leftPad(hashToCurveTime, 10),
+                StringUtils.leftPad(randomPointTime, 10),
+                StringUtils.leftPad(addTime, 10),
+                StringUtils.leftPad(multiplyTime, 10),
+                StringUtils.leftPad("--", 10),
+                StringUtils.leftPad("--", 10)
             );
         }
     }

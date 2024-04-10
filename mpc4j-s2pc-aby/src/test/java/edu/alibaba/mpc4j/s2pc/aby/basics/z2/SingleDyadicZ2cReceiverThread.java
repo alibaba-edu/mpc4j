@@ -78,8 +78,8 @@ class SingleDyadicZ2cReceiverThread extends Thread {
         try {
             receiver.init(bitNum);
             // generate x and y
-            MpcZ2Vector xPlainMpcVector = receiver.create(xVector);
-            MpcZ2Vector yPlainMpcVector = receiver.create(yVector);
+            MpcZ2Vector xPlainMpcVector = receiver.create(true, xVector);
+            MpcZ2Vector yPlainMpcVector = receiver.create(true, yVector);
             MpcZ2Vector x1SecretMpcVector = receiver.shareOther(bitNum);
             MpcZ2Vector y1SecretMpcVector = receiver.shareOwn(yVector);
             MpcZ2Vector z1PlainPlainMpcVector, z1PlainSecretMpcVector;

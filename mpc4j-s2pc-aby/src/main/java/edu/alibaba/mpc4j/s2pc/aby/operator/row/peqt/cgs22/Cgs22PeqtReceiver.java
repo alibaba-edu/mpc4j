@@ -39,9 +39,9 @@ public class Cgs22PeqtReceiver extends AbstractPeqtParty {
     public Cgs22PeqtReceiver(Rpc senderRpc, Party receiverParty, Cgs22PeqtConfig config) {
         super(Cgs22PeqtPtoDesc.getInstance(), senderRpc, receiverParty, config);
         z2cReceiver = Z2cFactory.createReceiver(senderRpc, receiverParty, config.getZ2cConfig());
-        addSubPtos(z2cReceiver);
+        addSubPto(z2cReceiver);
         lnotReceiver = LnotFactory.createReceiver(senderRpc, receiverParty, config.getLnotConfig());
-        addSubPtos(lnotReceiver);
+        addSubPto(lnotReceiver);
     }
 
     @Override

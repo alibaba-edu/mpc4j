@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.row.mux.zl;
 
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/4/10
  */
 @RunWith(Parameterized.class)
-public class ZlMuxTest extends AbstractTwoPartyPtoTest {
+public class ZlMuxTest extends AbstractTwoPartyMemoryRpcPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZlMuxTest.class);
     /**
      * default num

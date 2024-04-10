@@ -8,59 +8,132 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 数据包。
+ * data packet.
  *
  * @author Weiran Liu
  * @date 2021/12/08
  */
 public final class DataPacket {
     /**
-     * 数据包头
+     * header
      */
     private DataPacketHeader header;
     /**
-     * 数据包负载
+     * payload type
+     */
+    private PayloadType payloadType;
+    /**
+     * payload
      */
     private List<byte[]> payload;
+    /**
+     * equal length
+     */
+    private int equalLength;
 
     /**
-     * 构建数据包。
+     * Creates a data packet.
      *
-     * @param header  数据包头。
-     * @param payload 数据包负载。
-     * @return 数据包。
+     * @param header  header.
+     * @param payload payload.
+     * @return a data packet.
      */
     public static DataPacket fromByteArrayList(DataPacketHeader header, List<byte[]> payload) {
         DataPacket dataPacket = new DataPacket();
         dataPacket.header = header;
+        dataPacket.payload = payload;
+        dataPacket.equalLength = -1;
+
+        // empty payload
+        if (payload.size() == 0) {
+            dataPacket.payloadType = PayloadType.EMPTY;
+            return dataPacket;
+        }
+
+        // singleton payload
+        if (payload.size() == 1) {
+            dataPacket.payloadType = PayloadType.SINGLETON;
+            return dataPacket;
+        }
+
+        // try equal-size payload
+        boolean equalSize = true;
+        int length = payload.get(0).length;
+        for (byte[] data : payload) {
+            if (data.length != length) {
+                equalSize = false;
+                break;
+            }
+        }
+        if (equalSize) {
+            dataPacket.payloadType = PayloadType.EQUAL_SIZE;
+            dataPacket.equalLength = length;
+            return dataPacket;
+        }
+
+        // normal payload
+        dataPacket.payloadType = PayloadType.NORMAL;
+        return dataPacket;
+    }
+
+    /**
+     * Creates a data packet without checking correctness.
+     *
+     * @param header      header.
+     * @param payloadType type.
+     * @param payload     payload.
+     * @return a data packet.
+     */
+    public static DataPacket fromUncheck(DataPacketHeader header, PayloadType payloadType, List<byte[]> payload) {
+        DataPacket dataPacket = new DataPacket();
+        dataPacket.header = header;
+        dataPacket.payloadType = payloadType;
         dataPacket.payload = payload;
 
         return dataPacket;
     }
 
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private DataPacket() {
         // empty
     }
 
     /**
-     * 返回数据包头。
+     * Gets header.
      *
-     * @return 数据包头。
+     * @return header.
      */
     public DataPacketHeader getHeader() {
         return header;
     }
 
     /**
-     * 返回数据包负载。
+     * Gets payload type.
      *
-     * @return 数据包负载。
+     * @return payload type.
+     */
+    public PayloadType getPayloadType() {
+        return payloadType;
+    }
+
+    /**
+     * Gets payload.
+     *
+     * @return payload.
      */
     public List<byte[]> getPayload() {
         return payload;
+    }
+
+    /**
+     * Gets equal length. If the payload is not equal-length, return -1.
+     *
+     * @return equal length.
+     */
+    public int getEqualLength() {
+        return equalLength;
     }
 
     @Override
@@ -79,7 +152,7 @@ public final class DataPacket {
         if (obj == this) {
             return true;
         }
-        DataPacket that = (DataPacket)obj;
+        DataPacket that = (DataPacket) obj;
         return new EqualsBuilder()
             .append(this.header, that.header)
             .append(

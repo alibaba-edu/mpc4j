@@ -39,11 +39,11 @@ public class Rrk20ZlGreaterReceiver extends AbstractZlGreaterParty {
     public Rrk20ZlGreaterReceiver(Rpc receiverRpc, Party senderParty, Rrk20ZlGreaterConfig config) {
         super(Rrk20ZlGreaterPtoDesc.getInstance(), receiverRpc, senderParty, config);
         zlcReceiver = ZlcFactory.createReceiver(receiverRpc, senderParty, config.getZlcConfig());
-        addSubPtos(zlcReceiver);
+        addSubPto(zlcReceiver);
         zlMuxReceiver = ZlMuxFactory.createReceiver(receiverRpc, senderParty, config.getZlMuxConfig());
-        addSubPtos(zlMuxReceiver);
+        addSubPto(zlMuxReceiver);
         zlDreluReceiver = ZlDreluFactory.createReceiver(receiverRpc, senderParty, config.getZlDreluConfig());
-        addSubPtos(zlDreluReceiver);
+        addSubPto(zlDreluReceiver);
     }
 
     @Override

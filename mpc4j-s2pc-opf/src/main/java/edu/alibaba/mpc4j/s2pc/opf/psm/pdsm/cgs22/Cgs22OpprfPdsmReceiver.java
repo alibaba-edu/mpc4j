@@ -32,9 +32,9 @@ public class Cgs22OpprfPdsmReceiver extends AbstractPdsmReceiver {
     public Cgs22OpprfPdsmReceiver(Rpc receiverRpc, Party senderParty, Cgs22OpprfPdsmConfig config) {
         super(Cgs22OpprfPdsmPtoDesc.getInstance(), receiverRpc, senderParty, config);
         bopprfReceiver = BopprfFactory.createReceiver(receiverRpc, senderParty, config.getBopprfConfig());
-        addSubPtos(bopprfReceiver);
+        addSubPto(bopprfReceiver);
         peqtReceiver = PeqtFactory.createReceiver(receiverRpc, senderParty, config.getPeqtConfig());
-        addSubPtos(peqtReceiver);
+        addSubPto(peqtReceiver);
     }
 
     @Override

@@ -58,9 +58,9 @@ public class Ywl20SpDpprfSender extends AbstractSpDpprfSender {
     public Ywl20SpDpprfSender(Rpc senderRpc, Party receiverParty, Ywl20SpDpprfConfig config) {
         super(Ywl20SpDpprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
         preCotSender = PreCotFactory.createSender(senderRpc, receiverParty, config.getPreCotConfig());
-        addSubPtos(preCotSender);
+        addSubPto(preCotSender);
     }
 
     @Override

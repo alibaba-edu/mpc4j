@@ -52,10 +52,10 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
     public Ywl20ShBspCotSender(Rpc senderRpc, Party receiverParty, Ywl20ShBspCotConfig config) {
         super(Ywl20ShBspCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
-        addSubPtos(coreCotSender);
+        addSubPto(coreCotSender);
         bpDpprfConfig = config.getBpDpprfConfig();
         bpDpprfSender = BpDpprfFactory.createSender(senderRpc, receiverParty, bpDpprfConfig);
-        addSubPtos(bpDpprfSender);
+        addSubPto(bpDpprfSender);
     }
 
     @Override

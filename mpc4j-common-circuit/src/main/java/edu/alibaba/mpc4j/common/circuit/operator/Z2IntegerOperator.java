@@ -35,4 +35,8 @@ public enum Z2IntegerOperator {
      * sort
      */
     SORT,
+    /**
+     * psort
+     */
+    P_SORT,
 }

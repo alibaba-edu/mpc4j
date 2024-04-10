@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pso.main.ccpsi;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
-import edu.alibaba.mpc4j.common.rpc.test.AbstractTwoPartyPtoTest;
+import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiFactory.CcpsiType;
@@ -24,7 +24,7 @@ import java.util.Properties;
  * @date 2023/10/10
  */
 @RunWith(Parameterized.class)
-public class MainCcpsiTest extends AbstractTwoPartyPtoTest {
+public class MainCcpsiTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * sender RPC
      */

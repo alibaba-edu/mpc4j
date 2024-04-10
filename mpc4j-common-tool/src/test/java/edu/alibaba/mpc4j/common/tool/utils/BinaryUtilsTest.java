@@ -374,4 +374,16 @@ public class BinaryUtilsTest {
             Assert.assertFalse(BinaryUtils.getBoolean(falseByteArray, binaryIndex));
         });
     }
+
+    @Test
+    public void testUncheckByteArrayToBinary(){
+        for(int i = 0; i < 10; i++){
+            byte[] data = new byte[SECURE_RANDOM.nextInt(128) + 1];
+            SECURE_RANDOM.nextBytes(data);
+            boolean[] all = BinaryUtils.byteArrayToBinary(data);
+            int keepBit = SECURE_RANDOM.nextInt(data.length << 3);
+            boolean[] res = BinaryUtils.uncheckByteArrayToBinary(data, keepBit);
+            Assert.assertArrayEquals(res, Arrays.copyOfRange(all, all.length - keepBit, all.length));
+        }
+    }
 }

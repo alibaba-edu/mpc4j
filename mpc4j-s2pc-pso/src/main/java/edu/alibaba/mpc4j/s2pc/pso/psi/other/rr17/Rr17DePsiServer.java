@@ -102,9 +102,9 @@ public class Rr17DePsiServer<T> extends AbstractPsiServer<T> {
         lcotInvReceiver = LcotFactory.createReceiver(serverRpc, clientParty, config.getLcotConfig());
         coinTossSender = CoinTossFactory.createSender(serverRpc, clientParty, config.getCoinTossConfig());
         divParam4PhaseHash = config.getDivParam4PhaseHash();
-        addSubPtos(lcotSender);
-        addSubPtos(lcotInvReceiver);
-        addSubPtos(coinTossSender);
+        addSubPto(lcotSender);
+        addSubPto(lcotInvReceiver);
+        addSubPto(coinTossSender);
         filterType = config.getFilterType();
     }
 

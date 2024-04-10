@@ -20,7 +20,7 @@ public interface PayablePirServer extends TwoPartyPto {
      * @param valueByteLength  value byte length.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(Map<ByteBuffer, ByteBuffer> keyValueMap, int valueByteLength) throws MpcAbortException;
+    void init(Map<ByteBuffer, byte[]> keyValueMap, int valueByteLength) throws MpcAbortException;
 
     /**
      * server executes protocol.

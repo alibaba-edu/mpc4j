@@ -43,6 +43,10 @@ We implement some cryptographic tools in `mpc4j-common-tool`. We believe these t
 - Pinkas, Benny, Mike Rosulek, Ni Trieu, and Avishay Yanai. SpOT-light: Lightweight Private Set Intersection from Sparse OT Extension. CRYPTO 2019, Part III, Springer International Publishing, pp. 401-431.
 - Kolesnikov, Vladimir, Mike Rosulek, Ni Trieu, and Xiao Wang. Scalable Private Set Union from Symmetric-key Techniques. ASIACRYPT 2019, Part II, Cham: Springer International Publishing, pp. 636-666.
 
+## Cryptographic Primitives
+
+- Boldyreva, Alexandra, Nathan Chenette, Younho Lee, and Adam O’neill. Order-preserving symmetric encryption. EUROCRYPT 2009, pp. 224-241, 2009.
+
 ## Discrete Gaussian Sampler
 
 We implement some discrete Gaussian sampling algorithms (also known as Discrete Gaussians over the Integers) in `mpc4j-common-sampler`. We learned a lot from the library [dgs](https://github.com/malb/dgs).
@@ -176,7 +180,7 @@ We implement Private Set Operations in `mpc4j-s2pc-pso` and `mpc4j-s2pc-pjc`.
 
 - Pinkas, Benny, Thomas Schneider, Oleksandr Tkachenko, and Avishay Yanai. Efficient Circuit-Based PSI with Linear Communication. EUROCRYPT 2019, Part III, Springer International Publishing, pp. 122-153.
 - Chandran, Nishanth, Divya Gupta, and Akash Shah. Circuit-PSI with Linear Complexity via Relaxed Batch OPPRF. PETS 2022, no. 1, pp. 353-372.
-- 
+- Son, Yongha, and Jinhyuck Jeong. PSI with computation or Circuit-PSI for Unbalanced Sets from Homomorphic Encryption.. AsiaCCS 2023, pp. 342-356. 2023.
 
 ### Private Set Union and Private ID
 
@@ -184,6 +188,7 @@ We implement Private Set Operations in `mpc4j-s2pc-pso` and `mpc4j-s2pc-pjc`.
 - Garimella, Gayathri, Payman Mohassel, Mike Rosulek, Saeed Sadeghian, and Jaspal Singh. Private Set Operations from Oblivious Switching. PKC 2021, Cham: Springer International Publishing, pp. 591-617.
 - Kolesnikov, Vladimir, Mike Rosulek, Ni Trieu, and Xiao Wang. Scalable Private Set Union from Symmetric-key Techniques. ASIACRYPT 2019, Part II, Cham: Springer International Publishing, pp. 636-666.
 - Buddhavarapu, Prasad, Andrew Knox, Payman Mohassel, Shubho Sengupta, Erik Taubeneck, and Vlad Vlaskin. Private Matching for Compute. Cryptology ePrint Archive, Paper 2020/599.
+- Tu, Binbin, Yu Chen, Qi Liu, and Cong Zhang. Fast Unbalanced Private Set Union from Fully Homomorphic Encryption. CCS 2023, pp. 2959-2973. 2023.
 
 ### PSI Cardinality
 
