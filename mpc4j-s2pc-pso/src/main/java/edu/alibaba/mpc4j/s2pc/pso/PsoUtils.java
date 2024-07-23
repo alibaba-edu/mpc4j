@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pso;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.bouncycastle.util.encoders.Hex;
@@ -20,22 +21,22 @@ import java.util.stream.IntStream;
 
 /**
  * PSO协议工具类。
- *
+ * <p></p>
  * 半诚实模型下相等性验证所需字节长度来自于下述论文第4.4节：
  * Pinkas, Benny, Thomas Schneider, and Michael Zohner. Scalable private set intersection based on OT extension. ACM
  * Transactions on Privacy and Security (TOPS) 21.2 (2018): 1-35.
- *
+ * <p></p>
  * P1 can perform a plaintext AES evaluation on his elements and only needs to send n1 collision-resistant strings
  * length of l = λ + log(n1) + log(n2) bit.
- *
+ * <p></p>
  * 恶意安全模型下相等性验证所需字节长度来自于下述论文第3.3节：
  * Chase, Melissa, and Peihan Miao. Private set intersection in the internet setting from lightweight oblivious PRF.
  * CRYPTO 2020, Springer, Cham, 2020.
- *
+ * <p></p>
  * Choice of l_2. The parameter l_2 is the output length of the hash function H_2, which controls the collision
  * probability of the PSI protocol. For security against malicious P_2, it can be computed similarly as
  * l_2 = σ + log_2(Q_2·n_2) where Q_2 is the maximum number of queries the adversary can make to H_2.
- *
+ * <p></p>
  * 本实现令Q_2 = 2^128，上述公式变为：l_2 = σ + 128 + log_2(n_2)。
  *
  * @author Weiran Liu
@@ -60,21 +61,6 @@ public class PsoUtils {
      */
     private PsoUtils() {
         // empty
-    }
-
-    /**
-     * 生成参与方的测试集合，各个集合的大小相等。
-     *
-     * @param prefix    前缀。
-     * @param partyNum  参与方数量。
-     * @param partySize 参与方集合大小。
-     * @return 各个参与方的集合。
-     */
-    public static ArrayList<Set<String>> generateEqualStringSets(String prefix, int partyNum, int partySize) {
-        int[] partySizes = new int[partyNum];
-        Arrays.fill(partySizes, partySize);
-
-        return generateStringSets(prefix, partySizes);
     }
 
     /**
@@ -232,11 +218,6 @@ public class PsoUtils {
     public static void generateBytesInputFiles(int serverSetSize, int clientSetSize, int elementByteLength)
         throws IOException {
         assert elementByteLength >= CommonConstants.STATS_BYTE_LENGTH;
-        File inputFolder = new File(getFileFolderName());
-        if (!inputFolder.exists()) {
-            boolean success = inputFolder.mkdir();
-            assert success;
-        }
         File serverInputFile = new File(getBytesFileName(BYTES_SERVER_PREFIX, serverSetSize, elementByteLength));
         File clientInputFile = new File(getBytesFileName(BYTES_CLIENT_PREFIX, clientSetSize, elementByteLength));
 
@@ -275,16 +256,7 @@ public class PsoUtils {
         clientFileWriter.close();
     }
 
-    /**
-     * Gets the input folder name.
-     *
-     * @return input folder name.
-     */
-    public static String getFileFolderName() {
-        return "temp" + File.separator;
-    }
-
     public static String getBytesFileName(String prefix, int setSize, int elementByteLength) {
-        return getFileFolderName() + prefix + "_" + (elementByteLength * Byte.SIZE) + "_" + setSize + ".input";
+        return MainPtoConfigUtils.getFileFolderName() + prefix + "_" + (elementByteLength * Byte.SIZE) + "_" + setSize + ".input";
     }
 }

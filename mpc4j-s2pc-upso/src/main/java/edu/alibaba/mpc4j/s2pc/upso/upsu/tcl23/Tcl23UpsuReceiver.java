@@ -119,7 +119,7 @@ public class Tcl23UpsuReceiver extends AbstractUpsuReceiver {
         int expectAlpha = CommonUtils.getUnitNum(expectBinSize, params.getMaxPartitionSizePerBin());
         pmPeqtReceiver.init(expectAlpha, params.getBinNum());
         // init core COT
-        coreCotReceiver.init(params.getBinNum());
+        coreCotReceiver.init();
         // generate hash keys
         hashKeys = CommonUtils.generateRandomKeys(params.getCuckooHashNum(), secureRandom);
         DataPacketHeader hashKeyHeader = new DataPacketHeader(

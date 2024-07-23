@@ -2,11 +2,10 @@ package edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl.rrk20;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl.ZlMaxConfig;
 import edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl.ZlMaxFactory;
-import edu.alibaba.mpc4j.s2pc.aby.operator.row.greater.zl.ZlGreaterConfig;
-import edu.alibaba.mpc4j.s2pc.aby.operator.row.greater.zl.ZlGreaterFactory;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.max2.zl.ZlMax2Config;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.max2.zl.ZlMax2Factory;
 
 /**
  * RRK+20 Zl Max Config.
@@ -18,15 +17,15 @@ public class Rrk20ZlMaxConfig extends AbstractMultiPartyPtoConfig implements ZlM
     /**
      * Zl greater config.
      */
-    private final ZlGreaterConfig zlGreaterConfig;
+    private final ZlMax2Config zlMax2Config;
 
     private Rrk20ZlMaxConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.zlGreaterConfig);
-        zlGreaterConfig = builder.zlGreaterConfig;
+        super(SecurityModel.SEMI_HONEST, builder.zlMax2Config);
+        zlMax2Config = builder.zlMax2Config;
     }
 
-    public ZlGreaterConfig getZlGreaterConfig() {
-        return zlGreaterConfig;
+    public ZlMax2Config getZlGreaterConfig() {
+        return zlMax2Config;
     }
 
     @Override
@@ -34,19 +33,14 @@ public class Rrk20ZlMaxConfig extends AbstractMultiPartyPtoConfig implements ZlM
         return ZlMaxFactory.ZlMaxType.RRK20;
     }
 
-    @Override
-    public Zl getZl() {
-        return zlGreaterConfig.getZl();
-    }
-
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Rrk20ZlMaxConfig> {
         /**
          * Zl greater config.
          */
-        private final ZlGreaterConfig zlGreaterConfig;
+        private final ZlMax2Config zlMax2Config;
 
-        public Builder(Zl zl) {
-            zlGreaterConfig = ZlGreaterFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true, zl);
+        public Builder(SecurityModel securityModel, boolean silent) {
+            zlMax2Config = ZlMax2Factory.createDefaultConfig(securityModel, silent);
         }
 
         @Override

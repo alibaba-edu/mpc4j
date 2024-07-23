@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     edu_alibaba_mpc4j_common_tool_network_waksman_NativeWaksmanNetwork
- * Method:    generateBenesNetwork
+ * Method:    generateNetwork
  * Signature: ([I)[[B
  */
-JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_waksman_NativeWaksmanNetwork_generateBenesNetwork
+JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_waksman_NativeWaksmanNetwork_generateNetwork
   (JNIEnv *, jobject, jintArray);
 
 #ifdef __cplusplus

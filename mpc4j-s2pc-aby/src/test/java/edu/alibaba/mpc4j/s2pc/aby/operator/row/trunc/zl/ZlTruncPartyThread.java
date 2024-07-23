@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.row.trunc.zl;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 
 /**
@@ -15,13 +16,13 @@ public class ZlTruncPartyThread extends Thread {
      */
     private final ZlTruncParty party;
     /**
+     * z2c party
+     */
+    private final Z2cParty z2cParty;
+    /**
      * x
      */
     private final SquareZlVector shareX;
-    /**
-     * l
-     */
-    private final int l;
     /**
      * num
      */
@@ -35,11 +36,11 @@ public class ZlTruncPartyThread extends Thread {
      */
     private final int s;
 
-    ZlTruncPartyThread(ZlTruncParty party, int l, SquareZlVector shareX, int s) {
+    ZlTruncPartyThread(ZlTruncParty party, Z2cParty z2cParty, SquareZlVector shareX, int s) {
         this.party = party;
+        this.z2cParty = z2cParty;
         this.shareX = shareX;
         this.num = shareX.getNum();
-        this.l = l;
         this.s = s;
     }
 
@@ -50,7 +51,8 @@ public class ZlTruncPartyThread extends Thread {
     @Override
     public void run() {
         try {
-            party.init(l, num);
+            z2cParty.init(shareX.getZl().getL() * num);
+            party.init(shareX.getZl().getL(), num);
             shareZ = party.trunc(shareX, s);
         } catch (MpcAbortException e) {
             e.printStackTrace();

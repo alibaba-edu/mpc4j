@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.common.circuit.z2;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 
@@ -42,34 +41,37 @@ public class PlainZ2cParty implements MpcZ2cParty {
     }
 
     @Override
-    public void init(long updateBitNum) {
-        MathPreconditions.checkPositive("updateBitNum", updateBitNum);
+    public void init(int expectTotalNum) {
+        MathPreconditions.checkPositive("expect_total_num", expectTotalNum);
+    }
+
+    @Override
+    public void init() {
+        // do nothing
     }
 
     @Override
     public PlainZ2Vector shareOwn(BitVector xi) {
         MathPreconditions.checkPositive("bitNum", xi.bitNum());
-        // do nothing
-        return null;
+        return PlainZ2Vector.create(xi);
     }
 
     @Override
-    public MpcZ2Vector[] shareOwn(BitVector[] xiArray) {
+    public PlainZ2Vector[] shareOwn(BitVector[] xiArray) {
         int totalBitNum = Arrays.stream(xiArray).mapToInt(BitVector::bitNum).sum();
         MathPreconditions.checkPositive("totalBitNum", totalBitNum);
-        // do nothing
-        return null;
+        return Arrays.stream(xiArray).map(PlainZ2Vector::create).toArray(PlainZ2Vector[]::new);
     }
 
     @Override
-    public MpcZ2Vector shareOther(int bitNum) throws MpcAbortException {
+    public PlainZ2Vector shareOther(int bitNum) {
         MathPreconditions.checkPositive("bitNum", bitNum);
         // do nothing
         return null;
     }
 
     @Override
-    public MpcZ2Vector[] shareOther(int[] bitNums) throws MpcAbortException {
+    public PlainZ2Vector[] shareOther(int[] bitNums) {
         int totalBitNum = Arrays.stream(bitNums).sum();
         MathPreconditions.checkPositive("totalBitNum", totalBitNum);
         // do nothing
@@ -77,26 +79,23 @@ public class PlainZ2cParty implements MpcZ2cParty {
     }
 
     @Override
-    public BitVector[] open(MpcZ2Vector[] xiArray) throws MpcAbortException{
+    public BitVector[] open(MpcZ2Vector[] xiArray) {
         int totalBitNum = Arrays.stream(xiArray).mapToInt(MpcZ2Vector::bitNum).sum();
         MathPreconditions.checkPositive("totalBitNum", totalBitNum);
-        // do nothing
-        return null;
+        return Arrays.stream(xiArray).map(MpcZ2Vector::getBitVector).toArray(BitVector[]::new);
     }
 
     @Override
-    public BitVector revealOwn(MpcZ2Vector xi) throws MpcAbortException {
+    public BitVector revealOwn(MpcZ2Vector xi) {
         MathPreconditions.checkPositive("bitNum", xi.bitNum());
-        // do nothing
-        return null;
+        return xi.getBitVector();
     }
 
     @Override
-    public BitVector[] revealOwn(MpcZ2Vector[] xiArray) throws MpcAbortException {
+    public BitVector[] revealOwn(MpcZ2Vector[] xiArray) {
         int totalBitNum = Arrays.stream(xiArray).mapToInt(MpcZ2Vector::bitNum).sum();
         MathPreconditions.checkPositive("totalBitNum", totalBitNum);
-        // do nothing
-        return null;
+        return Arrays.stream(xiArray).map(MpcZ2Vector::getBitVector).toArray(BitVector[]::new);
     }
 
     @Override

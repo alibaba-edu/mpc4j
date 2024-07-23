@@ -12,7 +12,7 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
-import edu.alibaba.mpc4j.common.structure.matrix.MatrixUtils;
+import edu.alibaba.mpc4j.common.structure.StructureUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2023/4/10
  */
-public class Zl32Database implements ModBitNumDatabase {
+public class Zl32Database implements Database {
     /**
      * element bit length
      */
@@ -292,8 +292,7 @@ public class Zl32Database implements ModBitNumDatabase {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof Zl32Database) {
-            Zl32Database that = (Zl32Database) obj;
+        if (obj instanceof Zl32Database that) {
             return new EqualsBuilder()
                 .append(this.l, that.l)
                 .append(this.data, that.data)
@@ -305,6 +304,6 @@ public class Zl32Database implements ModBitNumDatabase {
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + " (l = " + l + "): "
-            + Arrays.toString(Arrays.copyOf(data, Math.min(data.length, MatrixUtils.DISPLAY_NUM)));
+            + Arrays.toString(Arrays.copyOf(data, Math.min(data.length, StructureUtils.DISPLAY_NUM)));
     }
 }

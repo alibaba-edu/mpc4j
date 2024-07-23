@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 /**
  * 长整数工具类测试。
@@ -99,6 +100,53 @@ public class LongUtilsTest {
         byte[] convertByteArray = LongUtils.longToByteArray(value);
         Assert.assertArrayEquals(byteArray, convertByteArray);
         long convertValue = LongUtils.byteArrayToLong(byteArray);
+        Assert.assertEquals(value, convertValue);
+    }
+
+    @Test
+    public void testInvalidLongFixedByteArray() {
+        // byteL = 0
+        Assert.assertThrows(AssertionError.class, () -> LongUtils.longToFixedByteArray(1, 0));
+        // 0 < byteL < Long.BYTES with value in out range
+        for (int byteL = 1; byteL < Long.BYTES; byteL ++) {
+            final int finalByteL = byteL;
+            Assert.assertThrows(AssertionError.class, () -> LongUtils.longToFixedByteArray(1L << (finalByteL * Byte.SIZE), finalByteL));
+            Assert.assertThrows(AssertionError.class, () -> LongUtils.longToFixedByteArray(-1L << (finalByteL * Byte.SIZE), finalByteL));
+        }
+        // byteL = 0
+        Assert.assertThrows(AssertionError.class, () -> LongUtils.fixedByteArrayToLong(new byte[0]));
+    }
+
+    @Test
+    public void testLongFixedByteArray() {
+        // 0
+        for (int byteL = 1; byteL <= Long.BYTES; byteL++) {
+            byte[] byteArray = new byte[byteL];
+            testLongFixedByteArray(0, byteArray);
+        }
+        // 1
+        for (int byteL = 1; byteL <= Long.BYTES; byteL++) {
+            byte[] byteArray = new byte[byteL];
+            byteArray[byteL - 1] = 1;
+            testLongFixedByteArray(1, byteArray);
+        }
+        // large
+        for (int byteL = 1; byteL < Long.BYTES; byteL++) {
+            byte[] byteArray = new byte[byteL];
+            Arrays.fill(byteArray, (byte) 0xFF);
+            testLongFixedByteArray(((1L << (byteL * Byte.SIZE)) - 1), byteArray);
+        }
+        // -11
+        testLongFixedByteArray(
+            -1,
+            new byte[] {(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF,}
+        );
+    }
+
+    private void testLongFixedByteArray(long value, byte[] byteArray) {
+        byte[] convertByteArray = LongUtils.longToFixedByteArray(value, byteArray.length);
+        Assert.assertArrayEquals(byteArray, convertByteArray);
+        long convertValue = LongUtils.fixedByteArrayToLong(byteArray);
         Assert.assertEquals(value, convertValue);
     }
 

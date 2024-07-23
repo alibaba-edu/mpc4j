@@ -96,7 +96,6 @@ public class LcotFactory implements PtoFactory {
             case IDEAL:
             case SEMI_HONEST:
                 return new Kk13OptLcotConfig.Builder().build();
-            case COVERT:
             case MALICIOUS:
                 return new Oos17LcotConfig.Builder().build();
             default:

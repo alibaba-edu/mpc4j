@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.corr.zl.AbstractZlCorrParty;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl.ZlDreluFactory;
@@ -48,11 +49,11 @@ public class Rrk20ZlCorrSender extends AbstractZlCorrParty {
      */
     private ZlVector corr;
 
-    public Rrk20ZlCorrSender(Rpc senderRpc, Party receiverParty, Rrk20ZlCorrConfig config) {
-        super(getInstance(), senderRpc, receiverParty, config);
-        dreluSender = ZlDreluFactory.createSender(senderRpc, receiverParty, config.getZlDreluConfig());
+    public Rrk20ZlCorrSender(Z2cParty z2cSender, Party receiverParty, Rrk20ZlCorrConfig config) {
+        super(getInstance(), z2cSender.getRpc(), receiverParty, config);
+        dreluSender = ZlDreluFactory.createSender(z2cSender, receiverParty, config.getZlDreluConfig());
         addSubPto(dreluSender);
-        lnotSender = LnotFactory.createSender(senderRpc, receiverParty, config.getLnotConfig());
+        lnotSender = LnotFactory.createSender(z2cSender.getRpc(), receiverParty, config.getLnotConfig());
         addSubPto(lnotSender);
     }
 

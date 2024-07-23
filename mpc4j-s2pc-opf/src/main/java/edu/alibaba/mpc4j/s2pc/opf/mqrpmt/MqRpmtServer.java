@@ -7,28 +7,28 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 
 /**
- * mqRPMT协议服务端接口。
+ * mqRPMT server.
  *
  * @author Weiran Liu
  * @date 2022/9/10
  */
 public interface MqRpmtServer extends TwoPartyPto {
     /**
-     * 初始化协议。
+     * Inits the protocol.
      *
-     * @param maxServerElementSize 服务端最大元素数量。
-     * @param maxClientElementSize 客户端最大元素数量。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param maxServerElementSize max server element size.
+     * @param maxClientElementSize max client element size.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     void init(int maxServerElementSize, int maxClientElementSize) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Executes the protocol.
      *
-     * @param serverElementSet  服务端元素集合。
-     * @param clientElementSize 客户端元素数量。
-     * @return 协议输出结果。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param serverElementSet  server element set.
+     * @param clientElementSize client element size.
+     * @return server output.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     ByteBuffer[] mqRpmt(Set<ByteBuffer> serverElementSet, int clientElementSize) throws MpcAbortException;
 }

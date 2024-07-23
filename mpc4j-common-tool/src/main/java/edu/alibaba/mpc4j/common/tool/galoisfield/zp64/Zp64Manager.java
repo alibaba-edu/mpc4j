@@ -27,7 +27,7 @@ public class Zp64Manager {
      * @return 有限域Zp。
      */
     public static IntegersZp64 getFiniteField(int l) {
-        assert l > 0 && l <= LongUtils.MAX_L : "l must be in range (0, " + LongUtils.MAX_L + "]:" + l;
+        assert l > 0 && l <= LongUtils.MAX_L_FOR_MODULE_N : "l must be in range (0, " + LongUtils.MAX_L_FOR_MODULE_N + "]:" + l;
         return new IntegersZp64(getPrime(l));
     }
 
@@ -38,7 +38,7 @@ public class Zp64Manager {
      * @return 有限域质数p。
      */
     public static long getPrime(int l) {
-        assert l > 0 && l <= LongUtils.MAX_L : "l must be in range (0, " + LongUtils.MAX_L + "]:" + l;
+        assert l > 0 && l <= LongUtils.MAX_L_FOR_MODULE_N : "l must be in range (0, " + LongUtils.MAX_L_FOR_MODULE_N + "]:" + l;
         BigInteger bigIntegerPrime = ZpManager.getPrime(l);
         return bigIntegerPrime.longValue();
     }

@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.network.waksman;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetworkFactory.WaksmanNetworkType;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -138,10 +139,12 @@ public class WaksmanNetworkTest {
     }
 
     private void testSwitchCount(int n, int expectSwitchCount) {
-        List<Integer> shufflePermutationMap = IntStream.range(0, n).boxed().collect(Collectors.toList());
-        Collections.shuffle(shufflePermutationMap, SECURE_RANDOM);
-        int[] permutationMap = shufflePermutationMap.stream().mapToInt(permutation -> permutation).toArray();
-        WaksmanNetwork<Integer> network = WaksmanNetworkFactory.createInstance(type, permutationMap);
+        int[] pi = IntStream.range(0, n).toArray();
+        ArrayUtils.shuffle(pi, SECURE_RANDOM);
+        // test the generated network has that number of switches.
+        WaksmanNetwork<Integer> network = WaksmanNetworkFactory.createInstance(type, pi);
         Assert.assertEquals(expectSwitchCount, network.getSwitchCount());
+        // test the Factory returns the correct number of switches.
+        Assert.assertEquals(expectSwitchCount, WaksmanNetworkFactory.getSwitchCount(n));
     }
 }

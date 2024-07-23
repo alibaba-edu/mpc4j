@@ -1,5 +1,7 @@
 package edu.alibaba.mpc4j.dp.ldp.nominal.encode;
 
+import java.util.List;
+
 /**
  * 编码LDP机制工厂类。
  *
@@ -15,6 +17,16 @@ public class EncodeLdpFactory {
     }
 
     /**
+     * Encode_Ldp机制类型。
+     */
+    public enum EncodeLdpType {
+        /**
+         * DirectEncode机制
+         */
+        DE,
+    }
+
+    /**
      * 构造编码LDP机制。
      *
      * @param encodeLdpConfig 配置项。
@@ -27,5 +39,21 @@ public class EncodeLdpFactory {
             return directEncodeLdp;
         }
         throw new IllegalArgumentException("Illegal EncodeLdpConfig: " + encodeLdpConfig.getClass().getSimpleName());
+    }
+
+    /**
+     * 构建LDP机制默认配置项。
+     *
+     * @param ldpType LDP机制类型。
+     * @return 默认配置项。
+     */
+    public static EncodeLdpConfig createDefaultConfig(EncodeLdpType ldpType, double baseEpsilon, List<String> labelArrayList) {
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (ldpType) {
+            case DE:
+                return new DirectEncodeLdpConfig.Builder(baseEpsilon, labelArrayList).build();
+            default:
+                throw new IllegalArgumentException("Invalid LDP Mechanismm Type:" + ldpType);
+        }
     }
 }

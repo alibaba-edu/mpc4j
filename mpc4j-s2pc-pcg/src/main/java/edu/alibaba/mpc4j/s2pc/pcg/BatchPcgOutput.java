@@ -6,7 +6,7 @@ package edu.alibaba.mpc4j.s2pc.pcg;
  * @author Weiran Liu
  * @date 2023/7/22
  */
-public interface BatchPcgOutput extends PcgPartyOutput {
+public interface BatchPcgOutput {
     /**
      * Gets batch num.
      *
@@ -15,12 +15,17 @@ public interface BatchPcgOutput extends PcgPartyOutput {
     int getBatchNum();
 
     /**
-     * Gets num, which is equal to batch num.
+     * Gets each num.
      *
-     * @return num.
+     * @return each num.
      */
-    @Override
-    default int getNum() {
-        return getBatchNum();
-    }
+    int getEachNum();
+
+    /**
+     * Gets the output.
+     *
+     * @param index index.
+     * @return the output.
+     */
+    PcgPartyOutput get(int index);
 }

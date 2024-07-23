@@ -4,8 +4,8 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorUtils.SilverCodeType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.bcg19.Bcg19RegMspCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotFactory;
 
 /**

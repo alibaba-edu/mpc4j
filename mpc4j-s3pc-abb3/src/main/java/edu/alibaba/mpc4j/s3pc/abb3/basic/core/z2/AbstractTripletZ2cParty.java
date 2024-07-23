@@ -54,7 +54,12 @@ public abstract class AbstractTripletZ2cParty extends AbstractAbbThreePartyPto i
     }
 
     @Override
-    public void init(long updateBitNum) {
+    public void init(int expectTotalNum) {
+        throw new IllegalArgumentException("should not invoke this function");
+    }
+
+    @Override
+    public void init() {
         throw new IllegalArgumentException("should not invoke this function");
     }
 

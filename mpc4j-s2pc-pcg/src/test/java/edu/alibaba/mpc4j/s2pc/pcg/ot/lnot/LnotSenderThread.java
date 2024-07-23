@@ -22,23 +22,14 @@ class LnotSenderThread extends Thread {
      */
     private final int num;
     /**
-     * update num
-     */
-    private final int updateNum;
-    /**
      * the sender output
      */
     private LnotSenderOutput senderOutput;
 
     LnotSenderThread(LnotSender sender, int l, int num) {
-        this(sender, l, num, num);
-    }
-
-    LnotSenderThread(LnotSender sender, int l, int num, int updateNum) {
         this.sender = sender;
         this.l = l;
         this.num = num;
-        this.updateNum = updateNum;
     }
 
     LnotSenderOutput getSenderOutput() {
@@ -48,7 +39,7 @@ class LnotSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.init(l, updateNum);
+            sender.init(l, 1 << 12);
             senderOutput = sender.send(num);
         } catch (MpcAbortException e) {
             e.printStackTrace();

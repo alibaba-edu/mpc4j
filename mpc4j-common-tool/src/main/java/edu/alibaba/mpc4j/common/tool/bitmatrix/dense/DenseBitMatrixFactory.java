@@ -69,11 +69,11 @@ public class DenseBitMatrixFactory {
     }
 
     /**
-     * Creates a all-one matrix.
+     * Creates a random matrix.
      *
-     * @param type    type.
-     * @param rows    number of rows.
-     * @param columns number of columns.
+     * @param type         type.
+     * @param rows         number of rows.
+     * @param columns      number of columns.
      * @param secureRandom random state.
      * @return a matrix.
      */
@@ -83,6 +83,26 @@ public class DenseBitMatrixFactory {
                 return ByteDenseBitMatrix.createRandom(rows, columns, secureRandom);
             case LONG_MATRIX:
                 return LongDenseBitMatrix.createRandom(rows, columns, secureRandom);
+            default:
+                throw new IllegalArgumentException("Invalid " + DenseBitMatrixType.class.getSimpleName() + ": " + type);
+        }
+    }
+
+    /**
+     * Creates a random matrix.
+     *
+     * @param type    type.
+     * @param rows    number of rows.
+     * @param columns number of columns.
+     * @param seed    seed.
+     * @return a matrix.
+     */
+    public static DenseBitMatrix createRandom(DenseBitMatrixType type, int rows, int columns, byte[] seed) {
+        switch (type) {
+            case BYTE_MATRIX:
+                return ByteDenseBitMatrix.createRandom(rows, columns, seed);
+            case LONG_MATRIX:
+                return LongDenseBitMatrix.createRandom(rows, columns, seed);
             default:
                 throw new IllegalArgumentException("Invalid " + DenseBitMatrixType.class.getSimpleName() + ": " + type);
         }

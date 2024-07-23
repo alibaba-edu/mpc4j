@@ -3,11 +3,10 @@ package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.wykw21;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.bcg19.Bcg19RegGf2kMspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.bcg19.Bcg19RegGf2kMspVoleConfig;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -23,7 +22,6 @@ import java.util.Collection;
  * @author Weiran Liu
  * @date 2023/7/23
  */
-@Ignore
 @RunWith(Parameterized.class)
 public class Wykw21Gf2kNcVoleLpnParamsFinderTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(Wykw21Gf2kNcVoleLpnParamsFinderTest.class);
@@ -37,7 +35,7 @@ public class Wykw21Gf2kNcVoleLpnParamsFinderTest {
             Gf2kMspVoleFactory.Gf2kMspVoleType.BCG19_REG + " (" + SecurityModel.MALICIOUS + ")",
             new Bcg19RegGf2kMspVoleConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
-        // BCG19_REG (malicious)
+        // BCG19_REG (semi-honest)
         configurations.add(new Object[] {
             Gf2kMspVoleFactory.Gf2kMspVoleType.BCG19_REG + " (" + SecurityModel.SEMI_HONEST + ")",
             new Bcg19RegGf2kMspVoleConfig.Builder(SecurityModel.SEMI_HONEST).build(),
@@ -109,22 +107,6 @@ public class Wykw21Gf2kNcVoleLpnParamsFinderTest {
     @Test
     public void test2To22() {
         testLpnParamsFinder(1 << 22);
-    }
-
-    @Test
-    public void test2To23() {
-        testLpnParamsFinder(1 << 23);
-    }
-
-    @Test
-    public void test2To24() {
-        testLpnParamsFinder(1 << 24);
-    }
-
-    @Test
-    public void test10Million() {
-        // YWL20的参数使密钥数量接近于1000万
-        testLpnParamsFinder(10000000);
     }
 
     private void testLpnParamsFinder(int minN) {

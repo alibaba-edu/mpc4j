@@ -15,8 +15,8 @@ import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirClient;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
+import edu.alibaba.mpc4j.s2pc.pir.IdxPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.AbstractUpsuSender;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -24,7 +24,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -44,7 +43,7 @@ public class Zlp24PkeUpsuSender extends AbstractUpsuSender {
     /**
      * batch index PIR client
      */
-    private final BatchIndexPirClient batchIndexPirClient;
+    private final IdxPirClient batchIndexPirClient;
     /**
      * core COT sender
      */
@@ -84,7 +83,7 @@ public class Zlp24PkeUpsuSender extends AbstractUpsuSender {
 
     public Zlp24PkeUpsuSender(Rpc senderRpc, Party receiverParty, Zlp24PkeUpsuConfig config) {
         super(getInstance(), senderRpc, receiverParty, config);
-        batchIndexPirClient = BatchIndexPirFactory.createClient(senderRpc, receiverParty, config.getBatchIndexPirConfig());
+        batchIndexPirClient = StdIdxPirFactory.createClient(senderRpc, receiverParty, config.getBatchIndexPirConfig());
         addSubPto(batchIndexPirClient);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
         addSubPto(coreCotSender);
@@ -99,9 +98,8 @@ public class Zlp24PkeUpsuSender extends AbstractUpsuSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        coreCotSender.init(delta, maxSenderElementSize);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(delta);
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -165,9 +163,9 @@ public class Zlp24PkeUpsuSender extends AbstractUpsuSender {
         MpcAbortPreconditions.checkArgument(eccDokvs.densePositionRange() == denseOkvsPayload.size());
 
         stopWatch.start();
-        List<Integer> retrievalIndexList = generateRetrievalIndexList();
-        Map<Integer, byte[]> okvsSparsePayload = batchIndexPirClient.pir(retrievalIndexList);
-        MpcAbortPreconditions.checkArgument(retrievalIndexList.size() == okvsSparsePayload.size());
+        List<Integer> indices = generateRetrievalIndexList();
+        byte[][] okvsSparsePayload = batchIndexPirClient.pir(indices.stream().mapToInt(integer -> integer).toArray());
+        MpcAbortPreconditions.checkArgument(indices.size() == okvsSparsePayload.length);
         stopWatch.stop();
         long batchIndexPirTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -175,7 +173,7 @@ public class Zlp24PkeUpsuSender extends AbstractUpsuSender {
 
         // recover okvs storage
         stopWatch.start();
-        generateOkvsStorage(denseOkvsPayload, okvsSparsePayload, retrievalIndexList);
+        generateOkvsStorage(denseOkvsPayload, okvsSparsePayload, indices);
         stopWatch.stop();
         long generateOkvsStorageTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -236,14 +234,14 @@ public class Zlp24PkeUpsuSender extends AbstractUpsuSender {
      * @param okvsSparsePayload  okvs sparse payload.
      * @param retrievalIndexList retrieval index list.
      */
-    private void generateOkvsStorage(List<byte[]> okvsDensePayload, Map<Integer, byte[]> okvsSparsePayload,
+    private void generateOkvsStorage(List<byte[]> okvsDensePayload, byte[][] okvsSparsePayload,
                                      List<Integer> retrievalIndexList) {
         kemEccDokvsStorage = new ECPoint[eccDokvs.sparsePositionRange() + eccDokvs.densePositionRange()];
         ctEccDokvsStorage = new ECPoint[eccDokvs.sparsePositionRange() + eccDokvs.densePositionRange()];
         int byteLength = CommonUtils.getByteLength(bitLength);
         byte[] item = new byte[byteLength];
         IntStream.range(0, retrievalIndexList.size()).forEach(i -> {
-            byte[] sparseItem = okvsSparsePayload.get(retrievalIndexList.get(i));
+            byte[] sparseItem = okvsSparsePayload[i];
             System.arraycopy(sparseItem, 0, item, 0, byteLength);
             kemEccDokvsStorage[retrievalIndexList.get(i)] = ecc.decode(item);
             System.arraycopy(sparseItem, byteLength, item, 0, byteLength);

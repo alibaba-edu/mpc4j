@@ -4,28 +4,26 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 
 /**
- * 2^l选1-COT协议接收方接口。
+ * 1-out-of-2^l COT receiver.
  *
  * @author Weiran Liu
  * @date 2022/5/25
  */
 public interface LcotReceiver extends TwoPartyPto {
     /**
-     * 初始化协议。
+     * Inits the protocol.
      *
-     * @param inputBitLength 选择值比特长度。
-     * @param maxNum         最大执行数量。
-     * @return output bit length.
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param l choice bit length.
+     * @throws MpcAbortException the protocol failure aborts.
      */
-    int init(int inputBitLength, int maxNum) throws MpcAbortException;
+    void init(int l) throws MpcAbortException;
 
     /**
-     * 执行协议。
+     * Executes the protocol.
      *
-     * @param choices 选择值数组。
-     * @return 接收方输出。
-     * @throws MpcAbortException 如果协议异常中止。
+     * @param choices choices.
+     * @return receiver output.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     LcotReceiverOutput receive(byte[][] choices) throws MpcAbortException;
 }

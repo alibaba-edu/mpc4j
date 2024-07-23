@@ -24,11 +24,16 @@ public class Rrk20MillionaireConfig extends AbstractMultiPartyPtoConfig implemen
      * Z2 circuit config.
      */
     private final Z2cConfig z2cConfig;
+    /**
+     * bit length of split block
+     */
+    private final int m;
 
     private Rrk20MillionaireConfig(Rrk20MillionaireConfig.Builder builder) {
         super(SecurityModel.SEMI_HONEST, builder.lnotConfig, builder.z2cConfig);
         lnotConfig = builder.lnotConfig;
         z2cConfig = builder.z2cConfig;
+        m = builder.m;
     }
 
     public LnotConfig getLnotConfig() {
@@ -37,6 +42,10 @@ public class Rrk20MillionaireConfig extends AbstractMultiPartyPtoConfig implemen
 
     public Z2cConfig getZ2cConfig() {
         return z2cConfig;
+    }
+
+    public int getM() {
+        return m;
     }
 
     @Override
@@ -53,19 +62,25 @@ public class Rrk20MillionaireConfig extends AbstractMultiPartyPtoConfig implemen
          * Z2 circuit config.
          */
         private final Z2cConfig z2cConfig;
+        /**
+         * bit length of split block
+         */
+        private int m;
 
         public Builder(SecurityModel securityModel, boolean silent) {
             z2cConfig = Z2cFactory.createDefaultConfig(securityModel, silent);
-            if (silent) {
-                lnotConfig = LnotFactory.createCacheConfig(securityModel);
-            } else {
-                lnotConfig = LnotFactory.createDirectConfig(securityModel);
-            }
+            lnotConfig = LnotFactory.createDefaultConfig(securityModel, silent);
+            m = 4;
         }
 
         @Override
         public Rrk20MillionaireConfig build() {
             return new Rrk20MillionaireConfig(this);
+        }
+
+        public Builder setM(int m) {
+            this.m = m;
+            return this;
         }
     }
 }

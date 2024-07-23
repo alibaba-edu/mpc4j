@@ -6,13 +6,14 @@ import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.AbstractPeqtParty;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.cgs22.Cgs22PeqtPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory;
@@ -40,6 +41,10 @@ public class Cgs22PeqtSender extends AbstractPeqtParty {
      * LNOT sender
      */
     private final LnotSender lnotSender;
+    /**
+     * bit length of split block
+     */
+    private final int m;
 
     public Cgs22PeqtSender(Rpc senderRpc, Party receiverParty, Cgs22PeqtConfig config) {
         super(Cgs22PeqtPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -47,6 +52,8 @@ public class Cgs22PeqtSender extends AbstractPeqtParty {
         addSubPto(Z2cSender);
         lnotSender = LnotFactory.createSender(senderRpc, receiverParty, config.getLnotConfig());
         addSubPto(lnotSender);
+        m = config.getM();
+        MathPreconditions.checkPositiveInRangeClosed("m", m, Byte.SIZE);
     }
 
     @Override
@@ -55,11 +62,10 @@ public class Cgs22PeqtSender extends AbstractPeqtParty {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // q = l / m, where m = 4
-        int maxByteL = CommonUtils.getByteLength(maxL);
-        int maxQ = maxByteL * 2;
-        Z2cSender.init(maxNum * (maxQ - 1));
-        lnotSender.init(4, maxNum * maxQ);
+        // q = l / m
+        int maxQ = CommonUtils.getUnitNum(maxL, m);
+        Z2cSender.init(maxNum * maxQ);
+        lnotSender.init(m, maxNum * maxQ);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -74,9 +80,9 @@ public class Cgs22PeqtSender extends AbstractPeqtParty {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // q = l/4
-        int q = byteL * 2;
-        int[][] partitionInputArray = partitionInputArray(q);
+        // q = l/m
+        int q = CommonUtils.getUnitNum(l, m);
+        int[][] partitionInputArray = Cgs22PeqtUtils.partitionInputArray(inputs, m, q);
         stopWatch.stop();
         long prepareTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -86,22 +92,22 @@ public class Cgs22PeqtSender extends AbstractPeqtParty {
         // P0 samples eq_{0,j} for all j ∈ [0,q)
         BitVector[] eqs = new BitVector[q];
         for (int j = 0; j < q; j++) {
-            eqs[j] = BitVectorFactory.createZeros(num);
+            eqs[j] = BitVectorFactory.createRandom(num, secureRandom);
         }
         // for j ∈ [0,q) do
         for (int j = 0; j < q; j++) {
             final int jFinal = j;
-            // P0 & P1 invoke 1-out-of-2^4 OT with P0 as sender.
+            // P0 & P1 invoke 1-out-of-2^m OT with P0 as sender.
             LnotSenderOutput lnotSenderOutput = lnotSender.send(num);
-            // for v ∈ [2^4], P0 sets e_{j,v} ← <eq_{0,j}>_0 ⊕ 1{x_{1,j} = v}
-            IntStream vIntStream = IntStream.range(0, 1 << 4);
+            // for v ∈ [2^m], P0 sets e_{j,v} ← <eq_{0,j}>_0 ⊕ 1{x_{1,j} = v}
+            IntStream vIntStream = IntStream.range(0, 1 << m);
             vIntStream = parallel ? vIntStream.parallel() : vIntStream;
             List<byte[]> evsPayload = vIntStream
                 .mapToObj(v -> {
                     BitVector ev = BitVectorFactory.createRandom(num, secureRandom);
                     for (int index = 0; index < num; index++) {
                         byte[] ri = lnotSenderOutput.getRb(index, v);
-                        if (v == partitionInputArray[index][jFinal]) {
+                        if (v == partitionInputArray[jFinal][index]) {
                             // x_j == v, e_{j,v} = Rb ⊕ 1
                             ev.set(index, (ri[0] % 2) == 0);
                         } else {
@@ -137,22 +143,6 @@ public class Cgs22PeqtSender extends AbstractPeqtParty {
         return z0;
     }
 
-    private int[][] partitionInputArray(int q) {
-        // P0 parses each of its input element as x_{q-1} || ... || x_{0}, where x_j ∈ {0,1}^4 for all j ∈ [0,q).
-        int[][] partitionInputArray = new int[num][q];
-        IntStream.range(0, num).forEach(index -> {
-            byte[] x = inputs[index];
-            for (int lIndex = 0; lIndex < byteL; lIndex++) {
-                byte lIndexByte = x[lIndex];
-                // the left part
-                partitionInputArray[index][lIndex * 2] = ((lIndexByte & 0xFF) >> 4);
-                // the right part
-                partitionInputArray[index][lIndex * 2 + 1] = (lIndexByte & 0x0F);
-            }
-        });
-        return partitionInputArray;
-    }
-
     private SquareZ2Vector combine(BitVector[] eqs, int q) throws MpcAbortException {
         SquareZ2Vector[] eqs0 = new SquareZ2Vector[q];
         for (int j = 0; j < q; j++) {
@@ -178,4 +168,5 @@ public class Cgs22PeqtSender extends AbstractPeqtParty {
         }
         return eqs0[0];
     }
+
 }

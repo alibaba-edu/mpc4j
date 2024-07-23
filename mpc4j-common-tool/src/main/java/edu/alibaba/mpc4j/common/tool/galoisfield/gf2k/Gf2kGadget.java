@@ -1,21 +1,22 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 
-import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
+import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-
-import java.math.BigInteger;
-import java.util.stream.IntStream;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 
 /**
- * GF2K gadget. The scheme comes from:
+ * Binary GF2K gadget. The scheme comes from:
  * <p>
  * Keller, Marcel, Emmanuela Orsini, and Peter Scholl. MASCOT: faster malicious arithmetic secure computation with
  * oblivious transfer. CCS 2016, pp. 830-842. 2016.
  * </p>
- * Section 2，Notation部分。 由于元素采用大端表示，小工具向量（Gadget Array）的元素顺序和原论文相反。即：
+ * <p></p>
+ * Since all elements are represented in big-endian form, the sequence of Gadget Array is in reversed order, that is,
  * <p>
  * gadget = (X^{127}, X^{126}, ...., X, 1)
+ * </p>
+ * This is different compared with Section 2, Notation.
  *
  * @author Weiran Liu
  * @date 2023/3/13
@@ -41,27 +42,29 @@ public class Gf2kGadget {
     /**
      * Creates an GF2K gadget.
      */
-    public Gf2kGadget(EnvType envType) {
-        this.gf2k = Gf2kFactory.createInstance(envType);
+    public Gf2kGadget(Gf2k gf2k) {
+        this.gf2k = gf2k;
         l = gf2k.getL();
         byteL = gf2k.getByteL();
-        gadgetArray = IntStream.range(0, l)
-            .mapToObj(i -> BigInteger.ONE.shiftLeft(l - i - 1))
-            .map(element -> BigIntegerUtils.nonNegBigIntegerToByteArray(element, byteL))
-            .toArray(byte[][]::new);
+        gadgetArray = new byte[l][byteL];
+        byte[] fieldOne = gf2k.createOne();
+        for (int i = l - 1; i >= 0; i--) {
+            gadgetArray[i] = BytesUtils.clone(fieldOne);
+            BytesUtils.shiftLefti(fieldOne, 1);
+        }
     }
 
     /**
-     * Computes the inner product of the input array and the gadget array.
+     * Computes the inner product of the field elements and the gadget array.
      *
-     * @param inputArray the input array.
+     * @param fieldElements field elements.
      * @return the inner product.
      */
-    public byte[] innerProduct(byte[][] inputArray) {
-        assert inputArray.length == l : "input array length must equal to " + l + ": " + inputArray.length;
+    public byte[] innerProduct(byte[][] fieldElements) {
+        MathPreconditions.checkEqual("l", "field_elements.length", l, fieldElements.length);
         byte[] result = new byte[byteL];
         for (int i = 0; i < l; i++) {
-            byte[] product = gf2k.mul(gadgetArray[i], inputArray[i]);
+            byte[] product = gf2k.mul(gadgetArray[i], fieldElements[i]);
             gf2k.addi(result, product);
         }
         return result;
@@ -74,14 +77,8 @@ public class Gf2kGadget {
      * @return the composition result.
      */
     public byte[] composition(boolean[] binary) {
-        assert binary.length == l : "binary length must equal to " + l + ": " + binary.length;
-        byte[] result = new byte[byteL];
-        for (int i = 0; i < l; i++) {
-            if (binary[i]) {
-                gf2k.addi(result, gadgetArray[i]);
-            }
-        }
-        return result;
+        MathPreconditions.checkEqual("l", "binary.length", l, binary.length);
+        return BinaryUtils.binaryToByteArray(binary);
     }
 
     /**
@@ -91,7 +88,7 @@ public class Gf2kGadget {
      * @return the decomposition result.
      */
     public boolean[] decomposition(byte[] element) {
-        assert gf2k.validateRangeElement(element) : "element must be valid";
+        Preconditions.checkArgument(gf2k.validateRangeElement(element));
         return BinaryUtils.byteArrayToBinary(element, l);
     }
 }

@@ -22,8 +22,8 @@ public abstract class AbstractRegOpBoost extends AbstractOpBoost {
      */
     protected double[] testTruths;
 
-    public AbstractRegOpBoost(Properties properties, OpBoostTaskType taskType) {
-        super(properties, taskType);
+    public AbstractRegOpBoost(Properties properties, String ownName, OpBoostTaskType taskType) {
+        super(properties, ownName, taskType);
     }
 
     @Override

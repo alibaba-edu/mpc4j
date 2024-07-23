@@ -29,7 +29,7 @@ class DirectEncodeLdp implements EncodeLdp {
     @Override
     public void setup(LdpConfig ldpConfig) {
         assert ldpConfig instanceof DirectEncodeLdpConfig;
-        directEncodeLdpConfig = (DirectEncodeLdpConfig)ldpConfig;
+        directEncodeLdpConfig = (DirectEncodeLdpConfig) ldpConfig;
         // 设置翻转概率
         int d = directEncodeLdpConfig.getLabelSize();
         double epsilon = directEncodeLdpConfig.getBaseEpsilon();

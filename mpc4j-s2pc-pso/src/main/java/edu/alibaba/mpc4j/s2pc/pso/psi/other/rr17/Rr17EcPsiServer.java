@@ -130,7 +130,7 @@ public class Rr17EcPsiServer<T> extends AbstractPsiServer<T> {
         peqtHash = HashFactory.createInstance(envType, peqtByteLength);
         phaseHashBin = new PhaseHashBin(envType, binNum, maxItemSize, hashKeys[0]);
 
-        lcotSender.init(encodeInputByteLength * Byte.SIZE, binNum * binSize);
+        lcotSender.init(encodeInputByteLength * Byte.SIZE);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

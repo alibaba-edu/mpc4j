@@ -90,8 +90,7 @@ public class Prty20PsiServer<T> extends AbstractPsiServer<T> {
         maxL = Prty20PsiPtoDesc.getMaxL(envType, securityModel, paxosType, maxServerElementSize, maxClientElementSize);
         int maxByteL = CommonUtils.getByteLength(maxL);
         h1 = HashFactory.createInstance(envType, maxByteL);
-        int maxM = Gf2eDokvsFactory.getM(envType, paxosType, maxClientElementSize);
-        lcotSender.init(maxL, maxM);
+        lcotSender.init(maxL);
         stopWatch.stop();
         long initLcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

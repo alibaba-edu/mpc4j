@@ -1,11 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pjc.main;
 
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.main.pid.PidMain;
 import edu.alibaba.mpc4j.s2pc.pjc.main.pmid.PmidMain;
-import edu.alibaba.mpc4j.s2pc.pso.main.PsoMain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
@@ -16,8 +14,6 @@ import java.util.Properties;
  * @date 2022/11/15
  */
 public class PjcMain {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PsoMain.class);
-
     /**
      * 主函数。
      *
@@ -25,23 +21,20 @@ public class PjcMain {
      */
     public static void main(String[] args) throws Exception {
         PropertiesUtils.loadLog4jProperties();
-        // 读取配置文件
-        LOGGER.info("read PTO config");
         Properties properties = PropertiesUtils.loadProperties(args[0]);
-        // 读取协议类型
-        String ptoType = PropertiesUtils.readString(properties, "pto_type");
-        LOGGER.info("pto_type = " + ptoType);
+        String ownName = args[1];
+        String ptoType = MainPtoConfigUtils.readPtoType(properties);
         switch (ptoType) {
             case PidMain.PTO_TYPE_NAME:
-                PidMain pidMain = new PidMain(properties);
+                PidMain pidMain = new PidMain(properties, ownName);
                 pidMain.runNetty();
                 break;
             case PmidMain.PTO_TYPE_NAME:
-                PmidMain pmidMain = new PmidMain(properties);
+                PmidMain pmidMain = new PmidMain(properties, ownName);
                 pmidMain.runNetty();
                 break;
             default:
-                throw new IllegalArgumentException("Invalid pto_type: " + ptoType);
+                throw new IllegalArgumentException("Invalid " + MainPtoConfigUtils.PTO_TYPE_KEY + ": " + ptoType);
         }
         System.exit(0);
     }

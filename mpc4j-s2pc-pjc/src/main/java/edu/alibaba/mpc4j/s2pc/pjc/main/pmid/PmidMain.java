@@ -3,16 +3,15 @@ package edu.alibaba.mpc4j.s2pc.pjc.main.pmid;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcPropertiesUtils;
+import edu.alibaba.mpc4j.common.rpc.main.AbstractMainTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
-import edu.alibaba.mpc4j.s2pc.pso.main.PsoMain;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidClient;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidFactory;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidServer;
-import org.apache.commons.lang3.time.StopWatch;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,13 +26,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * PMID主函数。
+ * PMID main.
  *
  * @author Weiran Liu
  * @date 2022/5/17
  */
-public class PmidMain {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PsoMain.class);
+public class PmidMain extends AbstractMainTwoPartyPto {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PmidMain.class);
+    /**
+     * protocol name key
+     */
+    public static final String PTO_NAME_KEY = "pmid_pto_name";
     /**
      * 协议类型名称
      */
@@ -51,50 +54,44 @@ public class PmidMain {
      */
     private static final int WARMUP_SET_SIZE = 1 << 10;
     /**
-     * server stop watch
+     * log non-side set sizes
      */
-    private final StopWatch serverStopWatch;
+    private final int[] nonSideSetSizes;
     /**
-     * server stop watch
+     * log one-side set sizes
      */
-    private final StopWatch clientStopWatch;
+    private final int[] oneSideSetSizes;
     /**
-     * 配置参数
+     * lost two-side set sizes
      */
-    private final Properties properties;
+    private final int[] twoSideSetSizes;
+    /**
+     * max multi-set num
+     */
+    private final int maxU;
+    /**
+     * PMID config
+     */
+    private final PmidConfig config;
 
-    public PmidMain(Properties properties) {
-        this.properties = properties;
-        serverStopWatch = new StopWatch();
-        clientStopWatch = new StopWatch();
-    }
-
-    public void runNetty() throws Exception {
-        Rpc ownRpc = RpcPropertiesUtils.readNettyRpc(properties, "server", "client");
-        if (ownRpc.ownParty().getPartyId() == 0) {
-            runServer(ownRpc, ownRpc.getParty(1));
-        } else if (ownRpc.ownParty().getPartyId() == 1) {
-            runClient(ownRpc, ownRpc.getParty(0));
-        } else {
-            throw new IllegalArgumentException("Invalid PartyID for own_name: " + ownRpc.ownParty().getPartyName());
-        }
-    }
-
-    public void runServer(Rpc serverRpc, Party clientParty) throws Exception {
-        // 读取协议参数
-        LOGGER.info("{} read settings", serverRpc.ownParty().getPartyName());
-        // 读取集合大小
+    public PmidMain(Properties properties, String ownName) {
+        super(properties, ownName);
+        // read common config
+        LOGGER.info("{} read settings", ownRpc.ownParty().getPartyName());
         int[] logNonSideSetSizes = PropertiesUtils.readLogIntArray(properties, "non_side_log_set_size");
-        int[] nonSideSetSizes = Arrays.stream(logNonSideSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        nonSideSetSizes = Arrays.stream(logNonSideSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
         int[] logOneSideSetSizes = PropertiesUtils.readLogIntArray(properties, "one_side_log_set_size");
-        int[] oneSideSetSizes = Arrays.stream(logOneSideSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        oneSideSetSizes = Arrays.stream(logOneSideSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
         int[] logTwoSideSetSizes = PropertiesUtils.readLogIntArray(properties, "two_side_log_set_size");
-        int[] twoSideSetSizes = Arrays.stream(logTwoSideSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        // 读取max(u)
-        int maxU = PropertiesUtils.readInt(properties, "max_u");
-        // 读取特殊参数
-        LOGGER.info("{} read PTO config", serverRpc.ownParty().getPartyName());
-        PmidConfig config = PmidConfigUtils.createConfig(properties);
+        twoSideSetSizes = Arrays.stream(logTwoSideSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        maxU = PropertiesUtils.readInt(properties, "max_u");
+        // read PTO config
+        LOGGER.info("{} read PTO config", ownRpc.ownParty().getPartyName());
+        config = PmidConfigUtils.createConfig(properties);
+    }
+
+    @Override
+    public void runParty1(Rpc serverRpc, Party clientParty) throws IOException, MpcAbortException {
         // 生成输入文件
         LOGGER.info("{} generate warm-up element files", serverRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, ELEMENT_BYTE_LENGTH);
@@ -110,8 +107,9 @@ public class PmidMain {
         }
         LOGGER.info("{} create result file", serverRpc.ownParty().getPartyName());
         // 创建统计结果文件
-        String filePath = PsoUtils.getFileFolderName() + PTO_TYPE_NAME
+        String filePath = MainPtoConfigUtils.getFileFolderName() + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
+            + "_" + appendString
             + "_" + ELEMENT_BYTE_LENGTH * Byte.SIZE
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -186,7 +184,7 @@ public class PmidMain {
         return serverElementMap;
     }
 
-    private void warmupServer(Rpc serverRpc, Party clientParty, PmidConfig config, int taskId) throws Exception {
+    private void warmupServer(Rpc serverRpc, Party clientParty, PmidConfig config, int taskId) throws IOException, MpcAbortException {
         Map<ByteBuffer, Integer> serverElementMap = getServerElementMap(WARMUP_SET_SIZE, WARMUP_MAX_U);
         PmidServer<ByteBuffer> pmidServer = PmidFactory.createServer(serverRpc, clientParty, config);
         pmidServer.setTaskId(taskId);
@@ -222,11 +220,11 @@ public class PmidMain {
         pmidServer.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", pmidServer.ownParty().getPartyName());
-        serverStopWatch.start();
+        stopWatch.start();
         pmidServer.init(serverSetSize, serverU, clientSetSize, clientU);
-        serverStopWatch.stop();
-        long initTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
-        serverStopWatch.reset();
+        stopWatch.stop();
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long initDataPacketNum = pmidServer.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = pmidServer.getRpc().getPayloadByteLength();
         long initSendByteLength = pmidServer.getRpc().getSendByteLength();
@@ -235,11 +233,11 @@ public class PmidMain {
         pmidServer.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", pmidServer.ownParty().getPartyName());
-        serverStopWatch.start();
+        stopWatch.start();
         pmidServer.pmid(serverElementMap, clientSetSize, clientU);
-        serverStopWatch.stop();
-        long ptoTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
-        serverStopWatch.reset();
+        stopWatch.stop();
+        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long ptoDataPacketNum = pmidServer.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = pmidServer.getRpc().getPayloadByteLength();
         long ptoSendByteLength = pmidServer.getRpc().getSendByteLength();
@@ -261,21 +259,8 @@ public class PmidMain {
         LOGGER.info("{} finish", pmidServer.ownParty().getPartyName());
     }
 
-    public void runClient(Rpc clientRpc, Party serverParty) throws Exception {
-        // 读取协议参数
-        LOGGER.info("{} read settings", clientRpc.ownParty().getPartyName());
-        // 读取集合大小
-        int[] logNonSideSetSizes = PropertiesUtils.readLogIntArray(properties, "non_side_log_set_size");
-        int[] nonSideSetSizes = Arrays.stream(logNonSideSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        int[] logOneSideSetSizes = PropertiesUtils.readLogIntArray(properties, "one_side_log_set_size");
-        int[] oneSideSetSizes = Arrays.stream(logOneSideSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        int[] logTwoSideSetSizes = PropertiesUtils.readLogIntArray(properties, "two_side_log_set_size");
-        int[] twoSideSetSizes = Arrays.stream(logTwoSideSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        // 读取max(k)
-        int maxU = PropertiesUtils.readInt(properties, "max_u");
-        // 读取特殊参数
-        LOGGER.info("{} read PTO config", clientRpc.ownParty().getPartyName());
-        PmidConfig config = PmidConfigUtils.createConfig(properties);
+    @Override
+    public void runParty2(Rpc clientRpc, Party serverParty) throws IOException, MpcAbortException {
         // 生成输入文件
         LOGGER.info("{} generate warm-up element files", clientRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, ELEMENT_BYTE_LENGTH);
@@ -291,8 +276,9 @@ public class PmidMain {
         }
         // 创建统计结果文件
         LOGGER.info("{} create result file", clientRpc.ownParty().getPartyName());
-        String filePath = PsoUtils.getFileFolderName() + PTO_TYPE_NAME
+        String filePath = MainPtoConfigUtils.getFileFolderName() + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
+            + "_" + appendString
             + "_" + ELEMENT_BYTE_LENGTH * Byte.SIZE
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -367,7 +353,7 @@ public class PmidMain {
         return clientElementMap;
     }
 
-    private void warmupClient(Rpc clientRpc, Party serverParty, PmidConfig config, int taskId) throws Exception {
+    private void warmupClient(Rpc clientRpc, Party serverParty, PmidConfig config, int taskId) throws IOException, MpcAbortException {
         Map<ByteBuffer, Integer> clientElementMap = getClientElementMap(WARMUP_SET_SIZE, WARMUP_MAX_U);
         PmidClient<ByteBuffer> pmidClient = PmidFactory.createClient(clientRpc, serverParty, config);
         pmidClient.setTaskId(taskId);
@@ -406,11 +392,11 @@ public class PmidMain {
         pmidClient.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", pmidClient.ownParty().getPartyName());
-        clientStopWatch.start();
+        stopWatch.start();
         pmidClient.init(clientSetSize, clientU, serverSetSize, serverU);
-        clientStopWatch.stop();
-        long initTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
-        clientStopWatch.reset();
+        stopWatch.stop();
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long initDataPacketNum = pmidClient.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = pmidClient.getRpc().getPayloadByteLength();
         long initSendByteLength = pmidClient.getRpc().getSendByteLength();
@@ -419,11 +405,11 @@ public class PmidMain {
         pmidClient.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", pmidClient.ownParty().getPartyName());
-        clientStopWatch.start();
+        stopWatch.start();
         pmidClient.pmid(clientElementMap, serverSetSize, serverU);
-        clientStopWatch.stop();
-        long ptoTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
-        clientStopWatch.reset();
+        stopWatch.stop();
+        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long ptoDataPacketNum = pmidClient.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = pmidClient.getRpc().getPayloadByteLength();
         long ptoSendByteLength = pmidClient.getRpc().getSendByteLength();

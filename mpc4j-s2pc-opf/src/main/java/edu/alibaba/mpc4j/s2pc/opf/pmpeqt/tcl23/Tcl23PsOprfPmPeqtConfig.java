@@ -4,8 +4,8 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnConfig;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
 import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.PmPeqtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.PmPeqtFactory;
 
@@ -20,15 +20,15 @@ public class Tcl23PsOprfPmPeqtConfig extends AbstractMultiPartyPtoConfig impleme
     /**
      * OSN config
      */
-    private final OsnConfig osnConfig;
+    private final DosnConfig dosnConfig;
     /**
      * OPRF config
      */
     private final OprfConfig oprfConfig;
 
     private Tcl23PsOprfPmPeqtConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.osnConfig, builder.oprfConfig);
-        osnConfig = builder.osnConfig;
+        super(SecurityModel.SEMI_HONEST, builder.dosnConfig, builder.oprfConfig);
+        dosnConfig = builder.dosnConfig;
         oprfConfig = builder.oprfConfig;
     }
 
@@ -41,27 +41,27 @@ public class Tcl23PsOprfPmPeqtConfig extends AbstractMultiPartyPtoConfig impleme
         return oprfConfig;
     }
 
-    public OsnConfig getOsnConfig() {
-        return osnConfig;
+    public DosnConfig getOsnConfig() {
+        return dosnConfig;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Tcl23PsOprfPmPeqtConfig> {
         /**
          * OSN config
          */
-        private OsnConfig osnConfig;
+        private DosnConfig dosnConfig;
         /**
          * OPRF config
          */
         private OprfConfig oprfConfig;
 
-        public Builder(boolean silent) {
-            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        public Builder() {
+            dosnConfig = DosnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, false);
             oprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
         }
 
-        public Builder setOsnConfig(OsnConfig osnConfig) {
-            this.osnConfig = osnConfig;
+        public Builder setOsnConfig(DosnConfig dosnConfig) {
+            this.dosnConfig = dosnConfig;
             return this;
         }
 

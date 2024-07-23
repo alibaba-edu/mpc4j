@@ -1,10 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.pre;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.pre.bea95.Bea95PreLnotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.pre.PreLnotFactory.PreLnotType;
 import org.junit.Test;
@@ -108,10 +107,8 @@ public class PreLnotTest extends AbstractTwoPartyMemoryRpcPto {
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
             // pre-compute sender / receiver output
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
-            LnotSenderOutput preSenderOutput = LnotTestUtils.genSenderOutput(l, num, SECURE_RANDOM);
-            LnotReceiverOutput preReceiverOutput = LnotTestUtils.genReceiverOutput(preSenderOutput, SECURE_RANDOM);
+            LnotSenderOutput preSenderOutput = LnotSenderOutput.createRandom(num, l, SECURE_RANDOM);
+            LnotReceiverOutput preReceiverOutput = LnotReceiverOutput.createRandom(preSenderOutput, SECURE_RANDOM);
             // receiver actual choices
             int[] choiceArray = IntStream.range(0, num)
                 .map(index -> SECURE_RANDOM.nextInt(n))
@@ -131,7 +128,7 @@ public class PreLnotTest extends AbstractTwoPartyMemoryRpcPto {
             // verify
             LnotSenderOutput senderOutput = senderThread.getSenderOutput();
             LnotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            LnotTestUtils.assertOutput(l, num, senderOutput, receiverOutput);
+            OtTestUtils.assertOutput(num, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();

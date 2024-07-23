@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.zp64;
 
 import edu.alibaba.mpc4j.common.tool.galoisfield.LongField;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory.Zp64Type;
 
 /**
  * Zp64有限域运算接口。
@@ -14,17 +15,7 @@ public interface Zp64 extends LongField {
      *
      * @return the Zp64 type.
      */
-    Zp64Factory.Zp64Type getZp64Type();
-
-    /**
-     * Gets the name.
-     *
-     * @return the name.
-     */
-    @Override
-    default String getName() {
-        return getZp64Type().name();
-    }
+    Zp64Type getZp64Type();
 
     /**
      * Gets the prime.

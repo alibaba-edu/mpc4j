@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.psu.zcl23;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k.Gf2kDokvsFactory.Gf2kDokvsType;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
@@ -32,16 +32,16 @@ public class Zcl23SkePsuConfig extends AbstractMultiPartyPtoConfig implements Ps
      */
     private final CoreCotConfig coreCotConfig;
     /**
-     * GF2E-DOKVS type
+     * GF2K-DOKVS type
      */
-    private final Gf2eDokvsType gf2eDokvsType;
+    private final Gf2kDokvsType gf2kDokvsType;
 
     private Zcl23SkePsuConfig(Builder builder) {
         super(SecurityModel.SEMI_HONEST, builder.z2cConfig, builder.oprpConfig, builder.coreCotConfig);
         z2cConfig = builder.z2cConfig;
         oprpConfig = builder.oprpConfig;
         coreCotConfig = builder.coreCotConfig;
-        gf2eDokvsType = builder.gf2eDokvsType;
+        gf2kDokvsType = builder.gf2kDokvsType;
     }
 
     @Override
@@ -61,53 +61,33 @@ public class Zcl23SkePsuConfig extends AbstractMultiPartyPtoConfig implements Ps
         return coreCotConfig;
     }
 
-    public Gf2eDokvsType getGf2eDokvsType() {
-        return gf2eDokvsType;
+    public Gf2kDokvsType getGf2kDokvsType() {
+        return gf2kDokvsType;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Zcl23SkePsuConfig> {
         /**
          * Z2 circuit config
          */
-        private Z2cConfig z2cConfig;
+        private final Z2cConfig z2cConfig;
         /**
          * OPRP协议配置项
          */
-        private OprpConfig oprpConfig;
+        private final OprpConfig oprpConfig;
         /**
          * 核COT协议配置项
          */
-        private CoreCotConfig coreCotConfig;
+        private final CoreCotConfig coreCotConfig;
         /**
          * GF2E-DOKVS type
          */
-        private Gf2eDokvsType gf2eDokvsType;
+        private final Gf2kDokvsType gf2kDokvsType;
 
-        public Builder(SecurityModel securityModel) {
-            z2cConfig = Z2cFactory.createDefaultConfig(securityModel, true);
-            oprpConfig = OprpFactory.createDefaultConfig(securityModel, true);
+        public Builder(SecurityModel securityModel, boolean silent) {
+            z2cConfig = Z2cFactory.createDefaultConfig(securityModel, silent);
+            oprpConfig = OprpFactory.createDefaultConfig();
             coreCotConfig = CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            gf2eDokvsType = Gf2eDokvsType.H3_SINGLETON_GCT;
-        }
-
-        public Builder setBcConfig(Z2cConfig z2cConfig) {
-            this.z2cConfig = z2cConfig;
-            return this;
-        }
-
-        public Builder setOprpConfig(OprpConfig oprpConfig) {
-            this.oprpConfig = oprpConfig;
-            return this;
-        }
-
-        public Builder setCoreCotConfig(CoreCotConfig coreCotConfig) {
-            this.coreCotConfig = coreCotConfig;
-            return this;
-        }
-
-        public Builder setGf2eDokvsType(Gf2eDokvsType gf2eDokvsType) {
-            this.gf2eDokvsType = gf2eDokvsType;
-            return this;
+            gf2kDokvsType = Gf2kDokvsType.H3_CLUSTER_BINARY_BLAZE_GCT;
         }
 
         @Override

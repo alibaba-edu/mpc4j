@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.prg;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory.PrgType;
 import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.SM4Engine;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
@@ -42,7 +43,7 @@ public class BcSm4CtrPrg implements Prg {
             KeyParameter keyParameter = new KeyParameter(seed);
             ParametersWithIV parametersWithIv = new ParametersWithIV(keyParameter, IV);
             // 初始化SM4/CTR引擎
-            BufferedBlockCipher sm4CtrCipher = new BufferedBlockCipher(new SICBlockCipher(new SM4Engine()));
+            BufferedBlockCipher sm4CtrCipher = new DefaultBufferedBlockCipher(SICBlockCipher.newInstance(new SM4Engine()));
             sm4CtrCipher.init(true, parametersWithIv);
             // PRG加密的是一个全零的明文
             byte[] plaintext = new byte[outputByteLength];

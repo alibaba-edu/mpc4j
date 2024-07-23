@@ -1,7 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core;
 
-import java.util.Arrays;
-
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
@@ -17,10 +15,6 @@ import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
  */
 public abstract class AbstractCoreCotReceiver extends AbstractTwoPartyPto implements CoreCotReceiver {
     /**
-     * 最大数量
-     */
-    private int maxNum;
-    /**
      * 选择比特
      */
     protected boolean[] choices;
@@ -33,15 +27,13 @@ public abstract class AbstractCoreCotReceiver extends AbstractTwoPartyPto implem
         super(ptoDesc, receiverRpc, senderParty, config);
     }
 
-    protected void setInitInput(int maxNum) {
-        MathPreconditions.checkPositive("maxNum", maxNum);
-        this.maxNum = maxNum;
+    protected void setInitInput() {
         initState();
     }
 
     protected void setPtoInput(boolean[] choices) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", choices.length, maxNum);
+        MathPreconditions.checkPositive("num", choices.length);
         // 拷贝一份
         this.choices = BinaryUtils.clone(choices);
         num = choices.length;

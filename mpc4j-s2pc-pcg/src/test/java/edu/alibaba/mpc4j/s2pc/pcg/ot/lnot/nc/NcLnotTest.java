@@ -2,13 +2,11 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc.NcLnotFactory.NcLnotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc.cot.CotNcLnotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.nc.direct.DirectNcLnotConfig;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -66,15 +64,6 @@ public class NcLnotTest extends AbstractTwoPartyMemoryRpcPto {
         configurations.add(new Object[] {
             NcLnotType.COT.name() + " (" + SecurityModel.SEMI_HONEST + ")",
             new CotNcLnotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
-        });
-        // DIRECT
-        configurations.add(new Object[] {
-            NcLnotType.DIRECT.name() + " (" + SecurityModel.MALICIOUS + ")",
-            new DirectNcLnotConfig.Builder(SecurityModel.MALICIOUS).build(),
-        });
-        configurations.add(new Object[] {
-            NcLnotType.DIRECT.name() + " (" + SecurityModel.SEMI_HONEST + ")",
-            new DirectNcLnotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
 
         return configurations;
@@ -150,8 +139,6 @@ public class NcLnotTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
             NcLnotSenderThread senderThread = new NcLnotSenderThread(sender, l, num, round);
             NcLnotReceiverThread receiverThread = new NcLnotReceiverThread(receiver, l, num, round);
             STOP_WATCH.start();
@@ -167,7 +154,7 @@ public class NcLnotTest extends AbstractTwoPartyMemoryRpcPto {
             // verify
             LnotSenderOutput senderOutput = senderThread.getSenderOutput();
             LnotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            LnotTestUtils.assertOutput(l, num * round, senderOutput, receiverOutput);
+            OtTestUtils.assertOutput(num * round, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();

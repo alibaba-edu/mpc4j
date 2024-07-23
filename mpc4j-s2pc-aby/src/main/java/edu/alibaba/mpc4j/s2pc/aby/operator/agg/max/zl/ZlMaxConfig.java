@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl;
 
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 /**
  * Zl Max Config.
@@ -16,11 +15,4 @@ public interface ZlMaxConfig extends MultiPartyPtoConfig {
      * @return the protocol type.
      */
     ZlMaxFactory.ZlMaxType getPtoType();
-
-    /**
-     * Get the zl.
-     *
-     * @return the zl.
-     */
-    Zl getZl();
 }

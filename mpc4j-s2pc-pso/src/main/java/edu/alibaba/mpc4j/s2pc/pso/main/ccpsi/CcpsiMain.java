@@ -4,7 +4,8 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcPropertiesUtils;
+import edu.alibaba.mpc4j.common.rpc.main.AbstractMainTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
@@ -12,7 +13,6 @@ import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiFactory;
 import edu.alibaba.mpc4j.s2pc.pso.cpsi.ccpsi.CcpsiServer;
-import org.apache.commons.lang3.time.StopWatch;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +34,12 @@ import java.util.stream.Collectors;
  * @author Feng Han
  * @date 2023/10/10
  */
-public class CcpsiMain {
+public class CcpsiMain extends AbstractMainTwoPartyPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(CcpsiMain.class);
+    /**
+     * protocol name key
+     */
+    public static final String PTO_NAME_KEY = "ccpsi_pto_name";
     /**
      * protocol type name
      */
@@ -49,41 +53,31 @@ public class CcpsiMain {
      */
     private static final int WARMUP_SET_SIZE = 1 << 10;
     /**
-     * server stop watch
+     * element byte length
      */
-    private final StopWatch serverStopWatch;
+    private final int elementByteLength;
     /**
-     * client stop watch
+     * number of set sizes
      */
-    private final StopWatch clientStopWatch;
+    private final int setSizeNum;
     /**
-     * properties
+     * server set sizes
      */
-    private final Properties properties;
+    private final int[] serverSetSizes;
+    /**
+     * client set sizes
+     */
+    private final int[] clientSetSizes;
+    /**
+     * CCPSI config
+     */
+    private final CcpsiConfig config;
 
-    public CcpsiMain(Properties properties) {
-        this.properties = properties;
-        serverStopWatch = new StopWatch();
-        clientStopWatch = new StopWatch();
-    }
-
-    public void runNetty() throws Exception {
-        Rpc ownRpc = RpcPropertiesUtils.readNettyRpc(properties, "server", "client");
-        if (ownRpc.ownParty().getPartyId() == 0) {
-            runServer(ownRpc, ownRpc.getParty(1));
-        } else if (ownRpc.ownParty().getPartyId() == 1) {
-            runClient(ownRpc, ownRpc.getParty(0));
-        } else {
-            throw new IllegalArgumentException("Invalid PartyID for own_name: " + ownRpc.ownParty().getPartyName());
-        }
-    }
-
-    public void runServer(Rpc serverRpc, Party clientParty) throws MpcAbortException, IOException {
-        // 读取协议参数
-        LOGGER.info("{} read settings", serverRpc.ownParty().getPartyName());
-        // 读取元素字节长度
-        int elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
-        // 读取集合大小
+    public CcpsiMain(Properties properties, String ownName) {
+        super(properties, ownName);
+        // read PTO config
+        LOGGER.info("{} read settings", ownRpc.ownParty().getPartyName());
+        elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
         int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
         int[] clientLogSetSizes = PropertiesUtils.readLogIntArray(properties, "client_log_set_size");
         Preconditions.checkArgument(
@@ -91,24 +85,28 @@ public class CcpsiMain {
             "# of server log_set_size = %s, $ of client log_set_size = %s, they must be equal",
             serverLogSetSizes.length, clientLogSetSizes.length
         );
-        int setSizeNum = serverLogSetSizes.length;
-        int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        // 读取特殊参数
-        LOGGER.info("{} read PTO config", serverRpc.ownParty().getPartyName());
-        CcpsiConfig config = CcpsiConfigUtils.createCcpsiConfig(properties);
+        setSizeNum = serverLogSetSizes.length;
+        serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        // read CCPSI config
+        LOGGER.info("{} read CCPSI config", ownRpc.ownParty().getPartyName());
+        config = CcpsiConfigUtils.createConfig(properties);
+    }
+
+    @Override
+    public void runParty1(Rpc serverRpc, Party clientParty) throws MpcAbortException, IOException {
         // 生成输入文件
         LOGGER.info("{} generate warm-up element files", serverRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
         LOGGER.info("{} generate element files", serverRpc.ownParty().getPartyName());
-        for (int setSizeIndex = 0 ; setSizeIndex < setSizeNum; setSizeIndex++) {
+        for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
             PsoUtils.generateBytesInputFiles(serverSetSizes[setSizeIndex], clientSetSizes[setSizeIndex], elementByteLength);
         }
         LOGGER.info("{} create result file", serverRpc.ownParty().getPartyName());
         // 创建统计结果文件
-        String filePath = PsoUtils.getFileFolderName() + PTO_TYPE_NAME
+        String filePath = MainPtoConfigUtils.getFileFolderName() + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
-            + PropertiesUtils.readString(properties, "append_string", "")
+            + "_" + appendString
             + "_" + elementByteLength * Byte.SIZE
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -191,11 +189,11 @@ public class CcpsiMain {
         psiServer.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", psiServer.ownParty().getPartyName());
-        serverStopWatch.start();
+        stopWatch.start();
         psiServer.init(serverSetSize, clientSetSize);
-        serverStopWatch.stop();
-        long initTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
-        serverStopWatch.reset();
+        stopWatch.stop();
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long initDataPacketNum = psiServer.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = psiServer.getRpc().getPayloadByteLength();
         long initSendByteLength = psiServer.getRpc().getSendByteLength();
@@ -203,11 +201,11 @@ public class CcpsiMain {
         psiServer.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", psiServer.ownParty().getPartyName());
-        serverStopWatch.start();
+        stopWatch.start();
         psiServer.psi(serverElementSet, clientSetSize);
-        serverStopWatch.stop();
-        long ptoTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
-        serverStopWatch.reset();
+        stopWatch.stop();
+        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long ptoDataPacketNum = psiServer.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = psiServer.getRpc().getPayloadByteLength();
         long ptoSendByteLength = psiServer.getRpc().getSendByteLength();
@@ -226,25 +224,8 @@ public class CcpsiMain {
         LOGGER.info("{} finish", psiServer.ownParty().getPartyName());
     }
 
-    public void runClient(Rpc clientRpc, Party serverParty) throws MpcAbortException, IOException {
-        // 读取协议参数
-        LOGGER.info("{} read settings", clientRpc.ownParty().getPartyName());
-        // 读取元素字节长度
-        int elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
-        // 读取集合大小
-        int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
-        int[] clientLogSetSizes = PropertiesUtils.readLogIntArray(properties, "client_log_set_size");
-        Preconditions.checkArgument(
-            serverLogSetSizes.length == clientLogSetSizes.length,
-            "# of server log_set_size = %s, $ of client log_set_size = %s, they must be equal",
-            serverLogSetSizes.length, clientLogSetSizes.length
-        );
-        int setSizeNum = serverLogSetSizes.length;
-        int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        // 读取特殊参数
-        LOGGER.info("{} read PTO config", clientRpc.ownParty().getPartyName());
-        CcpsiConfig config = CcpsiConfigUtils.createCcpsiConfig(properties);
+    @Override
+    public void runParty2(Rpc clientRpc, Party serverParty) throws MpcAbortException, IOException {
         // 生成输入文件
         LOGGER.info("{} generate warm-up element files", clientRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
@@ -254,9 +235,9 @@ public class CcpsiMain {
         }
         // 创建统计结果文件
         LOGGER.info("{} create result file", clientRpc.ownParty().getPartyName());
-        String filePath = PsoUtils.getFileFolderName() + PTO_TYPE_NAME
+        String filePath = MainPtoConfigUtils.getFileFolderName() + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
-            + PropertiesUtils.readString(properties, "append_string", "")
+            + "_" + appendString
             + "_" + elementByteLength * Byte.SIZE
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -345,11 +326,11 @@ public class CcpsiMain {
         psiClient.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", psiClient.ownParty().getPartyName());
-        clientStopWatch.start();
+        stopWatch.start();
         psiClient.init(clientSetSize, serverSetSize);
-        clientStopWatch.stop();
-        long initTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
-        clientStopWatch.reset();
+        stopWatch.stop();
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long initDataPacketNum = psiClient.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = psiClient.getRpc().getPayloadByteLength();
         long initSendByteLength = psiClient.getRpc().getSendByteLength();
@@ -357,11 +338,11 @@ public class CcpsiMain {
         psiClient.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", psiClient.ownParty().getPartyName());
-        clientStopWatch.start();
+        stopWatch.start();
         psiClient.psi(clientElementSet, serverSetSize);
-        clientStopWatch.stop();
-        long ptoTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
-        clientStopWatch.reset();
+        stopWatch.stop();
+        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long ptoDataPacketNum = psiClient.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = psiClient.getRpc().getPayloadByteLength();
         long ptoSendByteLength = psiClient.getRpc().getSendByteLength();

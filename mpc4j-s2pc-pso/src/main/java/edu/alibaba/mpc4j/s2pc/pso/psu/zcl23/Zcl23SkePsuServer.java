@@ -3,9 +3,9 @@ package edu.alibaba.mpc4j.s2pc.pso.psu.zcl23;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k.Gf2kDokvs;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k.Gf2kDokvsFactory;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k.Gf2kDokvsFactory.Gf2kDokvsType;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
@@ -53,9 +53,9 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
      */
     private final CoreCotSender coreCotSender;
     /**
-     * GF2E-DOKVS type
+     * GF2K-DOKVS type
      */
-    private final Gf2eDokvsType dokvsType;
+    private final Gf2kDokvsType dokvsType;
     /**
      * GF2E-DOKVS hash keys
      */
@@ -69,11 +69,22 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
         super(Zcl23SkePsuPtoDesc.getInstance(), serverRpc, clientParty, config);
         z2cSender = Z2cFactory.createSender(serverRpc, clientParty, config.getZ2cConfig());
         addSubPto(z2cSender);
-        oprpReceiver = OprpFactory.createReceiver(serverRpc, clientParty, config.getOprpConfig());
+        oprpReceiver = OprpFactory.createReceiver(z2cSender, clientParty, config.getOprpConfig());
         addSubPto(oprpReceiver);
         coreCotSender = CoreCotFactory.createSender(serverRpc, clientParty, config.getCoreCotConfig());
         addSubPto(coreCotSender);
-        dokvsType = config.getGf2eDokvsType();
+        dokvsType = config.getGf2kDokvsType();
+    }
+
+    public Zcl23SkePsuServer(Rpc serverRpc, Party clientParty, Party aiderParty, Zcl23SkePsuConfig config) {
+        super(Zcl23SkePsuPtoDesc.getInstance(), serverRpc, clientParty, config);
+        z2cSender = Z2cFactory.createSender(serverRpc, clientParty, aiderParty, config.getZ2cConfig());
+        addSubPto(z2cSender);
+        oprpReceiver = OprpFactory.createReceiver(z2cSender, clientParty, config.getOprpConfig());
+        addSubPto(oprpReceiver);
+        coreCotSender = CoreCotFactory.createSender(serverRpc, clientParty, config.getCoreCotConfig());
+        addSubPto(coreCotSender);
+        dokvsType = config.getGf2kDokvsType();
     }
 
     @Override
@@ -82,8 +93,9 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 涉及三元组部分的初始化
-        z2cSender.init((long) maxServerElementSize * CommonConstants.BLOCK_BIT_LENGTH);
+        long expectNum = (long) maxServerElementSize * CommonConstants.BLOCK_BIT_LENGTH
+            + OprpFactory.expectZ2TripleNum(oprpReceiver.getType(), maxServerElementSize);
+        z2cSender.init((int) Math.min(expectNum, Integer.MAX_VALUE));
         oprpReceiver.init(maxServerElementSize);
         stopWatch.stop();
         long bcTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -92,9 +104,8 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
 
         stopWatch.start();
         // 其他部分初始化
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        coreCotSender.init(delta, maxServerElementSize);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -103,7 +114,7 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
         stopWatch.start();
         List<byte[]> keysPayload = new LinkedList<>();
         // init DOKVS hash keys
-        int dokvsHashKeyNum = Gf2eDokvsFactory.getHashKeyNum(dokvsType);
+        int dokvsHashKeyNum = Gf2kDokvsFactory.getHashKeyNum(dokvsType);
         dokvsHashKeys = IntStream.range(0, dokvsHashKeyNum)
             .mapToObj(keyIndex -> {
                 byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
@@ -151,7 +162,7 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
         List<byte[]> peqtSharesPayload = new LinkedList<>();
         peqtSharesPayload.add(serverChoiceShares);
         DataPacketHeader peqtSharesHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), Zcl23SkePsuPtoDesc.PtoStep.SERVER_SEND_PEQT_SHARES.ordinal(), extraInfo,
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PEQT_SHARES.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(peqtSharesHeader, peqtSharesPayload));
@@ -187,13 +198,11 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
     }
 
     private void handleDokvsPayload(List<byte[]> dokvsPayload) throws MpcAbortException {
-        int dokvsM = Gf2eDokvsFactory.getM(envType, dokvsType, clientElementSize);
+        int dokvsM = Gf2kDokvsFactory.getM(envType, dokvsType, clientElementSize);
         MpcAbortPreconditions.checkArgument(dokvsPayload.size() == dokvsM);
         // 读取DOKVS
         byte[][] storages = dokvsPayload.toArray(new byte[0][]);
-        Gf2eDokvs<ByteBuffer> dokvs = Gf2eDokvsFactory.createInstance(
-            envType, dokvsType, clientElementSize, CommonConstants.BLOCK_BIT_LENGTH, dokvsHashKeys
-        );
+        Gf2kDokvs<ByteBuffer> dokvs = Gf2kDokvsFactory.createInstance(envType, dokvsType, clientElementSize, dokvsHashKeys);
         IntStream senderMessageIntStream = IntStream.range(0, serverElementSize);
         senderMessageIntStream = parallel ? senderMessageIntStream.parallel() : senderMessageIntStream;
         senderMessages = senderMessageIntStream
@@ -209,8 +218,7 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
             transBitMatrix.setColumn(i, oprpReceiverOutput.getShare(i));
         }
         TransBitMatrix transposeTransBitMatrix = transBitMatrix.transpose();
-        int logSize = LongUtils.ceilLog2(serverElementSize);
-        // 服务端结构初始化全为1
+        int logSize = LongUtils.ceilLog2(clientElementSize);
         SquareZ2Vector serverPeqtShares = SquareZ2Vector.createOnes(serverElementSize);
         for (int index = 0; index < CommonConstants.BLOCK_BIT_LENGTH - logSize; index++) {
             byte[] bits = transposeTransBitMatrix.getColumn(index);

@@ -6,6 +6,8 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketBuffer;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
+import edu.alibaba.mpc4j.common.rpc.utils.PayloadType;
+import edu.alibaba.mpc4j.common.tool.utils.SerializeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,8 +120,21 @@ public class MemoryRpc implements Rpc {
         DataPacket copyDataPacket = DataPacket.fromByteArrayList(dataPacket.getHeader(), copyPayload);
         // 先统计数据包大小，再发送数据包，否则可能会出现统计的时候数据包被其他线程修改，抛出并发异常
         dataPacketNum++;
-        payloadByteLength += copyPayload.stream().mapToInt(data -> data.length).sum();
-        sendByteLength += copyPayload.stream().mapToInt(data -> data.length).sum();
+        int byteLength;
+        switch (dataPacket.getPayloadType()) {
+            case EMPTY:
+            case SINGLETON:
+            case NORMAL:
+                byteLength = copyPayload.stream().mapToInt(data -> data.length).sum();
+                break;
+            case EQUAL_SIZE:
+                byteLength = SerializeUtils.compressEqual(payload, dataPacket.getEqualLength()).length + Integer.BYTES;
+                break;
+            default:
+                throw new IllegalStateException("Invalid " + PayloadType.class.getSimpleName() + ": " + dataPacket.getPayloadType());
+        }
+        payloadByteLength += byteLength;
+        sendByteLength += byteLength;
         // 往dataPacketBuffer中放置数据包
         dataPacketBuffer.put(copyDataPacket);
     }
@@ -141,9 +156,9 @@ public class MemoryRpc implements Rpc {
     }
 
     @Override
-    public DataPacket receiveAny() {
+    public DataPacket receiveAny(int ptoId) {
         try {
-            return dataPacketBuffer.take(ownPartyId);
+            return dataPacketBuffer.take(ownPartyId, ptoId);
         } catch (InterruptedException e) {
             return null;
         }

@@ -30,8 +30,8 @@ public class RegOpGradBoost extends AbstractRegOpBoost {
     private static final Logger LOGGER = LoggerFactory.getLogger(RegOpGradBoost.class);
 
 
-    public RegOpGradBoost(Properties properties) {
-        super(properties, OpBoostTaskType.REG_OP_GRAD_BOOST);
+    public RegOpGradBoost(Properties properties, String ownName) {
+        super(properties, ownName, OpBoostTaskType.REG_OP_GRAD_BOOST);
     }
 
     @Override

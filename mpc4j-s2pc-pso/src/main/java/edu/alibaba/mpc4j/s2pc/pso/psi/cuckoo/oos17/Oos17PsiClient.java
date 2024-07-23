@@ -78,8 +78,6 @@ public class Oos17PsiClient<T> extends AbstractPsiClient<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxClientElementSize);
-        int maxStashNum = CuckooHashBinFactory.getStashSize(cuckooHashBinType, maxClientElementSize);
         int byteL = PsiUtils.getSemiHonestPeqtByteLength(maxServerElementSize, maxClientElementSize);
         h1 = HashFactory.createInstance(envType, byteL);
         int l = byteL * Byte.SIZE;
@@ -92,7 +90,7 @@ public class Oos17PsiClient<T> extends AbstractPsiClient<T> {
         );
         rpc.send(DataPacket.fromByteArrayList(cuckooHashKeysHeader, cuckooHashKeysPayload));
         // init LCOT
-        lcotReceiver.init(l, maxBinNum + maxStashNum);
+        lcotReceiver.init(l);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

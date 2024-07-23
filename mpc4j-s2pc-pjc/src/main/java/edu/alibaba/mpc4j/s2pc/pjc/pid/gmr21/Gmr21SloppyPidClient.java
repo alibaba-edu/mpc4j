@@ -228,7 +228,7 @@ public class Gmr21SloppyPidClient<T> extends AbstractPidParty<T> {
 
         stopWatch.start();
         // The parties invoke F_{psu}, with inputs {R_B(x) | y ∈ Y} for Bob
-        Set<ByteBuffer> pidSet = psuClient.psu(clientPidMap.keySet(), otherElementSetSize, pidByteLength);
+        Set<ByteBuffer> pidSet = psuClient.psu(clientPidMap.keySet(), otherElementSetSize, pidByteLength).getUnion();
         stopWatch.stop();
         long psuTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

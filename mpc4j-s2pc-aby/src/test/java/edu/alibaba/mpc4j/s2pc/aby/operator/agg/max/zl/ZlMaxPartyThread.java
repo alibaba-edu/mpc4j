@@ -1,6 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 
 /**
@@ -11,9 +13,17 @@ import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
  */
 class ZlMaxPartyThread extends Thread {
     /**
-     * the sender
+     * the party
      */
     private final ZlMaxParty party;
+    /**
+     * zlc party
+     */
+    private final Z2cParty z2cParty;
+    /**
+     * Zl
+     */
+    private final Zl zl;
     /**
      * x
      */
@@ -23,19 +33,16 @@ class ZlMaxPartyThread extends Thread {
      */
     private final int num;
     /**
-     * l
-     */
-    private final int l;
-    /**
      * z
      */
     private SquareZlVector shareZ;
 
-    ZlMaxPartyThread(ZlMaxParty party, SquareZlVector shareX) {
+    ZlMaxPartyThread(ZlMaxParty party, Z2cParty z2cParty, Zl zl, SquareZlVector shareX) {
         this.party = party;
+        this.z2cParty = z2cParty;
+        this.zl = zl;
         this.x = shareX;
         this.num = shareX.getNum();
-        this.l = shareX.getZl().getL();
     }
 
     SquareZlVector getShareZ() {
@@ -45,7 +52,8 @@ class ZlMaxPartyThread extends Thread {
     @Override
     public void run() {
         try {
-            party.init(l, num);
+            z2cParty.init(zl.getL() * num);
+            party.init(zl.getL(), num);
             shareZ = party.max(x);
         } catch (MpcAbortException e) {
             e.printStackTrace();

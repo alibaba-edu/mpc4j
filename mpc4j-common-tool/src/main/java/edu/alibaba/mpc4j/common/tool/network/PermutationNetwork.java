@@ -27,6 +27,11 @@ public interface PermutationNetwork<T> {
     int getLevel();
 
     /**
+     * set parallel programming
+     */
+    void setParallel(boolean parallel);
+
+    /**
      * Gets the maximal width of the network, i.e., the maximal number of switching gate for all levels.
      *
      * @return the maximal width of the network.

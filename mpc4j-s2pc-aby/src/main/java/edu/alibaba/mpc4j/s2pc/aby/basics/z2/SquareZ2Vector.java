@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.aby.basics.z2;
 
-import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2Vector;
 import edu.alibaba.mpc4j.common.circuit.z2.utils.Z2VectorUtils;
+import edu.alibaba.mpc4j.common.structure.vector.Vector;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
@@ -211,7 +211,7 @@ public class SquareZ2Vector implements MpcZ2Vector {
     }
 
     @Override
-    public void merge(MpcVector other) {
+    public void merge(Vector other) {
         SquareZ2Vector that = (SquareZ2Vector) other;
         assert this.plain == that.isPlain() : "merged ones must have the same public state";
         bitVector.merge(that.getBitVector());
@@ -230,8 +230,7 @@ public class SquareZ2Vector implements MpcZ2Vector {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof SquareZ2Vector) {
-            SquareZ2Vector that = (SquareZ2Vector) obj;
+        if (obj instanceof SquareZ2Vector that) {
             return new EqualsBuilder()
                 .append(this.bitVector, that.bitVector)
                 .append(this.plain, that.plain)

@@ -1,13 +1,16 @@
 package edu.alibaba.mpc4j.s2pc.pir.main.cppir.keyword;
 
-import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.piano.PianoSingleCpPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.pai.PaiSingleCpPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleSingleCpPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.spam.SpamSingleCpPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.keyword.SingleCpKsPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.keyword.alpr21.Alpr21SingleCpKsPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.keyword.pai.PaiSingleCpCksPirConfig;
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirFactory.CpIdxPirType;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.piano.PianoCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.pai.PaiCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.spam.SpamCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirFactory.CpKsPirType;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.alpr21.Alpr21CpKsPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.pai.PaiCpCksPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.main.cppir.index.CpIdxPirMain;
 
 import java.util.Properties;
 
@@ -31,32 +34,42 @@ class SingleCpKsPirConfigUtils {
      * @param properties properties.
      * @return config.
      */
-    public static SingleCpKsPirConfig createKeywordCpPirConfig(Properties properties) {
-        // read protocol type
-        String singleCpPirTypeString = PropertiesUtils.readString(properties, "pto_name");
-        SingleCpKsPirType singleCpKsPirType = SingleCpKsPirType.valueOf(singleCpPirTypeString);
-        switch (singleCpKsPirType) {
-            case ALPR21_PIANO:
-                return new Alpr21SingleCpKsPirConfig.Builder()
-                    .setSingleIndexCpPirConfig(new PianoSingleCpPirConfig.Builder().build())
-                    .build();
-            case ALPR21_SPAM:
-                return new Alpr21SingleCpKsPirConfig.Builder()
-                    .setSingleIndexCpPirConfig(new SpamSingleCpPirConfig.Builder().build())
-                    .build();
-            case ALPR21_SIMPLE:
-                return new Alpr21SingleCpKsPirConfig.Builder()
-                    .setSingleIndexCpPirConfig(new SimpleSingleCpPirConfig.Builder().build())
-                    .build();
-            case ALPR21_PAI:
-                return new Alpr21SingleCpKsPirConfig.Builder()
-                    .setSingleIndexCpPirConfig(new PaiSingleCpPirConfig.Builder().build())
-                    .build();
+    public static CpKsPirConfig createConfig(Properties properties) {
+        CpKsPirType cpKsPirType = MainPtoConfigUtils.readEnum(
+            CpKsPirType.class, properties, SingleCpKsPirMain.PTO_NAME_KEY
+        );
+        switch (cpKsPirType) {
+            case ALPR21:
+                CpIdxPirType cpIdxPirType = MainPtoConfigUtils.readEnum(
+                    CpIdxPirType.class, properties, CpIdxPirMain.PTO_NAME_KEY
+                );
+                switch (cpIdxPirType) {
+                    case PAI:
+                        return new Alpr21CpKsPirConfig.Builder()
+                            .setCpIdxPirConfig(new PaiCpIdxPirConfig.Builder().build())
+                            .build();
+                    case SPAM:
+                        return new Alpr21CpKsPirConfig.Builder()
+                            .setCpIdxPirConfig(new SpamCpIdxPirConfig.Builder().build())
+                            .build();
+                    case PIANO:
+                        return new Alpr21CpKsPirConfig.Builder()
+                            .setCpIdxPirConfig(new PianoCpIdxPirConfig.Builder().build())
+                            .build();
+                    case SIMPLE:
+                        return new Alpr21CpKsPirConfig.Builder()
+                            .setCpIdxPirConfig(new SimpleCpIdxPirConfig.Builder().build())
+                            .build();
+                    default:
+                        throw new IllegalArgumentException(
+                            "Invalid " + CpIdxPirType.class.getSimpleName() + ": " + cpIdxPirType.name()
+                        );
+                }
             case PAI_CKS:
-                return new PaiSingleCpCksPirConfig.Builder().build();
+                return new PaiCpCksPirConfig.Builder().build();
             default:
                 throw new IllegalArgumentException(
-                    "Invalid " + SingleCpKsPirType.class.getSimpleName() + ": " + singleCpKsPirType.name()
+                    "Invalid " + CpKsPirType.class.getSimpleName() + ": " + cpKsPirType.name()
                 );
         }
     }

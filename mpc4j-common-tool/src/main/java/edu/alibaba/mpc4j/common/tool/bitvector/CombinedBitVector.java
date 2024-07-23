@@ -160,7 +160,7 @@ public class CombinedBitVector implements BitVector {
 
     @Override
     public void reduce(int bitNum) {
-//        innerBitVectorToBigIntegerBitVector();
+        innerBitVectorToBigIntegerBitVector();
         innerBitVector.reduce(bitNum);
     }
 

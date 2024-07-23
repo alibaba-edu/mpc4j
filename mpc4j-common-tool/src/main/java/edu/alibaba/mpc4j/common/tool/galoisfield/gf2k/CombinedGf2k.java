@@ -1,6 +1,9 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.CombinedGf128;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 
 /**
  * combined GF(2^128).
@@ -10,52 +13,52 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
  */
 class CombinedGf2k extends AbstractGf2k {
     /**
-     * NTL GF(2^κ).
+     * Combined GF(2^128).
      */
-    private final NtlGf2k ntlGf2k;
-    /**
-     * JDK GF(2^κ).
-     */
-    private final JdkGf2k jdkGf2k;
+    private final CombinedGf128 combinedGf128;
 
     CombinedGf2k(EnvType envType) {
         super(envType);
-        ntlGf2k = new NtlGf2k(envType);
-        jdkGf2k = new JdkGf2k(envType);
+        combinedGf128 = new CombinedGf128(envType);
     }
 
     @Override
-    public Gf2kFactory.Gf2kType getGf2kType() {
-        return Gf2kFactory.Gf2kType.COMBINED;
+    public Gf2eType getGf2eType() {
+        return combinedGf128.getGf2eType();
+    }
+
+    @Override
+    public Gf2kType getGf2kType() {
+        return Gf2kType.COMBINED;
     }
 
     @Override
     public byte[] div(byte[] p, byte[] q) {
-        return ntlGf2k.div(p, q);
+        return combinedGf128.div(p, q);
     }
 
     @Override
     public void divi(byte[] p, byte[] q) {
-        ntlGf2k.divi(p, q);
+        combinedGf128.divi(p, q);
     }
 
     @Override
     public byte[] inv(byte[] p) {
-        return ntlGf2k.inv(p);
+        return combinedGf128.inv(p);
     }
 
     @Override
     public void invi(byte[] p) {
-        ntlGf2k.invi(p);
+        combinedGf128.invi(p);
     }
 
     @Override
     public byte[] mul(byte[] p, byte[] q) {
-        return jdkGf2k.mul(p, q);
+        return combinedGf128.mul(p, q);
     }
 
     @Override
     public void muli(byte[] p, byte[] q) {
-        jdkGf2k.muli(p, q);
+        combinedGf128.muli(p, q);
     }
 }

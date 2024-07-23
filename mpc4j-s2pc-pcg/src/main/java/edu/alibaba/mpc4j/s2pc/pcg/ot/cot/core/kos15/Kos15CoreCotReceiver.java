@@ -8,8 +8,8 @@ import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64Factory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2e;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -41,7 +41,7 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
     /**
      * GF(2^64)运算接口
      */
-    private final Gf64 gf64;
+    private final Gf2e gf064;
     /**
      * KDF-OT协议输出
      */
@@ -75,13 +75,13 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
         super(Kos15CoreCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
         baseOtSender = BaseOtFactory.createSender(receiverRpc, senderParty, config.getBaseOtConfig());
         addSubPto(baseOtSender);
-        gf64 = Gf64Factory.createInstance(envType, config.getGf64Type());
-        s = gf64.getL();
+        gf064 = Gf2eFactory.createInstance(envType, 64);
+        s = gf064.getL();
     }
 
     @Override
-    public void init(int maxNum) throws MpcAbortException {
-        setInitInput(maxNum);
+    public void init() throws MpcAbortException {
+        setInitInput();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
@@ -184,12 +184,12 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
             System.arraycopy(extendChoices, i * s, block, 0, s);
             xBlock[i] = BinaryUtils.binaryToByteArray(block);
         }
-        byte[] xPolynomial = gf64.createZero();
+        byte[] xPolynomial = gf064.createZero();
         for (int i = 0; i < m; i++) {
-            gf64.muli(xBlock[i], chiPolynomial.get(i));
-            gf64.addi(xPolynomial, xBlock[i]);
+            gf064.muli(xBlock[i], chiPolynomial.get(i));
+            gf064.addi(xPolynomial, xBlock[i]);
         }
-        gf64.addi(xPolynomial, xBlock[m]);
+        gf064.addi(xPolynomial, xBlock[m]);
         correlateCheckPayload.add(xPolynomial);
         IntStream tMatrixIntStream = IntStream.range(0, CommonConstants.BLOCK_BIT_LENGTH);
         tMatrixIntStream = parallel ? tMatrixIntStream.parallel() : tMatrixIntStream;
@@ -199,12 +199,12 @@ public class Kos15CoreCotReceiver extends AbstractCoreCotReceiver {
             for (int j = 0; j < m + 1; j++) {
                 flattenColumn.get(tBlock[j]);
             }
-            byte[] ti = gf64.createZero();
+            byte[] ti = gf064.createZero();
             for (int j = 0; j < m; j++) {
-                gf64.muli(tBlock[j], chiPolynomial.get(j));
-                gf64.addi(ti, tBlock[j]);
+                gf064.muli(tBlock[j], chiPolynomial.get(j));
+                gf064.addi(ti, tBlock[j]);
             }
-            gf64.addi(ti, tBlock[m]);
+            gf064.addi(ti, tBlock[m]);
             return ti;
         }).collect(Collectors.toList()));
         // 矩阵转置，得到t

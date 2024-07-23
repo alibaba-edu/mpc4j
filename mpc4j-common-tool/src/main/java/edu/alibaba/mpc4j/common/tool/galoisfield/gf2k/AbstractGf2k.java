@@ -20,7 +20,7 @@ abstract class AbstractGf2k implements Gf2k {
     /**
      * l = 128 (in bit length)
      */
-    private static final int L = CommonConstants.BLOCK_BIT_LENGTH;
+    protected static final int L = CommonConstants.BLOCK_BIT_LENGTH;
     /**
      * l = 128 (in byte length)
      */
@@ -124,9 +124,7 @@ abstract class AbstractGf2k implements Gf2k {
 
     @Override
     public byte[] createRandom(SecureRandom secureRandom) {
-        byte[] element = new byte[BYTE_L];
-        secureRandom.nextBytes(element);
-        return element;
+        return BytesUtils.randomByteArray(BYTE_L, secureRandom);
     }
 
     @Override

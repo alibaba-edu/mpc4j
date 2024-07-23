@@ -65,8 +65,7 @@ public class Cm20MpOprfSender extends AbstractMpOprfSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxW = Cm20MpOprfPtoDesc.getW(Math.max(maxBatchSize, maxPrfNum));
-        coreCotReceiver.init(maxW);
+        coreCotReceiver.init();
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -134,8 +133,7 @@ public class Cm20MpOprfSender extends AbstractMpOprfSender {
     private void handleDeltaPayload(List<byte[]> deltaPayload) {
         byte[][] deltaArray = deltaPayload.toArray(new byte[0][]);
         Prg prg = PrgFactory.createInstance(envType, nByteLength);
-        IntStream wIntStream = IntStream.range(0, w);
-        wIntStream = parallel ? wIntStream.parallel() : wIntStream;
+        IntStream wIntStream = parallel ? IntStream.range(0, w).parallel() : IntStream.range(0, w);
         matrixC = wIntStream.mapToObj(index -> {
             // We do not need to use CRHF since we need to call PRG.
             byte[] cColumn = prg.extendToBytes(cotReceiverOutput.getRb(index));

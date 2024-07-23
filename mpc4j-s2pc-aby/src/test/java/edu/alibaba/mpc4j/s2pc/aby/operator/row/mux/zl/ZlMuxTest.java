@@ -48,7 +48,7 @@ public class ZlMuxTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * default Zl
      */
-    private static final Zl DEFAULT_ZL = ZlFactory.createInstance(EnvType.STANDARD, Integer.SIZE);
+    private static final Zl DEFAULT_ZL = ZlFactory.createInstance(EnvType.STANDARD, 32);
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {

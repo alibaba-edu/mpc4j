@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.circuit.operator.DyadicAcOperator;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -19,6 +20,10 @@ class BatchDyadicZlcSenderThread extends Thread {
      * sender
      */
     private final ZlcParty sender;
+    /**
+     * Zl
+     */
+    private final Zl zl;
     /**
      * operator
      */
@@ -56,8 +61,9 @@ class BatchDyadicZlcSenderThread extends Thread {
      */
     private ZlVector[] sendSecretSecretVectors;
 
-    BatchDyadicZlcSenderThread(ZlcParty sender, DyadicAcOperator operator, ZlVector[] xVectors, ZlVector[] yVectors) {
+    BatchDyadicZlcSenderThread(ZlcParty sender, Zl zl, DyadicAcOperator operator, ZlVector[] xVectors, ZlVector[] yVectors) {
         this.sender = sender;
+        this.zl = zl;
         this.operator = operator;
         this.xVectors = xVectors;
         this.yVectors = yVectors;
@@ -107,7 +113,7 @@ class BatchDyadicZlcSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.init(totalNum);
+            sender.init(zl.getL(), totalNum);
             // set inputs
             MpcZlVector[] xPlainMpcVectors = Arrays.stream(xVectors)
                 .map(sender::create)
@@ -117,7 +123,7 @@ class BatchDyadicZlcSenderThread extends Thread {
                 .toArray(MpcZlVector[]::new);
             MpcZlVector[] x0SecretMpcVectors = sender.shareOwn(xVectors);
             int[] nums = Arrays.stream(yVectors).mapToInt(ZlVector::getNum).toArray();
-            MpcZlVector[] y0SecretMpcVectors = sender.shareOther(nums);
+            MpcZlVector[] y0SecretMpcVectors = sender.shareOther(zl, nums);
             MpcZlVector[] z0PlainPlainMpcVectors, z0PlainSecretMpcVectors;
             MpcZlVector[] z0SecretPlainMpcVectors, z0SecretSecretMpcVectors;
             switch (operator) {

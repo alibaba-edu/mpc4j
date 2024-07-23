@@ -2,17 +2,15 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.zl.bea91;
 
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.AbstractZlcParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.bea91.Bea91ZlcPtoDesc.PtoStep;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlMtgFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlMtgParty;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlTriple;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.ZlTriple;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.zl.ZlTripleGenFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.zl.ZlTripleGenParty;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -28,34 +26,23 @@ import java.util.stream.Collectors;
  */
 public class Bea91ZlcReceiver extends AbstractZlcParty {
     /**
-     * multiplication triple generation receiver
+     * Zl triple generation receiver
      */
-    private final ZlMtgParty mtgReceiver;
+    private final ZlTripleGenParty zlTripleGenReceiver;
 
     public Bea91ZlcReceiver(Rpc receiverRpc, Party senderParty, Bea91ZlcConfig config) {
         super(Bea91ZlcPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        mtgReceiver = ZlMtgFactory.createReceiver(receiverRpc, senderParty, config.getMtgConfig());
-        addSubPto(mtgReceiver);
-    }
-
-    public Bea91ZlcReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, Bea91ZlcConfig config) {
-        super(Bea91ZlcPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        mtgReceiver = ZlMtgFactory.createReceiver(receiverRpc, senderParty, aiderParty, config.getMtgConfig());
-        addSubPto(mtgReceiver);
+        zlTripleGenReceiver = ZlTripleGenFactory.createReceiver(receiverRpc, senderParty, config.getZlTripleGenConfig());
+        addSubPto(zlTripleGenReceiver);
     }
 
     @Override
-    public Zl getZl() {
-        return zl;
-    }
-
-    @Override
-    public void init(int updateNum) throws MpcAbortException {
-        setInitInput(updateNum);
+    public void init(int maxL, int expectTotalNum) throws MpcAbortException {
+        setInitInput(maxL, expectTotalNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        mtgReceiver.init(updateNum);
+        zlTripleGenReceiver.init(maxL, expectTotalNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -70,16 +57,14 @@ public class Bea91ZlcReceiver extends AbstractZlcParty {
         logPhaseInfo(PtoState.PTO_BEGIN, "send share");
 
         stopWatch.start();
+        Zl zl = x1.getZl();
+        int byteL = zl.getByteL();
         ZlVector x1Vector = ZlVector.createRandom(zl, num, secureRandom);
         ZlVector x0Vector = x1.sub(x1Vector);
         List<byte[]> x0Payload = Arrays.stream(x0Vector.getElements())
             .map(element -> BigIntegerUtils.nonNegBigIntegerToByteArray(element, byteL))
             .collect(Collectors.toList());
-        DataPacketHeader x0Header = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_INPUT_SHARE.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(x0Header, x0Payload));
+        sendOtherPartyPayload(PtoStep.RECEIVER_SEND_INPUT_SHARE.ordinal(), x0Payload);
         stopWatch.stop();
         long shareTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -90,16 +75,13 @@ public class Bea91ZlcReceiver extends AbstractZlcParty {
     }
 
     @Override
-    public SquareZlVector shareOther(int num) throws MpcAbortException {
-        setShareOtherInput(num);
+    public SquareZlVector shareOther(Zl zl, int num) throws MpcAbortException {
+        setShareOtherInput(zl, num);
         logPhaseInfo(PtoState.PTO_BEGIN, "receive share");
 
+        List<byte[]> x1Payload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_INPUT_SHARE.ordinal());
+
         stopWatch.start();
-        DataPacketHeader x1Header = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_INPUT_SHARE.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> x1Payload = rpc.receive(x1Header).getPayload();
         MpcAbortPreconditions.checkArgument(x1Payload.size() == num);
         BigInteger[] x1Array = x1Payload.stream()
             .map(BigIntegerUtils::byteArrayToNonNegBigInteger)
@@ -123,13 +105,11 @@ public class Bea91ZlcReceiver extends AbstractZlcParty {
         } else {
             logPhaseInfo(PtoState.PTO_BEGIN, "receive share");
 
+            List<byte[]> x0Payload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_OUTPUT_SHARE.ordinal());
+
             stopWatch.start();
-            DataPacketHeader x0Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_OUTPUT_SHARE.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> x0Payload = rpc.receive(x0Header).getPayload();
             MpcAbortPreconditions.checkArgument(x0Payload.size() == num);
+            Zl zl = x1.getZl();
             BigInteger[] x0Array = x0Payload.stream()
                 .map(BigIntegerUtils::byteArrayToNonNegBigInteger)
                 .toArray(BigInteger[]::new);
@@ -153,14 +133,12 @@ public class Bea91ZlcReceiver extends AbstractZlcParty {
             logPhaseInfo(PtoState.PTO_BEGIN, "send share");
 
             stopWatch.start();
+            Zl zl = x1.getZl();
+            int byteL = zl.getByteL();
             List<byte[]> x1Payload = Arrays.stream(x1.getZlVector().getElements())
                 .map(element -> BigIntegerUtils.nonNegBigIntegerToByteArray(element, byteL))
                 .collect(Collectors.toList());
-            DataPacketHeader x1Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_OUTPUT_SHARE.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(x1Header, x1Payload));
+            sendOtherPartyPayload(PtoStep.RECEIVER_SEND_OUTPUT_SHARE.ordinal(), x1Payload);
             stopWatch.stop();
             long revealTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
@@ -215,6 +193,7 @@ public class Bea91ZlcReceiver extends AbstractZlcParty {
             return SquareZlVector.create(z1Vector, true);
         } else if (x1.isPlain()) {
             // x1 is plain vector, y1 is secret vector, the receiver computes 0 - y1
+            Zl zl = x1.getZl();
             ZlVector z1Vector = ZlVector.createZeros(zl, num).sub(y1.getZlVector());
             return SquareZlVector.create(z1Vector, false);
         } else if (y1.isPlain()) {
@@ -256,7 +235,9 @@ public class Bea91ZlcReceiver extends AbstractZlcParty {
             logPhaseInfo(PtoState.PTO_BEGIN, "mul");
 
             stopWatch.start();
-            ZlTriple triple = mtgReceiver.generate(num);
+            Zl zl = x1.getZl();
+            int byteL = zl.getByteL();
+            ZlTriple triple = zlTripleGenReceiver.generate(zl, num);
             stopWatch.stop();
             long mtgTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
@@ -275,24 +256,17 @@ public class Bea91ZlcReceiver extends AbstractZlcParty {
                 .collect(Collectors.toList());
             List<byte[]> f1Payload = Arrays.stream(f1.getElements())
                 .map(element -> BigIntegerUtils.nonNegBigIntegerToByteArray(element, byteL))
-                .collect(Collectors.toList());
+                .toList();
             e1f1Payload.addAll(f1Payload);
-            DataPacketHeader e1f1Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_E1_F1.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(e1f1Header, e1f1Payload));
+            sendOtherPartyPayload(PtoStep.RECEIVER_SEND_E1_F1.ordinal(), e1f1Payload);
             stopWatch.stop();
             long e1f1Time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
             logStepInfo(PtoState.PTO_STEP, 2, 3, e1f1Time, "and (open e/f)");
 
+            List<byte[]> e0f0Payload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_E0_F0.ordinal());
+
             stopWatch.start();
-            DataPacketHeader e0f0Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_E0_F0.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> e0f0Payload = rpc.receive(e0f0Header).getPayload();
             MpcAbortPreconditions.checkArgument(e0f0Payload.size() == 2 * num);
             BigInteger[] e0f0 = e0f0Payload.stream()
                 .map(BigIntegerUtils::byteArrayToNonNegBigInteger)

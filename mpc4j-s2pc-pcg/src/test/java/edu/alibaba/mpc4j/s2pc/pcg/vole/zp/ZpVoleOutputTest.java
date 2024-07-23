@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.VoleTestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,166 +28,177 @@ public class ZpVoleOutputTest {
      */
     private static final int MAX_NUM = 64;
     /**
-     * the random state
+     * Zp
      */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private final Zp field;
     /**
-     * the default Zp instance
+     * random state
      */
-    private static final Zp DEFAULT_ZP = ZpFactory.createInstance(EnvType.STANDARD, ZpManager.getPrime(64));
-    /**
-     * another Zp instance
-     */
-    private static final Zp OTHER_ZP = ZpFactory.createInstance(EnvType.STANDARD, ZpManager.getPrime(65));
+    private final SecureRandom secureRandom;
+
+    public ZpVoleOutputTest() {
+        field = ZpFactory.createInstance(EnvType.STANDARD, ZpManager.getPrime(64));
+        secureRandom = new SecureRandom();
+    }
 
     @Test
-    public void testSenderIllegalInputs() {
-        // create a sender output with length 0
-        Assert.assertThrows(AssertionError.class, () ->
-            ZpVoleSenderOutput.create(DEFAULT_ZP, new BigInteger[0], new BigInteger[0])
-        );
+    public void testIllegalSenderInputs() {
         // create a sender output with mismatched length
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             BigInteger[] x = IntStream.range(0, MIN_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
+                .mapToObj(index -> field.createRandom(secureRandom))
                 .toArray(BigInteger[]::new);
             BigInteger[] t = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
+                .mapToObj(index -> field.createRandom(secureRandom))
                 .toArray(BigInteger[]::new);
-            ZpVoleSenderOutput.create(DEFAULT_ZP, x, t);
+            ZpVoleSenderOutput.create(field, x, t);
         });
         // create a sender output with negative x
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             BigInteger[] x = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createNonZeroRandom(SECURE_RANDOM).negate())
+                .mapToObj(index -> field.createNonZeroRandom(secureRandom).negate())
                 .toArray(BigInteger[]::new);
             BigInteger[] t = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
+                .mapToObj(index -> field.createRandom(secureRandom))
                 .toArray(BigInteger[]::new);
-            ZpVoleSenderOutput.create(DEFAULT_ZP, x, t);
+            ZpVoleSenderOutput.create(field, x, t);
         });
         // create a sender output with large x
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             BigInteger[] x = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.getPrime().add(BigInteger.ONE))
+                .mapToObj(index -> field.getPrime().add(BigInteger.ONE))
                 .toArray(BigInteger[]::new);
             BigInteger[] t = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
+                .mapToObj(index -> field.createRandom(secureRandom))
                 .toArray(BigInteger[]::new);
-            ZpVoleSenderOutput.create(DEFAULT_ZP, x, t);
+            ZpVoleSenderOutput.create(field, x, t);
         });
         // create a sender output with negative t
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             BigInteger[] x = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
+                .mapToObj(index -> field.createRandom(secureRandom))
                 .toArray(BigInteger[]::new);
             BigInteger[] t = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createNonZeroRandom(SECURE_RANDOM).negate())
+                .mapToObj(index -> field.createNonZeroRandom(secureRandom).negate())
                 .toArray(BigInteger[]::new);
-            ZpVoleSenderOutput.create(DEFAULT_ZP, x, t);
+            ZpVoleSenderOutput.create(field, x, t);
         });
         // create a sender output with large t
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             BigInteger[] x = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
+                .mapToObj(index -> field.createRandom(secureRandom))
                 .toArray(BigInteger[]::new);
             BigInteger[] t = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.getPrime().add(BigInteger.ONE))
+                .mapToObj(index -> field.getPrime().add(BigInteger.ONE))
                 .toArray(BigInteger[]::new);
-            ZpVoleSenderOutput.create(DEFAULT_ZP, x, t);
-        });
-        // merge two sender outputs with different p
-        Assert.assertThrows(AssertionError.class, () -> {
-            BigInteger[] x0 = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            BigInteger[] t0 = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            ZpVoleSenderOutput senderOutput0 = ZpVoleSenderOutput.create(DEFAULT_ZP, x0, t0);
-            BigInteger[] x1 = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> OTHER_ZP.createRandom(SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            BigInteger[] t1 = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> OTHER_ZP.createRandom(SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            ZpVoleSenderOutput senderOutput1 = ZpVoleSenderOutput.create(DEFAULT_ZP, x1, t1);
-            senderOutput0.merge(senderOutput1);
+            ZpVoleSenderOutput.create(field, x, t);
         });
     }
 
     @Test
-    public void testReceiverIllegalInputs() {
-        // create a receiver output with length = 0
-        Assert.assertThrows(AssertionError.class, () -> {
-            BigInteger delta = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
-            ZpVoleReceiverOutput.create(DEFAULT_ZP, delta, new BigInteger[0]);
-        });
+    public void testIllegalReceiverInputs() {
         // create a receiver output with a negative Δ
-        Assert.assertThrows(AssertionError.class, () -> {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
             BigInteger delta = BigInteger.ONE.negate();
             BigInteger[] q = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
+                .mapToObj(index -> field.createRandom(secureRandom))
                 .toArray(BigInteger[]::new);
-            ZpVoleReceiverOutput.create(DEFAULT_ZP, delta, q);
+            ZpVoleReceiverOutput.create(field, delta, q);
         });
         // create a receiver output with invalid Δ
-        Assert.assertThrows(AssertionError.class, () -> {
-            BigInteger delta = DEFAULT_ZP.getPrime().subtract(BigInteger.ONE);
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            BigInteger delta = field.getPrime().subtract(BigInteger.ONE);
             BigInteger[] q = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
+                .mapToObj(index -> field.createRandom(secureRandom))
                 .toArray(BigInteger[]::new);
-            ZpVoleReceiverOutput.create(DEFAULT_ZP, delta, q);
+            ZpVoleReceiverOutput.create(field, delta, q);
         });
         // create a receiver output with large Δ
-        Assert.assertThrows(AssertionError.class, () -> {
-            BigInteger delta = DEFAULT_ZP.getPrime().add(BigInteger.ONE);
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            BigInteger delta = field.getPrime().add(BigInteger.ONE);
             BigInteger[] q = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
+                .mapToObj(index -> field.createRandom(secureRandom))
                 .toArray(BigInteger[]::new);
-            ZpVoleReceiverOutput.create(DEFAULT_ZP, delta, q);
+            ZpVoleReceiverOutput.create(field, delta, q);
         });
         // create a receiver output with negative q
-        Assert.assertThrows(AssertionError.class, () -> {
-            BigInteger delta = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            BigInteger delta = field.createRangeRandom(secureRandom);
             BigInteger[] q = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createNonZeroRandom(SECURE_RANDOM).negate())
+                .mapToObj(index -> field.createNonZeroRandom(secureRandom).negate())
                 .toArray(BigInteger[]::new);
-            ZpVoleReceiverOutput.create(DEFAULT_ZP, delta, q);
+            ZpVoleReceiverOutput.create(field, delta, q);
         });
         // create a receiver output with large q
-        Assert.assertThrows(AssertionError.class, () -> {
-            BigInteger delta = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            BigInteger delta = field.createRangeRandom(secureRandom);
             BigInteger[] q = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.getPrime().add(BigInteger.ONE))
+                .mapToObj(index -> field.getPrime().add(BigInteger.ONE))
                 .toArray(BigInteger[]::new);
-            ZpVoleReceiverOutput.create(DEFAULT_ZP, delta, q);
+            ZpVoleReceiverOutput.create(field, delta, q);
+        });
+    }
+
+    @Test
+    public void testIllegalUpdate() {
+        BigInteger delta = field.createRangeRandom(secureRandom);
+        // split with 0 length
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, 4, delta, secureRandom);
+            receiverOutput.split(0);
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, 4, delta, secureRandom);
+            ZpVoleSenderOutput senderOutput = ZpVoleSenderOutput.createRandom(receiverOutput, secureRandom);
+            senderOutput.split(0);
+        });
+        // split with large length
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, 4, delta, secureRandom);
+            receiverOutput.split(5);
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, 4, delta, secureRandom);
+            ZpVoleSenderOutput senderOutput = ZpVoleSenderOutput.createRandom(receiverOutput, secureRandom);
+            senderOutput.split(5);
+        });
+        // reduce vector with 0 length
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, 4, delta, secureRandom);
+            receiverOutput.reduce(0);
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, 4, delta, secureRandom);
+            ZpVoleSenderOutput senderOutput = ZpVoleSenderOutput.createRandom(receiverOutput, secureRandom);
+            senderOutput.reduce(0);
+        });
+        // reduce vector with large length
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, 4, delta, secureRandom);
+            receiverOutput.reduce(5);
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, 4, delta, secureRandom);
+            ZpVoleSenderOutput senderOutput = ZpVoleSenderOutput.createRandom(receiverOutput, secureRandom);
+            senderOutput.reduce(5);
         });
         // merge two receiver outputs with different Δ
-        Assert.assertThrows(AssertionError.class, () -> {
-            BigInteger delta0 = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
-            BigInteger delta1 = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
-            BigInteger[] q = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            ZpVoleReceiverOutput receiverOutput0 = ZpVoleReceiverOutput.create(DEFAULT_ZP, delta0, q);
-            ZpVoleReceiverOutput receiverOutput1 = ZpVoleReceiverOutput.create(DEFAULT_ZP, delta1, q);
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            BigInteger delta0 = field.createRangeRandom(secureRandom);
+            BigInteger delta1 = field.createRangeRandom(secureRandom);
+            ZpVoleReceiverOutput receiverOutput0 = ZpVoleReceiverOutput.createRandom(field, 4, delta0, secureRandom);
+            ZpVoleReceiverOutput receiverOutput1 = ZpVoleReceiverOutput.createRandom(field, 4, delta1, secureRandom);
             receiverOutput0.merge(receiverOutput1);
         });
-        // merge two receiver outputs with different Zp
-        Assert.assertThrows(AssertionError.class, () -> {
-            BigInteger delta0 = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
-            BigInteger[] q0 = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> DEFAULT_ZP.createRandom(SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            ZpVoleReceiverOutput receiverOutput0 = ZpVoleReceiverOutput.create(DEFAULT_ZP, delta0, q0);
-            BigInteger delta1 = OTHER_ZP.createRangeRandom(SECURE_RANDOM);
-            BigInteger[] q1 = IntStream.range(0, MAX_NUM)
-                .mapToObj(index -> OTHER_ZP.createRandom(SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            ZpVoleReceiverOutput receiverOutput1 = ZpVoleReceiverOutput.create(OTHER_ZP, delta1, q1);
-            receiverOutput0.merge(receiverOutput1);
-        });
+    }
+
+    @Test
+    public void testCreateRandomCorrelation() {
+        int num = MAX_NUM;
+        BigInteger delta = field.createRangeRandom(secureRandom);
+        ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+        ZpVoleSenderOutput senderOutput = ZpVoleSenderOutput.createRandom(receiverOutput, secureRandom);
+        VoleTestUtils.assertOutput(num, senderOutput, receiverOutput);
     }
 
     @Test
@@ -197,109 +209,55 @@ public class ZpVoleOutputTest {
     }
 
     private void testReduce(int num) {
-        BigInteger delta = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
+        BigInteger delta = field.createRangeRandom(secureRandom);
         // reduce 1
-        ZpVoleReceiverOutput receiverOutput1 = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-        ZpVoleSenderOutput senderOutput1 = ZpVoleTestUtils.genSenderOutput(receiverOutput1, SECURE_RANDOM);
+        ZpVoleReceiverOutput receiverOutput1 = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+        ZpVoleSenderOutput senderOutput1 = ZpVoleSenderOutput.createRandom(receiverOutput1, secureRandom);
         senderOutput1.reduce(1);
         receiverOutput1.reduce(1);
-        ZpVoleTestUtils.assertOutput(1, senderOutput1, receiverOutput1);
+        VoleTestUtils.assertOutput(1, senderOutput1, receiverOutput1);
         // reduce all
-        ZpVoleReceiverOutput receiverOutputAll = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-        ZpVoleSenderOutput senderOutputAll = ZpVoleTestUtils.genSenderOutput(receiverOutputAll, SECURE_RANDOM);
+        ZpVoleReceiverOutput receiverOutputAll = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+        ZpVoleSenderOutput senderOutputAll = ZpVoleSenderOutput.createRandom(receiverOutputAll, secureRandom);
         senderOutputAll.reduce(num);
         receiverOutputAll.reduce(num);
-        ZpVoleTestUtils.assertOutput(num, senderOutputAll, receiverOutputAll);
+        VoleTestUtils.assertOutput(num, senderOutputAll, receiverOutputAll);
         if (num > 1) {
             // reduce num - 1
-            ZpVoleReceiverOutput receiverOutputNum = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-            ZpVoleSenderOutput senderOutputNum = ZpVoleTestUtils.genSenderOutput(receiverOutputNum, SECURE_RANDOM);
+            ZpVoleReceiverOutput receiverOutputNum = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+            ZpVoleSenderOutput senderOutputNum = ZpVoleSenderOutput.createRandom(receiverOutputNum, secureRandom);
             senderOutputNum.reduce(num - 1);
             receiverOutputNum.reduce(num - 1);
-            ZpVoleTestUtils.assertOutput(num - 1, senderOutputNum, receiverOutputNum);
+            VoleTestUtils.assertOutput(num - 1, senderOutputNum, receiverOutputNum);
             // reduce half
-            ZpVoleReceiverOutput receiverOutputHalf = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-            ZpVoleSenderOutput senderOutputHalf = ZpVoleTestUtils.genSenderOutput(receiverOutputHalf, SECURE_RANDOM);
+            ZpVoleReceiverOutput receiverOutputHalf = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+            ZpVoleSenderOutput senderOutputHalf = ZpVoleSenderOutput.createRandom(receiverOutputHalf, secureRandom);
             senderOutputHalf.reduce(num / 2);
             receiverOutputHalf.reduce(num / 2);
-            ZpVoleTestUtils.assertOutput(num / 2, senderOutputHalf, receiverOutputHalf);
+            VoleTestUtils.assertOutput(num / 2, senderOutputHalf, receiverOutputHalf);
         }
-    }
-
-    @Test
-    public void testAllEmptyMerge() {
-        BigInteger delta = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
-        ZpVoleSenderOutput senderOutput = ZpVoleSenderOutput.createEmpty(DEFAULT_ZP);
-        ZpVoleSenderOutput mergeSenderOutput = ZpVoleSenderOutput.createEmpty(DEFAULT_ZP);
-        ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createEmpty(DEFAULT_ZP, delta);
-        ZpVoleReceiverOutput mergeReceiverOutput = ZpVoleReceiverOutput.createEmpty(DEFAULT_ZP, delta);
-        // merge
-        senderOutput.merge(mergeSenderOutput);
-        receiverOutput.merge(mergeReceiverOutput);
-        // verify
-        ZpVoleTestUtils.assertOutput(0, senderOutput, receiverOutput);
-    }
-
-    @Test
-    public void testLeftEmptyMerge() {
-        for (int num = MIN_NUM; num < MAX_NUM; num++) {
-            testLeftEmptyMerge(num);
-        }
-    }
-
-    private void testLeftEmptyMerge(int num) {
-        BigInteger delta = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
-        ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createEmpty(DEFAULT_ZP, delta);
-        ZpVoleReceiverOutput mergeReceiverOutput = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-        ZpVoleSenderOutput senderOutput = ZpVoleSenderOutput.createEmpty(DEFAULT_ZP);
-        ZpVoleSenderOutput mergeSenderOutput = ZpVoleTestUtils.genSenderOutput(mergeReceiverOutput, SECURE_RANDOM);
-        // merge
-        senderOutput.merge(mergeSenderOutput);
-        receiverOutput.merge(mergeReceiverOutput);
-        // verify
-        ZpVoleTestUtils.assertOutput(num, senderOutput, receiverOutput);
-    }
-
-    @Test
-    public void testRightEmptyMerge() {
-        for (int num = MIN_NUM; num < MAX_NUM; num++) {
-            testRightEmptyMerge(num);
-        }
-    }
-
-    private void testRightEmptyMerge(int num) {
-        BigInteger delta = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
-        ZpVoleReceiverOutput receiverOutput = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-        ZpVoleReceiverOutput mergeReceiverOutput = ZpVoleReceiverOutput.createEmpty(DEFAULT_ZP, delta);
-        ZpVoleSenderOutput senderOutput = ZpVoleTestUtils.genSenderOutput(receiverOutput, SECURE_RANDOM);
-        ZpVoleSenderOutput mergeSenderOutput = ZpVoleSenderOutput.createEmpty(DEFAULT_ZP);
-        // merge
-        senderOutput.merge(mergeSenderOutput);
-        receiverOutput.merge(mergeReceiverOutput);
-        // verify
-        ZpVoleTestUtils.assertOutput(num, senderOutput, receiverOutput);
     }
 
     @Test
     public void testMerge() {
-        for (int num1 = MIN_NUM; num1 < MAX_NUM; num1++) {
-            for (int num2 = MIN_NUM; num2 < MAX_NUM; num2++) {
+        for (int num1 = 0; num1 < MAX_NUM; num1++) {
+            for (int num2 = 0; num2 < MAX_NUM; num2++) {
                 testMerge(num1, num2);
             }
         }
     }
 
     private void testMerge(int num1, int num2) {
-        BigInteger delta = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
-        ZpVoleReceiverOutput receiverOutput = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num1, delta, SECURE_RANDOM);
-        ZpVoleReceiverOutput mergeReceiverOutput = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num2, delta, SECURE_RANDOM);
-        ZpVoleSenderOutput senderOutput = ZpVoleTestUtils.genSenderOutput(receiverOutput, SECURE_RANDOM);
-        ZpVoleSenderOutput mergeSenderOutput = ZpVoleTestUtils.genSenderOutput(mergeReceiverOutput, SECURE_RANDOM);
+        BigInteger delta = field.createRangeRandom(secureRandom);
+        ZpVoleReceiverOutput receiverOutput = ZpVoleReceiverOutput.createRandom(field, num1, delta, secureRandom);
+        ZpVoleReceiverOutput mergeReceiverOutput = ZpVoleReceiverOutput.createRandom(field, num2, delta, secureRandom);
+        ZpVoleSenderOutput senderOutput = ZpVoleSenderOutput.createRandom(receiverOutput, secureRandom);
+        ZpVoleSenderOutput mergeSenderOutput = ZpVoleSenderOutput.createRandom(mergeReceiverOutput, secureRandom);
         // merge
         senderOutput.merge(mergeSenderOutput);
         receiverOutput.merge(mergeReceiverOutput);
         // verify
-        ZpVoleTestUtils.assertOutput(num1 + num2, senderOutput, receiverOutput);
+        VoleTestUtils.assertOutput(num1 + num2, senderOutput, receiverOutput);
     }
 
     @Test
@@ -310,36 +268,93 @@ public class ZpVoleOutputTest {
     }
 
     private void testSplit(int num) {
-        BigInteger delta = DEFAULT_ZP.createRangeRandom(SECURE_RANDOM);
+        BigInteger delta = field.createRangeRandom(secureRandom);
         // split 1
-        ZpVoleReceiverOutput receiverOutput1 = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-        ZpVoleSenderOutput senderOutput1 = ZpVoleTestUtils.genSenderOutput(receiverOutput1, SECURE_RANDOM);
+        ZpVoleReceiverOutput receiverOutput1 = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+        ZpVoleSenderOutput senderOutput1 = ZpVoleSenderOutput.createRandom(receiverOutput1, secureRandom);
         ZpVoleSenderOutput splitSenderOutput1 = senderOutput1.split(1);
         ZpVoleReceiverOutput splitReceiverOutput1 = receiverOutput1.split(1);
-        ZpVoleTestUtils.assertOutput(num - 1, senderOutput1, receiverOutput1);
-        ZpVoleTestUtils.assertOutput(1, splitSenderOutput1, splitReceiverOutput1);
+        VoleTestUtils.assertOutput(num - 1, senderOutput1, receiverOutput1);
+        VoleTestUtils.assertOutput(1, splitSenderOutput1, splitReceiverOutput1);
         // split all
-        ZpVoleReceiverOutput receiverOutputAll = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-        ZpVoleSenderOutput senderOutputAll = ZpVoleTestUtils.genSenderOutput(receiverOutputAll, SECURE_RANDOM);
+        ZpVoleReceiverOutput receiverOutputAll = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+        ZpVoleSenderOutput senderOutputAll = ZpVoleSenderOutput.createRandom(receiverOutputAll, secureRandom);
         ZpVoleSenderOutput splitSenderOutputAll = senderOutputAll.split(num);
         ZpVoleReceiverOutput splitReceiverOutputAll = receiverOutputAll.split(num);
-        ZpVoleTestUtils.assertOutput(0, senderOutputAll, receiverOutputAll);
-        ZpVoleTestUtils.assertOutput(num, splitSenderOutputAll, splitReceiverOutputAll);
+        VoleTestUtils.assertOutput(0, senderOutputAll, receiverOutputAll);
+        VoleTestUtils.assertOutput(num, splitSenderOutputAll, splitReceiverOutputAll);
         if (num > 1) {
             // split num - 1
-            ZpVoleReceiverOutput receiverOutputNum = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-            ZpVoleSenderOutput senderOutputNum = ZpVoleTestUtils.genSenderOutput(receiverOutputNum, SECURE_RANDOM);
+            ZpVoleReceiverOutput receiverOutputNum = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+            ZpVoleSenderOutput senderOutputNum = ZpVoleSenderOutput.createRandom(receiverOutputNum, secureRandom);
             ZpVoleSenderOutput splitSenderOutputNum = senderOutputNum.split(num - 1);
             ZpVoleReceiverOutput splitReceiverOutputN = receiverOutputNum.split(num - 1);
-            ZpVoleTestUtils.assertOutput(1, senderOutputNum, receiverOutputNum);
-            ZpVoleTestUtils.assertOutput(num - 1, splitSenderOutputNum, splitReceiverOutputN);
+            VoleTestUtils.assertOutput(1, senderOutputNum, receiverOutputNum);
+            VoleTestUtils.assertOutput(num - 1, splitSenderOutputNum, splitReceiverOutputN);
             // split half
-            ZpVoleReceiverOutput receiverOutputHalf = ZpVoleTestUtils.genReceiverOutput(DEFAULT_ZP, num, delta, SECURE_RANDOM);
-            ZpVoleSenderOutput senderOutputHalf = ZpVoleTestUtils.genSenderOutput(receiverOutputHalf, SECURE_RANDOM);
+            ZpVoleReceiverOutput receiverOutputHalf = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+            ZpVoleSenderOutput senderOutputHalf = ZpVoleSenderOutput.createRandom(receiverOutputHalf, secureRandom);
             ZpVoleSenderOutput splitSenderOutputHalf = senderOutputHalf.split(num / 2);
             ZpVoleReceiverOutput splitReceiverOutputHalf = receiverOutputHalf.split(num / 2);
-            ZpVoleTestUtils.assertOutput(num - num / 2, senderOutputHalf, receiverOutputHalf);
-            ZpVoleTestUtils.assertOutput(num / 2, splitSenderOutputHalf, splitReceiverOutputHalf);
+            VoleTestUtils.assertOutput(num - num / 2, senderOutputHalf, receiverOutputHalf);
+            VoleTestUtils.assertOutput(num / 2, splitSenderOutputHalf, splitReceiverOutputHalf);
+        }
+    }
+
+    @Test
+    public void testSplitMerge() {
+        for (int num = MIN_NUM; num < MAX_NUM; num++) {
+            testSplitMerge(num);
+        }
+    }
+
+    private void testSplitMerge(int num) {
+        BigInteger delta = field.createRangeRandom(secureRandom);
+        // split and merge 1
+        ZpVoleReceiverOutput receiverOutput1 = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+        ZpVoleReceiverOutput copyReceiverOutput1 = receiverOutput1.copy();
+        ZpVoleReceiverOutput splitReceiverOutput1 = receiverOutput1.split(1);
+        receiverOutput1.merge(splitReceiverOutput1);
+        Assert.assertEquals(copyReceiverOutput1, receiverOutput1);
+        ZpVoleSenderOutput senderOutput1 = ZpVoleSenderOutput.createRandom(receiverOutput1, secureRandom);
+        ZpVoleSenderOutput copySenderOutput1 = senderOutput1.copy();
+        ZpVoleSenderOutput splitSenderOutput1 = senderOutput1.split(1);
+        senderOutput1.merge(splitSenderOutput1);
+        Assert.assertEquals(copySenderOutput1, senderOutput1);
+        // split and merge all
+        ZpVoleReceiverOutput receiverOutputAll = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+        ZpVoleReceiverOutput copyReceiverOutputAll = receiverOutputAll.copy();
+        ZpVoleReceiverOutput splitReceiverOutputAll = receiverOutputAll.split(num);
+        receiverOutputAll.merge(splitReceiverOutputAll);
+        Assert.assertEquals(copyReceiverOutputAll, receiverOutputAll);
+        ZpVoleSenderOutput senderOutputAll = ZpVoleSenderOutput.createRandom(receiverOutputAll, secureRandom);
+        ZpVoleSenderOutput copySenderOutputAll = senderOutputAll.copy();
+        ZpVoleSenderOutput splitSenderOutputAll = senderOutputAll.split(num);
+        senderOutputAll.merge(splitSenderOutputAll);
+        Assert.assertEquals(copySenderOutputAll, senderOutputAll);
+        if (num > 1) {
+            // split and merge num - 1
+            ZpVoleReceiverOutput receiverOutputNum = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+            ZpVoleReceiverOutput copyReceiverOutputNum = receiverOutputNum.copy();
+            ZpVoleReceiverOutput splitReceiverOutputNum = receiverOutputNum.split(num - 1);
+            receiverOutputNum.merge(splitReceiverOutputNum);
+            Assert.assertEquals(copyReceiverOutputNum, receiverOutputNum);
+            ZpVoleSenderOutput senderOutputNum = ZpVoleSenderOutput.createRandom(receiverOutputNum, secureRandom);
+            ZpVoleSenderOutput copySenderOutputNum = senderOutputNum.copy();
+            ZpVoleSenderOutput splitSenderOutputNum = senderOutputNum.split(num - 1);
+            senderOutputNum.merge(splitSenderOutputNum);
+            Assert.assertEquals(copySenderOutputNum, senderOutputNum);
+            // split half
+            ZpVoleReceiverOutput receiverOutputHalf = ZpVoleReceiverOutput.createRandom(field, num, delta, secureRandom);
+            ZpVoleReceiverOutput copyReceiverOutputHalf = receiverOutputHalf.copy();
+            ZpVoleReceiverOutput splitReceiverOutputHalf = receiverOutputHalf.split(num / 2);
+            receiverOutputHalf.merge(splitReceiverOutputHalf);
+            Assert.assertEquals(copyReceiverOutputHalf, receiverOutputHalf);
+            ZpVoleSenderOutput senderOutputHalf = ZpVoleSenderOutput.createRandom(receiverOutputHalf, secureRandom);
+            ZpVoleSenderOutput copySenderOutputHalf = senderOutputHalf.copy();
+            ZpVoleSenderOutput splitSenderOutputHalf = senderOutputHalf.split(num / 2);
+            senderOutputHalf.merge(splitSenderOutputHalf);
+            Assert.assertEquals(copySenderOutputHalf, senderOutputHalf);
         }
     }
 }

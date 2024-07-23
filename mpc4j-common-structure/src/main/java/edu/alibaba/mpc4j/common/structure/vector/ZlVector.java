@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.structure.vector;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.structure.matrix.MatrixUtils;
+import edu.alibaba.mpc4j.common.structure.StructureUtils;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2023/4/10
  */
-public class ZlVector implements RingVector {
+public class ZlVector implements RingVector, BigIntegerVector {
     /**
      * merges vectors.
      *
@@ -28,15 +28,16 @@ public class ZlVector implements RingVector {
      */
     public static ZlVector merge(ZlVector[] vectors) {
         MathPreconditions.checkPositive("vectors.length", vectors.length);
-        int len = Arrays.stream(vectors).mapToInt(ZlVector::getNum).sum();
-        BigInteger[] mergeElements = new BigInteger[len];
+        Zl zl = vectors[0].getZl();
+        int length = Arrays.stream(vectors).mapToInt(ZlVector::getNum).sum();
+        BigInteger[] mergeElements = new BigInteger[length];
         for (int i = 0, pos = 0; i < vectors.length; i++) {
-            Preconditions.checkArgument(vectors[i].zl.equals(vectors[0].getZl()));
+            Preconditions.checkArgument(vectors[i].zl.equals(zl));
             MathPreconditions.checkPositive("vector.num", vectors[i].getNum());
             System.arraycopy(vectors[i].elements, 0, mergeElements, pos, vectors[i].elements.length);
             pos += vectors[i].elements.length;
         }
-        return ZlVector.create(vectors[0].getZl(), mergeElements);
+        return ZlVector.create(zl, mergeElements);
     }
 
     /**
@@ -47,8 +48,8 @@ public class ZlVector implements RingVector {
      * @return a vector.
      */
     public static ZlVector create(Zl zl, BigInteger[] elements) {
-        ZlVector vector = new ZlVector(zl);
         MathPreconditions.checkPositive("num", elements.length);
+        ZlVector vector = new ZlVector(zl);
         vector.elements = Arrays.stream(elements)
             .peek(element -> Preconditions.checkArgument(zl.validateElement(element)))
             .toArray(BigInteger[]::new);
@@ -64,8 +65,8 @@ public class ZlVector implements RingVector {
      * @return a vector.
      */
     public static ZlVector createRandom(Zl zl, int num, SecureRandom secureRandom) {
-        ZlVector vector = new ZlVector(zl);
         MathPreconditions.checkPositive("num", num);
+        ZlVector vector = new ZlVector(zl);
         vector.elements = IntStream.range(0, num)
             .mapToObj(index -> zl.createRandom(secureRandom))
             .toArray(BigInteger[]::new);
@@ -80,8 +81,8 @@ public class ZlVector implements RingVector {
      * @return a vector.
      */
     public static ZlVector createOnes(Zl zl, int num) {
-        ZlVector vector = new ZlVector(zl);
         MathPreconditions.checkPositive("num", num);
+        ZlVector vector = new ZlVector(zl);
         vector.elements = IntStream.range(0, num)
             .mapToObj(index -> zl.createOne())
             .toArray(BigInteger[]::new);
@@ -96,8 +97,8 @@ public class ZlVector implements RingVector {
      * @return a vector.
      */
     public static ZlVector createZeros(Zl zl, int num) {
-        ZlVector vector = new ZlVector(zl);
         MathPreconditions.checkPositive("num", num);
+        ZlVector vector = new ZlVector(zl);
         vector.elements = IntStream.range(0, num)
             .mapToObj(index -> zl.createZero())
             .toArray(BigInteger[]::new);
@@ -146,14 +147,6 @@ public class ZlVector implements RingVector {
     }
 
     @Override
-    public void replaceCopy(Vector other) {
-        ZlVector that = (ZlVector) other;
-        MathPreconditions.checkEqual("this.num", "that.num", this.getNum(), that.getNum());
-        int num = getNum();
-        System.arraycopy(that.elements, 0, this.elements, 0, num);
-    }
-
-    @Override
     public int getNum() {
         return elements.length;
     }
@@ -162,12 +155,12 @@ public class ZlVector implements RingVector {
     public ZlVector split(int splitNum) {
         int num = getNum();
         MathPreconditions.checkPositiveInRangeClosed("splitNum", splitNum, num);
-        BigInteger[] subElements = new BigInteger[splitNum];
+        BigInteger[] splitElements = new BigInteger[splitNum];
         BigInteger[] remainElements = new BigInteger[num - splitNum];
-        System.arraycopy(elements, 0, subElements, 0, splitNum);
-        System.arraycopy(elements, splitNum, remainElements, 0, num - splitNum);
+        System.arraycopy(elements, num - splitNum, splitElements, 0, splitNum);
+        System.arraycopy(elements, 0, remainElements, 0, num - splitNum);
         elements = remainElements;
-        return ZlVector.create(zl, subElements);
+        return ZlVector.create(zl, splitElements);
     }
 
     @Override
@@ -177,7 +170,7 @@ public class ZlVector implements RingVector {
         if (reduceNum < num) {
             // reduce if the reduced rows is less than rows.
             BigInteger[] remainElements = new BigInteger[reduceNum];
-            System.arraycopy(elements, 0, remainElements, 0, reduceNum);
+            System.arraycopy(elements, num - reduceNum, remainElements, 0, reduceNum);
             elements = remainElements;
         }
     }
@@ -280,7 +273,7 @@ public class ZlVector implements RingVector {
     /**
      * splits the vector.
      *
-     * @param nums        nums for each of the split vector.
+     * @param nums nums for each of the split vector.
      * @return the split vectors.
      */
     public ZlVector[] split(int[] nums) {
@@ -302,6 +295,17 @@ public class ZlVector implements RingVector {
      */
     public Zl getZl() {
         return zl;
+    }
+
+    /**
+     * Sets the element.
+     *
+     * @param index index.
+     * @param element element.
+     */
+    public void setElement(int index, BigInteger element) {
+        Preconditions.checkArgument(zl.validateElement(element));
+        elements[index] = element;
     }
 
     /**
@@ -336,8 +340,7 @@ public class ZlVector implements RingVector {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ZlVector) {
-            ZlVector that = (ZlVector) obj;
+        if (obj instanceof ZlVector that) {
             if (this.getNum() != that.getNum()) {
                 return false;
             }
@@ -351,7 +354,7 @@ public class ZlVector implements RingVector {
 
     @Override
     public String toString() {
-        String[] stringData = Arrays.stream(Arrays.copyOf(elements, Math.min(elements.length, MatrixUtils.DISPLAY_NUM)))
+        String[] stringData = Arrays.stream(Arrays.copyOf(elements, Math.min(elements.length, StructureUtils.DISPLAY_NUM)))
             .map(BigInteger::toString)
             .toArray(String[]::new);
         return this.getClass().getSimpleName() + " (l = " + zl.getL() + "): " + Arrays.toString(stringData);

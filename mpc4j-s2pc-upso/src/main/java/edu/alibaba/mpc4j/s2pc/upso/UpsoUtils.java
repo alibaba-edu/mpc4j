@@ -1,7 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.upso;
 
-import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2Vector;
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.NoStashCuckooHashBin;
@@ -9,10 +7,8 @@ import edu.alibaba.mpc4j.common.tool.polynomial.power.PowersDag;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.crypto.fhe.context.ParmsId;
 import edu.alibaba.mpc4j.crypto.fhe.context.SealContext;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -20,7 +16,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -226,36 +221,6 @@ public class UpsoUtils {
         TIntSet sourcePowersSet = new TIntHashSet(queryPowers);
         PowersDag powersDag = new PowersDag(sourcePowersSet, maxPartitionSizePerBin);
         return powersDag.getDag();
-    }
-
-    /**
-     * vector array OR operation.
-     *
-     * @param array    vector array.
-     * @param z2cParty z2c party.
-     * @return or vector of input vectors.
-     * @throws MpcAbortException the protocol failure aborts.
-     */
-    public static MpcZ2Vector or(MpcZ2Vector[] array, Z2cParty z2cParty) throws MpcAbortException {
-        int l = array.length;
-        // tree-based AND
-        int logL = LongUtils.ceilLog2(l);
-        for (int h = 1; h <= logL; h++) {
-            int nodeNum = array.length / 2;
-            MpcZ2Vector[] eqXiArray = new MpcZ2Vector[nodeNum];
-            MpcZ2Vector[] eqYiArray = new MpcZ2Vector[nodeNum];
-            for (int i = 0; i < nodeNum; i++) {
-                eqXiArray[i] = array[i * 2];
-                eqYiArray[i] = array[i * 2 + 1];
-            }
-            MpcZ2Vector[] eqZiArray = z2cParty.or(eqXiArray, eqYiArray);
-            if (array.length % 2 == 1) {
-                eqZiArray = Arrays.copyOf(eqZiArray, nodeNum + 1);
-                eqZiArray[nodeNum] = array[array.length - 1];
-            }
-            array = eqZiArray;
-        }
-        return array[0];
     }
 
     /**

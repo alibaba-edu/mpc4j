@@ -51,7 +51,7 @@ class Bea91Z2cPtoDesc implements PtoDesc {
         /**
          * the receiver sends the output share
          */
-        RECEIVER_SEND_OUTPUT_SHARE
+        RECEIVER_SEND_OUTPUT_SHARE,
     }
 
     /**

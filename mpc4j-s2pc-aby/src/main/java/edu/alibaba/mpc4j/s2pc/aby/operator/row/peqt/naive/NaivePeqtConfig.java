@@ -20,7 +20,7 @@ public class NaivePeqtConfig extends AbstractMultiPartyPtoConfig implements Peqt
     private final Z2cConfig z2cConfig;
 
     private NaivePeqtConfig(Builder builder) {
-        super(builder.z2cConfig);
+        super(SecurityModel.MALICIOUS, builder.z2cConfig);
         z2cConfig = builder.z2cConfig;
     }
 

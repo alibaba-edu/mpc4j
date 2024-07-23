@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 
 import com.google.common.base.Preconditions;
@@ -8,6 +9,8 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtSenderOutput;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
  * COT sender output.
@@ -19,7 +22,7 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
     /**
      * Δ
      */
-    private byte[] delta;
+    private final byte[] delta;
     /**
      * R0 array
      */
@@ -33,14 +36,9 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
      * @return a sender output.
      */
     public static CotSenderOutput create(byte[] delta, byte[][] r0Array) {
-        CotSenderOutput senderOutput = new CotSenderOutput();
-        MathPreconditions.checkEqual("delta.length", "λ in bytes", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        senderOutput.delta = BytesUtils.clone(delta);
-        MathPreconditions.checkPositive("num", r0Array.length);
+        CotSenderOutput senderOutput = new CotSenderOutput(delta);
         senderOutput.r0Array = Arrays.stream(r0Array)
-            .peek(r0 ->
-                MathPreconditions.checkEqual("R0.length", "λ in bytes", r0.length, CommonConstants.BLOCK_BYTE_LENGTH)
-            )
+            .peek(r0 -> MathPreconditions.checkEqual("R0.length", "λ", r0.length, CommonConstants.BLOCK_BYTE_LENGTH))
             .toArray(byte[][]::new);
 
         return senderOutput;
@@ -53,29 +51,52 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
      * @return an empty sender output.
      */
     public static CotSenderOutput createEmpty(byte[] delta) {
-        CotSenderOutput senderOutput = new CotSenderOutput();
-        MathPreconditions.checkEqual("delta.length", "λ in bytes", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        senderOutput.delta = BytesUtils.clone(delta);
+        CotSenderOutput senderOutput = new CotSenderOutput(delta);
         senderOutput.r0Array = new byte[0][];
 
         return senderOutput;
     }
 
     /**
-     * private constructor.
+     * Creates a random sender output.
+     *
+     * @param num          num.
+     * @param delta        Δ.
+     * @param secureRandom random state.
+     * @return a random sender output.
      */
-    private CotSenderOutput() {
-        // empty
+    public static CotSenderOutput createRandom(int num, byte[] delta, SecureRandom secureRandom) {
+        CotSenderOutput senderOutput = new CotSenderOutput(delta);
+        senderOutput.r0Array = BytesUtils.randomByteArrayVector(num, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        return senderOutput;
+    }
+
+    /**
+     * private constructor.
+     *
+     * @param delta Δ.
+     */
+    private CotSenderOutput(byte[] delta) {
+        MathPreconditions.checkEqual("delta.length", "λ", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
+        this.delta = BytesUtils.clone(delta);
+    }
+
+    @Override
+    public CotSenderOutput copy() {
+        CotSenderOutput copy = new CotSenderOutput(delta);
+        copy.r0Array = BytesUtils.clone(r0Array);
+        return copy;
     }
 
     @Override
     public CotSenderOutput split(int splitNum) {
         int num = getNum();
         MathPreconditions.checkPositiveInRangeClosed("splitNum", splitNum, num);
+        // split R0 array
         byte[][] r0SubArray = new byte[splitNum][];
         byte[][] r0RemainArray = new byte[num - splitNum][];
-        System.arraycopy(r0Array, 0, r0SubArray, 0, splitNum);
-        System.arraycopy(r0Array, splitNum, r0RemainArray, 0, num - splitNum);
+        System.arraycopy(r0Array, num - splitNum, r0SubArray, 0, splitNum);
+        System.arraycopy(r0Array, 0, r0RemainArray, 0, num - splitNum);
         r0Array = r0RemainArray;
 
         return CotSenderOutput.create(delta, r0SubArray);
@@ -86,7 +107,7 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
         int num = getNum();
         MathPreconditions.checkPositiveInRangeClosed("reduceNum", reduceNum, num);
         if (reduceNum < num) {
-            // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
+            // reduce only when reduceNum < num
             byte[][] r0RemainArray = new byte[reduceNum][];
             System.arraycopy(r0Array, 0, r0RemainArray, 0, reduceNum);
             r0Array = r0RemainArray;
@@ -97,6 +118,7 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
     public void merge(MergedPcgPartyOutput other) {
         CotSenderOutput that = (CotSenderOutput) other;
         Preconditions.checkArgument(BytesUtils.equals(this.delta, that.delta));
+        // merge R0 array
         byte[][] mergeR0Array = new byte[this.r0Array.length + that.r0Array.length][];
         System.arraycopy(this.r0Array, 0, mergeR0Array, 0, this.r0Array.length);
         System.arraycopy(that.r0Array, 0, mergeR0Array, this.r0Array.length, that.r0Array.length);
@@ -137,5 +159,27 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
     @Override
     public int getNum() {
         return r0Array.length;
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(delta)
+            .append(r0Array)
+            .hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof CotSenderOutput that) {
+            return new EqualsBuilder()
+                .append(this.delta, that.delta)
+                .append(this.r0Array, that.r0Array)
+                .isEquals();
+        }
+        return false;
     }
 }

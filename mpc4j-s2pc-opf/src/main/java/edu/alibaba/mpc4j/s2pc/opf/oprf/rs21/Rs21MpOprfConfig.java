@@ -55,7 +55,7 @@ public class Rs21MpOprfConfig extends AbstractMultiPartyPtoConfig implements MpO
         private Gf2kDokvsType okvsType;
 
         public Builder(SecurityModel securityModel) {
-            ncVoleConfig = Gf2kNcVoleFactory.createDefaultConfig(securityModel, true);
+            ncVoleConfig = Gf2kNcVoleFactory.createDefaultConfig(securityModel);
             okvsType = Gf2kDokvsType.H3_CLUSTER_FIELD_BLAZE_GCT;
         }
 

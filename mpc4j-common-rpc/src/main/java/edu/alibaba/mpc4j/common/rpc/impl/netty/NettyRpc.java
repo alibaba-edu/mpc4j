@@ -224,7 +224,7 @@ public class NettyRpc implements Rpc {
             .setTypeProto(typeProto)
             .setPayloadProto(payloadProto)
             .build();
-        payloadByteLength += dataPacket.getPayload().stream().mapToInt(data -> data.length).sum();
+        payloadByteLength += dataPacket.getPayload().stream().mapToLong(data -> data.length).sum();
         sendByteLength += dataPacketProto.getSerializedSize();
         dataPacketNum++;
         dataSendManager.sendData(partyIdHashMap.get(header.getReceiverId()), dataPacketProto);
@@ -249,10 +249,9 @@ public class NettyRpc implements Rpc {
     }
 
     @Override
-    public DataPacket receiveAny() {
+    public DataPacket receiveAny(int ptoId) {
         try {
-            // 尝试从缓存区中读取数据
-            return dataPacketBuffer.take(ownPartyId);
+            return dataPacketBuffer.take(ownPartyId, ptoId);
         } catch (InterruptedException e) {
             return null;
         }

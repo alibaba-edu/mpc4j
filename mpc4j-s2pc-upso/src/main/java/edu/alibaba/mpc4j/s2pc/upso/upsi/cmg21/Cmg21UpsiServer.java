@@ -1,8 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
@@ -102,21 +100,15 @@ public class Cmg21UpsiServer<T> extends AbstractUpsiServer<T> {
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 3, oprfTime, "OPRF");
 
-        DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
-            otherParty().getPartyId(), rpc.ownParty().getPartyId()
-        );
-        List<byte[]> hashKeyPayload = rpc.receive(cuckooHashKeyHeader).getPayload();
-
+        List<byte[]> hashKeyPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal());
         MpcAbortPreconditions.checkArgument(
-            hashKeyPayload.size() == params.getCuckooHashNum(),
-            "the size of hash keys " + "should be {}", params.getCuckooHashNum()
+            hashKeyPayload.size() == params.getCuckooHashNum(), "the size of hash keys " + "should be {}", params.getCuckooHashNum()
         );
         byte[][] hashKeys = hashKeyPayload.toArray(new byte[0][]);
 
         stopWatch.start();
         List<List<HashBinEntry<ByteBuffer>>> hashBins = generateCompleteHashBin(prfOutputList, hashKeys);
-        int binSize = hashBins.get(0).size();
+        int binSize = hashBins.getFirst().size();
         List<long[][]> encodeDatabase = UpsoUtils.encodeDatabase(
             zp64Poly, hashBins, binSize, params.getPlainModulus(), params.getMaxPartitionSizePerBin(),
             params.getItemEncodedSlotSize(), params.getItemPerCiphertext(), params.getBinNum(),
@@ -128,32 +120,20 @@ public class Cmg21UpsiServer<T> extends AbstractUpsiServer<T> {
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 2, 3, encodedTime, "Server encodes database");
 
-        DataPacketHeader encryptionParamsHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_ENCRYPTION_PARAMS.ordinal(), extraInfo,
-            otherParty().getPartyId(), rpc.ownParty().getPartyId()
-        );
-        List<byte[]> encryptionParamsPayload = rpc.receive(encryptionParamsHeader).getPayload();
+        List<byte[]> encryptionParamsPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_ENCRYPTION_PARAMS.ordinal());
         MpcAbortPreconditions.checkArgument(
             encryptionParamsPayload.size() == 2, "the size of encryption parameters should be 2"
         );
-        DataPacketHeader queryHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
-            otherParty().getPartyId(), rpc.ownParty().getPartyId()
-        );
-        List<byte[]> queryPayload =rpc.receive(queryHeader).getPayload();
+        List<byte[]> queryPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_QUERY.ordinal());
 
         stopWatch.start();
         List<byte[]> responsePayload = computeResponse(
             encodeDatabase, queryPayload, encryptionParamsPayload.get(0), encryptionParamsPayload.get(1), binSize
         );
+        sendOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal(), responsePayload);
         stopWatch.stop();
         long replyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        DataPacketHeader responseHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RESPONSE.ordinal(), extraInfo,
-            rpc.ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(responseHeader, responsePayload));
         logStepInfo(PtoState.PTO_STEP, 3, 3, replyTime, "Server generates reply");
 
         logPhaseInfo(PtoState.PTO_END);
@@ -193,8 +173,7 @@ public class Cmg21UpsiServer<T> extends AbstractUpsiServer<T> {
      */
     private List<ByteBuffer> oprf() throws MpcAbortException {
         MpOprfSenderOutput oprfSenderOutput = mpOprfSender.oprf(clientElementSize);
-        IntStream intStream = IntStream.range(0, serverElementSize);
-        intStream = parallel ? intStream.parallel() : intStream;
+        IntStream intStream = parallel ? IntStream.range(0, serverElementSize).parallel() : IntStream.range(0, serverElementSize);
         return new ArrayList<>(Arrays.asList(intStream
             .mapToObj(i -> ByteBuffer.wrap(oprfSenderOutput.getPrf(serverElementList.get(i).array())))
             .toArray(ByteBuffer[]::new)));
@@ -221,8 +200,7 @@ public class Cmg21UpsiServer<T> extends AbstractUpsiServer<T> {
         int[][] powerDegree = UpsoUtils.computePowerDegree(
             params.getPsLowDegree(), params.getQueryPowers(), params.getMaxPartitionSizePerBin()
         );
-        IntStream intStream = IntStream.range(0, params.getCiphertextNum());
-        intStream = parallel ? intStream.parallel() : intStream;
+        IntStream intStream = parallel ? IntStream.range(0, params.getCiphertextNum()).parallel() : IntStream.range(0, params.getCiphertextNum());
         List<byte[]> queryPowers = intStream
             .mapToObj(i -> Cmg21UpsiNativeUtils.computeEncryptedPowers(
                 encryptionParams,

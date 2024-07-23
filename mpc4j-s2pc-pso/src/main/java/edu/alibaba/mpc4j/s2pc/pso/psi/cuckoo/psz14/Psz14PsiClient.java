@@ -83,9 +83,6 @@ public class Psz14PsiClient<T> extends AbstractPsiClient<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxClientElementSize);
-        int maxStashNum = CuckooHashBinFactory.getStashSize(cuckooHashBinType, maxClientElementSize);
-        int maxByteL = PsiUtils.getSemiHonestPeqtByteLength(maxServerElementSize, maxClientElementSize);
         // init cuckoo hash keys
         cuckooHashKeys = CommonUtils.generateRandomKeys(cuckooHashNum, secureRandom);
         List<byte[]> cuckooHashKeysPayload = Arrays.stream(cuckooHashKeys).collect(Collectors.toList());
@@ -95,7 +92,7 @@ public class Psz14PsiClient<T> extends AbstractPsiClient<T> {
         );
         rpc.send(DataPacket.fromByteArrayList(cuckooHashKeysHeader, cuckooHashKeysPayload));
         // init LCOT
-        lcotReceiver.init(Byte.SIZE, (maxBinNum + maxStashNum) * maxByteL);
+        lcotReceiver.init(Byte.SIZE);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

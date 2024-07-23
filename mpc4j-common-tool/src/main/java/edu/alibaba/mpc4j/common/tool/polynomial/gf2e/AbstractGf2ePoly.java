@@ -16,9 +16,13 @@ import java.security.SecureRandom;
  */
 abstract class AbstractGf2ePoly implements Gf2ePoly {
     /**
-     * 有限域
+     * finite field
      */
     protected final FiniteField<UnivariatePolynomialZp64> finiteField;
+    /**
+     * minimal polynomial
+     */
+    protected final byte[] minimalPolynomial;
     /**
      * 有限域比特长度
      */
@@ -34,6 +38,7 @@ abstract class AbstractGf2ePoly implements Gf2ePoly {
 
     AbstractGf2ePoly(int l) {
         finiteField = Gf2eManager.getFiniteField(l);
+        minimalPolynomial = Gf2eManager.getMinimalPolynomial(l);
         this.l = l;
         byteL = CommonUtils.getByteLength(l);
         secureRandom = new SecureRandom();

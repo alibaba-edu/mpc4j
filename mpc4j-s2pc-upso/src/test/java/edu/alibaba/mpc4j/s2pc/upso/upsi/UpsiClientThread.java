@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.upso.upsi;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.UpsiClient;
 
+import java.io.IOException;
 import java.util.Set;
 
 
@@ -45,7 +46,7 @@ public class UpsiClientThread<T> extends Thread {
         try {
             client.init(maxClientElementSize);
             intersectionSet = client.psi(clientElementSet);
-        } catch (MpcAbortException e) {
+        } catch (MpcAbortException | IOException e) {
             e.printStackTrace();
         }
     }

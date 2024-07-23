@@ -1,10 +1,10 @@
 package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory.ByteEccType;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -20,7 +20,6 @@ import java.util.Collection;
  * @date 2022/9/6
  */
 @RunWith(Parameterized.class)
-@Ignore
 public class ByteEccConsistencyTest {
     /**
      * 最大随机轮数
@@ -33,15 +32,33 @@ public class ByteEccConsistencyTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
+        Collection<Object[]> configurations = new ArrayList<>();
 
+        // STANDARD
+        configurations.add(new Object[]{
+            EnvType.STANDARD.name() + " v.s. " + EnvType.STANDARD_JDK.name() + " (Full Type)",
+            ByteEccFactory.getFullType(EnvType.STANDARD), ByteEccFactory.getFullType(EnvType.STANDARD_JDK)
+        });
+        configurations.add(new Object[]{
+            EnvType.STANDARD.name() + " v.s. " + EnvType.STANDARD_JDK.name() + " (Mul Type)",
+            ByteEccFactory.getMulType(EnvType.STANDARD), ByteEccFactory.getMulType(EnvType.STANDARD_JDK)
+        });
+        // INLAND
+        configurations.add(new Object[]{
+            EnvType.INLAND.name() + " v.s. " + EnvType.INLAND_JDK.name() + " (Full Type)",
+            ByteEccFactory.getFullType(EnvType.INLAND), ByteEccFactory.getFullType(EnvType.INLAND_JDK)
+        });
+        configurations.add(new Object[]{
+            EnvType.INLAND.name() + " v.s. " + EnvType.INLAND_JDK.name() + " (Mul Type)",
+            ByteEccFactory.getMulType(EnvType.INLAND), ByteEccFactory.getMulType(EnvType.INLAND_JDK)
+        });
         // X25519
-        configurationParams.add(new Object[] {"X25519 (BC v.s. Sodium)", ByteEccType.X25519_BC, ByteEccType.X25519_SODIUM});
+        configurations.add(new Object[] {"X25519 (BC v.s. Sodium)", ByteEccType.X25519_BC, ByteEccType.X25519_SODIUM});
         // ED25519
-        configurationParams.add(new Object[] {"ED25519 (BC v.s. Sodium)", ByteEccType.ED25519_BC, ByteEccType.ED25519_SODIUM});
-        configurationParams.add(new Object[] {"ED25519 (BC v.s. Cafe)", ByteEccType.ED25519_BC, ByteEccType.ED25519_CAFE});
+        configurations.add(new Object[] {"ED25519 (BC v.s. Sodium)", ByteEccType.ED25519_BC, ByteEccType.ED25519_SODIUM});
+        configurations.add(new Object[] {"ED25519 (BC v.s. Cafe)", ByteEccType.ED25519_BC, ByteEccType.ED25519_CAFE});
 
-        return configurationParams;
+        return configurations;
     }
 
     /**

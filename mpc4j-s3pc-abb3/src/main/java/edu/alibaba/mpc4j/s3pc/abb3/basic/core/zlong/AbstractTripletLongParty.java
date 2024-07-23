@@ -93,7 +93,7 @@ public abstract class AbstractTripletLongParty extends AbstractAbbThreePartyPto 
         Stream<TripletLongVector> stream = parallel ? Arrays.stream(data).parallel() : Arrays.stream(data);
         LongVector[] addRes = stream.map(x -> {
             LongVector tmp = x.getVectors()[0].add(x.getVectors()[1]);
-            tmp.format(validBitLen);
+            tmp.module(validBitLen);
             return tmp;
         }).toArray(LongVector[]::new);
         byte[] addHash = crProvider.genHash(addRes);
@@ -101,7 +101,7 @@ public abstract class AbstractTripletLongParty extends AbstractAbbThreePartyPto 
         // 2. generate hash for x2, and compare it with the data from the left party
         byte[] x2Hash = crProvider.genHash(Arrays.stream(data).map(x -> {
             LongVector tmp = x.getVectors()[1].neg();
-            tmp.format(validBitLen);
+            tmp.module(validBitLen);
             return tmp;
         }).toArray(LongVector[]::new));
         byte[] recData = receive(PtoStep.COMPARE_VIEW.ordinal(), leftParty()).get(0);

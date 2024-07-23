@@ -42,19 +42,19 @@ public abstract class AbstractPsiCaServer<T> extends AbstractTwoPartyPto impleme
     }
 
     protected void setInitInput(int maxServerElementSize, int maxClientElementSize) {
-        MathPreconditions.checkPositive("maxServerElementSize", maxServerElementSize);
+        MathPreconditions.checkGreater("maxServerElementSize", maxServerElementSize, 1);
         this.maxServerElementSize = maxServerElementSize;
-        MathPreconditions.checkPositive("maxClientElementSize", maxClientElementSize);
+        MathPreconditions.checkGreater("maxClientElementSize", maxClientElementSize, 1);
         this.maxClientElementSize = maxClientElementSize;
         initState();
     }
 
     protected void setPtoInput(Set<T> serverElementSet, int clientElementSize) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("serverElementSize", serverElementSet.size(), maxServerElementSize);
+        MathPreconditions.checkInRangeClosed("serverElementSize", serverElementSet.size(), 2, maxServerElementSize);
         serverElementSize = serverElementSet.size();
         serverElementArrayList = new ArrayList<>(serverElementSet);
-        MathPreconditions.checkPositiveInRangeClosed("clientElementSize", clientElementSize, maxClientElementSize);
+        MathPreconditions.checkInRangeClosed("clientElementSize", clientElementSize, 2, maxClientElementSize);
         this.clientElementSize = clientElementSize;
         extraInfo++;
     }

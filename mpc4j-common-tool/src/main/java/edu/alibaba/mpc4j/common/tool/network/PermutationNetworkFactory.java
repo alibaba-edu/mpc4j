@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.network;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.network.benes.BenesNetworkFactory;
 import edu.alibaba.mpc4j.common.tool.network.benes.BenesNetworkFactory.BenesNetworkType;
+import edu.alibaba.mpc4j.common.tool.network.twaksman.TopWaksmanNetwork;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetworkFactory;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetworkFactory.WaksmanNetworkType;
 
@@ -19,6 +20,8 @@ public class PermutationNetworkFactory {
     private PermutationNetworkFactory() {
         // empty
     }
+
+    public static final int PARALLEL_THRESHOLD = 1024;
 
     /**
      * Waksman network type.
@@ -40,6 +43,10 @@ public class PermutationNetworkFactory {
          * Waksman Native
          */
         WAKSMAN_NATIVE,
+        /**
+         * Waksman network but assign values according to the highest bit
+         */
+        TOP_WAKSMAN,
     }
 
     /**
@@ -60,6 +67,8 @@ public class PermutationNetworkFactory {
                 return WaksmanNetworkFactory.createInstance(WaksmanNetworkType.JDK, permutationMap);
             case WAKSMAN_NATIVE:
                 return WaksmanNetworkFactory.createInstance(WaksmanNetworkType.NATIVE, permutationMap);
+            case TOP_WAKSMAN:
+                return new TopWaksmanNetwork<>(permutationMap);
             default:
                 throw new IllegalArgumentException("Invalid " + PermutationNetworkType.class.getSimpleName() + ": " + type.name());
         }
@@ -84,6 +93,8 @@ public class PermutationNetworkFactory {
                 return WaksmanNetworkFactory.createInstance(WaksmanNetworkType.JDK, n, network);
             case WAKSMAN_NATIVE:
                 return WaksmanNetworkFactory.createInstance(WaksmanNetworkType.NATIVE, n, network);
+            case TOP_WAKSMAN:
+                return new TopWaksmanNetwork<>(n, network);
             default:
                 throw new IllegalArgumentException("Invalid " + PermutationNetworkType.class.getSimpleName() + ": " + type.name());
         }

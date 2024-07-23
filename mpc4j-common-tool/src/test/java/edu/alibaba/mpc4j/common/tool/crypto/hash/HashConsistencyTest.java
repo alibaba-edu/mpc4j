@@ -2,10 +2,10 @@ package edu.alibaba.mpc4j.common.tool.crypto.hash;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory.HashType;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -21,7 +21,6 @@ import java.util.Collection;
  * @date 2022/01/07
  */
 @RunWith(Parameterized.class)
-@Ignore
 public class HashConsistencyTest {
     /**
      * 最大随机轮数
@@ -34,17 +33,28 @@ public class HashConsistencyTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
+        Collection<Object[]> configurations = new ArrayList<>();
+
+        // STANDARD
+        configurations.add(new Object[]{
+            EnvType.STANDARD.name() + " v.s. " + EnvType.STANDARD_JDK.name(),
+            HashFactory.getType(EnvType.STANDARD), HashFactory.getType(EnvType.STANDARD_JDK)
+        });
+        // INLAND
+        configurations.add(new Object[]{
+            EnvType.INLAND.name() + " v.s. " + EnvType.INLAND_JDK.name(),
+            HashFactory.getType(EnvType.INLAND), HashFactory.getType(EnvType.INLAND_JDK)
+        });
         // BLAKE_2B_160
-        configurationParams.add(new Object[] {
+        configurations.add(new Object[] {
             "Blake2b160: BC v.s. Native", HashType.BC_BLAKE_2B_160, HashType.NATIVE_BLAKE_2B_160}
         );
         // SHA256
-        configurationParams.add(new Object[] {
+        configurations.add(new Object[] {
             "SHA256: JDK v.s. Native", HashType.JDK_SHA256, HashType.NATIVE_SHA256}
         );
 
-        return configurationParams;
+        return configurations;
     }
 
     /**

@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.crypto.algs.ope;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.crypto.algs.range.LongValueRange;
+import edu.alibaba.mpc4j.crypto.algs.utils.range.LongRange;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 import org.bouncycastle.crypto.CryptoException;
@@ -19,36 +19,38 @@ import java.security.SecureRandom;
 public class LongOpeTest {
 
     @Test
-    public void testDefault() throws CryptoException {
-        Bclo19LongOpeEngine opeEngine = new Bclo19LongOpeEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        LongValueRange rangeD = new LongValueRange(-(1L << 32), 1L << 32);
-        LongValueRange rangeR = new LongValueRange(-(1L << 48), 1L << 48);
+    public void testSmallRange() throws CryptoException {
+        SecureRandom secureRandom = new SecureRandom();
+        Bclo09LongOpeEngine opeEngine = new Bclo09LongOpeEngine();
+        byte[] key = opeEngine.keyGen(secureRandom);
+        LongRange rangeD = new LongRange(-(1L << 3), 1L << 3);
+        LongRange rangeR = new LongRange(-(1L << 4), 1L << 4);
         opeEngine.init(key, rangeD, rangeR);
 
-        int minPlaintext = -100;
-        int maxPlaintext = 100;
+        int minPlaintext = -8;
+        int maxPlaintext = 8;
         testOpe(opeEngine, minPlaintext, maxPlaintext);
     }
 
     @Test
-    public void testRandom() throws CryptoException {
-        SecureRandom secureRandom = new SecureRandom();
-        Bclo19LongOpeEngine opeEngine = new Bclo19LongOpeEngine();
-        byte[] key = opeEngine.keyGen(secureRandom);
-        LongValueRange rangeD = new LongValueRange(-(1L << 32), 1L << 32);
-        LongValueRange rangeR = new LongValueRange(-(1L << 48), 1L << 48);
+    public void testDefault() throws CryptoException {
+        Bclo09LongOpeEngine opeEngine = new Bclo09LongOpeEngine();
+        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        LongRange rangeD = new LongRange(-(1L << 15), 1L << 16);
+        LongRange rangeR = new LongRange(-(1L << 16), 1L << 17);
         opeEngine.init(key, rangeD, rangeR);
 
-        int minPlaintext = -100;
-        int maxPlaintext = 100;
-        testOpe(opeEngine, minPlaintext, maxPlaintext);
+        // verify starting, middle, and ending points
+        testOpe(opeEngine, rangeD.getStart(), rangeD.getStart() + (1 << 10));
+        testOpe(opeEngine, -(1 << 10), (1 << 10));
+        testOpe(opeEngine, rangeD.getEnd() - (1 << 10), rangeD.getEnd());
     }
 
-    private void testOpe(Bclo19LongOpeEngine opeEngine, int minPlaintext, int maxPlaintext) throws CryptoException {
+
+    private void testOpe(Bclo09LongOpeEngine opeEngine, long minPlaintext, long maxPlaintext) throws CryptoException {
         TLongList ciphertexts = new TLongArrayList();
         int count = 0;
-        for (int plaintext = minPlaintext; plaintext <= maxPlaintext; plaintext++) {
+        for (long plaintext = minPlaintext; plaintext <= maxPlaintext; plaintext++) {
             long encryption = opeEngine.encrypt(plaintext);
             ciphertexts.add(encryption);
             // verify order-preserving

@@ -89,23 +89,33 @@ public class EccFactory {
     }
 
     /**
+     * Gets type based on environment.
+     *
+     * @param envType environment.
+     * @return type.
+     */
+    public static EccType getType(EnvType envType) {
+        switch (envType) {
+            case STANDARD:
+                return EccType.SEC_P256_R1_OPENSSL;
+            case STANDARD_JDK:
+                return EccType.SEC_P256_R1_BC;
+            case INLAND:
+                return EccType.SM2_P256_V1_OPENSSL;
+            case INLAND_JDK:
+                return EccType.SM2_P256_V1_BC;
+            default:
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
+        }
+    }
+
+    /**
      * 创建椭圆曲线。
      *
      * @param envType 环境类型。
      * @return 椭圆曲线。
      */
     public static Ecc createInstance(EnvType envType) {
-        switch (envType) {
-            case STANDARD:
-                return createInstance(EccType.SEC_P256_R1_OPENSSL);
-            case STANDARD_JDK:
-                return createInstance(EccType.SEC_P256_K1_BC);
-            case INLAND:
-                return createInstance(EccType.SM2_P256_V1_OPENSSL);
-            case INLAND_JDK:
-                return createInstance(EccType.SM2_P256_V1_BC);
-            default:
-                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
-        }
+        return createInstance(getType(envType));
     }
 }

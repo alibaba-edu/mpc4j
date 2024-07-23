@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.common.tool.polynomial.gf2e;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.RingsUtils;
+import edu.alibaba.mpc4j.common.tool.utils.Gf2xUtils;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -47,10 +47,10 @@ abstract class AbstractRingsGf2ePoly extends AbstractGf2ePoly {
         }
         // 转换成多项式点
         UnivariatePolynomialZp64[] pointXs = Arrays.stream(xArray)
-            .map(RingsUtils::byteArrayToGf2e)
+            .map(Gf2xUtils::byteArrayToRings)
             .toArray(UnivariatePolynomialZp64[]::new);
         UnivariatePolynomialZp64[] pointYs = Arrays.stream(yArray)
-            .map(RingsUtils::byteArrayToGf2e)
+            .map(Gf2xUtils::byteArrayToRings)
             .toArray(UnivariatePolynomialZp64[]::new);
         // 得到插值多项式
         UnivariatePolynomial<UnivariatePolynomialZp64> polynomial = polynomialInterpolate(num, pointXs, pointYs);
@@ -65,13 +65,16 @@ abstract class AbstractRingsGf2ePoly extends AbstractGf2ePoly {
             UnivariatePolynomialZp64[] prCoefficients = new UnivariatePolynomialZp64[num - pointXs.length];
             for (int index = 0; index < prCoefficients.length; index++) {
                 byte[] coefficient = BytesUtils.randomByteArray(byteL, l, secureRandom);
-                prCoefficients[index] = RingsUtils.byteArrayToGf2e(coefficient);
+                prCoefficients[index] = Gf2xUtils.byteArrayToRings(coefficient);
             }
             UnivariatePolynomial<UnivariatePolynomialZp64> pr = UnivariatePolynomial.create(finiteField, prCoefficients);
             // 计算P_0(x) + P_1(x) * P_r(x)
             polynomial = polynomial.add(p1.multiply(pr));
         }
-        return polynomialToBytes(num, polynomial);
+        return IntStream.range(0, num)
+            .mapToObj(polynomial::get)
+            .map(coefficient -> Gf2xUtils.ringsToByteArray(coefficient, byteL))
+            .toArray(byte[][]::new);
     }
 
     /**
@@ -112,7 +115,7 @@ abstract class AbstractRingsGf2ePoly extends AbstractGf2ePoly {
         UnivariatePolynomial<UnivariatePolynomialZp64> polynomial = UnivariatePolynomial.one(finiteField);
         // f(x) = (x - x_0) * (x - x_1) * ... * (x - x_m)
         for (byte[] x : xArray) {
-            UnivariatePolynomialZp64 pointX = RingsUtils.byteArrayToGf2e(x);
+            UnivariatePolynomialZp64 pointX = Gf2xUtils.byteArrayToRings(x);
             UnivariatePolynomial<UnivariatePolynomialZp64> linear = polynomial.createLinear(
                 finiteField.negate(pointX), finiteField.getOne()
             );
@@ -122,7 +125,7 @@ abstract class AbstractRingsGf2ePoly extends AbstractGf2ePoly {
             // 构造随机多项式
             UnivariatePolynomialZp64[] prCoefficients = IntStream.range(0, num - xArray.length)
                 .mapToObj(index -> BytesUtils.randomByteArray(byteL, l, secureRandom))
-                .map(RingsUtils::byteArrayToGf2e)
+                .map(Gf2xUtils::byteArrayToRings)
                 .toArray(UnivariatePolynomialZp64[]::new);
             UnivariatePolynomial<UnivariatePolynomialZp64> dummyPolynomial
                 = UnivariatePolynomial.create(finiteField, prCoefficients);
@@ -131,10 +134,13 @@ abstract class AbstractRingsGf2ePoly extends AbstractGf2ePoly {
             // 计算P_0(x) * P_r(x)
             polynomial = polynomial.multiply(dummyPolynomial);
         }
-        UnivariatePolynomialZp64 pointY = RingsUtils.byteArrayToGf2e(y);
+        UnivariatePolynomialZp64 pointY = Gf2xUtils.byteArrayToRings(y);
         polynomial = polynomial.add(UnivariatePolynomial.constant(finiteField, pointY));
 
-        return rootPolynomialToBytes(num, polynomial);
+        return IntStream.range(0, num + 1)
+            .mapToObj(polynomial::get)
+            .map(coefficient -> Gf2xUtils.ringsToByteArray(coefficient, byteL))
+            .toArray(byte[][]::new);
     }
 
     @Override
@@ -147,9 +153,9 @@ abstract class AbstractRingsGf2ePoly extends AbstractGf2ePoly {
         // 恢复多项式
         UnivariatePolynomial<UnivariatePolynomialZp64> polynomial = bytesToPolynomial(coefficients);
         // 求值
-        UnivariatePolynomialZp64 pointX = RingsUtils.byteArrayToGf2e(x);
+        UnivariatePolynomialZp64 pointX = Gf2xUtils.byteArrayToRings(x);
         UnivariatePolynomialZp64 pointY = polynomial.evaluate(pointX);
-        return RingsUtils.gf2eToByteArray(pointY, byteL);
+        return Gf2xUtils.ringsToByteArray(pointY, byteL);
     }
 
     @Override
@@ -165,9 +171,9 @@ abstract class AbstractRingsGf2ePoly extends AbstractGf2ePoly {
         UnivariatePolynomial<UnivariatePolynomialZp64> polynomial = bytesToPolynomial(coefficients);
         // 求值
         return Arrays.stream(xArray)
-            .map(RingsUtils::byteArrayToGf2e)
+            .map(Gf2xUtils::byteArrayToRings)
             .map(pointX -> polynomialEvaluate(polynomial, pointX))
-            .map(pointY -> RingsUtils.gf2eToByteArray(pointY, byteL))
+            .map(pointY -> Gf2xUtils.ringsToByteArray(pointY, byteL))
             .toArray(byte[][]::new);
     }
 
@@ -184,27 +190,9 @@ abstract class AbstractRingsGf2ePoly extends AbstractGf2ePoly {
         return polynomial.evaluate(x);
     }
 
-    protected byte[][] polynomialToBytes(int num, UnivariatePolynomial<UnivariatePolynomialZp64> polynomial) {
-        byte[][] coefficients = new byte[num][byteL];
-        IntStream.range(0, polynomial.degree() + 1).forEach(degreeIndex ->
-            coefficients[degreeIndex] = RingsUtils.gf2eToByteArray(polynomial.get(degreeIndex), byteL)
-        );
-
-        return coefficients;
-    }
-
-    private byte[][] rootPolynomialToBytes(int num, UnivariatePolynomial<UnivariatePolynomialZp64> polynomial) {
-        byte[][] coefficients = new byte[num + 1][byteL];
-        IntStream.range(0, polynomial.degree() + 1).forEach(degreeIndex ->
-            coefficients[degreeIndex] = RingsUtils.gf2eToByteArray(polynomial.get(degreeIndex), byteL)
-        );
-
-        return coefficients;
-    }
-
     protected UnivariatePolynomial<UnivariatePolynomialZp64> bytesToPolynomial(byte[][] coefficients) {
         UnivariatePolynomialZp64[] polyCoefficients = Arrays.stream(coefficients)
-            .map(RingsUtils::byteArrayToGf2e)
+            .map(Gf2xUtils::byteArrayToRings)
             .toArray(UnivariatePolynomialZp64[]::new);
 
         return UnivariatePolynomial.create(finiteField, polyCoefficients);

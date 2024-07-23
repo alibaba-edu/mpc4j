@@ -5,12 +5,12 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20.Ywl20UniMspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.bsp.BspCotFactory.BspCotType;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory.MspCotType;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.BspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.bcg19.Bcg19RegMspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.ywl20.Ywl20UniMspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.BspCotFactory.BspCotType;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotFactory.MspCotType;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -39,13 +39,9 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
      */
     enum PtoStep {
         /**
-         * receiver sends setup matrix key
+         * receiver sends matrix keys
          */
-        RECEIVER_SEND_SETUP_KEY,
-        /**
-         * receiver sends iteration matrix key
-         */
-        RECEIVER_SEND_ITERATION_LEY,
+        RECEIVER_SEND_MATRIX_KEYS,
     }
 
     /**
@@ -88,7 +84,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
     static final int MAX_LOG_N = Ywl20NcCotLpnParamsFinder.ITERATION_MAX_LOG_N;
 
     /**
-     * BCG19-REG-MSP-COT + YWL20-SH-BSP-COT setup LPN parameters
+     * BCG19-REG-MSP-COT + SH-BSP-COT setup LPN parameters
      */
     private static final TIntObjectMap<LpnParams> YWL20_SH_BCG19_REG_SETUP_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
@@ -109,7 +105,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
     }
 
     /**
-     * BCG19-REG-MSP-COT + YWL20-SH-BSP-COT iteration LPN parameters
+     * BCG19-REG-MSP-COT + SH-BSP-COT iteration LPN parameters
      */
     private static final TIntObjectMap<LpnParams> YWL20_SH_BCG19_REG_ITERATION_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
@@ -130,7 +126,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
     }
 
     /**
-     * BCG19-REG-MSP-COT + YWL20-MA-BSP-COT setup LPN parameters
+     * BCG19-REG-MSP-COT + MA-BSP-COT setup LPN parameters
      */
     private static final TIntObjectMap<LpnParams> YWL20_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
@@ -151,7 +147,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
     }
 
     /**
-     * BCG19-REG-MSP-COT + YWL20-MA-BSP-COT iteration LPN parameters
+     * BCG19-REG-MSP-COT + MA-BSP-COT iteration LPN parameters
      */
     private static final TIntObjectMap<LpnParams> YWL20_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
@@ -172,7 +168,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
     }
 
     /**
-     * YWL20-UNI-MSP-COT + YWL20-SH-BSP-COT setup LPN parameters
+     * YWL20-UNI-MSP-COT + SH-BSP-COT setup LPN parameters
      */
     private static final TIntObjectMap<LpnParams> YWL20_SH_YWL20_UNI_SETUP_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
@@ -193,7 +189,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
     }
 
     /**
-     * YWL20-UNI-MSP-COT + YWL20-SH-BSP-COT iteration LPN parameters
+     * YWL20-UNI-MSP-COT + SH-BSP-COT iteration LPN parameters
      */
     private static final TIntObjectMap<LpnParams> YWL20_SH_YWL20_UNI_ITERATION_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
@@ -214,7 +210,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
     }
 
     /**
-     * YWL20-UNI-MSP-COT + YWL20-MA-BSP-COT setup LPN parameters
+     * YWL20-UNI-MSP-COT + MA-BSP-COT setup LPN parameters
      */
     private static final TIntObjectMap<LpnParams> YWL20_MA_YWL20_UNI_SETUP_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
@@ -235,7 +231,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
     }
 
     /**
-     * YWL20-UNI-MSP-COT + YWL20-MA-BSP-COT iteration LPN parameters
+     * YWL20-UNI-MSP-COT + MA-BSP-COT iteration LPN parameters
      */
     private static final TIntObjectMap<LpnParams> YWL20_MA_YWL20_UNI_ITERATION_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
@@ -276,6 +272,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
                 BspCotType bcg19RegBspCotType = bcg19RegBspCotConfig.getPtoType();
                 switch (bcg19RegBspCotType) {
                     case YWL20_SEMI_HONEST:
+                    case GYW23:
                         return YWL20_SH_BCG19_REG_SETUP_LPN_PARAMS_MAP.get(ceilLogN);
                     case YWL20_MALICIOUS:
                         return YWL20_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.get(ceilLogN);
@@ -290,6 +287,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
                 BspCotType ywl20UniBspCotType = ywl20UniBspCotConfig.getPtoType();
                 switch (ywl20UniBspCotType) {
                     case YWL20_SEMI_HONEST:
+                    case GYW23:
                         return YWL20_SH_YWL20_UNI_SETUP_LPN_PARAMS_MAP.get(ceilLogN);
                     case YWL20_MALICIOUS:
                         return YWL20_MA_YWL20_UNI_SETUP_LPN_PARAMS_MAP.get(ceilLogN);
@@ -326,6 +324,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
                 BspCotType bcg19RegBspCotType = bcg19RegBspCotConfig.getPtoType();
                 switch (bcg19RegBspCotType) {
                     case YWL20_SEMI_HONEST:
+                    case GYW23:
                         return YWL20_SH_BCG19_REG_ITERATION_LPN_PARAMS_MAP.get(ceilLogN);
                     case YWL20_MALICIOUS:
                         return YWL20_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.get(ceilLogN);
@@ -340,6 +339,7 @@ class Ywl20NcCotPtoDesc implements PtoDesc {
                 BspCotType ywl20UniBspCotType = ywl20UniBspSotConfig.getPtoType();
                 switch (ywl20UniBspCotType) {
                     case YWL20_SEMI_HONEST:
+                    case GYW23:
                         return YWL20_SH_YWL20_UNI_ITERATION_LPN_PARAMS_MAP.get(ceilLogN);
                     case YWL20_MALICIOUS:
                         return YWL20_MA_YWL20_UNI_ITERATION_LPN_PARAMS_MAP.get(ceilLogN);

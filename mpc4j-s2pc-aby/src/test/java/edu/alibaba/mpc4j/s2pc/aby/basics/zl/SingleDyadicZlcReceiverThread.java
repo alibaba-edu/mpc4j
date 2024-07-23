@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.circuit.operator.DyadicAcOperator;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 /**
  * single Zl circuit receiver thread for dyadic (binary) operator.
@@ -16,6 +17,10 @@ class SingleDyadicZlcReceiverThread extends Thread {
      * receiver
      */
     private final ZlcParty receiver;
+    /**
+     * Zl
+     */
+    private final Zl zl;
     /**
      * operator
      */
@@ -49,8 +54,9 @@ class SingleDyadicZlcReceiverThread extends Thread {
      */
     private ZlVector recvSecretSecretVector;
 
-    SingleDyadicZlcReceiverThread(ZlcParty receiver, DyadicAcOperator operator, ZlVector xVector, ZlVector yVector) {
+    SingleDyadicZlcReceiverThread(ZlcParty receiver, Zl zl, DyadicAcOperator operator, ZlVector xVector, ZlVector yVector) {
         this.receiver = receiver;
+        this.zl = zl;
         this.operator = operator;
         this.xVector = xVector;
         this.yVector = yVector;
@@ -76,11 +82,11 @@ class SingleDyadicZlcReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.init(num);
+            receiver.init(zl.getL(), num);
             // generate x and y
             MpcZlVector xPlainMpcVector = receiver.create(xVector);
             MpcZlVector yPlainMpcVector = receiver.create(yVector);
-            MpcZlVector x1SecretMpcVector = receiver.shareOther(num);
+            MpcZlVector x1SecretMpcVector = receiver.shareOther(zl, num);
             MpcZlVector y1SecretMpcVector = receiver.shareOwn(yVector);
             MpcZlVector z1PlainPlainMpcVector, z1PlainSecretMpcVector;
             MpcZlVector z1SecretPlainMpcVector, z1SecretSecretMpcVector;

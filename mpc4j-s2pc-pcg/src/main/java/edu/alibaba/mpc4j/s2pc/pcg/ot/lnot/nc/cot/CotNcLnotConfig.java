@@ -34,9 +34,8 @@ public class CotNcLnotConfig extends AbstractMultiPartyPtoConfig implements NcLn
     }
 
     @Override
-    public int maxNum() {
-        // In theory, LCOT can support arbitrary num. Here we limit the max num in case of memory exception.
-        return 1 << 24;
+    public int maxNum(int l) {
+        return (int) Math.floor((double) ncCotConfig.maxNum() / l);
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<CotNcLnotConfig> {
@@ -46,7 +45,7 @@ public class CotNcLnotConfig extends AbstractMultiPartyPtoConfig implements NcLn
         private NcCotConfig ncCotConfig;
 
         public Builder(SecurityModel securityModel) {
-            ncCotConfig = NcCotFactory.createDefaultConfig(securityModel, true);
+            ncCotConfig = NcCotFactory.createDefaultConfig(securityModel);
         }
 
         public Builder setNcCotConfig(NcCotConfig ncCotConfig) {

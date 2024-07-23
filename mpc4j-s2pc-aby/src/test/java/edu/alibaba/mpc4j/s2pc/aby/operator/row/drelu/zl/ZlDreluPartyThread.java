@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 
 /**
@@ -16,13 +17,13 @@ public class ZlDreluPartyThread extends Thread {
      */
     private final ZlDreluParty party;
     /**
+     * z2c party
+     */
+    private final Z2cParty z2cParty;
+    /**
      * x
      */
     private final SquareZlVector shareX;
-    /**
-     * l
-     */
-    private final int l;
     /**
      * num
      */
@@ -32,11 +33,11 @@ public class ZlDreluPartyThread extends Thread {
      */
     private SquareZ2Vector shareZ;
 
-    ZlDreluPartyThread(ZlDreluParty party, int l, SquareZlVector shareX) {
+    ZlDreluPartyThread(ZlDreluParty party, Z2cParty z2cParty, SquareZlVector shareX) {
         this.party = party;
+        this.z2cParty = z2cParty;
         this.shareX = shareX;
         this.num = shareX.getNum();
-        this.l = l;
     }
 
     SquareZ2Vector getShareZ() {
@@ -46,8 +47,8 @@ public class ZlDreluPartyThread extends Thread {
     @Override
     public void run() {
         try {
-            party.getRpc().synchronize();
-            party.init(l, num);
+            z2cParty.init(shareX.getZl().getL() * num);
+            party.init(shareX.getZl().getL(), num);
             party.getRpc().reset();
             party.getRpc().synchronize();
             shareZ = party.drelu(shareX);

@@ -106,4 +106,15 @@ public class DirectEncodeLdpTest extends AbstractEncodeLdpTest {
 
         testReseed(mechanism);
     }
+
+    @Test
+    public void testFPR() {
+        EncodeLdpConfig ldpConfig = new DirectEncodeLdpConfig
+                .Builder(DEFAULT_BASE_EPSILON, DEFAULT_LABELS)
+                .setRandom(new Random())
+                .build();
+        EncodeLdp mechanism = EncodeLdpFactory.createInstance(ldpConfig);
+
+        testReseed(mechanism);
+    }
 }

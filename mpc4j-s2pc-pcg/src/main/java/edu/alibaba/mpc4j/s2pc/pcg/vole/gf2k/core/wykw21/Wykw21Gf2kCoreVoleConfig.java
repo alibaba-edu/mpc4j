@@ -15,7 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleFactory;
  */
 public class Wykw21Gf2kCoreVoleConfig extends AbstractMultiPartyPtoConfig implements Gf2kCoreVoleConfig {
     /**
-     * the base OT config.
+     * base OT config.
      */
     private final BaseOtConfig baseOtConfig;
 
@@ -35,17 +35,12 @@ public class Wykw21Gf2kCoreVoleConfig extends AbstractMultiPartyPtoConfig implem
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Wykw21Gf2kCoreVoleConfig> {
         /**
-         * the base OT config
+         * base OT config
          */
-        private BaseOtConfig baseOtConfig;
+        private final BaseOtConfig baseOtConfig;
 
         public Builder() {
             baseOtConfig = BaseOtFactory.createDefaultConfig(SecurityModel.MALICIOUS);
-        }
-
-        public Builder setBaseOtConfig(BaseOtConfig baseOtConfig) {
-            this.baseOtConfig = baseOtConfig;
-            return this;
         }
 
         @Override

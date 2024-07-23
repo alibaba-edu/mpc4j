@@ -1,13 +1,13 @@
 package edu.alibaba.mpc4j.common.tool.network.waksman;
 
+import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory.PermutationNetworkType;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetworkFactory.WaksmanNetworkType;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.linked.TIntLinkedList;
 
 import java.util.Arrays;
 import java.util.Stack;
+import java.util.concurrent.ForkJoinTask;
 import java.util.stream.IntStream;
 
 /**
@@ -25,10 +25,8 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
      */
     JdkWaksmanNetwork(final int[] permutationMap) {
         super(permutationMap);
-        // creates the source map
-        int[] sourceMap = IntStream.range(0, n).toArray();
         // iteratively create the Benes network
-        genWaksmanRoute(sourceMap, permutationMap);
+        genWaksmanRoute(permutationMap);
         // update widths
         updateWidths();
     }
@@ -43,29 +41,29 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
         super(n, network);
     }
 
-    private void genWaksmanRoute(final int[] sourceMap, final int[] permutationMap) {
+    private void genWaksmanRoute(final int[] permutationMap) {
         int logN = LongUtils.ceilLog2(n);
-        genWaksmanRoute(logN, 0, 0, sourceMap, permutationMap);
+        genWaksmanRoute(logN, 0, 0, permutationMap);
     }
 
-    private void genWaksmanRoute(int subLogN, int levelIndex, int permIndex, int[] subSrcs, int[] subDests) {
-        int subN = subSrcs.length;
+    private void genWaksmanRoute(int subLogN, int levelIndex, int permIndex, int[] perms) {
+        int subN = perms.length;
         if (subN == 2) {
             assert (subLogN == 1 || subLogN == 2);
             if (subLogN == 1) {
-                genSingleLevel(levelIndex, permIndex, subSrcs, subDests);
+                genSingleLevel(levelIndex, permIndex, perms);
             } else {
-                genPadSingleLevel(levelIndex, permIndex, subSrcs, subDests);
+                genPadSingleLevel(levelIndex, permIndex, perms);
             }
         } else if (subN == 3) {
             assert subLogN == 2;
-            genTripleLevel(levelIndex, permIndex, subSrcs, subDests);
+            genTripleLevel(levelIndex, permIndex, perms);
         } else if (subN == 4) {
             assert (subLogN == 2 || subLogN == 3);
             if (subLogN == 2) {
-                genQuadrupleLevel(levelIndex, permIndex, subSrcs, subDests);
+                genQuadrupleLevel(levelIndex, permIndex, perms);
             } else {
-                genPadQuadrupleLevel(levelIndex, permIndex, subSrcs, subDests);
+                genPadQuadrupleLevel(levelIndex, permIndex, perms);
             }
         } else {
             int subLevel = 2 * subLogN - 1;
@@ -74,16 +72,8 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
             // bottom subnetwork map, with size Math.ceil(n / 2)
             int subBottomN = subN - subTopN;
             // create forward/backward lookup tables
-            // subSrcList stores the position map. For example, src = [2, 4, 6], dest = [6, 4, 2].
-            // We re-organize the map to the form [0, subN - 1) -> [0, subN - 1)
-            int[] fullPerms = new int[n];
-            int[] fullInvPerms = new int[n];
-            IntStream.range(0, subN).forEach(i -> fullInvPerms[subSrcs[i]] = i);
-            IntStream.range(0, subN).forEach(i -> fullPerms[i] = fullInvPerms[subDests[i]]);
-            IntStream.range(0, subN).forEach(i -> fullInvPerms[fullPerms[i]] = i);
-            // shorten the array
-            int[] perms = Arrays.copyOf(fullPerms, subN);
-            int[] invPerms = Arrays.copyOf(fullInvPerms, subN);
+            int[] invPerms = new int[subN];
+            IntStream.range(0, subN).forEach(i -> invPerms[perms[i]] = i);
             // path, initialized by -1, we use 2 for empty node
             int[] path = new int[subN];
             Arrays.fill(path, -1);
@@ -92,13 +82,21 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                 path[subN - 1] = 1;
                 path[perms[subN - 1]] = 1;
                 // if values - 1 == perm[values - 1], then the last one is also a direct link. Handle other cases.
+//                if (perms[subN - 1] != subN - 1) {
+//                    int idx = perms[invPerms[subN - 1] ^ 1];
+//                    depthFirstSearch(path, perms, invPerms, idx);
+//                }
                 if (perms[subN - 1] != subN - 1) {
-                    int idx = perms[invPerms[subN - 1] ^ 1];
+                    int idx = perms[subN - 1] ^ 1;
                     depthFirstSearch(path, perms, invPerms, idx);
                 }
             } else {
-                // handling even n
-                evenDepthFirstSearch(path, perms, invPerms);
+                int index = perms[subN - 1];
+                path[index] = 1;
+                depthFirstSearch(path, perms, invPerms, index ^ 1);
+
+//                // handling even n
+//                evenDepthFirstSearch(path, perms, invPerms);
             }
             // set other switches
             for (int i = 0; i < subN; ++i) {
@@ -106,68 +104,63 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                     depthFirstSearch(path, perms, invPerms, i);
                 }
             }
-            // create left part of the network.
-            TIntList subTopSrcQueue = new TIntLinkedList();
-            TIntList subBottomSrcQueue = new TIntLinkedList();
-            for (int i = 0; i < subN - 1; i += 2) {
-                network[levelIndex][permIndex + i / 2] = (byte) path[i];
-                for (int j = 0; j < 2; j++) {
-                    int x = rightCycleShift((i | j) ^ path[i], subLogN);
-                    if (x < subN / 2) {
-                        subTopSrcQueue.add(subSrcs[i | j]);
-                    } else {
-                        subBottomSrcQueue.add(subSrcs[i | j]);
-                    }
-                }
-            }
-            if (subN % 2 == 1) {
-                // add one more switch for the odd case.
-                subBottomSrcQueue.add(subSrcs[subN - 1]);
-            }
-            // create right part of the subnetwork.
+            // create the subnetworks.
             int[] subTopDests = new int[subTopN];
             int[] subBottomDests = new int[subBottomN];
-            for (int i = 0; i < subN - 1; i += 2) {
-                network[levelIndex + subLevel - 1][permIndex + i / 2] = (byte) path[perms[i]];
-                for (int j = 0; j < 2; ++j) {
-                    int x = rightCycleShift((i | j) ^ path[perms[i]], subLogN);
-                    if (x < subN / 2) {
-                        subTopDests[i / 2] = subSrcs[perms[i | j]];
-                    } else {
-                        subBottomDests[i / 2] = subSrcs[perms[i | j]];
-                    }
+            byte[] leftNet = network[levelIndex];
+            byte[] rightNet = network[levelIndex + subLevel - 1];
+            for (int i = 0, partSrcIndex = 0; i < subN - 1; partSrcIndex++) {
+                leftNet[permIndex + partSrcIndex] = (byte) path[i];
+                // 对应的index是不是来自于上半个网络
+                int rightFromTop = path[perms[i]];
+                rightNet[permIndex + partSrcIndex] = (byte) rightFromTop;
+                if(rightFromTop == 0){
+                    subTopDests[partSrcIndex] = perms[i++] >> 1;
+                    subBottomDests[partSrcIndex] = perms[i++] >> 1;
+                }else{
+                    subBottomDests[partSrcIndex] = perms[i++] >> 1;
+                    subTopDests[partSrcIndex] = perms[i++] >> 1;
                 }
             }
             if (subN % 2 == 1) {
                 // add one more switch for the odd case.
-                subBottomDests[subN / 2] = subDests[subN - 1];
+                subBottomDests[subN / 2] = perms[subN - 1] >> 1;
             } else {
                 // remove one switch for the even case.
                 network[levelIndex + subLevel - 1][permIndex + subN / 2 - 1] = 2;
             }
-            int[] subTopSrcs = subTopSrcQueue.toArray();
-            int[] subBottomSrcs = subBottomSrcQueue.toArray();
-            // create top subnetwork, with (log(N) - 1) levels
-            genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex, subTopSrcs, subTopDests);
-            // create bottom subnetwork with (log(N) - 1) levels.
-            genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex + subN / 4, subBottomSrcs, subBottomDests);
+
+            if (parallel && n > PermutationNetworkFactory.PARALLEL_THRESHOLD && forkJoinPool.getParallelism() - forkJoinPool.getActiveThreadCount() > 0) {
+                ForkJoinTask<?> topTask = forkJoinPool.submit(() ->
+                    genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex, subTopDests));
+                ForkJoinTask<?> subTask = forkJoinPool.submit(() ->
+                    genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex + subN / 4, subBottomDests)
+                );
+                topTask.join();
+                subTask.join();
+            } else {
+                // create top subnetwork, with (log(N) - 1) levels
+                genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex, subTopDests);
+                // create bottom subnetwork with (log(N) - 1) levels.
+                genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex + subN / 4, subBottomDests);
+            }
         }
     }
 
-    private void genSingleLevel(int levelIndex, int permIndex, int[] subSrcs, int[] subDests) {
+    private void genSingleLevel(int levelIndex, int permIndex, int[] subDests) {
         // logN == 1, we have 2 * log(N) - 1 = 1 level (█)
-        network[levelIndex][permIndex] = !(subSrcs[0] == subDests[0]) ? (byte) 1 : (byte) 0;
+        network[levelIndex][permIndex] = subDests[0] == 0 ? (byte) 0 : (byte) 1;
     }
 
-    private void genPadSingleLevel(int levelIndex, int permIndex, int[] subSrcs, int[] subDests) {
+    private void genPadSingleLevel(int levelIndex, int permIndex, int[] subDests) {
         // logN == 2，we have 2 * logN - 1 = 3 levels (□ █ □).
         network[levelIndex][permIndex] = 2;
-        network[levelIndex + 1][permIndex] = !(subSrcs[0] == subDests[0]) ? (byte) 1 : (byte) 0;
+        network[levelIndex + 1][permIndex] = subDests[0] == 0 ? (byte) 0 : (byte) 1;
         network[levelIndex + 2][permIndex] = 2;
     }
 
-    private void genTripleLevel(int levelIndex, int permIndex, int[] subSrcs, int[] subDests) {
-        if (subSrcs[0] == subDests[0]) {
+    private void genTripleLevel(int levelIndex, int permIndex, int[] subDests) {
+        if (subDests[0] == 0) {
             /*
              * [0, 1, 2] -> [0, 1, 2], █ □ █ = 0   0
              *                         □ █ □     0
@@ -176,9 +169,9 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
              *                         □ █ □     1
              */
             network[levelIndex][permIndex] = 0;
-            network[levelIndex + 1][permIndex] = !(subSrcs[1] == subDests[1]) ? (byte) 1 : (byte) 0;
+            network[levelIndex + 1][permIndex] = subDests[1] == 1 ? (byte) 0 : (byte) 1;
             network[levelIndex + 2][permIndex] = 0;
-        } else if (subSrcs[0] == subDests[1]) {
+        } else if (subDests[1] == 0) {
             /*
              * [0, 1, 2] -> [1, 0, 2], █ □ █ = 0   1
              *                         □ █ □     0
@@ -187,7 +180,7 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
              *                         □ █ □     1
              */
             network[levelIndex][permIndex] = 0;
-            network[levelIndex + 1][permIndex] = !(subSrcs[1] == subDests[0]) ? (byte) 1 : (byte) 0;
+            network[levelIndex + 1][permIndex] = subDests[0] == 1 ? (byte) 0 : (byte) 1;
             network[levelIndex + 2][permIndex] = 1;
         } else {
             /*
@@ -199,12 +192,12 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
              */
             network[levelIndex][permIndex] = 1;
             network[levelIndex + 1][permIndex] = 1;
-            network[levelIndex + 2][permIndex] = !(subSrcs[1] == subDests[0]) ? (byte) 1 : (byte) 0;
+            network[levelIndex + 2][permIndex] = subDests[0] == 1 ? (byte) 0 : (byte) 1;
         }
     }
 
-    private void genQuadrupleLevel(int levelIndex, int permIndex, int[] subSrcs, int[] subDests) {
-        byte[] switches = genQuadrupleSwitches(subSrcs, subDests);
+    private void genQuadrupleLevel(int levelIndex, int permIndex, int[] subDests) {
+        byte[] switches = genQuadrupleSwitches(subDests);
         network[levelIndex][permIndex] = switches[0];
         network[levelIndex][permIndex + 1] = switches[1];
         network[levelIndex + 1][permIndex] = switches[2];
@@ -213,8 +206,8 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
         network[levelIndex + 2][permIndex + 1] = 2;
     }
 
-    private void genPadQuadrupleLevel(int levelIndex, int permIndex, int[] subSrcs, int[] subDests) {
-        byte[] switches = genQuadrupleSwitches(subSrcs, subDests);
+    private void genPadQuadrupleLevel(int levelIndex, int permIndex, int[] subDests) {
+        byte[] switches = genQuadrupleSwitches(subDests);
         network[levelIndex][permIndex] = switches[0];
         network[levelIndex][permIndex + 1] = switches[1];
         network[levelIndex + 1][permIndex] = 2;
@@ -227,37 +220,36 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
         network[levelIndex + 4][permIndex + 1] = 2;
     }
 
-    private byte[] genQuadrupleSwitches(int[] subSrcs, int[] subDests) {
-        assert subSrcs.length == 4;
+    private byte[] genQuadrupleSwitches(int[] subDests) {
         assert subDests.length == 4;
-        if (subDests[0] == subSrcs[0]) {
+        if (subDests[0] == 0) {
             // [0, 1, 2, 3] -> [0, ?, ?, ?]
-            if (subDests[1] == subSrcs[1]) {
+            if (subDests[1] == 1) {
                 // [0, 1, 2, 3] -> [0, 1, ?, ?]
-                if (subDests[2] == subSrcs[2]) {
+                if (subDests[2] == 2) {
                     /*
                      * [0, 1, 2, 3] -> [0, 1, 2, 3], █ █ █ = 0 0 0
                      *                               █ █ □   0 0
                      */
                     return new byte[]{0, 0, 0, 0, 0};
                 } else {
-                    assert subDests[2] == subSrcs[3];
+                    assert subDests[2] == 3;
                     /*
                      * [0, 1, 2, 3] -> [0, 1, 3, 2], █ █ █ = 0 0 0
                      *                               █ █ □   1 0
                      */
                     return new byte[]{0, 1, 0, 0, 0};
                 }
-            } else if (subDests[1] == subSrcs[2]) {
+            } else if (subDests[1] == 2) {
                 // [0, 1, 2, 3] -> [0, 2, ?, ?]
-                if (subDests[2] == subSrcs[1]) {
+                if (subDests[2] == 1) {
                     /*
                      * [0, 1, 2, 3] -> [0, 2, 1, 3], █ █ █ = 1 1 1
                      *                               █ █ □   0 0
                      */
                     return new byte[]{1, 0, 1, 0, 1};
                 } else {
-                    assert subDests[2] == subSrcs[3];
+                    assert subDests[2] == 3;
                     /*
                      * [0, 1, 2, 3] -> [0, 2, 3, 1], █ █ █ = 0 0 0
                      *                               █ █ □   1 1
@@ -265,16 +257,16 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                     return new byte[]{0, 1, 0, 1, 0};
                 }
             } else {
-                assert subDests[1] == subSrcs[3];
+                assert subDests[1] == 3;
                 // [0, 1, 2, 3] -> [0, 3, ?, ?]
-                if (subDests[2] == subSrcs[1]) {
+                if (subDests[2] == 1) {
                     /*
                      * [0, 1, 2, 3] -> [0, 3, 1, 2], █ █ █ = 1 1 1
                      *                               █ █ □   1 0
                      */
                     return new byte[]{1, 1, 1, 0, 1};
                 } else {
-                    assert subDests[2] == subSrcs[2];
+                    assert subDests[2] == 2;
                     /*
                      * [0, 1, 2, 3] -> [0, 3, 2, 1], █ █ █ = 0 0 0
                      *                               █ █ □   0 1
@@ -282,34 +274,34 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                     return new byte[]{0, 0, 0, 1, 0};
                 }
             }
-        } else if (subDests[0] == subSrcs[1]) {
+        } else if (subDests[0] == 1) {
             // [0, 1, 2, 3] -> [1, ?, ?, ?]
-            if (subDests[1] == subSrcs[0]) {
+            if (subDests[1] == 0) {
                 // [0, 1, 2, 3] -> [1, 0, ?, ?]
-                if (subDests[2] == subSrcs[2]) {
+                if (subDests[2] == 2) {
                     /*
                      * [0, 1, 2, 3] -> [1, 0, 2, 3], █ █ █ = 0 0 1
                      *                               █ █ □   0 0
                      */
                     return new byte[]{0, 0, 0, 0, 1};
                 } else {
-                    assert subDests[2] == subSrcs[3];
+                    assert subDests[2] == 3;
                     /*
                      * [0, 1, 2, 3] -> [1, 0, 3, 2], █ █ █ = 0 0 1
                      *                               █ █ □   1 0
                      */
                     return new byte[]{0, 1, 0, 0, 1};
                 }
-            } else if (subDests[1] == subSrcs[2]) {
+            } else if (subDests[1] == 2) {
                 // [0, 1, 2, 3] -> [1, 2, ?, ?]
-                if (subDests[2] == subSrcs[0]) {
+                if (subDests[2] == 0) {
                     /*
                      * [0, 1, 2, 3] -> [1, 2, 0, 3], █ █ █ = 0 1 1
                      *                               █ █ □   0 0
                      */
                     return new byte[]{0, 0, 1, 0, 1};
                 } else {
-                    assert subDests[2] == subSrcs[3];
+                    assert subDests[2] == 3;
                     /*
                      * [0, 1, 2, 3] -> [1, 2, 3, 0], █ █ █ = 1 0 0
                      *                               █ █ □   1 1
@@ -317,16 +309,16 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                     return new byte[]{1, 1, 0, 1, 0};
                 }
             } else {
-                assert subDests[1] == subSrcs[3];
+                assert subDests[1] == 3;
                 // [0, 1, 2, 3] -> [1, 3, ?, ?]
-                if (subDests[2] == subSrcs[0]) {
+                if (subDests[2] == 0) {
                     /*
                      * [0, 1, 2, 3] -> [1, 3, 0, 2], █ █ █ = 0 1 1
                      *                               █ █ □   1 0
                      */
                     return new byte[]{0, 1, 1, 0, 1};
                 } else {
-                    assert subDests[2] == subSrcs[2];
+                    assert subDests[2] == 2;
                     /*
                      * [0, 1, 2, 3] -> [1, 3, 2, 0], █ █ █ = 1 0 0
                      *                               █ █ □   0 1
@@ -334,34 +326,34 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                     return new byte[]{1, 0, 0, 1, 0};
                 }
             }
-        } else if (subDests[0] == subSrcs[2]) {
+        } else if (subDests[0] == 2) {
             // [0, 1, 2, 3] -> [2, ?, ?, ?]
-            if (subDests[1] == subSrcs[0]) {
+            if (subDests[1] == 0) {
                 // [0, 1, 2, 3] -> [2, 0, ?, ?]
-                if (subDests[2] == subSrcs[1]) {
+                if (subDests[2] == 1) {
                     /*
                      * [0, 1, 2, 3] -> [2, 0, 1, 3], █ █ █ = 1 1 0
                      *                               █ █ □   0 0
                      */
                     return new byte[]{1, 0, 1, 0, 0};
                 } else {
-                    assert subDests[2] == subSrcs[3];
+                    assert subDests[2] == 3;
                     /*
                      * [0, 1, 2, 3] -> [2, 0, 3, 1], █ █ █ = 0 0 1
                      *                               █ █ □   1 1
                      */
                     return new byte[]{0, 1, 0, 1, 1};
                 }
-            } else if (subDests[1] == subSrcs[1]) {
+            } else if (subDests[1] == 1) {
                 // [0, 1, 2, 3] -> [2, 1, ?, ?]
-                if (subDests[2] == subSrcs[0]) {
+                if (subDests[2] == 0) {
                     /*
                      * [0, 1, 2, 3] -> [2, 1, 0, 3], █ █ █ = 0 1 0
                      *                               █ █ □   0 0
                      */
                     return new byte[]{0, 0, 1, 0, 0};
                 } else {
-                    assert subDests[2] == subSrcs[3];
+                    assert subDests[2] == 3;
                     /*
                      * [0, 1, 2, 3] -> [2, 1, 3, 0], █ █ █ = 1 0 1
                      *                               █ █ □   1 1
@@ -369,16 +361,16 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                     return new byte[]{1, 1, 0, 1, 1};
                 }
             } else {
-                assert subDests[1] == subSrcs[3];
+                assert subDests[1] == 3;
                 // [0, 1, 2, 3] -> [2, 3, ?, ?]
-                if (subDests[2] == subSrcs[0]) {
+                if (subDests[2] == 0) {
                     /*
                      * [0, 1, 2, 3] -> [2, 3, 0, 1], █ █ █ = 0 1 0
                      *                               █ █ □   0 1
                      */
                     return new byte[]{0, 0, 1, 1, 0};
                 } else {
-                    assert subDests[2] == subSrcs[1];
+                    assert subDests[2] == 1;
                     /*
                      * [0, 1, 2, 3] -> [2, 3, 1, 0], █ █ █ = 1 1 0
                      *                               █ █ □   0 1
@@ -387,34 +379,34 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                 }
             }
         } else {
-            assert subDests[0] == subSrcs[3];
+            assert subDests[0] == 3;
             // [0, 1, 2, 3] -> [3, ?, ?, ?]
-            if (subDests[1] == subSrcs[0]) {
+            if (subDests[1] == 0) {
                 // [0, 1, 2, 3] -> [3, 0, ?, ?]
-                if (subDests[2] == subSrcs[1]) {
+                if (subDests[2] == 1) {
                     /*
                      * [0, 1, 2, 3] -> [3, 0, 1, 2], █ █ █ = 1 1 0
                      *                               █ █ □   1 0
                      */
                     return new byte[]{1, 1, 1, 0, 0};
                 } else {
-                    assert subDests[2] == subSrcs[2];
+                    assert subDests[2] == 2;
                     /*
                      * [0, 1, 2, 3] -> [3, 0, 2, 1], █ █ █ = 0 0 1
                      *                               █ █ □   0 1
                      */
                     return new byte[]{0, 0, 0, 1, 1};
                 }
-            } else if (subDests[1] == subSrcs[1]) {
+            } else if (subDests[1] == 1) {
                 // [0, 1, 2, 3] -> [3, 1, ?, ?]
-                if (subDests[2] == subSrcs[0]) {
+                if (subDests[2] == 0) {
                     /*
                      * [0, 1, 2, 3] -> [3, 1, 0, 2], █ █ █ = 0 1 0
                      *                               █ █ □   1 0
                      */
                     return new byte[]{0, 1, 1, 0, 0};
                 } else {
-                    assert subDests[2] == subSrcs[2];
+                    assert subDests[2] == 2;
                     /*
                      * [0, 1, 2, 3] -> [3, 1, 2, 0], █ █ █ = 1 0 1
                      *                               █ █ □   0 1
@@ -422,16 +414,16 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                     return new byte[]{1, 0, 0, 1, 1};
                 }
             } else {
-                assert subDests[1] == subSrcs[2];
+                assert subDests[1] == 2;
                 // [0, 1, 2, 3] -> [3, 2, ?, ?]
-                if (subDests[2] == subSrcs[0]) {
+                if (subDests[2] == 0) {
                     /*
                      * [0, 1, 2, 3] -> [3, 2, 0, 1], █ █ █ = 0 1 0
                      *                               █ █ □   1 1
                      */
                     return new byte[]{0, 1, 1, 1, 0};
                 } else {
-                    assert subDests[2] == subSrcs[1];
+                    assert subDests[2] == 1;
                     /*
                      * [0, 1, 2, 3] -> [3, 2, 1, 0], █ █ █ = 1 1 1
                      *                               █ █ □   0 1

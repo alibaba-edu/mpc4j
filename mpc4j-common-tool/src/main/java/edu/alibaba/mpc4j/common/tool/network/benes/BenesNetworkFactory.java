@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.network.benes;
 
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 /**
  * Benes network factory.
@@ -87,6 +88,35 @@ public class BenesNetworkFactory {
                 return new NativeBenesNetwork<>(permutationMap);
             default:
                 throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
+        }
+    }
+
+    /**
+     * Gets total number of switches. The formula is shown in Section 4 of the paper.
+     * <p>S(k) = 2⌊k / 2⌋ + S(⌈k / 2⌉) + S(⌊k / 2⌋)</p>
+     *
+     * @return total number of switches.
+     */
+    public static int getSwitchCount(int n) {
+        MathPreconditions.checkGreater("n", n, 1);
+        return innerGetSwitchCount(n);
+    }
+
+    private static int innerGetSwitchCount(int n) {
+        // in inner function, we allow n = 1 since this condition can be reached in recursion。
+        if (n == 1) {
+            // S(1) = 0
+            return 0;
+        }
+        if (n == 2) {
+            // S(2) = 1
+            return 1;
+        } else {
+            if (n % 2 == 0) {
+                return 2 * (n / 2) + innerGetSwitchCount(n / 2) + innerGetSwitchCount(n / 2);
+            } else {
+                return 2 * (n / 2) + innerGetSwitchCount(n / 2 + 1) + innerGetSwitchCount(n / 2);
+            }
         }
     }
 }

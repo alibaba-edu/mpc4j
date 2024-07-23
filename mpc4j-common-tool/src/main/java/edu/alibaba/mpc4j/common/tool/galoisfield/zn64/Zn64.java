@@ -15,16 +15,6 @@ public interface Zn64 extends LongRing {
     Zn64Factory.Zn64Type getZn64Type();
 
     /**
-     * Gets the name.
-     *
-     * @return the name.
-     */
-    @Override
-    default String getName() {
-        return getZn64Type().name();
-    }
-
-    /**
      * Gets the modulus n.
      *
      * @return the modulus n.

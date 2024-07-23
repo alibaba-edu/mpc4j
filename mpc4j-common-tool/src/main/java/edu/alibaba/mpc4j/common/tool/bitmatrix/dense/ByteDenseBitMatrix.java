@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.bitmatrix.dense;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
@@ -27,7 +28,7 @@ public class ByteDenseBitMatrix implements DenseBitMatrix {
     /**
      * Creates an all-zero matrix.
      *
-     * @param rows number of rows.
+     * @param rows    number of rows.
      * @param columns number of columns.
      * @return a matrix.
      */
@@ -44,7 +45,7 @@ public class ByteDenseBitMatrix implements DenseBitMatrix {
     /**
      * Creates an all-one matrix.
      *
-     * @param rows number of rows.
+     * @param rows    number of rows.
      * @param columns number of columns.
      * @return a matrix.
      */
@@ -61,7 +62,7 @@ public class ByteDenseBitMatrix implements DenseBitMatrix {
     /**
      * Creates a random matrix.
      *
-     * @param rows number of rows.
+     * @param rows    number of rows.
      * @param columns number of columns.
      * @return a matrix.
      */
@@ -73,6 +74,21 @@ public class ByteDenseBitMatrix implements DenseBitMatrix {
             .mapToObj(iRow -> BytesUtils.randomByteArray(bitMatrix.byteColumns, columns, secureRandom))
             .toArray(byte[][]::new);
         return bitMatrix;
+    }
+
+    /**
+     * Creates a random matrix.
+     *
+     * @param rows    number of rows.
+     * @param columns number of columns.
+     * @param seed    seed.
+     * @return a matrix.
+     */
+    public static ByteDenseBitMatrix createRandom(final int rows, final int columns, byte[] seed) {
+        MathPreconditions.checkEqual("λ", "seed.length", CommonConstants.BLOCK_BYTE_LENGTH, seed.length);
+        SecureRandom secureRandom = CommonUtils.createSeedSecureRandom();
+        secureRandom.setSeed(seed);
+        return createRandom(rows, columns, secureRandom);
     }
 
     /**

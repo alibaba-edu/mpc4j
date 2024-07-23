@@ -51,14 +51,13 @@ public class Kk13OptLcotReceiver extends AbstractLcotReceiver {
     }
 
     @Override
-    public int init(int inputBitLength, int maxNum) throws MpcAbortException {
-        setInitInput(inputBitLength, maxNum);
+    public void init(int l) throws MpcAbortException {
+        setInitInput(l);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] cotDelta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(cotDelta);
-        coreCotSender.init(cotDelta, outputBitLength);
+        byte[] cotDelta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(cotDelta);
         kdfOtSenderOutput = new KdfOtSenderOutput(envType, coreCotSender.send(outputBitLength));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -66,7 +65,6 @@ public class Kk13OptLcotReceiver extends AbstractLcotReceiver {
         logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
         logPhaseInfo(PtoState.INIT_END);
-        return linearCoder.getCodewordBitLength();
     }
 
     @Override
@@ -105,8 +103,8 @@ public class Kk13OptLcotReceiver extends AbstractLcotReceiver {
         // 将此编码转置
         TransBitMatrix codeTransposeMatrix = codeMatrix.transpose();
         // 用密钥扩展得到矩阵T
-        IntStream columnIndexIntStream = IntStream.range(0, outputBitLength);
-        columnIndexIntStream = parallel ? columnIndexIntStream.parallel() : columnIndexIntStream;
+        IntStream columnIndexIntStream = parallel
+            ? IntStream.range(0, outputBitLength).parallel() : IntStream.range(0, outputBitLength);
         return columnIndexIntStream
             .mapToObj(columnIndex -> {
                 // R computes t^i = G(k^0_i)
@@ -132,6 +130,6 @@ public class Kk13OptLcotReceiver extends AbstractLcotReceiver {
             .mapToObj(tMatrixTranspose::getColumn)
             .toArray(byte[][]::new);
 
-        return LcotReceiverOutput.create(inputBitLength, outputBitLength, choices, qsArray);
+        return LcotReceiverOutput.create(l, choices, qsArray);
     }
 }

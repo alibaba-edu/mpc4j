@@ -8,6 +8,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory.OprpType;
 
 import java.util.Arrays;
 
@@ -18,6 +19,10 @@ import java.util.Arrays;
  * @date 2022/02/14
  */
 public abstract class AbstractOprpReceiver extends AbstractTwoPartyPto implements OprpReceiver {
+    /**
+     * config
+     */
+    private final OprpConfig config;
     /**
      * 最大批处理数量
      */
@@ -45,6 +50,7 @@ public abstract class AbstractOprpReceiver extends AbstractTwoPartyPto implement
 
     protected AbstractOprpReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, OprpConfig config) {
         super(ptoDesc, receiverRpc, senderParty, config);
+        this.config = config;
     }
 
     protected void setInitInput(int maxBatchSize) {
@@ -68,5 +74,10 @@ public abstract class AbstractOprpReceiver extends AbstractTwoPartyPto implement
             )
             .toArray(byte[][]::new);
         extraInfo++;
+    }
+
+    @Override
+    public OprpType getType() {
+        return config.getPtoType();
     }
 }

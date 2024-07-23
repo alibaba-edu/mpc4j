@@ -13,10 +13,10 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnPartyOutput;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnReceiver;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnSender;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnPartyOutput;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnReceiver;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnSender;
 import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractPsuServer;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfsPsuPtoDesc.PtoStep;
 
@@ -36,7 +36,7 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
     /**
      * 第一轮OSN发送方
      */
-    private final OsnSender firstOsnSender;
+    private final DosnSender firstDosnSender;
     /**
      * OPRF接收方
      */
@@ -44,7 +44,7 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
     /**
      * 第二轮OSN接收方
      */
-    private final OsnReceiver secondOsnReceiver;
+    private final DosnReceiver secondDosnReceiver;
     /**
      * 布谷鸟哈希类型
      */
@@ -84,16 +84,16 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
     /**
      * π′的OSN协议输出
      */
-    private OsnPartyOutput secondOsnReceiverOutput;
+    private DosnPartyOutput secondOsnReceiverOutput;
 
     public Jsz22SfsPsuServer(Rpc serverRpc, Party clientParty, Jsz22SfsPsuConfig config) {
         super(Jsz22SfsPsuPtoDesc.getInstance(), serverRpc, clientParty, config);
-        firstOsnSender = OsnFactory.createSender(serverRpc, clientParty, config.getOsnConfig());
-        addSubPto(firstOsnSender);
+        firstDosnSender = DosnFactory.createSender(serverRpc, clientParty, config.getOsnConfig());
+        addSubPto(firstDosnSender);
         oprfReceiver = OprfFactory.createOprfReceiver(serverRpc, clientParty, config.getOprfConfig());
         addSubPto(oprfReceiver);
-        secondOsnReceiver = OsnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
-        addSubPto(secondOsnReceiver);
+        secondDosnReceiver = DosnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
+        addSubPto(secondDosnReceiver);
         cuckooHashBinType = config.getCuckooHashBinType();
     }
 
@@ -105,9 +105,9 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         stopWatch.start();
         int maxBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxServerElementSize);
         // 初始化各个子协议
-        firstOsnSender.init(maxBinNum);
+        firstDosnSender.init();
         oprfReceiver.init(maxBinNum);
-        secondOsnReceiver.init(maxBinNum);
+        secondDosnReceiver.init();
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -148,13 +148,13 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
 
         stopWatch.start();
         // 构建服务端元素向量(x_1, ..., x_m)
-        Vector<byte[]> xVector = IntStream.range(0, binNum)
+        byte[][] xVector = IntStream.range(0, binNum)
             .mapToObj(binIndex -> cuckooHashBin.getHashBinEntry(binIndex).getItemByteArray())
-            .collect(Collectors.toCollection(Vector::new));
+            .toArray(byte[][]::new);
         cuckooHashBin = null;
         // S and R invoke the ideal functionality F_{PS}.
         // S acts as P_0 with input set X_S, obtains the shuffled shares {a_1, a_2, ... , a_b}.
-        OsnPartyOutput firstOsnSenderOutput = firstOsnSender.osn(xVector, elementByteLength);
+        DosnPartyOutput firstOsnSenderOutput = firstDosnSender.dosn(xVector, elementByteLength);
         aArray = IntStream.range(0, binNum)
             .mapToObj(firstOsnSenderOutput::getShare)
             .toArray(byte[][]::new);
@@ -195,7 +195,7 @@ public class Jsz22SfsPsuServer extends AbstractPsuServer {
         stopWatch.start();
         // S and R invoke the ideal functionality F_{PS}.
         // S acts as P_1 with a random permutation π′, S obtains the shuffled share sets {s^1_1, s^1_2, ..., s^1_b}
-        secondOsnReceiverOutput = secondOsnReceiver.osn(secondPi, elementByteLength);
+        secondOsnReceiverOutput = secondDosnReceiver.dosn(secondPi, elementByteLength);
         stopWatch.stop();
         long secondOsnTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

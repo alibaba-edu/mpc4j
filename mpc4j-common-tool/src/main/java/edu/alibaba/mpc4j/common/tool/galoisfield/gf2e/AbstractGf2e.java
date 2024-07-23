@@ -7,8 +7,6 @@ import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
@@ -31,9 +29,13 @@ abstract class AbstractGf2e implements Gf2e {
      */
     protected final int byteL;
     /**
-     * the finite field
+     * finite field
      */
     protected final FiniteField<UnivariatePolynomialZp64> finiteField;
+    /**
+     * minimal polynomial
+     */
+    protected final byte[] minimalPolynomial;
     /**
      * the zero element
      */
@@ -50,21 +52,17 @@ abstract class AbstractGf2e implements Gf2e {
      * the pseudo-random generator
      */
     private final Prg prg;
-    /**
-     * special case for GF(2^k)
-     */
-    protected final Gf2k gf2k;
 
     AbstractGf2e(EnvType envType, int l) {
         assert l > 0;
         this.l = l;
         byteL = CommonUtils.getByteLength(l);
+        minimalPolynomial = Gf2eManager.getMinimalPolynomial(l);
         finiteField = Gf2eManager.getFiniteField(l);
         zero = createZero();
         one = createOne();
         kdf = KdfFactory.createInstance(envType);
         prg = PrgFactory.createInstance(envType, byteL);
-        gf2k = Gf2kFactory.createInstance(envType);
     }
 
     @Override
@@ -202,7 +200,7 @@ abstract class AbstractGf2e implements Gf2e {
 
     @Override
     public boolean validateNonZeroElement(byte[] p) {
-        return BytesUtils.isFixedReduceByteArray(p, byteL, l) && !isZero(p);
+        return !isZero(p);
     }
 
     @Override
@@ -230,6 +228,6 @@ abstract class AbstractGf2e implements Gf2e {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + " (" + finiteField.toString() + ")";
+        return this.getClass().getSimpleName() + " (l = " + l + ")";
     }
 }

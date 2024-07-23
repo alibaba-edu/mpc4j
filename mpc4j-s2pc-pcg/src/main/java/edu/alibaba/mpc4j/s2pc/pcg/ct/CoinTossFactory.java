@@ -90,7 +90,6 @@ public class CoinTossFactory implements PtoFactory {
             case IDEAL:
             case SEMI_HONEST:
                 return new DirectCoinTossConfig.Builder().build();
-            case COVERT:
             case MALICIOUS:
                 return new Blum82CoinTossConfig.Builder().build();
             default:

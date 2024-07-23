@@ -22,11 +22,11 @@ public abstract class AbstractLcotSender extends AbstractTwoPartyPto implements 
     /**
      * 输入比特长度
      */
-    protected int inputBitLength;
+    protected int l;
     /**
      * 输入字节长度
      */
-    protected int inputByteLength;
+    protected int byteL;
     /**
      * 输出比特长度
      */
@@ -48,10 +48,6 @@ public abstract class AbstractLcotSender extends AbstractTwoPartyPto implements 
      */
     protected boolean[] deltaBinary;
     /**
-     * 最大数量
-     */
-    private int maxNum;
-    /**
      * 数量
      */
     protected int num;
@@ -64,27 +60,25 @@ public abstract class AbstractLcotSender extends AbstractTwoPartyPto implements 
         super(ptoDesc, senderRpc, receiverParty, config);
     }
 
-    protected void setInitInput(int inputBitLength, byte[] delta, int maxNum) {
-        MathPreconditions.checkPositive("inputBitLength", inputBitLength);
-        this.inputBitLength = inputBitLength;
-        inputByteLength = CommonUtils.getByteLength(inputBitLength);
-        linearCoder = LinearCoderFactory.getInstance(inputBitLength);
+    protected void setInitInput(int l, byte[] delta) {
+        MathPreconditions.checkPositive("l", l);
+        this.l = l;
+        byteL = CommonUtils.getByteLength(l);
+        linearCoder = LinearCoderFactory.getInstance(l);
         outputBitLength = linearCoder.getCodewordBitLength();
         outputByteLength = linearCoder.getCodewordByteLength();
         MathPreconditions.checkEqual("Δ.length", "outputByteLength", delta.length, outputByteLength);
         Preconditions.checkArgument(BytesUtils.isReduceByteArray(delta, outputBitLength));
         this.delta = BytesUtils.clone(delta);
         deltaBinary = BinaryUtils.byteArrayToBinary(delta, outputBitLength);
-        MathPreconditions.checkPositive("maxNum", maxNum);
-        this.maxNum = maxNum;
         initState();
     }
 
-    protected void setInitInput(int inputBitLength, int maxNum) {
-        MathPreconditions.checkPositive("inputBitLength", inputBitLength);
-        this.inputBitLength = inputBitLength;
-        inputByteLength = CommonUtils.getByteLength(inputBitLength);
-        linearCoder = LinearCoderFactory.getInstance(inputBitLength);
+    protected void setInitInput(int l) {
+        MathPreconditions.checkPositive("l", l);
+        this.l = l;
+        byteL = CommonUtils.getByteLength(l);
+        linearCoder = LinearCoderFactory.getInstance(l);
         outputBitLength = linearCoder.getCodewordBitLength();
         outputByteLength = linearCoder.getCodewordByteLength();
         // 生成Δ
@@ -92,14 +86,12 @@ public abstract class AbstractLcotSender extends AbstractTwoPartyPto implements 
         secureRandom.nextBytes(delta);
         BytesUtils.reduceByteArray(delta, outputBitLength);
         deltaBinary = BinaryUtils.byteArrayToBinary(delta, outputBitLength);
-        MathPreconditions.checkPositive("maxNum", maxNum);
-        this.maxNum = maxNum;
         initState();
     }
 
     protected void setPtoInput(int num) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
+        MathPreconditions.checkPositive("num", num);
         this.num = num;
         byteNum = CommonUtils.getByteLength(num);
         extraInfo++;

@@ -1,13 +1,14 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2e;
+import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2k;
+import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 
 /**
@@ -22,9 +23,17 @@ public abstract class AbstractGf2kNcVoleReceiver extends AbstractTwoPartyPto imp
      */
     private final Gf2kNcVoleConfig config;
     /**
-     * GF2K instance
+     * field
      */
-    protected final Gf2k gf2k;
+    protected Sgf2k field;
+    /**
+     * subfield
+     */
+    protected Gf2e subfield;
+    /**
+     * subfield L
+     */
+    protected int subfieldL;
     /**
      * Δ
      */
@@ -37,11 +46,13 @@ public abstract class AbstractGf2kNcVoleReceiver extends AbstractTwoPartyPto imp
     protected AbstractGf2kNcVoleReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, Gf2kNcVoleConfig config) {
         super(ptoDesc, receiverRpc, senderParty, config);
         this.config = config;
-        gf2k = Gf2kFactory.createInstance(envType);
     }
 
-    protected void setInitInput(byte[] delta, int num) {
-        MathPreconditions.checkEqual("Δ.length", "λ(B)", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
+    protected void setInitInput(int subfieldL, byte[] delta, int num) {
+        field = Sgf2kFactory.getInstance(envType, subfieldL);
+        subfield = field.getSubfield();
+        this.subfieldL = subfieldL;
+        Preconditions.checkArgument(field.validateElement(delta));
         this.delta = BytesUtils.clone(delta);
         MathPreconditions.checkPositiveInRangeClosed("num", num, config.maxNum());
         this.num = num;

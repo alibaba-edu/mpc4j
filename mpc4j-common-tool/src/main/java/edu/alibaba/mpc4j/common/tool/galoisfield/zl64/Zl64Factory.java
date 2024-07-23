@@ -17,10 +17,6 @@ public class Zl64Factory {
          * JDK
          */
         JDK,
-        /**
-         * Rings
-         */
-        RINGS,
     }
 
     /**
@@ -32,11 +28,10 @@ public class Zl64Factory {
      * @return an instance of Zl64.
      */
     public static Zl64 createInstance(EnvType envType, Zl64Type type, int l) {
+        //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
             case JDK:
                 return new JdkZl64(envType, l);
-            case RINGS:
-                return new RingsZl64(envType, l);
             default:
                 throw new IllegalArgumentException("Invalid " + Zl64Type.class.getSimpleName() + ": " + type.name());
         }
@@ -55,7 +50,7 @@ public class Zl64Factory {
             case INLAND:
             case STANDARD_JDK:
             case INLAND_JDK:
-                return new RingsZl64(envType, l);
+                return new JdkZl64(envType, l);
             default:
                 throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }

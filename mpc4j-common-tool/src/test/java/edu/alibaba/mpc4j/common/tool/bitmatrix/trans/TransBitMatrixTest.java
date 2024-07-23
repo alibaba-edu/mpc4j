@@ -28,7 +28,7 @@ public class TransBitMatrixTest {
     /**
      * random state
      */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private final SecureRandom secureRandom;
 
     @Parameterized.Parameters(name="{0}")
     public static Collection<Object[]> configurations() {
@@ -49,6 +49,7 @@ public class TransBitMatrixTest {
     public TransBitMatrixTest(String name, TransBitMatrixType type) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.type = type;
+        secureRandom = new SecureRandom();
     }
 
     @Test
@@ -64,7 +65,6 @@ public class TransBitMatrixTest {
 
     /**
      * (1 × 1)
-     *
      * 1    -->     1
      */
     private static final int ROWS_MATRIX_1X1 = 1;
@@ -83,7 +83,6 @@ public class TransBitMatrixTest {
 
     /**
      * (8 × 8)
-     *
      * 00000001         00000000
      * 00000011         00000011
      * 00000111         00000111
@@ -192,7 +191,6 @@ public class TransBitMatrixTest {
 
     /**
      * (8 × 16)
-     *
      * 0011111111111111     00000000
      * 0001111111111110     00000000
      * 0000111111111100     10000000
@@ -248,7 +246,6 @@ public class TransBitMatrixTest {
 
     /**
      * (1025 × 129)
-     *
      *  100...000       111......111
      *  100...000       000......000
      *      .     -->       ...
@@ -312,7 +309,7 @@ public class TransBitMatrixTest {
         int rowBytes = CommonUtils.getByteLength(rows);
         IntStream.range(0, columns).forEach(columnIndex -> {
             byte[] column = new byte[rowBytes];
-            SECURE_RANDOM.nextBytes(column);
+            secureRandom.nextBytes(column);
             BytesUtils.reduceByteArray(column, rows);
             a.setColumn(columnIndex, column);
         });

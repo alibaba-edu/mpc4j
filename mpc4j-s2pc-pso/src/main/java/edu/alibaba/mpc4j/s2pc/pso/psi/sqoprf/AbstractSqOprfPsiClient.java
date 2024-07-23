@@ -16,7 +16,6 @@ import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pso.psi.AbstractPsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiUtils;
-import edu.alibaba.mpc4j.s2pc.pso.psi.sqoprf.SqOprfPsiPtoDesc.PtoStep;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,8 +87,8 @@ public abstract class AbstractSqOprfPsiClient<T> extends AbstractPsiClient<T> {
         logStepInfo(PtoState.PTO_STEP, 2, 3, oprfTime, "Client runs OPRF");
 
         DataPacketHeader serverPrfFilterHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PRF_FILTER.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
+            encodeTaskId, getPtoDesc().getPtoId(), SqOprfPsiPtoStep.SERVER_SEND_PRF_FILTER.ordinal(),
+            extraInfo, otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverPrfPayload = rpc.receive(serverPrfFilterHeader).getPayload();
 

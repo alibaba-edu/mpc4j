@@ -107,9 +107,7 @@ public class HhLdpMainTest {
     }
 
     private HhLdpMain createHhLdpMain(String path) throws IOException {
-        String configPath = Objects.requireNonNull(
-            HhLdpMainTest.class.getClassLoader().getResource(path)
-        ).getPath();
+        String configPath = Objects.requireNonNull(getClass().getClassLoader().getResource(path)).getPath();
         Properties properties = PropertiesUtils.loadProperties(configPath);
         return new HhLdpMain(properties);
     }

@@ -5,8 +5,11 @@ import edu.alibaba.mpc4j.common.rpc.PartyState;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
+import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
+import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
@@ -29,6 +32,10 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      * default display log level
      */
     private static final int DEFAULT_DISPLAY_LOG_LEVEL = 2;
+    /**
+     * max msg size
+     */
+    public static final int MAX_SIZE_MSG = 1 << 30;
     /**
      * protocol description.
      */
@@ -78,6 +85,14 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      */
     private int displayLogLevel;
     /**
+     * timestamps for sending payloads, each party maintain each sending timestamps for each parties
+     */
+    protected long[] sendingTimestamps;
+    /**
+     * timestamps for receiving payloads, each party maintain each receiving timestamps for each parties
+     */
+    protected long[] receivingTimestamps;
+    /**
      * the extra information
      */
     protected long extraInfo;
@@ -116,6 +131,9 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
         ptoStepLogPrefix = "    ↓";
         ptoEndLogPrefix = "↙";
         extraInfo = 0;
+        int partyNum = rpc.getPartySet().size();
+        sendingTimestamps = new long[partyNum];
+        receivingTimestamps = new long[partyNum];
         partyState = PartyState.NON_INITIALIZED;
         envType = config.getEnvType();
         secureRandom = new SecureRandom();
@@ -128,7 +146,18 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
         encodeTaskId = ((long) hashCode << Integer.SIZE) + taskId;
     }
 
+    /**
+     * Adds a sub-protocol under the current protocol. If a sub-protocol is added multiple times, then that sup-protocol
+     * is treated as the lowest sup-protocol.
+     *
+     * @param subPto sub-protocol.
+     */
     protected void addSubPto(MultiPartyPto subPto) {
+        // add sub-protocols must only be executed before initialized
+        switch (partyState) {
+            case NON_INITIALIZED -> {}
+            case INITIALIZED, DESTROYED -> throw new IllegalStateException("Party state must not be " + partyState);
+        }
         int subPtoIndex = subPtos.size();
         subPtos.add(subPto);
         int ptoPathLength = ptoPath.length;
@@ -136,6 +165,10 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
         System.arraycopy(ptoPath, 0, subPtoPath, 0, ptoPathLength);
         subPtoPath[ptoPathLength] = subPtoIndex;
         subPto.updatePtoPath(subPtoPath);
+        // sub-protocols may be added in the init phase, we need to update related parameters
+        subPto.setEncodeTaskId(taskId);
+        subPto.setParallel(parallel);
+        subPto.setSecureRandom(secureRandom);
     }
 
     @Override
@@ -143,9 +176,10 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
         // we cannot find a way to verify that this is called internally.
         this.ptoPath = ptoPath;
         updateEncodeId();
-        ptoBeginLogPrefix = "    " + ptoBeginLogPrefix;
-        ptoStepLogPrefix = "    " + ptoStepLogPrefix;
-        ptoEndLogPrefix = "    " + ptoEndLogPrefix;
+        String tab = StringUtils.repeat("  ", ptoPath.length + 1);
+        ptoBeginLogPrefix = tab + ptoBeginLogPrefix;
+        ptoStepLogPrefix = tab + ptoStepLogPrefix;
+        ptoEndLogPrefix = tab + ptoEndLogPrefix;
         // set sub-protocols
         int ptoPathLength = ptoPath.length;
         for (int subPtoIndex = 0; subPtoIndex < subPtos.size(); subPtoIndex++) {
@@ -230,6 +264,87 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
         return envType;
     }
 
+    /**
+     * Sends payload to the given party.
+     *
+     * @param stepId       step ID.
+     * @param receiveParty party to receive payload.
+     * @param payload      payload.
+     */
+    protected void sendPayload(int stepId, Party receiveParty, List<byte[]> payload) {
+        int sendPartyId = ownParty().getPartyId();
+        int receivePartyId = receiveParty.getPartyId();
+        DataPacketHeader header = new DataPacketHeader(
+            encodeTaskId, getPtoDesc().getPtoId(), stepId, sendingTimestamps[receivePartyId], sendPartyId, receivePartyId
+        );
+        rpc.send(DataPacket.fromByteArrayList(header, payload));
+        sendingTimestamps[receivePartyId]++;
+    }
+
+    /**
+     * Sends payload to the given party.
+     *
+     * @param stepId       step ID.
+     * @param receiveParty party to receive payload.
+     * @param payload      payload.
+     */
+    protected void sendEqualSizePayload(int stepId, Party receiveParty, List<byte[]> payload) {
+        int byteLength = payload.get(0).length;
+        int maxSendNum = MAX_SIZE_MSG / byteLength;
+        if (maxSendNum >= payload.size()) {
+            sendPayload(stepId, receiveParty, payload);
+        } else {
+            int recBatchNum = (int) Math.ceil(payload.size() * 1.0 / maxSendNum);
+            for (int i = 0; i < recBatchNum; i++) {
+                int start = i * maxSendNum;
+                List<byte[]> part = payload.subList(start, Math.min(payload.size(), start + maxSendNum));
+                sendPayload(stepId, receiveParty, part);
+            }
+        }
+    }
+
+    /**
+     * Receives payload from the given party.
+     *
+     * @param stepId    step ID.
+     * @param sendParty party to send payload.
+     * @return payload.
+     */
+    protected List<byte[]> receivePayload(int stepId, Party sendParty) {
+        int sendPartyId = sendParty.getPartyId();
+        int receivePartyId = ownParty().getPartyId();
+        DataPacketHeader header = new DataPacketHeader(
+            encodeTaskId, getPtoDesc().getPtoId(), stepId, receivingTimestamps[sendPartyId], sendPartyId, receivePartyId
+        );
+        List<byte[]> payload = rpc.receive(header).getPayload();
+        receivingTimestamps[sendPartyId]++;
+        return payload;
+    }
+
+    /**
+     * Receives payload from the given party.
+     *
+     * @param stepId     step ID.
+     * @param sendParty  party to send payload.
+     * @param num        the number of arrays in the list
+     * @param byteLength the byte length of each array
+     * @return payload.
+     */
+    protected List<byte[]> receiveEqualSizePayload(int stepId, Party sendParty, int num, int byteLength) {
+        int maxSendNum = MAX_SIZE_MSG / byteLength;
+        List<byte[]> receiveMsgPayload;
+        if (maxSendNum >= num) {
+            return receivePayload(stepId, sendParty);
+        } else {
+            receiveMsgPayload = new ArrayList<>(num);
+            int recBatchNum = (int) Math.ceil(num * 1.0 / maxSendNum);
+            for (int i = 0; i < recBatchNum; i++) {
+                receiveMsgPayload.addAll(receivePayload(stepId, sendParty));
+            }
+        }
+        return receiveMsgPayload;
+    }
+
     @Override
     public void setDisplayLogLevel(int displayLogLevel) {
         // display_log_level >= 0
@@ -249,12 +364,12 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
         // we cannot automatically initialize sub-protocols, since each sub-protocol would have distinct initialize API.
         switch (partyState) {
             case NON_INITIALIZED:
-            case INITIALIZED:
                 partyState = PartyState.INITIALIZED;
                 return;
+            case INITIALIZED:
             case DESTROYED:
             default:
-                throw new IllegalStateException("Party state must not be " + PartyState.DESTROYED);
+                throw new IllegalStateException("Party state must not be " + partyState);
         }
     }
 
@@ -286,8 +401,10 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
                 }
                 return;
             case DESTROYED:
+                // sub-protocols have been destroyed
+                return;
             default:
-                throw new IllegalStateException("Party state must not be " + partyState);
+                throw new IllegalStateException("Unknown error " + partyState);
         }
     }
 

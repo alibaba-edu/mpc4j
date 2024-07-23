@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.basics.zl;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.circuit.operator.DyadicAcOperator;
 import edu.alibaba.mpc4j.common.circuit.operator.UnaryAcOperator;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
@@ -23,21 +24,13 @@ import java.util.stream.IntStream;
  */
 public abstract class AbstractZlcParty extends AbstractTwoPartyPto implements ZlcParty {
     /**
-     * Zl instance
+     * config
      */
-    protected final Zl zl;
+    protected final ZlcConfig config;
     /**
-     * l
+     * max l
      */
-    protected final int l;
-    /**
-     * l in bytes
-     */
-    protected final int byteL;
-    /**
-     * total num for updates.
-     */
-    protected long updateNum;
+    protected int maxL;
     /**
      * current num.
      */
@@ -45,31 +38,39 @@ public abstract class AbstractZlcParty extends AbstractTwoPartyPto implements Zl
 
     public AbstractZlcParty(PtoDesc ptoDesc, Rpc ownRpc, Party otherParty, ZlcConfig config) {
         super(ptoDesc, ownRpc, otherParty, config);
-        this.zl = config.getZl();
-        l = zl.getL();
-        byteL = zl.getByteL();
+        this.config = config;
     }
 
-    protected void setInitInput(int updateNum) {
-        MathPreconditions.checkPositive("updateNum", updateNum);
-        this.updateNum = updateNum;
+    protected void setInitInput(int maxL, int expectTotalNum) {
+        MathPreconditions.checkPositive("maxL", maxL);
+        MathPreconditions.checkPositive("expect_total_num", expectTotalNum);
+        this.maxL = maxL;
         initState();
+    }
+
+    @Override
+    public void init(int maxL) throws MpcAbortException {
+        init(maxL, config.defaultRoundNum(maxL));
     }
 
     protected void setShareOwnInput(ZlVector xi) {
         checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("l", xi.getZl().getL(), maxL);
         MathPreconditions.checkPositive("num", xi.getNum());
         num = xi.getNum();
     }
 
-    protected void setShareOtherInput(int num) {
+    protected void setShareOtherInput(Zl zl, int num) {
         checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("l", zl.getL(), maxL);
         MathPreconditions.checkPositive("num", num);
         this.num = num;
     }
 
     protected void setDyadicOperatorInput(SquareZlVector xi, SquareZlVector yi) {
         checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("l", xi.getZl().getL(), maxL);
+        Preconditions.checkArgument(xi.getZl().equals(yi.getZl()));
         MathPreconditions.checkEqual("xi.num", "yi.num", xi.getNum(), yi.getNum());
         MathPreconditions.checkPositive("num", xi.getNum());
         num = xi.getNum();
@@ -77,33 +78,39 @@ public abstract class AbstractZlcParty extends AbstractTwoPartyPto implements Zl
 
     protected void setRevealOwnInput(SquareZlVector xi) {
         checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("l", xi.getZl().getL(), maxL);
         MathPreconditions.checkPositive("xi.num", xi.getNum());
         num = xi.getNum();
     }
 
     protected void setRevealOtherInput(SquareZlVector xi) {
         checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("l", xi.getZl().getL(), maxL);
         MathPreconditions.checkPositive("xi.num", xi.getNum());
         num = xi.getNum();
     }
 
     @Override
     public SquareZlVector create(ZlVector zlVector) {
+        MathPreconditions.checkPositiveInRangeClosed("l", zlVector.getZl().getL(), maxL);
         return SquareZlVector.create(zlVector, true);
     }
 
     @Override
-    public SquareZlVector createOnes(int num) {
+    public SquareZlVector createOnes(Zl zl, int num) {
+        MathPreconditions.checkPositiveInRangeClosed("l", zl.getL(), maxL);
         return SquareZlVector.createOnes(zl, num);
     }
 
     @Override
-    public SquareZlVector createZeros(int num) {
+    public SquareZlVector createZeros(Zl zl, int num) {
+        MathPreconditions.checkPositiveInRangeClosed("l", zl.getL(), maxL);
         return SquareZlVector.createZeros(zl, num);
     }
 
     @Override
-    public SquareZlVector createEmpty(boolean plain) {
+    public SquareZlVector createEmpty(Zl zl, boolean plain) {
+        MathPreconditions.checkPositiveInRangeClosed("l", zl.getL(), maxL);
         return SquareZlVector.createEmpty(zl, plain);
     }
 
@@ -124,7 +131,7 @@ public abstract class AbstractZlcParty extends AbstractTwoPartyPto implements Zl
 
     @Override
     public SquareZlVector neg(MpcZlVector xi) throws MpcAbortException {
-        return sub(createZeros(num), xi);
+        return sub(createZeros(xi.getZl(), num), xi);
     }
 
     @Override
@@ -134,8 +141,7 @@ public abstract class AbstractZlcParty extends AbstractTwoPartyPto implements Zl
 
     private SquareZlVector[] operate(DyadicAcOperator operator, MpcZlVector[] xiArray, MpcZlVector[] yiArray)
         throws MpcAbortException {
-        assert xiArray.length == yiArray.length
-            : String.format("xiArray.length (%s) must be equal to yiArray.length (%s)", xiArray.length, yiArray.length);
+        MathPreconditions.checkEqual("xiArray.length", "yiArray.length", xiArray.length, yiArray.length);
         if (xiArray.length == 0) {
             return new SquareZlVector[0];
         }
@@ -184,17 +190,10 @@ public abstract class AbstractZlcParty extends AbstractTwoPartyPto implements Zl
         SquareZlVector mergeSelectYs = (SquareZlVector) merge(selectYs);
         SquareZlVector mergeSelectZs;
         switch (operator) {
-            case ADD:
-                mergeSelectZs = add(mergeSelectXs, mergeSelectYs);
-                break;
-            case SUB:
-                mergeSelectZs = sub(mergeSelectXs, mergeSelectYs);
-                break;
-            case MUL:
-                mergeSelectZs = mul(mergeSelectXs, mergeSelectYs);
-                break;
-            default:
-                throw new IllegalStateException();
+            case ADD -> mergeSelectZs = add(mergeSelectXs, mergeSelectYs);
+            case SUB -> mergeSelectZs = sub(mergeSelectXs, mergeSelectYs);
+            case MUL -> mergeSelectZs = mul(mergeSelectXs, mergeSelectYs);
+            default -> throw new IllegalStateException();
         }
         SquareZlVector[] selectZs = Arrays.stream(split(mergeSelectZs, nums))
             .map(vector -> (SquareZlVector) vector)
@@ -212,11 +211,8 @@ public abstract class AbstractZlcParty extends AbstractTwoPartyPto implements Zl
         SquareZlVector mergeZiArray;
         //noinspection SwitchStatementWithTooFewBranches
         switch (operator) {
-            case NEG:
-                mergeZiArray = neg(mergeXiArray);
-                break;
-            default:
-                throw new IllegalStateException();
+            case NEG -> mergeZiArray = neg(mergeXiArray);
+            default -> throw new IllegalStateException();
         }
         // split
         int[] nums = Arrays.stream(xiArray).mapToInt(MpcZlVector::getNum).toArray();
@@ -224,6 +220,4 @@ public abstract class AbstractZlcParty extends AbstractTwoPartyPto implements Zl
             .map(vector -> (SquareZlVector) vector)
             .toArray(SquareZlVector[]::new);
     }
-
-
 }

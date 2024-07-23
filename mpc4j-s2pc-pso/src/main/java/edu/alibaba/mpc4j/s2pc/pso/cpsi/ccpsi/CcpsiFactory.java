@@ -100,10 +100,8 @@ public class CcpsiFactory implements PtoFactory {
     public static CcpsiConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
         switch (securityModel) {
             case IDEAL:
-            case TRUSTED_DEALER:
             case SEMI_HONEST:
                 return new Psty19CcpsiConfig.Builder(silent).build();
-            case COVERT:
             case MALICIOUS:
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());

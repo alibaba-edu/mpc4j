@@ -22,8 +22,8 @@ import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirClient;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
+import edu.alibaba.mpc4j.s2pc.pir.IdxPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.AbstractUpsuSender;
 
 import java.nio.ByteBuffer;
@@ -55,7 +55,7 @@ public class Zlp24PeqtUpsuSender extends AbstractUpsuSender {
     /**
      * batch index PIR client
      */
-    private final BatchIndexPirClient batchIndexPirClient;
+    private final IdxPirClient batchIndexPirClient;
     /**
      * core COT sender
      */
@@ -91,7 +91,7 @@ public class Zlp24PeqtUpsuSender extends AbstractUpsuSender {
         addSubPto(sqOprfReceiver);
         pmPeqtSender = PmPeqtFactory.createSender(senderRpc, receiverParty, config.getPmPeqtConfig());
         addSubPto(pmPeqtSender);
-        batchIndexPirClient = BatchIndexPirFactory.createClient(senderRpc, receiverParty, config.getBatchIndexPirConfig());
+        batchIndexPirClient = StdIdxPirFactory.createClient(senderRpc, receiverParty, config.getBatchIndexPirConfig());
         addSubPto(batchIndexPirClient);
         coreCotSender = CoreCotFactory.createSender(senderRpc, receiverParty, config.getCoreCotConfig());
         addSubPto(coreCotSender);
@@ -119,9 +119,8 @@ public class Zlp24PeqtUpsuSender extends AbstractUpsuSender {
         cuckooHashBin = CuckooHashBinFactory.createNoStashCuckooHashBin(
             envType, cuckooHashBinType, maxSenderElementSize, cuckooHashKeys
         );
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        coreCotSender.init(delta, cuckooHashBinNum);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(delta);
         // init single query OPRF
         sqOprfReceiver.init(maxSenderElementSize);
         // send dokvs hash keys
@@ -181,9 +180,9 @@ public class Zlp24PeqtUpsuSender extends AbstractUpsuSender {
         logStepInfo(PtoState.PTO_STEP, 2, 6, oprfTime, "sender executes OPRF");
 
         stopWatch.start();
-        List<Integer> retrievalIndexList = generateRetrievalIndexList();
-        Map<Integer, byte[]> okvsSparsePayload = batchIndexPirClient.pir(retrievalIndexList);
-        MpcAbortPreconditions.checkArgument(retrievalIndexList.size() == okvsSparsePayload.size());
+        List<Integer> indices = generateRetrievalIndexList();
+        byte[][] okvsSparsePayload = batchIndexPirClient.pir(indices.stream().mapToInt(integer -> integer).toArray());
+        MpcAbortPreconditions.checkArgument(indices.size() == okvsSparsePayload.length);
         stopWatch.stop();
         long batchIndexPirTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -191,7 +190,7 @@ public class Zlp24PeqtUpsuSender extends AbstractUpsuSender {
 
         stopWatch.start();
         // recover okvs storage
-        byte[][] dokvsStorage = generateOkvsStorage(denseOkvsPayload, okvsSparsePayload, retrievalIndexList);
+        byte[][] dokvsStorage = generateOkvsStorage(denseOkvsPayload, okvsSparsePayload, indices);
         stopWatch.stop();
         long generateOkvsStorageTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -248,7 +247,7 @@ public class Zlp24PeqtUpsuSender extends AbstractUpsuSender {
             .mapToObj(sqOprfReceiverOutput::getPrf)
             .map(prg::extendToBytes)
             .peek(bytes -> BytesUtils.reduceByteArray(bytes, l))
-            .collect(Collectors.toList());
+            .toList();
         return IntStream.range(0, senderElementSize)
             .boxed()
             .collect(Collectors.toMap(i -> senderElementList.get(i), oprfOutput::get, (a, b) -> b));
@@ -275,25 +274,16 @@ public class Zlp24PeqtUpsuSender extends AbstractUpsuSender {
             .collect(Collectors.toList());
     }
 
-    /**
-     * generate dokvs storage.
-     *
-     * @param okvsDensePayload   dokvs dense payload.
-     * @param okvsSparsePayload  dokvs sparse payload.
-     * @param retrievalIndexList retrieval index list.
-     * @return dokvs storage.
-     */
-    private byte[][] generateOkvsStorage(List<byte[]> okvsDensePayload, Map<Integer, byte[]> okvsSparsePayload,
+    private byte[][] generateOkvsStorage(List<byte[]> okvsDensePayload, byte[][] okvsSparsePayload,
                                          List<Integer> retrievalIndexList) {
         byte[][] dokvsStorage = new byte[dokvs.getM()][];
         IntStream.range(0, retrievalIndexList.size()).forEach(i ->
-            dokvsStorage[retrievalIndexList.get(i)] = BytesUtils.clone(okvsSparsePayload.get(retrievalIndexList.get(i)))
+            dokvsStorage[retrievalIndexList.get(i)] = BytesUtils.clone(okvsSparsePayload[i]).clone()
         );
         IntStream.range(0, dokvs.densePositionRange()).forEach(i ->
             dokvsStorage[i + dokvs.sparsePositionRange()] = BytesUtils.clone(okvsDensePayload.get(i))
         );
         okvsDensePayload.clear();
-        okvsSparsePayload.clear();
         return dokvsStorage;
     }
 

@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 
 /**
@@ -14,7 +15,7 @@ public interface ZlMaxParty extends TwoPartyPto {
     /**
      * inits the protocol.
      *
-     * @param maxL   max l.
+     * @param maxL   maxL.
      * @param maxNum max num.
      * @throws MpcAbortException the protocol failure aborts.
      */

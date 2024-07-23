@@ -72,6 +72,7 @@ public class LongFieldTest {
         // try operating p and q when p is invalid
         final long largeP = 1L << (l + 1);
         final long negativeP = -1L;
+        final long zeroP = longField.createZero();
         final long q = longField.createNonZeroRandom(SECURE_RANDOM);
         // try dividing
         Assert.assertThrows(AssertionError.class, () -> longField.div(largeP, q));
@@ -81,14 +82,17 @@ public class LongFieldTest {
         final long p = longField.createNonZeroRandom(SECURE_RANDOM);
         final long largeQ = 1L << (l + 1);
         final long negativeQ = -1L;
+        final long zeroQ = longField.createZero();
         // try dividing
         Assert.assertThrows(AssertionError.class, () -> longField.div(p, largeQ));
         Assert.assertThrows(AssertionError.class, () -> longField.div(p, negativeQ));
+        Assert.assertThrows(AssertionError.class, () -> longField.div(p, zeroQ));
 
         // try operating p when p is invalid
         // try inverting p
         Assert.assertThrows(AssertionError.class, () -> longField.inv(largeP));
         Assert.assertThrows(AssertionError.class, () -> longField.inv(negativeP));
+        Assert.assertThrows(AssertionError.class, () -> longField.inv(zeroP));
     }
 
     @Test

@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtReceiverOutput;
 
 import java.util.Arrays;
@@ -23,7 +24,7 @@ public class RotReceiverOutput implements OtReceiverOutput {
      */
     private final Crhf crhf;
 
-    public RotReceiverOutput(EnvType envType, CrhfFactory.CrhfType crhfType, CotReceiverOutput cotReceiverOutput) {
+    public RotReceiverOutput(EnvType envType, CrhfType crhfType, CotReceiverOutput cotReceiverOutput) {
         this.cotReceiverOutput = cotReceiverOutput;
         crhf = CrhfFactory.createInstance(envType, crhfType);
     }

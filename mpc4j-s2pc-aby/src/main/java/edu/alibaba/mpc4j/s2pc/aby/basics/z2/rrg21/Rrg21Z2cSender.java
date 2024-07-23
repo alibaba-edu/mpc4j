@@ -2,16 +2,15 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.z2.rrg21;
 
 import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2Vector;
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.AbstractZ2cParty;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.rrg21.Rrg21Z2cPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.rrg21.Rrg21Z2cPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.*;
 
 import java.util.Arrays;
@@ -55,16 +54,15 @@ public class Rrg21Z2cSender extends AbstractZ2cParty {
     }
 
     @Override
-    public void init(long updateBitNum) throws MpcAbortException {
-        setInitInput(updateBitNum);
+    public void init(int expectTotalNum) throws MpcAbortException {
+        setInitInput(expectTotalNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
         // since storing many COT outputs would lead to memory exception, here we generate COT when necessary
-        cotSender.init(delta, (int) updateBitNum);
-        cotReceiver.init((int) updateBitNum);
+        cotSender.init(delta, expectTotalNum);
+        cotReceiver.init(expectTotalNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -82,11 +80,7 @@ public class Rrg21Z2cSender extends AbstractZ2cParty {
         BitVector x0Vector = BitVectorFactory.createRandom(bitNum, secureRandom);
         BitVector x1Vector = x0.xor(x0Vector);
         List<byte[]> x1Payload = Collections.singletonList(x1Vector.getBytes());
-        DataPacketHeader x1Header = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_INPUT_SHARE.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(x1Header, x1Payload));
+        sendOtherPartyPayload(PtoStep.SENDER_SEND_INPUT_SHARE.ordinal(), x1Payload);
         stopWatch.stop();
         long shareTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -101,12 +95,9 @@ public class Rrg21Z2cSender extends AbstractZ2cParty {
         setShareOtherInput(bitNum);
         logPhaseInfo(PtoState.PTO_BEGIN, "receive share");
 
+        List<byte[]> x0Payload = receiveOtherPartyPayload(PtoStep.RECEIVER_SEND_INPUT_SHARE.ordinal());
+
         stopWatch.start();
-        DataPacketHeader x0Header = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_INPUT_SHARE.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> x0Payload = rpc.receive(x0Header).getPayload();
         MpcAbortPreconditions.checkArgument(x0Payload.size() == 1);
         BitVector x0Vector = BitVectorFactory.create(bitNum, x0Payload.get(0));
         stopWatch.stop();
@@ -127,12 +118,9 @@ public class Rrg21Z2cSender extends AbstractZ2cParty {
         } else {
             logPhaseInfo(PtoState.PTO_BEGIN, "receive share");
 
+            List<byte[]> x1Payload = receiveOtherPartyPayload(PtoStep.RECEIVER_SEND_OUTPUT_SHARE.ordinal());
+
             stopWatch.start();
-            DataPacketHeader x1Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_OUTPUT_SHARE.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> x1Payload = rpc.receive(x1Header).getPayload();
             MpcAbortPreconditions.checkArgument(x1Payload.size() == 1);
             BitVector x0Vector = x0.getBitVector();
             BitVector x1Vector = BitVectorFactory.create(bitNum, x1Payload.get(0));
@@ -155,11 +143,7 @@ public class Rrg21Z2cSender extends AbstractZ2cParty {
 
             stopWatch.start();
             List<byte[]> x0Payload = Collections.singletonList(x0.getBitVector().getBytes());
-            DataPacketHeader x0Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_OUTPUT_SHARE.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(x0Header, x0Payload));
+            sendOtherPartyPayload(PtoStep.SENDER_SEND_OUTPUT_SHARE.ordinal(), x0Payload);
             stopWatch.stop();
             long revealTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
@@ -252,21 +236,13 @@ public class Rrg21Z2cSender extends AbstractZ2cParty {
 
             stopWatch.start();
             List<byte[]> delta0Payload = generateDelta0(rotSenderOutput, y0SquareVector);
-            DataPacketHeader delta0Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_DELTA0.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(delta0Header, delta0Payload));
+            sendOtherPartyPayload(PtoStep.SENDER_SEND_DELTA0.ordinal(), delta0Payload);
             stopWatch.stop();
             long delta0Time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
             logStepInfo(PtoState.PTO_STEP, 2, 4, delta0Time);
 
-            DataPacketHeader delta1Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_DELTA1.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> delta1Payload = rpc.receive(delta1Header).getPayload();
+            List<byte[]> delta1Payload = receiveOtherPartyPayload(PtoStep.RECEIVER_SEND_DELTA1.ordinal());
 
             stopWatch.start();
             handleDelta1Payload(rotReceiverOutput, delta1Payload);

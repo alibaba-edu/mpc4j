@@ -108,7 +108,7 @@ public class Rr16PsiClient<T> extends AbstractPsiClient<T> {
         gbfHash = PrfFactory.createInstance(envType, Integer.BYTES * SparseRandomBloomFilter.getHashNum(maxClientElementSize));
         gbfHash.setKey(hashKeys[0]);
 
-        coreCotReceiver.init(nOt);
+        coreCotReceiver.init();
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

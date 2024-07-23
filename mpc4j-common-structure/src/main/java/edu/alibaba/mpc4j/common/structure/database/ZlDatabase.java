@@ -12,7 +12,7 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.structure.matrix.MatrixUtils;
+import edu.alibaba.mpc4j.common.structure.StructureUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.bouncycastle.util.encoders.Hex;
@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2023/3/31
  */
-public class ZlDatabase implements ModBitNumDatabase {
+public class ZlDatabase implements Database {
     /**
      * element bit length
      */
@@ -155,7 +155,7 @@ public class ZlDatabase implements ModBitNumDatabase {
     }
 
     @Override
-    public ModBitNumDatabase split(int splitRows) {
+    public ZlDatabase split(int splitRows) {
         int rows = rows();
         MathPreconditions.checkPositiveInRangeClosed("split rows", splitRows, rows);
         byte[][] subData = new byte[splitRows][];
@@ -223,8 +223,7 @@ public class ZlDatabase implements ModBitNumDatabase {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ZlDatabase) {
-            ZlDatabase that = (ZlDatabase) obj;
+        if (obj instanceof ZlDatabase that) {
             if (this.rows() != that.rows()) {
                 return false;
             }
@@ -239,7 +238,7 @@ public class ZlDatabase implements ModBitNumDatabase {
 
     @Override
     public String toString() {
-        String[] stringData = Arrays.stream(Arrays.copyOf(data, Math.min(data.length, MatrixUtils.DISPLAY_NUM)))
+        String[] stringData = Arrays.stream(Arrays.copyOf(data, Math.min(data.length, StructureUtils.DISPLAY_NUM)))
             .map(Hex::toHexString)
             .toArray(String[]::new);
         return this.getClass().getSimpleName() + " (l = " + l + "): " + Arrays.toString(stringData);

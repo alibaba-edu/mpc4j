@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.work.vectoried;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirConfig;
 import edu.alibaba.mpc4j.work.BatchPirConfig;
 import edu.alibaba.mpc4j.work.BatchPirFactory;
 
@@ -16,7 +16,7 @@ public class VectorizedBatchPirConfig extends AbstractMultiPartyPtoConfig implem
     /**
      * vectorized batch PIR config
      */
-    private final Mr23BatchIndexPirConfig vectorizedBatchPirConfig;
+    private final VectorizedStdIdxPirConfig vectorizedBatchPirConfig;
 
     public VectorizedBatchPirConfig(Builder builder) {
         super(SecurityModel.MALICIOUS, builder.vectorizedBatchPirConfig);
@@ -28,7 +28,7 @@ public class VectorizedBatchPirConfig extends AbstractMultiPartyPtoConfig implem
         return BatchPirFactory.BatchIndexPirType.VECTORIZED_BATCH_PIR;
     }
 
-    public Mr23BatchIndexPirConfig getVectorizedBatchPirConfig() {
+    public VectorizedStdIdxPirConfig getVectorizedBatchPirConfig() {
         return vectorizedBatchPirConfig;
     }
 
@@ -36,13 +36,13 @@ public class VectorizedBatchPirConfig extends AbstractMultiPartyPtoConfig implem
         /**
          * vectorized batch PIR config
          */
-        private Mr23BatchIndexPirConfig vectorizedBatchPirConfig;
+        private VectorizedStdIdxPirConfig vectorizedBatchPirConfig;
 
         public Builder() {
-            vectorizedBatchPirConfig = new Mr23BatchIndexPirConfig.Builder().build();
+            vectorizedBatchPirConfig = new VectorizedStdIdxPirConfig.Builder().build();
         }
 
-        public Builder setVectorizedBatchPirConfig(Mr23BatchIndexPirConfig config) {
+        public Builder setVectorizedBatchPirConfig(VectorizedStdIdxPirConfig config) {
             this.vectorizedBatchPirConfig = config;
             return this;
         }

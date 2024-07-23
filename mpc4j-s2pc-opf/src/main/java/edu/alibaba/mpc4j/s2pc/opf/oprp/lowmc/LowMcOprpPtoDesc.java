@@ -4,42 +4,50 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * LowMc-OPRP协议信息。
+ * LowMc-OPRP protocol description.
  *
  * @author Weiran Liu
  * @date 2022/02/11
  */
 class LowMcOprpPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int)2566896299582292732L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "LOWMC_OPRP";
 
     /**
-     * 协议步骤
+     * protocol step
      */
     enum PtoStep {
         /**
-         * 服务端发送密钥分享值
+         * server sends shared key
          */
         SERVER_SEND_SHARE_KEY,
         /**
-         * 客户端发送消息分享值
+         * client sends shared message
          */
         CLIENT_SEND_SHARE_MESSAGE,
+        /**
+         * the sender sends e0 and f0
+         */
+        SENDER_SEND_E0_F0,
+        /**
+         * the receiver sends e1 and f1
+         */
+        RECEIVER_SEND_E1_F1,
     }
 
     /**
-     * 单例模式
+     * singleton mode
      */
     private static final LowMcOprpPtoDesc INSTANCE = new LowMcOprpPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor.
      */
     private LowMcOprpPtoDesc() {
         // empty

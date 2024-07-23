@@ -4,12 +4,11 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.VoleTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.ZpVoleTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.kos16.Kos16ZpCoreVoleConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.zp.core.ZpCoreVoleFactory.ZpCoreVoleType;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -135,72 +134,12 @@ public class ZpCoreVoleTest extends AbstractTwoPartyMemoryRpcPto {
             // verify
             ZpVoleSenderOutput senderOutput = senderThread.getSenderOutput();
             ZpVoleReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            ZpVoleTestUtils.assertOutput(num, senderOutput, receiverOutput);
+            VoleTestUtils.assertOutput(num, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();
             new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testResetDelta() {
-        Zp zp = DEFAULT_ZP;
-        ZpCoreVoleSender sender = ZpCoreVoleFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        ZpCoreVoleReceiver receiver = ZpCoreVoleFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
-        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
-        sender.setTaskId(randomTaskId);
-        receiver.setTaskId(randomTaskId);
-        try {
-            LOGGER.info("-----test {} (reset Δ) start-----", sender.getPtoDesc().getPtoName());
-            // Δ is in [0, 2^k)
-            BigInteger delta = zp.createRangeRandom(SECURE_RANDOM);
-            BigInteger[] x = IntStream.range(0, DEFAULT_NUM)
-                .mapToObj(index -> zp.createRandom(SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            // first round
-            ZpCoreVoleSenderThread senderThread = new ZpCoreVoleSenderThread(sender, zp, x);
-            ZpCoreVoleReceiverThread receiverThread = new ZpCoreVoleReceiverThread(receiver, zp, delta, DEFAULT_NUM);
-            STOP_WATCH.start();
-            senderThread.start();
-            receiverThread.start();
-            senderThread.join();
-            receiverThread.join();
-            STOP_WATCH.stop();
-            long firstTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
-            STOP_WATCH.reset();
-            ZpVoleSenderOutput senderOutput = senderThread.getSenderOutput();
-            ZpVoleReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            ZpVoleTestUtils.assertOutput(DEFAULT_NUM, senderOutput, receiverOutput);
-            printAndResetRpc(firstTime);
-            // second round, reset Δ
-            delta = zp.createRangeRandom(SECURE_RANDOM);
-            x = IntStream.range(0, DEFAULT_NUM)
-                .mapToObj(index -> zp.createRandom(SECURE_RANDOM))
-                .toArray(BigInteger[]::new);
-            senderThread = new ZpCoreVoleSenderThread(sender, zp, x);
-            receiverThread = new ZpCoreVoleReceiverThread(receiver, zp, delta, DEFAULT_NUM);
-            STOP_WATCH.start();
-            senderThread.start();
-            receiverThread.start();
-            senderThread.join();
-            receiverThread.join();
-            STOP_WATCH.stop();
-            long secondTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
-            STOP_WATCH.reset();
-            ZpVoleSenderOutput secondSenderOutput = senderThread.getSenderOutput();
-            ZpVoleReceiverOutput secondReceiverOutput = receiverThread.getReceiverOutput();
-            ZpVoleTestUtils.assertOutput(DEFAULT_NUM, secondSenderOutput, secondReceiverOutput);
-            // Δ should be different
-            Assert.assertNotEquals(secondReceiverOutput.getDelta(), receiverOutput.getDelta());
-            printAndResetRpc(secondTime);
-            // destroy
-            new Thread(sender::destroy).start();
-            new Thread(receiver::destroy).start();
-            LOGGER.info("-----test {} (reset Δ) end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

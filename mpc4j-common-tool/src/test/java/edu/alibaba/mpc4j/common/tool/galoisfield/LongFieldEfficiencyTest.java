@@ -48,8 +48,8 @@ public class LongFieldEfficiencyTest {
 
     @Test
     public void testZp64Efficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}",
-            "                type", "         l", "   div(us)", "   inv(us)"
+        LOGGER.info("{}\t{}\t{}",
+            "                                    type", "   div(us)", "   inv(us)"
         );
         int[] ls = new int[]{1, 2, 3, 4, 40, 62};
         for (int l : ls) {
@@ -62,7 +62,6 @@ public class LongFieldEfficiencyTest {
     }
 
     private void testEfficiency(LongField longField) {
-        int l = longField.getL();
         // create random elements
         long[] arrayA = new long[MAX_RANDOM];
         long[] arrayB = new long[MAX_RANDOM];
@@ -89,9 +88,8 @@ public class LongFieldEfficiencyTest {
         STOP_WATCH.reset();
         // output
         LOGGER.info(
-            "{}\t{}\t{}\t{}",
-            StringUtils.leftPad(longField.getName(), 20),
-            StringUtils.leftPad(String.valueOf(l), 10),
+            "{}\t{}\t{}",
+            StringUtils.leftPad(longField.toString(), 40),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(divTime), 10),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(invTime), 10)
         );

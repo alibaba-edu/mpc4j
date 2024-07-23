@@ -48,8 +48,10 @@ public class CrhfTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // MMO_SIGMA
-        configurations.add(new Object[] {CrhfType.MMO_SIGMA.name(), CrhfType.MMO_SIGMA, });
+        // SIMD_MMO_SIGMA
+        configurations.add(new Object[] {CrhfType.SIMD_MMO_SIGMA.name(), CrhfType.SIMD_MMO_SIGMA, });
+        // JDK_MMO_SIGMA
+        configurations.add(new Object[] {CrhfType.JDK_MMO_SIGMA.name(), CrhfType.JDK_MMO_SIGMA, });
         // MMO
         configurations.add(new Object[] {CrhfType.MMO.name(), CrhfType.MMO, });
 

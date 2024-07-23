@@ -69,14 +69,13 @@ public class Oos17LcotReceiver extends AbstractLcotReceiver {
     }
 
     @Override
-    public int init(int inputBitLength, int maxNum) throws MpcAbortException {
-        setInitInput(inputBitLength, maxNum);
+    public void init(int l) throws MpcAbortException {
+        setInitInput(l);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] cotDelta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(cotDelta);
-        coreCotSender.init(cotDelta, outputBitLength);
+        byte[] cotDelta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(cotDelta);
         kdfOtSenderOutput = new KdfOtSenderOutput(envType, coreCotSender.send(outputBitLength));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -97,7 +96,6 @@ public class Oos17LcotReceiver extends AbstractLcotReceiver {
         logStepInfo(PtoState.INIT_STEP, 2, 2, randomOracleTime);
 
         logPhaseInfo(PtoState.INIT_END);
-        return linearCoder.getCodewordBitLength();
     }
 
     @Override
@@ -144,9 +142,9 @@ public class Oos17LcotReceiver extends AbstractLcotReceiver {
         System.arraycopy(choices, 0, extendChoices, 0, num);
         // x_i is random for i ∈ [m + 1, m']
         for (int extendIndex = num; extendIndex < extendNum; extendIndex++) {
-            extendChoices[extendIndex] = new byte[inputByteLength];
+            extendChoices[extendIndex] = new byte[byteL];
             secureRandom.nextBytes(extendChoices[extendIndex]);
-            BytesUtils.reduceByteArray(extendChoices[extendIndex], inputBitLength);
+            BytesUtils.reduceByteArray(extendChoices[extendIndex], l);
         }
         // 初始化密码学原语
         Prg prg = PrgFactory.createInstance(envType, extendByteNum);
@@ -161,8 +159,9 @@ public class Oos17LcotReceiver extends AbstractLcotReceiver {
         // 将此编码转置
         TransBitMatrix codeTransposeMatrix = codeMatrix.transpose();
         // 用密钥扩展得到矩阵T
-        IntStream columnIndexIntStream = IntStream.range(0, outputBitLength);
-        columnIndexIntStream = parallel ? columnIndexIntStream.parallel() : columnIndexIntStream;
+        IntStream columnIndexIntStream = parallel
+            ? IntStream.range(0, outputBitLength).parallel()
+            : IntStream.range(0, outputBitLength);
         return columnIndexIntStream
             .mapToObj(columnIndex -> {
                 // R computes t^i = G(k^0_i)
@@ -187,8 +186,9 @@ public class Oos17LcotReceiver extends AbstractLcotReceiver {
         // 矩阵转置，得到t
         tTransposeMatrix = tMatrix.transpose();
         tMatrix = null;
-        IntStream correlateCheckIntStream = IntStream.range(0, CommonConstants.STATS_BIT_LENGTH);
-        correlateCheckIntStream = parallel ? correlateCheckIntStream.parallel() : correlateCheckIntStream;
+        IntStream correlateCheckIntStream = parallel
+            ? IntStream.range(0, CommonConstants.STATS_BIT_LENGTH).parallel()
+            : IntStream.range(0, CommonConstants.STATS_BIT_LENGTH);
         return correlateCheckIntStream
             .mapToObj(l -> {
                 byte[][] tw = new byte[2][];
@@ -208,7 +208,7 @@ public class Oos17LcotReceiver extends AbstractLcotReceiver {
                 }
                 BytesUtils.xori(tw[0], tTransposeMatrix.getColumn(num + l));
                 // w^(l) = Σ_{i ∈ [m]} w_i·x_i^(l) + w_{m + l}
-                tw[1] = new byte[inputByteLength];
+                tw[1] = new byte[byteL];
                 for (int i = 0; i < num; i++) {
                     if (xlBinary[i]) {
                         BytesUtils.xori(tw[1], extendChoices[i]);
@@ -225,6 +225,6 @@ public class Oos17LcotReceiver extends AbstractLcotReceiver {
         byte[][] qsArray = IntStream.range(0, num)
             .mapToObj(tTransposeMatrix::getColumn)
             .toArray(byte[][]::new);
-        return LcotReceiverOutput.create(inputBitLength, outputBitLength, choices, qsArray);
+        return LcotReceiverOutput.create(l, choices, qsArray);
     }
 }

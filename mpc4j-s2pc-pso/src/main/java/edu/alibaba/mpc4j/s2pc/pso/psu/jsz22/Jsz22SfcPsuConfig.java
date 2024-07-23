@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnConfig;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
 
@@ -26,7 +26,7 @@ public class Jsz22SfcPsuConfig extends AbstractMultiPartyPtoConfig implements Ps
     /**
      * OSN协议配置项
      */
-    private final OsnConfig osnConfig;
+    private final DosnConfig dosnConfig;
     /**
      * 核COT协议配置项
      */
@@ -37,9 +37,9 @@ public class Jsz22SfcPsuConfig extends AbstractMultiPartyPtoConfig implements Ps
     private final CuckooHashBinType cuckooHashBinType;
 
     private Jsz22SfcPsuConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.oprfConfig, builder.osnConfig, builder.coreCotConfig);
+        super(SecurityModel.SEMI_HONEST, builder.oprfConfig, builder.dosnConfig, builder.coreCotConfig);
         oprfConfig = builder.oprfConfig;
-        osnConfig = builder.osnConfig;
+        dosnConfig = builder.dosnConfig;
         coreCotConfig = builder.coreCotConfig;
         cuckooHashBinType = builder.cuckooHashBinType;
     }
@@ -53,8 +53,8 @@ public class Jsz22SfcPsuConfig extends AbstractMultiPartyPtoConfig implements Ps
         return oprfConfig;
     }
 
-    public OsnConfig getOsnConfig() {
-        return osnConfig;
+    public DosnConfig getOsnConfig() {
+        return dosnConfig;
     }
 
     public CoreCotConfig getCoreCotConfig() {
@@ -69,15 +69,15 @@ public class Jsz22SfcPsuConfig extends AbstractMultiPartyPtoConfig implements Ps
         /**
          * OPRF协议配置项
          */
-        private OprfConfig oprfConfig;
+        private final OprfConfig oprfConfig;
         /**
          * OSN协议配置项
          */
-        private OsnConfig osnConfig;
+        private final DosnConfig dosnConfig;
         /**
          * 核COT协议配置项
          */
-        private CoreCotConfig coreCotConfig;
+        private final CoreCotConfig coreCotConfig;
         /**
          * 布谷鸟哈希类型
          */
@@ -85,25 +85,9 @@ public class Jsz22SfcPsuConfig extends AbstractMultiPartyPtoConfig implements Ps
 
         public Builder(boolean silent) {
             oprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
-            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+            dosnConfig = DosnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             coreCotConfig = CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            // 论文建议平衡场景下使用PSZ18的3哈希协议，非平衡场景下使用PSZ18的4哈希协议
             cuckooHashBinType = CuckooHashBinType.NAIVE_3_HASH;
-        }
-
-        public Builder setOprfConfig(OprfConfig oprfConfig) {
-            this.oprfConfig = oprfConfig;
-            return this;
-        }
-
-        public Builder setOsnConfig(OsnConfig osnConfig) {
-            this.osnConfig = osnConfig;
-            return this;
-        }
-
-        public Builder setCoreCotConfig(CoreCotConfig coreCotConfig) {
-            this.coreCotConfig = coreCotConfig;
-            return this;
         }
 
         public Builder setCuckooHashBinType(CuckooHashBinType cuckooHashBinType) {

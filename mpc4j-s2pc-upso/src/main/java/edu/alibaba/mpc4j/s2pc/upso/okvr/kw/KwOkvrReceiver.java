@@ -13,16 +13,15 @@ import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirClient;
-import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirFactory;
+
+
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.ks.StdKsPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.ks.StdKsPirFactory;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.AbstractOkvrReceiver;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.kw.KwOkvrPtoDesc.PtoStep;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -53,7 +52,7 @@ public class KwOkvrReceiver extends AbstractOkvrReceiver {
     /**
      * keyword PIR
      */
-    private final KwPirClient kwPirClient;
+    private final StdKsPirClient<ByteBuffer> kwPirClient;
     /**
      * sparse OKVS
      */
@@ -63,7 +62,7 @@ public class KwOkvrReceiver extends AbstractOkvrReceiver {
         super(KwOkvrPtoDesc.getInstance(), receiverRpc, senderParty, config);
         sqOprfReceiver = SqOprfFactory.createReceiver(receiverRpc, senderParty, config.getSqOprfConfig());
         addSubPto(sqOprfReceiver);
-        kwPirClient = KwPirFactory.createClient(receiverRpc, senderParty, config.getKwPirConfig());
+        kwPirClient = StdKsPirFactory.createClient(receiverRpc, senderParty, config.getStdKsPirConfig());
         addSubPto(kwPirClient);
         okvsType = config.getOkvsType();
     }
@@ -101,7 +100,7 @@ public class KwOkvrReceiver extends AbstractOkvrReceiver {
 
         stopWatch.start();
         // init keyword PIR
-        kwPirClient.init(retrievalSize * sparseOkvs.sparsePositionNum(), sparseOkvs.sparsePositionRange(), byteL);
+        kwPirClient.init(sparseOkvs.sparsePositionRange(), byteL * Byte.SIZE, retrievalSize * sparseOkvs.sparsePositionNum());
         stopWatch.stop();
         long pirTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -124,13 +123,12 @@ public class KwOkvrReceiver extends AbstractOkvrReceiver {
 
         // receiver run keyword PIR
         stopWatch.start();
-
         List<Integer> retrievalIndexList = generateRetrievalIndexList();
-        Set<ByteBuffer> retrievalKeywordList = retrievalIndexList.stream()
+        ArrayList<ByteBuffer> retrievalKeywordList = retrievalIndexList.stream()
             .map(IntUtils::intToByteArray)
             .map(ByteBuffer::wrap)
-            .collect(Collectors.toSet());
-        Map<ByteBuffer, byte[]> okvsSparsePayload = kwPirClient.pir(retrievalKeywordList);
+            .collect(Collectors.toCollection(ArrayList::new));
+        byte[][] okvsSparsePayload = kwPirClient.pir(retrievalKeywordList);
         // recover okvs storage
         generateOkvsStorage(denseOkvsPayload, okvsSparsePayload, retrievalIndexList);
         stopWatch.stop();
@@ -158,25 +156,15 @@ public class KwOkvrReceiver extends AbstractOkvrReceiver {
         return outputArray;
     }
 
-    /**
-     * recover okvs storage.
-     *
-     * @param okvsDensePayload   okvs dense payload.
-     * @param okvsSparsePayload  okvs sparse payload.
-     * @param retrievalIndexList retrieval index list.
-     * @throws MpcAbortException the protocol failure aborts.
-     */
-    private void generateOkvsStorage(List<byte[]> okvsDensePayload, Map<ByteBuffer, byte[]> okvsSparsePayload,
+    private void generateOkvsStorage(List<byte[]> okvsDensePayload, byte[][] okvsSparsePayload,
                                      List<Integer> retrievalIndexList) throws MpcAbortException {
         int sparsePositionNum = sparseOkvs.sparsePositionRange();
         int densePositionNum = sparseOkvs.densePositionRange();
         MpcAbortPreconditions.checkArgument(densePositionNum == okvsDensePayload.size());
-        MpcAbortPreconditions.checkArgument(retrievalIndexList.size() == okvsSparsePayload.size());
+        MpcAbortPreconditions.checkArgument(retrievalIndexList.size() == okvsSparsePayload.length);
         okvsStorage = new byte[sparsePositionNum + densePositionNum][];
-        for (int i = 0; i < okvsSparsePayload.size(); i++) {
-            int position = retrievalIndexList.get(i);
-            ByteBuffer bytePosition = ByteBuffer.wrap(IntUtils.intToByteArray(position));
-            okvsStorage[position] = okvsSparsePayload.get(bytePosition);
+        for (int i = 0; i < okvsSparsePayload.length; i++) {
+            okvsStorage[retrievalIndexList.get(i)] = okvsSparsePayload[i].clone();
         }
         byte[][] denseOkvsStorage = okvsDensePayload.toArray(new byte[0][]);
         System.arraycopy(denseOkvsStorage, 0, okvsStorage, sparsePositionNum, denseOkvsStorage.length);
@@ -193,7 +181,6 @@ public class KwOkvrReceiver extends AbstractOkvrReceiver {
         return Arrays.stream(keyArray)
             .map(sparseOkvs::sparsePositions)
             .flatMapToInt(Arrays::stream)
-            .distinct()
             .boxed()
             .collect(Collectors.toList());
     }

@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.dp.ldp.nominal;
 import edu.alibaba.mpc4j.dp.ldp.LdpConfig;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -34,4 +35,18 @@ public interface NominalLdpConfig extends LdpConfig {
     default int getLabelSize() {
         return getLabelArrayList().size();
     }
+
+    /**
+     * Gets base ε.
+     *
+     * @return base ε.
+     */
+    double getBaseEpsilon();
+
+    /**
+     * Gets random.
+     *
+     * @return random.
+     */
+    Random getRandom();
 }

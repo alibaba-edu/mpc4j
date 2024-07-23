@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl;
 
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
@@ -7,6 +8,9 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl.rrk20.Rrk20ZlDreluConfig;
 import org.apache.commons.lang3.time.StopWatch;
@@ -39,14 +43,6 @@ public class ZlDreluTest extends AbstractTwoPartyMemoryRpcPto {
      * large num
      */
     private static final int LARGE_NUM = 1 << 16;
-    /**
-     * small Zl
-     */
-    private static final Zl SMALL_ZL = ZlFactory.createInstance(EnvType.STANDARD, 1);
-    /**
-     * default Zl
-     */
-    private static final Zl DEFAULT_ZL = ZlFactory.createInstance(EnvType.STANDARD, Double.SIZE);
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -55,12 +51,7 @@ public class ZlDreluTest extends AbstractTwoPartyMemoryRpcPto {
         // RRK+20
         configurations.add(new Object[]{
             ZlDreluFactory.ZlDreluType.RRK20.name(),
-            new Rrk20ZlDreluConfig.Builder(false).build()
-        });
-
-        configurations.add(new Object[]{
-            ZlDreluFactory.ZlDreluType.RRK20.name() + " silent OT",
-            new Rrk20ZlDreluConfig.Builder(true).build()
+            new Rrk20ZlDreluConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
 
         return configurations;
@@ -70,50 +61,60 @@ public class ZlDreluTest extends AbstractTwoPartyMemoryRpcPto {
      * the config
      */
     private final ZlDreluConfig config;
+    /**
+     * small Zl
+     */
+    private final Zl smallZl;
+    /**
+     * default Zl
+     */
+    private final Zl zl;
 
     public ZlDreluTest(String name, ZlDreluConfig config) {
         super(name);
         this.config = config;
+        smallZl = ZlFactory.createInstance(EnvType.STANDARD, 1);
+        zl = ZlFactory.createInstance(EnvType.STANDARD, Long.SIZE);
     }
 
     @Test
     public void test1Num() {
-        testPto(DEFAULT_ZL, 1, false);
+        testPto(zl, 1, false);
     }
 
     @Test
     public void test2Num() {
-        testPto(DEFAULT_ZL, 2, false);
+        testPto(zl, 2, false);
     }
 
     @Test
     public void test8Num() {
-        testPto(DEFAULT_ZL, 8, false);
+        testPto(zl, 8, false);
     }
 
     @Test
     public void testDefaultNum() {
-        testPto(DEFAULT_ZL, DEFAULT_NUM, false);
+        testPto(zl, DEFAULT_NUM, false);
     }
 
     @Test
     public void testParallelDefaultNum() {
-        testPto(DEFAULT_ZL, DEFAULT_NUM, true);
+        testPto(zl, DEFAULT_NUM, true);
     }
 
     @Test
     public void testSmallZl() {
-        testPto(SMALL_ZL, DEFAULT_NUM, false);
+        testPto(smallZl, DEFAULT_NUM, false);
     }
 
     @Test
     public void testLargeNum() {
-        testPto(DEFAULT_ZL, LARGE_NUM, false);
+        testPto(zl, LARGE_NUM, false);
     }
 
     @Test
     public void testParallelLargeNum() {
-        testPto(DEFAULT_ZL, LARGE_NUM, true);
+        testPto(zl, LARGE_NUM, true);
     }
 
     private void testPto(Zl zl, int num, boolean parallel) {
@@ -122,15 +123,19 @@ public class ZlDreluTest extends AbstractTwoPartyMemoryRpcPto {
         ZlVector x1 = ZlVector.createRandom(zl, num, SECURE_RANDOM);
         SquareZlVector shareX0 = SquareZlVector.create(x0, false);
         SquareZlVector shareX1 = SquareZlVector.create(x1, false);
+        // init z2c
+        Z2cConfig z2cConfig = Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+        Z2cParty z2cSender = Z2cFactory.createSender(firstRpc, secondRpc.ownParty(), z2cConfig);
+        Z2cParty z2cReceiver = Z2cFactory.createReceiver(secondRpc, firstRpc.ownParty(), z2cConfig);
         // init the protocol
-        ZlDreluParty sender = ZlDreluFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        ZlDreluParty receiver = ZlDreluFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
+        ZlDreluParty sender = ZlDreluFactory.createSender(z2cSender, secondRpc.ownParty(), config);
+        ZlDreluParty receiver = ZlDreluFactory.createReceiver(z2cReceiver, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            ZlDreluPartyThread senderThread = new ZlDreluPartyThread(sender, zl.getL(), shareX0);
-            ZlDreluPartyThread receiverThread = new ZlDreluPartyThread(receiver, zl.getL(), shareX1);
+            ZlDreluPartyThread senderThread = new ZlDreluPartyThread(sender, z2cSender, shareX0);
+            ZlDreluPartyThread receiverThread = new ZlDreluPartyThread(receiver, z2cReceiver, shareX1);
             StopWatch stopWatch = new StopWatch();
             // execute the protocol
             stopWatch.start();

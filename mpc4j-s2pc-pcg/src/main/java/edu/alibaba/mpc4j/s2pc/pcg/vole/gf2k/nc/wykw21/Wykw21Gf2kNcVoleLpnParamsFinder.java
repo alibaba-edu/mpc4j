@@ -4,8 +4,8 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParamsChecker;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleFactory;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 
@@ -29,6 +29,10 @@ import gnu.trove.map.hash.TIntDoubleHashMap;
  */
 public class Wykw21Gf2kNcVoleLpnParamsFinder {
     /**
+     * minimal subfield L
+     */
+    private static final int MIN_SUBFIELD_L = 1;
+    /**
      * unit K, the paper tries K = 2^6, for efficiency reason, we choose a larger unit K.
      */
     private static final int UNIT_K = 128;
@@ -39,7 +43,7 @@ public class Wykw21Gf2kNcVoleLpnParamsFinder {
     /**
      * max log(n)
      */
-    static final int ITERATION_MAX_LOG_N = 24;
+    static final int ITERATION_MAX_LOG_N = 22;
     /**
      * factors when searching max(n). The values are selected by experiments.
      */
@@ -79,7 +83,7 @@ public class Wykw21Gf2kNcVoleLpnParamsFinder {
     public static LpnParams findSetupLpnParams(Gf2kMspVoleConfig config, LpnParams iterationLpnParams) {
         // in Setup phase, we need k = k GF2K-VOLE and pre-computed GF2K-VOLE used in GF2K-MSP-VOLE
         int minSetupN = iterationLpnParams.getK()
-            + Gf2kMspVoleFactory.getPrecomputeNum(config, iterationLpnParams.getT(), iterationLpnParams.getN());
+            + Gf2kMspVoleFactory.getPrecomputeNum(config, MIN_SUBFIELD_L, iterationLpnParams.getT(), iterationLpnParams.getN());
         int k = UNIT_K;
         LpnParams optimalLpnParams = null;
         int optimalVoleNum = -1;
@@ -87,7 +91,7 @@ public class Wykw21Gf2kNcVoleLpnParamsFinder {
             LpnParams lpnParams = findSetupMinT(k, minSetupN);
             if (lpnParams != null) {
                 // compute VOLE num: k in Init phase and ones used in GF2K-MSP-VOLE (depends on n and t).
-                int voleNum = Gf2kMspVoleFactory.getPrecomputeNum(config, lpnParams.getT(), lpnParams.getN())
+                int voleNum = Gf2kMspVoleFactory.getPrecomputeNum(config, MIN_SUBFIELD_L, lpnParams.getT(), lpnParams.getN())
                     + lpnParams.getK();
                 // choose this param if this requires fewer VOLE.
                 if (optimalLpnParams == null || voleNum < optimalVoleNum) {
@@ -258,7 +262,7 @@ public class Wykw21Gf2kNcVoleLpnParamsFinder {
             return -1;
         }
         // if max(n) - k is smaller than the required GF2K-MSP-VOLE when iterating, it means we cannot find a valid n.
-        int maxNecessaryVoleNum = Gf2kMspVoleFactory.getPrecomputeNum(config, t, maxN) + k;
+        int maxNecessaryVoleNum = Gf2kMspVoleFactory.getPrecomputeNum(config, MIN_SUBFIELD_L, t, maxN) + k;
         if (maxN - minOutputN < maxNecessaryVoleNum) {
             return -1;
         }
@@ -268,7 +272,7 @@ public class Wykw21Gf2kNcVoleLpnParamsFinder {
         int suitableN = maxN;
         while (lowerN <= upperN) {
             currentN = (lowerN + upperN) / 2;
-            int necessaryCotNum = Gf2kMspVoleFactory.getPrecomputeNum(config, t, currentN) + k;
+            int necessaryCotNum = Gf2kMspVoleFactory.getPrecomputeNum(config, MIN_SUBFIELD_L, t, currentN) + k;
             if (currentN - minOutputN >= necessaryCotNum) {
                 suitableN = currentN;
                 // if n is valid, try to increase n.
@@ -293,6 +297,6 @@ public class Wykw21Gf2kNcVoleLpnParamsFinder {
         int k = iterationLpnParams.getK();
         int t = iterationLpnParams.getT();
         // we need to subtract k and the required GF2K-MSP-VOLE when iterating.
-        return n - Gf2kMspVoleFactory.getPrecomputeNum(config, t, n) - k;
+        return n - Gf2kMspVoleFactory.getPrecomputeNum(config, MIN_SUBFIELD_L, t, n) - k;
     }
 }

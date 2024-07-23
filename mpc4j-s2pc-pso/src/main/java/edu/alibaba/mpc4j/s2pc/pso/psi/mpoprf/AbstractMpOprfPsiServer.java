@@ -19,7 +19,6 @@ import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psi.AbstractPsiServer;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiUtils;
-import edu.alibaba.mpc4j.s2pc.pso.psi.mpoprf.MpOprfPsiPtoDesc.PtoStep;
 
 import java.util.Collections;
 import java.util.List;
@@ -81,9 +80,18 @@ public abstract class AbstractMpOprfPsiServer<T> extends AbstractPsiServer<T> {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        int peqtByteLength = securityModel.equals(SecurityModel.MALICIOUS) | securityModel.equals(SecurityModel.COVERT) ?
-            PsiUtils.getMaliciousPeqtByteLength(serverElementSize, clientElementSize) :
-            PsiUtils.getSemiHonestPeqtByteLength(serverElementSize, clientElementSize);
+        int peqtByteLength;
+        switch (securityModel) {
+            case IDEAL:
+            case SEMI_HONEST:
+                peqtByteLength = PsiUtils.getSemiHonestPeqtByteLength(serverElementSize, clientElementSize);
+                break;
+            case MALICIOUS:
+                peqtByteLength = PsiUtils.getMaliciousPeqtByteLength(serverElementSize, clientElementSize);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel);
+        }
         peqtHash = HashFactory.createInstance(envType, peqtByteLength);
         stopWatch.stop();
         long prepareInputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -113,8 +121,8 @@ public abstract class AbstractMpOprfPsiServer<T> extends AbstractPsiServer<T> {
         serverPrfs.forEach(serverPrfFilter::put);
         List<byte[]> serverPrfFilterPayload = serverPrfFilter.save();
         DataPacketHeader serverPrfFilterHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PRFS.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
+            encodeTaskId, getPtoDesc().getPtoId(), MpOprfPsiPtoStep.SERVER_SEND_PRFS.ordinal(),
+            extraInfo, ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(serverPrfFilterHeader, serverPrfFilterPayload));
         stopWatch.stop();

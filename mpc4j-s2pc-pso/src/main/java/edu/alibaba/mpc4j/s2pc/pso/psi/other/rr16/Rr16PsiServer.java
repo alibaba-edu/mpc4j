@@ -94,10 +94,9 @@ public class Rr16PsiServer<T> extends AbstractPsiServer<T> {
         int peqtByteLength = PsiUtils.getMaliciousPeqtByteLength(maxServerElementSize, maxClientElementSize);
         peqtHash = HashFactory.createInstance(envType, peqtByteLength);
         // init COT
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
         nOt = Rr16PsiUtils.getOtBatchSize(maxClientElementSize);
-        coreCotSender.init(delta, nOt);
+        coreCotSender.init(delta);
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

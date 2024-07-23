@@ -28,8 +28,8 @@ public abstract class AbstractClsOpBoost extends AbstractOpBoost {
      */
     protected int[] testTruths;
 
-    public AbstractClsOpBoost(Properties properties, OpBoostTaskType taskType) {
-        super(properties, taskType);
+    public AbstractClsOpBoost(Properties properties, String ownName, OpBoostTaskType taskType) {
+        super(properties, ownName, taskType);
     }
 
     @Override

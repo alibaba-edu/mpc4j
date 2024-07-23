@@ -10,8 +10,8 @@ import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.UpsuConfig;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.UpsuFactory;
 
@@ -33,7 +33,7 @@ public class Zlp24PeqtUpsuConfig extends AbstractMultiPartyPtoConfig implements 
     /**
      * batch index PIR config
      */
-    private final BatchIndexPirConfig batchIndexPirConfig;
+    private final StdIdxPirConfig batchIndexPirConfig;
     /**
      * core COT config
      */
@@ -71,7 +71,7 @@ public class Zlp24PeqtUpsuConfig extends AbstractMultiPartyPtoConfig implements 
         return pmPeqtConfig;
     }
 
-    public BatchIndexPirConfig getBatchIndexPirConfig() {
+    public StdIdxPirConfig getBatchIndexPirConfig() {
         return batchIndexPirConfig;
     }
 
@@ -99,7 +99,7 @@ public class Zlp24PeqtUpsuConfig extends AbstractMultiPartyPtoConfig implements 
         /**
          * batch index PIR config
          */
-        private BatchIndexPirConfig batchIndexPirConfig;
+        private StdIdxPirConfig batchIndexPirConfig;
         /**
          * core COT config
          */
@@ -116,7 +116,7 @@ public class Zlp24PeqtUpsuConfig extends AbstractMultiPartyPtoConfig implements 
         public Builder() {
             sqOprfConfig = SqOprfFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
             pmPeqtConfig = PmPeqtFactory.createPmPeqtDefaultConfig(SecurityModel.SEMI_HONEST);
-            batchIndexPirConfig = BatchIndexPirFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
+            batchIndexPirConfig = new VectorizedStdIdxPirConfig.Builder().build();
             coreCotConfig = CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
             cuckooHashBinType = CuckooHashBinFactory.CuckooHashBinType.NO_STASH_PSZ18_3_HASH;
             gf2eDokvsType = Gf2eDokvsFactory.Gf2eDokvsType.H3_SPARSE_CLUSTER_BLAZE_GCT;
@@ -132,7 +132,7 @@ public class Zlp24PeqtUpsuConfig extends AbstractMultiPartyPtoConfig implements 
             return this;
         }
 
-        public Builder setBatchIndexPirConfig(BatchIndexPirConfig batchIndexPirConfig) {
+        public Builder setStdIdxPirConfig(StdIdxPirConfig batchIndexPirConfig) {
             this.batchIndexPirConfig = batchIndexPirConfig;
             return this;
         }

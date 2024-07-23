@@ -1,10 +1,14 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.row.trunc.zl;
 
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.trunc.zl.gp23.Gp23ZlTruncConfig;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.trunc.zl.rrk20.Rrk20ZlTruncConfig;
@@ -34,35 +38,21 @@ public class ZlTruncTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * default num
      */
-    private static final int DEFAULT_NUM = 10000;
-    /**
-     * default Zl
-     */
-    private static final Zl DEFAULT_ZL = ZlFactory.createInstance(EnvType.STANDARD, Double.SIZE);
+    private static final int DEFAULT_NUM = 1 << 16;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // RRK+20 + silent OT
+        // GP23
         configurations.add(new Object[]{
-            ZlTruncFactory.ZlTruncType.RRK20.name() + " silent OT",
-            new Rrk20ZlTruncConfig.Builder(true).build()
-        });
-        // GP23 + silent OT
-        configurations.add(new Object[]{
-            ZlTruncFactory.ZlTruncType.GP23.name() + " silent OT",
-            new Gp23ZlTruncConfig.Builder(true).build()
+            ZlTruncFactory.ZlTruncType.GP23.name(),
+            new Gp23ZlTruncConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
         // RRK+20
         configurations.add(new Object[]{
             ZlTruncFactory.ZlTruncType.RRK20.name(),
-            new Rrk20ZlTruncConfig.Builder(false).build()
-        });
-        // GP23
-        configurations.add(new Object[]{
-            ZlTruncFactory.ZlTruncType.GP23.name(),
-            new Gp23ZlTruncConfig.Builder(false).build()
+            new Rrk20ZlTruncConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
 
         return configurations;
@@ -72,10 +62,16 @@ public class ZlTruncTest extends AbstractTwoPartyMemoryRpcPto {
      * the config
      */
     private final ZlTruncConfig config;
+    /**
+     * Zl
+     */
+    private final Zl zl;
+
 
     public ZlTruncTest(String name, ZlTruncConfig config) {
         super(name);
         this.config = config;
+        zl = ZlFactory.createInstance(EnvType.STANDARD, 32);
     }
 
     @Test
@@ -110,32 +106,36 @@ public class ZlTruncTest extends AbstractTwoPartyMemoryRpcPto {
 
     private void testPto(int s, boolean parallel) {
         // create inputs
-        BigInteger n = ZlTruncTest.DEFAULT_ZL.getRangeBound();
+        BigInteger n = zl.getRangeBound();
         BigInteger bound = n.divide(BigInteger.valueOf(3));
         BigInteger[] x = new BigInteger[ZlTruncTest.DEFAULT_NUM];
         BigInteger[] x0 = new BigInteger[ZlTruncTest.DEFAULT_NUM];
         BigInteger[] x1 = new BigInteger[ZlTruncTest.DEFAULT_NUM];
         for (int i = 0; i < ZlTruncTest.DEFAULT_NUM; i++) {
             do {
-                x[i] = new BigInteger(ZlTruncTest.DEFAULT_ZL.getL(), SECURE_RANDOM);
-                x1[i] = new BigInteger(ZlTruncTest.DEFAULT_ZL.getL(), SECURE_RANDOM);
-                x0[i] = new BigInteger(ZlTruncTest.DEFAULT_ZL.getL(), SECURE_RANDOM);
-                x[i] = x0[i].add(x1[i]).mod(n);
-            } while(x[i].compareTo(bound) >= 0 && x[i].subtract(n).abs().compareTo(bound) >= 0);
+                x[i] = BigInteger.valueOf(6320);//new BigInteger(ZlTruncTest.DEFAULT_ZL.getL(), SECURE_RANDOM);
+                x1[i] = zl.createRandom(SECURE_RANDOM);
+                x0[i] = zl.createRandom(SECURE_RANDOM);
+                x[i] = zl.add(x0[i], x1[i]);
+            } while (x[i].compareTo(bound) >= 0 && x[i].compareTo(n.subtract(bound)) < 0);
         }
-        ZlVector x0Vector = ZlVector.create(ZlTruncTest.DEFAULT_ZL, x0);
-        ZlVector x1Vector = ZlVector.create(ZlTruncTest.DEFAULT_ZL, x1);
+        ZlVector x0Vector = ZlVector.create(zl, x0);
+        ZlVector x1Vector = ZlVector.create(zl, x1);
         SquareZlVector shareX0 = SquareZlVector.create(x0Vector, false);
         SquareZlVector shareX1 = SquareZlVector.create(x1Vector, false);
+        // init z2c
+        Z2cConfig z2cConfig = Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+        Z2cParty z2cSender = Z2cFactory.createSender(firstRpc, secondRpc.ownParty(), z2cConfig);
+        Z2cParty z2cReceiver = Z2cFactory.createReceiver(secondRpc, firstRpc.ownParty(), z2cConfig);
         // init the protocol
-        ZlTruncParty sender = ZlTruncFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        ZlTruncParty receiver = ZlTruncFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
+        ZlTruncParty sender = ZlTruncFactory.createSender(z2cSender, secondRpc.ownParty(), config);
+        ZlTruncParty receiver = ZlTruncFactory.createReceiver(z2cReceiver, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            ZlTruncPartyThread senderThread = new ZlTruncPartyThread(sender, ZlTruncTest.DEFAULT_ZL.getL(), shareX0, s);
-            ZlTruncPartyThread receiverThread = new ZlTruncPartyThread(receiver, ZlTruncTest.DEFAULT_ZL.getL(), shareX1, s);
+            ZlTruncPartyThread senderThread = new ZlTruncPartyThread(sender, z2cSender, shareX0, s);
+            ZlTruncPartyThread receiverThread = new ZlTruncPartyThread(receiver, z2cReceiver, shareX1, s);
             StopWatch stopWatch = new StopWatch();
             // execute the protocol
             stopWatch.start();
@@ -165,7 +165,7 @@ public class ZlTruncTest extends AbstractTwoPartyMemoryRpcPto {
         Assert.assertEquals(num, shareZ0.getNum());
         Assert.assertEquals(num, shareZ1.getNum());
         ZlVector x = x0.add(x1);
-        BigInteger[] xShift = rDiv(x.getElements(), ZlTruncTest.DEFAULT_ZL.getRangeBound(), s);
+        BigInteger[] xShift = rDiv(x.getElements(), zl.getRangeBound(), s);
         ZlVector z = shareZ0.getZlVector().add(shareZ1.getZlVector());
         for (int index = 0; index < num; index++) {
             BigInteger a0 = x0.getElement(index).mod(BigInteger.ONE.shiftLeft(s));
@@ -177,7 +177,7 @@ public class ZlTruncTest extends AbstractTwoPartyMemoryRpcPto {
                 error = BigInteger.ONE;
             }
             BigInteger r1 = z.getElement(index);
-            BigInteger r2 = xShift[index].subtract(error).mod(ZlTruncTest.DEFAULT_ZL.getRangeBound());
+            BigInteger r2 = xShift[index].subtract(error).mod(zl.getRangeBound());
             Assert.assertEquals(r1, r2);
         }
     }

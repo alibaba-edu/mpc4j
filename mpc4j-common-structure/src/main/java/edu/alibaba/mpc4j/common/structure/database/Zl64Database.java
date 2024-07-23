@@ -12,7 +12,7 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.common.structure.matrix.MatrixUtils;
+import edu.alibaba.mpc4j.common.structure.StructureUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2023/4/4
  */
-public class Zl64Database implements ModBitNumDatabase {
+public class Zl64Database implements Database {
     /**
      * element bit length
      */
@@ -118,7 +118,7 @@ public class Zl64Database implements ModBitNumDatabase {
      */
     public static Zl64Database create(EnvType envType, boolean parallel, BitVector... bitVectors) {
         // check BitVectors.length is in range (0, MAX_L]
-        MathPreconditions.checkPositiveInRangeClosed("BitVectors.length", bitVectors.length, LongUtils.MAX_L);
+        MathPreconditions.checkPositiveInRangeClosed("BitVectors.length", bitVectors.length, LongUtils.MAX_L_FOR_MODULE_N);
         int l = bitVectors.length;
         // check all bit vectors has the same bit num
         int rows = bitVectors[0].bitNum();
@@ -154,7 +154,7 @@ public class Zl64Database implements ModBitNumDatabase {
     }
 
     private Zl64Database(int l) {
-        MathPreconditions.checkPositiveInRangeClosed("l", l, LongUtils.MAX_L);
+        MathPreconditions.checkPositiveInRangeClosed("l", l, LongUtils.MAX_L_FOR_MODULE_N);
         this.l = l;
         byteL = CommonUtils.getByteLength(l);
         rangeBound = 1L << l;
@@ -195,7 +195,7 @@ public class Zl64Database implements ModBitNumDatabase {
     }
 
     @Override
-    public ModBitNumDatabase split(int splitRows) {
+    public Zl64Database split(int splitRows) {
         int rows = rows();
         MathPreconditions.checkPositiveInRangeClosed("split rows", splitRows, rows);
         long[] subData = new long[splitRows];
@@ -292,8 +292,7 @@ public class Zl64Database implements ModBitNumDatabase {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof Zl64Database) {
-            Zl64Database that = (Zl64Database) obj;
+        if (obj instanceof Zl64Database that) {
             return new EqualsBuilder()
                 .append(this.l, that.l)
                 .append(this.data, that.data)
@@ -305,6 +304,6 @@ public class Zl64Database implements ModBitNumDatabase {
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + " (l = " + l + "): "
-            + Arrays.toString(Arrays.copyOf(data, Math.min(data.length, MatrixUtils.DISPLAY_NUM)));
+            + Arrays.toString(Arrays.copyOf(data, Math.min(data.length, StructureUtils.DISPLAY_NUM)));
     }
 }

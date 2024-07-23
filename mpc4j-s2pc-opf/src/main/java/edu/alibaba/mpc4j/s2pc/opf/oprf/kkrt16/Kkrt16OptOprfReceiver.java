@@ -77,7 +77,7 @@ public class Kkrt16OptOprfReceiver extends AbstractOprfReceiver {
         byte[] cotDelta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(cotDelta);
         // 初始化COT协议
-        coreCotSender.init(cotDelta, codewordBitLength);
+        coreCotSender.init(cotDelta);
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

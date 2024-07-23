@@ -4,13 +4,14 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.structure.lpn.primal.LocalLinearCoder;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleSender;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleSender;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleSender;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.AbstractGf2kNcVoleSender;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.wykw21.Wykw21Gf2kNcVolePtoDesc.PtoStep;
 
@@ -61,6 +62,10 @@ public class Wykw21Gf2kNcVoleSender extends AbstractGf2kNcVoleSender {
      * GF2K-VOLE sender output used in GF2K-MSP-VOLE
      */
     private Gf2kVoleSenderOutput mVoleSenderOutput;
+    /**
+     * matrix A
+     */
+    private LocalLinearCoder matrixA;
 
     public Wykw21Gf2kNcVoleSender(Rpc senderRpc, Party receiverParty, Wykw21Gf2kNcVoleConfig config) {
         super(Wykw21Gf2kNcVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -72,8 +77,8 @@ public class Wykw21Gf2kNcVoleSender extends AbstractGf2kNcVoleSender {
     }
 
     @Override
-    public void init(int num) throws MpcAbortException {
-        setInitInput(num);
+    public void init(int subfieldL, int num) throws MpcAbortException {
+        setInitInput(subfieldL, num);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
@@ -86,8 +91,8 @@ public class Wykw21Gf2kNcVoleSender extends AbstractGf2kNcVoleSender {
         iterationN = iterationLpnParams.getN();
         iterationT = iterationLpnParams.getT();
         // init core GF2K-VOLE and GF2K-MSP-VOLE
-        coreVoleSender.init(initK);
-        mspVoleSender.init(iterationT, iterationN);
+        coreVoleSender.init(subfieldL);
+        mspVoleSender.init(subfieldL);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -96,7 +101,7 @@ public class Wykw21Gf2kNcVoleSender extends AbstractGf2kNcVoleSender {
         stopWatch.start();
         // get k0 GF2K-VOLE used in setup, randomly generate xs
         byte[][] xs = IntStream.range(0, initK)
-            .mapToObj(index -> gf2k.createRandom(secureRandom))
+            .mapToObj(index -> subfield.createRandom(secureRandom))
             .toArray(byte[][]::new);
         Gf2kVoleSenderOutput uwInitVoleSenderOutput = coreVoleSender.send(xs);
         stopWatch.stop();
@@ -105,16 +110,19 @@ public class Wykw21Gf2kNcVoleSender extends AbstractGf2kNcVoleSender {
         logStepInfo(PtoState.INIT_STEP, 2, 5, k0InitTime);
 
         stopWatch.start();
-        // get seed for matrix A used in setup
-        DataPacketHeader matrixInitKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_SETUP_KEY.ordinal(),
+        // get seed for matrix A
+        DataPacketHeader matrixKeysHeader = new DataPacketHeader(
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_KEYS.ordinal(),
             otherParty().getPartyId(), ownParty().getPartyId()
         );
-        List<byte[]> matrixInitKeyPayload = rpc.receive(matrixInitKeyHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(matrixInitKeyPayload.size() == 1);
-        byte[] initKey = matrixInitKeyPayload.get(0);
+        List<byte[]> matrixKeysPayload = rpc.receive(matrixKeysHeader).getPayload();
+        MpcAbortPreconditions.checkArgument(matrixKeysPayload.size() == 2);
+        byte[] initKey = matrixKeysPayload.get(0);
         LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, initKey);
         matrixInitA.setParallel(parallel);
+        byte[] matrixKey = matrixKeysPayload.get(1);
+        matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey);
+        matrixA.setParallel(parallel);
         stopWatch.stop();
         long keyInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -132,16 +140,16 @@ public class Wykw21Gf2kNcVoleSender extends AbstractGf2kNcVoleSender {
         // x = u * A + e
         byte[][] initX = matrixInitA.encode(uwInitVoleSenderOutput.getX());
         for (int eIndex : ecInitMspVoleSenderOutput.getAlphaArray()) {
-            gf2k.addi(initX[eIndex], ecInitMspVoleSenderOutput.getX(eIndex));
+            subfield.addi(initX[eIndex], ecInitMspVoleSenderOutput.getX(eIndex));
         }
         // z = w * A + r
         byte[][] initZ = matrixInitA.encode(uwInitVoleSenderOutput.getT());
         IntStream.range(0, initN).forEach(index ->
-            gf2k.addi(initZ[index], ecInitMspVoleSenderOutput.getT(index))
+            field.addi(initZ[index], ecInitMspVoleSenderOutput.getT(index))
         );
-        mVoleSenderOutput = Gf2kVoleSenderOutput.create(initX, initZ);
+        mVoleSenderOutput = Gf2kVoleSenderOutput.create(field, initX, initZ);
         uwVoleSenderOutput = mVoleSenderOutput.split(iterationK);
-        mVolePreNum = Gf2kMspVoleFactory.getPrecomputeNum(mspVoleConfig, iterationT, iterationN);
+        mVolePreNum = Gf2kMspVoleFactory.getPrecomputeNum(mspVoleConfig, subfieldL, iterationT, iterationN);
         mVoleSenderOutput.reduce(mVolePreNum);
         stopWatch.stop();
         long extendInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -152,25 +160,14 @@ public class Wykw21Gf2kNcVoleSender extends AbstractGf2kNcVoleSender {
     }
 
     @Override
+    public void init(int num) throws MpcAbortException {
+        init(CommonConstants.BLOCK_BIT_LENGTH, num);
+    }
+
+    @Override
     public Gf2kVoleSenderOutput send() throws MpcAbortException {
         setPtoInput();
         logPhaseInfo(PtoState.PTO_BEGIN);
-
-        stopWatch.start();
-        // get seed for matrix A used in iteration
-        DataPacketHeader matrixKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_ITERATION_LEY.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> matrixKeyPayload = rpc.receive(matrixKeyHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(matrixKeyPayload.size() == 1);
-        byte[] matrixKey = matrixKeyPayload.get(0);
-        LocalLinearCoder matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey);
-        matrixA.setParallel(parallel);
-        stopWatch.stop();
-        long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 3, keyTime);
 
         stopWatch.start();
         // execute GF2K-MSP-VOLE
@@ -178,28 +175,27 @@ public class Wykw21Gf2kNcVoleSender extends AbstractGf2kNcVoleSender {
         stopWatch.stop();
         long sTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 2, 3, sTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, sTime);
 
         stopWatch.start();
-        // x = u * A + e
         byte[][] x = matrixA.encode(uwVoleSenderOutput.getX());
         for (int eIndex : ecMspVoleSenderOutput.getAlphaArray()) {
-            gf2k.addi(x[eIndex], ecMspVoleSenderOutput.getX(eIndex));
+            subfield.addi(x[eIndex], ecMspVoleSenderOutput.getX(eIndex));
         }
         // z = w * A + r
         byte[][] z = matrixA.encode(uwVoleSenderOutput.getT());
         IntStream.range(0, iterationN).forEach(index ->
-            gf2k.addi(z[index], ecMspVoleSenderOutput.getT(index))
+            field.addi(z[index], ecMspVoleSenderOutput.getT(index))
         );
         // split GF2K-VOLE output into k0 + MSP-COT + output
-        Gf2kVoleSenderOutput senderOutput = Gf2kVoleSenderOutput.create(x, z);
+        Gf2kVoleSenderOutput senderOutput = Gf2kVoleSenderOutput.create(field, x, z);
         uwVoleSenderOutput = senderOutput.split(iterationK);
         mVoleSenderOutput = senderOutput.split(mVolePreNum);
         senderOutput.reduce(num);
         stopWatch.stop();
         long extendTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 3, 3, extendTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, extendTime);
 
         logPhaseInfo(PtoState.PTO_END);
         return senderOutput;

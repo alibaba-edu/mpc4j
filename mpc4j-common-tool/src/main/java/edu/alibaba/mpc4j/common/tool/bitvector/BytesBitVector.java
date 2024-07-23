@@ -185,12 +185,11 @@ public class BytesBitVector implements BitVector {
     public BitVector split(int bitNum) {
         assert bitNum > 0 && bitNum <= this.bitNum
             : "number of split bits must be in range (0, " + this.bitNum + "]: " + bitNum;
-        // 切分方法：分别对2^length取模数和取余数，模数作为split结果，余数作为剩余结果
-        BigInteger mask = BigInteger.ONE.shiftLeft(this.bitNum - bitNum).subtract(BigInteger.ONE);
-        // 由于模数一定是2^length格式，因此可以用位运算更高效地实现
+        // mask used to obtain the split bit vector
+        BigInteger mask = BigInteger.ONE.shiftLeft(bitNum).subtract(BigInteger.ONE);
         BigInteger remainBigInteger = getBigInteger();
-        BigInteger splitBigInteger = remainBigInteger.shiftRight(this.bitNum - bitNum);
-        remainBigInteger = remainBigInteger.and(mask);
+        BigInteger splitBigInteger = remainBigInteger.and(mask);
+        remainBigInteger = remainBigInteger.shiftRight(bitNum);
         // update the remained bit vector
         this.bitNum = this.bitNum - bitNum;
         byteNum = this.bitNum == 0 ? 0 : CommonUtils.getByteLength(this.bitNum);
@@ -320,8 +319,7 @@ public class BytesBitVector implements BitVector {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof BitVector) {
-            BitVector that = (BitVector) obj;
+        if (obj instanceof BitVector that) {
             return new EqualsBuilder()
                 .append(this.getBytes(), that.getBytes())
                 .append(this.bitNum(), that.bitNum())

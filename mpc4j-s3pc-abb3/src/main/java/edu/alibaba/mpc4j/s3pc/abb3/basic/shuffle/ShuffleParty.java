@@ -29,7 +29,7 @@ public interface ShuffleParty extends ThreePartyPto {
     /**
      * initialize the party
      */
-    void init();
+    void init() throws MpcAbortException;
 
     /**
      * shuffle the data with predetermined permutation, the elements are stored in row

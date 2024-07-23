@@ -3,7 +3,10 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache.CacheCotConfig;
+import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.silent.SilentCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,11 +15,9 @@ import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 /**
  * COT test.
@@ -47,12 +48,12 @@ public class CotTest extends AbstractTwoPartyMemoryRpcPto {
         });
         // CACHE
         configurations.add(new Object[] {
-            CotFactory.CotType.CACHE.name() + " (" + SecurityModel.SEMI_HONEST + ")",
-            new CacheCotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
+            CotFactory.CotType.SILENT.name() + " (" + SecurityModel.SEMI_HONEST + ")",
+            new SilentCotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
         configurations.add(new Object[] {
-            CotFactory.CotType.CACHE.name() + " (" + SecurityModel.MALICIOUS + ")",
-            new CacheCotConfig.Builder(SecurityModel.MALICIOUS).build(),
+            CotFactory.CotType.SILENT.name() + " (" + SecurityModel.MALICIOUS + ")",
+            new SilentCotConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
 
         return configurations;
@@ -107,10 +108,8 @@ public class CotTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
-            boolean[] choices = new boolean[num];
-            IntStream.range(0, num).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
+            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            boolean[] choices = BinaryUtils.randomBinary(num, SECURE_RANDOM);
             CotSenderThread senderThread = new CotSenderThread(sender, delta, num);
             CotReceiverThread receiverThread = new CotReceiverThread(receiver, choices);
             STOP_WATCH.start();
@@ -126,7 +125,7 @@ public class CotTest extends AbstractTwoPartyMemoryRpcPto {
             // verify
             CotSenderOutput senderOutput = senderThread.getSenderOutput();
             CotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            CotTestUtils.assertOutput(num, senderOutput, receiverOutput);
+            OtTestUtils.assertOutput(num, senderOutput, receiverOutput);
             Assert.assertArrayEquals(delta, senderOutput.getDelta());
             Assert.assertArrayEquals(choices, receiverOutput.getChoices());
             printAndResetRpc(time);
@@ -140,65 +139,7 @@ public class CotTest extends AbstractTwoPartyMemoryRpcPto {
     }
 
     @Test
-    public void testResetDelta() {
-        CotSender sender = CotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        CotReceiver receiver = CotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
-        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
-        sender.setTaskId(randomTaskId);
-        receiver.setTaskId(randomTaskId);
-        try {
-            LOGGER.info("-----test {} (reset Δ) start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
-            boolean[] choices = new boolean[DEFAULT_NUM];
-            IntStream.range(0, DEFAULT_NUM).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
-            // first round
-            CotSenderThread senderThread = new CotSenderThread(sender, delta, DEFAULT_NUM);
-            CotReceiverThread receiverThread = new CotReceiverThread(receiver, choices);
-            STOP_WATCH.start();
-            senderThread.start();
-            receiverThread.start();
-            senderThread.join();
-            receiverThread.join();
-            STOP_WATCH.stop();
-            long firstTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
-            STOP_WATCH.reset();
-            CotSenderOutput senderOutput = senderThread.getSenderOutput();
-            CotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            CotTestUtils.assertOutput(DEFAULT_NUM, senderOutput, receiverOutput);
-            printAndResetRpc(firstTime);
-            // second round, reset Δ
-            SECURE_RANDOM.nextBytes(delta);
-            IntStream.range(0, DEFAULT_NUM).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
-            senderThread = new CotSenderThread(sender, delta, DEFAULT_NUM);
-            receiverThread = new CotReceiverThread(receiver, choices);
-            STOP_WATCH.start();
-            senderThread.start();
-            receiverThread.start();
-            senderThread.join();
-            receiverThread.join();
-            STOP_WATCH.stop();
-            long secondTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
-            STOP_WATCH.reset();
-            CotSenderOutput secondSenderOutput = senderThread.getSenderOutput();
-            CotReceiverOutput secondReceiverOutput = receiverThread.getReceiverOutput();
-            CotTestUtils.assertOutput(DEFAULT_NUM, secondSenderOutput, secondReceiverOutput);
-            // Δ should be different
-            Assert.assertNotEquals(
-                ByteBuffer.wrap(secondSenderOutput.getDelta()), ByteBuffer.wrap(senderOutput.getDelta())
-            );
-            printAndResetRpc(secondTime);
-            // destroy
-            new Thread(sender::destroy).start();
-            new Thread(receiver::destroy).start();
-            LOGGER.info("-----test {} (reset Δ) end-----", sender.getPtoDesc().getPtoName());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testLessUpdate() {
+    public void testMultipleRound() {
         int num = DEFAULT_NUM;
         CotSender sender = CotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
         CotReceiver receiver = CotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
@@ -206,11 +147,9 @@ public class CotTest extends AbstractTwoPartyMemoryRpcPto {
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
         try {
-            LOGGER.info("-----test {} (less update) start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
-            boolean[] choices = new boolean[num];
-            IntStream.range(0, DEFAULT_NUM).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
+            LOGGER.info("-----test {} (multiple round) start-----", sender.getPtoDesc().getPtoName());
+            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            boolean[] choices = BinaryUtils.randomBinary(DEFAULT_NUM, SECURE_RANDOM);
             CotSenderThread senderThread = new CotSenderThread(sender, delta, num, num / 2 - 1);
             CotReceiverThread receiverThread = new CotReceiverThread(receiver, choices, num / 2 - 1);
             STOP_WATCH.start();
@@ -223,12 +162,12 @@ public class CotTest extends AbstractTwoPartyMemoryRpcPto {
             STOP_WATCH.reset();
             CotSenderOutput senderOutput = senderThread.getSenderOutput();
             CotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            CotTestUtils.assertOutput(num, senderOutput, receiverOutput);
+            OtTestUtils.assertOutput(num, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();
             new Thread(receiver::destroy).start();
-            LOGGER.info("-----test {} (less update) end-----", sender.getPtoDesc().getPtoName());
+            LOGGER.info("-----test {} (multiple round) end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

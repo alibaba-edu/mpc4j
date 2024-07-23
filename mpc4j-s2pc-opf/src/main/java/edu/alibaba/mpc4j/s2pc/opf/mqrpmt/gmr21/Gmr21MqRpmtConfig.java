@@ -10,42 +10,42 @@ import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnConfig;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
 
 /**
- * GMR21-mqRPMT协议配置项。
+ * GMR21-mqRPMT config.
  *
  * @author Weiran Liu
  * @date 2022/09/10
  */
 public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements MqRpmtConfig {
     /**
-     * 布谷鸟哈希所用OPRF协议配置项
+     * OPRF used in cuckoo hash
      */
     private final OprfConfig cuckooHashOprfConfig;
     /**
-     * PEQT所用OPRF协议配置项
+     * OPRF used in PEQT
      */
     private final OprfConfig peqtOprfConfig;
     /**
-     * OSN协议配置项
+     * OSN
      */
-    private final OsnConfig osnConfig;
+    private final DosnConfig dosnConfig;
     /**
      * OKVS type
      */
     private final Gf2eDokvsType okvsType;
     /**
-     * 布谷鸟哈希类型
+     * cuckoo hash type
      */
     private final CuckooHashBinType cuckooHashBinType;
 
     private Gmr21MqRpmtConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.cuckooHashOprfConfig, builder.peqtOprfConfig, builder.osnConfig);
+        super(SecurityModel.SEMI_HONEST, builder.cuckooHashOprfConfig, builder.peqtOprfConfig, builder.dosnConfig);
         cuckooHashOprfConfig = builder.cuckooHashOprfConfig;
         peqtOprfConfig = builder.peqtOprfConfig;
-        osnConfig = builder.osnConfig;
+        dosnConfig = builder.dosnConfig;
         okvsType = builder.okvsType;
         cuckooHashBinType = builder.cuckooHashBinType;
     }
@@ -70,8 +70,8 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
         return peqtOprfConfig;
     }
 
-    public OsnConfig getOsnConfig() {
-        return osnConfig;
+    public DosnConfig getOsnConfig() {
+        return dosnConfig;
     }
 
     public Gf2eDokvsType getOkvsType() {
@@ -84,48 +84,34 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Gmr21MqRpmtConfig> {
         /**
-         * 布谷鸟哈希所用OPRF协议配置项
+         * OPRF used in cuckoo hash
          */
-        private OprfConfig cuckooHashOprfConfig;
+        private final OprfConfig cuckooHashOprfConfig;
         /**
-         * PEQT所用OPRF协议配置项
+         * OPRF used in PEQT
          */
-        private OprfConfig peqtOprfConfig;
+        private final OprfConfig peqtOprfConfig;
         /**
-         * OSN协议配置项
+         * OSN
          */
-        private OsnConfig osnConfig;
+        private final DosnConfig dosnConfig;
         /**
          * OKVS type
          */
         private Gf2eDokvsType okvsType;
         /**
-         * 布谷鸟哈希类型
+         * cuckoo hash type
          */
         private CuckooHashBinType cuckooHashBinType;
 
         public Builder(boolean silent) {
             cuckooHashOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
             peqtOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
-            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+            dosnConfig = DosnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             okvsType = Gf2eDokvsType.MEGA_BIN;
-            // GMR21源代码使用普通布谷鸟哈希实现无贮存区布谷鸟哈希的功能，这样通信量可以更小一点
+            // this type is used in the GMR21 implementation
+            // see https://github.com/osu-crypto/PSI-analytics/blob/master/test/psi_analytics_eurocrypt19_test.cpp#L35
             cuckooHashBinType = CuckooHashBinType.NAIVE_3_HASH;
-        }
-
-        public Builder setCuckooHashOprfConfig(OprfConfig cuckooHashOprfConfig) {
-            this.cuckooHashOprfConfig = cuckooHashOprfConfig;
-            return this;
-        }
-
-        public Builder setPeqtOprfConfig(OprfConfig peqtOprfConfig) {
-            this.peqtOprfConfig = peqtOprfConfig;
-            return this;
-        }
-
-        public Builder setOsnConfig(OsnConfig osnConfig) {
-            this.osnConfig = osnConfig;
-            return this;
         }
 
         public Builder setOkvsType(Gf2eDokvsType okvsType) {

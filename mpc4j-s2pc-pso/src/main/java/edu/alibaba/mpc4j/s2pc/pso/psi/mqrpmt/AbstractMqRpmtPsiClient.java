@@ -10,7 +10,6 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtClient;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotReceiverOutput;
@@ -41,10 +40,6 @@ public abstract class AbstractMqRpmtPsiClient<T> extends AbstractPsiClient<T> {
      */
     private final MqRpmtClient mqRpmtClient;
     /**
-     * mq-RPMT config
-     */
-    private final MqRpmtConfig mqRpmtConfig;
-    /**
      * core COT receiver
      */
     private final CoreCotReceiver coreCotReceiver;
@@ -56,9 +51,8 @@ public abstract class AbstractMqRpmtPsiClient<T> extends AbstractPsiClient<T> {
     public AbstractMqRpmtPsiClient(PtoDesc ptoDesc, Rpc clientRpc, Party serverParty, MqRpmtPsiConfig config) {
         super(ptoDesc, clientRpc, serverParty, config);
         mqRpmtClient = MqRpmtFactory.createClient(clientRpc, serverParty, config.getMqRpmtConfig());
-        mqRpmtConfig = config.getMqRpmtConfig();
-        coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
         addSubPto(mqRpmtClient);
+        coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
         addSubPto(coreCotReceiver);
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
     }
@@ -72,7 +66,7 @@ public abstract class AbstractMqRpmtPsiClient<T> extends AbstractPsiClient<T> {
         int refineMaxClientElementSize = Math.max(maxClientElementSize, 2);
         int refineMaxServerElementSize = Math.max(maxServerElementSize, 2);
         mqRpmtClient.init(refineMaxClientElementSize, refineMaxServerElementSize);
-        coreCotReceiver.init(mqRpmtConfig.getVectorLength(refineMaxServerElementSize, refineMaxClientElementSize));
+        coreCotReceiver.init();
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

@@ -19,10 +19,6 @@ import java.security.SecureRandom;
  */
 public class SinglePlainZ2PartyTest {
     /**
-     * random status
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    /**
      * default bit num
      */
     private static final int DEFAULT_BIT_NUM = 1001;
@@ -30,6 +26,14 @@ public class SinglePlainZ2PartyTest {
      * large num
      */
     private static final int LARGE_BIT_NUM = 1 << 16 - 1;
+    /**
+     * random status
+     */
+    private final SecureRandom secureRandom;
+
+    public SinglePlainZ2PartyTest() {
+        secureRandom = new SecureRandom();
+    }
 
     @Test
     public void test1BitNum() {
@@ -74,54 +78,57 @@ public class SinglePlainZ2PartyTest {
         PlainZ2cParty plainParty = new PlainZ2cParty();
         plainParty.init(bitNum);
         // generate x
-        BitVector xVector = BitVectorFactory.createRandom(bitNum, SECURE_RANDOM);
-        MpcZ2Vector xPlainVector = plainParty.create(true, xVector);
+        BitVector xBitVector = BitVectorFactory.createRandom(bitNum, secureRandom);
+        MpcZ2Vector xMpcVector = plainParty.create(true, xBitVector);
         // generate y
-        BitVector yVector = BitVectorFactory.createRandom(bitNum, SECURE_RANDOM);
-        MpcZ2Vector yPlainVector = plainParty.create(true, yVector);
+        BitVector yBitVector = BitVectorFactory.createRandom(bitNum, secureRandom);
+        MpcZ2Vector yMpcVector = plainParty.create(true, yBitVector);
         // create z
-        BitVector zVector;
-        MpcZ2Vector zPlainVector;
+        BitVector expectVector;
+        BitVector actualVector;
         switch (operator) {
-            case XOR:
-                zVector = xVector.xor(yVector);
-                zPlainVector = plainParty.xor(xPlainVector, yPlainVector);
-                break;
-            case AND:
-                zVector = xVector.and(yVector);
-                zPlainVector = plainParty.and(xPlainVector, yPlainVector);
-                break;
-            case OR:
-                zVector = xVector.or(yVector);
-                zPlainVector = plainParty.or(xPlainVector, yPlainVector);
-                break;
-            default:
+            case XOR -> {
+                expectVector = xBitVector.xor(yBitVector);
+                PlainZ2Vector resultVector = plainParty.xor(xMpcVector, yMpcVector);
+                actualVector = plainParty.revealOwn(resultVector);
+            }
+            case AND -> {
+                expectVector = xBitVector.and(yBitVector);
+                PlainZ2Vector resultVector = plainParty.and(xMpcVector, yMpcVector);
+                actualVector = plainParty.revealOwn(resultVector);
+            }
+            case OR -> {
+                expectVector = xBitVector.or(yBitVector);
+                PlainZ2Vector resultVector = plainParty.or(xMpcVector, yMpcVector);
+                actualVector = plainParty.revealOwn(resultVector);
+            }
+            default ->
                 throw new IllegalStateException("Invalid " + DyadicAcOperator.class.getSimpleName() + ": " + operator.name());
         }
         // verify
-        Assert.assertEquals(zVector, zPlainVector.getBitVector());
+        Assert.assertEquals(expectVector, actualVector);
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private void testUnaryOperator(UnaryBcOperator operator, int num) {
+    private void testUnaryOperator(UnaryBcOperator operator, int bitNum) {
         PlainZ2cParty plainParty = new PlainZ2cParty();
-        plainParty.init(num);
+        plainParty.init(bitNum);
         // generate x
-        BitVector xVector = BitVectorFactory.createRandom(num, SECURE_RANDOM);
-        MpcZ2Vector xPlainVector = plainParty.create(true, xVector);
+        BitVector xBitVector = BitVectorFactory.createRandom(bitNum, secureRandom);
+        MpcZ2Vector xMpcVector = plainParty.create(true, xBitVector);
         // create z
-        BitVector zVector;
-        MpcZ2Vector zPlainVector;
+        BitVector expectVector;
+        BitVector actualVector;
         //noinspection SwitchStatementWithTooFewBranches
         switch (operator) {
-            case NOT:
-                zVector = xVector.not();
-                zPlainVector = plainParty.not(xPlainVector);
-                break;
-            default:
+            case NOT -> {
+                expectVector = xBitVector.not();
+                PlainZ2Vector resultVector = plainParty.not(xMpcVector);
+                actualVector = plainParty.revealOwn(resultVector);
+            }
+            default ->
                 throw new IllegalStateException("Invalid " + UnaryAcOperator.class.getSimpleName() + ": " + operator.name());
         }
         // verify
-        Assert.assertEquals(zVector, zPlainVector.getBitVector());
+        Assert.assertEquals(expectVector, actualVector);
     }
 }

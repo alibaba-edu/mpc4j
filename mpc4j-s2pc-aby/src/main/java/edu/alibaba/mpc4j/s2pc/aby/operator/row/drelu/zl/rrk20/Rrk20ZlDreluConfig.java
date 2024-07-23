@@ -54,9 +54,9 @@ public class Rrk20ZlDreluConfig extends AbstractMultiPartyPtoConfig implements Z
          */
         private final Z2cConfig z2cConfig;
 
-        public Builder(boolean silent) {
-            millionaireConfig = MillionaireFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
-            z2cConfig = Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        public Builder(SecurityModel securityModel, boolean silent) {
+            millionaireConfig = MillionaireFactory.createDefaultConfig(securityModel, silent);
+            z2cConfig = Z2cFactory.createDefaultConfig(securityModel, silent);
         }
 
         @Override

@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory.MqRpmtType;
 
 /**
- * multi-query RPMT config.
+ * mqRPMT config.
  *
  * @author Weiran Liu
  * @date 2022/9/10

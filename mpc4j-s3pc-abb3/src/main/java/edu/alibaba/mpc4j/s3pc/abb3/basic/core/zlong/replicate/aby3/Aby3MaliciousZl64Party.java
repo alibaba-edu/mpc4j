@@ -125,7 +125,7 @@ public class Aby3MaliciousZl64Party extends AbstractAby3LongParty implements Tri
             assert data[i].equals(data2[i]);
             data[i].addi(xiArray[i].getVectors()[0]);
             data[i].addi(xiArray[i].getVectors()[1]);
-            data[i].format(validBitLen);
+            data[i].module(validBitLen);
         });
         return data;
     }
@@ -151,7 +151,7 @@ public class Aby3MaliciousZl64Party extends AbstractAby3LongParty implements Tri
         intStream.forEach(i -> {
             data[i].addi(xiArray[i].getVectors()[0]);
             data[i].addi(xiArray[i].getVectors()[1]);
-            data[i].format(validBitLen);
+            data[i].module(validBitLen);
         });
 
         extraInfo++;

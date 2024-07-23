@@ -5,16 +5,11 @@
     <parent>
         <artifactId>mpc4j</artifactId>
         <groupId>edu.alibaba</groupId>
-        <version>1.1.1</version>
+        <version>1.1.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>mpc4j-common-structure</artifactId>
-
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -31,63 +26,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-        </dependency>
-        <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-tool</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-sampler</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
-
-    <!-- 下面是用于打包的插件，如果不用这个插件导出jar可能会出现问题 -->
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <source>8</source>
-                    <target>8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <!--suppress MavenModelInspection -->
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <mainClass>edu.alibaba.mpc4j.common.structure.main.StructureMain</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
 </project>

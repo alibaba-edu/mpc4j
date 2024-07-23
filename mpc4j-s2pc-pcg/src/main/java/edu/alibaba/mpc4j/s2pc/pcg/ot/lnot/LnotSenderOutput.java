@@ -1,11 +1,16 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * 1-out-of-n OT sender output, where n = 2^l. The sender gets r_0, r_1, ..., r_{n - 1}.
@@ -15,11 +20,11 @@ import java.util.Arrays;
  */
 public class LnotSenderOutput implements MergedPcgPartyOutput {
     /**
-     * the choice bit length
+     * choice bit length
      */
     private final int l;
     /**
-     * the maximal choice
+     * maximal choice
      */
     private final int n;
     /**
@@ -30,19 +35,18 @@ public class LnotSenderOutput implements MergedPcgPartyOutput {
     /**
      * Creates a sender output.
      *
-     * @param l       the choice bit length.
-     * @param rsArray the rs array.
+     * @param l       choice bit length.
+     * @param rsArray rs array.
      * @return a sender output.
      */
     public static LnotSenderOutput create(int l, byte[][][] rsArray) {
         LnotSenderOutput senderOutput = new LnotSenderOutput(l);
-        assert rsArray.length > 0 : "# of rs must be greater than 0: " + rsArray.length;
         senderOutput.rsArray = Arrays.stream(rsArray)
             .peek(rs -> {
-                assert rs.length == senderOutput.n : "# of r must be equal to " + senderOutput.n + ": " + rs.length;
-                Arrays.stream(rs).forEach(r -> {
-                    assert r.length == CommonConstants.BLOCK_BYTE_LENGTH;
-                });
+                MathPreconditions.checkEqual("n", "rs.length", senderOutput.n, rs.length);
+                Arrays.stream(rs).forEach(r ->
+                    MathPreconditions.checkEqual("r.length", "λ", r.length, CommonConstants.BLOCK_BYTE_LENGTH)
+                );
             })
             .toArray(byte[][][]::new);
 
@@ -52,13 +56,28 @@ public class LnotSenderOutput implements MergedPcgPartyOutput {
     /**
      * Creates an empty sender output.
      *
-     * @param l the choice bit length.
+     * @param l choice bit length.
      * @return an empty sender output.
      */
     public static LnotSenderOutput createEmpty(int l) {
         LnotSenderOutput senderOutput = new LnotSenderOutput(l);
         senderOutput.rsArray = new byte[0][][];
+        return senderOutput;
+    }
 
+    /**
+     * Creates a random sender output.
+     *
+     * @param num          num.
+     * @param l            choice bit length.
+     * @param secureRandom random state.
+     * @return a random sender output.
+     */
+    public static LnotSenderOutput createRandom(int num, int l, SecureRandom secureRandom) {
+        LnotSenderOutput senderOutput = new LnotSenderOutput(l);
+        senderOutput.rsArray = IntStream.range(0, num)
+            .mapToObj(i -> BytesUtils.randomByteArrayVector(senderOutput.n, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom))
+            .toArray(byte[][][]::new);
         return senderOutput;
     }
 
@@ -66,19 +85,26 @@ public class LnotSenderOutput implements MergedPcgPartyOutput {
      * private constructor.
      */
     private LnotSenderOutput(int l) {
-        assert l > 0 && l <= IntUtils.MAX_L : "l must be in range (0, " + IntUtils.MAX_L + "]: " + l;
+        MathPreconditions.checkPositiveInRangeClosed("l", l, IntUtils.MAX_L);
         this.l = l;
         this.n = (1 << l);
     }
 
     @Override
+    public LnotSenderOutput copy() {
+        LnotSenderOutput copy = new LnotSenderOutput(l);
+        copy.rsArray = BytesUtils.clone(rsArray);
+        return copy;
+    }
+
+    @Override
     public LnotSenderOutput split(int splitNum) {
         int num = getNum();
-        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]: " + splitNum;
+        MathPreconditions.checkPositiveInRangeClosed("splitNum", splitNum, num);
         byte[][][] rsSubArray = new byte[splitNum][][];
         byte[][][] rsRemainArray = new byte[num - splitNum][][];
-        System.arraycopy(rsArray, 0, rsSubArray, 0, splitNum);
-        System.arraycopy(rsArray, splitNum, rsRemainArray, 0, num - splitNum);
+        System.arraycopy(rsArray, num - splitNum, rsSubArray, 0, splitNum);
+        System.arraycopy(rsArray, 0, rsRemainArray, 0, num - splitNum);
         rsArray = rsRemainArray;
 
         return LnotSenderOutput.create(l, rsSubArray);
@@ -87,7 +113,7 @@ public class LnotSenderOutput implements MergedPcgPartyOutput {
     @Override
     public void reduce(int reduceNum) {
         int num = getNum();
-        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        MathPreconditions.checkPositiveInRangeClosed("reduceNum", reduceNum, num);
         if (reduceNum < num) {
             // we need to reduce only if reduceNum is less than the current num.
             byte[][][] rsRemainArray = new byte[reduceNum][][];
@@ -99,7 +125,7 @@ public class LnotSenderOutput implements MergedPcgPartyOutput {
     @Override
     public void merge(MergedPcgPartyOutput other) {
         LnotSenderOutput that = (LnotSenderOutput) other;
-        assert this.l == that.l : "l mismatch";
+        MathPreconditions.checkEqual("this.l", "that.l", this.l, that.l);
         byte[][][] mergeRsArray = new byte[this.rsArray.length + that.rsArray.length][][];
         System.arraycopy(this.rsArray, 0, mergeRsArray, 0, this.rsArray.length);
         System.arraycopy(that.rsArray, 0, mergeRsArray, this.rsArray.length, that.rsArray.length);
@@ -148,5 +174,27 @@ public class LnotSenderOutput implements MergedPcgPartyOutput {
      */
     public int getN() {
         return n;
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(l)
+            .append(rsArray)
+            .hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof LnotSenderOutput that) {
+            return new EqualsBuilder()
+                .append(this.l, that.l)
+                .append(this.rsArray, that.rsArray)
+                .isEquals();
+        }
+        return false;
     }
 }

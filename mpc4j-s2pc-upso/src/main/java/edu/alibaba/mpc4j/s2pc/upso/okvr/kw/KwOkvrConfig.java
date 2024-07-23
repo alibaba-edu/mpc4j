@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
-import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.keyword.cmg21.Cmg21KwPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.ks.StdKsPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.ks.labelpsi.LabelpsiStdKsPirConfig;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.OkvrConfig;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.OkvrFactory.OkvrType;
 
@@ -30,7 +30,7 @@ public class KwOkvrConfig extends AbstractMultiPartyPtoConfig implements OkvrCon
     /**
      * Keyword PIR config
      */
-    private final KwPirConfig kwPirConfig;
+    private final StdKsPirConfig kwPirConfig;
 
     private KwOkvrConfig(Builder builder) {
         super(SecurityModel.SEMI_HONEST, builder.sqOprfConfig, builder.kwPirConfig);
@@ -52,7 +52,7 @@ public class KwOkvrConfig extends AbstractMultiPartyPtoConfig implements OkvrCon
         return okvsType;
     }
 
-    public KwPirConfig getKwPirConfig() {
+    public StdKsPirConfig getStdKsPirConfig() {
         return kwPirConfig;
     }
 
@@ -68,13 +68,13 @@ public class KwOkvrConfig extends AbstractMultiPartyPtoConfig implements OkvrCon
         /**
          * batch index PIR config
          */
-        private KwPirConfig kwPirConfig;
+        private StdKsPirConfig kwPirConfig;
 
         public Builder() {
             sqOprfConfig = SqOprfFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
             okvsType = Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT;
             assert Gf2eDokvsFactory.isSparse(okvsType);
-            kwPirConfig = new Cmg21KwPirConfig.Builder().build();
+            kwPirConfig = new LabelpsiStdKsPirConfig.Builder().build();
         }
 
         public Builder setSqOprfConfig(SqOprfConfig sqOprfConfig) {
@@ -88,7 +88,7 @@ public class KwOkvrConfig extends AbstractMultiPartyPtoConfig implements OkvrCon
             return this;
         }
 
-        public Builder setKwPirConfig(KwPirConfig kwPirConfig) {
+        public Builder setStdKsPirConfig(StdKsPirConfig kwPirConfig) {
             this.kwPirConfig = kwPirConfig;
             return this;
         }

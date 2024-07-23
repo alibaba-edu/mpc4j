@@ -128,7 +128,6 @@ public class BaseOtFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-            case COVERT:
             case MALICIOUS:
                 return new Np01ByteBaseOtConfig.Builder().build();
             default:

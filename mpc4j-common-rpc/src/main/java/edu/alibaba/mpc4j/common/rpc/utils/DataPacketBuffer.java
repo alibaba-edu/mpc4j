@@ -55,30 +55,6 @@ public class DataPacketBuffer {
     }
 
     /**
-     * Takes a data packet that matches the receiver ID.
-     *
-     * @param receiverId the receiver ID.
-     * @return a data packet.
-     * @throws InterruptedException interrupted exception.
-     */
-    public synchronized DataPacket take(int receiverId) throws InterruptedException {
-        DataPacketHeader targetHeader = null;
-        while (targetHeader == null) {
-            // we first try to find a candidate header
-            for (DataPacketHeader dataPacketHeader : dataPacketBuffer.keySet()) {
-                if (dataPacketHeader.getReceiverId() == receiverId) {
-                    targetHeader = dataPacketHeader;
-                }
-            }
-            if (targetHeader == null) {
-                // if we cannot find any candidate, wait for new data packets.
-                wait();
-            }
-        }
-        return DataPacket.fromByteArrayList(targetHeader, dataPacketBuffer.remove(targetHeader));
-    }
-
-    /**
      * Takes a data packet that matches the receiver ID and the protocol ID.
      *
      * @param receiverId the receiver ID.

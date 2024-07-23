@@ -48,29 +48,15 @@ public class Cgs22LnotPesmConfig extends AbstractMultiPartyPtoConfig implements 
         /**
          * Boolean circuit config
          */
-        private Z2cConfig z2cConfig;
+        private final Z2cConfig z2cConfig;
         /**
          * LNOT config
          */
-        private LnotConfig lnotConfig;
+        private final LnotConfig lnotConfig;
 
         public Builder(SecurityModel securityModel, boolean silent) {
             z2cConfig = Z2cFactory.createDefaultConfig(securityModel, silent);
-            if (silent) {
-                lnotConfig = LnotFactory.createCacheConfig(securityModel);
-            } else {
-                lnotConfig = LnotFactory.createDirectConfig(securityModel);
-            }
-        }
-
-        public Builder setZ2cConfig(Z2cConfig z2cConfig) {
-            this.z2cConfig = z2cConfig;
-            return this;
-        }
-
-        public Builder setLnotConfig(LnotConfig lnotConfig) {
-            this.lnotConfig = lnotConfig;
-            return this;
+            lnotConfig = LnotFactory.createDefaultConfig(securityModel, silent);
         }
 
         @Override

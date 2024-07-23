@@ -21,7 +21,7 @@ public class SilverCodeCreatorUtils {
     /**
      * max log(n)
      */
-    public static final int MAX_LOG_N = 24;
+    public static final int MAX_LOG_N = 22;
 
     /**
      * Silver Code type

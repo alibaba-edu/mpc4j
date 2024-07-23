@@ -95,26 +95,20 @@ public class HammingTest extends AbstractTwoPartyMemoryRpcPto {
     }
 
     private void testPto(int num, boolean parallel) {
-        HammingParty sender = HammingFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        HammingParty receiver = HammingFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
-        sender.setParallel(parallel);
-        receiver.setParallel(parallel);
-        testAllZeroInputPto(sender, receiver, num);
-        testAllOneInputPto(sender, receiver, num);
-        testRandomInputPto(sender, receiver, num);
-        // destroy
-        new Thread(sender::destroy).start();
-        new Thread(receiver::destroy).start();
+        testAllZeroInputPto(num, parallel);
+        testAllOneInputPto(num, parallel);
+        testRandomInputPto(num, parallel);
+
     }
 
-    private void testAllZeroInputPto(HammingParty sender, HammingParty receiver, int num) {
+    private void testAllZeroInputPto(int num, boolean parallel) {
         int byteLength = CommonUtils.getByteLength(num);
         byte[] x0Bytes = new byte[byteLength];
         byte[] x1Bytes = new byte[byteLength];
-        testInputPto(sender, receiver, x0Bytes, x1Bytes, num);
+        testInputPto(x0Bytes, x1Bytes, num, parallel);
     }
 
-    private void testAllOneInputPto(HammingParty sender, HammingParty receiver, int num) {
+    private void testAllOneInputPto(int num, boolean parallel) {
         int byteLength = CommonUtils.getByteLength(num);
         byte[] x0Bytes = new byte[byteLength];
         Arrays.fill(x0Bytes, (byte) 0xFF);
@@ -122,10 +116,10 @@ public class HammingTest extends AbstractTwoPartyMemoryRpcPto {
         byte[] x1Bytes = new byte[byteLength];
         Arrays.fill(x1Bytes, (byte) 0xFF);
         BytesUtils.reduceByteArray(x1Bytes, num);
-        testInputPto(sender, receiver, x0Bytes, x1Bytes, num);
+        testInputPto(x0Bytes, x1Bytes, num, parallel);
     }
 
-    private void testRandomInputPto(HammingParty sender, HammingParty receiver, int num) {
+    private void testRandomInputPto(int num, boolean parallel) {
         int byteLength = CommonUtils.getByteLength(num);
         byte[] x0Bytes = new byte[byteLength];
         SECURE_RANDOM.nextBytes(x0Bytes);
@@ -133,13 +127,17 @@ public class HammingTest extends AbstractTwoPartyMemoryRpcPto {
         byte[] x1Bytes = new byte[byteLength];
         SECURE_RANDOM.nextBytes(x1Bytes);
         BytesUtils.reduceByteArray(x1Bytes, num);
-        testInputPto(sender, receiver, x0Bytes, x1Bytes, num);
+        testInputPto(x0Bytes, x1Bytes, num, parallel);
     }
 
-    private void testInputPto(HammingParty sender, HammingParty receiver, byte[] x0Bytes, byte[] x1Bytes, int num) {
+    private void testInputPto(byte[] x0Bytes, byte[] x1Bytes, int num, boolean parallel) {
         int expectHammingDistance = BytesUtils.hammingDistance(x0Bytes, x1Bytes);
         assert BytesUtils.isReduceByteArray(x0Bytes, num);
         assert BytesUtils.isReduceByteArray(x1Bytes, num);
+        HammingParty sender = HammingFactory.createSender(firstRpc, secondRpc.ownParty(), config);
+        HammingParty receiver = HammingFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
+        sender.setParallel(parallel);
+        receiver.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
         sender.setTaskId(randomTaskId);
         receiver.setTaskId(randomTaskId);
@@ -165,6 +163,9 @@ public class HammingTest extends AbstractTwoPartyMemoryRpcPto {
             assertOutput(expectHammingDistance, senderHammingDistance, receiverHammingDistance);
             printAndResetRpc(time);
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
+            // destroy
+            new Thread(sender::destroy).start();
+            new Thread(receiver::destroy).start();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

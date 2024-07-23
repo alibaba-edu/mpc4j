@@ -35,7 +35,7 @@ class CoreCotReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.init(choices.length);
+            receiver.init();
             receiverOutput = receiver.receive(choices);
         } catch (MpcAbortException e) {
             e.printStackTrace();

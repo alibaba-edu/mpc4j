@@ -33,10 +33,6 @@ public class Gf2kFactory {
          */
         JDK,
         /**
-         * Bouncy Castle
-         */
-        BC,
-        /**
          * Rings
          */
         RINGS,
@@ -57,12 +53,29 @@ public class Gf2kFactory {
                 return new NtlGf2k(envType);
             case JDK:
                 return new JdkGf2k(envType);
-            case BC:
-                return new BcGf2k(envType);
             case RINGS:
                 return new RingsGf2k(envType);
             default:
                 throw new IllegalArgumentException("Invalid " + Gf2kType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Gets type based on environment.
+     *
+     * @param envType environment.
+     * @return type.
+     */
+    public static Gf2kType getType(EnvType envType) {
+        switch (envType) {
+            case STANDARD:
+                return Gf2kType.COMBINED;
+            case STANDARD_JDK:
+            case INLAND:
+            case INLAND_JDK:
+                return Gf2kType.JDK;
+            default:
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }
     }
 
@@ -73,15 +86,6 @@ public class Gf2kFactory {
      * @return an instance.
      */
     public static Gf2k createInstance(EnvType envType) {
-        switch (envType) {
-            case STANDARD:
-                return new CombinedGf2k(envType);
-            case STANDARD_JDK:
-            case INLAND:
-            case INLAND_JDK:
-                return new BcGf2k(envType);
-            default:
-                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
-        }
+        return createInstance(envType, getType(envType));
     }
 }

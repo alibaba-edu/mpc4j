@@ -22,6 +22,10 @@ public class DirectCotSender extends AbstractCotSender {
      * core COT sender
      */
     private final CoreCotSender coreCotSender;
+    /**
+     * max round num
+     */
+    private int roundNum;
 
     public DirectCotSender(Rpc senderRpc, Party receiverParty, DirectCotConfig config) {
         super(DirectCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -30,12 +34,13 @@ public class DirectCotSender extends AbstractCotSender {
     }
 
     @Override
-    public void init(byte[] delta, int updateNum) throws MpcAbortException {
-        setInitInput(delta, updateNum);
+    public void init(byte[] delta, int expectNum) throws MpcAbortException {
+        setInitInput(delta, expectNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        coreCotSender.init(delta, updateNum);
+        roundNum = Math.min(DirectCotPtoDesc.MAX_ROUND_NUM, expectNum);
+        coreCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -45,28 +50,33 @@ public class DirectCotSender extends AbstractCotSender {
     }
 
     @Override
+    public void init(byte[] delta) throws MpcAbortException {
+        init(delta, DirectCotPtoDesc.MAX_ROUND_NUM);
+    }
+
+    @Override
     public CotSenderOutput send(int num) throws MpcAbortException {
         setPtoInput(num);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         CotSenderOutput senderOutput = CotSenderOutput.createEmpty(delta);
-        if (num <= updateNum) {
-            senderOutput.merge(coreCotSender.send(num));
-        } else {
-            int currentNum = senderOutput.getNum();
-            while (currentNum < num) {
-                int roundNum = Math.min((num - currentNum), updateNum);
-                senderOutput.merge(coreCotSender.send(roundNum));
-                currentNum = senderOutput.getNum();
-            }
+        while (num > senderOutput.getNum()) {
+            int gapNum = num - senderOutput.getNum();
+            int eachNum = Math.min(gapNum, roundNum);
+            senderOutput.merge(coreCotSender.send(eachNum));
         }
         stopWatch.stop();
-        long coreCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 1, coreCotTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 1, roundTime);
 
         logPhaseInfo(PtoState.PTO_END);
         return senderOutput;
+    }
+
+    @Override
+    public CotSenderOutput sendRandom(int num) throws MpcAbortException {
+        return send(num);
     }
 }

@@ -14,11 +14,11 @@ public interface Gf2kCoreVoleReceiver extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
-     * @param delta  Δ.
-     * @param maxNum max num.
+     * @param subfieldL subfield L.
+     * @param delta     Δ.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(byte[] delta, int maxNum) throws MpcAbortException;
+    void init(int subfieldL, byte[] delta) throws MpcAbortException;
 
     /**
      * Executes the protocol.

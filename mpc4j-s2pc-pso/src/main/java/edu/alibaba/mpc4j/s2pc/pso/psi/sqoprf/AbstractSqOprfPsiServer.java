@@ -18,7 +18,6 @@ import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfKey;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfSender;
 import edu.alibaba.mpc4j.s2pc.pso.psi.AbstractPsiServer;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiUtils;
-import edu.alibaba.mpc4j.s2pc.pso.psi.sqoprf.SqOprfPsiPtoDesc.PtoStep;
 
 import java.util.Collections;
 import java.util.List;
@@ -105,8 +104,8 @@ public abstract class AbstractSqOprfPsiServer<T> extends AbstractPsiServer<T> {
         serverPrfs.forEach(serverPrfFilter::put);
         List<byte[]> serverPrfFilterPayload = serverPrfFilter.save();
         DataPacketHeader serverPrfHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_PRF_FILTER.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
+            encodeTaskId, getPtoDesc().getPtoId(), SqOprfPsiPtoStep.SERVER_SEND_PRF_FILTER.ordinal(),
+            extraInfo, ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(serverPrfHeader, serverPrfFilterPayload));
         stopWatch.stop();

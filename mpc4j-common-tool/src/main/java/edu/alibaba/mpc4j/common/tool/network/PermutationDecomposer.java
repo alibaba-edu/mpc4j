@@ -29,10 +29,6 @@ import java.util.*;
  */
 public class PermutationDecomposer {
     /**
-     * the permutation
-     */
-    private final int[] permutation;
-    /**
      * number of inputs N for the permutation π: [N] → [N], where N = 2^n
      */
     private final int n;
@@ -57,49 +53,149 @@ public class PermutationDecomposer {
      */
     private final int d;
     /**
-     * d split groups, each group contains N / T permutations π_(i,j): [T] → [T].
+     * group num, g = N / T
+     */
+    private final int g;
+    /**
+     * split groups. We have d layers, each layer contains N / T groups, each group contains T elements.
      */
     private final int[][][] splitGroups;
     /**
-     * d-layer permutations, each layer contains N / T sub-permutations π_(i,j): [T] → [T].
+     * whether set permutation
      */
-    private final int[][][] subPermutations;
+    private boolean setPermutation;
+    /**
+     * sub-permutations. We have d layers, each layer contains N / T groups, each group contains a [T] → [T] permutation.
+     */
+    private int[][][] subPermutations;
 
     /**
      * Creates a permutation decomposer.
      *
-     * @param permutation the permutation.
-     * @param t           the size of the sub-permutation.
+     * @param n number of inputs.
+     * @param t the size of the sub-permutation.
      */
-    public PermutationDecomposer(int[] permutation, int t) {
-        Preconditions.checkArgument(PermutationNetworkUtils.validPermutation(permutation));
+    public PermutationDecomposer(int n, int t) {
         // set and verify N
-        n = permutation.length;
         // N > 1, otherwise we do not need to permute
         MathPreconditions.checkGreater("N", n, 1);
         // N = 2^n
         Preconditions.checkArgument(IntMath.isPowerOfTwo(n), "N must be a power of 2: %s", n);
+        this.n = n;
         // computes n = log(N) when N = 2^n
         logN = Integer.numberOfTrailingZeros(n);
         // level = 2 * log(N) - 1
         level = 2 * logN - 1;
-        // copy the permutation
-        this.permutation = Arrays.copyOf(permutation, n);
         // set and verify T, T ∈ [2, N], T = 1 is valid but not necessary
         MathPreconditions.checkInRangeClosed("t", t, 2, n);
         // T = 2^t
-        Preconditions.checkArgument(IntMath.isPowerOfTwo(n), "N must be a power of 2: %s", n);
+        Preconditions.checkArgument(IntMath.isPowerOfTwo(t), "T must be a power of 2: %s", t);
         this.t = t;
         // computes t = log(T) when T = 2^t
         logT = Integer.numberOfTrailingZeros(t);
         // d = 2 * ceil(log(N) / log(T)) - 1
         d = 2 * (int) Math.ceil((double) logN / logT) - 1;
-        int[][] splitLayerPermutation = computeSplitLayerPermutation();
-        splitGroups = computeSplitGroups();
-        subPermutations = computeSubPermutations(splitGroups, splitLayerPermutation);
+        g = n / t;
+        splitGroups = new int[d][g][t];
+        computeSplitGroups();
+        setPermutation = false;
     }
 
-    private int[][] computeSplitLayerPermutation() {
+    private void computeSplitGroups() {
+        // create the left and the right split
+        for (int i = 1; i < (int) Math.ceil((double) logN / logT); i++) {
+            int step = 1 << (logN - i * logT);
+            int groupCounter = 0;
+            int[] vis = new int[n];
+            for (int j = 0; j < n; j++) {
+                if (vis[j] != 0) {
+                    continue;
+                }
+                for (int k = 0; k < t; k++) {
+                    splitGroups[i - 1][groupCounter][k] = j + k * step;
+                    splitGroups[d - i][groupCounter][k] = j + k * step;
+                    vis[j + k * step] = 1;
+                }
+                groupCounter++;
+            }
+        }
+        // create the middle split
+        int middleLayerIndex = (int) Math.ceil((double) logN / logT) - 1;
+        for (int i = 0; i < n / t; i++) {
+            for (int j = 0; j < t; j++) {
+                splitGroups[middleLayerIndex][i][j] = i * t + j;
+            }
+        }
+    }
+
+    /**
+     * Splits vector into groups.
+     *
+     * @param vector vector.
+     * @param i      layer index.
+     * @return groups.
+     */
+    public byte[][][] splitVector(byte[][] vector, int i) {
+        MathPreconditions.checkEqual("n", "vector.length", n, vector.length);
+        MathPreconditions.checkNonNegativeInRange("i", i, d);
+        byte[][][] groups = new byte[g][t][];
+        for (int j = 0; j < g; j++) {
+            MathPreconditions.checkEqual("t", "group[" + j + "].length", t, groups[j].length);
+            for (int k = 0; k < t; k++) {
+                groups[j][k] = vector[splitGroups[i][j][k]];
+            }
+        }
+        return groups;
+    }
+
+    /**
+     * Combines groups into vector.
+     *
+     * @param groups groups.
+     * @param i      layer index.
+     * @return vector.
+     */
+    public byte[][] combineGroups(byte[][][] groups, int i) {
+        MathPreconditions.checkEqual("g", "groups.length", g, groups.length);
+        MathPreconditions.checkNonNegativeInRange("i", i, d);
+        byte[][] vector = new byte[n][];
+        for (int j = 0; j < g; j++) {
+            MathPreconditions.checkEqual("t", "group[" + j + "].length", t, groups[j].length);
+            for (int k = 0; k < t; k++) {
+                vector[splitGroups[i][j][k]] = groups[j][k];
+            }
+        }
+        return vector;
+    }
+
+    /**
+     * Sets sub-permutations. We have d layers, each contains N / T groups, each group corresponds a [T] → [T]
+     * sub-permutations.
+     *
+     * @param permutation permutation.
+     */
+    public void setPermutation(final int[] permutation) {
+        Preconditions.checkArgument(PermutationNetworkUtils.validPermutation(permutation));
+        MathPreconditions.checkEqual("n", "permutation.length", n, permutation.length);
+        int[][] splitLayerPermutation = computeSplitLayerPermutation(permutation);
+        subPermutations = new int[d][n / t][t];
+        for (int i = 0; i < d; i++) {
+            int[] mp = new int[n];
+            for (int j = 0; j < n / t; j++) {
+                for (int k = 0; k < t; k++) {
+                    mp[splitLayerPermutation[i][splitGroups[i][j][k]]] = k;
+                }
+            }
+            for (int j = 0; j < n / t; j++) {
+                for (int k = 0; k < t; k++) {
+                    subPermutations[i][j][k] = mp[splitLayerPermutation[i + 1][splitGroups[i][j][k]]];
+                }
+            }
+        }
+        setPermutation = true;
+    }
+
+    private int[][] computeSplitLayerPermutation(int[] permutation) {
         /*
          * Compute permutation results for each layer.
          * There are 2 * log(N) permutation results for 2 * log(N) - 1 layers, each layer contains n elements.
@@ -203,51 +299,48 @@ public class PermutationDecomposer {
         return path;
     }
 
-    private int[][][] computeSplitGroups() {
-        int[][][] splitGroup = new int[d][n / t][t];
-        // create the left and the right split
-        for (int i = 1; i < (int) Math.ceil((double) logN / logT); i++) {
-            int step = 1 << (logN - i * logT);
-            int groupCounter = 0;
-            int[] vis = new int[n];
-            for (int j = 0; j < n; j++) {
-                if (vis[j] != 0) {
-                    continue;
-                }
-                for (int k = 0; k < t; k++) {
-                    splitGroup[i - 1][groupCounter][k] = j + k * step;
-                    splitGroup[d - i][groupCounter][k] = j + k * step;
-                    vis[j + k * step] = 1;
-                }
-                groupCounter++;
-            }
+    /**
+     * Permutations.
+     *
+     * @param inputGroups input groups.
+     * @param i           layer index.
+     * @return output groups.
+     */
+    public byte[][][] permutation(byte[][][] inputGroups, int i) {
+        Preconditions.checkArgument(setPermutation, "Please set permutation");
+        MathPreconditions.checkEqual("g", "input_groups.length", g, inputGroups.length);
+        MathPreconditions.checkNonNegativeInRange("i", i, d);
+        byte[][][] outputGroups = new byte[g][t][];
+        for (int j = 0; j < g; j++) {
+            MathPreconditions.checkEqual("t", "input_groups[" + j + "].length", t, inputGroups[j].length);
+            outputGroups[j] = PermutationNetworkUtils.permutation(subPermutations[i][j], inputGroups[j]);
         }
-        // create the middle split
-        int middleLayerIndex = (int) Math.ceil((double) logN / logT) - 1;
-        for (int i = 0; i < n / t; i++) {
-            for (int j = 0; j < t; j++) {
-                splitGroup[middleLayerIndex][i][j] = i * t + j;
-            }
-        }
-        return splitGroup;
+        return outputGroups;
     }
 
-    private int[][][] computeSubPermutations(final int[][][] splitGroup, final int[][] splitLayerPermutation) {
-        int[][][] subPermutations = new int[d][n / t][t];
-        for (int i = 0; i < d; i++) {
-            int[] mp = new int[n];
-            for (int j = 0; j < n / t; j++) {
-                for (int k = 0; k < t; k++) {
-                    mp[splitLayerPermutation[i][splitGroup[i][j][k]]] = k;
-                }
-            }
-            for (int j = 0; j < n / t; j++) {
-                for (int k = 0; k < t; k++) {
-                    subPermutations[i][j][k] = mp[splitLayerPermutation[i + 1][splitGroup[i][j][k]]];
-                }
-            }
-        }
-        return subPermutations;
+    /**
+     * Permutations.
+     *
+     * @param inputVector input vector.
+     * @param i           layer index.
+     * @return output vector.
+     */
+    public byte[][] permutation(byte[][] inputVector, int i) {
+        Preconditions.checkArgument(setPermutation, "Please set permutation");
+        MathPreconditions.checkEqual("n", "input_vector.length", n, inputVector.length);
+        MathPreconditions.checkNonNegativeInRange("i", i, d);
+        byte[][][] inputGroups = splitVector(inputVector, i);
+        byte[][][] outputGroups = permutation(inputGroups, i);
+        return combineGroups(outputGroups, i);
+    }
+
+    /**
+     * Gets N.
+     *
+     * @return N.
+     */
+    public int getN() {
+        return n;
     }
 
     /**
@@ -260,39 +353,12 @@ public class PermutationDecomposer {
     }
 
     /**
-     * Gets the number of sub-permutations in each layer, i.e, N / T.
+     * Gets the number of groups in each layer, i.e, N / T.
      *
-     * @return the number of sub-permutations in each layer.
+     * @return the number of groups in each layer.
      */
-    public int getSubNum() {
-        return n / t;
-    }
-
-    /**
-     * Gets the original permutation.
-     *
-     * @return the original permutation.
-     */
-    public int[] getPermutation() {
-        return permutation;
-    }
-
-    /**
-     * Gets split groups. We have d layers, each contains N / T groups, each group contains T sub-permutations.
-     *
-     * @return split groups.
-     */
-    public int[][][] getSplitGroups() {
-        return splitGroups;
-    }
-
-    /**
-     * Gets sub-permutations. We have d layers, each contains N / T groups, each group contains T sub-permutations.
-     *
-     * @return sub-permutations.
-     */
-    public int[][][] getSubPermutations() {
-        return subPermutations;
+    public int getG() {
+        return g;
     }
 
     /**
@@ -302,5 +368,15 @@ public class PermutationDecomposer {
      */
     public int getT() {
         return t;
+    }
+
+    /**
+     * Gets sub-permutations.
+     *
+     * @return sub-permutations.
+     */
+    public int[][][] getSubPermutations() {
+        Preconditions.checkArgument(setPermutation, "Please set permutation");
+        return subPermutations;
     }
 }

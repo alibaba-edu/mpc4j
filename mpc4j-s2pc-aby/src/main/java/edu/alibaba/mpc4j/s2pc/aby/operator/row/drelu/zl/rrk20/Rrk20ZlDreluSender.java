@@ -3,13 +3,11 @@ package edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl.rrk20;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl.AbstractZlDreluParty;
@@ -45,12 +43,12 @@ public class Rrk20ZlDreluSender extends AbstractZlDreluParty {
      */
     private byte[][] remainingX;
 
-    public Rrk20ZlDreluSender(Rpc senderRpc, Party receiverParty, Rrk20ZlDreluConfig config) {
-        super(Rrk20ZlDreluPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        millionaireSender = MillionaireFactory.createSender(senderRpc, receiverParty, config.getMillionaireConfig());
-        addSubPto(millionaireSender);
-        z2cSender = Z2cFactory.createSender(senderRpc, receiverParty, config.getZ2cConfig());
+    public Rrk20ZlDreluSender(Z2cParty z2cSender, Party receiverParty, Rrk20ZlDreluConfig config) {
+        super(Rrk20ZlDreluPtoDesc.getInstance(), z2cSender.getRpc(), receiverParty, config);
+        this.z2cSender = z2cSender;
         addSubPto(z2cSender);
+        millionaireSender = MillionaireFactory.createSender(z2cSender, receiverParty, config.getMillionaireConfig());
+        addSubPto(millionaireSender);
     }
 
     @Override
@@ -60,7 +58,6 @@ public class Rrk20ZlDreluSender extends AbstractZlDreluParty {
 
         stopWatch.start();
         millionaireSender.init(maxL, maxNum);
-        z2cSender.init(maxL * maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

@@ -15,9 +15,9 @@ import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSender;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSenderOutput;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnPartyOutput;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnReceiver;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnPartyOutput;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.AbstractPmPeqtSender;
 
 import java.util.List;
@@ -39,7 +39,7 @@ public class Tcl23PsOprfPmPeqtSender extends AbstractPmPeqtSender {
     /**
      * OSN receiver
      */
-    private final OsnReceiver osnReceiver;
+    private final DosnReceiver dosnReceiver;
     /**
      * OPRF sender
      */
@@ -47,8 +47,8 @@ public class Tcl23PsOprfPmPeqtSender extends AbstractPmPeqtSender {
 
     public Tcl23PsOprfPmPeqtSender(Rpc senderRpc, Party receiverParty, Tcl23PsOprfPmPeqtConfig config) {
         super(getInstance(), senderRpc, receiverParty, config);
-        osnReceiver = OsnFactory.createReceiver(senderRpc, receiverParty, config.getOsnConfig());
-        addSubPto(osnReceiver);
+        dosnReceiver = DosnFactory.createReceiver(senderRpc, receiverParty, config.getOsnConfig());
+        addSubPto(dosnReceiver);
         oprfSender = OprfFactory.createOprfSender(senderRpc, receiverParty, config.getOprfConfig());
         addSubPto(oprfSender);
     }
@@ -60,7 +60,7 @@ public class Tcl23PsOprfPmPeqtSender extends AbstractPmPeqtSender {
 
         stopWatch.start();
         // initialize OSN receiver
-        osnReceiver.init(maxRow * maxColumn);
+        dosnReceiver.init();
         // initialize OPRF sender
         oprfSender.init(maxRow * maxColumn);
         stopWatch.stop();
@@ -85,7 +85,7 @@ public class Tcl23PsOprfPmPeqtSender extends AbstractPmPeqtSender {
                 permutationMap[i * column + j]  = rowPermutationMap[i] * column + columnPermutationMap[j];
             }
         }
-        OsnPartyOutput osnPartyOutput = osnReceiver.osn(permutationMap, byteLength);
+        DosnPartyOutput dosnPartyOutput = dosnReceiver.dosn(permutationMap, byteLength);
         stopWatch.stop();
         long osnTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -94,7 +94,7 @@ public class Tcl23PsOprfPmPeqtSender extends AbstractPmPeqtSender {
         stopWatch.start();
         // MP-OPRF
         OprfSenderOutput oprfSenderOutput = oprfSender.oprf(row * column);
-        byte[][] shareMatrix = handleOsnOutput(inputMatrix, osnPartyOutput, rowPermutationMap, columnPermutationMap);
+        byte[][] shareMatrix = handleOsnOutput(inputMatrix, dosnPartyOutput, rowPermutationMap, columnPermutationMap);
         List<byte[]> prfPayload = computePrf(shareMatrix, oprfSenderOutput);
         DataPacketHeader prfPayloadHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_PRF.ordinal(), extraInfo,
@@ -113,18 +113,18 @@ public class Tcl23PsOprfPmPeqtSender extends AbstractPmPeqtSender {
      * handle OSN output.
      *
      * @param inputMatrix          input matrix.
-     * @param osnPartyOutput       OSN output.
+     * @param dosnPartyOutput       OSN output.
      * @param rowPermutationMap    row permutation map.
      * @param columnPermutationMap column permutation map.
      * @return share matrix.
      */
-    private byte[][] handleOsnOutput(byte[][][] inputMatrix, OsnPartyOutput osnPartyOutput, int[] rowPermutationMap,
+    private byte[][] handleOsnOutput(byte[][][] inputMatrix, DosnPartyOutput dosnPartyOutput, int[] rowPermutationMap,
                                      int[] columnPermutationMap) {
         byte[][] shareMatrix = new byte[row * column][];
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < column; j++) {
                 shareMatrix[i * column + j] = BytesUtils.xor(
-                    osnPartyOutput.getShare(i * column + j), inputMatrix[rowPermutationMap[i]][columnPermutationMap[j]]
+                    dosnPartyOutput.getShare(i * column + j), inputMatrix[rowPermutationMap[i]][columnPermutationMap[j]]
                 );
             }
         }

@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.vector;
 
-import edu.alibaba.mpc4j.common.structure.matrix.MatrixUtils;
+import edu.alibaba.mpc4j.common.structure.StructureUtils;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
@@ -22,14 +22,6 @@ import java.util.stream.IntStream;
 public class ZlVectorTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZlVectorTest.class);
     /**
-     * the random state
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    /**
-     * default rows
-     */
-    private static final int DEFAULT_NUM = 1 << 16;
-    /**
      * min num
      */
     private static final int MIN_NUM = 1;
@@ -40,37 +32,53 @@ public class ZlVectorTest {
     /**
      * default Zl instance
      */
-    private static final Zl DEFAULT_ZL = ZlFactory.createInstance(EnvType.STANDARD, 40);
+    private final Zl zl;
     /**
      * large Zl instance
      */
-    private static final Zl LARGE_ZL = ZlFactory.createInstance(EnvType.STANDARD, 128);
+    private final Zl largeZl;
+    /**
+     * the random state
+     */
+    private final SecureRandom secureRandom;
+
+    public ZlVectorTest() {
+        zl = ZlFactory.createInstance(EnvType.STANDARD, 40);
+        largeZl = ZlFactory.createInstance(EnvType.STANDARD, 128);
+        secureRandom = new SecureRandom();
+    }
 
     @Test
     public void testIllegalInputs() {
         // create a vector with num = 0
-        Assert.assertThrows(IllegalArgumentException.class, () -> ZlVector.create(DEFAULT_ZL, new BigInteger[0]));
+        Assert.assertThrows(IllegalArgumentException.class, () -> ZlVector.create(zl, new BigInteger[0]));
+        int num = 12;
         // create a random vector with num = 0
-        Assert.assertThrows(IllegalArgumentException.class, () -> ZlVector.createRandom(DEFAULT_ZL, 0, SECURE_RANDOM));
+        Assert.assertThrows(IllegalArgumentException.class, () -> ZlVector.createRandom(zl, 0, secureRandom));
         // create a vector with invalid data
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            BigInteger[] data = IntStream.range(0, DEFAULT_NUM)
-                .mapToObj(index -> DEFAULT_ZL.createZero().subtract(BigInteger.ONE))
+            BigInteger[] data = IntStream.range(0, num)
+                .mapToObj(index -> zl.createZero().subtract(BigInteger.ONE))
                 .toArray(BigInteger[]::new);
-            ZlVector.create(DEFAULT_ZL, data);
+            ZlVector.create(zl, data);
         });
-        ZlVector vector = ZlVector.createRandom(DEFAULT_ZL, DEFAULT_NUM, SECURE_RANDOM);
+    }
+
+    @Test
+    public void testIllegalUpdate() {
+        int num = 4;
+        ZlVector vector = ZlVector.createRandom(zl, num, secureRandom);
         // split vector with split num = 0
         Assert.assertThrows(IllegalArgumentException.class, () -> vector.split(0));
         // split vector with split num > num
-        Assert.assertThrows(IllegalArgumentException.class, () -> vector.split(DEFAULT_NUM + 1));
+        Assert.assertThrows(IllegalArgumentException.class, () -> vector.split(num + 1));
         // reduce vector with reduce num = 0
         Assert.assertThrows(IllegalArgumentException.class, () -> vector.reduce(0));
         // reduce vector with reduce num > num
-        Assert.assertThrows(IllegalArgumentException.class, () -> vector.reduce(DEFAULT_NUM + 1));
+        Assert.assertThrows(IllegalArgumentException.class, () -> vector.reduce(num + 1));
         // merge two vector with different l
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            ZlVector mergeVector = ZlVector.createRandom(LARGE_ZL, DEFAULT_NUM, SECURE_RANDOM);
+            ZlVector mergeVector = ZlVector.createRandom(largeZl, num, secureRandom);
             vector.merge(mergeVector);
         });
     }
@@ -84,20 +92,20 @@ public class ZlVectorTest {
 
     private void testReduce(int num) {
         // reduce 1
-        ZlVector vector1 = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+        ZlVector vector1 = ZlVector.createRandom(zl, num, secureRandom);
         vector1.reduce(1);
         Assert.assertEquals(1, vector1.getNum());
         // reduce all
-        ZlVector vectorAll = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+        ZlVector vectorAll = ZlVector.createRandom(zl, num, secureRandom);
         vectorAll.reduce(num);
         Assert.assertEquals(num, vectorAll.getNum());
         if (num > 1) {
             // reduce num - 1
-            ZlVector vectorNum = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+            ZlVector vectorNum = ZlVector.createRandom(zl, num, secureRandom);
             vectorNum.reduce(num - 1);
             Assert.assertEquals(num - 1, vectorNum.getNum());
             // reduce half
-            ZlVector vectorHalf = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+            ZlVector vectorHalf = ZlVector.createRandom(zl, num, secureRandom);
             vectorHalf.reduce(num / 2);
             Assert.assertEquals(num / 2, vectorHalf.getNum());
         }
@@ -105,8 +113,8 @@ public class ZlVectorTest {
 
     @Test
     public void testAllEmptyMerge() {
-        ZlVector vector = ZlVector.createEmpty(DEFAULT_ZL);
-        ZlVector mergeVector = ZlVector.createEmpty(DEFAULT_ZL);
+        ZlVector vector = ZlVector.createEmpty(zl);
+        ZlVector mergeVector = ZlVector.createEmpty(zl);
         vector.merge(mergeVector);
         Assert.assertEquals(0, vector.getNum());
     }
@@ -119,8 +127,8 @@ public class ZlVectorTest {
     }
 
     private void testLeftEmptyMerge(int num) {
-        ZlVector vector = ZlVector.createEmpty(DEFAULT_ZL);
-        ZlVector mergeVector = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+        ZlVector vector = ZlVector.createEmpty(zl);
+        ZlVector mergeVector = ZlVector.createRandom(zl, num, secureRandom);
         vector.merge(mergeVector);
         Assert.assertEquals(num, vector.getNum());
     }
@@ -133,8 +141,8 @@ public class ZlVectorTest {
     }
 
     private void testRightEmptyMerge(int num) {
-        ZlVector vector = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
-        ZlVector mergeVector = ZlVector.createEmpty(DEFAULT_ZL);
+        ZlVector vector = ZlVector.createRandom(zl, num, secureRandom);
+        ZlVector mergeVector = ZlVector.createEmpty(zl);
         vector.merge(mergeVector);
         Assert.assertEquals(num, vector.getNum());
     }
@@ -149,8 +157,8 @@ public class ZlVectorTest {
     }
 
     private void testMerge(int num1, int num2) {
-        ZlVector vector = ZlVector.createRandom(DEFAULT_ZL, num1, SECURE_RANDOM);
-        ZlVector mergeVector = ZlVector.createRandom(DEFAULT_ZL, num2, SECURE_RANDOM);
+        ZlVector vector = ZlVector.createRandom(zl, num1, secureRandom);
+        ZlVector mergeVector = ZlVector.createRandom(zl, num2, secureRandom);
         vector.merge(mergeVector);
         Assert.assertEquals(num1 + num2, vector.getNum());
     }
@@ -164,23 +172,23 @@ public class ZlVectorTest {
 
     private void testSplit(int num) {
         // split 1
-        ZlVector vector1 = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+        ZlVector vector1 = ZlVector.createRandom(zl, num, secureRandom);
         ZlVector splitVector1 = vector1.split(1);
         Assert.assertEquals(num - 1, vector1.getNum());
         Assert.assertEquals(1, splitVector1.getNum());
         // split all
-        ZlVector vectorAll = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+        ZlVector vectorAll = ZlVector.createRandom(zl, num, secureRandom);
         ZlVector splitVectorAll = vectorAll.split(num);
         Assert.assertEquals(0, vectorAll.getNum());
         Assert.assertEquals(num, splitVectorAll.getNum());
         if (num > 1) {
             // split num - 1
-            ZlVector vectorNum = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+            ZlVector vectorNum = ZlVector.createRandom(zl, num, secureRandom);
             ZlVector splitVectorNum = vectorNum.split(num - 1);
             Assert.assertEquals(1, vectorNum.getNum());
             Assert.assertEquals(num - 1, splitVectorNum.getNum());
             // split half
-            ZlVector vectorHalf = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+            ZlVector vectorHalf = ZlVector.createRandom(zl, num, secureRandom);
             ZlVector splitVectorHalf = vectorHalf.split(num / 2);
             Assert.assertEquals(num - num / 2, vectorHalf.getNum());
             Assert.assertEquals(num / 2, splitVectorHalf.getNum());
@@ -196,46 +204,46 @@ public class ZlVectorTest {
 
     private void testSplitMerge(int num) {
         // split and merge 1
-        ZlVector vector1 = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+        ZlVector vector1 = ZlVector.createRandom(zl, num, secureRandom);
         ZlVector copyVector1 = vector1.copy();
         ZlVector splitVector1 = vector1.split(1);
-        splitVector1.merge(vector1);
-        Assert.assertEquals(copyVector1, splitVector1);
+        vector1.merge(splitVector1);
+        Assert.assertEquals(copyVector1, vector1);
         // split and merge all
-        ZlVector vectorAll = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+        ZlVector vectorAll = ZlVector.createRandom(zl, num, secureRandom);
         ZlVector copyVectorAll = vectorAll.copy();
         ZlVector splitVectorAll = vectorAll.split(num);
-        splitVectorAll.merge(vectorAll);
-        Assert.assertEquals(copyVectorAll, splitVectorAll);
+        vectorAll.merge(splitVectorAll);
+        Assert.assertEquals(copyVectorAll, vectorAll);
         if (num > 1) {
             // split and merge num - 1
-            ZlVector vectorNum = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+            ZlVector vectorNum = ZlVector.createRandom(zl, num, secureRandom);
             ZlVector copyVectorNum = vectorNum.copy();
             ZlVector splitVectorNum = vectorNum.split(num - 1);
-            splitVectorNum.merge(vectorNum);
-            Assert.assertEquals(copyVectorNum, splitVectorNum);
+            vectorNum.merge(splitVectorNum);
+            Assert.assertEquals(copyVectorNum, vectorNum);
             // split half
-            ZlVector vectorHalf = ZlVector.createRandom(DEFAULT_ZL, num, SECURE_RANDOM);
+            ZlVector vectorHalf = ZlVector.createRandom(zl, num, secureRandom);
             ZlVector copyVectorHalf = vectorHalf.copy();
             ZlVector splitVectorHalf = vectorHalf.split(num / 2);
-            splitVectorHalf.merge(vectorHalf);
-            Assert.assertEquals(copyVectorHalf, splitVectorHalf);
+            vectorHalf.merge(splitVectorHalf);
+            Assert.assertEquals(copyVectorHalf, vectorHalf);
         }
     }
 
     @Test
     public void testDisplay() {
         // empty
-        ZlVector vectorEmpty = ZlVector.createEmpty(DEFAULT_ZL);
+        ZlVector vectorEmpty = ZlVector.createEmpty(zl);
         LOGGER.info(vectorEmpty.toString());
         // num = 1
-        ZlVector vector1 = ZlVector.createRandom(DEFAULT_ZL, 1, SECURE_RANDOM);
+        ZlVector vector1 = ZlVector.createRandom(zl, 1, secureRandom);
         LOGGER.info(vector1.toString());
         // num = DISPLAY_NUM
-        ZlVector vectorDisplayNum = ZlVector.createRandom(DEFAULT_ZL, MatrixUtils.DISPLAY_NUM, SECURE_RANDOM);
+        ZlVector vectorDisplayNum = ZlVector.createRandom(zl, StructureUtils.DISPLAY_NUM, secureRandom);
         LOGGER.info(vectorDisplayNum.toString());
         // num = DISPLAY_NUM + 1
-        ZlVector vectorDisplayNum1 = ZlVector.createRandom(DEFAULT_ZL, MatrixUtils.DISPLAY_NUM + 1, SECURE_RANDOM);
+        ZlVector vectorDisplayNum1 = ZlVector.createRandom(zl, StructureUtils.DISPLAY_NUM + 1, secureRandom);
         LOGGER.info(vectorDisplayNum1.toString());
     }
 }

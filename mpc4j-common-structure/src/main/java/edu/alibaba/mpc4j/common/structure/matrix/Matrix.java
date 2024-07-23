@@ -8,13 +8,6 @@ package edu.alibaba.mpc4j.common.structure.matrix;
  */
 public interface Matrix {
     /**
-     * Sets parallel operation.
-     *
-     * @param parallel parallel operation.
-     */
-    void setParallel(boolean parallel);
-
-    /**
      * Copies the matrix.
      *
      * @return the copied matrix.

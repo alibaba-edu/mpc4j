@@ -3,6 +3,11 @@ package edu.alibaba.mpc4j.s2pc.pso.psi;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
+import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyAidPto;
+import edu.alibaba.mpc4j.s2pc.pso.psi.aid.kmrs14.Kmrs14AidPsiAider;
+import edu.alibaba.mpc4j.s2pc.pso.psi.aid.kmrs14.Kmrs14AidPsiClient;
+import edu.alibaba.mpc4j.s2pc.pso.psi.aid.kmrs14.Kmrs14AidPsiConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psi.aid.kmrs14.Kmrs14AidPsiServer;
 import edu.alibaba.mpc4j.s2pc.pso.psi.cuckoo.oos17.Oos17PsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.psi.cuckoo.oos17.Oos17PsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.cuckoo.oos17.Oos17PsiServer;
@@ -139,7 +144,11 @@ public class PsiFactory implements PtoFactory {
         /**
          * RR16
          */
-        RR16
+        RR16,
+        /**
+         * KMRS14 aid PSI
+         */
+        AID_KMRS14,
     }
 
     /**
@@ -249,6 +258,66 @@ public class PsiFactory implements PtoFactory {
                 return new Rr17EcPsiClient<>(clientRpc, serverParty, (Rr17EcPsiConfig) config);
             case RR16:
                 return new Rr16PsiClient<>(clientRpc, serverParty, (Rr16PsiConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + PsiType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a PSI server.
+     *
+     * @param serverRpc   server RPC.
+     * @param clientParty client party.
+     * @param aidParty    aid party.
+     * @param config      config.
+     * @return a PSI server.
+     */
+    public static <X> PsiServer<X> createServer(Rpc serverRpc, Party clientParty, Party aidParty, PsiConfig config) {
+        PsiType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (type) {
+            case AID_KMRS14:
+                return new Kmrs14AidPsiServer<>(serverRpc, clientParty, aidParty, (Kmrs14AidPsiConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + PsiType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates a client.
+     *
+     * @param clientRpc   client RPC.
+     * @param serverParty server party.
+     * @param aidParty    aid party.
+     * @param config      config.
+     * @return a client.
+     */
+    public static <X> PsiClient<X> createClient(Rpc clientRpc, Party serverParty, Party aidParty, PsiConfig config) {
+        PsiType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (type) {
+            case AID_KMRS14:
+                return new Kmrs14AidPsiClient<>(clientRpc, serverParty, aidParty, (Kmrs14AidPsiConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + PsiType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates an aider.
+     *
+     * @param aiderRpc    aider RPC.
+     * @param serverParty server party.
+     * @param clientParty client party.
+     * @param config      config.
+     * @return an aider.
+     */
+    public static TwoPartyAidPto createAider(Rpc aiderRpc, Party serverParty, Party clientParty, PsiConfig config) {
+        PsiType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (type) {
+            case AID_KMRS14:
+                return new Kmrs14AidPsiAider(aiderRpc, serverParty, clientParty, (Kmrs14AidPsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + PsiType.class.getSimpleName() + ": " + type.name());
         }

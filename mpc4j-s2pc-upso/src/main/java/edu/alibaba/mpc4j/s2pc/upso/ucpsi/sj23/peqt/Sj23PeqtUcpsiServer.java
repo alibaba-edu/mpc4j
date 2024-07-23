@@ -1,8 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.peqt;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
@@ -75,7 +73,7 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
     /**
      * maks coeffs
      */
-    private List<long[]> maskCoeffList;
+    private long[][] coeffMasks;
 
     public Sj23PeqtUcpsiServer(Rpc serverRpc, Party clientParty, Sj23PeqtUcpsiConfig config) {
         super(Sj23PeqtUcpsiPtoDesc.getInstance(), serverRpc, clientParty, config);
@@ -88,9 +86,9 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
     public void init(Set<T> serverElementSet, int maxClientElementSize) throws MpcAbortException {
         setInitInput(serverElementSet, maxClientElementSize);
         logPhaseInfo(PtoState.INIT_BEGIN);
-        params = Sj23PeqtUcpsiParams.getParams(serverElementSize, maxClientElementSize);
 
         stopWatch.start();
+        params = Sj23PeqtUcpsiParams.getParams(serverElementSize, maxClientElementSize);
         // generate simple hash bin
         hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
         List<byte[][]> hashBins = generateSimpleHashBin(CommonUtils.getByteLength(params.l));
@@ -99,39 +97,30 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
         alpha = CommonUtils.getUnitNum(approxMaxBinSize, params.maxPartitionSizePerBin);
         // server sends hash keys
         List<byte[]> cuckooHashKeyPayload = Arrays.stream(hashKeys).collect(Collectors.toList());
-        DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_HASH_KEYS.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(cuckooHashKeyHeader, cuckooHashKeyPayload));
+        sendOtherPartyEqualSizePayload(PtoStep.SERVER_SEND_HASH_KEYS.ordinal(), cuckooHashKeyPayload);
         stopWatch.stop();
         long hashBinTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.INIT_STEP, 1, 3, hashBinTime);
 
         stopWatch.start();
-        // polynomial interpolate
-        plaintextList = encodeDatabase(hashBins);
+        encodeDatabase(hashBins);
         stopWatch.stop();
         long encodedTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.INIT_STEP, 2, 3, encodedTime);
 
-        DataPacketHeader clientPublicKeysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), extraInfo,
-            otherParty().getPartyId(), rpc.ownParty().getPartyId()
-        );
-        List<byte[]> clientPublicKeysPayload = rpc.receive(clientPublicKeysHeader).getPayload();
+        List<byte[]> clientPublicKeysPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal());
 
         stopWatch.start();
         // handle client public keys
         handleClientPublicKeyPayload(clientPublicKeysPayload);
-        // initialize peqt
+        // init PEQT
         peqtParty.init(params.l, alpha * params.binNum);
         stopWatch.stop();
         long peqtTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.INIT_STEP, 4, 4, peqtTime);
+        logStepInfo(PtoState.INIT_STEP, 3, 3, peqtTime);
 
         logPhaseInfo(PtoState.INIT_END);
     }
@@ -141,24 +130,16 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
         setPtoInput();
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        // receive query
-        DataPacketHeader queryHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
-            otherParty().getPartyId(), rpc.ownParty().getPartyId()
-        );
-        List<byte[]> queryPayload = rpc.receive(queryHeader).getPayload();
+        List<byte[]> queryPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_QUERY.ordinal());
 
         stopWatch.start();
         byte[][] masks = generateMask();
         List<byte[]> responsePayload = computeResponse(queryPayload);
+        coeffMasks = null;
+        sendOtherPartyEqualSizePayload(PtoStep.SERVER_SEND_RESPONSE.ordinal(), responsePayload);
         stopWatch.stop();
         long replyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        DataPacketHeader responseHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RESPONSE.ordinal(), extraInfo,
-            rpc.ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(responseHeader, responsePayload));
         logStepInfo(PtoState.PTO_STEP, 1, 2, replyTime, "Server generates reply");
 
         stopWatch.start();
@@ -185,7 +166,10 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
             .mapToObj(i -> z.split(alpha))
             .toArray(SquareZ2Vector[]::new);
         TransBitMatrix matrix = TransBitMatrixFactory.createInstance(envType, alpha, params.binNum, parallel);
-        IntStream.range(0, params.binNum).forEach(i -> matrix.setColumn(i, binVector[i].getBitVector().getBytes()));
+        // we need to flip the above bin vector since split is in the reverse order (from right to left)
+        IntStream.range(0, params.binNum).forEach(i ->
+            matrix.setColumn(i, binVector[params.binNum - 1 - i].getBitVector().getBytes())
+        );
         TransBitMatrix transpose = matrix.transpose();
         BitVector bitVector = BitVectorFactory.createZeros(params.binNum);
         for (int i = 0; i < alpha; i++) {
@@ -201,13 +185,13 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
      * @return masks.
      */
     private byte[][] generateMask() {
-        maskCoeffList = new ArrayList<>();
+        coeffMasks = new long[params.ciphertextNum * alpha][];
         for (int i = 0; i < params.ciphertextNum; i++) {
+            int offset = i * alpha;
             for (int j = 0; j < alpha; j++) {
-                long[] r = IntStream.range(0, params.polyModulusDegree)
+                coeffMasks[offset + j] = IntStream.range(0, params.polyModulusDegree)
                     .mapToLong(l -> Math.abs(secureRandom.nextLong()) % params.plainModulus)
                     .toArray();
-                maskCoeffList.add(r);
             }
         }
         int byteL = CommonUtils.getByteLength(params.l);
@@ -217,7 +201,7 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
             int coeffIndex = (i * params.itemEncodedSlotSize) % params.polyModulusDegree;
             for (int j = 0; j < alpha; j++) {
                 long[] item = new long[params.itemEncodedSlotSize];
-                System.arraycopy(maskCoeffList.get(cipherIndex * alpha + j), coeffIndex, item, 0, params.itemEncodedSlotSize);
+                System.arraycopy(coeffMasks[cipherIndex * alpha + j], coeffIndex, item, 0, params.itemEncodedSlotSize);
                 masks[i * alpha + j] = PirUtils.convertCoeffsToBytes(item, params.plainModulusSize);
                 BytesUtils.reduceByteArray(masks[i * alpha + j], params.l);
             }
@@ -257,9 +241,8 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
      * encode database.
      *
      * @param hashBins hash bin.
-     * @return encoded database.
      */
-    public List<long[][]> encodeDatabase(List<byte[][]> hashBins) {
+    public void encodeDatabase(List<byte[][]> hashBins) {
         int binSize = alpha * params.maxPartitionSizePerBin;
         Zp64Poly zp64Poly = Zp64PolyFactory.createInstance(envType, params.plainModulus);
         // we will split the hash table into partitions
@@ -284,7 +267,7 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
                 }
             }
         }
-        return UpsoUtils.rootInterpolate(
+        plaintextList = UpsoUtils.rootInterpolate(
             encodedItemArray, params.itemPerCiphertext, params.ciphertextNum, alpha, params.maxPartitionSizePerBin,
             params.polyModulusDegree, params.itemEncodedSlotSize, zp64Poly, parallel
         );
@@ -298,8 +281,8 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
      */
     private void handleClientPublicKeyPayload(List<byte[]> clientPublicKeysPayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(clientPublicKeysPayload.size() == 2);
-        publicKey = clientPublicKeysPayload.remove(0);
-        relinKeys = clientPublicKeysPayload.remove(0);
+        publicKey = clientPublicKeysPayload.get(0);
+        relinKeys = clientPublicKeysPayload.get(1);
     }
 
     /**
@@ -340,7 +323,7 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
                             plaintextList.get(i * alpha + j),
                             queryPowers.subList(i * powerDegree.length, (i + 1) * powerDegree.length),
                             params.psLowDegree,
-                            maskCoeffList.get(i * alpha + j))
+                            coeffMasks[i * alpha + j])
                         )
                         .toArray(byte[][]::new))
                 .flatMap(Arrays::stream)
@@ -354,7 +337,7 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
                                 publicKey,
                                 plaintextList.get(i * alpha + j),
                                 queryPowers.subList(i * powerDegree.length, (i + 1) * powerDegree.length),
-                                maskCoeffList.get(i * alpha + j)
+                                coeffMasks[i * alpha + j]
                             )
                         )
                         .toArray(byte[][]::new))

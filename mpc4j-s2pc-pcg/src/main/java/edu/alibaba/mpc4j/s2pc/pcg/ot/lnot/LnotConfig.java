@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot;
 
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory.LnotType;
 
 /**
  * 1-out-of-n (with n = 2^l) OT config.
@@ -10,16 +11,17 @@ import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
  */
 public interface LnotConfig extends MultiPartyPtoConfig {
     /**
-     * Gets the protocol type.
+     * Gets protocol type.
      *
-     * @return the protocol type.
+     * @return protocol type.
      */
-    LnotFactory.LnotType getPtoType();
+    LnotType getPtoType();
 
     /**
-     * Gets the maximal base num.
+     * Gets default round num.
      *
-     * @return the maximal base num.
+     * @param l l.
+     * @return default round num.
      */
-    int maxBaseNum();
+    int defaultRoundNum(int l);
 }

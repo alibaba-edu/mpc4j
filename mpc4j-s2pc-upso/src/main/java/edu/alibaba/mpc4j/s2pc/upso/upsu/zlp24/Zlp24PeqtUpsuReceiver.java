@@ -23,8 +23,8 @@ import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.IdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.AbstractUpsuReceiver;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.UpsuReceiverOutput;
 
@@ -36,7 +36,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.*;
-import static edu.alibaba.mpc4j.s2pc.upso.upsu.zlp24.Zlp24PeqtUpsuPtoDesc.*;
+import static edu.alibaba.mpc4j.s2pc.upso.upsu.zlp24.Zlp24PeqtUpsuPtoDesc.PtoStep;
+import static edu.alibaba.mpc4j.s2pc.upso.upsu.zlp24.Zlp24PeqtUpsuPtoDesc.getInstance;
 
 /**
  * ZLP24 UPSU receiver.
@@ -56,7 +57,7 @@ public class Zlp24PeqtUpsuReceiver extends AbstractUpsuReceiver {
     /**
      * batch index PIR server
      */
-    private final BatchIndexPirServer batchIndexPirServer;
+    private final IdxPirServer batchIndexPirServer;
     /**
      * core COT receiver
      */
@@ -100,7 +101,7 @@ public class Zlp24PeqtUpsuReceiver extends AbstractUpsuReceiver {
         addSubPto(sqOprfSender);
         pmPeqtReceiver = PmPeqtFactory.createReceiver(receiverRpc, senderParty, config.getPmPeqtConfig());
         addSubPto(pmPeqtReceiver);
-        batchIndexPirServer = BatchIndexPirFactory.createServer(receiverRpc, senderParty, config.getBatchIndexPirConfig());
+        batchIndexPirServer = StdIdxPirFactory.createServer(receiverRpc, senderParty, config.getBatchIndexPirConfig());
         addSubPto(batchIndexPirServer);
         coreCotReceiver = CoreCotFactory.createReceiver(receiverRpc, senderParty, config.getCoreCotConfig());
         addSubPto(coreCotReceiver);
@@ -124,7 +125,7 @@ public class Zlp24PeqtUpsuReceiver extends AbstractUpsuReceiver {
         rpc.send(DataPacket.fromByteArrayList(cuckooHashKeysHeader, Arrays.stream(cuckooHashKeys).collect(Collectors.toList())));
         // init core COT
         cuckooHashBinNum = getBinNum(cuckooHashBinType, maxSenderElementSize);
-        coreCotReceiver.init(cuckooHashBinNum);
+        coreCotReceiver.init();
         // init OPRF
         sqOprfKey = sqOprfSender.keyGen();
         sqOprfSender.init(maxSenderElementSize, sqOprfKey);

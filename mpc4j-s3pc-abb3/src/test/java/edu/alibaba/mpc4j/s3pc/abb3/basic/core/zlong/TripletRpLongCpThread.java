@@ -52,8 +52,8 @@ public class TripletRpLongCpThread extends Thread {
         try {
             z64cParty.getTripletProvider().init(0, totalNum);
             z64cParty.init();
-            for(AcOperator op : ops){
-                switch (op){
+            for (AcOperator op : ops) {
+                switch (op) {
                     case ADD:
                     case ADDI:
                     case SUB:
@@ -115,7 +115,7 @@ public class TripletRpLongCpThread extends Thread {
             rightMultiInput = (TripletLongVector[]) z64cParty.shareOwn(rightMulti);
             leftSingleInput = (TripletLongVector) z64cParty.shareOwn(new LongVector[]{leftSingle})[0];
             rightSingleInput = (TripletLongVector) z64cParty.shareOwn(new LongVector[]{rightSingle})[0];
-        }else{
+        } else {
             TripletLongVector[] rightMultiRandom = z64cParty.getTripletProvider().getCrProvider().randRpShareZl64Vector(dataNums);
             TripletLongVector rightSingleRandom = z64cParty.getTripletProvider().getCrProvider().randRpShareZl64Vector(new int[]{dataNums[0]})[0];
             LongVector[] rightMultiRandomPlain = z64cParty.open(rightMultiRandom);
@@ -176,7 +176,7 @@ public class TripletRpLongCpThread extends Thread {
                 shareResult.add(z64cParty.mul(leftSingleInput, rightPlainSingleInput));
                 break;
             }
-            case MULI:{
+            case MULI: {
                 z64cParty.muli(leftMultiInput, rightPlainMultiInput);
                 z64cParty.muli(leftSingleInput, rightPlainSingleInput);
                 shareResult.addAll(Arrays.stream(leftMultiInput).collect(Collectors.toList()));
@@ -184,14 +184,14 @@ public class TripletRpLongCpThread extends Thread {
                 break;
             }
         }
-        if(z64cParty.getRpc().ownParty().getPartyId() == 0){
+        if (z64cParty.getRpc().ownParty().getPartyId() == 0) {
 //            inputAndRes[2] = z64cParty.open(shareResult.toArray(new MpcLongVector[0]));
             inputAndRes[2] = z64cParty.revealOwn(shareResult.toArray(new MpcLongVector[0]));
-            if(op.equals(AcOperator.MULI)){
+            if (op.equals(AcOperator.MULI)) {
                 IntStream.range(0, 2).forEach(i -> inputAndRes[i] = Arrays.copyOfRange(inputAndRes[i], inputAndRes[i].length / 2, inputAndRes[2].length));
             }
             hashMap.put(op, inputAndRes);
-        }else{
+        } else {
 //            inputAndRes[2] = z64cParty.open(shareResult.toArray(new MpcLongVector[0]));
             z64cParty.revealOther(z64cParty.getRpc().getParty(0), shareResult.toArray(new MpcLongVector[0]));
         }
@@ -215,7 +215,7 @@ public class TripletRpLongCpThread extends Thread {
 
             multiInput = (TripletLongVector[]) z64cParty.shareOwn(multi);
             singleInput = (TripletLongVector) z64cParty.shareOwn(new LongVector[]{single})[0];
-        }else{
+        } else {
             multiInput = (TripletLongVector[]) z64cParty.shareOther(dataNums, z64cParty.getRpc().getParty(0));
             singleInput = (TripletLongVector) z64cParty.shareOther(new int[]{dataNums[0]}, z64cParty.getRpc().getParty(0))[0];
         }
@@ -233,10 +233,10 @@ public class TripletRpLongCpThread extends Thread {
                 break;
             }
         }
-        if(z64cParty.getRpc().ownParty().getPartyId() == 0){
+        if (z64cParty.getRpc().ownParty().getPartyId() == 0) {
             inputAndRes[1] = z64cParty.revealOwn(shareResult.toArray(new MpcLongVector[0]));
             hashMap.put(op, inputAndRes);
-        }else{
+        } else {
             z64cParty.revealOther(z64cParty.getRpc().getParty(0), shareResult.toArray(new MpcLongVector[0]));
         }
     }

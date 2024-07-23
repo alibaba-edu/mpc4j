@@ -7,7 +7,11 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory.OprpType;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpSender;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpSenderOutput;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.AbstractSqOprfSender;
@@ -27,9 +31,17 @@ import java.util.stream.IntStream;
  */
 public class Pssw09SqOprfSender extends AbstractSqOprfSender {
     /**
+     * Z2c sender
+     */
+    private final Z2cParty z2cSender;
+    /**
      * OPRP Sender
      */
     private final OprpSender oprpSender;
+    /**
+     * OPRP type
+     */
+    private final OprpType oprpType;
     /**
      * key
      */
@@ -37,8 +49,12 @@ public class Pssw09SqOprfSender extends AbstractSqOprfSender {
 
     public Pssw09SqOprfSender(Rpc senderRpc, Party receiverParty, Pssw09SqOprfConfig config) {
         super(Pssw09SqOprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        oprpSender = OprpFactory.createSender(senderRpc, receiverParty, config.getOprpConfig());
+        z2cSender = Z2cFactory.createSender(senderRpc, receiverParty, config.getZ2cConfig());
+        addSubPto(z2cSender);
+        OprpConfig oprpConfig = config.getOprpConfig();
+        oprpSender = OprpFactory.createSender(z2cSender, receiverParty, oprpConfig);
         addSubPto(oprpSender);
+        oprpType = oprpConfig.getPtoType();
     }
 
     @Override
@@ -56,18 +72,12 @@ public class Pssw09SqOprfSender extends AbstractSqOprfSender {
         stopWatch.start();
         // set key
         this.key = (Pssw09SqOprfKey) key;
-        stopWatch.stop();
-        long setKeyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.INIT_STEP, 1, 2, setKeyTime);
-
-        stopWatch.start();
-        // init OPRP
+        z2cSender.init(Math.min(Integer.MAX_VALUE, (int) OprpFactory.expectZ2TripleNum(oprpType, maxBatchSize)));
         oprpSender.init(maxBatchSize);
         stopWatch.stop();
-        long initOprpTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.INIT_STEP, 2, 2, initOprpTime);
+        logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
         logPhaseInfo(PtoState.INIT_END);
     }

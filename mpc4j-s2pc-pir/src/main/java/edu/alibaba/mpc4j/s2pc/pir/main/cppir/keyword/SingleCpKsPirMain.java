@@ -3,16 +3,16 @@ package edu.alibaba.mpc4j.s2pc.pir.main.cppir.keyword;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcPropertiesUtils;
+import edu.alibaba.mpc4j.common.rpc.main.AbstractMainTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.keyword.SingleCpKsPirClient;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.keyword.SingleCpKsPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.keyword.SingleCpKsPirFactory;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.keyword.SingleCpKsPirServer;
-import org.apache.commons.lang3.time.StopWatch;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirFactory;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirServer;
 import org.bouncycastle.util.encoders.Hex;
 import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
@@ -31,16 +31,16 @@ import java.util.stream.IntStream;
  * @author Liqiang Peng
  * @date 2023/9/27
  */
-public class SingleCpKsPirMain {
+public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleCpKsPirMain.class);
-    /**
-     * task name
-     */
-    public static final String TASK_NAME = "SINGLE_CP_KS_PIR_TASK";
     /**
      * protocol name
      */
-    private final String PTO_TYPE_NAME = "SINGLE_CP_KS_PIR_PTO";
+    public static final String PTO_NAME_KEY = "single_cp_ks_pir_pto_name";
+    /**
+     * type name
+     */
+    public static final String PTO_TYPE_NAME = "SINGLE_CP_KS_PIR";
     /**
      * warmup entry bit length
      */
@@ -54,51 +54,57 @@ public class SingleCpKsPirMain {
      */
     private static final int WARMUP_QUERY_NUM = 1 << 5;
     /**
-     * stop watch
+     * entry bit length
      */
-    private final StopWatch stopWatch;
+    private final int entryBitLength;
     /**
-     * properties
+     * parallel
      */
-    private final Properties properties;
+    private final boolean parallel;
+    /**
+     * server set sizes
+     */
+    private final int[] serverSetSizes;
+    /**
+     * server set size num
+     */
+    private final int serverSetSizeNum;
+    /**
+     * query num
+     */
+    private final int queryNum;
+    /**
+     * config
+     */
+    private final CpKsPirConfig config;
 
-    public SingleCpKsPirMain(Properties properties) {
-        this.properties = properties;
-        stopWatch = new StopWatch();
-    }
-
-    public void run() throws Exception {
-        Rpc ownRpc = RpcPropertiesUtils.readNettyRpc(properties, "server", "client");
-        if (ownRpc.ownParty().getPartyId() == 0) {
-            runServer(ownRpc, ownRpc.getParty(1));
-        } else if (ownRpc.ownParty().getPartyId() == 1) {
-            runClient(ownRpc, ownRpc.getParty(0));
-        } else {
-            throw new IllegalArgumentException(
-                "Invalid PartyID for own_name " + ownRpc.ownParty().getPartyName() + ": " + ownRpc.ownParty().getPartyId()
-            );
-        }
-    }
-
-    private void runServer(Rpc serverRpc, Party clientParty) throws Exception {
-        LOGGER.info("{} read settings", serverRpc.ownParty().getPartyName());
-        int entryBitLength = PropertiesUtils.readInt(properties, "entry_bit_length");
-        boolean parallel = PropertiesUtils.readBoolean(properties, "parallel");
+    public SingleCpKsPirMain(Properties properties, String ownName) {
+        super(properties, ownName);
+        // read common config
+        LOGGER.info("{} read common config", ownRpc.ownParty().getPartyName());
+        entryBitLength = PropertiesUtils.readInt(properties, "entry_bit_length");
+        parallel = PropertiesUtils.readBoolean(properties, "parallel");
         int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
-        int queryNum = PropertiesUtils.readInt(properties, "query_num");
-        int setSizeNum = serverLogSetSizes.length;
-        int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        LOGGER.info("{} read PTO config", serverRpc.ownParty().getPartyName());
-        SingleCpKsPirConfig config = SingleCpKsPirConfigUtils.createKeywordCpPirConfig(properties);
+        serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        serverSetSizeNum = serverLogSetSizes.length;
+        queryNum = PropertiesUtils.readInt(properties, "query_num");
+        // read PTO config
+        LOGGER.info("{} read PTO config", ownRpc.ownParty().getPartyName());
+        config = SingleCpKsPirConfigUtils.createConfig(properties);
+    }
+
+    @Override
+    public void runParty1(Rpc serverRpc, Party clientParty) throws IOException, MpcAbortException {
         LOGGER.info("{} generate warm-up database file", serverRpc.ownParty().getPartyName());
         PirUtils.generateBytesInputFiles(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
         LOGGER.info("{} generate database file", serverRpc.ownParty().getPartyName());
-        for (int setSizeIndex = 0 ; setSizeIndex < setSizeNum; setSizeIndex++) {
-            PirUtils.generateBytesInputFiles(serverSetSizes[setSizeIndex], entryBitLength);
+        for (int i = 0 ; i < serverSetSizeNum; i++) {
+            PirUtils.generateBytesInputFiles(serverSetSizes[i], entryBitLength);
         }
         LOGGER.info("{} create result file", serverRpc.ownParty().getPartyName());
-        String filePath = PTO_TYPE_NAME
+        String filePath = MainPtoConfigUtils.getFileFolderName() + File.separator + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
+            + "_" + appendString
             + "_" + entryBitLength
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -114,8 +120,8 @@ public class SingleCpKsPirMain {
         int taskId = 0;
         warmupServer(serverRpc, clientParty, config, taskId);
         taskId++;
-        for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
-            int serverSetSize = serverSetSizes[setSizeIndex];
+        for (int i = 0; i < serverSetSizeNum; i++) {
+            int serverSetSize = serverSetSizes[i];
             byte[][] entries = readServerDatabase(serverSetSize, entryBitLength);
             runServer(serverRpc, clientParty, config, taskId, parallel, entries, entryBitLength, queryNum, printWriter);
             taskId++;
@@ -140,8 +146,8 @@ public class SingleCpKsPirMain {
         return entries;
     }
 
-    private void warmupServer(Rpc serverRpc, Party clientParty, SingleCpKsPirConfig config, int taskId)
-        throws Exception {
+    private void warmupServer(Rpc serverRpc, Party clientParty, CpKsPirConfig config, int taskId)
+        throws IOException, MpcAbortException {
         byte[][] entries = readServerDatabase(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
         Map<String, byte[]> keywordValueMap = IntStream.range(0, WARMUP_SERVER_SET_SIZE)
             .boxed()
@@ -156,7 +162,7 @@ public class SingleCpKsPirMain {
             serverRpc.ownParty().getPartyName(), WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH, WARMUP_QUERY_NUM,
             false
         );
-        SingleCpKsPirServer<String> server = SingleCpKsPirFactory.createServer(serverRpc, clientParty, config);
+        CpKsPirServer<String> server = CpKsPirFactory.createServer(serverRpc, clientParty, config);
         server.setTaskId(taskId);
         server.setParallel(false);
         server.getRpc().synchronize();
@@ -173,7 +179,7 @@ public class SingleCpKsPirMain {
         LOGGER.info("(warmup) {} finish", server.ownParty().getPartyName());
     }
 
-    private void runServer(Rpc serverRpc, Party clientParty, SingleCpKsPirConfig config, int taskId,
+    private void runServer(Rpc serverRpc, Party clientParty, CpKsPirConfig config, int taskId,
                            boolean parallel, byte[][] entries, int entryBitLength, int queryNum,
                            PrintWriter printWriter)
         throws MpcAbortException {
@@ -189,7 +195,7 @@ public class SingleCpKsPirMain {
                 (a, b) -> b,
                 () -> new HashMap<>(entries.length)
             ));
-        SingleCpKsPirServer<String> server = SingleCpKsPirFactory.createServer(serverRpc, clientParty, config);
+        CpKsPirServer<String> server = CpKsPirFactory.createServer(serverRpc, clientParty, config);
         server.setTaskId(taskId);
         server.setParallel(parallel);
         server.getRpc().synchronize();
@@ -230,25 +236,18 @@ public class SingleCpKsPirMain {
         LOGGER.info("{} finish", server.ownParty().getPartyName());
     }
 
-    private void runClient(Rpc clientRpc, Party serverParty) throws Exception {
-        LOGGER.info("{} read settings", clientRpc.ownParty().getPartyName());
-        int entryBitLength = PropertiesUtils.readInt(properties, "entry_bit_length");
-        boolean parallel = PropertiesUtils.readBoolean(properties, "parallel");
-        int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
-        int queryNum = PropertiesUtils.readInt(properties, "query_num");
-        int setSizeNum = serverLogSetSizes.length;
-        int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        LOGGER.info("{} read PTO config", clientRpc.ownParty().getPartyName());
-        SingleCpKsPirConfig config = SingleCpKsPirConfigUtils.createKeywordCpPirConfig(properties);
+    @Override
+    public void runParty2(Rpc clientRpc, Party serverParty) throws IOException, MpcAbortException {
         LOGGER.info("{} generate warm-up index files", clientRpc.ownParty().getPartyName());
         PirUtils.generateIndexInputFiles(WARMUP_SERVER_SET_SIZE, WARMUP_QUERY_NUM);
         LOGGER.info("{} generate index files", clientRpc.ownParty().getPartyName());
-        for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
-            PirUtils.generateIndexInputFiles(serverSetSizes[setSizeIndex], queryNum);
+        for (int i = 0; i < serverSetSizeNum; i++) {
+            PirUtils.generateIndexInputFiles(serverSetSizes[i], queryNum);
         }
         LOGGER.info("{} create result file", clientRpc.ownParty().getPartyName());
-        String filePath = PTO_TYPE_NAME
+        String filePath = MainPtoConfigUtils.getFileFolderName() + File.separator + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
+            + "_" + appendString
             + "_" + entryBitLength
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -264,8 +263,8 @@ public class SingleCpKsPirMain {
         int taskId = 0;
         warmupClient(clientRpc, serverParty, config, taskId);
         taskId++;
-        for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
-            int serverSetSize = serverSetSizes[setSizeIndex];
+        for (int i = 0; i < serverSetSizeNum; i++) {
+            int serverSetSize = serverSetSizes[i];
             List<Integer> indexList = readClientRetrievalIndexList(queryNum);
             runClient(clientRpc, serverParty, config, taskId, indexList, serverSetSize, entryBitLength, parallel, printWriter);
             taskId++;
@@ -291,15 +290,15 @@ public class SingleCpKsPirMain {
         return indexList;
     }
 
-    private void warmupClient(Rpc clientRpc, Party serverParty, SingleCpKsPirConfig config, int taskId)
-        throws Exception {
+    private void warmupClient(Rpc clientRpc, Party serverParty, CpKsPirConfig config, int taskId)
+        throws IOException, MpcAbortException {
         LOGGER.info(
             "{}: serverSetSize = {}, entryBitLength = {}, queryNum = {}, parallel = {}",
             clientRpc.ownParty().getPartyName(), WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH, WARMUP_QUERY_NUM,
             false
         );
         List<Integer> indexList = readClientRetrievalIndexList(WARMUP_QUERY_NUM);
-        SingleCpKsPirClient<String> client = SingleCpKsPirFactory.createClient(clientRpc, serverParty, config);
+        CpKsPirClient<String> client = CpKsPirFactory.createClient(clientRpc, serverParty, config);
         client.setTaskId(taskId);
         client.setParallel(false);
         client.getRpc().synchronize();
@@ -316,7 +315,7 @@ public class SingleCpKsPirMain {
         LOGGER.info("(warmup) {} finish", client.ownParty().getPartyName());
     }
 
-    private void runClient(Rpc clientRpc, Party serverParty, SingleCpKsPirConfig config, int taskId,
+    private void runClient(Rpc clientRpc, Party serverParty, CpKsPirConfig config, int taskId,
                            List<Integer> indexList, int serverSetSize, int entryBitLength, boolean parallel,
                            PrintWriter printWriter)
         throws MpcAbortException {
@@ -325,7 +324,7 @@ public class SingleCpKsPirMain {
             "{}: serverSetSize = {}, entryBitLength = {}, queryNum = {}, parallel = {}",
             clientRpc.ownParty().getPartyName(), serverSetSize, entryBitLength, queryNum, parallel
         );
-        SingleCpKsPirClient<String> client = SingleCpKsPirFactory.createClient(clientRpc, serverParty, config);
+        CpKsPirClient<String> client = CpKsPirFactory.createClient(clientRpc, serverParty, config);
         client.setTaskId(taskId);
         client.setParallel(parallel);
         client.getRpc().synchronize();

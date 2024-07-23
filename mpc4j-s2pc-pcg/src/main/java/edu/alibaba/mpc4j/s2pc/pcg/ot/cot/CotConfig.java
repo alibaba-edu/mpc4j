@@ -15,4 +15,11 @@ public interface CotConfig extends MultiPartyPtoConfig {
      * @return the protocol type.
      */
     CotFactory.CotType getPtoType();
+
+    /**
+     * Gets default num.
+     *
+     * @return default num.
+     */
+    int defaultRoundNum();
 }

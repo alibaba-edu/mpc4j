@@ -2,16 +2,20 @@ package edu.alibaba.mpc4j.s2pc.opf.mqrpmt;
 
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz22.Czz22ByteEccCwMqRpmtClient;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz22.Czz22ByteEccCwMqRpmtConfig;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz22.Czz22ByteEccCwMqRpmtServer;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz24.Czz24CwOprfMqRpmtClient;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz24.Czz24CwOprfMqRpmtConfig;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz24.Czz24CwOprfMqRpmtServer;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtClient;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtServer;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.zcl23.Zcl23PkeMqRpmtClient;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.zcl23.Zcl23PkeMqRpmtConfig;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.zcl23.Zcl23PkeMqRpmtServer;
 
 /**
- * Multi-Query RPMT factory.
+ * mqRPMT Factory.
  *
  * @author Weiran Liu
  * @date 2022/9/10
@@ -25,7 +29,7 @@ public class MqRpmtFactory implements PtoFactory {
     }
 
     /**
-     * mq-RPMT type
+     * mqRPMT type
      */
     public enum MqRpmtType {
         /**
@@ -37,25 +41,13 @@ public class MqRpmtFactory implements PtoFactory {
          */
         JSZ22_SFC,
         /**
-         * ZCL22 (PKE)
+         * ZCL23 (PKE)
          */
-        ZCL22_PKE,
-        /**
-         * ZCL22 (SKE)
-         */
-        ZCL22_SKE,
+        ZCL23_PKE,
         /**
          * CZZ22_BYTE_ECC_CW_PRF
          */
-        CZZ22_BYTE_ECC_CW,
-        /**
-         * CZZ22_ECC_CW_PRF
-         */
-        CZZ22_ECC_CW,
-        /**
-         * CZZ22_ECC_PO_PRF
-         */
-        CZZ22_ECC_PO,
+        CZZ24_CW_OPRF,
     }
 
     /**
@@ -71,13 +63,11 @@ public class MqRpmtFactory implements PtoFactory {
         switch (type) {
             case GMR21:
                 return new Gmr21MqRpmtServer(serverRpc, clientParty, (Gmr21MqRpmtConfig) config);
-            case CZZ22_BYTE_ECC_CW:
-                return new Czz22ByteEccCwMqRpmtServer(serverRpc, clientParty, (Czz22ByteEccCwMqRpmtConfig) config);
-            case ZCL22_SKE:
-            case ZCL22_PKE:
+            case ZCL23_PKE:
+                return new Zcl23PkeMqRpmtServer(serverRpc, clientParty, (Zcl23PkeMqRpmtConfig) config);
+            case CZZ24_CW_OPRF:
+                return new Czz24CwOprfMqRpmtServer(serverRpc, clientParty, (Czz24CwOprfMqRpmtConfig) config);
             case JSZ22_SFC:
-            case CZZ22_ECC_CW:
-            case CZZ22_ECC_PO:
             default:
                 throw new IllegalArgumentException("Invalid " + MqRpmtType.class.getSimpleName() + ": " + type.name());
         }
@@ -96,15 +86,30 @@ public class MqRpmtFactory implements PtoFactory {
         switch (type) {
             case GMR21:
                 return new Gmr21MqRpmtClient(clientRpc, serverParty, (Gmr21MqRpmtConfig) config);
-            case CZZ22_BYTE_ECC_CW:
-                return new Czz22ByteEccCwMqRpmtClient(clientRpc, serverParty, (Czz22ByteEccCwMqRpmtConfig) config);
-            case ZCL22_SKE:
-            case ZCL22_PKE:
+            case ZCL23_PKE:
+                return new Zcl23PkeMqRpmtClient(clientRpc, serverParty, (Zcl23PkeMqRpmtConfig) config);
+            case CZZ24_CW_OPRF:
+                return new Czz24CwOprfMqRpmtClient(clientRpc, serverParty, (Czz24CwOprfMqRpmtConfig) config);
             case JSZ22_SFC:
-            case CZZ22_ECC_CW:
-            case CZZ22_ECC_PO:
             default:
                 throw new IllegalArgumentException("Invalid " + MqRpmtType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * Creates default mqRPMT config.
+     *
+     * @param securityModel 安全模型。
+     * @return 默认配置项。
+     */
+    public static MqRpmtConfig createDefaultConfig(SecurityModel securityModel) {
+        switch (securityModel) {
+            case IDEAL:
+            case SEMI_HONEST:
+                return new Czz24CwOprfMqRpmtConfig.Builder().build();
+            case MALICIOUS:
+            default:
+                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
         }
     }
 }

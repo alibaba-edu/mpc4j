@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s3pc.abb3.structure.zlong.replicate;
 
-import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import edu.alibaba.mpc4j.common.structure.vector.LongVector;
+import edu.alibaba.mpc4j.common.structure.vector.Vector;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.zlong.TripletLongVector;
@@ -129,7 +129,7 @@ public class TripletRpLongVector implements TripletLongVector {
     }
 
     @Override
-    public void merge(MpcVector other) {
+    public void merge(Vector other) {
         TripletRpLongVector that = (TripletRpLongVector) other;
         innerVec[0].merge(that.getVectors()[0]);
         innerVec[1].merge(that.getVectors()[1]);
@@ -148,8 +148,8 @@ public class TripletRpLongVector implements TripletLongVector {
 
     @Override
     public TripletRpLongVector[] split(int[] splitNums) {
-        LongVector[] r0 = innerVec[0].split(splitNums);
-        LongVector[] r1 = innerVec[1].split(splitNums);
+        LongVector[] r0 = LongVector.split(innerVec[0], splitNums);
+        LongVector[] r1 = LongVector.split(innerVec[1], splitNums);
         return IntStream.range(0, splitNums.length).mapToObj(i -> create(r0[i], r1[i])).toArray(TripletRpLongVector[]::new);
     }
 
@@ -157,8 +157,8 @@ public class TripletRpLongVector implements TripletLongVector {
     @Override
     public void setElements(TripletLongVector data, int sourceStartIndex, int targetStartIndex, int copyLen) {
         TripletRpLongVector that = (TripletRpLongVector) data;
-        innerVec[0].setValues(that.getVectors()[0], sourceStartIndex, targetStartIndex, copyLen);
-        innerVec[1].setValues(that.getVectors()[1], sourceStartIndex, targetStartIndex, copyLen);
+        innerVec[0].setElements(that.getVectors()[0], sourceStartIndex, targetStartIndex, copyLen);
+        innerVec[1].setElements(that.getVectors()[1], sourceStartIndex, targetStartIndex, copyLen);
     }
 
     @Override

@@ -22,9 +22,9 @@ class CotSenderThread extends Thread {
      */
     private final int num;
     /**
-     * update num
+     * expect num
      */
-    private final int updateNum;
+    private final int expectNum;
     /**
      * the sender output
      */
@@ -34,11 +34,11 @@ class CotSenderThread extends Thread {
         this(sender, delta, num, num);
     }
 
-    CotSenderThread(CotSender sender, byte[] delta, int num, int updateNum) {
+    CotSenderThread(CotSender sender, byte[] delta, int num, int expectNum) {
         this.sender = sender;
         this.delta = delta;
         this.num = num;
-        this.updateNum = updateNum;
+        this.expectNum = expectNum;
     }
 
     CotSenderOutput getSenderOutput() {
@@ -48,7 +48,7 @@ class CotSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.init(delta, updateNum);
+            sender.init(delta, expectNum);
             senderOutput = sender.send(num);
         } catch (MpcAbortException e) {
             e.printStackTrace();

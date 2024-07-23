@@ -45,12 +45,12 @@ public class Rrk20ZlDreluReceiver extends AbstractZlDreluParty {
      */
     private byte[][] remainingX;
 
-    public Rrk20ZlDreluReceiver(Rpc receiverRpc, Party senderParty, Rrk20ZlDreluConfig config) {
-        super(Rrk20ZlDreluPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        millionaireReceiver = MillionaireFactory.createReceiver(receiverRpc, senderParty, config.getMillionaireConfig());
-        addSubPto(millionaireReceiver);
-        z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, config.getZ2cConfig());
+    public Rrk20ZlDreluReceiver(Z2cParty z2cReceiver, Party senderParty, Rrk20ZlDreluConfig config) {
+        super(Rrk20ZlDreluPtoDesc.getInstance(), z2cReceiver.getRpc(), senderParty, config);
+        this.z2cReceiver = z2cReceiver;
         addSubPto(z2cReceiver);
+        millionaireReceiver = MillionaireFactory.createReceiver(z2cReceiver, senderParty, config.getMillionaireConfig());
+        addSubPto(millionaireReceiver);
     }
 
     @Override
@@ -60,7 +60,6 @@ public class Rrk20ZlDreluReceiver extends AbstractZlDreluParty {
 
         stopWatch.start();
         millionaireReceiver.init(maxL, maxNum);
-        z2cReceiver.init(maxL * maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

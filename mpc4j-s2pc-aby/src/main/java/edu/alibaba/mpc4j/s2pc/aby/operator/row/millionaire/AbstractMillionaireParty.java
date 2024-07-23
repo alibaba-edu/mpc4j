@@ -60,16 +60,17 @@ public abstract class AbstractMillionaireParty extends AbstractTwoPartyPto imple
         initState();
     }
 
-    protected void setPtoInput(int l, byte[][] inputs) {
+    protected void setPtoInput(int l, int m, byte[][] inputs) {
+        checkInitialized();
         MathPreconditions.checkPositiveInRangeClosed("l", l, maxL);
         this.l = l;
         byteL = CommonUtils.getByteLength(l);
         MathPreconditions.checkPositiveInRangeClosed("inputs.num", inputs.length, maxNum);
         num = inputs.length;
-        // q = l/4
-        q = byteL * 2;
+        // q = l/m
+        q = CommonUtils.getUnitNum(l, m);
         this.inputs = Arrays.stream(inputs)
-                .peek(input -> Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(input, byteL, l)))
-                .toArray(byte[][]::new);
+            .peek(input -> Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(input, byteL, l)))
+            .toArray(byte[][]::new);
     }
 }

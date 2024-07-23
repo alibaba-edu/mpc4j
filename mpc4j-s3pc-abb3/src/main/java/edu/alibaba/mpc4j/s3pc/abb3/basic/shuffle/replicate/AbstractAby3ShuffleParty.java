@@ -73,7 +73,7 @@ public abstract class AbstractAby3ShuffleParty extends AbstractAbbThreePartyPto 
     }
 
     @Override
-    public void init() {
+    public void init() throws MpcAbortException {
         z2cParty.init();
         zl64cParty.init();
     }

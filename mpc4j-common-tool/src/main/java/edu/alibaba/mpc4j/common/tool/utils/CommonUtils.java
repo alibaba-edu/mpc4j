@@ -21,15 +21,15 @@ public class CommonUtils {
     }
 
     /**
-     * 返回在给定的单位长度下，至少需要多少单位长度才能容纳输入的长度。
+     * Returns unit num if we split length into unit length. Here length can be 0 (in which the returned unit num is 0).
      *
-     * @param length 输入长度。
-     * @param unitLength 单位长度。
-     * @return 为容纳输入长度所需的单位长度数量。
+     * @param length     length.
+     * @param unitLength unit length.
+     * @return unit num.
      */
     public static int getUnitNum(int length, int unitLength) {
-        assert length > 0 : "length must be greater than 0: " + length;
-        assert unitLength > 0 : "unit length must be greater than 0: " + unitLength;
+        assert length >= 0 : "length must be non-negative: " + length;
+        assert unitLength > 0 : "unit length must be positive: " + unitLength;
         return (length + unitLength - 1) / unitLength;
     }
 
@@ -78,7 +78,7 @@ public class CommonUtils {
     /**
      * 生成随机密钥数组。
      *
-     * @param keyNum 密钥数量。
+     * @param keyNum       密钥数量。
      * @param secureRandom 随机状态。
      * @return 随机密钥数组。
      */
@@ -89,10 +89,16 @@ public class CommonUtils {
     }
 
     /**
-     * Creates a secureRandom that allows to set seed. Note that if we directly create a new SecureRandom(), we cannot
-     * handle the output even though we call setSeed().
+     * Creates a secureRandom that allows to set seed.
+     * <p></p>
+     * Recall that if we directly create a new <code>SecureRandom</code>, <code>setSeed(byte[] seed)</code> cannot make
+     * the output deterministic. Instead, here we create and return a SecureRandom that allows to
+     * <code>setSeed(byte[] seed)</code>.
+     * <p></p>
+     * Note that we must call <code>setSeed(byte[] seed)</code> to make the output deterministic. Calling
+     * <code>setSeed(long seed)</code> would still return random output.
      *
-     * @return a secureRandom that allows to set seed.
+     * @return a secureRandom that allows to call <code>setSeed(byte[] seed)</code> to make the output deterministic.
      */
     public static SecureRandom createSeedSecureRandom() {
         try {

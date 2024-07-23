@@ -2,10 +2,10 @@ package edu.alibaba.mpc4j.common.tool.crypto.prp;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -21,7 +21,6 @@ import java.util.Collection;
  * @date 2022/01/16
  */
 @RunWith(Parameterized.class)
-@Ignore
 public class PrpConsistencyTest {
     /**
      * 最大随机轮数
@@ -34,25 +33,36 @@ public class PrpConsistencyTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // AES
-        configurationParams.add(new Object[] {"AES", PrpType.JDK_AES, PrpType.NATIVE_AES});
-        // LOW_MC_20
-        configurationParams.add(new Object[] {"LOW_MC_20", PrpType.JDK_BYTES_LOW_MC_20, PrpType.JDK_LONGS_LOW_MC_20});
-        // LOW_MC_21
-        configurationParams.add(new Object[] {"LOW_MC_21", PrpType.JDK_BYTES_LOW_MC_21, PrpType.JDK_LONGS_LOW_MC_21});
-        // LOW_MC_23
-        configurationParams.add(new Object[] {"LOW_MC_23", PrpType.JDK_BYTES_LOW_MC_23, PrpType.JDK_LONGS_LOW_MC_23});
-        // LOW_MC_32
-        configurationParams.add(new Object[] {"LOW_MC_32", PrpType.JDK_BYTES_LOW_MC_32, PrpType.JDK_LONGS_LOW_MC_32});
-        // LOW_MC_192
-        configurationParams.add(new Object[] {"LOW_MC_192", PrpType.JDK_BYTES_LOW_MC_192, PrpType.JDK_LONGS_LOW_MC_192});
-        // LOW_MC_208
-        configurationParams.add(new Object[] {"LOW_MC_208", PrpType.JDK_BYTES_LOW_MC_208, PrpType.JDK_LONGS_LOW_MC_208});
-        // LOW_MC_287
-        configurationParams.add(new Object[] {"LOW_MC_287", PrpType.JDK_BYTES_LOW_MC_287, PrpType.JDK_LONGS_LOW_MC_287});
+        Collection<Object[]> configurations = new ArrayList<>();
 
-        return configurationParams;
+        // STANDARD
+        configurations.add(new Object[]{
+            EnvType.STANDARD.name() + " v.s. " + EnvType.STANDARD_JDK.name(),
+            PrpFactory.getType(EnvType.STANDARD), PrpFactory.getType(EnvType.STANDARD_JDK)
+        });
+        // INLAND
+        configurations.add(new Object[]{
+            EnvType.INLAND.name() + " v.s. " + EnvType.INLAND_JDK.name(),
+            PrpFactory.getType(EnvType.INLAND), PrpFactory.getType(EnvType.INLAND_JDK)
+        });
+        // AES
+        configurations.add(new Object[] {"AES", PrpType.JDK_AES, PrpType.NATIVE_AES});
+        // LOW_MC_20
+        configurations.add(new Object[] {"LOW_MC_20", PrpType.JDK_BYTES_LOW_MC_20, PrpType.JDK_LONGS_LOW_MC_20});
+        // LOW_MC_21
+        configurations.add(new Object[] {"LOW_MC_21", PrpType.JDK_BYTES_LOW_MC_21, PrpType.JDK_LONGS_LOW_MC_21});
+        // LOW_MC_23
+        configurations.add(new Object[] {"LOW_MC_23", PrpType.JDK_BYTES_LOW_MC_23, PrpType.JDK_LONGS_LOW_MC_23});
+        // LOW_MC_32
+        configurations.add(new Object[] {"LOW_MC_32", PrpType.JDK_BYTES_LOW_MC_32, PrpType.JDK_LONGS_LOW_MC_32});
+        // LOW_MC_192
+        configurations.add(new Object[] {"LOW_MC_192", PrpType.JDK_BYTES_LOW_MC_192, PrpType.JDK_LONGS_LOW_MC_192});
+        // LOW_MC_208
+        configurations.add(new Object[] {"LOW_MC_208", PrpType.JDK_BYTES_LOW_MC_208, PrpType.JDK_LONGS_LOW_MC_208});
+        // LOW_MC_287
+        configurations.add(new Object[] {"LOW_MC_287", PrpType.JDK_BYTES_LOW_MC_287, PrpType.JDK_LONGS_LOW_MC_287});
+
+        return configurations;
     }
 
     /**

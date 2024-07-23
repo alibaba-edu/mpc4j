@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc;
 
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.Gf2kNcVoleFactory.Gf2kNcVoleType;
 
 /**
  * no-choice GF2K-VOLE config.
@@ -14,7 +15,7 @@ public interface Gf2kNcVoleConfig extends MultiPartyPtoConfig {
      *
      * @return the protocol type.
      */
-    Gf2kNcVoleFactory.Gf2kNcVoleType getPtoType();
+    Gf2kNcVoleType getPtoType();
 
     /**
      * Gets the max num.

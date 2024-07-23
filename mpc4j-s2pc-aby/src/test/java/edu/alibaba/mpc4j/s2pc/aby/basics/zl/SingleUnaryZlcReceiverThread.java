@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.circuit.operator.UnaryAcOperator;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 /**
  * single Zl circuit receiver thread for unary operator.
@@ -16,6 +17,10 @@ class SingleUnaryZlcReceiverThread extends Thread {
      * receiver
      */
     private final ZlcParty receiver;
+    /**
+     * Zl
+     */
+    private final Zl zl;
     /**
      * operator
      */
@@ -37,8 +42,9 @@ class SingleUnaryZlcReceiverThread extends Thread {
      */
     private ZlVector recvSecretVector;
 
-    SingleUnaryZlcReceiverThread(ZlcParty receiver, UnaryAcOperator operator, ZlVector xVector) {
+    SingleUnaryZlcReceiverThread(ZlcParty receiver, Zl zl, UnaryAcOperator operator, ZlVector xVector) {
         this.receiver = receiver;
+        this.zl = zl;
         this.operator = operator;
         this.xVector = xVector;
         num = xVector.getNum();
@@ -55,10 +61,10 @@ class SingleUnaryZlcReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.init(num);
+            receiver.init(zl.getL(), num);
             // set inputs
             MpcZlVector xPlainMpcVector = receiver.create(xVector);
-            MpcZlVector x1SecretMpcVector = receiver.shareOther(num);
+            MpcZlVector x1SecretMpcVector = receiver.shareOther(zl, num);
             MpcZlVector z1PlainMpcVector, z1SecretMpcVector;
             //noinspection SwitchStatementWithTooFewBranches
             switch (operator) {

@@ -3,13 +3,12 @@ package edu.alibaba.mpc4j.common.structure.matrix;
 import edu.alibaba.mpc4j.common.structure.vector.RingVector;
 
 /**
- * ring matrix.
+ * long ring matrix.
  *
  * @author Liqiang Peng
  * @date 2023/5/23
  */
 public interface LongRingMatrix extends Matrix {
-
     /**
      * Get the element at position (i, j).
      *

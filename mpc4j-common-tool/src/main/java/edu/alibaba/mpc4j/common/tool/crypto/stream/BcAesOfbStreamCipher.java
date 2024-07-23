@@ -30,7 +30,7 @@ class BcAesOfbStreamCipher implements StreamCipher {
         KeyParameter keyParameter = new KeyParameter(key);
         CipherParameters cipherParameters = new ParametersWithIV(keyParameter, iv);
         org.bouncycastle.crypto.StreamCipher streamCipher
-            = new OFBBlockCipher(new AESEngine(), CommonConstants.BLOCK_BIT_LENGTH);
+            = new OFBBlockCipher(AESEngine.newInstance(), CommonConstants.BLOCK_BIT_LENGTH);
         streamCipher.init(true, cipherParameters);
         byte[] ciphertext = new byte[plaintext.length];
         streamCipher.processBytes(plaintext, 0, plaintext.length, ciphertext, 0);
@@ -44,7 +44,7 @@ class BcAesOfbStreamCipher implements StreamCipher {
         KeyParameter keyParameter = new KeyParameter(key);
         CipherParameters cipherParameters = new ParametersWithIV(keyParameter, iv);
         org.bouncycastle.crypto.StreamCipher streamCipher
-            = new OFBBlockCipher(new AESEngine(), CommonConstants.BLOCK_BIT_LENGTH);
+            = new OFBBlockCipher(AESEngine.newInstance(), CommonConstants.BLOCK_BIT_LENGTH);
         streamCipher.init(true, cipherParameters);
         // 先拷贝IV
         byte[] ciphertext = new byte[IV_BYTE_LENGTH + plaintext.length];
@@ -62,7 +62,7 @@ class BcAesOfbStreamCipher implements StreamCipher {
         KeyParameter keyParameter = new KeyParameter(key);
         CipherParameters cipherParameters = new ParametersWithIV(keyParameter, iv);
         org.bouncycastle.crypto.StreamCipher streamCipher
-            = new OFBBlockCipher(new AESEngine(), CommonConstants.BLOCK_BIT_LENGTH);
+            = new OFBBlockCipher(AESEngine.newInstance(), CommonConstants.BLOCK_BIT_LENGTH);
         streamCipher.init(false, cipherParameters);
         byte[] plaintext = new byte[ciphertext.length];
         streamCipher.processBytes(ciphertext, 0, ciphertext.length, plaintext, 0);
@@ -80,7 +80,7 @@ class BcAesOfbStreamCipher implements StreamCipher {
         KeyParameter keyParameter = new KeyParameter(key);
         CipherParameters cipherParameters = new ParametersWithIV(keyParameter, iv);
         org.bouncycastle.crypto.StreamCipher streamCipher
-            = new OFBBlockCipher(new AESEngine(), CommonConstants.BLOCK_BIT_LENGTH);
+            = new OFBBlockCipher(AESEngine.newInstance(), CommonConstants.BLOCK_BIT_LENGTH);
         streamCipher.init(false, cipherParameters);
         byte[] plaintext = new byte[payloadByteLength];
         streamCipher.processBytes(ciphertext, IV_BYTE_LENGTH, payloadByteLength, plaintext, 0);

@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.upso.upsi;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 
+import java.io.IOException;
 import java.util.Set;
 
 /**
@@ -35,5 +36,5 @@ public interface UpsiClient<T> extends TwoPartyPto {
      * @return intersection set.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    Set<T> psi(Set<T> clientElementSet) throws MpcAbortException;
+    Set<T> psi(Set<T> clientElementSet) throws MpcAbortException, IOException;
 }

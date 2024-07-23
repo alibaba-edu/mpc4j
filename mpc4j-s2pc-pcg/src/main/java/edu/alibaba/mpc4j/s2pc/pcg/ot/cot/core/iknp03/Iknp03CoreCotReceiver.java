@@ -53,8 +53,8 @@ public class Iknp03CoreCotReceiver extends AbstractCoreCotReceiver {
     }
 
     @Override
-    public void init(int maxNum) throws MpcAbortException {
-        setInitInput(maxNum);
+    public void init() throws MpcAbortException {
+        setInitInput();
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();

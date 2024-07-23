@@ -215,7 +215,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
         intStream.forEach(i -> {
             leftData[i].addi(d0[i]);
             leftData[i].addi(d1[i]);
-            leftData[i].format(validBitLen);
+            leftData[i].module(validBitLen);
         });
         return Arrays.copyOfRange(leftData, 0, dataDim);
     }
@@ -249,7 +249,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
         intStream.forEach(i -> {
             data[i].addi(xiArray[i].getVectors()[0]);
             data[i].addi(xiArray[i].getVectors()[1]);
-            data[i].format(validBits);
+            data[i].module(validBits);
         });
 
         extraInfo++;
@@ -275,8 +275,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
                     selfId == 2 ? right.getVectors()[0].add(left.getVectors()[1]) : left.getVectors()[1].copy());
             }
         } else {
-            if (res[1][0] instanceof TripletRpLongMacVector) {
-                TripletRpLongMacVector right = (TripletRpLongMacVector) res[1][0];
+            if (res[1][0] instanceof TripletRpLongMacVector right) {
                 if (left.getMacIndex() == right.getMacIndex() && left.getMacIndex() == currentMacIndex) {
                     return TripletRpLongMacVector.create(currentMacIndex,
                         new LongVector[]{left.getVectors()[0].add(right.getVectors()[0]), left.getVectors()[1].add(right.getVectors()[1])},
@@ -290,8 +289,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
     @Override
     public void addi(MpcLongVector xi, MpcLongVector yi) {
         assert !xi.isPlain();
-        if (xi instanceof TripletRpLongMacVector) {
-            TripletRpLongMacVector left = (TripletRpLongMacVector) xi;
+        if (xi instanceof TripletRpLongMacVector left) {
             if (yi.isPlain()) {
                 if (left.getMacIndex() == currentMacIndex) {
                     TripletRpLongMacVector right = setPublicValue(yi.getVectors()[0]);
@@ -376,8 +374,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
     @Override
     public void subi(MpcLongVector xi, MpcLongVector yi) {
         assert !xi.isPlain();
-        if (xi instanceof TripletRpLongMacVector) {
-            TripletRpLongMacVector left = (TripletRpLongMacVector) xi;
+        if (xi instanceof TripletRpLongMacVector left) {
             TripletRpLongMacVector right;
             if (yi.isPlain()) {
                 if (left.getMacIndex() == currentMacIndex) {
@@ -439,8 +436,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
         } else {
             xi.getVectors()[0].negi();
             xi.getVectors()[1].negi();
-            if (xi instanceof TripletRpLongMacVector) {
-                TripletRpLongMacVector tmp = (TripletRpLongMacVector) xi;
+            if (xi instanceof TripletRpLongMacVector tmp) {
                 if (tmp.getMacIndex() == currentMacIndex) {
                     tmp.getMacVec()[0].negi();
                     tmp.getMacVec()[1].negi();
@@ -487,8 +483,8 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
 
         LongVector all0 = crProvider.randZeroZl64Vector(totalNum);
         LongVector all1 = crProvider.randZeroZl64Vector(totalNum);
-        LongVector[] zeroShares = all0.split(nums);
-        LongVector[] zeroMacShares = all1.split(nums);
+        LongVector[] zeroShares = LongVector.split(all0, nums);
+        LongVector[] zeroMacShares = LongVector.split(all1, nums);
 
         IntStream intStream = parallel ? IntStream.range(0, left.length).parallel() : IntStream.range(0, left.length);
         long[][] sendData = new long[left.length << 1][];
@@ -540,8 +536,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
         intStream.forEach(i -> {
             xiArray[i].getVectors()[0].muli(yiArray[i].getVectors()[0]);
             xiArray[i].getVectors()[1].muli(yiArray[i].getVectors()[0]);
-            if (xiArray[i] instanceof TripletRpLongMacVector && ((TripletRpLongMacVector) xiArray[i]).getMacIndex() == currentMacIndex) {
-                TripletRpLongMacVector tmp = (TripletRpLongMacVector) xiArray[i];
+            if (xiArray[i] instanceof TripletRpLongMacVector tmp && ((TripletRpLongMacVector) xiArray[i]).getMacIndex() == currentMacIndex) {
                 if (tmp.getMacIndex() == currentMacIndex) {
                     tmp.getMacVec()[0].muli(yiArray[i].getVectors()[0]);
                     tmp.getMacVec()[1].muli(yiArray[i].getVectors()[0]);
@@ -552,6 +547,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
         });
     }
 
+    @Override
     public MpcLongVector add(MpcLongVector xi, long constValue) {
         if (xi.isPlain()) {
             return PlainLongVector.create(Arrays.stream(xi.getVectors()[0].getElements()).map(each -> each + constValue).toArray());
@@ -561,8 +557,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
                     ? LongVector.create(Arrays.stream(xi.getVectors()[i].getElements()).map(each -> each + constValue).toArray())
                     : xi.getVectors()[i].copy()
             ).toArray(LongVector[]::new);
-            if (xi instanceof TripletRpLongMacVector) {
-                TripletRpLongMacVector that = (TripletRpLongMacVector) xi;
+            if (xi instanceof TripletRpLongMacVector that) {
                 if (that.getMacIndex() == currentMacIndex) {
                     long[] constMacValue = new long[]{constValue * shareMacKey[0], constValue * shareMacKey[1]};
                     LongVector[] macVec = IntStream.range(0, 2).mapToObj(i ->
@@ -589,8 +584,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
                 long[] newArray = Arrays.stream(xi.getVectors()[1].getElements()).map(each -> each + constValue).toArray();
                 xi.setVectors(xi.getVectors()[0], LongVector.create(newArray));
             }
-            if (xi instanceof TripletRpLongMacVector) {
-                TripletRpLongMacVector that = (TripletRpLongMacVector) xi;
+            if (xi instanceof TripletRpLongMacVector that) {
                 if (that.getMacIndex() == currentMacIndex) {
                     long[] constMacValue = new long[]{constValue * shareMacKey[0], constValue * shareMacKey[1]};
                     LongVector[] macVec = IntStream.range(0, 2).mapToObj(i ->
@@ -719,7 +713,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
         int[] dataNum = Arrays.stream(noMacData).mapToInt(TripletRpLongVector::getNum).toArray();
         int totalNum = Arrays.stream(dataNum).sum();
 
-        LongVector[] r = crProvider.randZeroZl64Vector(totalNum).split(dataNum);
+        LongVector[] r = LongVector.split(crProvider.randZeroZl64Vector(totalNum), dataNum);
         IntStream intStream = parallel ? IntStream.range(0, noMacData.length).parallel() : IntStream.range(0, noMacData.length);
         long sumMac = shareMacKey[0] + shareMacKey[1];
         intStream.forEach(i -> {

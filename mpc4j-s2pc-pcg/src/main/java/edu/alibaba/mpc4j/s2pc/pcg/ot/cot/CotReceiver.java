@@ -13,10 +13,17 @@ public interface CotReceiver extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
-     * @param updateNum update num.
+     * @param expectNum expect num.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(int updateNum) throws MpcAbortException;
+    void init(int expectNum) throws MpcAbortException;
+
+    /**
+     * Inits the protocol.
+     *
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    void init() throws MpcAbortException;
 
     /**
      * Executes the protocol.
@@ -26,4 +33,13 @@ public interface CotReceiver extends TwoPartyPto {
      * @throws MpcAbortException the protocol failure aborts.
      */
     CotReceiverOutput receive(boolean[] choices) throws MpcAbortException;
+
+    /**
+     * Executes the protocol.
+     *
+     * @param num num.
+     * @return the receiver output.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    CotReceiverOutput receiveRandom(int num) throws MpcAbortException;
 }

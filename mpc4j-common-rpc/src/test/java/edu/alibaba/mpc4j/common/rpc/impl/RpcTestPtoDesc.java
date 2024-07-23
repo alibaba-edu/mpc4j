@@ -13,7 +13,7 @@ class RpcTestPtoDesc implements PtoDesc {
     /**
      * 协议ID
      */
-    private static final int PTO_ID = Math.abs((int)1723200316341236086L);
+    private static final int PTO_ID = Math.abs((int) 1723200316341236086L);
     /**
      * 协议名称
      */
@@ -35,6 +35,22 @@ class RpcTestPtoDesc implements PtoDesc {
          * singleton
          */
         SINGLETON,
+        /**
+         * l1
+         */
+        L1,
+        /**
+         * l2
+         */
+        L2,
+        /**
+         * l4
+         */
+        L4,
+        /**
+         * l8
+         */
+        L8,
         /**
          * equal-length
          */

@@ -129,22 +129,32 @@ public class HashFactory {
     }
 
     /**
+     * Gets type based on environment.
+     *
+     * @param envType environment.
+     * @return type.
+     */
+    public static HashType getType(EnvType envType) {
+        switch (envType) {
+            case STANDARD:
+            case STANDARD_JDK:
+                return HashType.JDK_SHA256;
+            case INLAND:
+            case INLAND_JDK:
+                return HashType.BC_SM3;
+            default:
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
+        }
+    }
+
+    /**
      * 创建哈希函数实例。
      *
-     * @param envType 哈希函数类型。
+     * @param envType          哈希函数类型。
      * @param outputByteLength 输出字节长度。
      * @return 哈希函数实例。
      */
     public static Hash createInstance(EnvType envType, int outputByteLength) {
-        switch (envType) {
-            case STANDARD:
-            case STANDARD_JDK:
-                return new JdkSha256Hash(outputByteLength);
-            case INLAND:
-            case INLAND_JDK:
-                return new BcSm3Hash(outputByteLength);
-            default:
-                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
-        }
+        return createInstance(getType(envType), outputByteLength);
     }
 }

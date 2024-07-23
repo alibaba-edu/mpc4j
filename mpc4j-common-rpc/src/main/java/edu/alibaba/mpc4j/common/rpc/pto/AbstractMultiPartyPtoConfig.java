@@ -25,15 +25,6 @@ public abstract class AbstractMultiPartyPtoConfig implements MultiPartyPtoConfig
     private final MultiPartyPtoConfig[] subPtoConfigs;
 
     /**
-     * Creates a protocol config, with its security model fully depending on its sub-protocol.
-     *
-     * @param subPtoConfig config for its sub-protocol.
-     */
-    protected AbstractMultiPartyPtoConfig(MultiPartyPtoConfig subPtoConfig) {
-        this(SecurityModel.MALICIOUS, subPtoConfig);
-    }
-
-    /**
      * Creates a protocol config with a default security model.
      *
      * @param defaultModel default security model.

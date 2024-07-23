@@ -1,8 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
@@ -20,10 +21,10 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.AbstractNcCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20.Ywl20NcCotPtoDesc.PtoStep;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotReceiver;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotReceiverOutput;
 
 /**
  * YWL20-NC-COT receiver.
@@ -68,6 +69,10 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
      * COT receiver output used in MSP-COT
      */
     private CotReceiverOutput rCotReceiverOutput;
+    /**
+     * matrix A
+     */
+    private LocalLinearCoder matrixA;
 
     public Ywl20NcCotReceiver(Rpc receiverRpc, Party senderParty, Ywl20NcCotConfig config) {
         super(Ywl20NcCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
@@ -93,8 +98,8 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         iterationN = iterationLpnParams.getN();
         iterationT = iterationLpnParams.getT();
         // init core COT and MSP-COT
-        coreCotReceiver.init(initK);
-        mspCotReceiver.init(iterationT, iterationN);
+        coreCotReceiver.init();
+        mspCotReceiver.init();
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -111,17 +116,18 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         logStepInfo(PtoState.INIT_STEP, 2, 5, kInitCotTime);
 
         stopWatch.start();
-        // get seed for matrix A used in setup
-        byte[] matrixInitKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(matrixInitKey);
-        List<byte[]> matrixInitKeyPayload = Collections.singletonList(matrixInitKey);
+        // get seed for matrix A
+        byte[][] matrixKeys = BytesUtils.randomByteArrayVector(2, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        List<byte[]> matrixKeysPayload = Arrays.stream(matrixKeys).collect(Collectors.toList());
         DataPacketHeader matrixInitKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_SETUP_KEY.ordinal(),
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_MATRIX_KEYS.ordinal(),
             ownParty().getPartyId(), otherParty().getPartyId()
         );
-        rpc.send(DataPacket.fromByteArrayList(matrixInitKeyHeader, matrixInitKeyPayload));
-        LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, matrixInitKey);
+        rpc.send(DataPacket.fromByteArrayList(matrixInitKeyHeader, matrixKeysPayload));
+        LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, matrixKeys[0]);
         matrixInitA.setParallel(parallel);
+        matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKeys[1]);
+        matrixA.setParallel(parallel);
         stopWatch.stop();
         long keyInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -164,41 +170,21 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // get seed for matrix A used in iteration
-        byte[] matrixKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(matrixKey);
-        List<byte[]> matrixKeyPayload = Collections.singletonList(matrixKey);
-        DataPacketHeader matrixKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_ITERATION_LEY.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(matrixKeyHeader, matrixKeyPayload));
-        LocalLinearCoder matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey);
-        matrixA.setParallel(parallel);
-        stopWatch.stop();
-        long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 3, keyTime);
-
-        stopWatch.start();
         // execute MSP-COT
         MspCotReceiverOutput rMspCotReceiverOutput = mspCotReceiver.receive(iterationT, iterationN, rCotReceiverOutput);
         stopWatch.stop();
         long rTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 2, 3, rTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, rTime, "Receive runs MSP-COT");
 
         stopWatch.start();
-        // x = u * A + e
+        // x = u * A + e, z = w * A + r
         boolean[] x = matrixA.encode(wCotReceiverOutput.getChoices());
+        byte[][] z = matrixA.encode(wCotReceiverOutput.getRbArray());
         for (int eIndex : rMspCotReceiverOutput.getAlphaArray()) {
             x[eIndex] = !x[eIndex];
         }
-        // z = w * A + r
-        byte[][] z = matrixA.encode(wCotReceiverOutput.getRbArray());
-        IntStream.range(0, iterationN).forEach(index ->
-            BytesUtils.xori(z[index], rMspCotReceiverOutput.getRb(index))
-        );
+        IntStream.range(0, iterationN).forEach(index -> BytesUtils.xori(z[index], rMspCotReceiverOutput.getRb(index)));
         // split COT output into k0 + MSP-COT + output
         CotReceiverOutput receiverOutput = CotReceiverOutput.create(x, z);
         wCotReceiverOutput = receiverOutput.split(iterationK);
@@ -207,7 +193,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         stopWatch.stop();
         long extendTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 3, 3, extendTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, extendTime, "Receiver extends outputs");
 
         logPhaseInfo(PtoState.PTO_END);
         return receiverOutput;

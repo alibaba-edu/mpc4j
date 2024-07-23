@@ -9,6 +9,7 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.zl.ZlcFactory.ZlcType;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.bea91.Bea91ZlcConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -49,22 +50,11 @@ public class BatchZlcTest extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        Zl[] zls = new Zl[]{
-            ZlFactory.createInstance(EnvType.STANDARD, 1),
-            ZlFactory.createInstance(EnvType.STANDARD, 3),
-            ZlFactory.createInstance(EnvType.STANDARD, LongUtils.MAX_L - 1),
-            ZlFactory.createInstance(EnvType.STANDARD, LongUtils.MAX_L),
-            ZlFactory.createInstance(EnvType.STANDARD, LongUtils.MAX_L + 1),
-        };
-
-        for (Zl zl : zls) {
-            int l = zl.getL();
-            // Bea91
-            configurations.add(new Object[]{
-                ZlcFactory.ZlType.BEA91.name() + " (l = " + l + ", " + SecurityModel.SEMI_HONEST + ")",
-                new Bea91ZlcConfig.Builder(SecurityModel.SEMI_HONEST, zl).build()
-            });
-        }
+        // Bea91
+        configurations.add(new Object[]{
+            ZlcType.BEA91.name() + ", " + SecurityModel.SEMI_HONEST + ")",
+            new Bea91ZlcConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
+        });
 
         return configurations;
     }
@@ -74,14 +64,14 @@ public class BatchZlcTest extends AbstractTwoPartyMemoryRpcPto {
      */
     private final ZlcConfig config;
     /**
-     * Zl instance
+     * Zl
      */
     private final Zl zl;
 
     public BatchZlcTest(String name, ZlcConfig config) {
         super(name);
         this.config = config;
-        zl = config.getZl();
+        zl = ZlFactory.createInstance(EnvType.STANDARD, LongUtils.MAX_L_FOR_MODULE_N - 1);
     }
 
     @Test
@@ -159,9 +149,9 @@ public class BatchZlcTest extends AbstractTwoPartyMemoryRpcPto {
         try {
             LOGGER.info("-----test {} ({}) start-----", sender.getPtoDesc().getPtoName(), operator.name());
             BatchDyadicZlcSenderThread senderThread
-                = new BatchDyadicZlcSenderThread(sender, operator, xVectors, yVectors);
+                = new BatchDyadicZlcSenderThread(sender, zl, operator, xVectors, yVectors);
             BatchDyadicZlcReceiverThread receiverThread
-                = new BatchDyadicZlcReceiverThread(receiver, operator, xVectors, yVectors);
+                = new BatchDyadicZlcReceiverThread(receiver, zl, operator, xVectors, yVectors);
             StopWatch stopWatch = new StopWatch();
             // start
             stopWatch.start();
@@ -216,8 +206,8 @@ public class BatchZlcTest extends AbstractTwoPartyMemoryRpcPto {
             .toArray(ZlVector[]::new);
         try {
             LOGGER.info("-----test {} ({}) start-----", sender.getPtoDesc().getPtoName(), operator.name());
-            BatchUnaryZlcSenderThread senderThread = new BatchUnaryZlcSenderThread(sender, operator, xVectors);
-            BatchUnaryZlcReceiverThread receiverThread = new BatchUnaryZlcReceiverThread(receiver, operator, xVectors);
+            BatchUnaryZlcSenderThread senderThread = new BatchUnaryZlcSenderThread(sender, zl, operator, xVectors);
+            BatchUnaryZlcReceiverThread receiverThread = new BatchUnaryZlcReceiverThread(receiver, zl, operator, xVectors);
             StopWatch stopWatch = new StopWatch();
             // start
             stopWatch.start();

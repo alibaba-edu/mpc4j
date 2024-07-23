@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.OkvrConfig;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.OkvrFactory.OkvrType;
 
@@ -30,7 +30,7 @@ public class PirOkvrConfig extends AbstractMultiPartyPtoConfig implements OkvrCo
     /**
      * batch index PIR config
      */
-    private final BatchIndexPirConfig batchIndexPirConfig;
+    private final StdIdxPirConfig batchIndexPirConfig;
 
     private PirOkvrConfig(Builder builder) {
         super(SecurityModel.SEMI_HONEST, builder.sqOprfConfig, builder.batchIndexPirConfig);
@@ -52,7 +52,7 @@ public class PirOkvrConfig extends AbstractMultiPartyPtoConfig implements OkvrCo
         return okvsType;
     }
 
-    public BatchIndexPirConfig getBatchIndexPirConfig() {
+    public StdIdxPirConfig getStdIdxConfig() {
         return batchIndexPirConfig;
     }
 
@@ -68,13 +68,13 @@ public class PirOkvrConfig extends AbstractMultiPartyPtoConfig implements OkvrCo
         /**
          * batch index PIR config
          */
-        private BatchIndexPirConfig batchIndexPirConfig;
+        private StdIdxPirConfig batchIndexPirConfig;
 
         public Builder() {
             sqOprfConfig = SqOprfFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
             okvsType = Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT;
-            assert Gf2eDokvsFactory.isSparse(okvsType);
-            batchIndexPirConfig = new Mr23BatchIndexPirConfig.Builder().build();
+            Preconditions.checkArgument(Gf2eDokvsFactory.isSparse(okvsType));
+            batchIndexPirConfig = new VectorizedStdIdxPirConfig.Builder().build();
         }
 
         public Builder setSqOprfConfig(SqOprfConfig sqOprfConfig) {
@@ -88,7 +88,7 @@ public class PirOkvrConfig extends AbstractMultiPartyPtoConfig implements OkvrCo
             return this;
         }
 
-        public Builder setBatchIndexPirConfig(BatchIndexPirConfig batchIndexPirConfig) {
+        public Builder setStdIdxPirConfig(StdIdxPirConfig batchIndexPirConfig) {
             this.batchIndexPirConfig = batchIndexPirConfig;
             return this;
         }

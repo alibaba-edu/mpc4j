@@ -3,12 +3,12 @@ package edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl.rrk20;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl.AbstractZlMaxParty;
-import edu.alibaba.mpc4j.s2pc.aby.operator.row.greater.zl.ZlGreaterFactory;
-import edu.alibaba.mpc4j.s2pc.aby.operator.row.greater.zl.ZlGreaterParty;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.max2.zl.ZlMax2Factory;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.max2.zl.ZlMax2Party;
 
 import java.util.concurrent.TimeUnit;
 
@@ -20,14 +20,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class Rrk20ZlMaxSender extends AbstractZlMaxParty {
     /**
-     * zl greater sender.
+     * zl max2 sender.
      */
-    private final ZlGreaterParty zlGreaterSender;
+    private final ZlMax2Party zlMax2Sender;
 
-    public Rrk20ZlMaxSender(Rpc senderRpc, Party receiverParty, Rrk20ZlMaxConfig config) {
-        super(Rrk20ZlMaxPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        zlGreaterSender = ZlGreaterFactory.createSender(senderRpc, receiverParty, config.getZlGreaterConfig());
-        addSubPto(zlGreaterSender);
+    public Rrk20ZlMaxSender(Z2cParty z2cSender, Party receiverParty, Rrk20ZlMaxConfig config) {
+        super(Rrk20ZlMaxPtoDesc.getInstance(), z2cSender.getRpc(), receiverParty, config);
+        zlMax2Sender = ZlMax2Factory.createSender(z2cSender, receiverParty, config.getZlGreaterConfig());
+        addSubPto(zlMax2Sender);
     }
 
     @Override
@@ -36,7 +36,7 @@ public class Rrk20ZlMaxSender extends AbstractZlMaxParty {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        zlGreaterSender.init(maxL, maxNum);
+        zlMax2Sender.init(maxL, maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -68,7 +68,7 @@ public class Rrk20ZlMaxSender extends AbstractZlMaxParty {
         int lastNodeNum = num;
         for (int i = 1; i <= logNum; i++) {
             for (int j = 0; j < currentNodeNum; j++) {
-                inputs[j] = zlGreaterSender.gt(inputs[j * 2], inputs[j * 2 + 1]);
+                inputs[j] = zlMax2Sender.max2(inputs[j * 2], inputs[j * 2 + 1]);
             }
             if (lastNodeNum % 2 == 1) {
                 inputs[currentNodeNum] = inputs[lastNodeNum - 1];

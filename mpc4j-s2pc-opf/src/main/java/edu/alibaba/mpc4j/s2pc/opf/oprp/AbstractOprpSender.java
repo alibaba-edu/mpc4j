@@ -8,6 +8,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory.OprpType;
 
 /**
  * OPRP协议发送方。
@@ -16,6 +17,10 @@ import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
  * @date 2022/02/14
  */
 public abstract class AbstractOprpSender extends AbstractTwoPartyPto implements OprpSender {
+    /**
+     * config
+     */
+    private final OprpConfig config;
     /**
      * 最大批处理数量
      */
@@ -43,6 +48,7 @@ public abstract class AbstractOprpSender extends AbstractTwoPartyPto implements 
 
     protected AbstractOprpSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, OprpConfig config) {
         super(ptoDesc, senderRpc, receiverParty, config);
+        this.config = config;
     }
 
     protected void setInitInput(int maxBatchSize) {
@@ -61,5 +67,10 @@ public abstract class AbstractOprpSender extends AbstractTwoPartyPto implements 
         batchByteSize = CommonUtils.getByteLength(batchSize);
         roundBatchSize = batchByteSize * Byte.SIZE;
         extraInfo++;
+    }
+
+    @Override
+    public OprpType getType() {
+        return config.getPtoType();
     }
 }

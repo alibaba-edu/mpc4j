@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.s2pc.pso.psi.cuckoo.psz14;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
@@ -86,9 +85,6 @@ public class Psz14PsiServer<T> extends AbstractPsiServer<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxClientElementSize);
-        int maxStashNum = CuckooHashBinFactory.getStashSize(cuckooHashBinType, maxClientElementSize);
-        int maxByteL = PsiUtils.getSemiHonestPeqtByteLength(maxServerElementSize, maxClientElementSize);
         // init cuckoo hash keys
         DataPacketHeader cuckooHashKeysHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
@@ -105,9 +101,7 @@ public class Psz14PsiServer<T> extends AbstractPsiServer<T> {
             })
             .toArray(Prf[]::new);
         // init LCOT
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        lcotSender.init(Byte.SIZE, (maxBinNum + maxStashNum) * maxByteL);
+        lcotSender.init(Byte.SIZE);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

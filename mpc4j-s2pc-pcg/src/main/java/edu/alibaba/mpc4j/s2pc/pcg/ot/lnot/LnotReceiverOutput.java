@@ -1,11 +1,16 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * 1-out-of-n OT receiver output. The receiver gets (i, r_i).
@@ -15,11 +20,11 @@ import java.util.Arrays;
  */
 public class LnotReceiverOutput implements MergedPcgPartyOutput {
     /**
-     * the choice bit length
+     * choice bit length
      */
     private final int l;
     /**
-     * the maximal choice
+     * maximal choice
      */
     private final int n;
     /**
@@ -34,24 +39,19 @@ public class LnotReceiverOutput implements MergedPcgPartyOutput {
     /**
      * Creates a receiver output.
      *
-     * @param l           the choice bit length.
-     * @param choiceArray the choice array.
-     * @param rbArray     the rb array.
+     * @param l           choice bit length.
+     * @param choiceArray choice array.
+     * @param rbArray     rb array.
      * @return a receiver output.
      */
     public static LnotReceiverOutput create(int l, int[] choiceArray, byte[][] rbArray) {
         LnotReceiverOutput receiverOutput = new LnotReceiverOutput(l);
-        assert choiceArray.length > 0 : "# of choices must be greater than 0: " + choiceArray.length;
-        assert choiceArray.length == rbArray.length : "# of choices must match # of rbs";
+        MathPreconditions.checkEqual("choiceArray.length", "rbArray.length", choiceArray.length, rbArray.length);
         receiverOutput.choiceArray = Arrays.stream(choiceArray)
-            .peek(choice -> {
-                assert choice >= 0 && choice < receiverOutput.n : "choice must be in range [0, " + receiverOutput.n + "): " + choice;
-            })
+            .peek(choice -> MathPreconditions.checkNonNegativeInRange("choice", choice, receiverOutput.n))
             .toArray();
         receiverOutput.rbArray = Arrays.stream(rbArray)
-            .peek(rb -> {
-                assert rb.length == CommonConstants.BLOCK_BYTE_LENGTH;
-            })
+            .peek(rb -> MathPreconditions.checkEqual("rb.length", "λ", rb.length, CommonConstants.BLOCK_BYTE_LENGTH))
             .toArray(byte[][]::new);
         return receiverOutput;
     }
@@ -59,14 +59,32 @@ public class LnotReceiverOutput implements MergedPcgPartyOutput {
     /**
      * Creates an empty receiver output.
      *
-     * @param l the choice bit length.
+     * @param l choice bit length.
      * @return an empty receiver output.
      */
     public static LnotReceiverOutput createEmpty(int l) {
         LnotReceiverOutput receiverOutput = new LnotReceiverOutput(l);
         receiverOutput.choiceArray = new int[0];
         receiverOutput.rbArray = new byte[0][];
+        return receiverOutput;
+    }
 
+    /**
+     * Creates a random receiver output.
+     *
+     * @param senderOutput sender output.
+     * @param secureRandom random state.
+     * @return a random receiver output.
+     */
+    public static LnotReceiverOutput createRandom(LnotSenderOutput senderOutput, SecureRandom secureRandom) {
+        int num = senderOutput.getNum();
+        LnotReceiverOutput receiverOutput = new LnotReceiverOutput(senderOutput.getL());
+        receiverOutput.choiceArray = IntStream.range(0, num)
+            .map(i -> IntUtils.randomNonNegative(receiverOutput.n, secureRandom))
+            .toArray();
+        receiverOutput.rbArray = IntStream.range(0, num)
+            .mapToObj(i -> BytesUtils.clone(senderOutput.getRb(i, receiverOutput.choiceArray[i])))
+            .toArray(byte[][]::new);
         return receiverOutput;
     }
 
@@ -74,26 +92,34 @@ public class LnotReceiverOutput implements MergedPcgPartyOutput {
      * private constructor.
      */
     private LnotReceiverOutput(int l) {
-        assert l > 0 && l <= IntUtils.MAX_L : "l must be in range (0, " + IntUtils.MAX_L + "]: " + l;
+        MathPreconditions.checkPositiveInRangeClosed("l", l, IntUtils.MAX_L);
         this.l = l;
         this.n = (1 << l);
     }
 
     @Override
+    public LnotReceiverOutput copy() {
+        LnotReceiverOutput copy = new LnotReceiverOutput(l);
+        copy.choiceArray = IntUtils.clone(choiceArray);
+        copy.rbArray = BytesUtils.clone(rbArray);
+        return copy;
+    }
+
+    @Override
     public LnotReceiverOutput split(int splitNum) {
         int num = getNum();
-        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]: " + splitNum;
+        MathPreconditions.checkPositiveInRangeClosed("splitNum", splitNum, num);
         // split choice array
         int[] subChoiceArray = new int[splitNum];
         int[] remainChoiceArray = new int[num - splitNum];
-        System.arraycopy(choiceArray, 0, subChoiceArray, 0, splitNum);
-        System.arraycopy(choiceArray, splitNum, remainChoiceArray, 0, num - splitNum);
+        System.arraycopy(choiceArray, num - splitNum, subChoiceArray, 0, splitNum);
+        System.arraycopy(choiceArray, 0, remainChoiceArray, 0, num - splitNum);
         choiceArray = remainChoiceArray;
         // split rb
         byte[][] subRbArray = new byte[splitNum][];
         byte[][] remainRbArray = new byte[num - splitNum][];
-        System.arraycopy(rbArray, 0, subRbArray, 0, splitNum);
-        System.arraycopy(rbArray, splitNum, remainRbArray, 0, num - splitNum);
+        System.arraycopy(rbArray, num - splitNum, subRbArray, 0, splitNum);
+        System.arraycopy(rbArray, 0, remainRbArray, 0, num - splitNum);
         rbArray = remainRbArray;
 
         return LnotReceiverOutput.create(l, subChoiceArray, subRbArray);
@@ -102,7 +128,7 @@ public class LnotReceiverOutput implements MergedPcgPartyOutput {
     @Override
     public void reduce(int reduceNum) {
         int num = getNum();
-        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        MathPreconditions.checkPositiveInRangeClosed("reduceNum", reduceNum, num);
         if (reduceNum < num) {
             // we need to reduce only if reduceNum is less than the current num.
             int[] remainChoiceArray = new int[reduceNum];
@@ -117,7 +143,7 @@ public class LnotReceiverOutput implements MergedPcgPartyOutput {
     @Override
     public void merge(MergedPcgPartyOutput other) {
         LnotReceiverOutput that = (LnotReceiverOutput) other;
-        assert this.l == that.l : "l mismatch";
+        MathPreconditions.checkEqual("this.l", "that.l", this.l, that.l);
         // copy choice array
         int[] mergeChoiceArray = new int[this.choiceArray.length + that.choiceArray.length];
         System.arraycopy(this.choiceArray, 0, mergeChoiceArray, 0, this.choiceArray.length);
@@ -171,5 +197,29 @@ public class LnotReceiverOutput implements MergedPcgPartyOutput {
      */
     public int getN() {
         return n;
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(l)
+            .append(choiceArray)
+            .append(rbArray)
+            .hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof LnotReceiverOutput that) {
+            return new EqualsBuilder()
+                .append(this.l, that.l)
+                .append(this.choiceArray, that.choiceArray)
+                .append(this.rbArray, that.rbArray)
+                .isEquals();
+        }
+        return false;
     }
 }

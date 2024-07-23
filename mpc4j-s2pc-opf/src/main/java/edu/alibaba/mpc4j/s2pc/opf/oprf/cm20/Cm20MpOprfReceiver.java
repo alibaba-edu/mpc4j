@@ -101,10 +101,8 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxW = Cm20MpOprfPtoDesc.getW(Math.max(maxBatchSize, maxPrfNum));
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        coreCotSender.init(delta, maxW);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(delta);
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -182,8 +180,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
 
     private List<byte[]> generateDeltaPayload() {
         // For each y ∈ Y, compute v = F_k(H_1(y)).
-        Stream<byte[]> inputStream = Arrays.stream(inputs);
-        inputStream = parallel ? inputStream.parallel() : inputStream;
+        Stream<byte[]> inputStream = parallel ? Arrays.stream(inputs).parallel() : Arrays.stream(inputs);
         encodes = inputStream
             .map(input -> {
                 byte[] extendPrf = f.getBytes(h1.digestToBytes(input));
@@ -196,8 +193,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
             })
             .toArray(int[][]::new);
         // Initialize an m × w binary matrix D to all 1’s. Set D_i[v[i]] = 0 for all i ∈ [w].
-        IntStream wIntStream = IntStream.range(0, w);
-        wIntStream = parallel ? wIntStream.parallel() : wIntStream;
+        IntStream wIntStream = parallel ? IntStream.range(0, w).parallel() : IntStream.range(0, w);
         byte[][] matrixD = wIntStream.mapToObj(wIndex -> {
             byte[] dColumn = new byte[nByteLength];
             Arrays.fill(dColumn, (byte) 0xFF);
@@ -209,8 +205,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         // generate Δ
         Prg prg = PrgFactory.createInstance(envType, nByteLength);
         matrixA = new byte[w][nByteLength];
-        IntStream deltaIntStream = IntStream.range(0, w);
-        deltaIntStream = parallel ? deltaIntStream.parallel() : deltaIntStream;
+        IntStream deltaIntStream = parallel ? IntStream.range(0, w).parallel() : IntStream.range(0, w);
         return deltaIntStream.mapToObj(index -> {
             // We do not need to use CRHF since we need to call PRG.
             matrixA[index] = prg.extendToBytes(cotSenderOutput.getR0(index));
@@ -225,8 +220,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
     }
 
     private MpOprfReceiverOutput generateOprfOutput() {
-        IntStream inputIndexStream = IntStream.range(0, batchSize);
-        inputIndexStream = parallel ? inputIndexStream.parallel() : inputIndexStream;
+        IntStream inputIndexStream = parallel ? IntStream.range(0, batchSize).parallel() : IntStream.range(0, batchSize);
         byte[][] prfs = inputIndexStream
             .mapToObj(index -> {
                 byte[] prf = new byte[wByteLength];

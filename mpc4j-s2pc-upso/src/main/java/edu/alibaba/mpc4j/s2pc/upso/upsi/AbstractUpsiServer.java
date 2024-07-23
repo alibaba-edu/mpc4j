@@ -69,7 +69,7 @@ public abstract class AbstractUpsiServer<T> extends AbstractTwoPartyPto implemen
         serverElementSize = serverElementSet.size();
         MathPreconditions.checkPositiveInRangeClosed("clientElementSize", clientElementSize, maxClientElementSize);
         this.clientElementSize = clientElementSize;
-        byteArrayObjectMap = new HashMap<>(clientElementSize);
+        byteArrayObjectMap = new HashMap<>(serverElementSize);
         serverElementSet.forEach(serverElement ->
             byteArrayObjectMap.put(ByteBuffer.wrap(ObjectUtils.objectToByteArray(serverElement)), serverElement)
         );

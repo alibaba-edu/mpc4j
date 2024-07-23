@@ -6,10 +6,10 @@ import java.util.Collection;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20.Ywl20UniMspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.bcg19.Bcg19RegMspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.ywl20.Ywl20UniMspCotConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -119,21 +119,6 @@ public class Ywl20NcCotLpnParamsFinderTest {
     @Test
     public void test2To22() {
         testLpnParamsFinder(1 << 22);
-    }
-
-    @Test
-    public void test2To23() {
-        testLpnParamsFinder(1 << 23);
-    }
-
-    @Test
-    public void test2To24() {
-        testLpnParamsFinder(1 << 24);
-    }
-
-    @Test
-    public void test10Million() {
-        testLpnParamsFinder(10000000);
     }
 
     private void testLpnParamsFinder(int minN) {

@@ -14,10 +14,10 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.AbstractNcCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20.Ywl20NcCotPtoDesc.PtoStep;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotSenderOutput;
 
 /**
  * YWL20-NC-COT sender.
@@ -62,6 +62,10 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
      * COT sender output used in MSP-COT
      */
     private CotSenderOutput sCotSenderOutput;
+    /**
+     * matrix A
+     */
+    private LocalLinearCoder matrixA;
 
     public Ywl20NcCotSender(Rpc senderRpc, Party receiverParty, Ywl20NcCotConfig config) {
         super(Ywl20NcCotPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -87,8 +91,8 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         iterationN = iterationLpnParams.getN();
         iterationT = iterationLpnParams.getT();
         // init core COT and MSP-COT
-        coreCotSender.init(delta, initK);
-        mspCotSender.init(delta, iterationT, iterationN);
+        coreCotSender.init(delta);
+        mspCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -103,16 +107,19 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         logStepInfo(PtoState.INIT_STEP, 2, 5, kInitCotTime);
 
         stopWatch.start();
-        // get seed for matrix A used in setup
-        DataPacketHeader matrixInitKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_SETUP_KEY.ordinal(),
+        // get seed for matrix A
+        DataPacketHeader matrixKeysHeader = new DataPacketHeader(
+            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_MATRIX_KEYS.ordinal(),
             otherParty().getPartyId(), ownParty().getPartyId()
         );
-        List<byte[]> matrixInitKeyPayload = rpc.receive(matrixInitKeyHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(matrixInitKeyPayload.size() == 1);
-        byte[] initKey = matrixInitKeyPayload.get(0);
+        List<byte[]> matrixKeysPayload = rpc.receive(matrixKeysHeader).getPayload();
+        MpcAbortPreconditions.checkArgument(matrixKeysPayload.size() == 2);
+        byte[] initKey = matrixKeysPayload.get(0);
         LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, initKey);
         matrixInitA.setParallel(parallel);
+        byte[] matrixKey = matrixKeysPayload.get(1);
+        matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey);
+        matrixA.setParallel(parallel);
         stopWatch.stop();
         long keyInitTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -150,28 +157,12 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // get seed for matrix A used in iteration
-        DataPacketHeader matrixKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_ITERATION_LEY.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> matrixKeyPayload = rpc.receive(matrixKeyHeader).getPayload();
-        MpcAbortPreconditions.checkArgument(matrixKeyPayload.size() == 1);
-        byte[] matrixKey = matrixKeyPayload.get(0);
-        LocalLinearCoder matrixA = new LocalLinearCoder(envType, iterationK, iterationN, matrixKey);
-        matrixA.setParallel(parallel);
-        stopWatch.stop();
-        long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 3, keyTime);
-
-        stopWatch.start();
         // execute MSP-COT
         MspCotSenderOutput sMspCotSenderOutput = mspCotSender.send(iterationT, iterationN, sCotSenderOutput);
         stopWatch.stop();
         long sTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 2, 3, sTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, sTime, "Sender runs MSP-COT");
 
         stopWatch.start();
         // y = v * A + s
@@ -187,7 +178,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         stopWatch.stop();
         long extendTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 3, 3, extendTime);
+        logStepInfo(PtoState.PTO_STEP, 2, 2, extendTime, "Sender extends outputs");
 
         logPhaseInfo(PtoState.PTO_END);
         return senderOutput;

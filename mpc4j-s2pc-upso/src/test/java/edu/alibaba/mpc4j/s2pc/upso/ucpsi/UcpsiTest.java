@@ -5,10 +5,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.naive.NaiveBatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.simplepir.CuckooHashBatchSimplePirConfig;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
-import edu.alibaba.mpc4j.s2pc.upso.okvr.pir.PirOkvrConfig;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.psty19.Psty19UcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.pdsm.Sj23PdsmUcpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.ucpsi.sj23.peqt.Sj23PeqtUcpsiConfig;
@@ -69,24 +66,6 @@ public class UcpsiTest extends AbstractTwoPartyMemoryRpcPto {
                 .build()
         });
         // PSTY19
-        configurations.add(new Object[]{
-            UcpsiFactory.UcpsiType.PSTY19.name() + " (direct + naive batch simple pir)",
-            new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
-                .setOkvrConfig(
-                    new PirOkvrConfig.Builder().setBatchIndexPirConfig(
-                            new NaiveBatchIndexPirConfig.Builder().build())
-                        .build())
-                .build()
-        });
-        configurations.add(new Object[]{
-            UcpsiFactory.UcpsiType.PSTY19.name() + " (direct + cuckoo hash batch simple pir)",
-            new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true)
-                .setOkvrConfig(
-                    new PirOkvrConfig.Builder().setBatchIndexPirConfig(
-                            new CuckooHashBatchSimplePirConfig.Builder().build())
-                        .build())
-                .build()
-        });
         configurations.add(new Object[]{
             UcpsiFactory.UcpsiType.PSTY19.name() + " (silent)",
             new Psty19UcpsiConfig.Builder(SecurityModel.SEMI_HONEST, true).build()

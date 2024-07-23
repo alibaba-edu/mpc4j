@@ -47,8 +47,6 @@ public interface TripletLongParty extends AbbCoreParty, MpcLongParty {
             res[i] = sub(xiArray[i], yiArray[i]);
         }
         return res;
-//        IntStream intStream = getParallel() ? IntStream.range(0, xiArray.length).parallel() : IntStream.range(0, xiArray.length);
-//        return intStream.mapToObj(i -> sub(xiArray[i], yiArray[i])).toArray(TripletZl64Vector[]::new);
     }
 
     @Override
@@ -64,16 +62,17 @@ public interface TripletLongParty extends AbbCoreParty, MpcLongParty {
     /**
      * compute: res[i] = xi[i] + constValue
      *
-     * @param xi         data
-     * @param constValue a plain const value
+     * @param xi         data.
+     * @param constValue a plain const value.
+     * @return result.
      */
     MpcLongVector add(MpcLongVector xi, long constValue);
 
     /**
-     * compute: xi[i] = xi[i] + constValue
+     * compute: xi[i] = xi[i] + constValue.
      *
-     * @param xi         data
-     * @param constValue a plain const value
+     * @param xi         data.
+     * @param constValue a plain const value.
      */
     void addi(MpcLongVector xi, long constValue);
 
@@ -82,6 +81,7 @@ public interface TripletLongParty extends AbbCoreParty, MpcLongParty {
      *
      * @throws MpcAbortException if the protocol is abort.
      */
+    @Override
     void verifyMul() throws MpcAbortException;
 
     /**

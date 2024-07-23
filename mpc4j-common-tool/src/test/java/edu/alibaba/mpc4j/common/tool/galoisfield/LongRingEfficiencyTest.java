@@ -47,7 +47,7 @@ public class LongRingEfficiencyTest {
     /**
      * the Zl64 test types
      */
-    private static final Zl64Type[] ZL64_TYPES = new Zl64Type[]{Zl64Type.JDK, Zl64Type.RINGS,};
+    private static final Zl64Type[] ZL64_TYPES = new Zl64Type[]{Zl64Type.JDK,};
     /**
      * the Zp64 test types
      */
@@ -55,8 +55,8 @@ public class LongRingEfficiencyTest {
 
     @Test
     public void testZl64Efficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            "                type", "         l",
+        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}",
+            "                                    type",
             "   add(us)", "   neg(us)", "   sub(us)", "   mul(us)", "   pow(us)"
         );
         int[] ls = new int[]{1, 2, 3, 4, 40, 62};
@@ -71,8 +71,8 @@ public class LongRingEfficiencyTest {
 
     @Test
     public void testZp64Efficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            "                type", "         l",
+        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}",
+            "                                    type",
             "   add(us)", "   neg(us)", "   sub(us)", "   mul(us)", "   pow(us)"
         );
         int[] ls = new int[]{1, 2, 3, 4, 40, 62};
@@ -134,9 +134,8 @@ public class LongRingEfficiencyTest {
         STOP_WATCH.reset();
         // output
         LOGGER.info(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            StringUtils.leftPad(longRing.getName(), 20),
-            StringUtils.leftPad(String.valueOf(l), 10),
+            "{}\t{}\t{}\t{}\t{}\t{}",
+            StringUtils.leftPad(longRing.toString(), 40),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(addTime), 10),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(negTime), 10),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(subTime), 10),

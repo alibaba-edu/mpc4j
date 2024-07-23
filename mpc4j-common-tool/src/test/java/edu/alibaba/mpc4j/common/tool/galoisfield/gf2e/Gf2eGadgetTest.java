@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2e;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.GaloisfieldTestUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -35,9 +36,7 @@ public class Gf2eGadgetTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        int[] ls = new int[]{1, 2, 3, 4, 39, 40, 41, 128, 256};
-        // add each l
-        for (int l : ls) {
+        for (int l : GaloisfieldTestUtils.GF2E_L_ARRAY) {
             configurations.add(new Object[]{"l = " + l + ")", l});
         }
 

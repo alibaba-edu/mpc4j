@@ -88,7 +88,7 @@ public class Abb3RpParty extends AbstractAbbThreePartyPto implements Abb3Party{
     }
 
     @Override
-    public void init() {
+    public void init() throws MpcAbortException {
         if(partyState.equals(PartyState.INITIALIZED)){
             return;
         }

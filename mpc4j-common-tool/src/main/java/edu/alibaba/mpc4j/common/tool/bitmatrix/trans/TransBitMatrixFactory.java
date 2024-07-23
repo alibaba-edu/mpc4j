@@ -21,6 +21,10 @@ public class TransBitMatrixFactory {
      */
     public enum TransBitMatrixType {
         /**
+         * JDK SIMD transpose
+         */
+        JDK_SIMD,
+        /**
          * JDK transpose
          */
         JDK,
@@ -60,6 +64,8 @@ public class TransBitMatrixFactory {
      */
     public static TransBitMatrix createInstance(TransBitMatrixType type, int rows, int columns) {
         switch (type) {
+            case JDK_SIMD:
+                return new JdkSimdTransBitMatrix(rows, columns);
             case JDK:
                 return new JdkTransBitMatrix(rows, columns);
             case EKLUNDH:

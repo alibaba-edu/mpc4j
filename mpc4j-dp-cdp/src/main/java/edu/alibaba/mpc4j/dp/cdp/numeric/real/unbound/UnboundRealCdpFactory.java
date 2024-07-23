@@ -38,5 +38,7 @@ public class UnboundRealCdpFactory {
         }
         throw new IllegalArgumentException("Invalid UnboundRealCdpConfig: " + unboundRealCdpConfig.getClass().getSimpleName());
     }
-
+    public static UnboundRealCdpConfig createDefaultConfig (double epsilon, double sensitivity){
+        return new ApacheLaplaceCdpConfig.Builder(epsilon,sensitivity).build();
+    }
 }

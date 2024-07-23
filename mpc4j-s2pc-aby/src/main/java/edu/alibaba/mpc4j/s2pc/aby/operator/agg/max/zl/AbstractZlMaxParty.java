@@ -31,18 +31,6 @@ public abstract class AbstractZlMaxParty extends AbstractTwoPartyPto implements 
      */
     protected int num;
     /**
-     * Zl instance
-     */
-    protected Zl zl;
-    /**
-     * l.
-     */
-    protected int l;
-    /**
-     * l in bytes
-     */
-    protected int byteL;
-    /**
      * inputs
      */
     protected SquareZlVector[] inputs;
@@ -54,20 +42,20 @@ public abstract class AbstractZlMaxParty extends AbstractTwoPartyPto implements 
 
     protected void setInitInput(int maxL, int maxNum) {
         MathPreconditions.checkPositive("maxL", maxL);
-        this.maxL = maxL;
         MathPreconditions.checkPositive("maxNum", maxNum);
+        this.maxL = maxL;
         this.maxNum = maxNum;
         initState();
     }
 
     protected void setPtoInput(SquareZlVector xi) {
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("l", xi.getZl().getL(), maxL);
+        MathPreconditions.checkPositiveInRangeClosed("num", xi.getNum(), maxNum);
+        Zl zl = xi.getZl();
         num = xi.getNum();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
-        zl = xi.getZl();
-        l = zl.getL();
-        MathPreconditions.checkPositiveInRangeClosed("l", l, maxL);
-        byteL = zl.getByteL();
         inputs = Arrays.stream(xi.getZlVector().getElements())
-                .map(e -> SquareZlVector.create(zl, new BigInteger[]{e}, false)).toArray(SquareZlVector[]::new);
+            .map(e -> SquareZlVector.create(zl, new BigInteger[]{e}, false))
+            .toArray(SquareZlVector[]::new);
     }
 }

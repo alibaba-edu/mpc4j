@@ -4,7 +4,8 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcPropertiesUtils;
+import edu.alibaba.mpc4j.common.rpc.main.AbstractMainTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
@@ -12,7 +13,6 @@ import edu.alibaba.mpc4j.s2pc.upso.upsu.UpsuConfig;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.UpsuFactory;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.UpsuReceiver;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.UpsuSender;
-import org.apache.commons.lang3.time.StopWatch;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +32,16 @@ import java.util.stream.Collectors;
  * @author Liqiang Peng
  * @date 2024/3/29
  */
-public class UpsuMain {
+public class UpsuMain extends AbstractMainTwoPartyPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(UpsuMain.class);
     /**
      * task name
      */
-    public static final String TASK_NAME = "UPSU_TASK";
+    public static final String PTO_TYPE_NAME = "UPSU";
+    /**
+     * protocol name key.
+     */
+    public static final String PTO_NAME_KEY = "upsu_pto_name";
     /**
      * warmup element byte length
      */
@@ -51,35 +55,34 @@ public class UpsuMain {
      */
     private static final int WARMUP_CLIENT_SET_SIZE = 1 << 10;
     /**
-     * stop watch
+     * element byte length
      */
-    private final StopWatch stopWatch;
+    private final int elementByteLength;
     /**
-     * properties
+     * set size num
      */
-    private final Properties properties;
+    private final int setSizeNum;
+    /**
+     * server set sizes
+     */
+    private final int[] serverSetSizes;
+    /**
+     * client set sizes
+     */
+    private final int[] clientSetSizes;
+    /**
+     * UPSU main type
+     */
+    private final UpsuMainType upsuMainType;
+    /**
+     * config
+     */
+    private final UpsuConfig config;
 
-    public UpsuMain(Properties properties) {
-        this.properties = properties;
-        stopWatch = new StopWatch();
-    }
-
-    public void run() throws Exception {
-        Rpc ownRpc = RpcPropertiesUtils.readNettyRpc(properties, "server", "client");
-        if (ownRpc.ownParty().getPartyId() == 0) {
-            runServer(ownRpc, ownRpc.getParty(1));
-        } else if (ownRpc.ownParty().getPartyId() == 1) {
-            runClient(ownRpc, ownRpc.getParty(0));
-        } else {
-            throw new IllegalArgumentException("Invalid PartyID for own_name: " + ownRpc.ownParty().getPartyName());
-        }
-    }
-
-    private void runServer(Rpc serverRpc, Party clientParty) throws Exception {
-        String upsuTypeString = PropertiesUtils.readString(properties, "pto_name");
-        UpsuType upsuType = UpsuType.valueOf(upsuTypeString);
-        LOGGER.info("{} read settings", serverRpc.ownParty().getPartyName());
-        int elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
+    public UpsuMain(Properties properties, String ownName) {
+        super(properties, ownName);
+        LOGGER.info("{} read common settings", ownRpc.ownParty().getPartyName());
+        elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
         int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
         int[] clientLogSetSizes = PropertiesUtils.readLogIntArray(properties, "client_log_set_size");
         Preconditions.checkArgument(
@@ -87,11 +90,16 @@ public class UpsuMain {
             "# of server log_set_size = %s, $ of client log_set_size = %s, they must be equal",
             serverLogSetSizes.length, clientLogSetSizes.length
         );
-        int setSizeNum = serverLogSetSizes.length;
-        int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        LOGGER.info("{} read PTO config", serverRpc.ownParty().getPartyName());
-        UpsuConfig config = UpsuConfigUtils.createUpsuConfig(properties);
+        setSizeNum = serverLogSetSizes.length;
+        serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        LOGGER.info("{} read PTO config", ownRpc.ownParty().getPartyName());
+        upsuMainType = MainPtoConfigUtils.readEnum(UpsuMainType.class, properties, PTO_NAME_KEY);
+        config = UpsuConfigUtils.createConfig(properties);
+    }
+
+    @Override
+    public void runParty1(Rpc serverRpc, Party clientParty) throws IOException, MpcAbortException {
         LOGGER.info("{} generate warm-up element files", serverRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SERVER_SET_SIZE, WARMUP_CLIENT_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
         LOGGER.info("{} generate element files", serverRpc.ownParty().getPartyName());
@@ -101,8 +109,9 @@ public class UpsuMain {
             );
         }
         LOGGER.info("{} create result file", serverRpc.ownParty().getPartyName());
-        String filePath = upsuType.name()
-            + "_" + config.getPtoType().name()
+        String filePath = MainPtoConfigUtils.getFileFolderName() + File.separator + PTO_TYPE_NAME
+            + "_" + upsuMainType
+            + "_" + appendString
             + "_" + elementByteLength * Byte.SIZE
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -146,7 +155,7 @@ public class UpsuMain {
         return serverElementSet;
     }
 
-    private void warmupServer(Rpc serverRpc, Party clientParty, UpsuConfig config, int taskId) throws Exception {
+    private void warmupServer(Rpc serverRpc, Party clientParty, UpsuConfig config, int taskId) throws IOException, MpcAbortException {
         Set<ByteBuffer> serverElementSet = readServerElementSet(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
         UpsuSender upsuSender = UpsuFactory.createSender(serverRpc, clientParty, config);
         upsuSender.setTaskId(taskId);
@@ -210,26 +219,12 @@ public class UpsuMain {
         LOGGER.info("{} finish", upsuSender.ownParty().getPartyName());
     }
 
-    private void runClient(Rpc clientRpc, Party serverParty) throws Exception {
-        String upsuTypeString = PropertiesUtils.readString(properties, "pto_name");
-        UpsuType upsuType = UpsuType.valueOf(upsuTypeString);
-        LOGGER.info("{} read settings", clientRpc.ownParty().getPartyName());
-        int elementByteLength = PropertiesUtils.readInt(properties, "element_byte_length");
-        int[] serverLogSetSizes = PropertiesUtils.readLogIntArray(properties, "server_log_set_size");
-        int[] clientLogSetSizes = PropertiesUtils.readLogIntArray(properties, "client_log_set_size");
-        Preconditions.checkArgument(
-            serverLogSetSizes.length == clientLogSetSizes.length,
-            "# of server log_set_size = %s, $ of client log_set_size = %s, they must be equal",
-            serverLogSetSizes.length, clientLogSetSizes.length
-        );
-        int setSizeNum = serverLogSetSizes.length;
-        int[] serverSetSizes = Arrays.stream(serverLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        int[] clientSetSizes = Arrays.stream(clientLogSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        LOGGER.info("{} read PTO config", clientRpc.ownParty().getPartyName());
-        UpsuConfig config = UpsuConfigUtils.createUpsuConfig(properties);
+    @Override
+    public void runParty2(Rpc clientRpc, Party serverParty) throws IOException, MpcAbortException {
         LOGGER.info("{} create result file", clientRpc.ownParty().getPartyName());
-        String filePath = upsuType.name()
-            + "_" + config.getPtoType().name()
+        String filePath = MainPtoConfigUtils.getFileFolderName() + File.separator + PTO_TYPE_NAME
+            + "_" + upsuMainType
+            + "_" + appendString
             + "_" + elementByteLength * Byte.SIZE
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -274,7 +269,7 @@ public class UpsuMain {
         return clientElementSet;
     }
 
-    private void warmupClient(Rpc clientRpc, Party serverParty, UpsuConfig config, int taskId) throws Exception {
+    private void warmupClient(Rpc clientRpc, Party serverParty, UpsuConfig config, int taskId) throws IOException, MpcAbortException {
         Set<ByteBuffer> clientElementSet = readClientElementSet(WARMUP_CLIENT_SET_SIZE, WARMUP_ELEMENT_BYTE_LENGTH);
         UpsuReceiver upsuReceiver = UpsuFactory.createReceiver(clientRpc, serverParty, config);
         upsuReceiver.setTaskId(taskId);

@@ -36,6 +36,7 @@ public class BoundIntegralCdpFactory {
             base2ExpBoundIntegralCdp.setup(boundIntegralCdpConfig);
             return base2ExpBoundIntegralCdp;
         }
+
         throw new IllegalArgumentException("Invalid BoundIntegralCdpConfig: " + boundIntegralCdpConfig.getClass().getSimpleName());
     }
 }

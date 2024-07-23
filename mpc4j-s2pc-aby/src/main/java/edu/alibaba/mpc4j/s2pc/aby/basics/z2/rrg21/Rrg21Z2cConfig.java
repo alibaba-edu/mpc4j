@@ -33,14 +33,19 @@ public class Rrg21Z2cConfig extends AbstractMultiPartyPtoConfig implements Z2cCo
         return Z2cFactory.BcType.RRG21;
     }
 
+    @Override
+    public int defaultRoundNum() {
+        return cotConfig.defaultRoundNum();
+    }
+
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Rrg21Z2cConfig> {
         /**
          * no-choice COT config
          */
         private CotConfig cotConfig;
 
-        public Builder() {
-            cotConfig = CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+        public Builder(boolean silent) {
+            cotConfig = CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
         }
 
         public Builder setCotConfig(CotConfig cotConfig) {

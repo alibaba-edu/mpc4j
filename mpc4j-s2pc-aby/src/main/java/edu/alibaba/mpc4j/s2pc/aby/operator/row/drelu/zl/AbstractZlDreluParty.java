@@ -46,15 +46,17 @@ public abstract class AbstractZlDreluParty extends AbstractTwoPartyPto implement
 
     protected void setInitInput(int maxL, int maxNum) {
         MathPreconditions.checkPositive("maxL", maxL);
-        this.maxL = maxL;
         MathPreconditions.checkPositive("maxNum", maxNum);
         this.maxNum = maxNum;
+        this.maxL = maxL;
         initState();
     }
 
     protected void setPtoInput(SquareZlVector xi) {
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("num", xi.getNum(), maxNum);
+        MathPreconditions.checkPositiveInRangeClosed("l", xi.getZl().getL(), maxL);
         num = xi.getNum();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
         zl = xi.getZl();
         l = zl.getL();
         byteL = zl.getByteL();

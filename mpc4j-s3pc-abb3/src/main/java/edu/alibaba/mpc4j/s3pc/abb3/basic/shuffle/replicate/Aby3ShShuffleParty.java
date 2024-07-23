@@ -61,7 +61,7 @@ public class Aby3ShShuffleParty extends AbstractAby3ShuffleParty implements Aby3
                 intStream = parallel ? IntStream.range(0, input.length).parallel() : IntStream.range(0, input.length);
                 intStream.forEach(i -> {
                     LongVector zero = LongVector.createZeros(targetLen);
-                    zero.setValues(randWithWho[i], 0, 0, randWithWho[i].getNum());
+                    zero.setElements(randWithWho[i], 0, 0, randWithWho[i].getNum());
                     randWithWho[i] = zero;
                 });
             }

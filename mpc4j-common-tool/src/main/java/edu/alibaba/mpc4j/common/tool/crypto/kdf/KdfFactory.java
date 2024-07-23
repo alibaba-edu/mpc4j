@@ -73,21 +73,31 @@ public class KdfFactory {
     }
 
     /**
+     * Gets type based on environment.
+     *
+     * @param envType environment.
+     * @return type.
+     */
+    public static KdfType getType(EnvType envType) {
+        switch (envType) {
+            case STANDARD:
+            case STANDARD_JDK:
+                return KdfType.JDK_SHA256;
+            case INLAND:
+            case INLAND_JDK:
+                return KdfType.BC_SM3;
+            default:
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
+        }
+    }
+
+    /**
      * 创建密钥派生函数实例。
      *
      * @param envType 环境类型。
      * @return 密钥派生函数实例。
      */
     public static Kdf createInstance(EnvType envType) {
-        switch (envType) {
-            case STANDARD:
-            case STANDARD_JDK:
-                return new JdkSha256Kdf();
-            case INLAND:
-            case INLAND_JDK:
-                return new BcSm3Kdf();
-            default:
-                throw new IllegalArgumentException("Invalid EnvType " + envType.name());
-        }
+        return createInstance(getType(envType));
     }
 }

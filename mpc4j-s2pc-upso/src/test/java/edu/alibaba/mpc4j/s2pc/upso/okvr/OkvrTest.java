@@ -3,8 +3,6 @@ package edu.alibaba.mpc4j.s2pc.upso.okvr;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.labelpsi.Cmg21BatchIndexPirConfig;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.OkvrFactory.OkvrType;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.kw.KwOkvrConfig;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.okvs.OkvsOkvrConfig;
@@ -72,20 +70,6 @@ public class OkvrTest extends AbstractTwoPartyMemoryRpcPto {
         configurations.add(new Object[]{
             OkvrType.PIR.name() + "(" + Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT + ")",
             new PirOkvrConfig.Builder().setSparseOkvsType(Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT).build(),
-        });
-        configurations.add(new Object[]{
-            OkvrType.PIR.name() + "(" + BatchIndexPirFactory.BatchIndexPirType.LABEL_PSI + " " + Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT + ")",
-            new PirOkvrConfig.Builder()
-                .setBatchIndexPirConfig(new Cmg21BatchIndexPirConfig.Builder().build())
-                .setSparseOkvsType(Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT)
-                .build(),
-        });
-        configurations.add(new Object[]{
-            OkvrType.PIR.name() + "(" + BatchIndexPirFactory.BatchIndexPirType.LABEL_PSI + " " + Gf2eDokvsType.H3_SPARSE_CLUSTER_BLAZE_GCT + ")",
-            new PirOkvrConfig.Builder()
-                .setBatchIndexPirConfig(new Cmg21BatchIndexPirConfig.Builder().build())
-                .setSparseOkvsType(Gf2eDokvsType.H3_SPARSE_CLUSTER_BLAZE_GCT)
-                .build(),
         });
         // OKVS
         configurations.add(new Object[]{

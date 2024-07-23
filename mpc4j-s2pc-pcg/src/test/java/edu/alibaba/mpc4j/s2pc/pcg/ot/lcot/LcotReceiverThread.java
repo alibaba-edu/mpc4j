@@ -16,7 +16,7 @@ class LcotReceiverThread extends Thread {
     /**
      * 输入比特长度
      */
-    private final int inputBitLength;
+    private final int l;
     /**
      * 选择值数组
      */
@@ -26,9 +26,9 @@ class LcotReceiverThread extends Thread {
      */
     private LcotReceiverOutput receiverOutput;
 
-    LcotReceiverThread(LcotReceiver receiver, int inputBitLength, byte[][] choices) {
+    LcotReceiverThread(LcotReceiver receiver, int l, byte[][] choices) {
         this.receiver = receiver;
-        this.inputBitLength = inputBitLength;
+        this.l = l;
         this.choices = choices;
     }
 
@@ -40,7 +40,7 @@ class LcotReceiverThread extends Thread {
     public void run() {
         try {
             receiver.getRpc().connect();
-            receiver.init(inputBitLength, choices.length);
+            receiver.init(l);
             receiverOutput = receiver.receive(choices);
             receiver.getRpc().disconnect();
         } catch (MpcAbortException e) {

@@ -73,7 +73,7 @@ public class Kkrt16OriOprfSender extends AbstractOprfSender {
         codewordByteLength = RandomCoderUtils.getCodewordByteLength(Math.max(maxBatchSize, maxPrfNum));
         codewordBitLength = codewordByteLength * Byte.SIZE;
         // 初始化COT协议
-        coreCotReceiver.init(codewordBitLength);
+        coreCotReceiver.init();
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

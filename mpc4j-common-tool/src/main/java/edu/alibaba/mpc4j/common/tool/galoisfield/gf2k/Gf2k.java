@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 
-import edu.alibaba.mpc4j.common.tool.galoisfield.BytesField;
+import com.google.common.math.IntMath;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2e;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 
 /**
@@ -9,7 +10,7 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
  * @author Weiran Liu
  * @date 2022/01/15
  */
-public interface Gf2k extends BytesField {
+public interface Gf2k extends Gf2e {
     /**
      * Gets type.
      *
@@ -18,12 +19,31 @@ public interface Gf2k extends BytesField {
     Gf2kType getGf2kType();
 
     /**
-     * Gets name.
+     * Returns if the given subfield is a subfield.
      *
-     * @return name.
+     * @param subfield subfield.
+     * @return true if the given subfield is a subfield, false otherwise.
      */
-    @Override
-    default String getName() {
-        return getGf2kType().name();
+    default boolean isSubfield(Gf2e subfield) {
+        int subfieldL = subfield.getL();
+        int fieldL = getL();
+        // subfield l be 2^k and l <= λ
+        return IntMath.isPowerOfTwo(subfieldL) && subfieldL <= fieldL;
+    }
+
+    /**
+     * Extends a subfield element into the field.
+     *
+     * @param subfield        subfield.
+     * @param subfieldElement subfield element.
+     * @return extend element.
+     */
+    default byte[] extend(Gf2e subfield, byte[] subfieldElement) {
+        assert isSubfield(subfield);
+        int subByteL = subfield.getByteL();
+        int byteOffset = getByteL() - subByteL;
+        byte[] extendElement = createZero();
+        System.arraycopy(subfieldElement, 0, extendElement, byteOffset, subByteL);
+        return extendElement;
     }
 }

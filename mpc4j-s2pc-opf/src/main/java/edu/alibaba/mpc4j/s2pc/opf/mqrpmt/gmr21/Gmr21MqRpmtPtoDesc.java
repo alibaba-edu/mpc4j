@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 /**
- * GMR21-mqRPMT协议信息。论文来源：
+ * GMR21-mqRPMT protocol description. The protocol comes from the following paper.
  * <p>
  * Garimella G, Mohassel P, Rosulek M, et al. Private Set Operations from Oblivious Switching. PKC 2021, Springer,
  * Cham, pp. 591-617.
@@ -18,43 +18,43 @@ import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
  */
 class Gmr21MqRpmtPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * protocol ID
      */
     private static final int PTO_ID = Math.abs((int) 8473841492126133075L);
     /**
-     * 协议名称
+     * protocol name
      */
     private static final String PTO_NAME = "GMR21_mqRPMT";
 
     /**
-     * 协议步骤
+     * protocol step
      */
     enum PtoStep {
         /**
-         * 服务端发送密钥
+         * server sends keys
          */
         SERVER_SEND_KEYS,
         /**
-         * 服务端发送布谷鸟哈希密钥
+         * server sends cuckoo hash keys
          */
         SERVER_SEND_CUCKOO_HASH_KEYS,
         /**
-         * 客户端发送OKVS
+         * client sends OKVS
          */
         CLIENT_SEND_OKVS,
         /**
-         * 服务端发送a'
+         * server sends a'
          */
         SERVER_SEND_A_PRIME_OPRFS,
     }
 
     /**
-     * 单例模式
+     * singleton mode
      */
     private static final Gmr21MqRpmtPtoDesc INSTANCE = new Gmr21MqRpmtPtoDesc();
 
     /**
-     * 私有构造函数
+     * private constructor
      */
     private Gmr21MqRpmtPtoDesc() {
         // empty
@@ -79,12 +79,12 @@ class Gmr21MqRpmtPtoDesc implements PtoDesc {
     }
 
     /**
-     * 有限域字节长度
+     * finite field byte length
      */
     static final int FINITE_FIELD_BYTE_LENGTH = Long.BYTES;
 
     /**
-     * 计算PEQT协议对比字节长度σ + 2 * log_2(binNum)，转换为字节长度。
+     * Gets PEQT byte length: σ + 2 * log_2(binNum).
      *
      * @param binNum 桶数量（β）。
      * @return PEQT协议对比长度。

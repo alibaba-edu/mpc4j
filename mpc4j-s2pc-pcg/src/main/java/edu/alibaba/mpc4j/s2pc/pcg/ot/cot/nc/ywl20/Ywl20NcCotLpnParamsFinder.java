@@ -4,8 +4,8 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParamsChecker;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotFactory;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 
@@ -38,7 +38,7 @@ public class Ywl20NcCotLpnParamsFinder {
     /**
      * max log(n)
      */
-    static final int ITERATION_MAX_LOG_N = 24;
+    static final int ITERATION_MAX_LOG_N = 22;
     /**
      * factors when searching max(n). The values are selected by experiments.
      */

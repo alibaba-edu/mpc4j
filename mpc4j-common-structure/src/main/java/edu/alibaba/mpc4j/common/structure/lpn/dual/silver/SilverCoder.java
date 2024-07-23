@@ -94,12 +94,12 @@ public class SilverCoder implements DualLpnCoder {
     }
 
     @Override
-    public boolean[] dualEncode(boolean[] e) {
-        assert e.length == codeSize;
+    public boolean[] dualEncode(boolean[] es) {
+        assert es.length == codeSize;
         // initialize w = [x | p | p' | p''], where x ∈ {0,1}^s, p ∈ {0,1}^g, p' ∈ {0,1}^s, p'' ∈ {0,1}^s
-        boolean[] x = Arrays.copyOfRange(e, 0, kValue - gapValue);
-        boolean[] p = Arrays.copyOfRange(e, kValue - gapValue, kValue);
-        boolean[] pp = Arrays.copyOfRange(e, kValue, e.length);
+        boolean[] x = Arrays.copyOfRange(es, 0, kValue - gapValue);
+        boolean[] p = Arrays.copyOfRange(es, kValue - gapValue, kValue);
+        boolean[] pp = Arrays.copyOfRange(es, kValue, es.length);
         boolean[] ppp = new boolean[kValue - gapValue];
         // Step 1: compute p' = p' · C^{-1}
         pp = matrixC.invLmul(pp);
@@ -120,21 +120,21 @@ public class SilverCoder implements DualLpnCoder {
     }
 
     @Override
-    public byte[][] dualEncode(byte[][] e) {
-        assert e.length == codeSize;
+    public byte[][] dualEncode(byte[][] es) {
+        assert es.length == codeSize;
         // initialize w = [x | p | p' | p''], where x ∈ {0,1}^s, p ∈ {0,1}^g, p' ∈ {0,1}^s, p'' ∈ {0,1}^s
-        int byteLength = e[0].length;
+        int byteLength = es[0].length;
         byte[][] x = new byte[kValue - gapValue][];
         for (int i = 0; i < x.length; i++) {
-            x[i] = BytesUtils.clone(e[i]);
+            x[i] = BytesUtils.clone(es[i]);
         }
         byte[][] p = new byte[gapValue][];
         for (int i = 0; i < p.length; i++) {
-            p[i] = BytesUtils.clone(e[i + kValue - gapValue]);
+            p[i] = BytesUtils.clone(es[i + kValue - gapValue]);
         }
         byte[][] pp = new byte[kValue - gapValue][];
         for (int i = 0; i < pp.length; i++) {
-            pp[i] = BytesUtils.clone(e[i + kValue]);
+            pp[i] = BytesUtils.clone(es[i + kValue]);
         }
         byte[][] ppp = new byte[kValue - gapValue][byteLength];
         // Step 1: compute p' = p' · C^{-1}

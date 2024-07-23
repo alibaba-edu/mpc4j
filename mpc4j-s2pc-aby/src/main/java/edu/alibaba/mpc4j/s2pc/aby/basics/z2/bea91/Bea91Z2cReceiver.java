@@ -2,17 +2,15 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.z2.bea91;
 
 import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2Vector;
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.AbstractZ2cParty;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.bea91.Bea91Z2cPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgParty;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2Triple;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.bea91.Bea91Z2cPtoDesc.PtoStep;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.Z2Triple;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.z2.Z2TripleGenFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.z2.Z2TripleGenParty;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,27 +28,27 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
     /**
      * multiplication triple generation receiver
      */
-    private final Z2MtgParty mtgReceiver;
+    private final Z2TripleGenParty z2TripleGenReceiver;
 
     public Bea91Z2cReceiver(Rpc receiverRpc, Party senderParty, Bea91Z2cConfig config) {
         super(Bea91Z2cPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        mtgReceiver = Z2MtgFactory.createReceiver(receiverRpc, senderParty, config.getMtgConfig());
-        addSubPto(mtgReceiver);
+        z2TripleGenReceiver = Z2TripleGenFactory.createReceiver(receiverRpc, senderParty, config.getZ2TripleGenConfig());
+        addSubPto(z2TripleGenReceiver);
     }
 
     public Bea91Z2cReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, Bea91Z2cConfig config) {
         super(Bea91Z2cPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        mtgReceiver = Z2MtgFactory.createReceiver(receiverRpc, senderParty, aiderParty, config.getMtgConfig());
-        addSubPto(mtgReceiver);
+        z2TripleGenReceiver = Z2TripleGenFactory.createReceiver(receiverRpc, senderParty, aiderParty, config.getZ2TripleGenConfig());
+        addSubPto(z2TripleGenReceiver);
     }
 
     @Override
-    public void init(long updateBitNum) throws MpcAbortException {
-        setInitInput(updateBitNum);
+    public void init(int expectTotalNum) throws MpcAbortException {
+        setInitInput(expectTotalNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        mtgReceiver.init((int) updateBitNum);
+        z2TripleGenReceiver.init(expectTotalNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -68,11 +66,7 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
         BitVector x1Vector = BitVectorFactory.createRandom(bitNum, secureRandom);
         BitVector x0Vector = x1.xor(x1Vector);
         List<byte[]> x0Payload = Collections.singletonList(x0Vector.getBytes());
-        DataPacketHeader x0Header = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_INPUT_SHARE.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(x0Header, x0Payload));
+        sendOtherPartyPayload(PtoStep.RECEIVER_SEND_INPUT_SHARE.ordinal(), x0Payload);
         stopWatch.stop();
         long shareTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -87,12 +81,9 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
         setShareOtherInput(bitNum);
         logPhaseInfo(PtoState.PTO_BEGIN, "receive share");
 
+        List<byte[]> x1Payload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_INPUT_SHARE.ordinal());
+
         stopWatch.start();
-        DataPacketHeader x1Header = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_INPUT_SHARE.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> x1Payload = rpc.receive(x1Header).getPayload();
         MpcAbortPreconditions.checkArgument(x1Payload.size() == 1);
         BitVector x1Vector = BitVectorFactory.create(bitNum, x1Payload.get(0));
         stopWatch.stop();
@@ -113,12 +104,9 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
         } else {
             logPhaseInfo(PtoState.PTO_BEGIN, "receive share");
 
+            List<byte[]> x0Payload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_OUTPUT_SHARE.ordinal());
+
             stopWatch.start();
-            DataPacketHeader x0Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_OUTPUT_SHARE.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> x0Payload = rpc.receive(x0Header).getPayload();
             MpcAbortPreconditions.checkArgument(x0Payload.size() == 1);
             BitVector x0Vector = BitVectorFactory.create(bitNum, x0Payload.get(0));
             BitVector x1Vector = x1.getBitVector();
@@ -141,11 +129,7 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
 
             stopWatch.start();
             List<byte[]> x1Payload = Collections.singletonList(x1.getBitVector().getBytes());
-            DataPacketHeader x1Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_OUTPUT_SHARE.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(x1Header, x1Payload));
+            sendOtherPartyPayload(PtoStep.RECEIVER_SEND_OUTPUT_SHARE.ordinal(), x1Payload);
             stopWatch.stop();
             long revealTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
@@ -232,7 +216,7 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
             logPhaseInfo(PtoState.PTO_BEGIN, "and");
 
             stopWatch.start();
-            Z2Triple triple = mtgReceiver.generate(bitNum);
+            Z2Triple triple = z2TripleGenReceiver.generate(bitNum);
             stopWatch.stop();
             long mtgTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
@@ -249,22 +233,15 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
             List<byte[]> e1f1Payload = new LinkedList<>();
             e1f1Payload.add(e1);
             e1f1Payload.add(f1);
-            DataPacketHeader e1f1Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_E1_F1.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(e1f1Header, e1f1Payload));
+            sendOtherPartyPayload(PtoStep.RECEIVER_SEND_E1_F1.ordinal(), e1f1Payload);
             stopWatch.stop();
             long e1f1Time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
             logStepInfo(PtoState.PTO_STEP, 2, 3, e1f1Time, "and (open e/f)");
 
+            List<byte[]> e0f0Payload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_E0_F0.ordinal());
+
             stopWatch.start();
-            DataPacketHeader e0f0Header = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_E0_F0.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> e0f0Payload = rpc.receive(e0f0Header).getPayload();
             MpcAbortPreconditions.checkArgument(e0f0Payload.size() == 2);
             byte[] e0 = e0f0Payload.remove(0);
             byte[] f0 = e0f0Payload.remove(0);

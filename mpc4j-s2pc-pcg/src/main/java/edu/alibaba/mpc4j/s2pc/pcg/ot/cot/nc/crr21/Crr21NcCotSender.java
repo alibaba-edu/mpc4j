@@ -14,9 +14,9 @@ import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorFacto
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.AbstractNcCotSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSender;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotSenderOutput;
 
 /**
  * CRR21-NC-COT协议发送方。
@@ -75,7 +75,7 @@ public class Crr21NcCotSender extends AbstractNcCotSender {
         stopWatch.start();
         iterationN = lpnParams.getN();
         iterationT = lpnParams.getT();
-        mspCotSender.init(delta, iterationT, iterationN);
+        mspCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

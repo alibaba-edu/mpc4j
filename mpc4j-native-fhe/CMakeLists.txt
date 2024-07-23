@@ -55,23 +55,24 @@ add_library(
         utils.cpp
         index_pir.cpp
         random.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_index_single_xpir_Mbfk16SingleIndexPirNativeUtils.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_keyword_cmg21_Cmg21KwPirNativeUtils.cpp
-        mtg/edu_alibaba_mpc4j_s2pc_pcg_mtg_zp64_core_rss19_Rss19Zp64CoreMtgNativeUtils.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_index_single_onionpir_Mcr21SingleIndexPirNativeUtils.cpp
         tfhe/tfhe.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_index_single_sealpir_Acls18SingleIndexPirNativeUtils.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_index_single_fastpir_Ayaa21SingleIndexPirNativeUtils.cpp
         tfhe/util.cpp
         tfhe/util.h
-        pir/edu_alibaba_mpc4j_s2pc_pir_index_single_vectorizedpir_Mr23SingleIndexPirNativeUtils.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_index_batch_vectorizedpir_Mr23BatchIndexPirNativeUtils.cpp
         upso/edu_alibaba_mpc4j_s2pc_upso_upsi_cmg21_Cmg21UpsiNativeUtils.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_index_single_mulpir_Alpr21SingleIndexPirNativeUtils.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_index_single_constantweightpir_Mk22SingleIndexPirNativeUtils.cpp
-        pir/edu_alibaba_mpc4j_s2pc_pir_keyword_aaag22_Aaag22KwPirNativeUtils.cpp
         upso/edu_alibaba_mpc4j_s2pc_upso_ucpsi_sj23_peqt_Sj23PeqtUcpsiNativeUtils.cpp
-        upso/edu_alibaba_mpc4j_s2pc_upso_ucpsi_sj23_pdsm_Sj23PdsmUcpsiNativeUtils.cpp pir/edu_alibaba_mpc4j_work_psipir_Lpzl24BatchPirNativeUtils.cpp upso/edu_alibaba_mpc4j_s2pc_upso_upsu_tcl23_Tcl23UpsuNativeUtils.cpp)
+        upso/edu_alibaba_mpc4j_s2pc_upso_ucpsi_sj23_pdsm_Sj23PdsmUcpsiNativeUtils.cpp
+        pir/edu_alibaba_mpc4j_work_psipir_Lpzl24BatchPirNativeUtils.cpp
+        upso/edu_alibaba_mpc4j_s2pc_upso_upsu_tcl23_Tcl23UpsuNativeUtils.cpp
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_index_xpir_XpirStdIdxPirNativeUtils.cpp
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_index_seal_SealStdIdxPirNativeUtils.cpp
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_index_mul_MulStdIdxPirNativeUtils.cpp
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_index_onion_OnionStdIdxPirNativeUtils.cpp
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_index_vectorized_VectorizedStdIdxPirNativeUtils.cpp
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_index_cw_CwStdIdxPirNativeUtils.cpp
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_index_fast_FastStdIdxPirNativeUtils.cpp
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_ks_labelpsi_LabelpsiStdKsPirNativeUtils.cpp
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_kw_pantheon_PantheonStdKwPirNativeUtils.cpp
+)
 # 链接SEAL库
 if(TARGET SEAL::seal)
     target_link_libraries(mpc4j-native-fhe PUBLIC SEAL::seal)

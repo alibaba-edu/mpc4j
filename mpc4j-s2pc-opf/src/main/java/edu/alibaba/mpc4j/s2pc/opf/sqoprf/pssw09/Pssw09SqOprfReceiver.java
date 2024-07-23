@@ -6,7 +6,10 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.*;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory.OprpType;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.AbstractSqOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.pssw09.Pssw09SqOprfPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfReceiverOutput;
@@ -25,9 +28,17 @@ import java.util.stream.IntStream;
  */
 public class Pssw09SqOprfReceiver extends AbstractSqOprfReceiver {
     /**
+     * Z2c receiver
+     */
+    private final Z2cParty z2cReceiver;
+    /**
      * OPRP Receiver
      */
     private final OprpReceiver oprpReceiver;
+    /**
+     * OPRP type
+     */
+    private final OprpType oprpType;
     /**
      * hash function
      */
@@ -35,8 +46,12 @@ public class Pssw09SqOprfReceiver extends AbstractSqOprfReceiver {
 
     public Pssw09SqOprfReceiver(Rpc receiverRpc, Party senderParty, Pssw09SqOprfConfig config) {
         super(Pssw09SqOprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        oprpReceiver = OprpFactory.createReceiver(receiverRpc, senderParty, config.getOprpConfig());
+        z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, config.getZ2cConfig());
+        addSubPto(z2cReceiver);
+        OprpConfig oprpConfig = config.getOprpConfig();
+        oprpReceiver = OprpFactory.createReceiver(z2cReceiver, senderParty, oprpConfig);
         addSubPto(oprpReceiver);
+        oprpType = oprpConfig.getPtoType();
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
     }
 
@@ -47,7 +62,7 @@ public class Pssw09SqOprfReceiver extends AbstractSqOprfReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // init OPRP
+        z2cReceiver.init(Math.min(Integer.MAX_VALUE, (int) OprpFactory.expectZ2TripleNum(oprpType, maxBatchSize)));
         oprpReceiver.init(maxBatchSize);
         stopWatch.stop();
         long initOprpTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

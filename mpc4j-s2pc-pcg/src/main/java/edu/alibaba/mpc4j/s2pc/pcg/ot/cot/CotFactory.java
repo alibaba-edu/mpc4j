@@ -4,9 +4,9 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache.CacheCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache.CacheCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.cache.CacheCotSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.silent.SilentCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.silent.SilentCotReceiver;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.silent.SilentCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotSender;
@@ -34,9 +34,9 @@ public class CotFactory implements PtoFactory {
          */
         DIRECT,
         /**
-         * Cache OT
+         * silent COT
          */
-        CACHE,
+        SILENT,
     }
 
     /**
@@ -52,8 +52,8 @@ public class CotFactory implements PtoFactory {
         switch (type) {
             case DIRECT:
                 return new DirectCotSender(senderRpc, receiverParty, (DirectCotConfig) config);
-            case CACHE:
-                return new CacheCotSender(senderRpc, receiverParty, (CacheCotConfig) config);
+            case SILENT:
+                return new SilentCotSender(senderRpc, receiverParty, (SilentCotConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + CotType.class.getSimpleName() + ": " + type.name());
         }
@@ -72,8 +72,8 @@ public class CotFactory implements PtoFactory {
         switch (type) {
             case DIRECT:
                 return new DirectCotReceiver(receiverRpc, senderParty, (DirectCotConfig) config);
-            case CACHE:
-                return new CacheCotReceiver(receiverRpc, senderParty, (CacheCotConfig) config);
+            case SILENT:
+                return new SilentCotReceiver(receiverRpc, senderParty, (SilentCotConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + CotType.class.getSimpleName() + ": " + type.name());
         }
@@ -88,7 +88,7 @@ public class CotFactory implements PtoFactory {
      */
     public static CotConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
         if (silent) {
-            return new CacheCotConfig.Builder(securityModel).build();
+            return new SilentCotConfig.Builder(securityModel).build();
         } else {
             return new DirectCotConfig.Builder(securityModel).build();
         }

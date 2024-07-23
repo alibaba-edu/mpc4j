@@ -19,9 +19,9 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSender;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSenderOutput;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnPartyOutput;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnReceiver;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnPartyOutput;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnReceiver;
 import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractPsuServer;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuPtoDesc.PtoStep;
 
@@ -42,7 +42,7 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
     /**
      * OSN接收方
      */
-    private final OsnReceiver osnReceiver;
+    private final DosnReceiver dosnReceiver;
     /**
      * OPRF发送方
      */
@@ -90,8 +90,8 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
 
     public Jsz22SfcPsuServer(Rpc serverRpc, Party clientParty, Jsz22SfcPsuConfig config) {
         super(Jsz22SfcPsuPtoDesc.getInstance(), serverRpc, clientParty, config);
-        osnReceiver = OsnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
-        addSubPto(osnReceiver);
+        dosnReceiver = DosnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
+        addSubPto(dosnReceiver);
         oprfSender = OprfFactory.createOprfSender(serverRpc, clientParty, config.getOprfConfig());
         addSubPto(oprfSender);
         coreCotSender = CoreCotFactory.createSender(serverRpc, clientParty, config.getCoreCotConfig());
@@ -110,11 +110,10 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
         // note that in PSU, we must use no-stash cuckoo hash
         int maxPrfNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType) * maxServerElementSize;
         // 初始化各个子协议
-        osnReceiver.init(maxBinNum);
+        dosnReceiver.init();
         oprfSender.init(maxBinNum, maxPrfNum);
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        coreCotSender.init(delta, maxServerElementSize);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -160,7 +159,7 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
         stopWatch.start();
         // S and R invoke the ideal functionality F_{PS}.
         // S acts as P_1 with a permutation π, obtains the shuffled shares {a'_1, a'_2, ... , a'_b}.
-        OsnPartyOutput osnReceiverOutput = osnReceiver.osn(pi, elementByteLength);
+        DosnPartyOutput osnReceiverOutput = dosnReceiver.dosn(pi, elementByteLength);
         aPrimeArray = IntStream.range(0, binNum)
             .mapToObj(osnReceiverOutput::getShare)
             .toArray(byte[][]::new);

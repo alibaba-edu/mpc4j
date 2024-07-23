@@ -14,10 +14,18 @@ public interface LnotSender extends TwoPartyPto {
      * Inits the protocol.
      *
      * @param l         choice bit length.
-     * @param updateNum update num.
+     * @param expectNum expect num.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(int l, int updateNum) throws MpcAbortException;
+    void init(int l, int expectNum) throws MpcAbortException;
+
+    /**
+     * Inits the protocol.
+     *
+     * @param l choice bit length.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    void init(int l) throws MpcAbortException;
 
     /**
      * Executes the protocol.

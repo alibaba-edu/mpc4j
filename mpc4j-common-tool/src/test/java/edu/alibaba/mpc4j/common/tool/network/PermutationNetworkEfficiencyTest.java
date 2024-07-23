@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.network;
 
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory.PermutationNetworkType;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -9,8 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -36,11 +35,11 @@ public class PermutationNetworkEfficiencyTest {
     /**
      * numbers of inputs
      */
-    private static final int[] PERMUTATION_NUM_ARRAY = new int[] {1 << 12, 1 << 14, 1 << 16, 1 << 18};
+    private static final int[] PERMUTATION_NUM_ARRAY = new int[] {1 << 12, 1 << 14, 1 << 16, 1 << 18, 1 << 20};
 
     @Test
     public void testEfficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}", "                name", " perm. num", "create(us)", " perm.(us)");
+        LOGGER.info("{}\t{}\t{}\t{}", "                name", " perm. num", "create(ms)", " perm.(ms)");
         for (int num : PERMUTATION_NUM_ARRAY) {
             testEfficiency(num);
         }
@@ -48,16 +47,11 @@ public class PermutationNetworkEfficiencyTest {
 
     private void testEfficiency(int num) {
         for (PermutationNetworkType type : PermutationNetworkType.values()) {
-            List<Integer> shufflePermutationMap = IntStream.range(0, num)
-                .boxed()
-                .collect(Collectors.toList());
-            Collections.shuffle(shufflePermutationMap, SECURE_RANDOM);
-            int[] permutationMap = shufflePermutationMap.stream()
-                .mapToInt(permutation -> permutation)
-                .toArray();
+            int[] permutation = IntStream.range(0, num).toArray();
+            ArrayUtils.shuffle(permutation, SECURE_RANDOM);
 
             STOP_WATCH.start();
-            PermutationNetwork<Integer> network = PermutationNetworkFactory.createInstance(type, permutationMap);
+            PermutationNetwork<Integer> network = PermutationNetworkFactory.createInstance(type, permutation);
             STOP_WATCH.stop();
             long createTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
             STOP_WATCH.reset();

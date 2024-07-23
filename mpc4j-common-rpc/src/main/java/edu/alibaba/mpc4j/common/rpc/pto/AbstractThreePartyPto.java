@@ -11,18 +11,17 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
  * @date 2023/5/4
  */
 public abstract class AbstractThreePartyPto extends AbstractMultiPartyPto implements ThreePartyPto {
-
-    protected AbstractThreePartyPto(PtoDesc ptoDesc, Rpc rpc, Party leftParty, Party rightParty, MultiPartyPtoConfig config) {
-        super(ptoDesc, config, rpc, leftParty, rightParty);
-    }
-
-    @Override
-    public Party leftParty() {
-        return otherParties()[0];
-    }
-
-    @Override
-    public Party rightParty() {
-        return otherParties()[1];
+    /**
+     * Creates a three party protocol.
+     *
+     * @param ptoDesc    protocol description.
+     * @param ownRpc     own RPC.
+     * @param leftParty  left party.
+     * @param rightParty right party.
+     * @param config     config.
+     */
+    protected AbstractThreePartyPto(PtoDesc ptoDesc, Rpc ownRpc, Party leftParty, Party rightParty,
+                                    MultiPartyPtoConfig config) {
+        super(ptoDesc, config, ownRpc, leftParty, rightParty);
     }
 }

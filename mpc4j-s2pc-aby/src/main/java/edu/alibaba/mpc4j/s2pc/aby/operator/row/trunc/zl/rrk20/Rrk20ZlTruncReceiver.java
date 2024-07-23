@@ -4,9 +4,11 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl.ZlDreluFactory;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl.ZlDreluParty;
@@ -42,11 +44,11 @@ public class Rrk20ZlTruncReceiver extends AbstractZlTruncParty {
      */
     private final LnotReceiver lnotReceiver;
 
-    public Rrk20ZlTruncReceiver(Rpc receiverRpc, Party senderParty, Rrk20ZlTruncConfig config) {
-        super(getInstance(), receiverRpc, senderParty, config);
-        dreluReceiver = ZlDreluFactory.createReceiver(receiverRpc, senderParty, config.getZlDreluConfig());
+    public Rrk20ZlTruncReceiver(Z2cParty z2cReceiver, Party senderParty, Rrk20ZlTruncConfig config) {
+        super(getInstance(), z2cReceiver.getRpc(), senderParty, config);
+        dreluReceiver = ZlDreluFactory.createReceiver(z2cReceiver, senderParty, config.getZlDreluConfig());
         addSubPto(dreluReceiver);
-        lnotReceiver = LnotFactory.createReceiver(receiverRpc, senderParty, config.getLnotConfig());
+        lnotReceiver = LnotFactory.createReceiver(z2cReceiver.getRpc(), senderParty, config.getLnotConfig());
         addSubPto(lnotReceiver);
     }
 

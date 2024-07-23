@@ -1,5 +1,7 @@
 package edu.alibaba.mpc4j.common.structure.lpn.dual;
 
+import edu.alibaba.mpc4j.common.structure.lpn.LpnCoder;
+
 /**
  * Dual LPN Coder.
  * <p></p>
@@ -17,36 +19,22 @@ package edu.alibaba.mpc4j.common.structure.lpn.dual;
  * @author Weiran Liu
  * @date 2024/1/3
  */
-public interface DualLpnCoder {
+public interface DualLpnCoder extends LpnCoder {
     /**
      * Encodes binary vector e = (e_1, ..., e_n) to binary vector w = (w_1, ..., w_k).
      *
-     * @param e binary vector e = (e_1, ..., e_n).
+     * @param es binary vector e = (e_1, ..., e_n).
      * @return binary vector w = (w_1, ..., w_k).
      */
-    boolean[] dualEncode(boolean[] e);
+    boolean[] dualEncode(boolean[] es);
 
     /**
      * Encodes GF2E vector e = (e_1, ..., e_n) to GF2E vector w = (w_1, ..., w_k).
      *
-     * @param e GF2E vector e = (e_1, ..., e_n).
+     * @param es GF2E vector e = (e_1, ..., e_n).
      * @return GF2E vector w = (w_1, ..., w_k).
      */
-    byte[][] dualEncode(byte[][] e);
-
-    /**
-     * Gets code size (n). This is the input size of the coder, i.e., e = (e_1, ..., e_n).
-     *
-     * @return code size (n).
-     */
-    int getCodeSize();
-
-    /**
-     * Gets message size (k). This is the output size of the coder, i.e., w = (w_1, ..., w_k).
-     *
-     * @return message size (k).
-     */
-    int getMessageSize();
+    byte[][] dualEncode(byte[][] es);
 
     /**
      * Gets the rows for the parity check matrix, that is, n - k.
@@ -65,18 +53,4 @@ public interface DualLpnCoder {
     default int getParityColumns() {
         return getCodeSize();
     }
-
-    /**
-     * Sets parallel encoding.
-     *
-     * @param parallel parallel encoding.
-     */
-    void setParallel(boolean parallel);
-
-    /**
-     * Gets parallel encoding.
-     *
-     * @return parallel encoding.
-     */
-    boolean getParallel();
 }

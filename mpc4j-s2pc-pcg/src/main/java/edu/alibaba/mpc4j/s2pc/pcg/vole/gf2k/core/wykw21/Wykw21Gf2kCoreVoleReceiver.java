@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kGadget;
+import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtReceiverOutput;
@@ -31,10 +31,6 @@ public class Wykw21Gf2kCoreVoleReceiver extends AbstractGf2kCoreVoleReceiver {
      */
     private final BaseOtReceiver baseOtReceiver;
     /**
-     * GF2K gadget
-     */
-    private Gf2kGadget gf2kGadget;
-    /**
      * base OT receiver output
      */
     private BaseOtReceiverOutput baseOtReceiverOutput;
@@ -49,7 +45,7 @@ public class Wykw21Gf2kCoreVoleReceiver extends AbstractGf2kCoreVoleReceiver {
     /**
      * b used for challenge
      */
-    private byte[] b;
+    private byte[][] bs;
 
     public Wykw21Gf2kCoreVoleReceiver(Rpc receiverRpc, Party senderParty, Wykw21Gf2kCoreVoleConfig config) {
         super(Wykw21Gf2kCoreVolePtoDesc.getInstance(), receiverRpc, senderParty, config);
@@ -58,14 +54,13 @@ public class Wykw21Gf2kCoreVoleReceiver extends AbstractGf2kCoreVoleReceiver {
     }
 
     @Override
-    public void init(byte[] delta, int maxNum) throws MpcAbortException {
-        setInitInput(delta, maxNum);
+    public void init(int subfieldL, byte[] delta) throws MpcAbortException {
+        setInitInput(subfieldL, delta);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        gf2kGadget = new Gf2kGadget(envType);
         baseOtReceiver.init();
-        deltaBinary = gf2kGadget.decomposition(delta);
+        deltaBinary = BinaryUtils.byteArrayToBinary(delta);
         baseOtReceiverOutput = baseOtReceiver.receive(deltaBinary);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -113,7 +108,7 @@ public class Wykw21Gf2kCoreVoleReceiver extends AbstractGf2kCoreVoleReceiver {
             .mapToObj(index -> {
                 byte[] seed = ByteBuffer.allocate(Long.BYTES + Integer.BYTES + randomOracleKey.length)
                     .putLong(extraInfo).putInt(index).put(randomOracleKey).array();
-                return gf2k.createRandom(seed);
+                return field.createRandom(seed);
             })
             .toArray(byte[][]::new);
         DataPacketHeader responseHeader = new DataPacketHeader(
@@ -126,15 +121,16 @@ public class Wykw21Gf2kCoreVoleReceiver extends AbstractGf2kCoreVoleReceiver {
         byte[] x = responsePayload.remove(0);
         byte[] z = responsePayload.remove(0);
         // y = Σ_{i = 0}^{n - 1} (χ_i · v_i) + b
-        byte[] y = gf2k.createZero();
+        byte[] y = field.createZero();
         for (int i = 0; i < num; i++) {
-            gf2k.addi(y, gf2k.mul(chis[i], receiverOutput.getQ(i)));
+            field.addi(y, field.mul(chis[i], receiverOutput.getQ(i)));
         }
-        gf2k.addi(y, b);
+        byte[] b = field.innerProduct(bs);
+        field.addi(y, b);
         // y + Δ · x
-        gf2k.addi(y, gf2k.mul(delta, x));
+        field.addi(y, field.mul(delta, x));
         MpcAbortPreconditions.checkArgument(Arrays.equals(y, z));
-        b = null;
+        bs = null;
         stopWatch.stop();
         long responseTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -146,16 +142,16 @@ public class Wykw21Gf2kCoreVoleReceiver extends AbstractGf2kCoreVoleReceiver {
     }
 
     private Gf2kVoleReceiverOutput handleMatrixPayload(List<byte[]> matrixPayload) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(matrixPayload.size() == (num + 1) * l);
+        MpcAbortPreconditions.checkArgument(matrixPayload.size() == (num + r) * fieldL);
         byte[][] matrixPayloadArray = matrixPayload.toArray(new byte[0][]);
         // create matrix Q, add one more Q for generating b
-        byte[][][] qMatrix = new byte[num + 1][l][];
-        IntStream matrixStream = IntStream.range(0, (num + 1) * l);
+        byte[][][] qMatrix = new byte[num + r][fieldL][];
+        IntStream matrixStream = IntStream.range(0, (num + r) * fieldL);
         matrixStream = parallel ? matrixStream.parallel() : matrixStream;
         matrixStream.forEach(index -> {
             // current position for matrix Q
-            int rowIndex = index / l;
-            int columnIndex = index % l;
+            int rowIndex = index / fieldL;
+            int columnIndex = index % fieldL;
             // read u from the payload
             byte[] u = matrixPayloadArray[index];
             // compute t_b = PRF(kb, i), q(i,j) = u + Δ_j * t_b,
@@ -163,20 +159,19 @@ public class Wykw21Gf2kCoreVoleReceiver extends AbstractGf2kCoreVoleReceiver {
                 .allocate(Long.BYTES + Integer.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
                 .putLong(extraInfo).putInt(rowIndex).put(baseOtReceiverOutput.getRb(columnIndex))
                 .array();
-            byte[] tb = gf2k.createRandom(tbSeed);
-            qMatrix[rowIndex][columnIndex] = deltaBinary[columnIndex] ? gf2k.add(u, tb) : tb;
+            byte[] tb = subfield.createRandom(tbSeed);
+            qMatrix[rowIndex][columnIndex] = deltaBinary[columnIndex] ? subfield.add(u, tb) : tb;
         });
         // composite each row in q using gadget
         IntStream qMatrixIndexStream = IntStream.range(0, num);
         qMatrixIndexStream = parallel ? qMatrixIndexStream.parallel() : qMatrixIndexStream;
         byte[][] q = qMatrixIndexStream
-            .mapToObj(rowIndex -> {
-                byte[][] row = qMatrix[rowIndex];
-                return gf2kGadget.innerProduct(row);
-            })
+            .mapToObj(rowIndex -> field.mixInnerProduct(qMatrix[rowIndex]))
             .toArray(byte[][]::new);
         // composite the last row in q using gadget
-        b = gf2kGadget.innerProduct(qMatrix[num]);
-        return Gf2kVoleReceiverOutput.create(delta, q);
+        bs = IntStream.range(0, r)
+            .mapToObj(h -> field.mixInnerProduct(qMatrix[num + h]))
+            .toArray(byte[][]::new);
+        return Gf2kVoleReceiverOutput.create(field, delta, q);
     }
 }

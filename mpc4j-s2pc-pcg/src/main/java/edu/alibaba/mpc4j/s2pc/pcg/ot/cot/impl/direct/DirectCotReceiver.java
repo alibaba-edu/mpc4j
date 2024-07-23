@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.AbstractCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
@@ -22,6 +23,10 @@ public class DirectCotReceiver extends AbstractCotReceiver {
      * core COT receiver
      */
     private final CoreCotReceiver coreCotReceiver;
+    /**
+     * round num
+     */
+    private int roundNum;
 
     public DirectCotReceiver(Rpc receiverRpc, Party senderParty, DirectCotConfig config) {
         super(DirectCotPtoDesc.getInstance(), receiverRpc, senderParty, config);
@@ -30,12 +35,13 @@ public class DirectCotReceiver extends AbstractCotReceiver {
     }
 
     @Override
-    public void init(int updateNum) throws MpcAbortException {
-        setInitInput(updateNum);
+    public void init(int expectNum) throws MpcAbortException {
+        setInitInput(expectNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        coreCotReceiver.init(updateNum);
+        roundNum = Math.min(DirectCotPtoDesc.MAX_ROUND_NUM, expectNum);
+        coreCotReceiver.init();
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -45,32 +51,35 @@ public class DirectCotReceiver extends AbstractCotReceiver {
     }
 
     @Override
+    public void init() throws MpcAbortException {
+        init(DirectCotPtoDesc.MAX_ROUND_NUM);
+    }
+
+    @Override
     public CotReceiverOutput receive(boolean[] choices) throws MpcAbortException {
         setPtoInput(choices);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
         CotReceiverOutput receiverOutput = CotReceiverOutput.createEmpty();
-        if (num <= updateNum) {
-            receiverOutput.merge(coreCotReceiver.receive(choices));
-        } else {
-            int currentNum = receiverOutput.getNum();
-            int round = 0;
-            while (currentNum < num) {
-                int roundNum = Math.min((num - currentNum), updateNum);
-                boolean[] roundChoices = new boolean[roundNum];
-                System.arraycopy(choices, round * updateNum, roundChoices, 0, roundNum);
-                receiverOutput.merge(coreCotReceiver.receive(roundChoices));
-                round++;
-                currentNum = receiverOutput.getNum();
-            }
+        while (num > receiverOutput.getNum()) {
+            int gapNum = num - receiverOutput.getNum();
+            int eachNum = Math.min(gapNum, roundNum);
+            boolean[] roundChoices = new boolean[eachNum];
+            System.arraycopy(choices, receiverOutput.getNum(), roundChoices, 0, eachNum);
+            receiverOutput.merge(coreCotReceiver.receive(roundChoices));
         }
         stopWatch.stop();
-        long coreCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 1, coreCotTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 1, roundTime);
 
         logPhaseInfo(PtoState.PTO_END);
         return receiverOutput;
+    }
+
+    @Override
+    public CotReceiverOutput receiveRandom(int num) throws MpcAbortException {
+        return receive(BinaryUtils.randomBinary(num, secureRandom));
     }
 }

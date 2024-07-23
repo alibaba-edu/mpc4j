@@ -18,9 +18,9 @@ public abstract class AbstractCotReceiver extends AbstractTwoPartyPto implements
      */
     protected final CotConfig config;
     /**
-     * update num
+     * expect num
      */
-    protected int updateNum;
+    protected int expectNum;
     /**
      * choices
      */
@@ -35,9 +35,9 @@ public abstract class AbstractCotReceiver extends AbstractTwoPartyPto implements
         this.config = config;
     }
 
-    protected void setInitInput(int updateNum) {
-        MathPreconditions.checkPositive("updateNum", updateNum);
-        this.updateNum = updateNum;
+    protected void setInitInput(int expectNum) {
+        MathPreconditions.checkPositive("expect_num", expectNum);
+        this.expectNum = expectNum;
         initState();
     }
 
@@ -46,6 +46,13 @@ public abstract class AbstractCotReceiver extends AbstractTwoPartyPto implements
         MathPreconditions.checkPositive("num", choices.length);
         this.choices = choices;
         num = choices.length;
+        extraInfo++;
+    }
+
+    protected void setPtoInput(int num) {
+        checkInitialized();
+        MathPreconditions.checkPositive("num", num);
+        this.num = num;
         extraInfo++;
     }
 }

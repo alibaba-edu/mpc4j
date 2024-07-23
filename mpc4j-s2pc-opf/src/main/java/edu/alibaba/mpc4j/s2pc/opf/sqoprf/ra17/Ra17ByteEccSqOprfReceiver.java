@@ -40,7 +40,7 @@ public class Ra17ByteEccSqOprfReceiver extends AbstractSqOprfReceiver {
 
     public Ra17ByteEccSqOprfReceiver(Rpc receiverRpc, Party senderParty, Ra17ByteEccSqOprfConfig config) {
         super(Ra17ByteEccSqOprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        byteFullEcc = ByteEccFactory.createFullInstance(envType);
+        byteFullEcc = ByteEccFactory.createFastestFullInstance();
         kdf = KdfFactory.createInstance(envType);
     }
 
@@ -90,8 +90,7 @@ public class Ra17ByteEccSqOprfReceiver extends AbstractSqOprfReceiver {
     private List<byte[]> generateBlindPayload() {
         BigInteger n = byteFullEcc.getN();
         inverseBetas = new BigInteger[batchSize];
-        IntStream batchIntStream = IntStream.range(0, batchSize);
-        batchIntStream = parallel ? batchIntStream.parallel() : batchIntStream;
+        IntStream batchIntStream = parallel ? IntStream.range(0, batchSize).parallel() : IntStream.range(0, batchSize);
         return batchIntStream
             .mapToObj(index -> {
                 // generate β
@@ -108,8 +107,7 @@ public class Ra17ByteEccSqOprfReceiver extends AbstractSqOprfReceiver {
     private SqOprfReceiverOutput handleBlindPrfPayload(List<byte[]> blindPrfPayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(blindPrfPayload.size() == batchSize);
         byte[][] blindPrfArray = blindPrfPayload.toArray(new byte[0][]);
-        IntStream batchIntStream = IntStream.range(0, batchSize);
-        batchIntStream = parallel ? batchIntStream.parallel() : batchIntStream;
+        IntStream batchIntStream = parallel ? IntStream.range(0, batchSize).parallel() : IntStream.range(0, batchSize);
         byte[][] prfs = batchIntStream
             .mapToObj(index -> byteFullEcc.mul(blindPrfArray[index], inverseBetas[index]))
             .map(kdf::deriveKey)

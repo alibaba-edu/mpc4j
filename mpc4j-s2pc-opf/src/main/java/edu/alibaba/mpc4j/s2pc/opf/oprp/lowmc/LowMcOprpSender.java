@@ -10,7 +10,6 @@ import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.AbstractOprpSender;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.lowmc.LowMcOprpPtoDesc.PtoStep;
@@ -42,15 +41,9 @@ public class LowMcOprpSender extends AbstractOprpSender {
      */
     private long[][] roundKeyShares;
 
-    public LowMcOprpSender(Rpc senderRpc, Party receiverParty, LowMcOprpConfig config) {
-        super(LowMcOprpPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        z2cSender = Z2cFactory.createSender(senderRpc, receiverParty, config.getZ2cConfig());
-        addSubPto(z2cSender);
-    }
-
-    public LowMcOprpSender(Rpc senderRpc, Party receiverParty, Party aiderParty, LowMcOprpConfig config) {
-        super(LowMcOprpPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        z2cSender = Z2cFactory.createSender(senderRpc, receiverParty, aiderParty, config.getZ2cConfig());
+    public LowMcOprpSender(Z2cParty z2cSender, Party receiverParty, LowMcOprpConfig config) {
+        super(LowMcOprpPtoDesc.getInstance(), z2cSender.getRpc(), receiverParty, config);
+        this.z2cSender = z2cSender;
         addSubPto(z2cSender);
     }
 
@@ -68,14 +61,6 @@ public class LowMcOprpSender extends AbstractOprpSender {
     public void init(int maxBatchSize) throws MpcAbortException {
         setInitInput(maxBatchSize);
         logPhaseInfo(PtoState.INIT_BEGIN);
-
-        stopWatch.start();
-        // 初始化BC协议
-        z2cSender.init(LowMcUtils.SBOX_NUM * 3 * maxRoundBatchSize * LowMcUtils.ROUND);
-        stopWatch.stop();
-        long initBcTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.INIT_STEP, 1, 1, initBcTime);
 
         logPhaseInfo(PtoState.INIT_END);
     }

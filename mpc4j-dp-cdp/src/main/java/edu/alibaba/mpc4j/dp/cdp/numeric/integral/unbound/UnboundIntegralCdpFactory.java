@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.dp.cdp.numeric.integral.unbound;
 
+import edu.alibaba.mpc4j.dp.cdp.numeric.integral.unbound.geometric.DiscreteGeometricCdpConfig;
 import edu.alibaba.mpc4j.dp.cdp.numeric.integral.unbound.geometric.GeometricCdpConfig;
 import edu.alibaba.mpc4j.dp.cdp.numeric.integral.unbound.geometric.GeometricCdpFactory;
 
@@ -29,4 +30,5 @@ public class UnboundIntegralCdpFactory {
         }
         throw new IllegalArgumentException("Invalid UnboundIntegralCdpConfig: " + unboundIntegralCdpConfig.getClass().getSimpleName());
     }
+
 }

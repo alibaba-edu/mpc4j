@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pso.psi.mqrpmt.czz22;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtConfig;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz22.Czz22ByteEccCwMqRpmtConfig;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz24.Czz24CwOprfMqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psi.mqrpmt.MqRpmtPsiConfig;
@@ -57,7 +57,7 @@ public class Czz22PsiConfig extends AbstractMultiPartyPtoConfig implements MqRpm
         private CoreCotConfig coreCotConfig;
 
         public Builder() {
-            mqRpmtConfig = new Czz22ByteEccCwMqRpmtConfig.Builder().build();
+            mqRpmtConfig = new Czz24CwOprfMqRpmtConfig.Builder().build();
             coreCotConfig = CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
         }
 

@@ -36,55 +36,55 @@ import java.util.stream.IntStream;
  */
 public class Krtw19PsuServer extends AbstractPsuServer {
     /**
-     * RMPT协议的OPRF接收方
+     * OPRF used in RMPT
      */
     private final OprfReceiver rpmtOprfReceiver;
     /**
-     * PEQT协议的OPRF发送方
+     * OPRF used in PEQT
      */
     private final OprfSender peqtOprfSender;
     /**
-     * 核COT协议发送方
+     * core COT
      */
     private final CoreCotSender coreCotSender;
     /**
-     * 流水线执行数量
+     * pipeline size
      */
     private final int pipeSize;
     /**
-     * 桶哈希函数密钥
+     * bin hash keys
      */
     private byte[][] hashBinKeys;
     /**
-     * 桶数量（β）
+     * bin num (β)
      */
     private int binNum;
     /**
-     * 最大桶大小（m）
+     * max bin size (m)
      */
     private int maxBinSize;
     /**
-     * 服务端元素哈希桶
+     * simple hash bin
      */
     private EmptyPadHashBin<ByteBuffer> hashBin;
     /**
-     * 多项式系数数量
+     * coefficient num
      */
     private int coefficientNum;
     /**
-     * 多项式服务
+     * polynomial evaluation
      */
     private Gf2ePoly gf2ePoly;
     /**
-     * 有限域哈希函数
+     * finite field hash
      */
     private Hash finiteFieldHash;
     /**
-     * PEQT输出哈希函数
+     * PEQT hash
      */
     private Hash peqtHash;
     /**
-     * 加密伪随机数生成器
+     * PRG for encryption
      */
     private Prg encPrg;
 
@@ -105,12 +105,10 @@ public class Krtw19PsuServer extends AbstractPsuServer {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // 初始化各个子协议
-        rpmtOprfReceiver.init(Krtw19PsuUtils.MAX_BIN_NUM);
-        peqtOprfSender.init(Krtw19PsuUtils.MAX_BIN_NUM);
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        coreCotSender.init(delta, Krtw19PsuUtils.MAX_BIN_NUM);
+        rpmtOprfReceiver.init(Krtw19PsuPtoDesc.MAX_BIN_NUM);
+        peqtOprfSender.init(Krtw19PsuPtoDesc.MAX_BIN_NUM);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -118,7 +116,6 @@ public class Krtw19PsuServer extends AbstractPsuServer {
 
         stopWatch.start();
         List<byte[]> keysPayload = new LinkedList<>();
-        // 初始化哈希桶密钥
         hashBinKeys = new byte[1][CommonConstants.BLOCK_BYTE_LENGTH];
         secureRandom.nextBytes(hashBinKeys[0]);
         keysPayload.add(hashBinKeys[0]);
@@ -156,56 +153,46 @@ public class Krtw19PsuServer extends AbstractPsuServer {
     }
 
     private void initParams() {
-        // 取得服务单和客户端元素数量的最大值
         int n = Math.max(serverElementSize, clientElementSize);
-        // 设置桶参数
-        binNum = Krtw19PsuUtils.getBinNum(n);
-        maxBinSize = Krtw19PsuUtils.getMaxBinSize(n);
+        binNum = Krtw19PsuPtoDesc.getBinNum(n);
+        maxBinSize = Krtw19PsuPtoDesc.getMaxBinSize(n);
         hashBin = new EmptyPadHashBin<>(envType, binNum, maxBinSize, serverElementSize, hashBinKeys);
-        // 向桶插入元素
         hashBin.insertItems(serverElementArrayList);
-        // 放置特殊的元素\bot，并进行随机置乱
         hashBin.insertPaddingItems(botElementByteBuffer);
-        // 设置有限域比特长度σ = λ + log(β * (m + 1)^2)
-        int fieldBitLength = Krtw19PsuUtils.getFiniteFieldBitLength(binNum, maxBinSize);
-        int fieldByteLength = fieldBitLength / Byte.SIZE;
-        // 设置有限域哈希
+        int fieldByteLength = Krtw19PsuPtoDesc.getFiniteFieldByteLength(binNum, maxBinSize);
+        int fieldBitLength = fieldByteLength * Byte.SIZE;
         finiteFieldHash = HashFactory.createInstance(envType, fieldByteLength);
-        // 设置多项式运算服务
         gf2ePoly = Gf2ePolyFactory.createInstance(envType, fieldBitLength);
-        // 设置多项式系数数量，客户端会用根插值算法插值maxBinSize - 1个元素，因此多项式系数数量为maxBinSize
+        // interpolate maxBinSize - 1 elements
         coefficientNum = gf2ePoly.rootCoefficientNum(maxBinSize - 1);
-        // 设置PEQT哈希
-        int peqtLength = Krtw19PsuUtils.getPeqtByteLength(binNum, maxBinSize);
+        int peqtLength = Krtw19PsuPtoDesc.getPeqtByteLength(binNum, maxBinSize);
         peqtHash = HashFactory.createInstance(getEnvType(), peqtLength);
-        // 设置加密伪随机数生成器
         encPrg = PrgFactory.createInstance(envType, elementByteLength);
     }
 
     private void handleBinColumn(int binColumnIndex) throws MpcAbortException {
         stopWatch.start();
-        // 从哈希桶中提取出列数据
         byte[][] xs = IntStream.range(0, binNum)
             .mapToObj(binIndex -> hashBin.getBin(binIndex).get(binColumnIndex).getItem())
             .map(ByteBuffer::array)
             .toArray(byte[][]::new);
-        // 调用OPRF得到q^*并计算哈希结果
         OprfReceiverOutput rpmtOprfReceiverOprfOutput = rpmtOprfReceiver.oprf(xs);
         IntStream qIntStream = IntStream.range(0, rpmtOprfReceiverOprfOutput.getBatchSize());
         qIntStream = parallel ? qIntStream.parallel() : qIntStream;
-        byte[][] qs = qIntStream.mapToObj(i -> {
-            byte[] q = rpmtOprfReceiverOprfOutput.getPrf(i);
-            return finiteFieldHash.digestToBytes(q);
-        }).toArray(byte[][]::new);
+        byte[][] qs = qIntStream
+            .mapToObj(i -> {
+                byte[] q = rpmtOprfReceiverOprfOutput.getPrf(i);
+                return finiteFieldHash.digestToBytes(q);
+            })
+            .toArray(byte[][]::new);
         stopWatch.stop();
         long qTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logSubStepInfo(PtoState.PTO_STEP, 2, 1 + (binColumnIndex * 4), maxBinSize * 4, qTime);
 
         stopWatch.start();
-        // 初始化s*的空间
         byte[][] ss = new byte[binNum][];
-        // Pipeline过程，先执行整除倍，最后再循环一遍
+        // pipeline execution
         int pipelineTime = binNum / pipeSize;
         int round;
         for (round = 0; round < pipelineTime; round++) {
@@ -233,7 +220,6 @@ public class Krtw19PsuServer extends AbstractPsuServer {
         logSubStepInfo(PtoState.PTO_STEP, 2, 2 + (binColumnIndex * 4), maxBinSize * 4, polyTime);
 
         stopWatch.start();
-        // 调用并发送sStarsOprf
         OprfSenderOutput peqtOprfSenderOutput = peqtOprfSender.oprf(binNum);
         IntStream sIntStream = IntStream.range(0, binNum);
         sIntStream = parallel ? sIntStream.parallel() : sIntStream;
@@ -279,7 +265,6 @@ public class Krtw19PsuServer extends AbstractPsuServer {
         throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(polyPayload.size() == (end - start) * coefficientNum);
         byte[][] flatPolyArray = polyPayload.toArray(new byte[0][]);
-        // 计算s^*
         IntStream qIntStream = IntStream.range(start, end);
         qIntStream = parallel ? qIntStream.parallel() : qIntStream;
         qIntStream.forEach(index -> {
@@ -288,8 +273,8 @@ public class Krtw19PsuServer extends AbstractPsuServer {
             byte[][] coefficients = Arrays.copyOfRange(
                 flatPolyArray, polyStart * coefficientNum, polyEnd * coefficientNum
             );
-            byte[] qStar = finiteFieldHash.digestToBytes(qs[index]);
-            ss[index] = gf2ePoly.evaluate(coefficients, qStar);
+//            byte[] qStar = finiteFieldHash.digestToBytes(qs[index]);
+            ss[index] = gf2ePoly.evaluate(coefficients, qs[index]);
         });
     }
 }

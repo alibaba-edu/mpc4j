@@ -12,8 +12,8 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirClient;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
+import edu.alibaba.mpc4j.s2pc.pir.IdxPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.AbstractOkvrReceiver;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.pir.PirOkvrPtoDesc.PtoStep;
 
@@ -52,7 +52,7 @@ public class PirOkvrReceiver extends AbstractOkvrReceiver {
     /**
      * batch index pir
      */
-    private final BatchIndexPirClient batchIndexPirClient;
+    private final IdxPirClient batchIndexPirClient;
     /**
      * sparse OKVS
      */
@@ -62,7 +62,7 @@ public class PirOkvrReceiver extends AbstractOkvrReceiver {
         super(PirOkvrPtoDesc.getInstance(), receiverRpc, senderParty, config);
         sqOprfReceiver = SqOprfFactory.createReceiver(receiverRpc, senderParty, config.getSqOprfConfig());
         addSubPto(sqOprfReceiver);
-        batchIndexPirClient = BatchIndexPirFactory.createClient(receiverRpc, senderParty, config.getBatchIndexPirConfig());
+        batchIndexPirClient = StdIdxPirFactory.createClient(receiverRpc, senderParty, config.getStdIdxConfig());
         addSubPto(batchIndexPirClient);
         okvsType = config.getOkvsType();
     }
@@ -114,19 +114,14 @@ public class PirOkvrReceiver extends AbstractOkvrReceiver {
         setPtoInput(keys);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        // receive OKVS dense part
-        DataPacketHeader denseOkvsHeader = new DataPacketHeader(
-            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_DENSE_OKVS.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> denseOkvsPayload = rpc.receive(denseOkvsHeader).getPayload();
+        List<byte[]> denseOkvsPayload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_DENSE_OKVS.ordinal());
 
         // receiver run batch index PIR
         stopWatch.start();
-        List<Integer> retrievalIndexList = generateRetrievalIndexList();
-        Map<Integer, byte[]> okvsSparsePayload = batchIndexPirClient.pir(retrievalIndexList);
+        List<Integer> indices = generateRetrievalIndexList();
+        byte[][] okvsSparsePayload = batchIndexPirClient.pir(indices.stream().mapToInt(integer -> integer).toArray());
         // recover okvs storage
-        generateOkvsStorage(denseOkvsPayload, okvsSparsePayload, retrievalIndexList);
+        generateOkvsStorage(denseOkvsPayload, okvsSparsePayload, indices);
         stopWatch.stop();
         long batchPirTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -152,36 +147,25 @@ public class PirOkvrReceiver extends AbstractOkvrReceiver {
         return outputArray;
     }
 
-    /**
-     * recover okvs storage.
-     *
-     * @param okvsDensePayload   okvs dense payload.
-     * @param okvsSparsePayload  okvs sparse payload.
-     * @param retrievalIndexList retrieval index list.
-     * @throws MpcAbortException the protocol failure aborts.
-     */
-    private void generateOkvsStorage(List<byte[]> okvsDensePayload, Map<Integer, byte[]> okvsSparsePayload,
+    private void generateOkvsStorage(List<byte[]> okvsDensePayload, byte[][] okvsSparsePayload,
                                      List<Integer> retrievalIndexList) throws MpcAbortException {
         int sparsePositionNum = sparseOkvs.sparsePositionRange();
         int densePositionNum = sparseOkvs.densePositionRange();
         MpcAbortPreconditions.checkArgument(densePositionNum == okvsDensePayload.size());
-        MpcAbortPreconditions.checkArgument(retrievalIndexList.size() == okvsSparsePayload.size());
+        MpcAbortPreconditions.checkArgument(retrievalIndexList.size() == okvsSparsePayload.length);
         okvsStorage = new byte[sparsePositionNum + densePositionNum][];
-        for (int i = 0; i < okvsSparsePayload.size(); i++) {
-            okvsStorage[retrievalIndexList.get(i)] = okvsSparsePayload.get(retrievalIndexList.get(i));
+        for (int i = 0; i < okvsSparsePayload.length; i++) {
+            okvsStorage[retrievalIndexList.get(i)] = okvsSparsePayload[i];
         }
         byte[][] denseOkvsStorage = okvsDensePayload.toArray(new byte[0][]);
         System.arraycopy(denseOkvsStorage, 0, okvsStorage, sparsePositionNum, denseOkvsStorage.length);
         MpcAbortPreconditions.checkArgument(okvsStorage.length == Gf2eDokvsFactory.getM(envType, okvsType, num));
     }
 
-    /**
-     * generate sparse okvs retrieval index list.
-     *
-     * @return sparse okvs retrieval index list.
-     */
     private List<Integer> generateRetrievalIndexList() {
-        SparseGf2eDokvs<ByteBuffer> sparseOkvs = Gf2eDokvsFactory.createSparseInstance(envType, okvsType, num, l, okvsKeys);
+        SparseGf2eDokvs<ByteBuffer> sparseOkvs = Gf2eDokvsFactory.createSparseInstance(
+            envType, okvsType, num, l, okvsKeys
+        );
         return Arrays.stream(keyArray)
             .map(sparseOkvs::sparsePositions)
             .flatMapToInt(Arrays::stream)
@@ -190,20 +174,13 @@ public class PirOkvrReceiver extends AbstractOkvrReceiver {
             .collect(Collectors.toList());
     }
 
-    /**
-     * handle OPRF output.
-     *
-     * @param oprfReceiverOutput OPRF receiver output.
-     * @return PRF output.
-     */
     private Map<ByteBuffer, byte[]> handleOprfOutput(SqOprfReceiverOutput oprfReceiverOutput) {
         // The PRF maps (random) inputs to {0, 1}^l, we only need to set an empty key
         Prf prf = PrfFactory.createInstance(envType, byteL);
         prf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
         // compute PRF output
         SparseGf2eDokvs<ByteBuffer> sparseOkvs = Gf2eDokvsFactory.createSparseInstance(envType, okvsType, num, l, okvsKeys);
-        IntStream indexIntStream = IntStream.range(0, retrievalSize);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
+        IntStream indexIntStream = parallel ? IntStream.range(0, retrievalSize).parallel() : IntStream.range(0, retrievalSize);
         return indexIntStream
             .boxed()
             .collect(Collectors.toMap(

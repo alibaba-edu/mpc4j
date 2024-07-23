@@ -32,7 +32,7 @@ public class Ra17ByteEccSqOprfSender extends AbstractSqOprfSender {
 
     public Ra17ByteEccSqOprfSender(Rpc senderRpc, Party receiverParty, Ra17ByteEccSqOprfConfig config) {
         super(Ra17ByteEccSqOprfPtoDesc.getInstance(), senderRpc, receiverParty, config);
-        byteFullEcc = ByteEccFactory.createFullInstance(envType);
+        byteFullEcc = ByteEccFactory.createFastestFullInstance();
     }
 
     @Override
@@ -84,8 +84,7 @@ public class Ra17ByteEccSqOprfSender extends AbstractSqOprfSender {
 
     private List<byte[]> handleBlindPayload(List<byte[]> blindPayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(blindPayload.size() == batchSize);
-        Stream<byte[]> blindStream = blindPayload.stream();
-        blindStream = parallel ? blindStream.parallel() : blindStream;
+        Stream<byte[]> blindStream = parallel ? blindPayload.parallelStream() : blindPayload.stream();
         return blindStream
             // compute H(m_c)^βα
             .map(element -> byteFullEcc.mul(element, ra17ByteEccSqOprfKey.getAlpha()))

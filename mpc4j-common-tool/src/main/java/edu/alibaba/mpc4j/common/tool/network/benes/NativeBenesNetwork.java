@@ -24,7 +24,7 @@ class NativeBenesNetwork<T> extends AbstractBenesNetwork<T> {
      */
     NativeBenesNetwork(final int[] permutationMap) {
         super(permutationMap);
-        network = generateBenesNetwork(permutationMap);
+        network = generateNetwork(permutationMap);
         updateWidths();
     }
 
@@ -38,7 +38,7 @@ class NativeBenesNetwork<T> extends AbstractBenesNetwork<T> {
         super(n, network);
     }
 
-    private native byte[][] generateBenesNetwork(int[] permutationMap);
+    private native byte[][] generateNetwork(int[] permutationMap);
 
     @Override
     public BenesNetworkType getBenesType() {

@@ -126,7 +126,7 @@ public class Cmg21jUpsiClient<T> extends AbstractUpsiClient<T> {
     }
 
     @Override
-    public Set<T> psi(Set<T> clientElementSet) throws MpcAbortException {
+    public Set<T> psi(Set<T> clientElementSet) throws MpcAbortException, IOException {
         setPtoInput(clientElementSet);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
@@ -157,12 +157,7 @@ public class Cmg21jUpsiClient<T> extends AbstractUpsiClient<T> {
 
         stopWatch.start();
         genEncryptionParameters();
-        List<byte[]> publicKeysPayload = null;
-        try {
-            publicKeysPayload = generatePublicKeysPayload();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        List<byte[]> publicKeysPayload = generatePublicKeysPayload();
         DataPacketHeader publicKeysHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_ENCRYPTION_PARAMS.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()

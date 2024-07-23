@@ -8,9 +8,11 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl.ZlDreluFactory;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.drelu.zl.ZlDreluParty;
@@ -49,13 +51,14 @@ public class Rrk20ZlTruncSender extends AbstractZlTruncParty {
      */
     private ZlVector corr;
 
-    public Rrk20ZlTruncSender(Rpc senderRpc, Party receiverParty, Rrk20ZlTruncConfig config) {
-        super(getInstance(), senderRpc, receiverParty, config);
-        dreluSender = ZlDreluFactory.createSender(senderRpc, receiverParty, config.getZlDreluConfig());
+    public Rrk20ZlTruncSender(Z2cParty z2cSender, Party receiverParty, Rrk20ZlTruncConfig config) {
+        super(getInstance(), z2cSender.getRpc(), receiverParty, config);
+        dreluSender = ZlDreluFactory.createSender(z2cSender, receiverParty, config.getZlDreluConfig());
         addSubPto(dreluSender);
-        lnotSender = LnotFactory.createSender(senderRpc, receiverParty, config.getLnotConfig());
+        lnotSender = LnotFactory.createSender(z2cSender.getRpc(), receiverParty, config.getLnotConfig());
         addSubPto(lnotSender);
     }
+
 
     @Override
     public void init(int maxL, int maxNum) throws MpcAbortException {

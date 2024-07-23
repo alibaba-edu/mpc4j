@@ -225,9 +225,9 @@ public class FileRpc implements Rpc {
     }
 
     @Override
-    public DataPacket receiveAny() {
+    public DataPacket receiveAny(int ptoId) {
         DataPacketHeader[] receivedDataPacketHeaders;
-        while ((receivedDataPacketHeaders = getReceivedDataPacketHeaders()).length == 0) {
+        while ((receivedDataPacketHeaders = getReceivedDataPacketHeaders(ptoId)).length == 0) {
             try {
                 //noinspection BusyWait
                 Thread.sleep(DEFAULT_READ_WAIT_MILLI_SECOND);
@@ -317,7 +317,7 @@ public class FileRpc implements Rpc {
             + FILE_NAME_SEPARATOR + FILE_STATUS_SUFFIX;
     }
 
-    private DataPacketHeader[] getReceivedDataPacketHeaders() {
+    private DataPacketHeader[] getReceivedDataPacketHeaders(int targetPtoId) {
         // read all status file
         File ownFilePath = new File(ownParty.getPartyFilePath());
         File[] files = ownFilePath.listFiles();
@@ -340,7 +340,7 @@ public class FileRpc implements Rpc {
                 long extraInfo = Long.parseLong(splitFileName[3]);
                 return new DataPacketHeader(taskId, ptoId, stepId, extraInfo, senderId, ownPartyId);
             })
-            .filter(header -> header.getReceiverId() == ownPartyId)
+            .filter(header -> header.getReceiverId() == ownPartyId && header.getPtoId() == targetPtoId)
             .toArray(DataPacketHeader[]::new);
     }
 

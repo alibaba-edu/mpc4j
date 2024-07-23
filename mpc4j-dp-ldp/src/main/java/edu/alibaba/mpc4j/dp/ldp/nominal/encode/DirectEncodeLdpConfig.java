@@ -35,6 +35,7 @@ public class DirectEncodeLdpConfig implements EncodeLdpConfig {
         random = builder.random;
     }
 
+    @Override
     public double getBaseEpsilon() {
         return baseEpsilon;
     }
@@ -49,6 +50,7 @@ public class DirectEncodeLdpConfig implements EncodeLdpConfig {
         return labelSet;
     }
 
+    @Override
     public Random getRandom() {
         return random;
     }

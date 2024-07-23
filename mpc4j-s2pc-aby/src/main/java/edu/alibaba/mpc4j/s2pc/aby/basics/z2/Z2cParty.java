@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.aby.basics.z2;
 
-import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2cParty;
 import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2Vector;
+import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2cParty;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;

@@ -128,8 +128,8 @@ public class Rr17DePsiClient<T> extends AbstractPsiClient<T> {
         int l = PsiUtils.getMaliciousPeqtByteLength(maxServerElementSize, maxClientElementSize);
         h1 = HashFactory.createInstance(envType, l);
         encodeInputByteLength = CommonUtils.getByteLength(l * Byte.SIZE - (int) Math.round(Math.floor(DoubleUtils.log2(binNum))));
-        lcotReceiver.init(encodeInputByteLength * Byte.SIZE, binNum * binSize);
-        lcotInvSender.init(encodeInputByteLength * Byte.SIZE, binNum * binSize);
+        lcotReceiver.init(encodeInputByteLength * Byte.SIZE);
+        lcotInvSender.init(encodeInputByteLength * Byte.SIZE);
 
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 public class ClsOpGradBoost extends AbstractClsOpBoost {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClsOpGradBoost.class);
 
-    public ClsOpGradBoost(Properties properties) {
-        super(properties, OpBoostTaskType.CLS_OP_GRAD_BOOST);
+    public ClsOpGradBoost(Properties properties, String ownName) {
+        super(properties, ownName, OpBoostTaskType.CLS_OP_GRAD_BOOST);
     }
 
     @Override

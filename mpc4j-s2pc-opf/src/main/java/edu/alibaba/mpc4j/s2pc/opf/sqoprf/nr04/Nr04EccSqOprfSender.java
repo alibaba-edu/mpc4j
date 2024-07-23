@@ -97,9 +97,8 @@ public class Nr04EccSqOprfSender extends AbstractSqOprfSender {
 
         stopWatch.start();
         // init COTs, where max number of OTs = N_C^{max} * κ
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
         int maxOtNum = maxBatchSize * CommonConstants.BLOCK_BIT_LENGTH;
-        secureRandom.nextBytes(delta);
         coreSender.init(delta, maxOtNum);
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

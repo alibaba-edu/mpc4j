@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.aby.basics.zl;
 
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
+import edu.alibaba.mpc4j.s2pc.aby.basics.zl.ZlcFactory.ZlcType;
 
 /**
  * Zl config.
@@ -15,12 +15,13 @@ public interface ZlcConfig extends MultiPartyPtoConfig {
      *
      * @return protocol type.
      */
-    ZlcFactory.ZlType getPtoType();
+    ZlcType getPtoType();
 
     /**
-     * Gets Zl instance.
+     * Gets default round num.
      *
-     * @return Zl instance.
+     * @param l l.
+     * @return default round num.
      */
-    Zl getZl();
+    int defaultRoundNum(int l);
 }

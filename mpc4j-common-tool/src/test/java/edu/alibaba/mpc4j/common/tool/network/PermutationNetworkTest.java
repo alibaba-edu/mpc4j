@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory.PermutationNetworkType;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,6 +45,8 @@ public class PermutationNetworkTest {
         configurations.add(new Object[]{PermutationNetworkType.WAKSMAN_JDK.name(), PermutationNetworkType.WAKSMAN_JDK,});
         // Waksman Native
         configurations.add(new Object[]{PermutationNetworkType.WAKSMAN_NATIVE.name(), PermutationNetworkType.WAKSMAN_NATIVE,});
+        // Waksman using the highest bit
+        configurations.add(new Object[]{PermutationNetworkType.TOP_WAKSMAN.name(), PermutationNetworkType.TOP_WAKSMAN,});
 
         return configurations;
     }
@@ -185,11 +188,10 @@ public class PermutationNetworkTest {
 
     private void testIntegerRandom(int n) {
         for (int i = 0; i < RANDOM_ROUND; i++) {
-            List<Integer> shufflePermutationMap = IntStream.range(0, n).boxed().collect(Collectors.toList());
-            Collections.shuffle(shufflePermutationMap, SECURE_RANDOM);
-            int[] permutationMap = shufflePermutationMap.stream().mapToInt(permutation -> permutation).toArray();
-            PermutationNetwork<Integer> network = PermutationNetworkFactory.createInstance(type, permutationMap);
-            assertIntegerCorrect(permutationMap, network);
+            int[] permutation = IntStream.range(0, n).toArray();
+            ArrayUtils.shuffle(permutation, SECURE_RANDOM);
+            PermutationNetwork<Integer> network = PermutationNetworkFactory.createInstance(type, permutation);
+            assertIntegerCorrect(permutation, network);
         }
     }
 
@@ -219,7 +221,7 @@ public class PermutationNetworkTest {
     public void testByteBufferRandom() {
         int[] basicN = new int[]{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32};
         for (int n : basicN) {
-            testIntegerRandom(n);
+            testByteBufferRandom(n);
         }
         // n = 2^k
         testByteBufferRandom(1 << 10);
@@ -230,11 +232,10 @@ public class PermutationNetworkTest {
 
     private void testByteBufferRandom(int n) {
         for (int i = 0; i < RANDOM_ROUND; i++) {
-            List<Integer> shufflePermutationMap = IntStream.range(0, n).boxed().collect(Collectors.toList());
-            Collections.shuffle(shufflePermutationMap, SECURE_RANDOM);
-            int[] permutationMap = shufflePermutationMap.stream().mapToInt(permutation -> permutation).toArray();
-            PermutationNetwork<ByteBuffer> network = PermutationNetworkFactory.createInstance(type, permutationMap);
-            assertByteBufferCorrect(permutationMap, network);
+            int[] permutation = IntStream.range(0, n).toArray();
+            ArrayUtils.shuffle(permutation, SECURE_RANDOM);
+            PermutationNetwork<ByteBuffer> network = PermutationNetworkFactory.createInstance(type, permutation);
+            assertByteBufferCorrect(permutation, network);
         }
     }
 

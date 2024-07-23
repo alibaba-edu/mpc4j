@@ -2,13 +2,14 @@ package edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.cgs22;
 
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.AbstractPeqtParty;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.peqt.cgs22.Cgs22PeqtPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory;
@@ -35,6 +36,10 @@ public class Cgs22PeqtReceiver extends AbstractPeqtParty {
      * LNOT receiver
      */
     private final LnotReceiver lnotReceiver;
+    /**
+     * bit length of split block
+     */
+    private final int m;
 
     public Cgs22PeqtReceiver(Rpc senderRpc, Party receiverParty, Cgs22PeqtConfig config) {
         super(Cgs22PeqtPtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -42,6 +47,8 @@ public class Cgs22PeqtReceiver extends AbstractPeqtParty {
         addSubPto(z2cReceiver);
         lnotReceiver = LnotFactory.createReceiver(senderRpc, receiverParty, config.getLnotConfig());
         addSubPto(lnotReceiver);
+        m = config.getM();
+        MathPreconditions.checkPositiveInRangeClosed("m", m, Byte.SIZE);
     }
 
     @Override
@@ -50,11 +57,10 @@ public class Cgs22PeqtReceiver extends AbstractPeqtParty {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // q = l / m, where m = 4
-        int maxByteL = CommonUtils.getByteLength(maxL);
-        int maxQ = maxByteL * 2;
-        z2cReceiver.init(maxNum * (maxQ - 1));
-        lnotReceiver.init(4, maxNum * maxQ);
+        // q = l / m
+        int maxQ = CommonUtils.getUnitNum(maxL, m);
+        z2cReceiver.init(maxNum * maxQ);
+        lnotReceiver.init(m, maxNum * maxQ);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -69,9 +75,9 @@ public class Cgs22PeqtReceiver extends AbstractPeqtParty {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        // q = l/4
-        int q = byteL * 2;
-        int[][] partitionInputArray = partitionInputArray(q);
+        // q = l/m
+        int q = CommonUtils.getUnitNum(l, m);
+        int[][] partitionInputArray = Cgs22PeqtUtils.partitionInputArray(inputs, m, q);
         stopWatch.stop();
         long prepareTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -81,20 +87,20 @@ public class Cgs22PeqtReceiver extends AbstractPeqtParty {
         // P1 creates all-zero eq_{0,j} for all j ∈ [0,q)
         BitVector[] eqs = new BitVector[q];
         for (int j = 0; j < q; j++) {
-            eqs[j] = BitVectorFactory.createZeros(num);
+            eqs[j] = BitVectorFactory.createRandom(num, secureRandom);
         }
         // for j ∈ [0, q) do
         for (int j = 0; j < q; j++) {
-            // P0 & P1 invoke 1-out-of-2^4 OT with P1 as receiver.
+            // P0 & P1 invoke 1-out-of-2^m OT with P1 as receiver.
             LnotReceiverOutput lnotReceiverOutput = lnotReceiver.receive(partitionInputArray[j]);
             DataPacketHeader evsHeader = new DataPacketHeader(
                 encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_EVS.ordinal(), extraInfo,
                 otherParty().getPartyId(), ownParty().getPartyId()
             );
-            // for v ∈ [2^4], P1 receives e_{0,j}_1
+            // for v ∈ [2^m], P1 receives e_{0,j}_1
             List<byte[]> evsPayload = rpc.receive(evsHeader).getPayload();
             extraInfo++;
-            MpcAbortPreconditions.checkArgument(evsPayload.size() == 1 << 4);
+            MpcAbortPreconditions.checkArgument(evsPayload.size() == 1 << m);
             BitVector[] evs = evsPayload.stream()
                 .map(ev -> BitVectorFactory.create(num, ev))
                 .toArray(BitVector[]::new);

@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2e;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.GaloisfieldTestUtils;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -26,14 +27,14 @@ public class Gf2eTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        Gf2eType[] gf2eTypes = new Gf2eType[]{Gf2eType.NTL, Gf2eType.RINGS};
-        int[] ls = new int[]{1, 2, 3, 4, 39, 40, 41, 128, 256};
-        for (Gf2eType type : gf2eTypes) {
+        for (Gf2eType type : Gf2eType.values()) {
             // add each l
-            for (int l : ls) {
-                configurations.add(new Object[]{
-                    Gf2eType.class.getSimpleName() + " (" + type.name() + ", l = " + l + ")", type, l
-                });
+            for (int l : GaloisfieldTestUtils.GF2E_L_ARRAY) {
+                if (Gf2eFactory.available(type, l)) {
+                    configurations.add(new Object[]{
+                        Gf2eType.class.getSimpleName() + " (" + type.name() + ", l = " + l + ")", type, l
+                    });
+                }
             }
         }
 

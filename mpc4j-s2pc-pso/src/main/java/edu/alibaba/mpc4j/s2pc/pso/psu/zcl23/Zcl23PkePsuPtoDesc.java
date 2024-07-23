@@ -5,9 +5,10 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
  * ZCL23-PKE-PSU. The protocol comes from the following paper:
- * <p></p>
+ * <p>
  * Zhang, Cong, Yu Chen, Weiran Liu, Min Zhang, and Dongdai Lin. Linear Private Set Union from Multi-Query Reverse
  * Private Membership Test. USENIX Security 2023, pp. 337-354. 2023.
+ * </p>
  *
  * @author Weiran Liu
  * @date 2022/02/16
@@ -26,30 +27,6 @@ class Zcl23PkePsuPtoDesc implements PtoDesc {
      * protocol step
      */
     enum PtoStep {
-        /**
-         * server sends DOKVS keys
-         */
-        SERVER_SEND_DOKVS_KEYS,
-        /**
-         * client sends public key
-         */
-        CLIENT_SEND_PK,
-        /**
-         * client sends DOKVS-encoded KEM
-         */
-        CLIENT_SEND_DOKVS_KEM,
-        /**
-         * client sends DOKVS-encoded ciphertext
-         */
-        CLIENT_SEND_DOKVS_CT,
-        /**
-         * server sends re-randomized KEM
-         */
-        SERVER_SEND_RERAND_KEM,
-        /**
-         * server sends re-randomized ciphertext
-         */
-        SERVER_SEND_RERAND_CT,
         /**
          * server sends encrypted elements
          */

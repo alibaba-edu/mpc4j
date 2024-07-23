@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.s2pc.pso.psi.cuckoo.oos17;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
@@ -81,8 +80,6 @@ public class Oos17PsiServer<T> extends AbstractPsiServer<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int maxBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, maxClientElementSize);
-        int maxStashNum = CuckooHashBinFactory.getStashSize(cuckooHashBinType, maxClientElementSize);
         int byteL = PsiUtils.getSemiHonestPeqtByteLength(maxServerElementSize, maxClientElementSize);
         h1 = HashFactory.createInstance(envType, byteL);
         int l = byteL * Byte.SIZE;
@@ -102,9 +99,7 @@ public class Oos17PsiServer<T> extends AbstractPsiServer<T> {
             })
             .toArray(Prf[]::new);
         // init LCOT
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        lcotSender.init(l, maxBinNum + maxStashNum);
+        lcotSender.init(l);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

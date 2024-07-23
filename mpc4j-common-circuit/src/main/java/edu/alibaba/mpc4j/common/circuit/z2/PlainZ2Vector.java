@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.circuit.z2;
 
-import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import edu.alibaba.mpc4j.common.circuit.z2.utils.Z2VectorUtils;
+import edu.alibaba.mpc4j.common.structure.vector.Vector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 
@@ -164,7 +164,7 @@ public class PlainZ2Vector implements MpcZ2Vector {
     }
 
     @Override
-    public void merge(MpcVector other) {
+    public void merge(Vector other) {
         PlainZ2Vector that = (PlainZ2Vector) other;
         bitVector.merge(that.getBitVector());
     }

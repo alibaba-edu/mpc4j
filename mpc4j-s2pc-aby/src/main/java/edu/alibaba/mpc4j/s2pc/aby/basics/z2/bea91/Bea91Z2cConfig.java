@@ -2,10 +2,10 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.z2.bea91;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.z2.Z2TripleGenConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.z2.Z2TripleGenFactory;
 
 /**
  * Bea91 Z2 circuit config.
@@ -15,17 +15,17 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.z2.Z2MtgFactory;
  */
 public class Bea91Z2cConfig extends AbstractMultiPartyPtoConfig implements Z2cConfig {
     /**
-     * Boolean triple generation config
+     * Z2 triple generation config
      */
-    private final Z2MtgConfig z2MtgConfig;
+    private final Z2TripleGenConfig z2TripleGenConfig;
 
     private Bea91Z2cConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.z2MtgConfig);
-        z2MtgConfig = builder.z2MtgConfig;
+        super(SecurityModel.SEMI_HONEST, builder.z2TripleGenConfig);
+        z2TripleGenConfig = builder.z2TripleGenConfig;
     }
 
-    public Z2MtgConfig getMtgConfig() {
-        return z2MtgConfig;
+    public Z2TripleGenConfig getZ2TripleGenConfig() {
+        return z2TripleGenConfig;
     }
 
     @Override
@@ -33,19 +33,19 @@ public class Bea91Z2cConfig extends AbstractMultiPartyPtoConfig implements Z2cCo
         return Z2cFactory.BcType.BEA91;
     }
 
+    @Override
+    public int defaultRoundNum() {
+        return z2TripleGenConfig.defaultRoundNum();
+    }
+
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Bea91Z2cConfig> {
         /**
-         * Boolean triple generation config
+         * Z2 triple generation config
          */
-        private Z2MtgConfig z2MtgConfig;
+        private final Z2TripleGenConfig z2TripleGenConfig;
 
-        public Builder(SecurityModel securityModel) {
-            z2MtgConfig = Z2MtgFactory.createDefaultConfig(securityModel, true);
-        }
-
-        public Builder setZ2MtgConfig(Z2MtgConfig z2MtgConfig) {
-            this.z2MtgConfig = z2MtgConfig;
-            return this;
+        public Builder(SecurityModel securityModel, boolean silent) {
+            z2TripleGenConfig = Z2TripleGenFactory.createDefaultConfig(securityModel, silent);
         }
 
         @Override

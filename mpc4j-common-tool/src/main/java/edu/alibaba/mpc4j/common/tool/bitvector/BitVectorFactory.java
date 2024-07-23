@@ -55,16 +55,11 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector create(BitVectorType type, int bitNum, byte[] bytes) {
-        switch (type) {
-            case BYTES_BIT_VECTOR:
-                return BytesBitVector.create(bitNum, bytes);
-            case BIGINTEGER_BIT_VECTOR:
-                return BigIntegerBitVector.create(bitNum, bytes);
-            case COMBINED_BIT_VECTOR:
-                return CombinedBitVector.create(bitNum, bytes);
-            default:
-                throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
-        }
+        return switch (type) {
+            case BYTES_BIT_VECTOR -> BytesBitVector.create(bitNum, bytes);
+            case BIGINTEGER_BIT_VECTOR -> BigIntegerBitVector.create(bitNum, bytes);
+            case COMBINED_BIT_VECTOR -> CombinedBitVector.create(bitNum, bytes);
+        };
     }
 
     /**
@@ -87,16 +82,11 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector create(BitVectorType type, int bitNum, BigInteger bigInteger) {
-        switch (type) {
-            case BYTES_BIT_VECTOR:
-                return BytesBitVector.create(bitNum, bigInteger);
-            case BIGINTEGER_BIT_VECTOR:
-                return BigIntegerBitVector.create(bitNum, bigInteger);
-            case COMBINED_BIT_VECTOR:
-                return CombinedBitVector.create(bitNum, bigInteger);
-            default:
-                throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
-        }
+        return switch (type) {
+            case BYTES_BIT_VECTOR -> BytesBitVector.create(bitNum, bigInteger);
+            case BIGINTEGER_BIT_VECTOR -> BigIntegerBitVector.create(bitNum, bigInteger);
+            case COMBINED_BIT_VECTOR -> CombinedBitVector.create(bitNum, bigInteger);
+        };
     }
 
     /**
@@ -119,16 +109,11 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector createRandom(BitVectorType type, int bitNum, Random random) {
-        switch (type) {
-            case BYTES_BIT_VECTOR:
-                return BytesBitVector.createRandom(bitNum, random);
-            case BIGINTEGER_BIT_VECTOR:
-                return BigIntegerBitVector.createRandom(bitNum, random);
-            case COMBINED_BIT_VECTOR:
-                return CombinedBitVector.createRandom(bitNum, random);
-            default:
-                throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
-        }
+        return switch (type) {
+            case BYTES_BIT_VECTOR -> BytesBitVector.createRandom(bitNum, random);
+            case BIGINTEGER_BIT_VECTOR -> BigIntegerBitVector.createRandom(bitNum, random);
+            case COMBINED_BIT_VECTOR -> CombinedBitVector.createRandom(bitNum, random);
+        };
     }
 
     /**
@@ -149,16 +134,11 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector createOnes(BitVectorType type, int bitNum) {
-        switch (type) {
-            case BYTES_BIT_VECTOR:
-                return BytesBitVector.createOnes(bitNum);
-            case BIGINTEGER_BIT_VECTOR:
-                return BigIntegerBitVector.createOnes(bitNum);
-            case COMBINED_BIT_VECTOR:
-                return CombinedBitVector.createOnes(bitNum);
-            default:
-                throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
-        }
+        return switch (type) {
+            case BYTES_BIT_VECTOR -> BytesBitVector.createOnes(bitNum);
+            case BIGINTEGER_BIT_VECTOR -> BigIntegerBitVector.createOnes(bitNum);
+            case COMBINED_BIT_VECTOR -> CombinedBitVector.createOnes(bitNum);
+        };
     }
 
     /**
@@ -179,16 +159,11 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector createZeros(BitVectorType type, int bitNum) {
-        switch (type) {
-            case BYTES_BIT_VECTOR:
-                return BytesBitVector.createZeros(bitNum);
-            case BIGINTEGER_BIT_VECTOR:
-                return BigIntegerBitVector.createZeros(bitNum);
-            case COMBINED_BIT_VECTOR:
-                return CombinedBitVector.createZeros(bitNum);
-            default:
-                throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
-        }
+        return switch (type) {
+            case BYTES_BIT_VECTOR -> BytesBitVector.createZeros(bitNum);
+            case BIGINTEGER_BIT_VECTOR -> BigIntegerBitVector.createZeros(bitNum);
+            case COMBINED_BIT_VECTOR -> CombinedBitVector.createZeros(bitNum);
+        };
     }
 
     /**
@@ -207,16 +182,11 @@ public class BitVectorFactory {
      * @return the created bit vector.
      */
     public static BitVector createEmpty(BitVectorType type) {
-        switch (type) {
-            case BYTES_BIT_VECTOR:
-                return BytesBitVector.createEmpty();
-            case BIGINTEGER_BIT_VECTOR:
-                return BigIntegerBitVector.createEmpty();
-            case COMBINED_BIT_VECTOR:
-                return CombinedBitVector.createEmpty();
-            default:
-                throw new IllegalArgumentException("Invalid " + BitVectorType.class.getSimpleName() + ": " + type);
-        }
+        return switch (type) {
+            case BYTES_BIT_VECTOR -> BytesBitVector.createEmpty();
+            case BIGINTEGER_BIT_VECTOR -> BigIntegerBitVector.createEmpty();
+            case COMBINED_BIT_VECTOR -> CombinedBitVector.createEmpty();
+        };
     }
 
     /**
@@ -244,7 +214,7 @@ public class BitVectorFactory {
      */
     public static BitVector[] split(BitVector mergeBitVector, int[] bitNums) {
         BitVector[] bitVectors = new BitVector[bitNums.length];
-        for (int index = 0; index < bitNums.length; index++) {
+        for (int index = bitNums.length - 1; index >= 0; index--) {
             bitVectors[index] = mergeBitVector.split(bitNums[index]);
         }
         assert mergeBitVector.bitNum() == 0 : "merged vector must remain 0 bits: " + mergeBitVector.bitNum();

@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.corr;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.corr.zl.ZlCorrParty;
 
@@ -16,13 +17,13 @@ public class ZlCorrPartyThread extends Thread {
      */
     private final ZlCorrParty party;
     /**
+     * z2c party
+     */
+    private final Z2cParty z2cParty;
+    /**
      * x
      */
     private final SquareZlVector shareX;
-    /**
-     * l
-     */
-    private final int l;
     /**
      * num
      */
@@ -32,11 +33,11 @@ public class ZlCorrPartyThread extends Thread {
      */
     private SquareZlVector shareCorr;
 
-    ZlCorrPartyThread(ZlCorrParty party, int l, SquareZlVector shareX) {
+    ZlCorrPartyThread(ZlCorrParty party, Z2cParty z2cParty, SquareZlVector shareX) {
         this.party = party;
+        this.z2cParty = z2cParty;
         this.shareX = shareX;
         this.num = shareX.getNum();
-        this.l = l;
     }
 
     SquareZlVector getShareZ() {
@@ -46,7 +47,8 @@ public class ZlCorrPartyThread extends Thread {
     @Override
     public void run() {
         try {
-            party.init(l, num);
+            z2cParty.init(shareX.getZl().getL() * num);
+            party.init(shareX.getZl().getL(), num);
             shareCorr = party.corr(shareX);
         } catch (MpcAbortException e) {
             e.printStackTrace();

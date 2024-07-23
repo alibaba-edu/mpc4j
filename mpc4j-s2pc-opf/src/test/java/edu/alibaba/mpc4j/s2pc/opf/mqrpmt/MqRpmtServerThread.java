@@ -1,34 +1,33 @@
 package edu.alibaba.mpc4j.s2pc.opf.mqrpmt;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtServer;
 
 import java.nio.ByteBuffer;
 import java.util.Set;
 
 /**
- * mqRPMT协议服务端线程。
+ * mqRPMT server thread.
  *
  * @author Weiran Liu
  * @date 2022/09/10
  */
 class MqRpmtServerThread extends Thread {
     /**
-     * mqRPMT服务端
+     * mqRPMT server
      */
     private final MqRpmtServer server;
     /**
-     * 服务端集合
+     * server element set
      */
     private final Set<ByteBuffer> serverElementSet;
     /**
-     * 客户端元素数量
+     * client element size
      */
     private final int clientElementSize;
     /**
-     * 服务端输出向量
+     * server output
      */
-    private ByteBuffer[] serverVector;
+    private ByteBuffer[] serverOutput;
 
     MqRpmtServerThread(MqRpmtServer server, Set<ByteBuffer> serverElementSet, int clientElementSize) {
         this.server = server;
@@ -36,15 +35,15 @@ class MqRpmtServerThread extends Thread {
         this.clientElementSize = clientElementSize;
     }
 
-    ByteBuffer[] getServerVector() {
-        return serverVector;
+    ByteBuffer[] getServerOutput() {
+        return serverOutput;
     }
 
     @Override
     public void run() {
         try {
             server.init(serverElementSet.size(), clientElementSize);
-            serverVector = server.mqRpmt(serverElementSet, clientElementSize);
+            serverOutput = server.mqRpmt(serverElementSet, clientElementSize);
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

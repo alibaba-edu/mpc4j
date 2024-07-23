@@ -24,11 +24,16 @@ public class Cgs22PeqtConfig extends AbstractMultiPartyPtoConfig implements Peqt
      * LNOT config
      */
     private final LnotConfig lnotConfig;
+    /**
+     * bit length of split block
+     */
+    private int m;
 
     private Cgs22PeqtConfig(Builder builder) {
         super(SecurityModel.SEMI_HONEST, builder.z2cConfig, builder.lnotConfig);
         z2cConfig = builder.z2cConfig;
         lnotConfig = builder.lnotConfig;
+        m = builder.m;
     }
 
     public Z2cConfig getZ2cConfig() {
@@ -37,6 +42,10 @@ public class Cgs22PeqtConfig extends AbstractMultiPartyPtoConfig implements Peqt
 
     public LnotConfig getLnotConfig() {
         return lnotConfig;
+    }
+
+    public int getM() {
+        return m;
     }
 
     @Override
@@ -48,28 +57,24 @@ public class Cgs22PeqtConfig extends AbstractMultiPartyPtoConfig implements Peqt
         /**
          * Boolean circuit config
          */
-        private Z2cConfig z2cConfig;
+        private final Z2cConfig z2cConfig;
         /**
          * LNOT config
          */
-        private LnotConfig lnotConfig;
+        private final LnotConfig lnotConfig;
+        /**
+         * bit length of split block
+         */
+        private int m;
 
         public Builder(SecurityModel securityModel, boolean silent) {
             z2cConfig = Z2cFactory.createDefaultConfig(securityModel, silent);
-            if (silent) {
-                lnotConfig = LnotFactory.createCacheConfig(securityModel);
-            } else {
-                lnotConfig = LnotFactory.createDirectConfig(securityModel);
-            }
+            lnotConfig = LnotFactory.createDefaultConfig(securityModel, silent);
+            m = 4;
         }
 
-        public Builder setZ2cConfig(Z2cConfig z2cConfig) {
-            this.z2cConfig = z2cConfig;
-            return this;
-        }
-
-        public Builder setLnotConfig(LnotConfig lnotConfig) {
-            this.lnotConfig = lnotConfig;
+        public Builder setM(int m) {
+            this.m = m;
             return this;
         }
 

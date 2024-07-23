@@ -111,7 +111,10 @@ There are many research results related to base OT. We adjust some results in in
 
 We implement some OT Extension (OTE) and Silent OT protocols.
 
-- Couteau, Geoffroy, Peter Rindal, and Srinivasan Raghuraman. Silver: Silent VOLE and Oblivious Transfer from Hardness of Decoding Structured LDPC Codes. CRYPTO 2021, Part III, Cham: Springer International Publishing, pp. 502-534. (**Warning: Silver is not secure so that you need to use other silent OT. See paper "Correlated Pseudorandomness from Expand-Accumulate Codes" (CRYPTO 2022) and paper "Expand-Convolute Codes for Pseudorandom Correlation Generators from LPN" (CRYPTO 2023) for more details.**)
+- Guo, Xiaojie, Kang Yang, Xiao Wang, Wenhao Zhang, Xiang Xie, Jiang Zhang, and Zheli Liu. Half-tree: Halving the cost of tree expansion in cot and dpf. EUROCRYPT 2023, pp. 330-362.
+- Raghuraman, Srinivasan, Peter Rindal, and Titouan Tanguy. Expand-convolute codes for pseudorandom correlation generators from LPN. CRYPTO 2023, pp. 602-632.
+- Boyle, Elette, Geoffroy Couteau, Niv Gilboa, Yuval Ishai, Lisa Kohl, Nicolas Resch, and Peter Scholl. Correlated pseudorandomness from expand-accumulate codes. CRYPTO 2022, pp. 603-633.
+- Couteau, Geoffroy, Peter Rindal, and Srinivasan Raghuraman. Silver: Silent VOLE and Oblivious Transfer from Hardness of Decoding Structured LDPC Codes. CRYPTO 2021, Part III, Cham: Springer International Publishing, pp. 502-534. (**Warning: Silver is not secure so that you need to use other silent OT. **)
 - Yang, Kang, Chenkai Weng, Xiao Lan, Jiang Zhang, and Xiao Wang. Ferret: Fast Extension for Correlated OT with Small Communication. CCS 2020, ACM, pp. 1607-1626.
 - Orrù, Michele, Emmanuela Orsini, and Peter Scholl. Actively Secure 1-out-of-N OT Extension with Application to Private Set Intersection. CT-RSA 2017, Springer International Publishing, pp. 381-396.
 - Keller, Marcel, Emmanuela Orsini, and Peter Scholl. Actively Secure OT Extension with Pptimal Overhead. CRYPTO 2015, Part I, Berlin, Heidelberg: Springer Berlin Heidelberg, pp. 724-741. Note that we fix the malicious security flaw introduced in the paper "SoftSpokenOT: Communication – Computation Tradeoffs in OT Extension (CRYPTO 2022)".
@@ -125,6 +128,13 @@ We implement some OT Extension (OTE) and Silent OT protocols.
 
 - Rathee, Deevashwer, Thomas Schneider, and K. K. Shukla. Improved Multiplication Triple Generation over Rings via RLWE-based AHE. CANS 2019, Springer International Publishing, pp. 347-359.
 - Demmler, Daniel, Thomas Schneider, and Michael Zohner. ABY - A Framework for Efficient Mixed-protocol Secure Two-party Computation. NDSS 2015.
+
+### Oblivious Permutation Networks
+
+- Peceny, Stanislav, Srinivasan Raghuraman, Peter Rindal, and Harshal Shah. Efficient Permutation Correlations and Batched Random Access for Two-Party Computation. Cryptology ePrint Archive (2024).
+- Garimella, Gayathri, Payman Mohassel, Mike Rosulek, Saeed Sadeghian, and Jaspal Singh. Private Set Operations from Oblivious Switching. PKC 2021, Cham: Springer International Publishing, pp. 591-617. (**This paper introduced an improved version of [MS13]**)
+- Chase, Melissa, Esha Ghosh, and Oxana Poburinnaya. Secret-shared shuffle. ASIACRYPT 2020, pp. 342-372.
+- Mohassel, Payman, and Saeed Sadeghian. "How to hide circuits in MPC an efficient framework for private function evaluation. EUROCRYPT 2013, pp. 557-574.
 
 ## Private Information Retrieval
 
@@ -163,6 +173,7 @@ We implement Private Set Operations in `mpc4j-s2pc-pso` and `mpc4j-s2pc-pjc`.
 
 ### Oblivious PRF and Private Set Intersection
 
+- Alamati, Navid, Guru-Vamsi Policharla, Srinivasan Raghuraman, and Peter Rindal. Improved Alternating-Moduli PRFs and Post-Quantum Signatures. CRYPTO 2024.
 - Raghuraman, Srinivasan, and Peter Rindal. Blazing Fast PSI from Improved OKVS and Subfield VOLE. CCS 2022, pp. 2505-2517.
 - Rindal, Peter, and Phillipp Schoppmann. VOLE-PSI: Fast OPRF and Circuit-PSI from Vector-OLE. EUROCRYPT 2021, Cham: Springer International Publishing, pp. 901-930.
 - Rosulek, Mike, and Ni Trieu. Compact and Malicious Private Set Intersection for Small Sets. CCS 2021, pp. 1166-1181.
@@ -188,6 +199,7 @@ We implement Private Set Operations in `mpc4j-s2pc-pso` and `mpc4j-s2pc-pjc`.
 - Garimella, Gayathri, Payman Mohassel, Mike Rosulek, Saeed Sadeghian, and Jaspal Singh. Private Set Operations from Oblivious Switching. PKC 2021, Cham: Springer International Publishing, pp. 591-617.
 - Kolesnikov, Vladimir, Mike Rosulek, Ni Trieu, and Xiao Wang. Scalable Private Set Union from Symmetric-key Techniques. ASIACRYPT 2019, Part II, Cham: Springer International Publishing, pp. 636-666.
 - Buddhavarapu, Prasad, Andrew Knox, Payman Mohassel, Shubho Sengupta, Erik Taubeneck, and Vlad Vlaskin. Private Matching for Compute. Cryptology ePrint Archive, Paper 2020/599.
+
 - Tu, Binbin, Yu Chen, Qi Liu, and Cong Zhang. Fast Unbalanced Private Set Union from Fully Homomorphic Encryption. CCS 2023, pp. 2959-2973. 2023.
 
 ### PSI Cardinality

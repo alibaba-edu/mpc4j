@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * KOS16-GF2K-core VOLE description. The protocol comes from:
+ * KOS16 GF2K-core-VOLE description. The protocol comes from:
  * <p>
  * Keller, Marcel, Emmanuela Orsini, and Peter Scholl. MASCOT: faster malicious arithmetic secure computation with
  * oblivious transfer. CCS 2016, pp. 830-842. 2016.

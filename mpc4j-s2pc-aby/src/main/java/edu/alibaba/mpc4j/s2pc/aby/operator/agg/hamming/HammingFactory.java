@@ -88,7 +88,6 @@ public class HammingFactory {
                 return new Bcp13ShHammingConfig.Builder()
                     .setCotConfig(CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent))
                     .build();
-            case COVERT:
             case MALICIOUS:
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());

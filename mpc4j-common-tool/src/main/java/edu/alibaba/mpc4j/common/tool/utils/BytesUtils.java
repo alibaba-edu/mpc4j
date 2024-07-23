@@ -207,9 +207,11 @@ public class BytesUtils {
      * @return true if the given {@code byte[]} contains at most {@code bitLength} valid bits.
      */
     public static boolean isReduceByteArray(byte[] byteArray, final int bitLength) {
-        // 这里的bitLength指的是要保留多少个比特位，因此可以取到[0, byteArray.length * Byte.SIZE]
         assert bitLength >= 0 && bitLength <= byteArray.length * Byte.SIZE
             : "bitLength must be in range [0, " + byteArray.length * Byte.SIZE + "]: " + bitLength;
+        if (bitLength == 0) {
+            return Arrays.equals(byteArray, new byte[byteArray.length]);
+        }
         int resBitNum = bitLength & 7;
         int zeroByteNum = (byteArray.length * Byte.SIZE - bitLength) >> 3;
         for (int byteIndex = 0; byteIndex < zeroByteNum; byteIndex++) {
@@ -286,6 +288,61 @@ public class BytesUtils {
     }
 
     /**
+     * Generates a random non-zero byte array.
+     *
+     * @param byteLength   the byte length.
+     * @param bitLength    the bit length.
+     * @param secureRandom the random state.
+     * @return a random byte array.
+     */
+    public static byte[] randomNonZeroByteArray(final int byteLength, final int bitLength, SecureRandom secureRandom) {
+        assert byteLength * Byte.SIZE >= bitLength
+            : "bitLength = " + bitLength + ", byteLength does not have enough room: " + byteLength;
+        assert bitLength > 0 : "bitLength must be greater than 0: " + bitLength;
+        byte[] byteArray = new byte[byteLength];
+        boolean isZero = true;
+        while (isZero) {
+            secureRandom.nextBytes(byteArray);
+            reduceByteArray(byteArray, bitLength);
+            isZero = Arrays.equals(new byte[byteLength], byteArray);
+        }
+        return byteArray;
+    }
+
+    /**
+     * Generates a random non-zero byte array.
+     *
+     * @param byteLength   the byte length.
+     * @param secureRandom the random state.
+     * @return a random byte array.
+     */
+    public static byte[] randomNonZeroByteArray(final int byteLength, SecureRandom secureRandom) {
+        assert byteLength > 0 : "byteLength must be greater than 0: " + byteLength;
+        byte[] byteArray = new byte[byteLength];
+        boolean isZero = true;
+        while (isZero) {
+            secureRandom.nextBytes(byteArray);
+            isZero = Arrays.equals(new byte[byteLength], byteArray);
+        }
+        return byteArray;
+    }
+
+    /**
+     * Creates random byte array vector.
+     *
+     * @param length       vector length.
+     * @param byteLength   byte length.
+     * @param bitLength    bit length.
+     * @param secureRandom random state.
+     * @return a random byte array vector.
+     */
+    public static byte[][] randomByteArrayVector(final int length, final int byteLength, final int bitLength, SecureRandom secureRandom) {
+        return IntStream.range(0, length)
+            .mapToObj(index -> BytesUtils.randomByteArray(byteLength, bitLength, secureRandom))
+            .toArray(byte[][]::new);
+    }
+
+    /**
      * Creates random byte array vector.
      *
      * @param length       vector length.
@@ -296,6 +353,35 @@ public class BytesUtils {
     public static byte[][] randomByteArrayVector(final int length, final int byteLength, SecureRandom secureRandom) {
         return IntStream.range(0, length)
             .mapToObj(index -> BytesUtils.randomByteArray(byteLength, secureRandom))
+            .toArray(byte[][]::new);
+    }
+
+    /**
+     * Creates random byte array vector.
+     *
+     * @param length       vector length.
+     * @param byteLength   byte length.
+     * @param secureRandom random state.
+     * @return a random byte array vector.
+     */
+    public static byte[][] randomNonZeroByteArrayVector(final int length, final int byteLength, SecureRandom secureRandom) {
+        return IntStream.range(0, length)
+            .mapToObj(index -> BytesUtils.randomNonZeroByteArray(byteLength, secureRandom))
+            .toArray(byte[][]::new);
+    }
+
+    /**
+     * Creates random byte array vector.
+     *
+     * @param length       vector length.
+     * @param byteLength   byte length.
+     * @param bitLength    bit length.
+     * @param secureRandom random state.
+     * @return a random byte array vector.
+     */
+    public static byte[][] randomNonZeroByteArrayVector(final int length, final int byteLength, final int bitLength, SecureRandom secureRandom) {
+        return IntStream.range(0, length)
+            .mapToObj(index -> BytesUtils.randomNonZeroByteArray(byteLength, bitLength, secureRandom))
             .toArray(byte[][]::new);
     }
 
@@ -426,7 +512,6 @@ public class BytesUtils {
         for (int i = x1.length - 1; i >= 0; i--) {
             out[i] = (byte) (x1[i] ^ x2[i]);
         }
-
         return out;
     }
 
@@ -439,7 +524,7 @@ public class BytesUtils {
     public static void xori(byte[] x1, final byte[] x2) {
         assert x1.length == x2.length : "x1.length = " + x1.length + " must be equal to x2.length = " + x2.length;
         for (int i = x1.length - 1; i >= 0; i--) {
-            x1[i] = (byte) (x1[i] ^ x2[i]);
+            x1[i] ^= x2[i];
         }
     }
 
@@ -469,7 +554,7 @@ public class BytesUtils {
     public static void andi(byte[] x1, final byte[] x2) {
         assert x1.length == x2.length : "x1.length = " + x1.length + " must be equal to x2.length = " + x2.length;
         for (int i = x1.length - 1; i >= 0; i--) {
-            x1[i] = (byte) (x1[i] & x2[i]);
+            x1[i] &= x2[i];
         }
     }
 
@@ -499,7 +584,7 @@ public class BytesUtils {
     public static void ori(byte[] x1, final byte[] x2) {
         assert x1.length == x2.length : "x1.length = " + x1.length + " must be equal to x2.length = " + x2.length;
         for (int i = x1.length - 1; i >= 0; i--) {
-            x1[i] = (byte) (x1[i] | x2[i]);
+            x1[i] |= x2[i];
         }
     }
 

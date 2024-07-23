@@ -10,9 +10,11 @@ import edu.alibaba.mpc4j.common.rpc.Party;
  */
 public interface TwoPartyPto extends MultiPartyPto {
     /**
-     * Gets the other party's information.
+     * Gets other party.
      *
-     * @return the other party's information.
+     * @return other party.
      */
-    Party otherParty();
+    default Party otherParty() {
+        return otherParties()[0];
+    }
 }

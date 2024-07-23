@@ -1,7 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.NtlGf2e;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
 
 /**
@@ -11,13 +12,19 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
  * @date 2022/4/27
  */
 class NtlGf2k extends AbstractGf2k {
-
-    static {
-        System.loadLibrary(CommonConstants.MPC4J_NATIVE_TOOL_NAME);
-    }
+    /**
+     * NTL GF(2^128)
+     */
+    private final NtlGf2e ntlGf128;
 
     NtlGf2k(EnvType envType) {
         super(envType);
+        ntlGf128 = new NtlGf2e(envType, 128);
+    }
+
+    @Override
+    public Gf2eType getGf2eType() {
+        return ntlGf128.getGf2eType();
     }
 
     @Override
@@ -27,53 +34,31 @@ class NtlGf2k extends AbstractGf2k {
 
     @Override
     public byte[] mul(byte[] p, byte[] q) {
-        assert validateElement(p);
-        assert validateElement(q);
-        return nativeMul(p, q);
+        return ntlGf128.mul(p, q);
     }
-
-    private native byte[] nativeMul(byte[] p, byte[] q);
 
     @Override
     public void muli(byte[] p, byte[] q) {
-        assert validateElement(p);
-        assert validateElement(q);
-        nativeMuli(p, q);
+        ntlGf128.muli(p, q);
     }
-
-    private native void nativeMuli(byte[] p, byte[] q);
 
     @Override
     public byte[] inv(byte[] p) {
-        assert validateNonZeroElement(p);
-        return nativeInv(p);
+        return ntlGf128.inv(p);
     }
-
-    private native byte[] nativeInv(byte[] p);
 
     @Override
     public void invi(byte[] p) {
-        assert validateNonZeroElement(p);
-        nativeInvi(p);
+        ntlGf128.invi(p);
     }
-
-    private native void nativeInvi(byte[] p);
 
     @Override
     public byte[] div(byte[] p, byte[] q) {
-        assert validateElement(p);
-        assert validateNonZeroElement(q);
-        return nativeDiv(p, q);
+        return ntlGf128.div(p, q);
     }
-
-    private native byte[] nativeDiv(byte[] p, byte[] q);
 
     @Override
     public void divi(byte[] p, byte[] q) {
-        assert validateElement(p);
-        assert validateNonZeroElement(q);
-        nativeDivi(p, q);
+        ntlGf128.divi(p, q);
     }
-
-    private native void nativeDivi(byte[] p, byte[] q);
 }

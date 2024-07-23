@@ -22,10 +22,6 @@ public class UpsuReceiverThread extends Thread {
      */
     private final Set<ByteBuffer> receiverElementSet;
     /**
-     * UPSU receiver output
-     */
-    private UpsuReceiverOutput upsuReceiverOutput;
-    /**
      * sender element size
      */
     private final int senderElementSize;
@@ -33,6 +29,10 @@ public class UpsuReceiverThread extends Thread {
      * element byte length
      */
     private final int elementByteLength;
+    /**
+     * receiver output
+     */
+    private UpsuReceiverOutput receiverOutput;
 
     UpsuReceiverThread(UpsuReceiver receiver, int senderElementSize, Set<ByteBuffer> receiverElementSet,
                        int elementByteLength) {
@@ -42,15 +42,15 @@ public class UpsuReceiverThread extends Thread {
         this.elementByteLength = elementByteLength;
     }
 
-    UpsuReceiverOutput getUpsuReceiverOutput() {
-        return upsuReceiverOutput;
+    UpsuReceiverOutput getReceiverOutput() {
+        return receiverOutput;
     }
 
     @Override
     public void run() {
         try {
             receiver.init(receiverElementSet, senderElementSize, elementByteLength);
-            upsuReceiverOutput = receiver.psu(senderElementSize);
+            receiverOutput = receiver.psu(senderElementSize);
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

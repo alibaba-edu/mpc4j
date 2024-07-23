@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 public class RegOpXgBoost extends AbstractRegOpBoost {
     private static final Logger LOGGER = LoggerFactory.getLogger(RegOpXgBoost.class);
 
-    public RegOpXgBoost(Properties properties) {
-        super(properties, OpBoostTaskType.REG_OP_XG_BOOST);
+    public RegOpXgBoost(Properties properties, String ownName) {
+        super(properties, ownName, OpBoostTaskType.REG_OP_XG_BOOST);
     }
 
     @Override

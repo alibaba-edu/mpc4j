@@ -22,9 +22,9 @@ import java.util.stream.IntStream;
  */
 public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2cParty {
     /**
-     * total number of bits for updates.
+     * config
      */
-    protected long updateBitNum;
+    private final Z2cConfig config;
     /**
      * current number of bits.
      */
@@ -32,26 +32,29 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
 
     public AbstractZ2cParty(PtoDesc ptoDesc, Rpc ownRpc, Party otherParty, Z2cConfig config) {
         super(ptoDesc, ownRpc, otherParty, config);
+        this.config = config;
     }
 
-    protected void setInitInput(long updateBitNum) {
-        MathPreconditions.checkPositive("updateBitNum", updateBitNum);
-        this.updateBitNum = updateBitNum;
+    protected void setInitInput(int expectTotalNum) {
+        MathPreconditions.checkPositive("expect_total_num", expectTotalNum);
         initState();
+    }
+
+    @Override
+    public void init() throws MpcAbortException {
+        init(config.defaultRoundNum());
     }
 
     protected void setShareOwnInput(BitVector xi) {
         checkInitialized();
         MathPreconditions.checkPositive("bitNum", xi.bitNum());
         bitNum = xi.bitNum();
-        extraInfo++;
     }
 
     protected void setShareOtherInput(int bitNum) {
         checkInitialized();
         MathPreconditions.checkPositive("bitNum", bitNum);
         this.bitNum = bitNum;
-        extraInfo++;
     }
 
     protected void setDyadicOperatorInput(SquareZ2Vector xi, SquareZ2Vector yi) {
@@ -59,21 +62,18 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
         MathPreconditions.checkEqual("xi.bitNum", "yi.bitNum", xi.getNum(), yi.getNum());
         MathPreconditions.checkPositive("bitNum", xi.bitNum());
         bitNum = xi.bitNum();
-        extraInfo++;
     }
 
     protected void setRevealOwnInput(SquareZ2Vector xi) {
         checkInitialized();
         MathPreconditions.checkPositive("xi.bitNum", xi.bitNum());
         bitNum = xi.bitNum();
-        extraInfo++;
     }
 
     protected void setRevealOtherInput(SquareZ2Vector xi) {
         checkInitialized();
         MathPreconditions.checkPositive("xi.bitNum", xi.bitNum());
         bitNum = xi.bitNum();
-        extraInfo++;
     }
 
     @Override
@@ -98,12 +98,12 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
     }
 
     @Override
-    public BitVector[] open(MpcZ2Vector[] xiArray) throws MpcAbortException{
+    public BitVector[] open(MpcZ2Vector[] xiArray) throws MpcAbortException {
         BitVector[] res;
-        if(rpc.ownParty().getPartyId() == 0){
+        if (rpc.ownParty().getPartyId() == 0) {
             res = revealOwn(xiArray);
             revealOther(xiArray);
-        }else{
+        } else {
             revealOther(xiArray);
             res = revealOwn(xiArray);
         }
@@ -182,14 +182,9 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
         SquareZ2Vector mergeSelectYs = (SquareZ2Vector) merge(selectYs);
         SquareZ2Vector mergeSelectZs;
         switch (operator) {
-            case AND:
-                mergeSelectZs = and(mergeSelectXs, mergeSelectYs);
-                break;
-            case XOR:
-                mergeSelectZs = xor(mergeSelectXs, mergeSelectYs);
-                break;
-            default:
-                throw new IllegalStateException();
+            case AND -> mergeSelectZs = and(mergeSelectXs, mergeSelectYs);
+            case XOR -> mergeSelectZs = xor(mergeSelectXs, mergeSelectYs);
+            default -> throw new IllegalStateException();
         }
         SquareZ2Vector[] selectZs = Arrays.stream(split(mergeSelectZs, bitNums))
             .map(vector -> (SquareZ2Vector) vector)
@@ -207,11 +202,8 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
         SquareZ2Vector mergeZiArray;
         //noinspection SwitchStatementWithTooFewBranches
         switch (operator) {
-            case NOT:
-                mergeZiArray = not(mergeXiArray);
-                break;
-            default:
-                throw new IllegalStateException();
+            case NOT -> mergeZiArray = not(mergeXiArray);
+            default -> throw new IllegalStateException();
         }
         // split
         int[] bitNums = Arrays.stream(xiArray).mapToInt(MpcZ2Vector::getNum).toArray();

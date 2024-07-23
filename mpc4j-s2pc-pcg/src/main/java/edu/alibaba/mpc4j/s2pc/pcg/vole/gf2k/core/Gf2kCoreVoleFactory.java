@@ -12,7 +12,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.wykw21.Wykw21Gf2kCoreVoleReceiv
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.wykw21.Wykw21Gf2kCoreVoleSender;
 
 /**
- * GF2K-core VOLE factory.
+ * GF2K-core-VOLE factory.
  *
  * @author Weiran Liu
  * @date 2023/3/15
@@ -88,9 +88,9 @@ public class Gf2kCoreVoleFactory implements PtoFactory {
     public static Gf2kCoreVoleConfig createDefaultConfig(SecurityModel securityModel) {
         switch (securityModel) {
             case IDEAL:
+            case TRUSTED_DEALER:
             case SEMI_HONEST:
                 return new Kos16Gf2kCoreVoleConfig.Builder().build();
-            case COVERT:
             case MALICIOUS:
                 return new Wykw21Gf2kCoreVoleConfig.Builder().build();
             default:

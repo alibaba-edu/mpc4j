@@ -18,19 +18,19 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
  */
 public class Krtw19PsuConfig extends AbstractMultiPartyPtoConfig implements PsuConfig {
     /**
-     * RPMT所用OPRF配置项
+     * OPRF used in RPMT
      */
     private final OprfConfig rpmtOprfConfig;
     /**
-     * PEQT所用OPRF配置项
+     * OPRF used in PEQT
      */
     private final OprfConfig peqtOprfConfig;
     /**
-     * 核COT协议配置项
+     * core COT
      */
     private final CoreCotConfig coreCotConfig;
     /**
-     * 流水线数量
+     * pipeline size
      */
     private final int pipeSize;
 
@@ -65,19 +65,19 @@ public class Krtw19PsuConfig extends AbstractMultiPartyPtoConfig implements PsuC
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Krtw19PsuConfig> {
         /**
-         * RPMT所用OPRF配置项
+         * OPRF used in RPMT
          */
         private OprfConfig rpmtOprfConfig;
         /**
-         * PEQT所用OPRF配置项
+         * OPRF used in PEQT
          */
         private OprfConfig peqtOprfConfig;
         /**
-         * 核COT协议配置项
+         * core COT
          */
         private CoreCotConfig coreCotConfig;
         /**
-         * 流水线数量
+         * pipeline size
          */
         private int pipeSize;
 

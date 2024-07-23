@@ -31,7 +31,7 @@ class PsuClientThread extends Thread {
     /**
      * 客户端并集
      */
-    private Set<ByteBuffer> unionSet;
+    private PsuClientOutput clientOutput;
 
     PsuClientThread(PsuClient client, Set<ByteBuffer> clientElementSet, int serverElementSize,
                     int elementByteLength) {
@@ -41,15 +41,15 @@ class PsuClientThread extends Thread {
         this.elementByteLength = elementByteLength;
     }
 
-    Set<ByteBuffer> getUnionSet() {
-        return unionSet;
+    PsuClientOutput getClientOutput() {
+        return clientOutput;
     }
 
     @Override
     public void run() {
         try {
             client.init(clientElementSet.size(), serverElementSize);
-            unionSet = client.psu(clientElementSet, serverElementSize, elementByteLength);
+            clientOutput = client.psu(clientElementSet, serverElementSize, elementByteLength);
         } catch (MpcAbortException e) {
             e.printStackTrace();
         }

@@ -8,25 +8,11 @@ package edu.alibaba.mpc4j.common.structure.vector;
  */
 public interface Vector {
     /**
-     * Sets parallel operation.
-     *
-     * @param parallel parallel operation.
-     */
-    void setParallel(boolean parallel);
-
-    /**
      * Copies the vector.
      *
      * @return the copied vector.
      */
     Vector copy();
-
-    /**
-     * Replaces the vector with the copied given vector.
-     *
-     * @param other the other vector.
-     */
-    void replaceCopy(Vector other);
 
     /**
      * Gets the number of elements in the vector.

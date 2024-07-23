@@ -5,16 +5,11 @@
     <parent>
         <artifactId>mpc4j</artifactId>
         <groupId>edu.alibaba</groupId>
-        <version>1.1.1</version>
+        <version>1.1.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>mpc4j-s2pc-aby</artifactId>
-
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -23,41 +18,43 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.googlecode.javaewah</groupId>
             <artifactId>JavaEWAH</artifactId>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-tool</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-rpc</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-circuit</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-structure</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-s2pc-pcg</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
         </dependency>
     </dependencies>
 
@@ -69,8 +66,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.5.1</version>
                 <configuration>
-                    <source>8</source>
-                    <target>8</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
             <plugin>

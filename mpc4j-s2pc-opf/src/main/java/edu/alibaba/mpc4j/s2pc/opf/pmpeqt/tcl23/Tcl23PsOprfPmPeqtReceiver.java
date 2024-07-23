@@ -14,13 +14,12 @@ import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnPartyOutput;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnSender;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnPartyOutput;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnSender;
 import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.AbstractPmPeqtReceiver;
 
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -38,7 +37,7 @@ public class Tcl23PsOprfPmPeqtReceiver extends AbstractPmPeqtReceiver {
     /**
      * OSN sender
      */
-    private final OsnSender osnSender;
+    private final DosnSender dosnSender;
     /**
      * OPRF receiver
      */
@@ -46,8 +45,8 @@ public class Tcl23PsOprfPmPeqtReceiver extends AbstractPmPeqtReceiver {
 
     public Tcl23PsOprfPmPeqtReceiver(Rpc receiverRpc, Party senderParty, Tcl23PsOprfPmPeqtConfig config) {
         super(getInstance(), receiverRpc, senderParty, config);
-        osnSender = OsnFactory.createSender(receiverRpc, senderParty, config.getOsnConfig());
-        addSubPto(osnSender);
+        dosnSender = DosnFactory.createSender(receiverRpc, senderParty, config.getOsnConfig());
+        addSubPto(dosnSender);
         oprfReceiver = OprfFactory.createOprfReceiver(receiverRpc, senderParty, config.getOprfConfig());
         addSubPto(oprfReceiver);
     }
@@ -59,7 +58,7 @@ public class Tcl23PsOprfPmPeqtReceiver extends AbstractPmPeqtReceiver {
 
         stopWatch.start();
         // initialize OSN sender
-        osnSender.init(maxRow * maxColumn);
+        dosnSender.init();
         // initialize MP-OPRF receiver
         oprfReceiver.init(maxRow * maxColumn);
         stopWatch.stop();
@@ -77,8 +76,8 @@ public class Tcl23PsOprfPmPeqtReceiver extends AbstractPmPeqtReceiver {
 
         stopWatch.start();
         // input permutation
-        Vector<byte[]> osnInputVector = generateOsnInputVector(inputMatrix);
-        OsnPartyOutput osnPartyOutput = osnSender.osn(osnInputVector, byteLength);
+        byte[][] osnInputVector = generateOsnInputVector(inputMatrix);
+        DosnPartyOutput dosnPartyOutput = dosnSender.dosn(osnInputVector, byteLength);
         stopWatch.stop();
         long osnTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -86,7 +85,7 @@ public class Tcl23PsOprfPmPeqtReceiver extends AbstractPmPeqtReceiver {
 
         stopWatch.start();
         // MP-OPRF
-        byte[][] oprfInput = handleOsnOutput(osnPartyOutput);
+        byte[][] oprfInput = handleOsnOutput(dosnPartyOutput);
         OprfReceiverOutput oprfReceiverOutput = oprfReceiver.oprf(oprfInput);
         DataPacketHeader prfPayloadHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_PRF.ordinal(), extraInfo,
@@ -109,11 +108,13 @@ public class Tcl23PsOprfPmPeqtReceiver extends AbstractPmPeqtReceiver {
      * @param inputMatrix input matrix.
      * @return OSN input vector.
      */
-    private Vector<byte[]> generateOsnInputVector(byte[][][] inputMatrix) {
-        Vector<byte[]> payload = new Vector<>(row * column);
+    private byte[][] generateOsnInputVector(byte[][][] inputMatrix) {
+        byte[][] payload = new byte[row * column][];
+        int index = 0;
         for (int i = 0; i < row; i++) {
             for (int j = 0; j < column; j++) {
-                payload.add(inputMatrix[i][j]);
+                payload[index] = inputMatrix[i][j];
+                index++;
             }
         }
         return payload;
@@ -122,12 +123,12 @@ public class Tcl23PsOprfPmPeqtReceiver extends AbstractPmPeqtReceiver {
     /**
      * handle OSN output.
      *
-     * @param osnPartyOutput OSN output.
+     * @param dosnPartyOutput OSN output.
      * @return permuted matrix.
      */
-    private byte[][] handleOsnOutput(OsnPartyOutput osnPartyOutput) {
+    private byte[][] handleOsnOutput(DosnPartyOutput dosnPartyOutput) {
         return IntStream.range(0, row * column)
-            .mapToObj(osnPartyOutput::getShare)
+            .mapToObj(dosnPartyOutput::getShare)
             .toArray(byte[][]::new);
     }
 

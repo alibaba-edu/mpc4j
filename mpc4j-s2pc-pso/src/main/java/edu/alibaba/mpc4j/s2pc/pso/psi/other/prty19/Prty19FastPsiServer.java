@@ -96,9 +96,7 @@ public class Prty19FastPsiServer<T> extends AbstractPsiServer<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // init COT
-        int maxL = Prty19PsiUtils.getFastL(maxServerElementSize);
-        coreCotReceiver.init(maxL);
+        coreCotReceiver.init();
         // receive two-choice hash keys
         DataPacketHeader twoChoiceHashKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_TWO_CHOICE_HASH_KEY.ordinal(), extraInfo,

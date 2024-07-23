@@ -25,9 +25,13 @@ public class CrhfFactory {
          */
         MMO,
         /**
-         * MMO_σ(x)
+         * MMO_σ(x) using JDK
          */
-        MMO_SIGMA,
+        JDK_MMO_SIGMA,
+        /**
+         * MMO_σ(x) using SIMD
+         */
+        SIMD_MMO_SIGMA,
     }
 
     /**
@@ -38,13 +42,10 @@ public class CrhfFactory {
      * @return 抗关联哈希函数。
      */
     public static Crhf createInstance(EnvType envType, CrhfType type) {
-        switch (type) {
-            case MMO:
-                return new MmoCrhf(envType);
-            case MMO_SIGMA:
-                return new MmoSigmaCrhf(envType);
-            default:
-                throw new IllegalArgumentException("Invalid CrhfType: " + type);
-        }
+        return switch (type) {
+            case MMO -> new MmoCrhf(envType);
+            case JDK_MMO_SIGMA -> new JdkMmoSigmaCrhf(envType);
+            case SIMD_MMO_SIGMA -> new SimdMmoSigmaCrhf(envType);
+        };
     }
 }

@@ -4,9 +4,9 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirServer;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirServer;
 import edu.alibaba.mpc4j.work.AbstractBatchPirServer;
 
 import java.math.BigInteger;
@@ -20,15 +20,15 @@ import java.util.stream.IntStream;
  * @date 2024/1/2
  */
 public class VectorizedBatchPirServer extends AbstractBatchPirServer {
-
     /**
      * Vectorized Batch PIR server
      */
-    private final Mr23BatchIndexPirServer server;
+    private final VectorizedStdIdxPirServer server;
 
     public VectorizedBatchPirServer(Rpc serverRpc, Party clientParty, VectorizedBatchPirConfig config) {
         super(VectorizedBatchPirPtoDesc.getInstance(), serverRpc, clientParty, config);
-        server = new Mr23BatchIndexPirServer(serverRpc, clientParty, config.getVectorizedBatchPirConfig());
+        server = new VectorizedStdIdxPirServer(serverRpc, clientParty, config.getVectorizedBatchPirConfig());
+        addSubPto(server);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class VectorizedBatchPirServer extends AbstractBatchPirServer {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        server.pir();
+        server.pir(maxRetrievalSize);
         stopWatch.stop();
         long genResponseTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

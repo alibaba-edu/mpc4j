@@ -1,14 +1,10 @@
 package edu.alibaba.mpc4j.s2pc.pir.main;
 
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
-import edu.alibaba.mpc4j.s2pc.pir.main.ccpsi.CcpsiMain;
-import edu.alibaba.mpc4j.s2pc.pir.main.payablepir.PayablePirMain;
-import edu.alibaba.mpc4j.s2pc.pir.main.scpsi.ScpsiMain;
-import edu.alibaba.mpc4j.s2pc.pir.main.cppir.index.SingleCpPirMain;
+import edu.alibaba.mpc4j.s2pc.pir.main.cppir.index.CpIdxPirMain;
 import edu.alibaba.mpc4j.s2pc.pir.main.cppir.keyword.SingleCpKsPirMain;
-import edu.alibaba.mpc4j.s2pc.pir.main.kwpir.KwPirMain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import edu.alibaba.mpc4j.s2pc.pir.main.kspir.SingleKsPirMain;
 
 import java.util.Properties;
 
@@ -19,8 +15,6 @@ import java.util.Properties;
  * @date 2022/04/23
  */
 public class PirMain {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PirMain.class);
-
     /**
      * main.
      *
@@ -28,39 +22,24 @@ public class PirMain {
      */
     public static void main(String[] args) throws Exception {
         PropertiesUtils.loadLog4jProperties();
-        // read config file
-        LOGGER.info("read PTO config");
         Properties properties = PropertiesUtils.loadProperties(args[0]);
-        // read task type
-        String taskType = PropertiesUtils.readString(properties, "task_type");
-        LOGGER.info("task_type = " + taskType);
-        switch (taskType) {
-            case ScpsiMain.TASK_NAME:
-                ScpsiMain scpsiMain = new ScpsiMain(properties);
-                scpsiMain.run();
+        String ownName = args[1];
+        String ptoType = MainPtoConfigUtils.readPtoType(properties);
+        switch (ptoType) {
+            case CpIdxPirMain.PTO_TYPE_NAME:
+                CpIdxPirMain cpIdxPirMain = new CpIdxPirMain(properties, ownName);
+                cpIdxPirMain.runNetty();
                 break;
-            case CcpsiMain.TASK_NAME:
-                CcpsiMain ccpsiMain = new CcpsiMain(properties);
-                ccpsiMain.run();
+            case SingleCpKsPirMain.PTO_NAME_KEY:
+                SingleCpKsPirMain singleCpKsPirMain = new SingleCpKsPirMain(properties, ownName);
+                singleCpKsPirMain.runNetty();
                 break;
-            case SingleCpPirMain.TASK_NAME:
-                SingleCpPirMain singleCpPirMain = new SingleCpPirMain(properties);
-                singleCpPirMain.run();
-                break;
-            case SingleCpKsPirMain.TASK_NAME:
-                SingleCpKsPirMain singleCpKsPirMain = new SingleCpKsPirMain(properties);
-                singleCpKsPirMain.run();
-                break;
-            case KwPirMain.TASK_NAME:
-                KwPirMain kwPirMain = new KwPirMain(properties);
-                kwPirMain.run();
-                break;
-            case PayablePirMain.TASK_NAME:
-                PayablePirMain payablePirMain = new PayablePirMain(properties);
-                payablePirMain.run();
+            case SingleKsPirMain.PTO_NAME_KEY:
+                SingleKsPirMain singleKwPirMain = new SingleKsPirMain(properties, ownName);
+                singleKwPirMain.runNetty();
                 break;
             default:
-                throw new IllegalArgumentException("Invalid task_type: " + taskType);
+                throw new IllegalArgumentException("Invalid pto_type: " + ptoType);
         }
         System.exit(0);
     }

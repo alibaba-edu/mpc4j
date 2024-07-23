@@ -5,8 +5,8 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnConfig;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory;
 
@@ -24,16 +24,16 @@ public class Jsz22SfsPsuConfig extends AbstractMultiPartyPtoConfig implements Ps
     /**
      * OSN协议配置项
      */
-    private final OsnConfig osnConfig;
+    private final DosnConfig dosnConfig;
     /**
      * 布谷鸟哈希类型
      */
     private final CuckooHashBinType cuckooHashBinType;
 
     private Jsz22SfsPsuConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.oprfConfig, builder.osnConfig);
+        super(SecurityModel.SEMI_HONEST, builder.oprfConfig, builder.dosnConfig);
         oprfConfig = builder.oprfConfig;
-        osnConfig = builder.osnConfig;
+        dosnConfig = builder.dosnConfig;
         cuckooHashBinType = builder.cuckooHashBinType;
     }
 
@@ -46,8 +46,8 @@ public class Jsz22SfsPsuConfig extends AbstractMultiPartyPtoConfig implements Ps
         return oprfConfig;
     }
 
-    public OsnConfig getOsnConfig() {
-        return osnConfig;
+    public DosnConfig getOsnConfig() {
+        return dosnConfig;
     }
 
     public CuckooHashBinType getCuckooHashBinType() {
@@ -58,11 +58,11 @@ public class Jsz22SfsPsuConfig extends AbstractMultiPartyPtoConfig implements Ps
         /**
          * OPRF协议配置项
          */
-        private OprfConfig oprfConfig;
+        private final OprfConfig oprfConfig;
         /**
          * OSN协议配置项
          */
-        private OsnConfig osnConfig;
+        private final DosnConfig dosnConfig;
         /**
          * 布谷鸟哈希类型
          */
@@ -70,19 +70,9 @@ public class Jsz22SfsPsuConfig extends AbstractMultiPartyPtoConfig implements Ps
 
         public Builder(boolean silent) {
             oprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
-            osnConfig = OsnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+            dosnConfig = DosnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             // 论文建议平衡场景下使用PSZ18的3哈希协议，非平衡场景下使用PSZ18的4哈希协议
             cuckooHashBinType = CuckooHashBinType.NAIVE_3_HASH;
-        }
-
-        public Builder setOprfConfig(OprfConfig oprfConfig) {
-            this.oprfConfig = oprfConfig;
-            return this;
-        }
-
-        public Builder setOsnConfig(OsnConfig osnConfig) {
-            this.osnConfig = osnConfig;
-            return this;
         }
 
         public Builder setCuckooHashBinType(CuckooHashBinType cuckooHashBinType) {

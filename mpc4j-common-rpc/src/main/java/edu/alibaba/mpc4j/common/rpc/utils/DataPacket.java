@@ -45,7 +45,7 @@ public final class DataPacket {
         dataPacket.equalLength = -1;
 
         // empty payload
-        if (payload.size() == 0) {
+        if (payload.isEmpty()) {
             dataPacket.payloadType = PayloadType.EMPTY;
             return dataPacket;
         }
@@ -66,30 +66,13 @@ public final class DataPacket {
             }
         }
         if (equalSize) {
+            // equal payload
             dataPacket.payloadType = PayloadType.EQUAL_SIZE;
             dataPacket.equalLength = length;
-            return dataPacket;
+        } else {
+            // normal payload
+            dataPacket.payloadType = PayloadType.NORMAL;
         }
-
-        // normal payload
-        dataPacket.payloadType = PayloadType.NORMAL;
-        return dataPacket;
-    }
-
-    /**
-     * Creates a data packet without checking correctness.
-     *
-     * @param header      header.
-     * @param payloadType type.
-     * @param payload     payload.
-     * @return a data packet.
-     */
-    public static DataPacket fromUncheck(DataPacketHeader header, PayloadType payloadType, List<byte[]> payload) {
-        DataPacket dataPacket = new DataPacket();
-        dataPacket.header = header;
-        dataPacket.payloadType = payloadType;
-        dataPacket.payload = payload;
-
         return dataPacket;
     }
 
@@ -146,13 +129,12 @@ public final class DataPacket {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof DataPacket)) {
+        if (!(obj instanceof DataPacket that)) {
             return false;
         }
         if (obj == this) {
             return true;
         }
-        DataPacket that = (DataPacket) obj;
         return new EqualsBuilder()
             .append(this.header, that.header)
             .append(

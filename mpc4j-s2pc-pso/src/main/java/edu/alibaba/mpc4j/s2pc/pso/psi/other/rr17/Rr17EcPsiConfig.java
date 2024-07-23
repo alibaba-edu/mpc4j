@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi.other.rr17;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ct.CoinTossConfig;
@@ -79,6 +80,10 @@ public class Rr17EcPsiConfig extends AbstractMultiPartyPtoConfig implements PsiC
 
         public Builder setDivParam(int divParam4PhaseHash) {
             // 4 in LAN setting, 10 in WAN setting
+            Preconditions.checkArgument(
+                divParam4PhaseHash == 4 || divParam4PhaseHash == 10,
+                "div_param must be 4 (LAN) or 10 (WAN): {}", divParam4PhaseHash
+            );
             this.divParam4PhaseHash = divParam4PhaseHash;
             return this;
         }

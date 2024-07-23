@@ -2,12 +2,12 @@ package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory.EccType;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.math.ec.ECPoint;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -24,7 +24,6 @@ import java.util.Collection;
  * @date 2022/01/07
  */
 @RunWith(Parameterized.class)
-@Ignore
 public class EccConsistencyTest {
     /**
      * 最大随机轮数
@@ -38,12 +37,23 @@ public class EccConsistencyTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
+
+        // STANDARD
+        configurations.add(new Object[]{
+            EnvType.STANDARD.name() + " v.s. " + EnvType.STANDARD_JDK.name(),
+            EccFactory.getType(EnvType.STANDARD), EccFactory.getType(EnvType.STANDARD_JDK)
+        });
+        // INLAND
+        configurations.add(new Object[]{
+            EnvType.INLAND.name() + " v.s. " + EnvType.INLAND_JDK.name(),
+            EccFactory.getType(EnvType.INLAND), EccFactory.getType(EnvType.INLAND_JDK)
+        });
         // SEC_P256_K1
-        configurations.add(new Object[] {"SecP256k1 (BC v.s. MCL)", EccType.SEC_P256_K1_BC, EccType.SEC_P256_K1_OPENSSL});
+        configurations.add(new Object[]{"SecP256k1 (BC v.s. MCL)", EccType.SEC_P256_K1_BC, EccType.SEC_P256_K1_OPENSSL});
         // SEC_P256_R1
-        configurations.add(new Object[] {"SecP256r1 (BC v.s. OpenSSL)", EccType.SEC_P256_R1_OPENSSL, EccType.SEC_P256_R1_OPENSSL});
+        configurations.add(new Object[]{"SecP256r1 (BC v.s. OpenSSL)", EccType.SEC_P256_R1_OPENSSL, EccType.SEC_P256_R1_OPENSSL});
         // SM2_P256_V1
-        configurations.add(new Object[] {"Sm2P256v1 (BC v.s. OpenSSL)", EccType.SM2_P256_V1_BC, EccType.SM2_P256_V1_OPENSSL});
+        configurations.add(new Object[]{"Sm2P256v1 (BC v.s. OpenSSL)", EccType.SM2_P256_V1_BC, EccType.SM2_P256_V1_OPENSSL});
         return configurations;
     }
 

@@ -6,6 +6,9 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.lowmc.LowMcOprpConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -45,16 +48,14 @@ public class OprpTest extends AbstractTwoPartyMemoryRpcPto {
 
         // LowMC
         configurations.add(new Object[] {
-            OprpFactory.OprpType.LOW_MC.name() + " (" + SecurityModel.SEMI_HONEST.name() + ")",
-            new LowMcOprpConfig.Builder(SecurityModel.SEMI_HONEST)
-                .build(),
+            OprpFactory.OprpType.LOW_MC.name(), new LowMcOprpConfig.Builder().build(),
         });
 
         return configurations;
     }
 
     /**
-     * 协议类型
+     * config
      */
     private final OprpConfig config;
 
@@ -94,8 +95,11 @@ public class OprpTest extends AbstractTwoPartyMemoryRpcPto {
     }
 
     private void testPto(int batchSize, boolean parallel) {
-        OprpSender sender = OprpFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        OprpReceiver receiver = OprpFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
+        Z2cConfig z2cConfig = Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+        Z2cParty z2cSender = Z2cFactory.createSender(firstRpc, secondRpc.ownParty(), z2cConfig);
+        Z2cParty z2cReceiver = Z2cFactory.createReceiver(secondRpc, firstRpc.ownParty(), z2cConfig);
+        OprpSender sender = OprpFactory.createSender(z2cSender, secondRpc.ownParty(), config);
+        OprpReceiver receiver = OprpFactory.createReceiver(z2cReceiver, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
@@ -112,8 +116,8 @@ public class OprpTest extends AbstractTwoPartyMemoryRpcPto {
                     return message;
                 })
                 .toArray(byte[][]::new);
-            OprpSenderThread senderThread = new OprpSenderThread(sender, key, batchSize);
-            OprpReceiverThread receiverThread = new OprpReceiverThread(receiver, messages);
+            OprpSenderThread senderThread = new OprpSenderThread(z2cSender, sender, key, batchSize);
+            OprpReceiverThread receiverThread = new OprpReceiverThread(z2cReceiver, receiver, messages);
             StopWatch stopWatch = new StopWatch();
             // start
             stopWatch.start();

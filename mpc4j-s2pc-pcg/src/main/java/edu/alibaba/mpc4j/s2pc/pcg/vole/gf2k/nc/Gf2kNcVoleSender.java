@@ -14,6 +14,15 @@ public interface Gf2kNcVoleSender extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
+     * @param subfieldL subfield L.
+     * @param num num.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    void init(int subfieldL, int num) throws MpcAbortException;
+
+    /**
+     * Inits the protocol.
+     *
      * @param num num.
      * @throws MpcAbortException the protocol failure aborts.
      */

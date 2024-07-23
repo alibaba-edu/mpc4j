@@ -23,7 +23,7 @@ public class NaiveDatabaseTest {
      * l array
      */
     private static final int[] L_ARRAY = new int[]{
-        1, 5, 7, 9, 15, 16, 17, LongUtils.MAX_L - 1, LongUtils.MAX_L, Long.SIZE, CommonConstants.BLOCK_BIT_LENGTH,
+        1, 5, 7, 9, 15, 16, 17, LongUtils.MAX_L_FOR_MODULE_N - 1, LongUtils.MAX_L_FOR_MODULE_N, Long.SIZE, CommonConstants.BLOCK_BIT_LENGTH,
     };
     /**
      * the random state

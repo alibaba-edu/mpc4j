@@ -43,8 +43,8 @@ public class Iknp03CoreCotSender extends AbstractCoreCotSender {
     }
 
     @Override
-    public void init(byte[] delta, int maxNum) throws MpcAbortException {
-        setInitInput(delta, maxNum);
+    public void init(byte[] delta) throws MpcAbortException {
+        setInitInput(delta);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();

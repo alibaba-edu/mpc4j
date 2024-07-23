@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.trunc.zl.gp23.Gp23ZlTruncConfig;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.trunc.zl.gp23.Gp23ZlTruncReceiver;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.trunc.zl.gp23.Gp23ZlTruncSender;
@@ -42,18 +43,18 @@ public class ZlTruncFactory implements PtoFactory {
     /**
      * Creates a sender.
      *
-     * @param senderRpc     the sender RPC.
+     * @param z2cSender     z2 circuit sender.
      * @param receiverParty the receiver party.
      * @param config        the config.
      * @return a sender.
      */
-    public static ZlTruncParty createSender(Rpc senderRpc, Party receiverParty, ZlTruncConfig config) {
+    public static ZlTruncParty createSender(Z2cParty z2cSender, Party receiverParty, ZlTruncConfig config) {
         ZlTruncType type = config.getPtoType();
         switch (type) {
             case RRK20:
-                return new Rrk20ZlTruncSender(senderRpc, receiverParty, (Rrk20ZlTruncConfig) config);
+                return new Rrk20ZlTruncSender(z2cSender, receiverParty, (Rrk20ZlTruncConfig) config);
             case GP23:
-                return new Gp23ZlTruncSender(senderRpc, receiverParty, (Gp23ZlTruncConfig) config);
+                return new Gp23ZlTruncSender(z2cSender.getRpc(), receiverParty, (Gp23ZlTruncConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + ZlTruncType.class.getSimpleName() + ": " + type.name());
         }
@@ -62,18 +63,18 @@ public class ZlTruncFactory implements PtoFactory {
     /**
      * Creates a receiver.
      *
-     * @param receiverRpc the receiver RPC.
+     * @param z2cReceiver z2 circuit receiver.
      * @param senderParty the sender party.
      * @param config      the config.
      * @return a receiver.
      */
-    public static ZlTruncParty createReceiver(Rpc receiverRpc, Party senderParty, ZlTruncConfig config) {
+    public static ZlTruncParty createReceiver(Z2cParty z2cReceiver, Party senderParty, ZlTruncConfig config) {
         ZlTruncType type = config.getPtoType();
         switch (type) {
             case RRK20:
-                return new Rrk20ZlTruncReceiver(receiverRpc, senderParty, (Rrk20ZlTruncConfig) config);
+                return new Rrk20ZlTruncReceiver(z2cReceiver, senderParty, (Rrk20ZlTruncConfig) config);
             case GP23:
-                return new Gp23ZlTruncReceiver(receiverRpc, senderParty, (Gp23ZlTruncConfig) config);
+                return new Gp23ZlTruncReceiver(z2cReceiver.getRpc(), senderParty, (Gp23ZlTruncConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + ZlTruncType.class.getSimpleName() + ": " + type.name());
         }
@@ -87,14 +88,6 @@ public class ZlTruncFactory implements PtoFactory {
      * @return a default config.
      */
     public static ZlTruncConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
-        switch (securityModel) {
-            case IDEAL:
-            case SEMI_HONEST:
-                return new Rrk20ZlTruncConfig.Builder(silent).build();
-            case COVERT:
-            case MALICIOUS:
-            default:
-                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
-        }
+        return new Rrk20ZlTruncConfig.Builder(securityModel, silent).build();
     }
 }

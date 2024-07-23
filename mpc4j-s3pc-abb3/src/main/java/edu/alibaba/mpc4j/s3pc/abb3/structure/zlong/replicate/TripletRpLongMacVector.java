@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s3pc.abb3.structure.zlong.replicate;
 
-import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import edu.alibaba.mpc4j.common.structure.vector.LongVector;
+import edu.alibaba.mpc4j.common.structure.vector.Vector;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.zlong.TripletLongVector;
 
@@ -73,8 +73,7 @@ public class TripletRpLongMacVector extends TripletRpLongVector implements Tripl
      * @return a shared vector.
      */
     public static TripletRpLongMacVector create(TripletRpLongVector other, boolean needCopy) {
-        if(other instanceof TripletRpLongMacVector){
-            TripletRpLongMacVector that = (TripletRpLongMacVector) other;
+        if (other instanceof TripletRpLongMacVector that) {
             if (needCopy) {
                 if (that.getMacIndex() > 0) {
                     return create(that.getMacIndex(),
@@ -90,7 +89,7 @@ public class TripletRpLongMacVector extends TripletRpLongVector implements Tripl
                     return create(that.getVectors());
                 }
             }
-        }else{
+        } else {
             return new TripletRpLongMacVector(needCopy
                 ? Arrays.stream(other.innerVec).map(LongVector::copy).toArray(LongVector[]::new)
                 : other.innerVec);
@@ -161,7 +160,7 @@ public class TripletRpLongMacVector extends TripletRpLongVector implements Tripl
             LongVector[] mac = Arrays.stream(this.macVec).map(each ->
                 LongVector.copyOfRange(each, startIndex, endIndex)).toArray(LongVector[]::new);
             return create(this.macIndex, inner, mac);
-        }else{
+        } else {
             return create(inner);
         }
     }
@@ -190,13 +189,13 @@ public class TripletRpLongMacVector extends TripletRpLongVector implements Tripl
 
     @Override
     public TripletRpLongMacVector[] split(int[] splitNums) {
-        LongVector[] r0 = innerVec[0].split(splitNums);
-        LongVector[] r1 = innerVec[1].split(splitNums);
+        LongVector[] r0 = LongVector.split(innerVec[0], splitNums);
+        LongVector[] r1 = LongVector.split(innerVec[1], splitNums);
         if (macIndex > 0) {
-            LongVector[] m0 = macVec[0].split(splitNums);
-            LongVector[] m1 = macVec[1].split(splitNums);
-            return IntStream.range(0, splitNums.length).mapToObj(i ->
-                    create(macIndex, new LongVector[]{r0[i], r1[i]}, new LongVector[]{m0[i], m1[i]}))
+            LongVector[] m0 = LongVector.split(macVec[0], splitNums);
+            LongVector[] m1 = LongVector.split(macVec[1], splitNums);
+            return IntStream.range(0, splitNums.length)
+                .mapToObj(i -> create(macIndex, new LongVector[]{r0[i], r1[i]}, new LongVector[]{m0[i], m1[i]}))
                 .toArray(TripletRpLongMacVector[]::new);
         } else {
             return IntStream.range(0, splitNums.length).mapToObj(i -> create(r0[i], r1[i])).toArray(TripletRpLongMacVector[]::new);
@@ -212,48 +211,46 @@ public class TripletRpLongMacVector extends TripletRpLongVector implements Tripl
     }
 
     @Override
-    public void merge(MpcVector other) {
+    public void merge(Vector other) {
         for (int i = 0; i < innerVec.length; i++) {
-            innerVec[i].merge(((TripletLongVector)other).getVectors()[i]);
+            innerVec[i].merge(((TripletLongVector) other).getVectors()[i]);
         }
-        if(other instanceof TripletRpLongMacVector){
-            TripletRpLongMacVector that = (TripletRpLongMacVector) other;
-            if(this.macIndex == that.getMacIndex() && this.macIndex > 0){
+        if (other instanceof TripletRpLongMacVector that) {
+            if (this.macIndex == that.getMacIndex() && this.macIndex > 0) {
                 for (int i = 0; i < macVec.length; i++) {
                     macVec[i].merge(that.getVectors()[i]);
                 }
-            }else{
+            } else {
                 deleteMac();
             }
-        }else{
+        } else {
             deleteMac();
         }
     }
 
     @Override
     public void setElements(TripletLongVector data, int sourceStartIndex, int targetStartIndex, int copyLen) {
-        if(data instanceof TripletRpLongMacVector && this.macVec != null){
-            TripletRpLongMacVector that = (TripletRpLongMacVector) data;
-            if(that.macIndex == 0 || (macIndex != that.macIndex && macIndex > 0)){
+        if (data instanceof TripletRpLongMacVector that && this.macVec != null) {
+            if (that.macIndex == 0 || (macIndex != that.macIndex && macIndex > 0)) {
                 // if the current vector has mac and not equal to the other data's mac, or the other data has no mac
                 this.deleteMac();
-            }else{
-                if(macIndex == 0){
+            } else {
+                if (macIndex == 0) {
                     macIndex = that.macIndex;
-                }else{
+                } else {
                     MathPreconditions.checkEqual("that.macIndex", "this.macIndex", that.macIndex, this.macIndex);
                 }
                 for (int i = 0; i < 2; i++) {
                     if (that.macIndex > 0) {
-                        macVec[i].setValues(that.getMacVec()[i], sourceStartIndex, targetStartIndex, copyLen);
+                        macVec[i].setElements(that.getMacVec()[i], sourceStartIndex, targetStartIndex, copyLen);
                     }
                 }
             }
-        }else{
+        } else {
             this.deleteMac();
         }
         for (int i = 0; i < 2; i++) {
-            innerVec[i].setValues(data.getVectors()[i], sourceStartIndex, targetStartIndex, copyLen);
+            innerVec[i].setElements(data.getVectors()[i], sourceStartIndex, targetStartIndex, copyLen);
         }
     }
 
@@ -337,15 +334,15 @@ public class TripletRpLongMacVector extends TripletRpLongVector implements Tripl
     }
 
     @Override
-    public void paddingZeros(int paddingNum){
+    public void paddingZeros(int paddingNum) {
         MathPreconditions.checkNonNegative("paddingNum", paddingNum);
         int beforeLen = getNum();
-        if(paddingNum > 0){
-            for(int i = 0; i < 2; i++){
+        if (paddingNum > 0) {
+            for (int i = 0; i < 2; i++) {
                 long[] tmp = new long[beforeLen + paddingNum];
                 System.arraycopy(innerVec[i].getElements(), 0, tmp, 0, beforeLen);
                 innerVec[i] = LongVector.create(tmp);
-                if(macIndex > 0){
+                if (macIndex > 0) {
                     long[] tmpMac = new long[beforeLen + paddingNum];
                     System.arraycopy(macVec[i].getElements(), 0, tmpMac, 0, beforeLen);
                     macVec[i] = LongVector.create(tmpMac);
@@ -359,16 +356,15 @@ public class TripletRpLongMacVector extends TripletRpLongVector implements Tripl
         for (int i = 0; i < innerVec.length; i++) {
             innerVec[i].setElementsByInterval(source.getVectors()[i], startPos, num, sepDistance);
         }
-        if (source instanceof TripletRpLongMacVector) {
-            TripletRpLongMacVector other = (TripletRpLongMacVector) source;
-            if(other.getMacIndex() > 0 && this.macIndex > 0 && other.getMacIndex() == this.macIndex){
+        if (source instanceof TripletRpLongMacVector other) {
+            if (other.getMacIndex() > 0 && this.macIndex > 0 && other.getMacIndex() == this.macIndex) {
                 for (int i = 0; i < innerVec.length; i++) {
                     macVec[i].setElementsByInterval(other.getMacVec()[i], startPos, num, sepDistance);
                 }
-            }else{
+            } else {
                 this.deleteMac();
             }
-        }else{
+        } else {
             this.deleteMac();
         }
     }
@@ -376,10 +372,10 @@ public class TripletRpLongMacVector extends TripletRpLongVector implements Tripl
     @Override
     public TripletLongVector getPointsWithFixedSpace(int startPos, int num, int sepDistance) {
         LongVector[] tmp = Arrays.stream(innerVec).map(each -> each.getElementsByInterval(startPos, num, sepDistance)).toArray(LongVector[]::new);
-        if(this.macIndex > 0){
+        if (this.macIndex > 0) {
             LongVector[] tmpMac = Arrays.stream(macVec).map(each -> each.getElementsByInterval(startPos, num, sepDistance)).toArray(LongVector[]::new);
             return create(macIndex, tmp, tmpMac);
-        }else{
+        } else {
             return create(tmp);
         }
     }

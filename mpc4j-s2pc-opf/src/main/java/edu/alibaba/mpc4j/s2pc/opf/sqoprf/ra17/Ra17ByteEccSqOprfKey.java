@@ -30,7 +30,7 @@ public class Ra17ByteEccSqOprfKey implements SqOprfKey {
     private final BigInteger alpha;
 
     Ra17ByteEccSqOprfKey(EnvType envType, BigInteger alpha) {
-        byteFullEcc = ByteEccFactory.createFullInstance(envType);
+        byteFullEcc = ByteEccFactory.createFastestFullInstance();
         kdf = KdfFactory.createInstance(envType);
         this.alpha = alpha;
     }

@@ -398,7 +398,7 @@ public class Zcl22MpPmidClient<T> extends AbstractPmidClient<T> {
         MpcAbortPreconditions.checkArgument(serverPsuSetSizePayload.size() == 1);
         int serverPsuSetSize = IntUtils.byteArrayToInt(serverPsuSetSizePayload.remove(0));
         // Alice and Bob invoke the PSU functionality F_{psu}. Bob acts as receiver with input ID_y and receives the union
-        Set<ByteBuffer> pmidSet = psuClient.psu(clientPmidMap.keySet(), serverPsuSetSize, pmidByteLength);
+        Set<ByteBuffer> pmidSet = psuClient.psu(clientPmidMap.keySet(), serverPsuSetSize, pmidByteLength).getUnion();
         // Bob sends union
         List<byte[]> unionPayload = pmidSet.stream().map(ByteBuffer::array).collect(Collectors.toList());
         DataPacketHeader unionHeader = new DataPacketHeader(

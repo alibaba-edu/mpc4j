@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.structure.database;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.structure.matrix.MatrixUtils;
+import edu.alibaba.mpc4j.common.structure.StructureUtils;
 import edu.alibaba.mpc4j.common.structure.database.DatabaseFactory.DatabaseType;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
@@ -24,12 +24,12 @@ import java.util.Locale;
 import java.util.stream.IntStream;
 
 /**
- * naive database. Each data is an element in Z_{2^l} represented by BigInteger where l > 0.
+ * naive database.
  *
  * @author Weiran Liu
  * @date 2023/4/5
  */
-public class NaiveDatabase implements ModBitNumDatabase {
+public class NaiveDatabase implements Database {
     /**
      * element bit length
      */
@@ -41,7 +41,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
     /**
      * data
      */
-    private BigInteger[] data;
+    private BitVector[] data;
 
     /**
      * Creates a database.
@@ -54,11 +54,11 @@ public class NaiveDatabase implements ModBitNumDatabase {
         NaiveDatabase database = new NaiveDatabase(l);
         MathPreconditions.checkPositive("rows", data.length);
         database.data = Arrays.stream(data)
-            .peek(element ->
-                Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(element, database.byteL, database.l))
+            .peek(rowData ->
+                Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(rowData, database.byteL, database.l))
             )
-            .map(BigIntegerUtils::byteArrayToNonNegBigInteger)
-            .toArray(BigInteger[]::new);
+            .map(rowData -> BitVectorFactory.create(l, rowData))
+            .toArray(BitVector[]::new);
         return database;
     }
 
@@ -77,7 +77,22 @@ public class NaiveDatabase implements ModBitNumDatabase {
                 Preconditions.checkArgument(element.signum() >= 0);
                 Preconditions.checkArgument(element.bitLength() <= l);
             })
-            .toArray(BigInteger[]::new);
+            .map(rowData -> BitVectorFactory.create(l, rowData))
+            .toArray(BitVector[]::new);
+        return database;
+    }
+
+    /**
+     * Creates a database.
+     *
+     * @param data data.
+     * @return a database.
+     */
+    public static NaiveDatabase create(BitVector[] data) {
+        MathPreconditions.checkPositive("rows", data.length);
+        int l = data[0].bitNum();
+        NaiveDatabase database = new NaiveDatabase(l);
+        database.data = data;
         return database;
     }
 
@@ -93,8 +108,8 @@ public class NaiveDatabase implements ModBitNumDatabase {
         NaiveDatabase database = new NaiveDatabase(l);
         MathPreconditions.checkPositive("rows", rows);
         database.data = IntStream.range(0, rows)
-            .mapToObj(index -> new BigInteger(l, secureRandom))
-            .toArray(BigInteger[]::new);
+            .mapToObj(index -> BitVectorFactory.createRandom(l, secureRandom))
+            .toArray(BitVector[]::new);
         return database;
     }
 
@@ -135,7 +150,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
      */
     public static NaiveDatabase createEmpty(int l) {
         NaiveDatabase database = new NaiveDatabase(l);
-        database.data = new BigInteger[0];
+        database.data = new BitVector[0];
 
         return database;
     }
@@ -170,7 +185,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
     public BitVector[] bitPartition(EnvType envType, boolean parallel) {
         int rows = rows();
         byte[][] byteArrayData = Arrays.stream(data)
-            .map(element -> BigIntegerUtils.nonNegBigIntegerToByteArray(element, byteL))
+            .map(BitVector::getBytes)
             .toArray(byte[][]::new);
         DenseBitMatrix byteDenseBitMatrix = ByteDenseBitMatrix.createFromDense(l, byteArrayData);
         DenseBitMatrix transByteDenseBitMatrix = byteDenseBitMatrix.transpose(envType, parallel);
@@ -180,15 +195,15 @@ public class NaiveDatabase implements ModBitNumDatabase {
     }
 
     @Override
-    public ModBitNumDatabase split(int splitRows) {
+    public NaiveDatabase split(int splitRows) {
         int rows = rows();
         MathPreconditions.checkPositiveInRangeClosed("split rows", splitRows, rows);
-        BigInteger[] subData = new BigInteger[splitRows];
-        BigInteger[] remainData = new BigInteger[rows - splitRows];
-        System.arraycopy(data, 0, subData, 0, splitRows);
-        System.arraycopy(data, splitRows, remainData, 0, rows - splitRows);
+        BitVector[] subData = new BitVector[splitRows];
+        BitVector[] remainData = new BitVector[rows - splitRows];
+        System.arraycopy(data, rows - splitRows, subData, 0, splitRows);
+        System.arraycopy(data, 0, remainData, 0, rows - splitRows);
         data = remainData;
-        return NaiveDatabase.create(l, subData);
+        return create(subData);
     }
 
     @Override
@@ -197,7 +212,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
         MathPreconditions.checkPositiveInRangeClosed("reduce rows", reduceRows, rows);
         if (reduceRows < rows) {
             // reduce if the reduced rows is less than rows.
-            BigInteger[] remainData = new BigInteger[reduceRows];
+            BitVector[] remainData = new BitVector[reduceRows];
             System.arraycopy(data, 0, remainData, 0, reduceRows);
             data = remainData;
         }
@@ -207,7 +222,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
     public void merge(Database other) {
         NaiveDatabase that = (NaiveDatabase) other;
         MathPreconditions.checkEqual("this.l", "that.l", this.l, that.l);
-        BigInteger[] mergeData = new BigInteger[this.data.length + that.data.length];
+        BitVector[] mergeData = new BitVector[this.data.length + that.data.length];
         System.arraycopy(this.data, 0, mergeData, 0, this.data.length);
         System.arraycopy(that.data, 0, mergeData, this.data.length, that.data.length);
         data = mergeData;
@@ -216,23 +231,23 @@ public class NaiveDatabase implements ModBitNumDatabase {
     @Override
     public byte[][] getBytesData() {
         return Arrays.stream(data)
-            .map(element -> BigIntegerUtils.nonNegBigIntegerToByteArray(element, byteL))
+            .map(BitVector::getBytes)
             .toArray(byte[][]::new);
     }
 
     @Override
     public byte[] getBytesData(int index) {
-        return BigIntegerUtils.nonNegBigIntegerToByteArray(data[index], byteL);
+        return data[index].getBytes();
     }
 
     @Override
     public BigInteger[] getBigIntegerData() {
-        return data;
+        return Arrays.stream(data).map(BitVector::getBigInteger).toArray(BigInteger[]::new);
     }
 
     @Override
     public BigInteger getBigIntegerData(int index) {
-        return data[index];
+        return data[index].getBigInteger();
     }
 
     @Override
@@ -248,8 +263,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof NaiveDatabase) {
-            NaiveDatabase that = (NaiveDatabase) obj;
+        if (obj instanceof NaiveDatabase that) {
             return new EqualsBuilder()
                 .append(this.l, that.l)
                 .append(this.data, that.data)
@@ -260,8 +274,8 @@ public class NaiveDatabase implements ModBitNumDatabase {
 
     @Override
     public String toString() {
-        String[] stringData = Arrays.stream(Arrays.copyOf(data, Math.min(data.length, MatrixUtils.DISPLAY_NUM)))
-            .map(element -> element.toString(16))
+        String[] stringData = Arrays.stream(Arrays.copyOf(data, Math.min(data.length, StructureUtils.DISPLAY_NUM)))
+            .map(Object::toString)
             .map(element -> element.toUpperCase(Locale.ROOT))
             .toArray(String[]::new);
         return this.getClass().getSimpleName() + " (l = " + l + "): " + Arrays.toString(stringData);
@@ -284,8 +298,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
         int partitionByteL = CommonUtils.getByteLength(partitionL);
         int rows = rows();
         // copy the data
-        BigInteger[] tempData = new BigInteger[rows];
-        System.arraycopy(data, 0, tempData, 0, rows);
+        BigInteger[] tempData = getBigIntegerData();
         // we need to partition in reverse order so that we can then combine
         for (int partitionIndex = partitionNum - 1; partitionIndex >= 0; partitionIndex--) {
             byte[][] partitionData = new byte[rows][partitionByteL];
@@ -347,8 +360,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
         BigInteger and = BigInteger.ONE.shiftLeft(partitionL).subtract(BigInteger.ONE);
         int rows = rows();
         // copy the data
-        BigInteger[] tempData = new BigInteger[rows];
-        System.arraycopy(data, 0, tempData, 0, rows);
+        BigInteger[] tempData = getBigIntegerData();
         // we need to partition in reverse order so that we can then combine
         for (int partitionIndex = partitionNum - 1; partitionIndex >= 0; partitionIndex--) {
             long[] partitionData = new long[rows];
@@ -410,8 +422,7 @@ public class NaiveDatabase implements ModBitNumDatabase {
         BigInteger and = BigInteger.ONE.shiftLeft(partitionL).subtract(BigInteger.ONE);
         int rows = rows();
         // copy the data
-        BigInteger[] tempData = new BigInteger[rows];
-        System.arraycopy(data, 0, tempData, 0, rows);
+        BigInteger[] tempData = getBigIntegerData();
         // we need to partition in reverse order so that we can then combine
         for (int partitionIndex = partitionNum - 1; partitionIndex >= 0; partitionIndex--) {
             int[] partitionData = new int[rows];

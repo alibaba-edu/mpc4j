@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.network.benes;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.network.benes.BenesNetworkFactory.BenesNetworkType;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -132,10 +133,12 @@ public class BenesNetworkTest {
     }
 
     private void testSwitchCount(int n, int expectSwitchCount) {
-        List<Integer> shufflePermutationMap = IntStream.range(0, n).boxed().collect(Collectors.toList());
-        Collections.shuffle(shufflePermutationMap, SECURE_RANDOM);
-        int[] permutationMap = shufflePermutationMap.stream().mapToInt(permutation -> permutation).toArray();
-        BenesNetwork<Integer> network = BenesNetworkFactory.createInstance(type, permutationMap);
+        int[] pi = IntStream.range(0, n).toArray();
+        ArrayUtils.shuffle(pi, SECURE_RANDOM);
+        // test the generated network has that number of switches.
+        BenesNetwork<Integer> network = BenesNetworkFactory.createInstance(type, pi);
         Assert.assertEquals(expectSwitchCount, network.getSwitchCount());
+        // test the Factory returns the correct number of switches.
+        Assert.assertEquals(expectSwitchCount, BenesNetworkFactory.getSwitchCount(n));
     }
 }

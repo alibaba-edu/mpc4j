@@ -48,7 +48,7 @@ public class Aby3MalShuffleParty extends AbstractAby3ShuffleParty implements Aby
     }
 
     @Override
-    public void init() {
+    public void init() throws MpcAbortException {
         super.init();
         macParty.init();
     }
@@ -121,7 +121,7 @@ public class Aby3MalShuffleParty extends AbstractAby3ShuffleParty implements Aby
                 intStream = parallel ? IntStream.range(0, data.length << 1).parallel() : IntStream.range(0, data.length << 1);
                 intStream.forEach(i -> {
                     LongVector zero = LongVector.createZeros(targetLen);
-                    zero.setValues(randWithWho[i], 0, 0, randWithWho[i].getNum());
+                    zero.setElements(randWithWho[i], 0, 0, randWithWho[i].getNum());
                     randWithWho[i] = zero;
                 });
             }

@@ -4,10 +4,10 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.Gf2kNcVoleFactory.Gf2kNcVoleType;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.Gf2kNcVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.Gf2kNcVoleFactory;
 
 /**
  * WYKW21-GF2K-NC-VOLE config.
@@ -40,8 +40,8 @@ public class Wykw21Gf2kNcVoleConfig extends AbstractMultiPartyPtoConfig implemen
     }
 
     @Override
-    public Gf2kNcVoleFactory.Gf2kNcVoleType getPtoType() {
-        return Gf2kNcVoleFactory.Gf2kNcVoleType.WYKW21;
+    public Gf2kNcVoleType getPtoType() {
+        return Gf2kNcVoleType.WYKW21;
     }
 
     @Override
@@ -53,25 +53,15 @@ public class Wykw21Gf2kNcVoleConfig extends AbstractMultiPartyPtoConfig implemen
         /**
          * core COT config
          */
-        private Gf2kCoreVoleConfig coreVoleConfig;
+        private final Gf2kCoreVoleConfig coreVoleConfig;
         /**
          * MSP-COT config
          */
-        private Gf2kMspVoleConfig mspVoleConfig;
+        private final Gf2kMspVoleConfig mspVoleConfig;
 
         public Builder(SecurityModel securityModel) {
             coreVoleConfig = Gf2kCoreVoleFactory.createDefaultConfig(securityModel);
             mspVoleConfig = Gf2kMspVoleFactory.createDefaultConfig(securityModel);
-        }
-
-        public Builder setCoreVoleConfig(Gf2kCoreVoleConfig coreVoleConfig) {
-            this.coreVoleConfig = coreVoleConfig;
-            return this;
-        }
-
-        public Builder setMspVoleConfig(Gf2kMspVoleConfig mspVoleConfig) {
-            this.mspVoleConfig = mspVoleConfig;
-            return this;
         }
 
         @Override

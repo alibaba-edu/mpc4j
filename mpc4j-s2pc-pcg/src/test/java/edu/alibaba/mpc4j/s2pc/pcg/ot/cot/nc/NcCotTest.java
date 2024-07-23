@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -9,17 +8,17 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorUtils.SilverCodeType;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotTestUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotFactory.NcCotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.crr21.Crr21NcCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.direct.DirectNcCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.rrt23.Rrt23NcCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.ywl20.Ywl20NcCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.MspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.bcg19.Bcg19RegMspCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.msp.ywl20.Ywl20UniMspCotConfig;
-import org.junit.Assert;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.MspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.bcg19.Bcg19RegMspCotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp.ywl20.Ywl20UniMspCotConfig;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -56,14 +55,14 @@ public class NcCotTest extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // DIRECT
+        // RRT23
         configurations.add(new Object[]{
-            NcCotType.DIRECT.name() + " (" + SecurityModel.MALICIOUS + ")",
-            new DirectNcCotConfig.Builder(SecurityModel.MALICIOUS).build(),
+            NcCotType.RRT23.name() + " (" + SecurityModel.MALICIOUS + ")",
+            new Rrt23NcCotConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
         configurations.add(new Object[]{
-            NcCotType.DIRECT.name() + " (" + SecurityModel.SEMI_HONEST + ")",
-            new DirectNcCotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
+            NcCotType.RRT23.name() + " (" + SecurityModel.SEMI_HONEST + ")",
+            new Rrt23NcCotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
         // YWL20 (Regular-Index)
         MspCotConfig maRegMspCotConfig = new Bcg19RegMspCotConfig.Builder(SecurityModel.MALICIOUS).build();
@@ -210,8 +209,7 @@ public class NcCotTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
+            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
             NcCotSenderThread senderThread = new NcCotSenderThread(sender, delta, num, round);
             NcCotReceiverThread receiverThread = new NcCotReceiverThread(receiver, num, round);
             STOP_WATCH.start();
@@ -227,69 +225,12 @@ public class NcCotTest extends AbstractTwoPartyMemoryRpcPto {
             // verify
             CotSenderOutput senderOutput = senderThread.getSenderOutput();
             CotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            CotTestUtils.assertOutput(num * round, senderOutput, receiverOutput);
+            OtTestUtils.assertOutput(num * round, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();
             new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testResetDelta() {
-        NcCotSender sender = NcCotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        NcCotReceiver receiver = NcCotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
-        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
-        int round = DEFAULT_ROUND;
-        int num = DEFAULT_NUM;
-        sender.setTaskId(randomTaskId);
-        receiver.setTaskId(randomTaskId);
-        try {
-            LOGGER.info("-----test {} (reset Δ) start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
-            // first round
-            NcCotSenderThread senderThread = new NcCotSenderThread(sender, delta, num, round);
-            NcCotReceiverThread receiverThread = new NcCotReceiverThread(receiver, num, round);
-            STOP_WATCH.start();
-            senderThread.start();
-            receiverThread.start();
-            senderThread.join();
-            receiverThread.join();
-            STOP_WATCH.stop();
-            long firstTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
-            STOP_WATCH.reset();
-            CotSenderOutput firstSenderOutput = senderThread.getSenderOutput();
-            CotReceiverOutput firstReceiverOutput = receiverThread.getReceiverOutput();
-            CotTestUtils.assertOutput(num * round, firstSenderOutput, firstReceiverOutput);
-            printAndResetRpc(firstTime);
-            // second time, reset delta
-            SECURE_RANDOM.nextBytes(delta);
-            senderThread = new NcCotSenderThread(sender, delta, num, round);
-            receiverThread = new NcCotReceiverThread(receiver, num, round);
-            STOP_WATCH.start();
-            senderThread.start();
-            receiverThread.start();
-            senderThread.join();
-            receiverThread.join();
-            STOP_WATCH.stop();
-            long secondTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
-            STOP_WATCH.reset();
-            CotSenderOutput secondSenderOutput = senderThread.getSenderOutput();
-            CotReceiverOutput secondReceiverOutput = receiverThread.getReceiverOutput();
-            CotTestUtils.assertOutput(num * round, secondSenderOutput, secondReceiverOutput);
-            // Δ should be different
-            Assert.assertNotEquals(
-                ByteBuffer.wrap(secondSenderOutput.getDelta()), ByteBuffer.wrap(firstSenderOutput.getDelta())
-            );
-            printAndResetRpc(secondTime);
-            // destroy
-            new Thread(sender::destroy).start();
-            new Thread(receiver::destroy).start();
-            LOGGER.info("-----test {} (reset Δ) end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

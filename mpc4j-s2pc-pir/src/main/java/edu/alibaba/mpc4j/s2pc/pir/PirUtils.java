@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pir;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
@@ -22,24 +23,67 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * PIR utils.
+ * PIR utilities.
  *
  * @author Liqiang Peng
  * @date 2022/8/1
  */
 public class PirUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(PirUtils.class);
-
     /**
-     * secure random
+     * random state
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    /**
+     * max batch num of PBC index PIR
+     */
+    public static final int MAX_BATCH_NUM = 1 << 12;
 
     /**
      * private constructor.
      */
     private PirUtils() {
         // empty
+    }
+
+    /**
+     * Given retrieval index, compute indices in each dimension. For example, if database is divided into 2 dimensions
+     * (n_1, n_2), and the retrieval index is x, then indices in these 2 dimension is (x / n_2, x / n_2 / 1).
+     *
+     * @param x             retrieval index x.
+     * @param dimensionSize dimension size.
+     * @return indices in each dimension.
+     */
+    public static int[] decomposeIndex(int x, int[] dimensionSize) {
+        long longProduct = Arrays.stream(dimensionSize).asLongStream().reduce(1, (di, dj) -> di * dj);
+        // since database size must be an integer, we have that d_1 * ... d_t <= n
+        assert longProduct <= Integer.MAX_VALUE;
+        int product = (int) longProduct;
+        int[] indices = new int[dimensionSize.length];
+        for (int i = 0; i < dimensionSize.length; i++) {
+            product /= dimensionSize[i];
+            int xi = x / product;
+            indices[i] = xi;
+            x -= xi * product;
+        }
+        return indices;
+    }
+
+    /**
+     * Returns element size of plaintext.
+     *
+     * @param elementByteLength element byte length.
+     * @param polyModulusDegree poly modulus degree.
+     * @param coeffBitLength    coefficient bit length.
+     * @return element size of plaintext.
+     */
+    public static int elementSizeOfPlaintext(int elementByteLength, int polyModulusDegree, int coeffBitLength) {
+        // number of coefficients that can store one element
+        int coeffSizeOfElement = CommonUtils.getUnitNum(Byte.SIZE * elementByteLength, coeffBitLength);
+        int elementSizeOfPlaintext = polyModulusDegree / coeffSizeOfElement;
+        assert elementSizeOfPlaintext > 0 : "N should be larger than the of coefficients needed to represent a database element";
+        return elementSizeOfPlaintext;
     }
 
     /**
@@ -98,7 +142,7 @@ public class PirUtils {
      * @return keyword label map.
      */
     public static Map<ByteBuffer, byte[]> generateKeywordByteBufferLabelMap(Set<ByteBuffer> keywordSet,
-                                                                                int labelByteLength) {
+                                                                            int labelByteLength) {
         return keywordSet.stream()
             .collect(Collectors.toMap(
                 keyword -> keyword,
@@ -240,45 +284,18 @@ public class PirUtils {
      * @return server file name.
      */
     public static String getServerFileName(String prefix, int setSize, int elementBitLength) {
-        return prefix + "_" + elementBitLength + "_" + setSize + ".input";
+        return MainPtoConfigUtils.getFileFolderName() + prefix + "_" + prefix + "_" + elementBitLength + "_" + setSize + ".input";
     }
 
     /**
      * return client file name.
      *
-     * @param prefix           prefix.
-     * @param setSize          set size.
+     * @param prefix  prefix.
+     * @param setSize set size.
      * @return client file name.
      */
     public static String getClientFileName(String prefix, int setSize) {
-        return prefix + "_" + setSize + ".input";
-    }
-
-    /**
-     * return element size of plaintext.
-     *
-     * @param elementByteLength element byte length.
-     * @param polyModulusDegree poly modulus degree.
-     * @param coeffBitLength    coeff bit length.
-     * @return element size of plaintext.
-     */
-    public static int elementSizeOfPlaintext(int elementByteLength, int polyModulusDegree, int coeffBitLength) {
-        int coeffSizeOfElement = coeffSizeOfElement(elementByteLength, coeffBitLength);
-        int elementSizeOfPlaintext = polyModulusDegree / coeffSizeOfElement;
-        assert elementSizeOfPlaintext > 0 :
-            "N should be larger than the of coefficients needed to represent a database element";
-        return elementSizeOfPlaintext;
-    }
-
-    /**
-     * return coeff size of element.
-     *
-     * @param elementByteLength element byte length.
-     * @param coeffBitLength    coeff bit length.
-     * @return coeff size of element.
-     */
-    public static int coeffSizeOfElement(int elementByteLength, int coeffBitLength) {
-        return CommonUtils.getUnitNum(Byte.SIZE * elementByteLength, coeffBitLength);
+        return MainPtoConfigUtils.getFileFolderName() + prefix + "_" + prefix + "_" + setSize + ".input";
     }
 
     /**
@@ -296,7 +313,7 @@ public class PirUtils {
         int room = limit;
         int flag = 0;
         for (int i = 0; i < size; i++) {
-            int src = byteArray[i+offset];
+            int src = byteArray[i + offset];
             if (src < 0) {
                 src &= 0xFF;
             }
@@ -349,25 +366,6 @@ public class PirUtils {
             }
         }
         return byteArray;
-    }
-
-    /**
-     * compute indices in each dimension.
-     *
-     * @param retrievalIndex retrieval index.
-     * @param dimensionSize  dimension size.
-     * @return indices in each dimension.
-     */
-    public static int[] computeIndices(int retrievalIndex, int[] dimensionSize) {
-        long product = Arrays.stream(dimensionSize).asLongStream().reduce(1, (a, b) -> a * b);
-        int[] indices = new int[dimensionSize.length];
-        for (int i = 0; i < dimensionSize.length; i++) {
-            product /= dimensionSize[i];
-            int ji = (int) (retrievalIndex / product);
-            indices[i] = ji;
-            retrievalIndex -= ji * product;
-        }
-        return indices;
     }
 
     /**
@@ -482,7 +480,7 @@ public class PirUtils {
             product *= Arrays.stream(dimensionArray, 0, dimensionSize).reduce(1, (a, b) -> a * b);
         }
         if (dimensionSize == 1 && dimensionArray[0] > firstDimensionSize) {
-            dimensionArray = new int[] {firstDimensionSize, subsequentDimensionSize};
+            dimensionArray = new int[]{firstDimensionSize, subsequentDimensionSize};
         }
         return dimensionArray;
     }

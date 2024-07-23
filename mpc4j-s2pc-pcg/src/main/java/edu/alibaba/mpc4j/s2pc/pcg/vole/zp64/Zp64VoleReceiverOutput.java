@@ -1,9 +1,16 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.zp64;
 
+import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
+import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * Zp64-VOLE receiver output. The receiver gets (Δ, q) with t = q + Δ · x, where x and t are owned by the sender.
@@ -13,13 +20,13 @@ import java.util.Arrays;
  */
 public class Zp64VoleReceiverOutput implements MergedPcgPartyOutput {
     /**
-     * the Zp64 instance
+     * Zp64
      */
-    private Zp64 zp64;
+    private final Zp64 zp64;
     /**
      * Δ
      */
-    private long delta;
+    private final long delta;
     /**
      * q_i
      */
@@ -34,15 +41,9 @@ public class Zp64VoleReceiverOutput implements MergedPcgPartyOutput {
      * @return a receiver output.
      */
     public static Zp64VoleReceiverOutput create(Zp64 zp64, long delta, long[] q) {
-        Zp64VoleReceiverOutput receiverOutput = new Zp64VoleReceiverOutput();
-        receiverOutput.zp64 = zp64;
-        assert zp64.validateRangeElement(delta) : "Δ must be in range [0, " + zp64.getRangeBound() + "): " + delta;
-        receiverOutput.delta = delta;
-        assert q.length > 0 : "# of q must be greater than 0: " + q.length;
+        Zp64VoleReceiverOutput receiverOutput = new Zp64VoleReceiverOutput(zp64, delta);
         receiverOutput.q = Arrays.stream(q)
-            .peek(qi -> {
-                assert zp64.validateElement(qi) : "qi must be in range [0, " + zp64.getPrime() + "): " + qi;
-            })
+            .peek(qi -> Preconditions.checkArgument(zp64.validateElement(qi)))
             .toArray();
         return receiverOutput;
     }
@@ -55,20 +56,38 @@ public class Zp64VoleReceiverOutput implements MergedPcgPartyOutput {
      * @return an empty receiver output.
      */
     public static Zp64VoleReceiverOutput createEmpty(Zp64 zp64, long delta) {
-        Zp64VoleReceiverOutput receiverOutput = new Zp64VoleReceiverOutput();
-        receiverOutput.zp64 = zp64;
-        assert zp64.validateRangeElement(delta) : "Δ must be in range [0, " + zp64.getRangeBound() + "): " + delta;
-        receiverOutput.delta = delta;
+        Zp64VoleReceiverOutput receiverOutput = new Zp64VoleReceiverOutput(zp64, delta);
         receiverOutput.q = new long[0];
 
         return receiverOutput;
     }
 
     /**
-     * private constructor.
+     * Creates a random receiver output.
+     *
+     * @param zp64         Zp64.
+     * @param num          num.
+     * @param secureRandom random state.
+     * @return a random receiver output.
      */
-    private Zp64VoleReceiverOutput() {
-        // empty
+    public static Zp64VoleReceiverOutput createRandom(Zp64 zp64, int num, long delta, SecureRandom secureRandom) {
+        Zp64VoleReceiverOutput receiverOutput = new Zp64VoleReceiverOutput(zp64, delta);
+        receiverOutput.q = IntStream.range(0, num)
+            .mapToLong(index -> zp64.createRandom(secureRandom))
+            .toArray();
+        return receiverOutput;
+    }
+
+    /**
+     * private constructor.
+     *
+     * @param zp64  Zp64.
+     * @param delta Δ.
+     */
+    private Zp64VoleReceiverOutput(Zp64 zp64, long delta) {
+        this.zp64 = zp64;
+        Preconditions.checkArgument(zp64.validateRangeElement(delta));
+        this.delta = delta;
     }
 
     @Override
@@ -77,14 +96,21 @@ public class Zp64VoleReceiverOutput implements MergedPcgPartyOutput {
     }
 
     @Override
+    public Zp64VoleReceiverOutput copy() {
+        Zp64VoleReceiverOutput copy = new Zp64VoleReceiverOutput(zp64, delta);
+        copy.q = LongUtils.clone(q);
+        return copy;
+    }
+
+    @Override
     public Zp64VoleReceiverOutput split(int splitNum) {
         int num = getNum();
-        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]: " + splitNum;
+        MathPreconditions.checkPositiveInRangeClosed("split_num", splitNum, num);
         // split q
         long[] subQ = new long[splitNum];
         long[] remainQ = new long[num - splitNum];
-        System.arraycopy(q, 0, subQ, 0, splitNum);
-        System.arraycopy(q, splitNum, remainQ, 0, num - splitNum);
+        System.arraycopy(q, num - splitNum, subQ, 0, splitNum);
+        System.arraycopy(q, 0, remainQ, 0, num - splitNum);
         q = remainQ;
 
         return Zp64VoleReceiverOutput.create(zp64, delta, subQ);
@@ -93,7 +119,7 @@ public class Zp64VoleReceiverOutput implements MergedPcgPartyOutput {
     @Override
     public void reduce(int reduceNum) {
         int num = getNum();
-        assert reduceNum > 0 && reduceNum <= num : "reduceNum  must be in range (0, " + num + "]: " + reduceNum;
+        MathPreconditions.checkPositiveInRangeClosed("reduce_num", reduceNum, num);
         if (reduceNum < num) {
             // if the reduced num is less than num, do split. If not, keep the current state.
             long[] remainQ = new long[reduceNum];
@@ -105,10 +131,8 @@ public class Zp64VoleReceiverOutput implements MergedPcgPartyOutput {
     @Override
     public void merge(MergedPcgPartyOutput other) {
         Zp64VoleReceiverOutput that = (Zp64VoleReceiverOutput) other;
-        assert this.zp64.equals(that.zp64) : "merged " + this.getClass().getSimpleName()
-            + " must have the same " + zp64.getClass().getSimpleName() + " instance:"
-            + " (" + this.zp64 + " : " + that.zp64 + ")";
-        assert this.delta == that.delta : "merged outputs must have the same Δ (" + this.delta + " : " + that.delta + ")";
+        Preconditions.checkArgument(this.zp64.equals(that.zp64));
+        MathPreconditions.checkEqual("this.delta", "that.delta", this.delta, that.delta);
         // merge q
         long[] mergeQ = new long[this.q.length + that.q.length];
         System.arraycopy(this.q, 0, mergeQ, 0, this.q.length);
@@ -151,5 +175,29 @@ public class Zp64VoleReceiverOutput implements MergedPcgPartyOutput {
      */
     public long[] getQ() {
         return q;
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(zp64)
+            .append(delta)
+            .append(q)
+            .hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof Zp64VoleReceiverOutput that) {
+            return new EqualsBuilder()
+                .append(this.zp64, that.zp64)
+                .append(this.delta, that.delta)
+                .append(this.q, that.q)
+                .isEquals();
+        }
+        return false;
     }
 }

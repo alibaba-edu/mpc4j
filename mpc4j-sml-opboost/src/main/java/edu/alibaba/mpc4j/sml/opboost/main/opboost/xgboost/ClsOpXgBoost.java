@@ -33,8 +33,8 @@ import java.util.concurrent.TimeUnit;
 public class ClsOpXgBoost extends AbstractClsOpBoost {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClsOpXgBoost.class);
 
-    public ClsOpXgBoost(Properties properties) {
-        super(properties, OpBoostTaskType.CLS_OP_XG_BOOST);
+    public ClsOpXgBoost(Properties properties, String ownName) {
+        super(properties, ownName, OpBoostTaskType.CLS_OP_XG_BOOST);
     }
 
     @Override

@@ -91,63 +91,14 @@ public class RpcTest {
         for (Thread thread : threads) {
             thread.join();
         }
-        // empty data packet
-        Set<DataPacket> emptySendDataPacketSet = new HashSet<>();
-        Set<DataPacket> emptyReceivedDataPacketSet = new HashSet<>();
+        // check data packet
+        Set<DataPacket> sendDataPacketSet = new HashSet<>();
+        Set<DataPacket> receivedDataPacketSet = new HashSet<>();
         for (RpcDataThread thread : threads) {
-            emptySendDataPacketSet.addAll(thread.getEmptySendDataPacketSet());
-            emptyReceivedDataPacketSet.addAll(thread.getEmptyReceivedDataPacketSet());
+            sendDataPacketSet.addAll(thread.getSendDataPacketSet());
+            receivedDataPacketSet.addAll(thread.getReceivedDataPacketSet());
         }
-        Assert.assertTrue(emptySendDataPacketSet.containsAll(emptyReceivedDataPacketSet));
-        Assert.assertTrue(emptyReceivedDataPacketSet.containsAll(emptySendDataPacketSet));
-        // length-0 data packet
-        Set<DataPacket> zeroLengthSendDataPacketSet = new HashSet<>();
-        Set<DataPacket> zeroLengthReceivedDataPacketSet = new HashSet<>();
-        for (RpcDataThread thread : threads) {
-            zeroLengthSendDataPacketSet.addAll(thread.getZeroLengthSendDataPacketSet());
-            zeroLengthReceivedDataPacketSet.addAll(thread.getZeroLengthReceivedDataPacketSet());
-        }
-        Assert.assertTrue(zeroLengthSendDataPacketSet.containsAll(zeroLengthReceivedDataPacketSet));
-        Assert.assertTrue(zeroLengthReceivedDataPacketSet.containsAll(zeroLengthSendDataPacketSet));
-        // singleton data packet
-        Set<DataPacket> singleSendDataPacketSet = new HashSet<>();
-        Set<DataPacket> singleReceivedDataPacketSet = new HashSet<>();
-        for (RpcDataThread thread : threads) {
-            singleSendDataPacketSet.addAll(thread.getSingleSendDataPacketSet());
-            singleReceivedDataPacketSet.addAll(thread.getSingleReceivedDataPacketSet());
-        }
-        Assert.assertTrue(singleSendDataPacketSet.containsAll(singleReceivedDataPacketSet));
-        Assert.assertTrue(singleReceivedDataPacketSet.containsAll(singleSendDataPacketSet));
-        // equal-length data packet
-        Set<DataPacket> equalLengthSendDataPacketSet = new HashSet<>();
-        Set<DataPacket> equalLengthReceivedDataPacketSet = new HashSet<>();
-        for (RpcDataThread thread : threads) {
-            equalLengthSendDataPacketSet.addAll(thread.getEqualLengthSendDataPacketSet());
-            equalLengthReceivedDataPacketSet.addAll(thread.getEqualLengthReceivedDataPacketSet());
-        }
-        Assert.assertTrue(equalLengthSendDataPacketSet.containsAll(equalLengthReceivedDataPacketSet));
-        Assert.assertTrue(equalLengthReceivedDataPacketSet.containsAll(equalLengthSendDataPacketSet));
-        // data packet with extra information
-        Set<DataPacket> extraInfoSendDataPacketSet = new HashSet<>();
-        Set<DataPacket> extraInfoReceivedDataPacketSet = new HashSet<>();
-        for (RpcDataThread thread : threads) {
-            extraInfoSendDataPacketSet.addAll(thread.getExtraInfoSendDataPacketSet());
-            extraInfoReceivedDataPacketSet.addAll(thread.getExtraInfoReceivedDataPacketSet());
-        }
-        Assert.assertTrue(extraInfoSendDataPacketSet.containsAll(extraInfoReceivedDataPacketSet));
-        Assert.assertTrue(extraInfoReceivedDataPacketSet.containsAll(extraInfoSendDataPacketSet));
-        // verify the data in memory are different
-        DataPacket[] sendAll = extraInfoSendDataPacketSet.toArray(new DataPacket[0]);
-        sendAll[0].getPayload().get(0)[0] = (byte) (sendAll[0].getPayload().get(0)[0] + 1);
-        Assert.assertFalse(extraInfoReceivedDataPacketSet.contains(sendAll[0]));
-        // take any data packet verification
-        Set<DataPacket> takeAnySendDataPacketSet = new HashSet<>();
-        Set<DataPacket> takeAnyReceivedDataPacketSet = new HashSet<>();
-        for (RpcDataThread thread : threads) {
-            takeAnySendDataPacketSet.addAll(thread.getTakeAnySendDataPacketSet());
-            takeAnyReceivedDataPacketSet.addAll(thread.getTakeAnyReceivedDataPacketSet());
-        }
-        Assert.assertTrue(takeAnySendDataPacketSet.containsAll(takeAnyReceivedDataPacketSet));
-        Assert.assertTrue(takeAnyReceivedDataPacketSet.containsAll(takeAnySendDataPacketSet));
+        Assert.assertTrue(sendDataPacketSet.containsAll(receivedDataPacketSet));
+        Assert.assertTrue(receivedDataPacketSet.containsAll(sendDataPacketSet));
     }
 }

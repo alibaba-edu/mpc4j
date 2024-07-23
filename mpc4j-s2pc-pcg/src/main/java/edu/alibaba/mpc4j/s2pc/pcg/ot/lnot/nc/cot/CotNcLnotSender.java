@@ -5,7 +5,7 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotSenderOutput;
@@ -29,25 +29,12 @@ public class CotNcLnotSender extends AbstractNcLnotSender {
      * no-choice COT sender
      */
     private final NcCotSender ncCotSender;
-    /**
-     * the maximal COT num
-     */
-    private final int maxCotBaseNum;
-    /**
-     * update round
-     */
-    private int updateRound;
-    /**
-     * Δ
-     */
-    private byte[] delta;
 
     public CotNcLnotSender(Rpc senderRpc, Party receiverParty, CotNcLnotConfig config) {
         super(CotNcLnotPtoDesc.getInstance(), senderRpc, receiverParty, config);
         NcCotConfig ncCotConfig = config.getNcCotConfig();
         ncCotSender = NcCotFactory.createSender(senderRpc, receiverParty, ncCotConfig);
         addSubPto(ncCotSender);
-        maxCotBaseNum = ncCotConfig.maxNum();
     }
 
     @Override
@@ -56,21 +43,9 @@ public class CotNcLnotSender extends AbstractNcLnotSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        int cotNum = l * num;
-        int perRoundNum;
-        if (cotNum <= maxCotBaseNum) {
-            // we need to run single round
-            perRoundNum = cotNum;
-            updateRound = 1;
-        } else {
-            // we need to run multiple round
-            perRoundNum = maxCotBaseNum;
-            updateRound = (int) Math.ceil((double) cotNum / maxCotBaseNum);
-        }
-        delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
         // log(n) * num
-        ncCotSender.init(delta, perRoundNum);
+        ncCotSender.init(delta, l * num);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -84,43 +59,33 @@ public class CotNcLnotSender extends AbstractNcLnotSender {
         setPtoInput();
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        CotSenderOutput cotSenderOutput = CotSenderOutput.createEmpty(delta);
-        for (int round = 1; round <= updateRound; round++) {
-            stopWatch.start();
-            CotSenderOutput roundCotSenderOutput = ncCotSender.send();
-            cotSenderOutput.merge(roundCotSenderOutput);
-            stopWatch.stop();
-            long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
-            logSubStepInfo(PtoState.PTO_STEP, 1, round, updateRound, roundTime);
-        }
+        stopWatch.start();
+        CotSenderOutput cotSenderOutput = ncCotSender.send();
+        stopWatch.stop();
+        long cotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 1, 2, cotTime);
 
         stopWatch.start();
-        cotSenderOutput.reduce(l * num);
-        RotSenderOutput rotSenderOutput = new RotSenderOutput(envType, CrhfFactory.CrhfType.MMO, cotSenderOutput);
+        RotSenderOutput rotSenderOutput = new RotSenderOutput(envType, CrhfType.MMO, cotSenderOutput);
         // convert COT sender output to be LNOT sender output
-        IntStream indexIntStream = IntStream.range(0, num);
-        indexIntStream = parallel ? indexIntStream.parallel() : indexIntStream;
-        byte[][][] rsArray = indexIntStream
-            .mapToObj(index -> {
-                int cotIndex = index * l;
-                byte[][] rs = new byte[n][];
-                for (int choice = 0; choice < n; choice++) {
-                    rs[choice] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                    int tempChoice = choice;
-                    for (int bitPosition = l - 1; bitPosition >= 0; bitPosition--) {
-                        boolean bit = (tempChoice % 2) == 1;
-                        if (!bit) {
-                            BytesUtils.xori(rs[choice], rotSenderOutput.getR0(cotIndex + bitPosition));
-                        } else {
-                            BytesUtils.xori(rs[choice], rotSenderOutput.getR1(cotIndex + bitPosition));
-                        }
-                        tempChoice = (tempChoice >> 1);
-                    }
+        IntStream indexIntStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
+        // With tree construction, we can compute with 2l XOR instead of l^2 XOR
+        byte[][][] rsArray = indexIntStream.mapToObj(index -> {
+            int cotIndex = index * l + l - 1;
+            byte[][] rs = new byte[n][];
+            rs[0] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            for (int i = 0; i < l; i++, cotIndex--) {
+                byte[] c0 = rotSenderOutput.getR0(cotIndex);
+                byte[] c1 = rotSenderOutput.getR1(cotIndex);
+                int numOfRowi = 1 << i;
+                for (int j = 0; j < numOfRowi; j++) {
+                    rs[numOfRowi + j] = BytesUtils.xor(rs[j], c1);
+                    BytesUtils.xori(rs[j], c0);
                 }
-                return rs;
-            })
-            .toArray(byte[][][]::new);
+            }
+            return rs;
+        }).toArray(byte[][][]::new);
         LnotSenderOutput senderOutput = LnotSenderOutput.create(l, rsArray);
         stopWatch.stop();
         long convertTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

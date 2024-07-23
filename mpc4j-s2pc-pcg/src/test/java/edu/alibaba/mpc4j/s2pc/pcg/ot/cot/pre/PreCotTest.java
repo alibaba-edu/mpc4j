@@ -3,11 +3,12 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotTestUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.pre.PreCotFactory.PreCotType;
@@ -83,13 +84,11 @@ public class PreCotTest extends AbstractTwoPartyMemoryRpcPto {
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
             // pre-compute sender / receiver output
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
-            CotSenderOutput preSenderOutput = CotTestUtils.genSenderOutput(num, delta, SECURE_RANDOM);
-            CotReceiverOutput preReceiverOutput = CotTestUtils.genReceiverOutput(preSenderOutput, SECURE_RANDOM);
+            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            CotSenderOutput preSenderOutput = CotSenderOutput.createRandom(num, delta, SECURE_RANDOM);
+            CotReceiverOutput preReceiverOutput = CotReceiverOutput.createRandom(preSenderOutput, SECURE_RANDOM);
             // receiver actual choices
-            boolean[] choices = new boolean[num];
-            IntStream.range(0, num).forEach(index -> choices[index] = SECURE_RANDOM.nextBoolean());
+            boolean[] choices = BinaryUtils.randomBinary(num, SECURE_RANDOM);
             PreCotSenderThread senderThread = new PreCotSenderThread(sender, preSenderOutput);
             PreCotReceiverThread receiverThread = new PreCotReceiverThread(receiver, preReceiverOutput, choices);
             STOP_WATCH.start();
@@ -105,7 +104,7 @@ public class PreCotTest extends AbstractTwoPartyMemoryRpcPto {
             // verify
             CotSenderOutput senderOutput = senderThread.getSenderOutput();
             CotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            CotTestUtils.assertOutput(num, senderOutput, receiverOutput);
+            OtTestUtils.assertOutput(num, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();

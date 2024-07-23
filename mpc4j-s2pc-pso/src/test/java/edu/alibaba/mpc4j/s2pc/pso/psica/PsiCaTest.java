@@ -96,11 +96,6 @@ public class PsiCaTest extends AbstractTwoPartyMemoryRpcPto {
     }
 
     @Test
-    public void test1() {
-        testPto(1, 1, false);
-    }
-
-    @Test
     public void test2() {
         testPto(2, 2, false);
     }

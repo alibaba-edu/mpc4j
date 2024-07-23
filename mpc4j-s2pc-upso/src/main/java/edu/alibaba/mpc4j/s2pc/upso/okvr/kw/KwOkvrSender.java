@@ -18,8 +18,8 @@ import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfKey;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfSender;
-import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirFactory;
-import edu.alibaba.mpc4j.s2pc.pir.keyword.KwPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.ks.StdKsPirFactory;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.ks.StdKsPirServer;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.AbstractOkvrSender;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.kw.KwOkvrPtoDesc.PtoStep;
 
@@ -67,7 +67,7 @@ public class KwOkvrSender extends AbstractOkvrSender {
     /**
      * Keyword PIR server
      */
-    private final KwPirServer kwPirServer;
+    private final StdKsPirServer<ByteBuffer> kwPirServer;
     /**
      * sparse OKVS
      */
@@ -77,7 +77,7 @@ public class KwOkvrSender extends AbstractOkvrSender {
         super(KwOkvrPtoDesc.getInstance(), senderRpc, receiverParty, config);
         sqOprfSender = SqOprfFactory.createSender(senderRpc, receiverParty, config.getSqOprfConfig());
         addSubPto(sqOprfSender);
-        kwPirServer = KwPirFactory.createServer(senderRpc, receiverParty, config.getKwPirConfig());
+        kwPirServer = StdKsPirFactory.createServer(senderRpc, receiverParty, config.getStdKsPirConfig());
         addSubPto(kwPirServer);
         okvsType = config.getOkvsType();
     }
@@ -124,7 +124,7 @@ public class KwOkvrSender extends AbstractOkvrSender {
                 index -> ByteBuffer.wrap(IntUtils.intToByteArray(index)),
                 index -> okvsSparseStorage[index]
             ));
-        kwPirServer.init(keyLabelMap, retrievalSize * sparseOkvs.sparsePositionNum(), byteL);
+        kwPirServer.init(keyLabelMap, byteL * Byte.SIZE, retrievalSize * sparseOkvs.sparsePositionNum());
         stopWatch.stop();
         long pirTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -153,7 +153,7 @@ public class KwOkvrSender extends AbstractOkvrSender {
         logStepInfo(PtoState.PTO_STEP, 1, 3, okvsTime, "Sender sends dense OKVS");
 
         stopWatch.start();
-        kwPirServer.pir();
+        kwPirServer.pir(retrievalSize * sparseOkvs.sparsePositionNum());
         stopWatch.stop();
         long kwPirTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -177,8 +177,8 @@ public class KwOkvrSender extends AbstractOkvrSender {
         Prf prf = PrfFactory.createInstance(envType, byteL);
         prf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
         // oprf key-value map
-        Stream<Entry<ByteBuffer, byte[]>> keyValueMapStream = keyValueMap.entrySet().stream();
-        keyValueMapStream = parallel ? keyValueMapStream.parallel() : keyValueMapStream;
+        Stream<Entry<ByteBuffer, byte[]>> keyValueMapStream =
+            parallel ? keyValueMap.entrySet().stream().parallel() : keyValueMap.entrySet().stream();
         Map<ByteBuffer, byte[]> oprfKeyValueMap = keyValueMapStream
             .collect(Collectors.toMap(
                 Entry::getKey,

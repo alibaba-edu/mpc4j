@@ -23,11 +23,11 @@ public abstract class AbstractLcotReceiver extends AbstractTwoPartyPto implement
     /**
      * 输入比特长度
      */
-    protected int inputBitLength;
+    protected int l;
     /**
      * 输入字节长度
      */
-    protected int inputByteLength;
+    protected int byteL;
     /**
      * 输出随机量比特长度
      */
@@ -40,10 +40,6 @@ public abstract class AbstractLcotReceiver extends AbstractTwoPartyPto implement
      * 线性编码器
      */
     protected LinearCoder linearCoder;
-    /**
-     * 最大数量
-     */
-    private int maxNum;
     /**
      * 数量
      */
@@ -61,28 +57,26 @@ public abstract class AbstractLcotReceiver extends AbstractTwoPartyPto implement
         super(ptoDesc, receiverRpc, senderParty, config);
     }
 
-    protected void setInitInput(int inputBitLength, int maxNum) {
-        MathPreconditions.checkPositive("inputBitLength", inputBitLength);
-        this.inputBitLength = inputBitLength;
-        inputByteLength = CommonUtils.getByteLength(inputBitLength);
-        linearCoder = LinearCoderFactory.getInstance(inputBitLength);
+    protected void setInitInput(int l) {
+        MathPreconditions.checkPositive("l", l);
+        this.l = l;
+        byteL = CommonUtils.getByteLength(l);
+        linearCoder = LinearCoderFactory.getInstance(l);
         outputBitLength = linearCoder.getCodewordBitLength();
         outputByteLength = linearCoder.getCodewordByteLength();
-        MathPreconditions.checkPositive("maxNum", maxNum);
-        this.maxNum = maxNum;
         initState();
     }
 
     protected void setPtoInput(byte[][] choices) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", choices.length, maxNum);
+        MathPreconditions.checkPositive("num", choices.length);
         num = choices.length;
         byteNum = CommonUtils.getByteLength(num);
         // 拷贝一份
         this.choices = Arrays.stream(choices)
             .peek(choice -> {
-                MathPreconditions.checkEqual("choice.length", "inputByteLength", choice.length, inputByteLength);
-                Preconditions.checkArgument(BytesUtils.isReduceByteArray(choice, inputBitLength));
+                MathPreconditions.checkEqual("choice.length", "inputByteLength", choice.length, byteL);
+                Preconditions.checkArgument(BytesUtils.isReduceByteArray(choice, l));
             })
             .map(BytesUtils::clone)
             .toArray(byte[][]::new);

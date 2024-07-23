@@ -14,10 +14,18 @@ public interface CotSender extends TwoPartyPto {
      * Inits the protocol.
      *
      * @param delta     Δ.
-     * @param updateNum update num.
+     * @param expectNum expect num.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(byte[] delta, int updateNum) throws MpcAbortException;
+    void init(byte[] delta, int expectNum) throws MpcAbortException;
+
+    /**
+     * Init the protocol.
+     *
+     * @param delta Δ.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    void init(byte[] delta) throws MpcAbortException;
 
     /**
      * Executes the protocol.
@@ -27,4 +35,13 @@ public interface CotSender extends TwoPartyPto {
      * @throws MpcAbortException the protocol failure aborts.
      */
     CotSenderOutput send(int num) throws MpcAbortException;
+
+    /**
+     * Executes the protocol.
+     *
+     * @param num num.
+     * @return the sender output.
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    CotSenderOutput sendRandom(int num) throws MpcAbortException;
 }

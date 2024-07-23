@@ -29,49 +29,56 @@ public class GeometricTest {
      */
     private static final int SAMPLE_NUM = 100000;
 
-    @Parameterized.Parameters(name="{0}")
+    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurationParams = new ArrayList<>();
 
         // DiscreteGeometricSampler, μ = 0, b = 0.5
-        GeometricSampler discreteSampler01 = new DiscreteGeometricSampler(new Random(), 0, 1, 2);
-        configurationParams.add(new Object[] { discreteSampler01.toString(), discreteSampler01, });
+        GeometricSampler discreteSampler01 = new DiscreteGeometricSampler(new Random(), 0, 2, 1);
+        configurationParams.add(new Object[]{discreteSampler01.toString(), discreteSampler01,});
         // JdkSampler, μ = 0, b = 0.5
         GeometricSampler jdkSampler01 = new JdkGeometricSampler(0, 0.5);
-        configurationParams.add(new Object[] { jdkSampler01.toString(), jdkSampler01, });
+        configurationParams.add(new Object[]{jdkSampler01.toString(), jdkSampler01,});
         // ApacheSampler, μ = 0, b = 0.5
         GeometricSampler apacheSampler01 = new ApacheGeometricSampler(0, 0.5);
-        configurationParams.add(new Object[] { apacheSampler01.toString(), apacheSampler01, });
+        configurationParams.add(new Object[]{apacheSampler01.toString(), apacheSampler01,});
 
         // DiscreteGeometricSampler, μ = 0, b = 1
         GeometricSampler discreteSampler02 = new DiscreteGeometricSampler(new Random(), 0, 2, 2);
-        configurationParams.add(new Object[] { discreteSampler02.toString(), discreteSampler02, });
+        configurationParams.add(new Object[]{discreteSampler02.toString(), discreteSampler02,});
         // JdkSampler, μ = 0, b = 1.0
         GeometricSampler jdkSampler02 = new JdkGeometricSampler(0, 1.0);
-        configurationParams.add(new Object[] { jdkSampler02.toString(), jdkSampler02, });
+        configurationParams.add(new Object[]{jdkSampler02.toString(), jdkSampler02,});
         // ApacheSampler, μ = 0, b = 1.0
         GeometricSampler apacheSampler02 = new ApacheGeometricSampler(0, 1.0);
-        configurationParams.add(new Object[] { apacheSampler02.toString(), apacheSampler02, });
+        configurationParams.add(new Object[]{apacheSampler02.toString(), apacheSampler02,});
 
         // DiscreteGeometricSampler, μ = 0, b = 4.0
         GeometricSampler discreteSampler03 = new DiscreteGeometricSampler(new Random(), 0, 4, 1);
-        configurationParams.add(new Object[] { discreteSampler03.toString(), discreteSampler03, });
+        configurationParams.add(new Object[]{discreteSampler03.toString(), discreteSampler03,});
         // JdkSampler, μ = 0, b = 4.0
         GeometricSampler jdkSampler03 = new JdkGeometricSampler(0, 4.0);
-        configurationParams.add(new Object[] { jdkSampler03.toString(), jdkSampler03, });
+        configurationParams.add(new Object[]{jdkSampler03.toString(), jdkSampler03,});
         // ApacheSampler, μ = 0, b = 4.0
         GeometricSampler apacheSampler03 = new ApacheGeometricSampler(0, 4.0);
-        configurationParams.add(new Object[] { apacheSampler03.toString(), apacheSampler03, });
+        configurationParams.add(new Object[]{apacheSampler03.toString(), apacheSampler03,});
 
         // DiscreteGeometricSampler, μ = -5, b = 1.0
         GeometricSampler discreteSampler04 = new DiscreteGeometricSampler(new Random(), -5, 1, 1);
-        configurationParams.add(new Object[] { discreteSampler04.toString(), discreteSampler04, });
+        configurationParams.add(new Object[]{discreteSampler04.toString(), discreteSampler04,});
         // JdkSampler, μ = -5, b = 1.0
         GeometricSampler jdkSampler04 = new JdkGeometricSampler(-5, 1.0);
-        configurationParams.add(new Object[] { jdkSampler04.toString(), jdkSampler04, });
+        configurationParams.add(new Object[]{jdkSampler04.toString(), jdkSampler04,});
         // ApacheSampler, μ = -5, b = 1.0
         GeometricSampler apacheSampler04 = new ApacheGeometricSampler(-5, 1.0);
-        configurationParams.add(new Object[] { apacheSampler04.toString(), apacheSampler04, });
+        configurationParams.add(new Object[]{apacheSampler04.toString(), apacheSampler04,});
+
+        // Special Sampler
+        double epsilon = 1;
+        double delta = 0.0001;
+        int mu = (int) ((Math.log((Math.exp(1) + 1) * (1 - delta))) / epsilon);
+        GeometricSampler discreteSampler05 = new DiscreteGeometricSampler(new Random(), mu, 1, 1);
+        configurationParams.add(new Object[]{discreteSampler05.toString(), discreteSampler05,});
 
         return configurationParams;
     }

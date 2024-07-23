@@ -1,9 +1,12 @@
 package edu.alibaba.mpc4j.common.tool.network;
 
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
+import org.apache.commons.lang3.ArrayUtils;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Vector;
 import java.util.stream.IntStream;
@@ -20,6 +23,20 @@ public class PermutationNetworkUtils {
      */
     private PermutationNetworkUtils() {
         // empty
+    }
+
+    /**
+     * Generates a random permutation.
+     *
+     * @param num          num.
+     * @param secureRandom random state.
+     * @return a random permutation.
+     */
+    public static int[] randomPermutation(int num, SecureRandom secureRandom) {
+        MathPreconditions.checkGreater("num", num, 1);
+        int[] pi = IntStream.range(0, num).toArray();
+        ArrayUtils.shuffle(pi, secureRandom);
+        return pi;
     }
 
     /**
@@ -73,31 +90,53 @@ public class PermutationNetworkUtils {
     }
 
     /**
-     * Permutes the input vector by for the given positions and the given permutation. For example, if positions =
-     * [0, 2, 4, 6] and permutation = [3, 1, 2, 0], then we set:
-     * <li>the 6-th element to the 0-th position.</li>
+     * Permutes the input vector by the given permutation map. For example, if permutation = [3, 1, 2, 0], then we set:
+     * <li>the 3-th element to the 0-th position.</li>
+     * <li>the 1-th element to the 1-th position.</li>
      * <li>the 2-th element to the 2-th position.</li>
-     * <li>the 4-th element to the 4-th position.</li>
-     * <li>the 0-th element to the 6-th position.</li>
+     * <li>the 0-th element to the 3-th position.</li>
      *
-     * @param positions   positions.
-     * @param permutation permutation.
-     * @param inputVector input vector.
-     * @param <T>         input type.
+     * @param permutation the permutation map.
+     * @param inputVector the input vector.
      * @return the permuted input vector.
      */
-    public static <T> Vector<T> permutation(int[] positions, int[] permutation, Vector<T> inputVector) {
-        int subN = permutation.length;
-        assert positions.length == subN;
-        Vector<T> subInputVector = new Vector<>(subN);
-        for (int i = 0; i < subN; i++) {
-            subInputVector.add(inputVector.get(positions[i]));
-        }
-        Vector<T> subOutputVector = PermutationNetworkUtils.permutation(permutation, subInputVector);
-        Vector<T> outputVector = new Vector<>(inputVector);
-        for (int i = 0; i < subN; i++) {
-            outputVector.set(positions[i], subOutputVector.get(i));
-        }
+    public static byte[][] permutation(int[] permutation, byte[][] inputVector) {
+        assert validPermutation(permutation);
+        assert permutation.length == inputVector.length;
+        int n = permutation.length;
+        // Creates the actual permutation map
+        TIntIntMap map = new TIntIntHashMap(n);
+        IntStream.range(0, n).forEach(inputPosition -> map.put(permutation[inputPosition], inputPosition));
+        byte[][] outputVector = new byte[n][];
+        IntStream.range(0, n).forEach(inputPosition ->
+            outputVector[map.get(inputPosition)] = inputVector[inputPosition]
+        );
+
+        return outputVector;
+    }
+
+    /**
+     * Permutes the input vector by the given permutation map. For example, if permutation = [3, 1, 2, 0], then we set:
+     * <li>the 3-th element to the 0-th position.</li>
+     * <li>the 1-th element to the 1-th position.</li>
+     * <li>the 2-th element to the 2-th position.</li>
+     * <li>the 0-th element to the 3-th position.</li>
+     *
+     * @param permutation the permutation map.
+     * @param inputVector the input vector.
+     * @return the permuted input vector.
+     */
+    public static int[] permutation(int[] permutation, int[] inputVector) {
+        assert validPermutation(permutation);
+        assert permutation.length == inputVector.length;
+        int n = permutation.length;
+        // Creates the actual permutation map
+        TIntIntMap map = new TIntIntHashMap(n);
+        IntStream.range(0, n).forEach(inputPosition -> map.put(permutation[inputPosition], inputPosition));
+        int[] outputVector = new int[n];
+        IntStream.range(0, n).forEach(inputPosition ->
+            outputVector[map.get(inputPosition)] = inputVector[inputPosition]
+        );
 
         return outputVector;
     }

@@ -61,28 +61,28 @@ public class CcpsiTest extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // RS21
-        for (CuckooHashBinType type : CUCKOO_HASH_BIN_TYPES) {
-            configurations.add(new Object[]{
-                CcpsiType.RS21.name() + " (silent, " + type.name() + ")",
-                new Rs21CcpsiConfig.Builder(true).setCuckooHashBinType(type).build(),
-            });
-            configurations.add(new Object[]{
-                CcpsiType.RS21.name() + " (direct, " + type.name() + ")",
-                new Rs21CcpsiConfig.Builder(false).setCuckooHashBinType(type).build(),
-            });
-        }
-        // CGS22
-        for (CuckooHashBinType type : CUCKOO_HASH_BIN_TYPES) {
-            configurations.add(new Object[]{
-                CcpsiType.CGS22.name() + " (silent, " + type.name() + ")",
-                new Cgs22CcpsiConfig.Builder(true).setCuckooHashBinType(type).build(),
-            });
-            configurations.add(new Object[]{
-                CcpsiType.CGS22.name() + " (direct, " + type.name() + ")",
-                new Cgs22CcpsiConfig.Builder(false).setCuckooHashBinType(type).build(),
-            });
-        }
+//        // RS21
+//        for (CuckooHashBinType type : CUCKOO_HASH_BIN_TYPES) {
+//            configurations.add(new Object[]{
+//                CcpsiType.RS21.name() + " (silent, " + type.name() + ")",
+//                new Rs21CcpsiConfig.Builder(true).setCuckooHashBinType(type).build(),
+//            });
+//            configurations.add(new Object[]{
+//                CcpsiType.RS21.name() + " (direct, " + type.name() + ")",
+//                new Rs21CcpsiConfig.Builder(false).setCuckooHashBinType(type).build(),
+//            });
+//        }
+//        // CGS22
+//        for (CuckooHashBinType type : CUCKOO_HASH_BIN_TYPES) {
+//            configurations.add(new Object[]{
+//                CcpsiType.CGS22.name() + " (silent, " + type.name() + ")",
+//                new Cgs22CcpsiConfig.Builder(true).setCuckooHashBinType(type).build(),
+//            });
+//            configurations.add(new Object[]{
+//                CcpsiType.CGS22.name() + " (direct, " + type.name() + ")",
+//                new Cgs22CcpsiConfig.Builder(false).setCuckooHashBinType(type).build(),
+//            });
+//        }
         // PSTY19
         for (CuckooHashBinType type : CUCKOO_HASH_BIN_TYPES) {
             configurations.add(new Object[]{

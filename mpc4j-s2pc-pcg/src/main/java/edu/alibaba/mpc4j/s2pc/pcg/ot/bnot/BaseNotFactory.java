@@ -122,7 +122,6 @@ public class BaseNotFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-            case COVERT:
             case MALICIOUS:
                 return new Np99BaseNotConfig.Builder().build();
             default:

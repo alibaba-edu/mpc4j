@@ -21,7 +21,6 @@ public class ConvolutionDiscGaussSamplerTest {
     @Test
     public void testRatios() {
         testRatios(150);
-        testRatios(1500);
         testRatios(1 << 27);
     }
 

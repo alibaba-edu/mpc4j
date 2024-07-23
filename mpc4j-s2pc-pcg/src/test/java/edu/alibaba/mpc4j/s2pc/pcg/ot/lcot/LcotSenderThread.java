@@ -16,7 +16,7 @@ class LcotSenderThread extends Thread {
     /**
      * 输入比特长度
      */
-    private final int inputBitLength;
+    private final int l;
     /**
      * 执行数量
      */
@@ -26,9 +26,9 @@ class LcotSenderThread extends Thread {
      */
     private LcotSenderOutput senderOutput;
 
-    LcotSenderThread(LcotSender sender, int inputBitLength, int num) {
+    LcotSenderThread(LcotSender sender, int l, int num) {
         this.sender = sender;
-        this.inputBitLength = inputBitLength;
+        this.l = l;
         this.num = num;
     }
 
@@ -40,7 +40,7 @@ class LcotSenderThread extends Thread {
     public void run() {
         try {
             sender.getRpc().connect();
-            sender.init(inputBitLength, num);
+            sender.init(l);
             senderOutput = sender.send(num);
             sender.getRpc().disconnect();
         } catch (MpcAbortException e) {

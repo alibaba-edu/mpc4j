@@ -230,9 +230,7 @@ add_library(
         ntl_poly/ntl_gf2x.cpp
         ntl_poly/edu_alibaba_mpc4j_common_tool_polynomial_zp_NtlZpPoly.cpp
         ntl_poly/ntl_zp.cpp
-        gf2k/edu_alibaba_mpc4j_common_tool_galoisfield_gf2k_NtlGf2k.cpp
         gf2e/edu_alibaba_mpc4j_common_tool_galoisfield_gf2e_NtlNativeGf2e.cpp
-        gf64/edu_alibaba_mpc4j_common_tool_galoisfield_gf64_NtlGf64.cpp
         ntl_poly/ntl_zp64.cpp
         ntl_poly/edu_alibaba_mpc4j_common_tool_polynomial_zp64_NtlZp64Poly.cpp
         ecc_openssl/openssl_bit_iterator.hpp
@@ -248,11 +246,12 @@ add_library(
         ntl_poly/edu_alibaba_mpc4j_common_tool_polynomial_zp_NtlTreeZpPoly.cpp
         ntl_poly/ntl_zp_util.cpp
         ecc_fourq/edu_alibaba_mpc4j_common_tool_crypto_ecc_fourq_FourqByteFullEcc.cpp
-        network/benes_newtork.cpp
-        network/waksman_network.cpp
         network/edu_alibaba_mpc4j_common_tool_network_benes_NativeBenesNetwork.cpp
         network/edu_alibaba_mpc4j_common_tool_network_waksman_NativeWaksmanNetwork.cpp
-)
+        network/waksman_network.hpp
+        network/benes_network.hpp
+        ntl_sgf2k/ntl_sgf2k_utils.cpp
+        ntl_sgf2k/edu_alibaba_mpc4j_common_tool_galoisfield_sgf2k_NtlSubSgf2k.cpp)
 
 target_include_directories(
         mpc4j-native-tool
@@ -263,7 +262,6 @@ target_include_directories(
 target_link_libraries(
         mpc4j-native-tool
         PUBLIC
-        ${GF2X_LIBRARY}
         ${NTL_LIBRARY}
         ${GMP_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}

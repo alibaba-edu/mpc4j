@@ -3,9 +3,9 @@
 //
 
 #include "edu_alibaba_mpc4j_common_tool_network_waksman_NativeWaksmanNetwork.h"
-#include "waksman_network.h"
+#include "waksman_network.hpp"
 
-JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_waksman_NativeWaksmanNetwork_generateBenesNetwork
+JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_waksman_NativeWaksmanNetwork_generateNetwork
     (JNIEnv *env, jobject context, jintArray j_permutation_map) {
     // read data
     int length = (*env).GetArrayLength(j_permutation_map);
@@ -17,7 +17,8 @@ JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_waksma
     // release j_permutation_map
     (*env).ReleaseIntArrayElements(j_permutation_map, permPointer, 0);
     // generate the Benes benes_network
-    std::vector<std::vector<int8_t>> switched = generate_waksman_network(dest);
+    auto* waksmanNetwork = new WaksmanNetwork(dest);
+    std::vector<std::vector<int8_t>> switched = waksmanNetwork->get_waksman_network();
     // create return values
     auto switchedSize = (jsize) switched.size();
     jclass byteArrayType = (*env).FindClass("[B");
@@ -30,7 +31,7 @@ JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_waksma
         (*env).SetObjectArrayElement(jNetwork, index, jByteArray);
         (*env).DeleteLocalRef(jByteArray);
     }
-    free_waksman_network();
+    delete waksmanNetwork;
     (*env).DeleteLocalRef(byteArrayType);
     return jNetwork;
 }

@@ -23,18 +23,17 @@ public class RpcPropertiesUtils {
     /**
      * reads and sets Netty RPC.
      *
-     * @param properties properties.
+     * @param properties  properties.
+     * @param ownName     own name.
      * @param partyPrefix the prefixes of the parties.
      * @return Netty RPC.
      */
-    public static Rpc readNettyRpc(Properties properties, String... partyPrefix) {
+    public static Rpc readNettyRpcWithOwnName(Properties properties, String ownName, String... partyPrefix) {
         MathPreconditions.checkGreater("# of parties", partyPrefix.length, 1);
         int partyNum = partyPrefix.length;
-        // 构建参与方信息
         Set<NettyParty> nettyPartySet = new HashSet<>(partyNum);
         Map<String, NettyParty> nettyPartyMap = new HashMap<>(partyNum);
         for (int partyIndex = 0; partyIndex < partyNum; partyIndex++) {
-            // 初始化服务端
             String name = PropertiesUtils.readString(properties, partyPrefix[partyIndex] + "_name");
             String ip = PropertiesUtils.readString(properties, partyPrefix[partyIndex] + "_ip");
             int port = PropertiesUtils.readInt(properties, partyPrefix[partyIndex] + "_port");
@@ -42,10 +41,8 @@ public class RpcPropertiesUtils {
             nettyPartySet.add(nettyParty);
             nettyPartyMap.put(name, nettyParty);
         }
-        // 获得自己的参与方信息
-        String ownName = PropertiesUtils.readString(properties, "own_name");
         NettyParty ownParty = Preconditions.checkNotNull(
-            nettyPartyMap.get(ownName), "own_name must be in %s: %s", Arrays.toString(partyPrefix), ownName
+            nettyPartyMap.get(ownName), "ownName must be in %s: %s", Arrays.toString(partyPrefix), ownName
         );
         return new NettyRpc(ownParty, nettyPartySet);
     }

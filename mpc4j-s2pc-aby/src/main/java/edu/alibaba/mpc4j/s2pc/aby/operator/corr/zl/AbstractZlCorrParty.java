@@ -16,45 +16,47 @@ import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
  */
 public abstract class AbstractZlCorrParty extends AbstractTwoPartyPto implements ZlCorrParty {
     /**
-     * max l
-     */
-    protected int maxL;
-    /**
      * max num
      */
     protected int maxNum;
     /**
-     * num
+     * max l
      */
-    protected int num;
+    protected int maxL;
     /**
      * Zl instance
      */
     protected Zl zl;
     /**
-     * l.
+     * l
      */
     protected int l;
     /**
      * l in bytes
      */
     protected int byteL;
+    /**
+     * num
+     */
+    protected int num;
 
     public AbstractZlCorrParty(PtoDesc ptoDesc, Rpc ownRpc, Party otherParty, ZlCorrConfig config) {
         super(ptoDesc, ownRpc, otherParty, config);
     }
 
     protected void setInitInput(int maxL, int maxNum) {
-        MathPreconditions.checkPositive("maxL", maxL);
-        this.maxL = maxL;
         MathPreconditions.checkPositive("maxNum", maxNum);
+        MathPreconditions.checkPositive("maxL", maxL);
         this.maxNum = maxNum;
+        this.maxL = maxL;
         initState();
     }
 
     protected void setPtoInput(SquareZlVector xi) {
+        checkInitialized();
+        MathPreconditions.checkPositiveInRangeClosed("num", xi.getNum(), maxNum);
+        MathPreconditions.checkPositiveInRangeClosed("l", xi.getZl().getL(), maxL);
         num = xi.getNum();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
         zl = xi.getZl();
         l = zl.getL();
         byteL = zl.getByteL();

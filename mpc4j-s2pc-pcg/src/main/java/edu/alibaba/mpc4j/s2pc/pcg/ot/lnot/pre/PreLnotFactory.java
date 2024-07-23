@@ -80,7 +80,6 @@ public class PreLnotFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-            case COVERT:
             case MALICIOUS:
                 return new Bea95PreLnotConfig.Builder().build();
             default:

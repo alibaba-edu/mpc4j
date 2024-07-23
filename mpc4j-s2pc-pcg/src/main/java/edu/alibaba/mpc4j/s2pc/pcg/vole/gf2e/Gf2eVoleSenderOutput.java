@@ -1,23 +1,28 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2e;
 
+import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2e;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
-import org.bouncycastle.util.encoders.Hex;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
- * GF2E-VOLE GF2E sender output. The sender gets (x, t) with t = q + Δ·x, where Δ and q is owned by the receiver.
+ * GF2E-VOLE GF2E sender output. The sender gets (x, t) with t = q + Δ · x, where Δ and q is owned by the receiver.
  *
  * @author Weiran Liu
  * @date 2022/6/9
  */
 public class Gf2eVoleSenderOutput implements MergedPcgPartyOutput {
     /**
-     * the GF2E instance
+     * field
      */
-    private Gf2e gf2e;
+    private final Gf2e field;
     /**
      * x_i
      */
@@ -30,27 +35,19 @@ public class Gf2eVoleSenderOutput implements MergedPcgPartyOutput {
     /**
      * Creates a sender output.
      *
-     * @param gf2e the GF2E instance.
-     * @param x    x_i.
-     * @param t    t_i.
+     * @param field field.
+     * @param x     x_i.
+     * @param t     t_i.
      * @return a sender output.
      */
-    public static Gf2eVoleSenderOutput create(Gf2e gf2e, byte[][] x, byte[][] t) {
-        Gf2eVoleSenderOutput senderOutput = new Gf2eVoleSenderOutput();
-        senderOutput.gf2e = gf2e;
-        assert x.length > 0 : "# of x must be greater than 0: " + x.length;
-        assert x.length == t.length : "# of x must be equal to # of t (" + x.length + " : " + t.length + ")";
+    public static Gf2eVoleSenderOutput create(Gf2e field, byte[][] x, byte[][] t) {
+        Gf2eVoleSenderOutput senderOutput = new Gf2eVoleSenderOutput(field);
+        MathPreconditions.checkEqual("x.length", "t.length", x.length, t.length);
         senderOutput.x = Arrays.stream(x)
-            .peek(xi -> {
-                assert gf2e.validateElement(xi) : "xi must be in range [0, 2^" + gf2e.getL() + "): " + Hex.toHexString(xi);
-            })
-            .map(BytesUtils::clone)
+            .peek(xi -> Preconditions.checkArgument(field.validateElement(xi)))
             .toArray(byte[][]::new);
         senderOutput.t = Arrays.stream(t)
-            .peek(ti -> {
-                assert gf2e.validateElement(ti) : "ti must be in range [0, 2^" + gf2e.getL() + "): " + Hex.toHexString(ti);
-            })
-            .map(BytesUtils::clone)
+            .peek(ti -> Preconditions.checkArgument(field.validateElement(ti)))
             .toArray(byte[][]::new);
 
         return senderOutput;
@@ -59,23 +56,48 @@ public class Gf2eVoleSenderOutput implements MergedPcgPartyOutput {
     /**
      * Creates an empty sender output.
      *
-     * @param gf2e the GF2E instance.
+     * @param field field.
      * @return an empty sender output.
      */
-    public static Gf2eVoleSenderOutput createEmpty(Gf2e gf2e) {
-        Gf2eVoleSenderOutput senderOutput = new Gf2eVoleSenderOutput();
-        senderOutput.gf2e = gf2e;
+    public static Gf2eVoleSenderOutput createEmpty(Gf2e field) {
+        Gf2eVoleSenderOutput senderOutput = new Gf2eVoleSenderOutput(field);
         senderOutput.x = new byte[0][];
         senderOutput.t = new byte[0][];
+        return senderOutput;
+    }
 
+    /**
+     * Creates a random sender output.
+     *
+     * @param receiverOutput receiver output.
+     * @param secureRandom   random state.
+     * @return a random sender output.
+     */
+    public static Gf2eVoleSenderOutput createRandom(Gf2eVoleReceiverOutput receiverOutput, SecureRandom secureRandom) {
+        int num = receiverOutput.getNum();
+        Gf2e field = receiverOutput.getField();
+        Gf2eVoleSenderOutput senderOutput = new Gf2eVoleSenderOutput(field);
+        senderOutput.x = IntStream.range(0, num)
+            .mapToObj(i -> field.createRandom(secureRandom))
+            .toArray(byte[][]::new);
+        byte[] delta = receiverOutput.getDelta();
+        senderOutput.t = IntStream.range(0, num)
+            .mapToObj(i -> {
+                byte[] ti = field.mul(senderOutput.x[i], delta);
+                field.addi(ti, receiverOutput.getQ(i));
+                return ti;
+            })
+            .toArray(byte[][]::new);
         return senderOutput;
     }
 
     /**
      * private constructor.
+     *
+     * @param field field.
      */
-    private Gf2eVoleSenderOutput() {
-        // empty
+    private Gf2eVoleSenderOutput(Gf2e field) {
+        this.field = field;
     }
 
     @Override
@@ -84,29 +106,37 @@ public class Gf2eVoleSenderOutput implements MergedPcgPartyOutput {
     }
 
     @Override
+    public Gf2eVoleSenderOutput copy() {
+        Gf2eVoleSenderOutput copy = new Gf2eVoleSenderOutput(field);
+        copy.x = BytesUtils.clone(x);
+        copy.t = BytesUtils.clone(t);
+        return copy;
+    }
+
+    @Override
     public Gf2eVoleSenderOutput split(int splitNum) {
         int num = getNum();
-        assert splitNum > 0 && splitNum <= num : "splitNum must be in range (0, " + num + "]: " + splitNum;
+        MathPreconditions.checkPositiveInRangeClosed("split_num", splitNum, num);
         // split x
         byte[][] subX = new byte[splitNum][];
         byte[][] remainX = new byte[num - splitNum][];
-        System.arraycopy(x, 0, subX, 0, splitNum);
-        System.arraycopy(x, splitNum, remainX, 0, num - splitNum);
+        System.arraycopy(x, num - splitNum, subX, 0, splitNum);
+        System.arraycopy(x, 0, remainX, 0, num - splitNum);
         x = remainX;
         // split t
         byte[][] subT = new byte[splitNum][];
         byte[][] remainT = new byte[num - splitNum][];
-        System.arraycopy(t, 0, subT, 0, splitNum);
-        System.arraycopy(t, splitNum, remainT, 0, num - splitNum);
+        System.arraycopy(t, num - splitNum, subT, 0, splitNum);
+        System.arraycopy(t, 0, remainT, 0, num - splitNum);
         t = remainT;
 
-        return Gf2eVoleSenderOutput.create(gf2e, subX, subT);
+        return Gf2eVoleSenderOutput.create(field, subX, subT);
     }
 
     @Override
     public void reduce(int reduceNum) {
         int num = getNum();
-        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        MathPreconditions.checkPositiveInRangeClosed("reduce_num", reduceNum, num);
         if (reduceNum < num) {
             // if the reduced num is less than num, do split. If not, keep the current state.
             byte[][] remainX = new byte[reduceNum][];
@@ -121,9 +151,7 @@ public class Gf2eVoleSenderOutput implements MergedPcgPartyOutput {
     @Override
     public void merge(MergedPcgPartyOutput other) {
         Gf2eVoleSenderOutput that = (Gf2eVoleSenderOutput) other;
-        assert this.gf2e.equals(that.gf2e) : "merged " + this.getClass().getSimpleName()
-            + " must have the same " + gf2e.getClass().getSimpleName() + " instance:"
-            + " (" + this.gf2e + " : " + that.gf2e + ")";
+        Preconditions.checkArgument(this.field.equals(that.field));
         // merge x
         byte[][] mergeX = new byte[this.x.length + that.x.length][];
         System.arraycopy(this.x, 0, mergeX, 0, this.x.length);
@@ -141,8 +169,8 @@ public class Gf2eVoleSenderOutput implements MergedPcgPartyOutput {
      *
      * @return the GF2E instance.
      */
-    public Gf2e getGf2e() {
-        return gf2e;
+    public Gf2e getField() {
+        return field;
     }
 
     /**
@@ -181,5 +209,29 @@ public class Gf2eVoleSenderOutput implements MergedPcgPartyOutput {
      */
     public byte[][] getT() {
         return t;
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(field)
+            .append(x)
+            .append(t)
+            .hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof Gf2eVoleSenderOutput that) {
+            return new EqualsBuilder()
+                .append(this.field, that.field)
+                .append(this.x, that.x)
+                .append(this.t, that.t)
+                .isEquals();
+        }
+        return false;
     }
 }

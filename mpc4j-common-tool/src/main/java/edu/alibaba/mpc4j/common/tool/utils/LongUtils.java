@@ -15,9 +15,10 @@ import java.util.stream.IntStream;
  */
 public class LongUtils {
     /**
-     * max l
+     * max l for Zp64 and Zn64, so that all elements in {0,1}^l are valid elements in Zp64 or Zn64. The reason we set
+     * this parameter as Long.SIZE - 2 is that if we set l = Long.SIZE - 1, then n or p must have 64 bits and be negative.
      */
-    public static final int MAX_L = Long.SIZE - 2;
+    public static final int MAX_L_FOR_MODULE_N = Long.SIZE - 2;
 
     /**
      * private constructor
@@ -69,6 +70,41 @@ public class LongUtils {
     public static long byteArrayToLong(byte[] value) {
         assert value.length == Long.BYTES;
         return ByteBuffer.wrap(value).getLong();
+    }
+
+    /**
+     * Converts {@code long} to {@code byte[]} with the given byte length. The conversion supports negative value.
+     *
+     * @param value value.
+     * @param byteL byteL.
+     * @return result.
+     * @throws IllegalArgumentException if <code>byteL > 0 && byteL <= Long.BYTES</code> does not hold, or if the given
+     *                                  <code>byteL</code> is not enough to represent the given <code>value</code>.
+     */
+    public static byte[] longToFixedByteArray(long value, int byteL) {
+        assert byteL > 0 && byteL <= Long.BYTES;
+        assert byteL == Long.BYTES || (value & ((1L << (byteL * Byte.SIZE)) - 1)) == value;
+        byte[] result = new byte[byteL];
+        for (int i = byteL - 1; i >= 0; i--) {
+            result[i] = (byte) ((value >>> (Byte.SIZE * (byteL - 1 - i))) & 0xFF);
+        }
+        return result;
+    }
+
+    /**
+     * Converts {@code byte[]} (possibly short byte length) to long. The conversion supports negative value.
+     *
+     * @param value value.
+     * @return result.
+     * @throws IllegalArgumentException if <code>value.length > 0 && value.length <= Long.BYTES</code> does not hold.
+     */
+    public static long fixedByteArrayToLong(byte[] value) {
+        assert value.length > 0 && value.length <= Long.BYTES;
+        long result = 0L;
+        for (byte b : value) {
+            result = (result << Byte.SIZE) + (b & 0xFF);
+        }
+        return result;
     }
 
     /**

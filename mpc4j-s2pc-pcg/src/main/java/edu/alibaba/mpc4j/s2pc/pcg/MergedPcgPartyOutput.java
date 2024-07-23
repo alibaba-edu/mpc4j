@@ -8,6 +8,13 @@ package edu.alibaba.mpc4j.s2pc.pcg;
  */
 public interface MergedPcgPartyOutput extends PcgPartyOutput {
     /**
+     * Copies the output.
+     *
+     * @return copied output.
+     */
+    MergedPcgPartyOutput copy();
+
+    /**
      * Splits the output with the split num.
      *
      * @param splitNum the split num.

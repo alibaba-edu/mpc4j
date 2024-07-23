@@ -5,17 +5,17 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleFactory.Gf2kCoreVoleType;
 
 /**
- * KOS16-GF2K-core VOLE config.
+ * KOS16 GF2K-core-VOLE config.
  *
  * @author Weiran Liu
  * @date 2023/3/16
  */
 public class Kos16Gf2kCoreVoleConfig extends AbstractMultiPartyPtoConfig implements Gf2kCoreVoleConfig {
     /**
-     * the base OT config.
+     * base OT
      */
     private final BaseOtConfig baseOtConfig;
 
@@ -29,23 +29,18 @@ public class Kos16Gf2kCoreVoleConfig extends AbstractMultiPartyPtoConfig impleme
     }
 
     @Override
-    public Gf2kCoreVoleFactory.Gf2kCoreVoleType getPtoType() {
-        return Gf2kCoreVoleFactory.Gf2kCoreVoleType.KOS16;
+    public Gf2kCoreVoleType getPtoType() {
+        return Gf2kCoreVoleType.KOS16;
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Kos16Gf2kCoreVoleConfig> {
         /**
-         * the base OT config
+         * base OT
          */
-        private BaseOtConfig baseOtConfig;
+        private final BaseOtConfig baseOtConfig;
 
         public Builder() {
             baseOtConfig = BaseOtFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-        }
-
-        public Builder setBaseOtConfig(BaseOtConfig baseOtConfig) {
-            this.baseOtConfig = baseOtConfig;
-            return this;
         }
 
         @Override

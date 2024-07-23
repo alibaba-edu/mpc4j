@@ -3,9 +3,9 @@
 //
 
 #include "edu_alibaba_mpc4j_common_tool_network_benes_NativeBenesNetwork.h"
-#include "benes_newtork.h"
+#include "benes_network.hpp"
 
-JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_benes_NativeBenesNetwork_generateBenesNetwork
+JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_benes_NativeBenesNetwork_generateNetwork
     (JNIEnv *env, jobject context, jintArray j_permutation_map) {
     // read data
     int length = (*env).GetArrayLength(j_permutation_map);
@@ -17,7 +17,8 @@ JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_benes_
     // release j_permutation_map
     (*env).ReleaseIntArrayElements(j_permutation_map, permPointer, 0);
     // generate the Benes benes_network
-    std::vector<std::vector<int8_t>> switched = generate_benes_network(dest);
+    auto* benesNetwork = new BenesNetwork(dest);
+    std::vector<std::vector<int8_t>> switched = benesNetwork->get_benes_network();
     // create return values
     auto switchedSize = (jsize)switched.size();
     jclass byteArrayType = (*env).FindClass("[B");
@@ -30,7 +31,7 @@ JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_benes_
         (*env).SetObjectArrayElement(jBenesNetwork, index, jByteArray);
         (*env).DeleteLocalRef(jByteArray);
     }
-    free_benes_network();
+    delete benesNetwork;
     (*env).DeleteLocalRef(byteArrayType);
     return jBenesNetwork;
 }

@@ -91,31 +91,36 @@ public class TripletRpLongCpTest extends AbstractThreePartyMemoryRpcPto {
     public void testAllSmallSize() {
         testOpi(false, opAll, SMALL_SIZE);
     }
+
     @Test
     public void testEachSmallSize() {
-        for(AcOperator op : opAll){
+        for (AcOperator op : opAll) {
             AcOperator[] single = new AcOperator[]{op};
             testOpi(false, single, SMALL_SIZE);
         }
     }
+
     @Test
     public void testAllMiddleSize() {
         testOpi(true, opAll, MIDDLE_SIZE);
     }
+
     @Test
     public void testEachMiddleSize() {
-        for(AcOperator op : opAll){
+        for (AcOperator op : opAll) {
             AcOperator[] single = new AcOperator[]{op};
             testOpi(true, single, MIDDLE_SIZE);
         }
     }
+
     @Test
     public void testAllLargeSize() {
         testOpi(true, opAll, LARGE_SIZE);
     }
+
     @Test
     public void testEachLargeSize() {
-        for(AcOperator op : opAll){
+        for (AcOperator op : opAll) {
             AcOperator[] single = new AcOperator[]{op};
             testOpi(true, single, LARGE_SIZE);
         }

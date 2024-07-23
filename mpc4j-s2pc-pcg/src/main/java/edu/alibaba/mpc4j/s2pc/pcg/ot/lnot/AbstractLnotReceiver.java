@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot;
 
+import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
@@ -57,6 +58,11 @@ public abstract class AbstractLnotReceiver extends AbstractTwoPartyPto implement
         MathPreconditions.checkPositive("updateNum", updateNum);
         this.updateNum = updateNum;
         initState();
+    }
+
+    @Override
+    public void init(int l) throws MpcAbortException {
+        init(l, config.defaultRoundNum(l));
     }
 
     protected void setPtoInput(int[] choiceArray) {

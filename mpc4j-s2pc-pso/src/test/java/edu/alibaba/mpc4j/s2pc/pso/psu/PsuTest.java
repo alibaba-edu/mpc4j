@@ -4,6 +4,8 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
+import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
+import edu.alibaba.mpc4j.s2pc.pso.psu.czz24.Czz24CwOprfPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfsPsuConfig;
@@ -59,50 +61,50 @@ public class PsuTest extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
+        // CZZ24_CW_OPRF
+        configurations.add(new Object[]{
+            PsuType.CZZ24_CW_OPRF.name(), new Czz24CwOprfPsuConfig.Builder().build(),
+        });
         // JSZ22_SFS (direct)
         configurations.add(new Object[]{
-            PsuFactory.PsuType.JSZ22_SFS.name() + " (direct)",
-            new Jsz22SfsPsuConfig.Builder(false).build(),
+            PsuType.JSZ22_SFS.name() + " (direct)", new Jsz22SfsPsuConfig.Builder(false).build(),
         });
         // JSZ22_SFS (silent)
         configurations.add(new Object[]{
-            PsuFactory.PsuType.JSZ22_SFS.name() + " (silent)",
-            new Jsz22SfsPsuConfig.Builder(true).build(),
+            PsuType.JSZ22_SFS.name() + " (silent)", new Jsz22SfsPsuConfig.Builder(true).build(),
         });
         // JSZ22_SFC (direct)
         configurations.add(new Object[]{
-            PsuFactory.PsuType.JSZ22_SFC.name() + " (direct)",
-            new Jsz22SfcPsuConfig.Builder(false).build(),
+            PsuType.JSZ22_SFC.name() + " (direct)", new Jsz22SfcPsuConfig.Builder(false).build(),
         });
         // JSZ22_SFC (silent)
         configurations.add(new Object[]{
-            PsuFactory.PsuType.JSZ22_SFC.name() + " (silent)",
-            new Jsz22SfcPsuConfig.Builder(true).build(),
+            PsuType.JSZ22_SFC.name() + " (silent)", new Jsz22SfcPsuConfig.Builder(true).build(),
         });
-        // ZCL22_PKE
+        // ZCL23_PKE
         configurations.add(new Object[]{
-            PsuFactory.PsuType.ZCL23_PKE.name(),
-            new Zcl23PkePsuConfig.Builder().build(),
+            PsuType.ZCL23_PKE.name(), new Zcl23PkePsuConfig.Builder().build(),
         });
-        // ZCL22_SKE
+        // ZCL23_SKE
         configurations.add(new Object[]{
-            PsuFactory.PsuType.ZCL23_SKE.name(),
-            new Zcl23SkePsuConfig.Builder(SecurityModel.SEMI_HONEST).build(),
+            PsuType.ZCL23_SKE.name() + "(" + SecurityModel.IDEAL + ")",
+            new Zcl23SkePsuConfig.Builder(SecurityModel.IDEAL, true).build(),
+        });
+        configurations.add(new Object[]{
+            PsuType.ZCL23_SKE.name() + "(" + SecurityModel.SEMI_HONEST + ", silent)",
+            new Zcl23SkePsuConfig.Builder(SecurityModel.SEMI_HONEST, true).build(),
         });
         // GMR21 (direct)
         configurations.add(new Object[]{
-            PsuFactory.PsuType.GMR21.name() + " (direct)",
-            new Gmr21PsuConfig.Builder(false).build(),
+            PsuType.GMR21.name() + " (direct)", new Gmr21PsuConfig.Builder(false).build(),
         });
         // GMR21 (silent)
         configurations.add(new Object[]{
-            PsuFactory.PsuType.GMR21.name() + " (silent)",
-            new Gmr21PsuConfig.Builder(true).build(),
+            PsuType.GMR21.name() + " (silent)", new Gmr21PsuConfig.Builder(true).build(),
         });
         // KRTW19
         configurations.add(new Object[]{
-            PsuFactory.PsuType.KRTW19.name(),
-            new Krtw19PsuConfig.Builder().build(),
+            PsuType.KRTW19.name(), new Krtw19PsuConfig.Builder().build(),
         });
 
         return configurations;
@@ -198,7 +200,7 @@ public class PsuTest extends AbstractTwoPartyMemoryRpcPto {
             long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();
             // verify
-            assertOutput(serverSet, clientSet, clientThread.getUnionSet());
+            assertOutput(serverSet, clientSet, clientThread.getClientOutput());
             printAndResetRpc(time);
             // destroy
             new Thread(server::destroy).start();
@@ -208,11 +210,16 @@ public class PsuTest extends AbstractTwoPartyMemoryRpcPto {
         }
     }
 
-    private void assertOutput(Set<ByteBuffer> serverSet, Set<ByteBuffer> clientSet, Set<ByteBuffer> outputUnionSet) {
-        // compute union
+    private void assertOutput(Set<ByteBuffer> serverSet, Set<ByteBuffer> clientSet, PsuClientOutput clientOutput) {
+        // compute intersection and union
+        Set<ByteBuffer> expectIntersectionSet = new HashSet<>(serverSet);
+        expectIntersectionSet.retainAll(clientSet);
+        int expectPsiCa = expectIntersectionSet.size();
         Set<ByteBuffer> expectUnionSet = new HashSet<>(serverSet);
         expectUnionSet.addAll(clientSet);
-        Assert.assertTrue(outputUnionSet.containsAll(expectUnionSet));
-        Assert.assertTrue(expectUnionSet.containsAll(outputUnionSet));
+        Assert.assertEquals(expectPsiCa, clientOutput.getPsiCa());
+        Set<ByteBuffer> actualUnionSet = clientOutput.getUnion();
+        Assert.assertTrue(actualUnionSet.containsAll(expectUnionSet));
+        Assert.assertTrue(expectUnionSet.containsAll(actualUnionSet));
     }
 }

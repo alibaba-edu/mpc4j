@@ -7,9 +7,6 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64Factory;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf64.Gf64Factory.Gf64Type;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -23,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * LongRing efficiency tests.
+ * BytesField efficiency tests.
  *
  * @author Weiran Liu
  * @date 2023/2/20
@@ -32,38 +29,31 @@ import java.util.stream.IntStream;
 public class BytesFieldEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BytesFieldEfficiencyTest.class);
     /**
-     * random num
+     * random round
      */
-    private static final int MAX_RANDOM = 1 << 16;
+    private static final int RANDOM_ROUND = 1 << 14;
     /**
-     * the time decimal format
+     * time decimal format
      */
     private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.000");
     /**
-     * the random state
+     * random state
      */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private final SecureRandom secureRandom;
     /**
-     * the stop watch
+     * stop watch
      */
-    private static final StopWatch STOP_WATCH = new StopWatch();
+    private final StopWatch stopWatch;
 
-    @Test
-    public void testGf64Efficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}\t{}",
-            "                type", "         l", "   mul(us)", "   div(us)", "   inv(us)"
-        );
-        for (Gf64Type type : Gf64Type.values()) {
-            Gf64 gf64 = Gf64Factory.createInstance(EnvType.STANDARD, type);
-            testEfficiency(gf64);
-        }
-        LOGGER.info(StringUtils.rightPad("", 60, '-'));
+    public BytesFieldEfficiencyTest() {
+        secureRandom = new SecureRandom();
+        stopWatch = new StopWatch();
     }
 
     @Test
     public void testGf2kEfficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}\t{}",
-            "                type", "         l", "   mul(us)", "   div(us)", "   inv(us)"
+        LOGGER.info("{}\t{}\t{}\t{}",
+            "                          type", "   mul(us)", "   div(us)", "   inv(us)"
         );
         for (Gf2kType type : Gf2kType.values()) {
             Gf2k gf2k = Gf2kFactory.createInstance(EnvType.STANDARD, type);
@@ -74,57 +64,56 @@ public class BytesFieldEfficiencyTest {
 
     @Test
     public void testGf2eEfficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}\t{}",
-            "                type", "         l", "   mul(us)", "   div(us)", "   inv(us)"
+        LOGGER.info("{}\t{}\t{}\t{}",
+            "                          type", "   mul(us)", "   div(us)", "   inv(us)"
         );
-        int[] ls = new int[]{1, 2, 3, 4, 40, 62, 128};
-        for (int l : ls) {
+        for (int l : GaloisfieldTestUtils.GF2E_L_ARRAY) {
             for (Gf2eType type : Gf2eType.values()) {
-                Gf2e gf2e = Gf2eFactory.createInstance(EnvType.STANDARD, type, l);
-                testEfficiency(gf2e);
+                if (Gf2eFactory.available(type, l)) {
+                    Gf2e gf2e = Gf2eFactory.createInstance(EnvType.STANDARD, type, l);
+                    testEfficiency(gf2e);
+                }
             }
             LOGGER.info(StringUtils.rightPad("", 60, '-'));
         }
     }
 
     private void testEfficiency(BytesField bytesField) {
-        int l = bytesField.getL();
         // create random elements
-        byte[][] arrayA = new byte[MAX_RANDOM][];
-        byte[][] arrayB = new byte[MAX_RANDOM][];
-        IntStream.range(0, MAX_RANDOM).forEach(index -> {
-            arrayA[index] = bytesField.createNonZeroRandom(SECURE_RANDOM);
-            arrayB[index] = bytesField.createNonZeroRandom(SECURE_RANDOM);
+        byte[][] arrayA = new byte[RANDOM_ROUND][];
+        byte[][] arrayB = new byte[RANDOM_ROUND][];
+        IntStream.range(0, RANDOM_ROUND).forEach(index -> {
+            arrayA[index] = bytesField.createNonZeroRandom(secureRandom);
+            arrayB[index] = bytesField.createNonZeroRandom(secureRandom);
         });
         // warmup
-        IntStream.range(0, MAX_RANDOM).forEach(index -> {
+        IntStream.range(0, RANDOM_ROUND).forEach(index -> {
             bytesField.mul(arrayA[index], arrayB[index]);
             bytesField.div(arrayA[index], arrayB[index]);
             bytesField.inv(arrayA[index]);
         });
         // mul
-        STOP_WATCH.start();
-        IntStream.range(0, MAX_RANDOM).forEach(index -> bytesField.mul(arrayA[index], arrayB[index]));
-        STOP_WATCH.stop();
-        double mulTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / MAX_RANDOM;
-        STOP_WATCH.reset();
+        stopWatch.start();
+        IntStream.range(0, RANDOM_ROUND).forEach(index -> bytesField.mul(arrayA[index], arrayB[index]));
+        stopWatch.stop();
+        double mulTime = (double) stopWatch.getTime(TimeUnit.MICROSECONDS) / RANDOM_ROUND;
+        stopWatch.reset();
         // div
-        STOP_WATCH.start();
-        IntStream.range(0, MAX_RANDOM).forEach(index -> bytesField.div(arrayA[index], arrayB[index]));
-        STOP_WATCH.stop();
-        double divTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / MAX_RANDOM;
-        STOP_WATCH.reset();
+        stopWatch.start();
+        IntStream.range(0, RANDOM_ROUND).forEach(index -> bytesField.div(arrayA[index], arrayB[index]));
+        stopWatch.stop();
+        double divTime = (double) stopWatch.getTime(TimeUnit.MICROSECONDS) / RANDOM_ROUND;
+        stopWatch.reset();
         // inv
-        STOP_WATCH.start();
-        IntStream.range(0, MAX_RANDOM).forEach(index -> bytesField.inv(arrayA[index]));
-        STOP_WATCH.stop();
-        double invTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / MAX_RANDOM;
-        STOP_WATCH.reset();
+        stopWatch.start();
+        IntStream.range(0, RANDOM_ROUND).forEach(index -> bytesField.inv(arrayA[index]));
+        stopWatch.stop();
+        double invTime = (double) stopWatch.getTime(TimeUnit.MICROSECONDS) / RANDOM_ROUND;
+        stopWatch.reset();
         // output
         LOGGER.info(
-            "{}\t{}\t{}\t{}\t{}",
-            StringUtils.leftPad(bytesField.getName(), 20),
-            StringUtils.leftPad(String.valueOf(l), 10),
+            "{}\t{}\t{}\t{}",
+            StringUtils.leftPad(bytesField.toString(), 30),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(mulTime), 10),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(divTime), 10),
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(invTime), 10)

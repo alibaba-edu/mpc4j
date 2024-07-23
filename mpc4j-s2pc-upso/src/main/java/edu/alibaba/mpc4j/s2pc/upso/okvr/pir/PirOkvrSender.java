@@ -18,8 +18,8 @@ import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfKey;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfSender;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.IdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.AbstractOkvrSender;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.pir.PirOkvrPtoDesc.PtoStep;
 
@@ -67,7 +67,7 @@ public class PirOkvrSender extends AbstractOkvrSender {
     /**
      * batch index PIR server
      */
-    private final BatchIndexPirServer batchIndexPirServer;
+    private final IdxPirServer batchIndexPirServer;
     /**
      * sparse OKVS
      */
@@ -77,7 +77,7 @@ public class PirOkvrSender extends AbstractOkvrSender {
         super(PirOkvrPtoDesc.getInstance(), senderRpc, receiverParty, config);
         sqOprfSender = SqOprfFactory.createSender(senderRpc, receiverParty, config.getSqOprfConfig());
         addSubPto(sqOprfSender);
-        batchIndexPirServer = BatchIndexPirFactory.createServer(senderRpc, receiverParty, config.getBatchIndexPirConfig());
+        batchIndexPirServer = StdIdxPirFactory.createServer(senderRpc, receiverParty, config.getStdIdxConfig());
         addSubPto(batchIndexPirServer);
         okvsType = config.getOkvsType();
     }
@@ -135,11 +135,7 @@ public class PirOkvrSender extends AbstractOkvrSender {
         stopWatch.start();
         // send OKVS dense storage
         List<byte[]> denseOkvsPayload = Arrays.stream(okvsDenseStorage).collect(Collectors.toList());
-        DataPacketHeader denseOkvsHeader = new DataPacketHeader(
-            encodeTaskId, ptoDesc.getPtoId(), PtoStep.SENDER_SEND_DENSE_OKVS.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(denseOkvsHeader, denseOkvsPayload));
+        sendOtherPartyPayload(PtoStep.SENDER_SEND_DENSE_OKVS.ordinal(), denseOkvsPayload);
         okvsDenseStorage = null;
         stopWatch.stop();
         long okvsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -171,8 +167,8 @@ public class PirOkvrSender extends AbstractOkvrSender {
         Prf prf = PrfFactory.createInstance(envType, byteL);
         prf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
         // oprf key-value map
-        Stream<Entry<ByteBuffer, byte[]>> keyValueMapStream = keyValueMap.entrySet().stream();
-        keyValueMapStream = parallel ? keyValueMapStream.parallel() : keyValueMapStream;
+        Stream<Entry<ByteBuffer, byte[]>> keyValueMapStream =
+            parallel ? keyValueMap.entrySet().stream().parallel() : keyValueMap.entrySet().stream();
         Map<ByteBuffer, byte[]> oprfKeyValueMap = keyValueMapStream
             .collect(Collectors.toMap(
                 Entry::getKey,

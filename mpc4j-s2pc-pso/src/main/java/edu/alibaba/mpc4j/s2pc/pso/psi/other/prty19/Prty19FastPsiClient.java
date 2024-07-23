@@ -80,11 +80,8 @@ public class Prty19FastPsiClient<T> extends AbstractPsiClient<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // init COT
-        int maxL = Prty19PsiUtils.getFastL(maxServerElementSize);
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        coreCotSender.init(delta, maxL);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(delta);
         // generate and send two-choice hash keys
         twoChoiceHashKeys = CommonUtils.generateRandomKeys(2, secureRandom);
         List<byte[]> twoChoiceHashKeyPayload = Arrays.stream(twoChoiceHashKeys).collect(Collectors.toList());

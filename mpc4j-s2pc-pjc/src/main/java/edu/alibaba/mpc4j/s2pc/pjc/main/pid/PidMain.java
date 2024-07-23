@@ -3,15 +3,14 @@ package edu.alibaba.mpc4j.s2pc.pjc.main.pid;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.RpcPropertiesUtils;
+import edu.alibaba.mpc4j.common.rpc.main.AbstractMainTwoPartyPto;
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
-import edu.alibaba.mpc4j.s2pc.pso.main.PsoMain;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidFactory;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.PidParty;
-import org.apache.commons.lang3.time.StopWatch;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,13 +25,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * PID主函数。
+ * PID main.
  *
  * @author Weiran Liu
  * @date 2022/5/16
  */
-public class PidMain {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PsoMain.class);
+public class PidMain extends AbstractMainTwoPartyPto {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PidMain.class);
+    /**
+     * protocol name key
+     */
+    public static final String PTO_NAME_KEY = "pid_pto_name";
     /**
      * 协议类型名称
      */
@@ -46,42 +49,27 @@ public class PidMain {
      */
     private static final int WARMUP_SET_SIZE = 1 << 10;
     /**
-     * server stop watch
+     * set sizes
      */
-    private final StopWatch serverStopWatch;
+    private final int[] setSizes;
     /**
-     * server stop watch
+     * PID config
      */
-    private final StopWatch clientStopWatch;
-    /**
-     * 配置参数
-     */
-    private final Properties properties;
+    private final PidConfig config;
 
-    public PidMain(Properties properties) {
-        this.properties = properties;
-        serverStopWatch = new StopWatch();
-        clientStopWatch = new StopWatch();
-    }
-
-    public void runNetty() throws Exception {
-        Rpc ownRpc = RpcPropertiesUtils.readNettyRpc(properties, "server", "client");
-        if (ownRpc.ownParty().getPartyId() == 0) {
-            runServer(ownRpc, ownRpc.getParty(1));
-        } else {
-            runClient(ownRpc, ownRpc.getParty(0));
-        }
-    }
-
-    public void runServer(Rpc serverRpc, Party clientParty) throws Exception {
-        // 读取协议参数
-        LOGGER.info("{} read settings", serverRpc.ownParty().getPartyName());
-        // 读取集合大小
+    public PidMain(Properties properties, String ownName) {
+        super(properties, ownName);
+        // read common config
+        LOGGER.info("{} read settings", ownRpc.ownParty().getPartyName());
         int[] logSetSizes = PropertiesUtils.readLogIntArray(properties, "log_set_size");
-        int[] setSizes = Arrays.stream(logSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        // 读取特殊参数
-        LOGGER.info("{} read PTO config", serverRpc.ownParty().getPartyName());
-        PidConfig config = PidConfigUtils.createConfig(properties);
+        setSizes = Arrays.stream(logSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
+        // read PTO config
+        LOGGER.info("{} read PTO config", ownRpc.ownParty().getPartyName());
+        config = PidConfigUtils.createConfig(properties);
+    }
+
+    @Override
+    public void runParty1(Rpc serverRpc, Party clientParty) throws IOException, MpcAbortException {
         // 生成输入文件
         LOGGER.info("{} generate warm-up element files", serverRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, ELEMENT_BYTE_LENGTH);
@@ -91,8 +79,9 @@ public class PidMain {
         }
         LOGGER.info("{} create result file", serverRpc.ownParty().getPartyName());
         // 创建统计结果文件
-        String filePath = PsoUtils.getFileFolderName() + PTO_TYPE_NAME
+        String filePath = MainPtoConfigUtils.getFileFolderName() + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
+            + "_" + appendString
             + "_" + ELEMENT_BYTE_LENGTH * Byte.SIZE
             + "_" + serverRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -146,7 +135,7 @@ public class PidMain {
         return serverElementSet;
     }
 
-    private void warmupServer(Rpc serverRpc, Party clientParty, PidConfig config, int taskId) throws Exception {
+    private void warmupServer(Rpc serverRpc, Party clientParty, PidConfig config, int taskId) throws MpcAbortException, IOException {
         Set<ByteBuffer> serverElementSet = readServerElementSet(WARMUP_SET_SIZE);
         PidParty<ByteBuffer> pidServer = PidFactory.createServer(serverRpc, clientParty, config);
         pidServer.setTaskId(taskId);
@@ -181,11 +170,11 @@ public class PidMain {
         pidServer.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", pidServer.ownParty().getPartyName());
-        serverStopWatch.start();
+        stopWatch.start();
         pidServer.init(serverSetSize, clientSetSize);
-        serverStopWatch.stop();
-        long initTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
-        serverStopWatch.reset();
+        stopWatch.stop();
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long initDataPacketNum = pidServer.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = pidServer.getRpc().getPayloadByteLength();
         long initSendByteLength = pidServer.getRpc().getSendByteLength();
@@ -193,11 +182,11 @@ public class PidMain {
         pidServer.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", pidServer.ownParty().getPartyName());
-        serverStopWatch.start();
+        stopWatch.start();
         pidServer.pid(serverElementSet, clientSetSize);
-        serverStopWatch.stop();
-        long ptoTime = serverStopWatch.getTime(TimeUnit.MILLISECONDS);
-        serverStopWatch.reset();
+        stopWatch.stop();
+        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long ptoDataPacketNum = pidServer.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = pidServer.getRpc().getPayloadByteLength();
         long ptoSendByteLength = pidServer.getRpc().getSendByteLength();
@@ -217,15 +206,8 @@ public class PidMain {
         LOGGER.info("{} finish", pidServer.ownParty().getPartyName());
     }
 
-    public void runClient(Rpc clientRpc, Party serverParty) throws Exception {
-        // 读取协议参数
-        LOGGER.info("{} read settings", clientRpc.ownParty().getPartyName());
-        // 读取集合大小
-        int[] logSetSizes = PropertiesUtils.readLogIntArray(properties, "log_set_size");
-        int[] setSizes = Arrays.stream(logSetSizes).map(logSetSize -> 1 << logSetSize).toArray();
-        // 读取特殊参数
-        LOGGER.info("{} read PTO config", clientRpc.ownParty().getPartyName());
-        PidConfig config = PidConfigUtils.createConfig(properties);
+    @Override
+    public void runParty2(Rpc clientRpc, Party serverParty) throws IOException, MpcAbortException {
         // 生成输入文件
         LOGGER.info("{} generate warm-up element files", clientRpc.ownParty().getPartyName());
         PsoUtils.generateBytesInputFiles(WARMUP_SET_SIZE, ELEMENT_BYTE_LENGTH);
@@ -235,8 +217,9 @@ public class PidMain {
         }
         // 创建统计结果文件
         LOGGER.info("{} create result file", clientRpc.ownParty().getPartyName());
-        String filePath = PsoUtils.getFileFolderName() + PTO_TYPE_NAME
+        String filePath = MainPtoConfigUtils.getFileFolderName() + PTO_TYPE_NAME
             + "_" + config.getPtoType().name()
+            + "_" + appendString
             + "_" + ELEMENT_BYTE_LENGTH * Byte.SIZE
             + "_" + clientRpc.ownParty().getPartyId()
             + "_" + ForkJoinPool.getCommonPoolParallelism()
@@ -287,7 +270,7 @@ public class PidMain {
         return clientElementSet;
     }
 
-    private void warmupClient(Rpc clientRpc, Party serverParty, PidConfig config, int taskId) throws Exception {
+    private void warmupClient(Rpc clientRpc, Party serverParty, PidConfig config, int taskId) throws IOException, MpcAbortException {
         // 读取输入文件
         Set<ByteBuffer> clientElementSet = readClientElementSet(WARMUP_SET_SIZE);
         PidParty<ByteBuffer> pidClient = PidFactory.createClient(clientRpc, serverParty, config);
@@ -323,11 +306,11 @@ public class PidMain {
         pidClient.getRpc().reset();
         // 初始化协议
         LOGGER.info("{} init", pidClient.ownParty().getPartyName());
-        clientStopWatch.start();
+        stopWatch.start();
         pidClient.init(clientSetSize, serverSetSize);
-        clientStopWatch.stop();
-        long initTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
-        clientStopWatch.reset();
+        stopWatch.stop();
+        long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long initDataPacketNum = pidClient.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = pidClient.getRpc().getPayloadByteLength();
         long initSendByteLength = pidClient.getRpc().getSendByteLength();
@@ -335,11 +318,11 @@ public class PidMain {
         pidClient.getRpc().reset();
         // 执行协议
         LOGGER.info("{} execute", pidClient.ownParty().getPartyName());
-        clientStopWatch.start();
+        stopWatch.start();
         pidClient.pid(clientElementSet, serverSetSize);
-        clientStopWatch.stop();
-        long ptoTime = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
-        clientStopWatch.reset();
+        stopWatch.stop();
+        long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
         long ptoDataPacketNum = pidClient.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = pidClient.getRpc().getPayloadByteLength();
         long ptoSendByteLength = pidClient.getRpc().getSendByteLength();

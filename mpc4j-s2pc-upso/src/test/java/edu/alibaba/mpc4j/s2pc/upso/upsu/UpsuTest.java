@@ -3,12 +3,10 @@ package edu.alibaba.mpc4j.s2pc.upso.upsu;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.ms13.Ms13OsnConfig;
 import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.tcl23.Tcl23ByteEccDdhPmPeqtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.tcl23.Tcl23EccDdhPmPeqtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.tcl23.Tcl23PsOprfPmPeqtConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.labelpsi.Cmg21BatchIndexPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.tcl23.Tcl23UpsuConfig;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.zlp24.Zlp24PeqtUpsuConfig;
@@ -71,64 +69,35 @@ public class UpsuTest extends AbstractTwoPartyMemoryRpcPto {
         configurations.add(new Object[]{
             UpsuFactory.UpsuType.TCL23.name() + " Permute + Share and OPRF",
             new Tcl23UpsuConfig.Builder()
-                .setPmPeqtConfig(new Tcl23PsOprfPmPeqtConfig.Builder(false)
-                    .setOsnConfig(new Ms13OsnConfig.Builder(false).build()).build())
-                .build()
-        });
-        // ZLP24 + PKE + Label PSI
-        configurations.add(new Object[]{
-           UpsuFactory.UpsuType.ZLP24_PKE.name() + " LABEL PSI",
-            new Zlp24PkeUpsuConfig.Builder()
-                .setBatchIndexPirConfig(new Cmg21BatchIndexPirConfig.Builder().build())
-                .build()
-        });
-        configurations.add(new Object[]{
-            UpsuFactory.UpsuType.ZLP24_PKE.name() + " 2 Hash LABEL PSI",
-            new Zlp24PkeUpsuConfig.Builder()
-                .setEccDokvsType(EccDokvsFactory.EccDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT)
-                .setBatchIndexPirConfig(new Cmg21BatchIndexPirConfig.Builder().build())
+                .setPmPeqtConfig(new Tcl23PsOprfPmPeqtConfig.Builder().build())
                 .build()
         });
         // ZLP24 + PKE + Vectorized PIR
         configurations.add(new Object[]{
             UpsuFactory.UpsuType.ZLP24_PKE.name() + " Vectorized PIR",
             new Zlp24PkeUpsuConfig.Builder()
-                .setBatchIndexPirConfig(new Mr23BatchIndexPirConfig.Builder().build())
+                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
                 .build()
         });
         configurations.add(new Object[]{
             UpsuFactory.UpsuType.ZLP24_PKE.name() + " 2 Hash Vectorized PIR",
             new Zlp24PkeUpsuConfig.Builder()
                 .setEccDokvsType(EccDokvsFactory.EccDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT)
-                .setBatchIndexPirConfig(new Mr23BatchIndexPirConfig.Builder().build())
-                .build()
-        });
-        // ZLP24 + PEQT + Label PSI
-        configurations.add(new Object[]{
-            UpsuFactory.UpsuType.ZLP24_PEQT.name() + " LABEL PSI",
-            new Zlp24PeqtUpsuConfig.Builder()
-                .setBatchIndexPirConfig(new Cmg21BatchIndexPirConfig.Builder().build())
-                .build()
-        });
-        configurations.add(new Object[]{
-            UpsuFactory.UpsuType.ZLP24_PEQT.name() + " 2 Hash LABEL PSI",
-            new Zlp24PeqtUpsuConfig.Builder()
-                .setGf2eDokvsType(Gf2eDokvsFactory.Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT)
-                .setBatchIndexPirConfig(new Cmg21BatchIndexPirConfig.Builder().build())
+                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
                 .build()
         });
         // ZLP24 + PEQT + Vectorized PIR
         configurations.add(new Object[]{
             UpsuFactory.UpsuType.ZLP24_PEQT.name() + " Vectorized PIR",
             new Zlp24PeqtUpsuConfig.Builder()
-                .setBatchIndexPirConfig(new Mr23BatchIndexPirConfig.Builder().build())
+                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
                 .build()
         });
         configurations.add(new Object[]{
             UpsuFactory.UpsuType.ZLP24_PEQT.name() + " 2 Hash Vectorized PIR",
             new Zlp24PeqtUpsuConfig.Builder()
                 .setGf2eDokvsType(Gf2eDokvsFactory.Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT)
-                .setBatchIndexPirConfig(new Mr23BatchIndexPirConfig.Builder().build())
+                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
                 .build()
         });
 
@@ -165,7 +134,7 @@ public class UpsuTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setParallel(parallel);
         try {
             UpsuSenderThread senderThread = new UpsuSenderThread(
-                sender, receiverElementSize, senderElementSet ,ELEMENT_BYTE_LENGTH
+                sender, receiverElementSize, senderElementSet, ELEMENT_BYTE_LENGTH
             );
             UpsuReceiverThread receiverThread = new UpsuReceiverThread(
                 receiver, senderElementSize, receiverElementSet, ELEMENT_BYTE_LENGTH
@@ -181,15 +150,8 @@ public class UpsuTest extends AbstractTwoPartyMemoryRpcPto {
             long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
             STOP_WATCH.reset();
             // verify
-            UpsuReceiverOutput upsuReceiverOutput = receiverThread.getUpsuReceiverOutput();
-            Set<ByteBuffer> outputUnionSet = upsuReceiverOutput.getUnionSet();
-            Set<ByteBuffer> expectUnionSet = new HashSet<>(receiverElementSet);
-            expectUnionSet.addAll(senderElementSet);
-            Assert.assertTrue(outputUnionSet.containsAll(expectUnionSet));
-            Assert.assertTrue(expectUnionSet.containsAll(outputUnionSet));
-            int intersectionSetSize = upsuReceiverOutput.getIntersectionSetSize();
-            sets.get(0).retainAll(sets.get(1));
-            Assert.assertEquals(sets.get(0).size(), intersectionSetSize);
+            UpsuReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
+            assertOutput(senderElementSet, receiverElementSet, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();
@@ -197,5 +159,19 @@ public class UpsuTest extends AbstractTwoPartyMemoryRpcPto {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private void assertOutput(Set<ByteBuffer> senderElementSet, Set<ByteBuffer> receiverElementSet,
+                              UpsuReceiverOutput receiverOutput) {
+        Set<ByteBuffer> expectUnion = new HashSet<>(receiverElementSet);
+        expectUnion.addAll(senderElementSet);
+        Set<ByteBuffer> expectIntersection = new HashSet<>(receiverElementSet);
+        expectIntersection.retainAll(senderElementSet);
+        int expectPsica = expectIntersection.size();
+        Set<ByteBuffer> actualUnion = receiverOutput.getUnion();
+        Assert.assertTrue(actualUnion.containsAll(expectUnion));
+        Assert.assertTrue(expectUnion.containsAll(actualUnion));
+        int actualPsica = receiverOutput.getPsica();
+        Assert.assertEquals(expectPsica, actualPsica);
     }
 }

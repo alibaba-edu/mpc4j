@@ -51,135 +51,52 @@ class RpcDataThread extends Thread {
     /**
      * 发送的空数据包
      */
-    private final Set<DataPacket> emptySendDataPacketSet;
+    private final Set<DataPacket> sendDataPacketSet;
     /**
      * 接收的空数据包
      */
-    private final Set<DataPacket> emptyReceivedDataPacketSet;
+    private final Set<DataPacket> receivedDataPacketSet;
     /**
-     * 发送的长度为0的数据包
+     * random state
      */
-    private final Set<DataPacket> zeroLengthSendDataPacketSet;
-    /**
-     * 接收的长度为0的数据包
-     */
-    private final Set<DataPacket> zeroLengthReceivedDataPacketSet;
-    /**
-     * 发送的单数据包
-     */
-    private final Set<DataPacket> singleSendDataPacketSet;
-    /**
-     * 接收的单数据包
-     */
-    private final Set<DataPacket> singleReceivedDataPacketSet;
-    /**
-     * send equal-length data packet
-     */
-    private final Set<DataPacket> equalLengthSendDataPacketSet;
-    /**
-     * receive equal-length data packet
-     */
-    private final Set<DataPacket> equalLengthReceivedDataPacketSet;
-    /**
-     * 发送的额外信息数据包
-     */
-    private final Set<DataPacket> extraInfoSendDataPacketSet;
-    /**
-     * 接收的额外信息数据包
-     */
-    private final Set<DataPacket> extraInfoReceivedDataPacketSet;
-    /**
-     * take any receive data packet
-     */
-    private final Set<DataPacket> takeAnySendDataPacketSet;
-    /**
-     * take any sent data packet
-     */
-    private final Set<DataPacket> takeAnyReceivedDataPacketSet;
+    private final SecureRandom secureRandom;
 
     RpcDataThread(int taskId, Rpc rpc) {
         this.taskId = taskId;
         this.rpc = rpc;
-        emptySendDataPacketSet = new HashSet<>();
-        emptyReceivedDataPacketSet = new HashSet<>();
-        zeroLengthSendDataPacketSet = new HashSet<>();
-        zeroLengthReceivedDataPacketSet = new HashSet<>();
-        singleSendDataPacketSet = new HashSet<>();
-        singleReceivedDataPacketSet = new HashSet<>();
-        equalLengthSendDataPacketSet = new HashSet<>();
-        equalLengthReceivedDataPacketSet = new HashSet<>();
-        extraInfoSendDataPacketSet = new HashSet<>();
-        extraInfoReceivedDataPacketSet = new HashSet<>();
-        takeAnySendDataPacketSet = new HashSet<>();
-        takeAnyReceivedDataPacketSet = new HashSet<>();
+        sendDataPacketSet = new HashSet<>();
+        receivedDataPacketSet = new HashSet<>();
+        secureRandom = new SecureRandom();
     }
 
-    Set<DataPacket> getEmptySendDataPacketSet() {
-        return emptySendDataPacketSet;
+    Set<DataPacket> getSendDataPacketSet() {
+        return sendDataPacketSet;
     }
 
-    Set<DataPacket> getEmptyReceivedDataPacketSet() {
-        return emptyReceivedDataPacketSet;
-    }
-
-    Set<DataPacket> getZeroLengthSendDataPacketSet() {
-        return zeroLengthSendDataPacketSet;
-    }
-
-    Set<DataPacket> getZeroLengthReceivedDataPacketSet() {
-        return zeroLengthReceivedDataPacketSet;
-    }
-
-    Set<DataPacket> getSingleSendDataPacketSet() {
-        return singleSendDataPacketSet;
-    }
-
-    Set<DataPacket> getSingleReceivedDataPacketSet() {
-        return singleReceivedDataPacketSet;
-    }
-
-    Set<DataPacket> getEqualLengthSendDataPacketSet() {
-        return equalLengthSendDataPacketSet;
-    }
-
-    Set<DataPacket> getEqualLengthReceivedDataPacketSet() {
-        return equalLengthReceivedDataPacketSet;
-    }
-
-    Set<DataPacket> getExtraInfoSendDataPacketSet() {
-        return extraInfoSendDataPacketSet;
-    }
-
-    Set<DataPacket> getExtraInfoReceivedDataPacketSet() {
-        return extraInfoReceivedDataPacketSet;
-    }
-
-    Set<DataPacket> getTakeAnySendDataPacketSet() {
-        return takeAnySendDataPacketSet;
-    }
-
-    Set<DataPacket> getTakeAnyReceivedDataPacketSet() {
-        return takeAnyReceivedDataPacketSet;
+    Set<DataPacket> getReceivedDataPacketSet() {
+        return receivedDataPacketSet;
     }
 
     @Override
     public void run() {
-        // 发送和接收空数据包
         emptyDataPacket();
         rpc.synchronize();
-        // 发送和接收长度为0的数据包
         zeroLengthDataPacket();
         rpc.synchronize();
-        // 发送和接收包含单条数据的数据包
         singletonDataPacket();
         rpc.synchronize();
-        // send and receive equal-length data packet
+        l1DataPacket();
+        rpc.synchronize();
+        l2DataPacket();
+        rpc.synchronize();
+        l4DataPacket();
+        rpc.synchronize();
+        l8DataPacket();
+        rpc.synchronize();
         equalLengthDataPacket();
         rpc.synchronize();
-        // 发送和接收包含额外信息的多条数据数据包
         extraInfoDataPacket();
         rpc.synchronize();
-        // 发送多个单条数据发送包并接收
         takeAnyDataPacket();
         rpc.synchronize();
     }
@@ -194,7 +111,7 @@ class RpcDataThread extends Thread {
                     rpc.ownParty().getPartyId(), party.getPartyId()
                 );
                 DataPacket dataPacket = DataPacket.fromByteArrayList(header, new LinkedList<>());
-                emptySendDataPacketSet.add(dataPacket);
+                sendDataPacketSet.add(dataPacket);
                 rpc.send(dataPacket);
             }
         }
@@ -207,7 +124,7 @@ class RpcDataThread extends Thread {
                     party.getPartyId(), rpc.ownParty().getPartyId()
                 );
                 DataPacket dataPacket = rpc.receive(header);
-                emptyReceivedDataPacketSet.add(dataPacket);
+                receivedDataPacketSet.add(dataPacket);
             }
         }
     }
@@ -224,7 +141,7 @@ class RpcDataThread extends Thread {
                 List<byte[]> payload = new LinkedList<>();
                 payload.add(RpcTestUtils.EMPTY_BYTE_ARRAY);
                 DataPacket dataPacket = DataPacket.fromByteArrayList(header, payload);
-                zeroLengthSendDataPacketSet.add(dataPacket);
+                sendDataPacketSet.add(dataPacket);
                 rpc.send(dataPacket);
             }
         }
@@ -237,7 +154,7 @@ class RpcDataThread extends Thread {
                     party.getPartyId(), rpc.ownParty().getPartyId()
                 );
                 DataPacket dataPacket = rpc.receive(header);
-                zeroLengthReceivedDataPacketSet.add(dataPacket);
+                receivedDataPacketSet.add(dataPacket);
             }
         }
     }
@@ -256,7 +173,7 @@ class RpcDataThread extends Thread {
                     .getBytes(StandardCharsets.UTF_8)
                 );
                 DataPacket dataPacket = DataPacket.fromByteArrayList(header, payload);
-                singleSendDataPacketSet.add(dataPacket);
+                sendDataPacketSet.add(dataPacket);
                 rpc.send(dataPacket);
             }
         }
@@ -269,13 +186,155 @@ class RpcDataThread extends Thread {
                     party.getPartyId(), rpc.ownParty().getPartyId()
                 );
                 DataPacket dataPacket = rpc.receive(header);
-                singleReceivedDataPacketSet.add(dataPacket);
+                receivedDataPacketSet.add(dataPacket);
+            }
+        }
+    }
+
+    private void l1DataPacket() {
+        // send data packet
+        for (Party party : rpc.getPartySet()) {
+            // do not send to its own
+            if (!party.equals(rpc.ownParty())) {
+                DataPacketHeader header = new DataPacketHeader(
+                    taskId, TEST_PTO_DESC.getPtoId(), PtoStep.L1.ordinal(),
+                    rpc.ownParty().getPartyId(), party.getPartyId()
+                );
+                List<byte[]> payload = IntStream.range(0, EQUAL_LENGTH_BYTE_NUM)
+                    .mapToObj(index -> {
+                        byte[] data = new byte[1];
+                        secureRandom.nextBytes(data);
+                        data[0] &= 0b00000001;
+                        return data;
+                    })
+                    .collect(Collectors.toList());
+                DataPacket dataPacket = DataPacket.fromByteArrayList(header, payload);
+                sendDataPacketSet.add(dataPacket);
+                rpc.send(dataPacket);
+            }
+        }
+        // receive data packet
+        for (Party party : rpc.getPartySet()) {
+            // do not receive from its own
+            if (!party.equals(rpc.ownParty())) {
+                DataPacketHeader header = new DataPacketHeader(
+                    taskId, TEST_PTO_DESC.getPtoId(), PtoStep.L1.ordinal(),
+                    party.getPartyId(), rpc.ownParty().getPartyId()
+                );
+                DataPacket dataPacket = rpc.receive(header);
+                receivedDataPacketSet.add(dataPacket);
+            }
+        }
+    }
+
+    private void l2DataPacket() {
+        // send data packet
+        for (Party party : rpc.getPartySet()) {
+            // do not send to its own
+            if (!party.equals(rpc.ownParty())) {
+                DataPacketHeader header = new DataPacketHeader(
+                    taskId, TEST_PTO_DESC.getPtoId(), PtoStep.L2.ordinal(),
+                    rpc.ownParty().getPartyId(), party.getPartyId()
+                );
+                List<byte[]> payload = IntStream.range(0, EQUAL_LENGTH_BYTE_NUM)
+                    .mapToObj(index -> {
+                        byte[] data = new byte[1];
+                        secureRandom.nextBytes(data);
+                        data[0] &= 0b00000011;
+                        return data;
+                    })
+                    .collect(Collectors.toList());
+                DataPacket dataPacket = DataPacket.fromByteArrayList(header, payload);
+                sendDataPacketSet.add(dataPacket);
+                rpc.send(dataPacket);
+            }
+        }
+        // receive data packet
+        for (Party party : rpc.getPartySet()) {
+            // do not receive from its own
+            if (!party.equals(rpc.ownParty())) {
+                DataPacketHeader header = new DataPacketHeader(
+                    taskId, TEST_PTO_DESC.getPtoId(), PtoStep.L2.ordinal(),
+                    party.getPartyId(), rpc.ownParty().getPartyId()
+                );
+                DataPacket dataPacket = rpc.receive(header);
+                receivedDataPacketSet.add(dataPacket);
+            }
+        }
+    }
+
+    private void l4DataPacket() {
+        // send data packet
+        for (Party party : rpc.getPartySet()) {
+            // do not send to its own
+            if (!party.equals(rpc.ownParty())) {
+                DataPacketHeader header = new DataPacketHeader(
+                    taskId, TEST_PTO_DESC.getPtoId(), PtoStep.L4.ordinal(),
+                    rpc.ownParty().getPartyId(), party.getPartyId()
+                );
+                List<byte[]> payload = IntStream.range(0, EQUAL_LENGTH_BYTE_NUM)
+                    .mapToObj(index -> {
+                        byte[] data = new byte[1];
+                        secureRandom.nextBytes(data);
+                        data[0] &= 0b00001111;
+                        return data;
+                    })
+                    .collect(Collectors.toList());
+                DataPacket dataPacket = DataPacket.fromByteArrayList(header, payload);
+                sendDataPacketSet.add(dataPacket);
+                rpc.send(dataPacket);
+            }
+        }
+        // receive data packet
+        for (Party party : rpc.getPartySet()) {
+            // do not receive from its own
+            if (!party.equals(rpc.ownParty())) {
+                DataPacketHeader header = new DataPacketHeader(
+                    taskId, TEST_PTO_DESC.getPtoId(), PtoStep.L4.ordinal(),
+                    party.getPartyId(), rpc.ownParty().getPartyId()
+                );
+                DataPacket dataPacket = rpc.receive(header);
+                receivedDataPacketSet.add(dataPacket);
+            }
+        }
+    }
+
+    private void l8DataPacket() {
+        // send data packet
+        for (Party party : rpc.getPartySet()) {
+            // do not send to its own
+            if (!party.equals(rpc.ownParty())) {
+                DataPacketHeader header = new DataPacketHeader(
+                    taskId, TEST_PTO_DESC.getPtoId(), PtoStep.L8.ordinal(),
+                    rpc.ownParty().getPartyId(), party.getPartyId()
+                );
+                List<byte[]> payload = IntStream.range(0, EQUAL_LENGTH_BYTE_NUM)
+                    .mapToObj(index -> {
+                        byte[] data = new byte[1];
+                        secureRandom.nextBytes(data);
+                        return data;
+                    })
+                    .collect(Collectors.toList());
+                DataPacket dataPacket = DataPacket.fromByteArrayList(header, payload);
+                sendDataPacketSet.add(dataPacket);
+                rpc.send(dataPacket);
+            }
+        }
+        // receive data packet
+        for (Party party : rpc.getPartySet()) {
+            // do not receive from its own
+            if (!party.equals(rpc.ownParty())) {
+                DataPacketHeader header = new DataPacketHeader(
+                    taskId, TEST_PTO_DESC.getPtoId(), PtoStep.L8.ordinal(),
+                    party.getPartyId(), rpc.ownParty().getPartyId()
+                );
+                DataPacket dataPacket = rpc.receive(header);
+                receivedDataPacketSet.add(dataPacket);
             }
         }
     }
 
     private void equalLengthDataPacket() {
-        SecureRandom secureRandom = new SecureRandom();
         // send equal-length data packet
         for (Party party : rpc.getPartySet()) {
             // do not send to its own
@@ -292,7 +351,7 @@ class RpcDataThread extends Thread {
                     })
                     .collect(Collectors.toList());
                 DataPacket dataPacket = DataPacket.fromByteArrayList(header, payload);
-                equalLengthSendDataPacketSet.add(dataPacket);
+                sendDataPacketSet.add(dataPacket);
                 rpc.send(dataPacket);
             }
         }
@@ -305,7 +364,7 @@ class RpcDataThread extends Thread {
                     party.getPartyId(), rpc.ownParty().getPartyId()
                 );
                 DataPacket dataPacket = rpc.receive(header);
-                equalLengthReceivedDataPacketSet.add(dataPacket);
+                receivedDataPacketSet.add(dataPacket);
             }
         }
     }
@@ -325,7 +384,7 @@ class RpcDataThread extends Thread {
                         rpc.ownParty().getPartyId(), party.getPartyId()
                     );
                     DataPacket dataPacket = DataPacket.fromByteArrayList(header, payload);
-                    extraInfoSendDataPacketSet.add(dataPacket);
+                    sendDataPacketSet.add(dataPacket);
                     rpc.send(dataPacket);
                 });
             }
@@ -340,7 +399,7 @@ class RpcDataThread extends Thread {
                         party.getPartyId(), rpc.ownParty().getPartyId()
                     );
                     DataPacket dataPacket = rpc.receive(header);
-                    extraInfoReceivedDataPacketSet.add(dataPacket);
+                    receivedDataPacketSet.add(dataPacket);
                 });
             }
         }
@@ -357,7 +416,7 @@ class RpcDataThread extends Thread {
                         rpc.ownParty().getPartyId(), party.getPartyId()
                     );
                     DataPacket dataPacket = DataPacket.fromByteArrayList(header, new LinkedList<>());
-                    takeAnySendDataPacketSet.add(dataPacket);
+                    sendDataPacketSet.add(dataPacket);
                     rpc.send(dataPacket);
                 }
             }
@@ -365,8 +424,8 @@ class RpcDataThread extends Thread {
             for (Party party : rpc.getPartySet()) {
                 // 不测试自己给自己发送数据包
                 if (!party.equals(rpc.ownParty())) {
-                    DataPacket dataPacket = rpc.receiveAny();
-                    takeAnyReceivedDataPacketSet.add(dataPacket);
+                    DataPacket dataPacket = rpc.receiveAny(TEST_PTO_DESC.getPtoId());
+                    receivedDataPacketSet.add(dataPacket);
                 }
             }
         }

@@ -23,7 +23,7 @@ class NativeWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
      */
     NativeWaksmanNetwork(final int[] permutationMap) {
         super(permutationMap);
-        network = generateBenesNetwork(permutationMap);
+        network = generateNetwork(permutationMap);
         updateWidths();
     }
 
@@ -37,7 +37,7 @@ class NativeWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
         super(n, network);
     }
 
-    private native byte[][] generateBenesNetwork(int[] permutationMap);
+    private native byte[][] generateNetwork(int[] permutationMap);
 
     @Override
     public WaksmanNetworkType getWaksmanType() {

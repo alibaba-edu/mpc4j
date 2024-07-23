@@ -35,8 +35,8 @@ public interface MpcLongParty {
     /**
      * Creates a vector with assigned value, and specify whether it is shared
      *
-     * @param longs assigned value.
-     * @param isPlain    whether this vector is plaintext or not
+     * @param longs   assigned value.
+     * @param isPlain whether this vector is plaintext or not
      * @return a vector.
      */
     MpcLongVector create(boolean isPlain, long[]... longs);
@@ -68,10 +68,11 @@ public interface MpcLongParty {
      */
     default MpcLongVector[] split(MpcLongVector mergeVector, int[] nums) {
         boolean isPlain = mergeVector.isPlain();
-        LongVector[][] splitRes = Arrays.stream(mergeVector.getVectors()).map(x ->
-            x.split(nums)).toArray(LongVector[][]::new);
-        return IntStream.range(0, nums.length).mapToObj(i ->
-                create(isPlain, Arrays.stream(splitRes).map(x -> x[i]).toArray(LongVector[]::new)))
+        LongVector[][] splitRes = Arrays.stream(mergeVector.getVectors())
+            .map(x -> LongVector.split(x, nums))
+            .toArray(LongVector[][]::new);
+        return IntStream.range(0, nums.length)
+            .mapToObj(i -> create(isPlain, Arrays.stream(splitRes).map(x -> x[i]).toArray(LongVector[]::new)))
             .toArray(MpcLongVector[]::new);
     }
 
@@ -104,7 +105,7 @@ public interface MpcLongParty {
     /**
      * Shares other's vector.
      *
-     * @param num num to be shared.
+     * @param num   num to be shared.
      * @param party the party that the data belongs to
      * @return the shared vector.
      */
@@ -115,7 +116,7 @@ public interface MpcLongParty {
     /**
      * Share other's BitVectors.
      *
-     * @param nums nums for each vector to be shared.
+     * @param nums  nums for each vector to be shared.
      * @param party the party that the data belongs to
      * @return the shared vectors.
      */
@@ -128,7 +129,7 @@ public interface MpcLongParty {
      * @return the revealed vectors.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    default LongVector[] revealOwn(MpcLongVector... xiArray) throws MpcAbortException{
+    default LongVector[] revealOwn(MpcLongVector... xiArray) throws MpcAbortException {
         return revealOwn(64, xiArray);
     }
 
@@ -136,7 +137,7 @@ public interface MpcLongParty {
      * Reveals its own vectors.
      *
      * @param validBitLen valid bit length of opened values
-     * @param xiArray the shared vectors.
+     * @param xiArray     the shared vectors.
      * @return the revealed vectors.
      * @throws MpcAbortException the protocol failure aborts.
      */
@@ -146,7 +147,7 @@ public interface MpcLongParty {
      * Reveals other's vectors.
      *
      * @param xiArray the shared vectors.
-     * @param party the party that the data belongs to
+     * @param party   the party that the data belongs to
      */
     void revealOther(Party party, MpcLongVector... xiArray) throws MpcAbortException;
 
@@ -155,7 +156,7 @@ public interface MpcLongParty {
      *
      * @param xiArray the shared vectors.
      */
-    default LongVector[] open(MpcLongVector... xiArray) throws MpcAbortException{
+    default LongVector[] open(MpcLongVector... xiArray) throws MpcAbortException {
         return open(64, xiArray);
     }
 
@@ -163,7 +164,7 @@ public interface MpcLongParty {
      * Open the shared values
      *
      * @param validBits valid bit length of opened values
-     * @param xiArray the shared vectors.
+     * @param xiArray   the shared vectors.
      */
     LongVector[] open(int validBits, MpcLongVector... xiArray) throws MpcAbortException;
 
@@ -183,7 +184,7 @@ public interface MpcLongParty {
      * @param yiArray yi array.
      * @return zi array, such that for each j, z[i] = x[i] + y[i].
      */
-    default MpcLongVector[] add(MpcLongVector[] xiArray, MpcLongVector[] yiArray){
+    default MpcLongVector[] add(MpcLongVector[] xiArray, MpcLongVector[] yiArray) {
         MathPreconditions.checkEqual("xiArray.length", "yiArray.length", xiArray.length, yiArray.length);
         IntStream intStream = getParallel() ? IntStream.range(0, xiArray.length).parallel() : IntStream.range(0, xiArray.length);
         return intStream.mapToObj(i -> add(xiArray[i], yiArray[i])).toArray(MpcLongVector[]::new);
@@ -203,7 +204,7 @@ public interface MpcLongParty {
      * @param xiArray xi array.
      * @param yiArray yi array.
      */
-    default void addi(MpcLongVector[] xiArray, MpcLongVector[] yiArray){
+    default void addi(MpcLongVector[] xiArray, MpcLongVector[] yiArray) {
         MathPreconditions.checkEqual("xiArray.length", "yiArray.length", xiArray.length, yiArray.length);
         IntStream intStream = getParallel() ? IntStream.range(0, xiArray.length).parallel() : IntStream.range(0, xiArray.length);
         intStream.forEach(i -> addi(xiArray[i], yiArray[i]));
@@ -265,7 +266,7 @@ public interface MpcLongParty {
      * @param xiArray xi array.
      * @return zi array, such that for each j, z[i] = -x[i].
      */
-    default MpcLongVector[] neg(MpcLongVector[] xiArray){
+    default MpcLongVector[] neg(MpcLongVector[] xiArray) {
         IntStream intStream = getParallel() ? IntStream.range(0, xiArray.length).parallel() : IntStream.range(0, xiArray.length);
         return intStream.mapToObj(i -> neg(xiArray[i])).toArray(MpcLongVector[]::new);
     }
@@ -282,7 +283,7 @@ public interface MpcLongParty {
      *
      * @param xiArray xi array.
      */
-    default void negi(MpcLongVector[] xiArray){
+    default void negi(MpcLongVector[] xiArray) {
         Stream<MpcLongVector> stream = getParallel() ? Arrays.stream(xiArray).parallel() : Arrays.stream(xiArray);
         stream.forEach(this::negi);
     }
@@ -294,7 +295,7 @@ public interface MpcLongParty {
      * @param yi yi.
      * @return zi, such that z = x * y.
      */
-    default MpcLongVector mul(MpcLongVector xi, MpcLongVector yi){
+    default MpcLongVector mul(MpcLongVector xi, MpcLongVector yi) {
         return mul(new MpcLongVector[]{xi}, new MpcLongVector[]{yi})[0];
     }
 
@@ -313,7 +314,7 @@ public interface MpcLongParty {
      * @param xi xi.
      * @param yi yi.
      */
-    default void muli(MpcLongVector xi, PlainLongVector yi){
+    default void muli(MpcLongVector xi, PlainLongVector yi) {
         muli(new MpcLongVector[]{xi}, new PlainLongVector[]{yi});
     }
 

@@ -62,18 +62,18 @@ public class Z2cFactory implements PtoFactory {
     /**
      * Creates a sender.
      *
-     * @param senderRpc     sender RPC.
-     * @param receiverParty receiver party.
-     * @param aiderParty    aider party.
-     * @param config        config.
+     * @param senderRpc     the sender RPC.
+     * @param receiverParty the receiver party.
+     * @param aiderParty    the aider party.
+     * @param config        the config.
      * @return a sender.
      */
     public static Z2cParty createSender(Rpc senderRpc, Party receiverParty, Party aiderParty, Z2cConfig config) {
         BcType type = config.getPtoType();
-        //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
             case BEA91:
                 return new Bea91Z2cSender(senderRpc, receiverParty, aiderParty, (Bea91Z2cConfig) config);
+            case RRG21:
             default:
                 throw new IllegalArgumentException("Invalid " + BcType.class.getSimpleName() + ": " + type.name());
         }
@@ -102,18 +102,18 @@ public class Z2cFactory implements PtoFactory {
     /**
      * Creates a receiver.
      *
-     * @param receiverRpc receiver RPC.
-     * @param senderParty sender party.
-     * @param aiderParty  aider party.
-     * @param config      config.
+     * @param receiverRpc the receiver RPC.
+     * @param senderParty the sender party.
+     * @param aiderParty  the aider party.
+     * @param config      the config.
      * @return a receiver.
      */
     public static Z2cParty createReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, Z2cConfig config) {
         BcType type = config.getPtoType();
-        //noinspection SwitchStatementWithTooFewBranches
         switch (type) {
             case BEA91:
                 return new Bea91Z2cReceiver(receiverRpc, senderParty, aiderParty, (Bea91Z2cConfig) config);
+            case RRG21:
             default:
                 throw new IllegalArgumentException("Invalid " + BcType.class.getSimpleName() + ": " + type.name());
         }
@@ -126,14 +126,6 @@ public class Z2cFactory implements PtoFactory {
      * @return a default config.
      */
     public static Z2cConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
-        switch (securityModel) {
-            case IDEAL:
-            case TRUSTED_DEALER:
-                return new Bea91Z2cConfig.Builder(securityModel).build();
-            case SEMI_HONEST:
-                return new Rrg21Z2cConfig.Builder().build();
-            default:
-                throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel);
-        }
+        return new Bea91Z2cConfig.Builder(securityModel, silent).build();
     }
 }

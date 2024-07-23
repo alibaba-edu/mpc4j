@@ -41,6 +41,10 @@ public abstract class AbstractPsiServer<T> extends AbstractTwoPartyPto implement
         super(ptoDesc, serverRpc, clientParty, config);
     }
 
+    protected AbstractPsiServer(PtoDesc ptoDesc, Rpc serverRpc, Party clientParty, Party aidParty, PsiConfig config) {
+        super(ptoDesc, serverRpc, clientParty, aidParty, config);
+    }
+
     protected void setInitInput(int maxServerElementSize, int maxClientElementSize) {
         MathPreconditions.checkPositive("maxServerElementSize", maxServerElementSize);
         this.maxServerElementSize = maxServerElementSize;

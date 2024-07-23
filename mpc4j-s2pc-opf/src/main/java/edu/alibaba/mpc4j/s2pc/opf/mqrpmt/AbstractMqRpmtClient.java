@@ -15,14 +15,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * mqRPMT协议客户端抽象类。
+ * abstract mqRPMT client.
  *
  * @author Weiran Liu
  * @date 2022/9/10
  */
 public abstract class AbstractMqRpmtClient extends AbstractTwoPartyPto implements MqRpmtClient {
     /**
-     * 特殊空元素字节缓存区
+     * ⊥
      */
     protected static final ByteBuffer BOT_ELEMENT_BYTE_BUFFER;
 
@@ -33,28 +33,33 @@ public abstract class AbstractMqRpmtClient extends AbstractTwoPartyPto implement
     }
 
     /**
-     * 客户端最大元素数量
+     * mqRPMT config
+     */
+    protected final MqRpmtConfig mqRpmtConfig;
+    /**
+     * max client element size.
      */
     private int maxClientElementSize;
     /**
-     * 服务端最大元素数量
+     * max server element size.
      */
     private int maxServerElementSize;
     /**
-     * 客户端元素集合
+     * client element array list.
      */
     protected ArrayList<ByteBuffer> clientElementArrayList;
     /**
-     * 客户端元素数量
+     * client element size.
      */
     protected int clientElementSize;
     /**
-     * 服务端元素数量
+     * server element size.
      */
     protected int serverElementSize;
 
     protected AbstractMqRpmtClient(PtoDesc ptoDesc, Rpc clientRpc, Party serverParty, MqRpmtConfig config) {
         super(ptoDesc, clientRpc, serverParty, config);
+        mqRpmtConfig = config;
     }
 
     protected void setInitInput(int maxClientElementSize, int maxServerElementSize) {

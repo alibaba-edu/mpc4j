@@ -1,20 +1,18 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lcot;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.coder.linear.LinearCoder;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.kk13.Kk13OptLcotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.kk13.Kk13OriLcotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.oos17.Oos17LcotConfig;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -154,7 +152,7 @@ public class LcotTest extends AbstractTwoPartyMemoryRpcPto {
             // verify
             LcotSenderOutput senderOutput = senderThread.getSenderOutput();
             LcotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            assertOutput(inputBitLength, num, senderOutput, receiverOutput);
+            OtTestUtils.assertOutput(num, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();
@@ -162,38 +160,6 @@ public class LcotTest extends AbstractTwoPartyMemoryRpcPto {
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void assertOutput(int inputBitLength, int num,
-                              LcotSenderOutput senderOutput, LcotReceiverOutput receiverOutput) {
-        // 验证输入长度
-        Assert.assertEquals(inputBitLength, senderOutput.getInputBitLength());
-        Assert.assertEquals(inputBitLength, receiverOutput.getInputBitLength());
-        Assert.assertEquals(senderOutput.getInputByteLength(), receiverOutput.getInputByteLength());
-        // 验证输出长度
-        Assert.assertEquals(senderOutput.getOutputBitLength(), receiverOutput.getOutputBitLength());
-        Assert.assertEquals(senderOutput.getOutputByteLength(), receiverOutput.getOutputByteLength());
-        // 验证数量
-        Assert.assertEquals(num, senderOutput.getNum());
-        Assert.assertEquals(num, receiverOutput.getNum());
-        IntStream.range(0, num).forEach(index -> {
-            byte[] choice = receiverOutput.getChoice(index);
-            Assert.assertArrayEquals(receiverOutput.getRb(index), senderOutput.getRb(index, choice));
-        });
-        // 验证同态性，此数量太大，用开根号降低数据量
-        LinearCoder linearCoder = senderOutput.getLinearCoder();
-        byte[][] choices = receiverOutput.getChoices();
-        for (int i = 0; i < num; i += (int)Math.sqrt(num)) {
-            for (int j = i + 1; j < num; j += (int)Math.sqrt(num)) {
-                byte[] tij = BytesUtils.xor(receiverOutput.getRb(i), receiverOutput.getRb(j));
-                byte[] qij = BytesUtils.xor(senderOutput.getQ(i), senderOutput.getQ(j));
-                byte[] choicei = BytesUtils.paddingByteArray(choices[i], linearCoder.getDatawordByteLength());
-                byte[] choicej = BytesUtils.paddingByteArray(choices[j], linearCoder.getDatawordByteLength());
-                byte[] choiceij = BytesUtils.xor(choicei, choicej);
-                BytesUtils.xori(qij, BytesUtils.and(senderOutput.getDelta(), linearCoder.encode(choiceij)));
-                Assert.assertEquals(ByteBuffer.wrap(tij), ByteBuffer.wrap(qij));
-            }
         }
     }
 }

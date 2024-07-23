@@ -5,13 +5,15 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.vectorizedpir.Mr23BatchIndexPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirClient;
 import edu.alibaba.mpc4j.work.AbstractBatchPirClient;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * vectorized batch index PIR client.
@@ -24,11 +26,12 @@ public class VectorizedBatchPirClient extends AbstractBatchPirClient {
     /**
      * Vectorized Batch PIR client
      */
-    private final Mr23BatchIndexPirClient client;
+    private final VectorizedStdIdxPirClient client;
 
     public VectorizedBatchPirClient(Rpc clientRpc, Party serverParty, VectorizedBatchPirConfig config) {
         super(VectorizedBatchPirPtoDesc.getInstance(), clientRpc, serverParty, config);
-        client = new Mr23BatchIndexPirClient(clientRpc, serverParty, config.getVectorizedBatchPirConfig());
+        client = new VectorizedStdIdxPirClient(clientRpc, serverParty, config.getVectorizedBatchPirConfig());
+        addSubPto(client);
     }
 
     @Override
@@ -52,9 +55,16 @@ public class VectorizedBatchPirClient extends AbstractBatchPirClient {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        Map<Integer, byte[]> retrievalItems = client.pir(retrievalIndexList);
-        Map<Integer, Boolean> result = new HashMap<>(retrievalItems.size());
-        retrievalItems.forEach((key, value) -> result.put(key, BinaryUtils.getBoolean(value, 7)));
+        int[] xs = IntStream.range(0, retrievalSize).map(retrievalIndexList::get).toArray();
+        byte[][] entries = client.pir(xs);
+        Map<Integer, Boolean> result = IntStream.range(0, retrievalSize)
+            .filter(i -> entries[i] != null)
+            .boxed()
+            .collect(
+                Collectors.toMap(
+                    retrievalIndexList::get, i -> BinaryUtils.getBoolean(entries[i], 7), (a, b) -> b,
+                    () -> new HashMap<>(retrievalSize))
+            );
         stopWatch.stop();
         long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

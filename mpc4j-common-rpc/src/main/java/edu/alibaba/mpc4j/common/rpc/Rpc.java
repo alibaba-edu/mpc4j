@@ -58,9 +58,10 @@ public interface Rpc {
      * Receives any data packet. It blocks and wait until there is at least one received data packet. If there are many
      * received data packet, it returns any valid data packet.
      *
+     * @param ptoId protocol ID.
      * @return one received data packet.
      */
-    DataPacket receiveAny();
+    DataPacket receiveAny(int ptoId);
 
     /**
      * 返回已发送的数据负载字节长度。

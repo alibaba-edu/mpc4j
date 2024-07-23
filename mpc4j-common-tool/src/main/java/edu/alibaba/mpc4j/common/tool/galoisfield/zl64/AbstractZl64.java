@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.zl64;
 
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -8,6 +9,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.security.SecureRandom;
 
@@ -27,6 +29,10 @@ abstract class AbstractZl64 implements Zl64 {
      */
     protected final int byteL;
     /**
+     * mask
+     */
+    protected final long mask;
+    /**
      * 2^l
      */
     protected final long rangeBound;
@@ -40,10 +46,18 @@ abstract class AbstractZl64 implements Zl64 {
     private final Prg prg;
 
     AbstractZl64(EnvType envType, int l) {
-        assert l > 0 && l <= LongUtils.MAX_L : "l must be in range (0, " + LongUtils.MAX_L + "]:" + l;
+        MathPreconditions.checkPositiveInRangeClosed("l", l, Long.SIZE);
         this.l = l;
         byteL = CommonUtils.getByteLength(l);
-        rangeBound = 1L << l;
+        if (l == Long.SIZE) {
+            mask = 0xFFFFFFFFFFFFFFFFL;
+        } else if (l == Long.SIZE - 1) {
+            mask = 0x7FFFFFFFFFFFFFFFL;
+        } else {
+            mask = (1L << l) - 1;
+        }
+        // when l = 64, range_bound becomes 0
+        rangeBound = (l == Long.SIZE) ? 0 : (1L << l);
         kdf = KdfFactory.createInstance(envType);
         prg = PrgFactory.createInstance(envType, Long.BYTES);
     }
@@ -74,6 +88,16 @@ abstract class AbstractZl64 implements Zl64 {
     }
 
     @Override
+    public long getMask() {
+        return mask;
+    }
+
+    @Override
+    public long module(final long a) {
+        return a & mask;
+    }
+
+    @Override
     public long createZero() {
         return 0L;
     }
@@ -97,14 +121,14 @@ abstract class AbstractZl64 implements Zl64 {
 
     @Override
     public long createRandom(SecureRandom secureRandom) {
-        return LongUtils.randomNonNegative(rangeBound, secureRandom);
+        return secureRandom.nextLong() & mask;
     }
 
     @Override
     public long createRandom(byte[] seed) {
         byte[] key = kdf.deriveKey(seed);
         byte[] elementByteArray = prg.extendToBytes(key);
-        return Math.abs(LongUtils.byteArrayToLong(elementByteArray)) % rangeBound;
+        return LongUtils.byteArrayToLong(elementByteArray) & mask;
     }
 
     @Override
@@ -139,17 +163,25 @@ abstract class AbstractZl64 implements Zl64 {
 
     @Override
     public boolean validateElement(final long a) {
-        return a >= 0 && a < rangeBound;
+        if (l == Long.SIZE) {
+            return true;
+        } else {
+            return a >= 0 && Long.compareUnsigned(a, rangeBound) < 0;
+        }
     }
 
     @Override
     public boolean validateNonZeroElement(final long a) {
-        return a > 0 && a < rangeBound;
+        if (l == Long.SIZE) {
+            return a != 0;
+        } else {
+            return a > 0 && Long.compareUnsigned(a, rangeBound) < 0;
+        }
     }
 
     @Override
     public boolean validateRangeElement(final long a) {
-        return a >= 0 && a < rangeBound;
+        return validateElement(a);
     }
 
     @Override
@@ -167,7 +199,7 @@ abstract class AbstractZl64 implements Zl64 {
 
     @Override
     public int hashCode() {
-        return "Zl64".hashCode();
+        return new HashCodeBuilder().append(Zl64.class.getSimpleName()).append(l).hashCode();
     }
 
     @Override

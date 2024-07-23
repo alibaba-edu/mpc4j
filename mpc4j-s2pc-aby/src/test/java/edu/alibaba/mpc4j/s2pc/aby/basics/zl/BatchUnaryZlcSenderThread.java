@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.circuit.operator.UnaryAcOperator;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 import java.util.Arrays;
 
@@ -18,6 +19,10 @@ class BatchUnaryZlcSenderThread extends Thread {
      * sender
      */
     private final ZlcParty sender;
+    /**
+     * Zl
+     */
+    private final Zl zl;
     /**
      * operator
      */
@@ -43,8 +48,9 @@ class BatchUnaryZlcSenderThread extends Thread {
      */
     private ZlVector[] sendSecretVectors;
 
-    BatchUnaryZlcSenderThread(ZlcParty sender, UnaryAcOperator operator, ZlVector[] xVectors) {
+    BatchUnaryZlcSenderThread(ZlcParty sender, Zl zl, UnaryAcOperator operator, ZlVector[] xVectors) {
         this.sender = sender;
+        this.zl = zl;
         this.operator = operator;
         this.xVectors = xVectors;
         totalNum = Arrays.stream(xVectors).mapToInt(ZlVector::getNum).sum();
@@ -73,7 +79,7 @@ class BatchUnaryZlcSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.init(totalNum);
+            sender.init(zl.getL(), totalNum);
             // set inputs
             MpcZlVector[] xPlainMpcVectors = Arrays.stream(xVectors)
                 .map(sender::create)

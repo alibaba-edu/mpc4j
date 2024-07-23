@@ -5,16 +5,11 @@
     <parent>
         <artifactId>mpc4j</artifactId>
         <groupId>edu.alibaba</groupId>
-        <version>1.1.1</version>
+        <version>1.1.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>mpc4j-common-sampler</artifactId>
-
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-    </properties>
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
@@ -23,21 +18,9 @@
             <artifactId>commons-math3</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.privacy</groupId>
@@ -46,7 +29,7 @@
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-tool</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

@@ -70,8 +70,7 @@ public class Gp23ZlTruncSender extends AbstractZlTruncParty {
 
         stopWatch.start();
         z2cSender.init(4 * maxNum);
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
         cotSender.init(delta, 2 * maxL * maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -102,8 +101,9 @@ public class Gp23ZlTruncSender extends AbstractZlTruncParty {
         IntStream intStream = IntStream.range(0, num);
         intStream = parallel ? intStream.parallel() : intStream;
         BigInteger[] k = intStream.mapToObj(index -> {
-            int value = (k0.getBitVector().get(index) ? 1 : 0) + (k1.getBitVector().get(index) ? 1 : 0);
-            return BigInteger.valueOf(value + (rs0[index] + rs1[index]) * 2L).mod(n);
+            int t0 = (k0.getBitVector().get(index) ? 1 : 0) + rs0[index] * 2;
+            int t1 = (k1.getBitVector().get(index) ? 1 : 0) + rs1[index] * 2;
+            return BigInteger.valueOf(1 - t0 + t1).mod(n);
         }).toArray(BigInteger[]::new);
         ZlVector ki = ZlVector.create(zl, k);
         ki.setParallel(parallel);
@@ -129,56 +129,16 @@ public class Gp23ZlTruncSender extends AbstractZlTruncParty {
         return result;
     }
 
-    private BitVector[] getIi(SquareZlVector xi) {
-        BigInteger lowerBound = n.divide(BigInteger.valueOf(3));
-        BigInteger upperBound = n.shiftLeft(1).divide(BigInteger.valueOf(3)).add(BigInteger.ONE);
-        IntStream intStream = IntStream.range(0, num);
-        intStream = parallel ? intStream.parallel() : intStream;
-        int[][] i0 = intStream.mapToObj(index -> {
-            BigInteger x = xi.getZlVector().getElement(index);
-            if (x.compareTo(lowerBound) <= 0) {
-                return new int[]{0, 0};
-            } else if (x.compareTo(upperBound) > 0) {
-                return new int[]{1, 0};
-            } else {
-                return new int[]{0, 1};
-            }
-        }).toArray(int[][]::new);
-        BitVector a = BitVectorFactory.createZeros(num);
-        BitVector b = BitVectorFactory.createZeros(num);
-        for (int index = 0; index < num; index++) {
-            if (i0[index][0] == 1) {
-                a.set(index, true);
-            }
-            if (i0[index][1] == 1) {
-                b.set(index, true);
-            }
-        }
-        return new BitVector[]{a, b};
-    }
-
     private MpcZ2Vector generateK0Share(BitVector[] i0) throws MpcAbortException {
-        MpcZ2Vector z0 = SquareZ2Vector.create(i0[0].and(i0[1].not()), false);
+        MpcZ2Vector z0 = SquareZ2Vector.create(i0[0].and(i0[1].not()).and(i0[2].not()), false);
         MpcZ2Vector z1 = SquareZ2Vector.create(BitVectorFactory.createZeros(num), false);
         return z2cSender.and(z0, z1);
     }
 
     private MpcZ2Vector generateK1Share(BitVector[] i0) throws MpcAbortException {
-        MpcZ2Vector z0 = SquareZ2Vector.create(i0[0].not().and(i0[1].not()), false);
+        MpcZ2Vector z0 = SquareZ2Vector.create(i0[0].not().and(i0[1].not()).and(i0[2]), false);
         MpcZ2Vector z1 = SquareZ2Vector.create(BitVectorFactory.createZeros(num), false);
-        MpcZ2Vector z2 = SquareZ2Vector.create(i0[0].not().and(i0[1]), false);
-        MpcZ2Vector z3 = SquareZ2Vector.create(BitVectorFactory.createZeros(num), false);
-        MpcZ2Vector z4 = SquareZ2Vector.create(i0[0].and(i0[1].not()), false);
-        MpcZ2Vector z5 = SquareZ2Vector.create(BitVectorFactory.createZeros(num), false);
-        MpcZ2Vector[] z = z2cSender.and(new MpcZ2Vector[]{z0, z2, z4}, new MpcZ2Vector[]{z1, z3, z5});
-        return z2cSender.xor(z2cSender.xor(z[0], z[1]), z[2]);
-    }
-
-    private ZlVector iDiv(BigInteger[] input, int d) {
-        IntStream intStream = IntStream.range(0, num);
-        intStream = parallel ? intStream.parallel() : intStream;
-        BigInteger[] elements = intStream.mapToObj(index -> input[index].shiftRight(d)).toArray(BigInteger[]::new);
-        return ZlVector.create(zl, elements);
+        return z2cSender.and(z0, z1);
     }
 
     private int[] booleanShareToArithShare(MpcZ2Vector k) throws MpcAbortException {

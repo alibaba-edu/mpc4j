@@ -3,6 +3,8 @@ package edu.alibaba.mpc4j.dp.ldp.numeric.real;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
@@ -14,6 +16,7 @@ import java.util.stream.IntStream;
  * @date 2022/5/3
  */
 public class LocalMapRealLdpTest extends AbstractRealLdpTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalMapRealLdpTest.class);
     /**
      * 默认基础ε
      */
@@ -117,11 +120,14 @@ public class LocalMapRealLdpTest extends AbstractRealLdpTest {
         double lowerBound = -1.0;
         SecureRandom secureRandom = new SecureRandom();
         // 输入范围[-1.0, -1.0 + 0.01)，输出范围[-1.0, -1.0 + 0.01)
-        IntStream.range(0, ROUND).forEach(index -> {
+        for (int i = 0; i < ROUND; i++) {
             double value = secureRandom.nextDouble() * SMALL_THETA + lowerBound;
             double noiseValue = mechanism.randomize(value);
+            if (noiseValue >= lowerBound + SMALL_THETA || noiseValue < lowerBound) {
+                LOGGER.error("Wrong (round = {}), expect: {} <= {} < {}", i, lowerBound, noiseValue, lowerBound + SMALL_THETA);
+            }
             Assert.assertTrue(noiseValue < lowerBound + SMALL_THETA && noiseValue >= lowerBound);
-        });
+        }
     }
 
     @Test

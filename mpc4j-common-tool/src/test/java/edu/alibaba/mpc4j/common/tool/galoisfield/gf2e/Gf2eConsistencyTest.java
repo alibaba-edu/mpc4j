@@ -2,11 +2,11 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2e;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.GaloisfieldTestUtils;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -16,48 +16,76 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * GF(2^l)运算一致性测试。
+ * GF(2^l) consistency test.
  *
  * @author Weiran Liu
  * @date 2022/5/19
  */
 @RunWith(Parameterized.class)
-@Ignore
 public class Gf2eConsistencyTest {
     /**
-     * 随机测试轮数
+     * random round
      */
-    private static final int MAX_RANDOM_ROUND = 1000;
-    /**
-     * 随机状态
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int RANDOM_ROUND = 1000;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // Rings V.S. NTL
-        configurationParams.add(new Object[] {"Rings V.S. NTL (l = 1)", Gf2eType.RINGS, Gf2eType.NTL, 1});
-        configurationParams.add(new Object[] {"Rings V.S. NTL (l = 2)", Gf2eType.RINGS, Gf2eType.NTL, 2});
-        configurationParams.add(new Object[] {"Rings V.S. NTL (l = 3)", Gf2eType.RINGS, Gf2eType.NTL, 3});
-        configurationParams.add(new Object[] {"Rings V.S. NTL (l = 4)", Gf2eType.RINGS, Gf2eType.NTL, 4});
-        configurationParams.add(new Object[] {"Rings V.S. NTL (l = 39)", Gf2eType.RINGS, Gf2eType.NTL, 39});
-        configurationParams.add(new Object[] {"Rings V.S. NTL (l = 40)", Gf2eType.RINGS, Gf2eType.NTL, 40});
-        configurationParams.add(new Object[] {"Rings V.S. NTL (l = 41)", Gf2eType.RINGS, Gf2eType.NTL, 41});
-        configurationParams.add(new Object[] {"Rings V.S. NTL (l = 128)", Gf2eType.RINGS, Gf2eType.NTL, 128});
-        configurationParams.add(new Object[] {"Rings V.S. NTL (l = 256)", Gf2eType.RINGS, Gf2eType.NTL, 256});
+        Collection<Object[]> configurations = new ArrayList<>();
 
-        return configurationParams;
+        for (int l : GaloisfieldTestUtils.GF2E_L_ARRAY) {
+            // STANDARD
+            configurations.add(new Object[]{
+                EnvType.STANDARD.name() + " v.s. " + EnvType.STANDARD_JDK.name() + "(l = " + l + ")",
+                Gf2eFactory.getType(EnvType.STANDARD, l), Gf2eFactory.getType(EnvType.STANDARD_JDK, l), l
+            });
+            // INLAND
+            configurations.add(new Object[]{
+                EnvType.INLAND.name() + " v.s. " + EnvType.INLAND_JDK.name() + "(l = " + l + ")",
+                Gf2eFactory.getType(EnvType.INLAND, l), Gf2eFactory.getType(EnvType.INLAND_JDK, l), l
+            });
+            Gf2eType thatType = Gf2eType.NTL;
+            Gf2eType thisType;
+            // COMBINED V.S. NTL
+            thisType = Gf2eType.COMBINED;
+            if (Gf2eFactory.available(thisType, l)) {
+                configurations.add(new Object[]{
+                    thisType + " v.s. " + thatType + " (l = " + l + ")", thisType, thatType, l
+                });
+            }
+            // JDK V.S. NTL
+            if (Gf2eFactory.available(thisType, l)) {
+                configurations.add(new Object[]{
+                    thisType + " v.s. " + thatType + " (l = " + l + ")", thisType, thatType, l
+                });
+            }
+            thisType = Gf2eType.JDK;
+            if (Gf2eFactory.available(thisType, l)) {
+                configurations.add(new Object[]{
+                    thisType + " v.s. " + thatType + " (l = " + l + ")", thisType, thatType, l
+                });
+            }
+            // Rings V.S. NTL
+            thisType = Gf2eType.RINGS;
+            configurations.add(new Object[]{
+                thisType + " v.s. " + thatType + " (l = " + l + ")", thisType, thatType, l
+            });
+        }
+
+        return configurations;
     }
 
     /**
-     * 被比较类型
+     * this GF(2^l)
      */
     private final Gf2e thisGf2e;
     /**
-     * 比较类型
+     * that GF(2^l)
      */
     private final Gf2e thatGf2e;
+    /**
+     * random state
+     */
+    private final SecureRandom secureRandom;
 
     public Gf2eConsistencyTest(String name, Gf2eType thisType, Gf2eType thatType, int l) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
@@ -65,28 +93,45 @@ public class Gf2eConsistencyTest {
         thatGf2e = Gf2eFactory.createInstance(EnvType.STANDARD, thatType, l);
         Assert.assertEquals(thisGf2e.getL(), thatGf2e.getL());
         Assert.assertEquals(thisGf2e.getByteL(), thatGf2e.getByteL());
+        secureRandom = new SecureRandom();
     }
 
     @Test
-    public void testMulConsistency() {
-        for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[] a = thisGf2e.createRandom(SECURE_RANDOM);
-            byte[] b = thisGf2e.createRandom(SECURE_RANDOM);
-            byte[] thisResult = thisGf2e.mul(a, b);
-            byte[] thatResult = thatGf2e.mul(a, b);
-            Assert.assertArrayEquals(thisResult, thatResult);
-        }
-    }
-
-    @Test
-    public void testMuliConsistency() {
-        for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[] thisA = thisGf2e.createRandom(SECURE_RANDOM);
-            byte[] thatA = BytesUtils.clone(thisA);
-            byte[] b = thisGf2e.createRandom(SECURE_RANDOM);
-            thisGf2e.muli(thisA, b);
-            thatGf2e.muli(thatA, b);
-            Assert.assertArrayEquals(thisA, thatA);
+    public void testConsistency() {
+        byte[] p, q, thisR, thatR;
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            // mul
+            p = thisGf2e.createNonZeroRandom(secureRandom);
+            q = thatGf2e.createNonZeroRandom(secureRandom);
+            thisR = thisGf2e.mul(p, q);
+            thatR = thatGf2e.mul(p, q);
+            Assert.assertArrayEquals(thisR, thatR);
+            // muli
+            thisR = BytesUtils.clone(p);
+            thatR = BytesUtils.clone(p);
+            thisGf2e.muli(thisR, q);
+            thatGf2e.muli(thatR, q);
+            Assert.assertArrayEquals(thisR, thatR);
+            // inv
+            thisR = thisGf2e.inv(p);
+            thatR = thatGf2e.inv(p);
+            Assert.assertArrayEquals(thisR, thatR);
+            // invi
+            thisR = BytesUtils.clone(p);
+            thatR = BytesUtils.clone(p);
+            thisGf2e.invi(thisR);
+            thatGf2e.invi(thatR);
+            Assert.assertArrayEquals(thisR, thatR);
+            // div
+            thisR = thisGf2e.div(p, q);
+            thatR = thatGf2e.div(p, q);
+            Assert.assertArrayEquals(thisR, thatR);
+            // divi
+            thisR = BytesUtils.clone(p);
+            thatR = BytesUtils.clone(p);
+            thisGf2e.divi(thisR, q);
+            thatGf2e.divi(thatR, q);
+            Assert.assertArrayEquals(thisR, thatR);
         }
     }
 }

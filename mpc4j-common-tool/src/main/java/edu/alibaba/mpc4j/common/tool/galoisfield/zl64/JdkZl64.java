@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.zl64;
 
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64Factory.Zl64Type;
 
 /**
  * Zl64 implemented by JDK.
@@ -9,51 +10,41 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
  * @date 2023/2/20
  */
 class JdkZl64 extends AbstractZl64 {
-    /**
-     * module using AND operation
-     */
-    private final long andModule;
 
     public JdkZl64(EnvType envType, int l) {
         super(envType, l);
-        andModule = rangeBound - 1;
     }
 
     @Override
-    public Zl64Factory.Zl64Type getZl64Type() {
-        return Zl64Factory.Zl64Type.JDK;
-    }
-
-    @Override
-    public long module(final long a) {
-        return a & andModule;
+    public Zl64Type getZl64Type() {
+        return Zl64Type.JDK;
     }
 
     @Override
     public long add(final long a, final long b) {
         assert validateElement(a);
         assert validateElement(b);
-        return (a + b) & andModule;
+        return (a + b) & mask;
     }
 
     @Override
     public long neg(final long a) {
         assert validateElement(a);
-        return (-a) & andModule;
+        return (-a) & mask;
     }
 
     @Override
     public long sub(final long a, final long b) {
         assert validateElement(a);
         assert validateElement(b);
-        return (a - b) & andModule;
+        return (a - b) & mask;
     }
 
     @Override
     public long mul(final long a, final long b) {
         assert validateElement(a);
         assert validateElement(b);
-        return (a * b) & andModule;
+        return (a * b) & mask;
     }
 
     @Override
@@ -69,13 +60,13 @@ class JdkZl64 extends AbstractZl64 {
         long base2k = a;
         for (; ; ) {
             if ((exponent & 1) != 0) {
-                result = (result * base2k) & andModule;
+                result = (result * base2k);
             }
             exponent = exponent >> 1;
             if (exponent == 0) {
-                return result;
+                return result & mask;
             }
-            base2k = (base2k * base2k) & andModule;
+            base2k = (base2k * base2k);
         }
     }
 }

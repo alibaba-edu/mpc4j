@@ -12,17 +12,13 @@ public enum SecurityModel {
      */
     IDEAL,
     /**
-     * security with trusted dealer.
+     * trusted dealer
      */
     TRUSTED_DEALER,
     /**
      * semi-honest security.
      */
     SEMI_HONEST,
-    /**
-     * covert security.
-     */
-    COVERT,
     /**
      * malicious security.
      */

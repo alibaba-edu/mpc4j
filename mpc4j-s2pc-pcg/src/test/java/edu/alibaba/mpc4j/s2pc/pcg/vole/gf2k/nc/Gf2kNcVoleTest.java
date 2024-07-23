@@ -3,20 +3,21 @@ package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2k;
+import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2kFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.VoleTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.Gf2kNcVoleFactory.Gf2kNcVoleType;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.direct.DirectGf2kNcVoleConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.wykw21.Wykw21Gf2kNcVoleConfig;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -45,41 +46,40 @@ public class Gf2kNcVoleTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * large round
      */
-    private static final int LARGE_ROUND = 2;
+    private static final int LARGE_ROUND = 5;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // WYKW21
-        configurations.add(new Object[]{
-            Gf2kNcVoleType.WYKW21.name() + " (" + SecurityModel.MALICIOUS + ")",
-            new Wykw21Gf2kNcVoleConfig.Builder(SecurityModel.MALICIOUS).build(),
-        });
-        configurations.add(new Object[]{
-            Gf2kNcVoleType.WYKW21.name() + " (" + SecurityModel.SEMI_HONEST + ")",
-            new Wykw21Gf2kNcVoleConfig.Builder(SecurityModel.SEMI_HONEST).build(),
-        });
-        // DIRECT
-        configurations.add(new Object[]{
-            Gf2kNcVoleType.DIRECT.name() + " (" + SecurityModel.MALICIOUS + ")",
-            new DirectGf2kNcVoleConfig.Builder(SecurityModel.MALICIOUS).build(),
-        });
-        configurations.add(new Object[]{
-            Gf2kNcVoleType.DIRECT.name() + " (" + SecurityModel.SEMI_HONEST + ")",
-            new DirectGf2kNcVoleConfig.Builder(SecurityModel.SEMI_HONEST).build(),
-        });
+        for (int subfieldL : new int[]{1, 2, 4, 8, 16, 32, 64, 128}) {
+            // WYKW21
+            configurations.add(new Object[]{
+                Gf2kNcVoleType.WYKW21.name() + " (" + SecurityModel.MALICIOUS + ", subfieldL = " + subfieldL + ")",
+                new Wykw21Gf2kNcVoleConfig.Builder(SecurityModel.MALICIOUS).build(), subfieldL,
+            });
+            configurations.add(new Object[]{
+                Gf2kNcVoleType.WYKW21.name() + " (" + SecurityModel.SEMI_HONEST + ", subfieldL = " + subfieldL + ")",
+                new Wykw21Gf2kNcVoleConfig.Builder(SecurityModel.SEMI_HONEST).build(), subfieldL,
+            });
+        }
 
         return configurations;
     }
+
     /**
      * config
      */
     private final Gf2kNcVoleConfig config;
+    /**
+     * field
+     */
+    private final Sgf2k field;
 
-    public Gf2kNcVoleTest(String name, Gf2kNcVoleConfig config) {
+    public Gf2kNcVoleTest(String name, Gf2kNcVoleConfig config, int subfieldL) {
         super(name);
         this.config = config;
+        field = Sgf2kFactory.getInstance(EnvType.STANDARD, subfieldL);
     }
 
     @Test
@@ -93,12 +93,12 @@ public class Gf2kNcVoleTest extends AbstractTwoPartyMemoryRpcPto {
     }
 
     @Test
-    public void testDefaultRoundDefaultNum() {
+    public void testDefaultNum() {
         testPto(DEFAULT_NUM, DEFAULT_ROUND, false);
     }
 
     @Test
-    public void testParallelDefaultRoundDefaultNum() {
+    public void testParallelDefaultNum() {
         testPto(DEFAULT_NUM, DEFAULT_ROUND, true);
     }
 
@@ -108,22 +108,22 @@ public class Gf2kNcVoleTest extends AbstractTwoPartyMemoryRpcPto {
     }
 
     @Test
-    public void testLargeRoundDefaultNum() {
+    public void testLargeRound() {
         testPto(DEFAULT_NUM, LARGE_ROUND, false);
     }
 
     @Test
-    public void testParallelLargeRoundDefaultNum() {
+    public void testParallelLargeRound() {
         testPto(DEFAULT_NUM, LARGE_ROUND, true);
     }
 
     @Test
-    public void testDefaultRoundLargeNum() {
+    public void testLargeNum() {
         testPto(LARGE_NUM, DEFAULT_ROUND, false);
     }
 
     @Test
-    public void testParallelDefaultRoundLargeNum() {
+    public void testParallelLargeNum() {
         testPto(LARGE_NUM, DEFAULT_ROUND, true);
     }
 
@@ -137,10 +137,9 @@ public class Gf2kNcVoleTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
-            Gf2kNcVoleSenderThread senderThread = new Gf2kNcVoleSenderThread(sender, num, round);
-            Gf2kNcVoleReceiverThread receiverThread = new Gf2kNcVoleReceiverThread(receiver, delta, num, round);
+            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            Gf2kNcVoleSenderThread senderThread = new Gf2kNcVoleSenderThread(sender, field, num, round);
+            Gf2kNcVoleReceiverThread receiverThread = new Gf2kNcVoleReceiverThread(receiver, field, delta, num, round);
             STOP_WATCH.start();
             // start
             senderThread.start();
@@ -154,69 +153,12 @@ public class Gf2kNcVoleTest extends AbstractTwoPartyMemoryRpcPto {
             // verify
             Gf2kVoleSenderOutput senderOutput = senderThread.getSenderOutput();
             Gf2kVoleReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            Gf2kVoleTestUtils.assertOutput(num * round, senderOutput, receiverOutput);
+            VoleTestUtils.assertOutput(field, num * round, senderOutput, receiverOutput);
             printAndResetRpc(time);
             // destroy
             new Thread(sender::destroy).start();
             new Thread(receiver::destroy).start();
             LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testResetDelta() {
-        Gf2kNcVoleSender sender = Gf2kNcVoleFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        Gf2kNcVoleReceiver receiver = Gf2kNcVoleFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
-        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
-        int round = DEFAULT_ROUND;
-        int num = DEFAULT_NUM;
-        sender.setTaskId(randomTaskId);
-        receiver.setTaskId(randomTaskId);
-        try {
-            LOGGER.info("-----test {} (reset Δ) start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(delta);
-            // first round
-            Gf2kNcVoleSenderThread senderThread = new Gf2kNcVoleSenderThread(sender, num, round);
-            Gf2kNcVoleReceiverThread receiverThread = new Gf2kNcVoleReceiverThread(receiver, delta, num, round);
-            STOP_WATCH.start();
-            senderThread.start();
-            receiverThread.start();
-            senderThread.join();
-            receiverThread.join();
-            STOP_WATCH.stop();
-            long firstTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
-            STOP_WATCH.reset();
-            Gf2kVoleSenderOutput firstSenderOutput = senderThread.getSenderOutput();
-            Gf2kVoleReceiverOutput firstReceiverOutput = receiverThread.getReceiverOutput();
-            Gf2kVoleTestUtils.assertOutput(num * round, firstSenderOutput, firstReceiverOutput);
-            printAndResetRpc(firstTime);
-            // second time, reset delta
-            SECURE_RANDOM.nextBytes(delta);
-            senderThread = new Gf2kNcVoleSenderThread(sender, num, round);
-            receiverThread = new Gf2kNcVoleReceiverThread(receiver, delta, num, round);
-            STOP_WATCH.start();
-            senderThread.start();
-            receiverThread.start();
-            senderThread.join();
-            receiverThread.join();
-            STOP_WATCH.stop();
-            long secondTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
-            STOP_WATCH.reset();
-            Gf2kVoleSenderOutput secondSenderOutput = senderThread.getSenderOutput();
-            Gf2kVoleReceiverOutput secondReceiverOutput = receiverThread.getReceiverOutput();
-            Gf2kVoleTestUtils.assertOutput(num * round, secondSenderOutput, secondReceiverOutput);
-            // Δ should be different
-            Assert.assertNotEquals(
-                ByteBuffer.wrap(secondReceiverOutput.getDelta()), ByteBuffer.wrap(firstReceiverOutput.getDelta())
-            );
-            printAndResetRpc(secondTime);
-            // destroy
-            new Thread(sender::destroy).start();
-            new Thread(receiver::destroy).start();
-            LOGGER.info("-----test {} (reset Δ) end-----", sender.getPtoDesc().getPtoName());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

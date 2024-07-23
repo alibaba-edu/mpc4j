@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.circuit.zl;
 
-import edu.alibaba.mpc4j.common.circuit.MpcVector;
+import edu.alibaba.mpc4j.common.structure.vector.Vector;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 
@@ -15,23 +15,23 @@ import java.security.SecureRandom;
  */
 public class PlainZlVector implements MpcZlVector {
     /**
-     * Create a plain Zl vector with the assigned value.
+     * Create a plain vector with the assigned value.
      *
+     * @param zl     Zl instance.
      * @param values the assigned values.
-     * @return a plain Zl vector.
+     * @return a plain vector.
      */
     public static PlainZlVector create(Zl zl, BigInteger[] values) {
         PlainZlVector plainZlVector = new PlainZlVector();
         plainZlVector.zlVector = ZlVector.create(zl, values);
-
         return plainZlVector;
     }
 
     /**
-     * Creates a plain Zl vector with the assigned Zl vector.
+     * Creates a plain vector with the assigned vector.
      *
-     * @param zlVector the assigned Zl vector.
-     * @return a plain Zl vector.
+     * @param zlVector the assigned vector.
+     * @return a plain vector.
      */
     public static PlainZlVector create(ZlVector zlVector) {
         PlainZlVector plainZlVector = new PlainZlVector();
@@ -40,12 +40,12 @@ public class PlainZlVector implements MpcZlVector {
     }
 
     /**
-     * Create a random plain Zl vector.
+     * Create a random plain vector.
      *
-     * @param zl           the Zl instance.
+     * @param zl           Zl instance.
      * @param num          num.
-     * @param secureRandom the random states.
-     * @return a plain Zl vector.
+     * @param secureRandom random states.
+     * @return a plain vector.
      */
     public static PlainZlVector createRandom(Zl zl, int num, SecureRandom secureRandom) {
         PlainZlVector plainZlVector = new PlainZlVector();
@@ -54,11 +54,11 @@ public class PlainZlVector implements MpcZlVector {
     }
 
     /**
-     * Create a plain all-one Zl vector.
+     * Create a plain all-one vector.
      *
-     * @param zl  the Zl instance.
+     * @param zl  Zl instance.
      * @param num num.
-     * @return a plain Zl vector.
+     * @return a plain vector.
      */
     public static PlainZlVector createOnes(Zl zl, int num) {
         PlainZlVector plainZlVector = new PlainZlVector();
@@ -67,11 +67,11 @@ public class PlainZlVector implements MpcZlVector {
     }
 
     /**
-     * Create a plain all-zero Zl vector.
+     * Create a plain all-zero vector.
      *
-     * @param zl  the Zl instance.
+     * @param zl  Zl instance.
      * @param num num.
-     * @return a plain z2 vector.
+     * @return a plain vector.
      */
     public static PlainZlVector createZeros(Zl zl, int num) {
         PlainZlVector plainZlVector = new PlainZlVector();
@@ -80,10 +80,10 @@ public class PlainZlVector implements MpcZlVector {
     }
 
     /**
-     * Create an empty plain Zl vector.
+     * Create an empty plain vector.
      *
-     * @param zl the Zl instance.
-     * @return a plain Zl vector.
+     * @param zl Zl instance.
+     * @return a plain vector.
      */
     public static PlainZlVector createEmpty(Zl zl) {
         PlainZlVector plainZlVector = new PlainZlVector();
@@ -92,7 +92,7 @@ public class PlainZlVector implements MpcZlVector {
     }
 
     /**
-     * the Zl vector
+     * Zl vector
      */
     private ZlVector zlVector;
 
@@ -138,7 +138,7 @@ public class PlainZlVector implements MpcZlVector {
     }
 
     @Override
-    public void merge(MpcVector other) {
+    public void merge(Vector other) {
         PlainZlVector that = (PlainZlVector) other;
         zlVector.merge(that.getZlVector());
     }

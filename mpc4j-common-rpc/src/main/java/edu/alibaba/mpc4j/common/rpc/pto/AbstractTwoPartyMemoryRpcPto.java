@@ -4,9 +4,13 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
+import edu.alibaba.mpc4j.common.rpc.main.MainParty1Thread;
+import edu.alibaba.mpc4j.common.rpc.main.MainParty2Thread;
+import edu.alibaba.mpc4j.common.rpc.main.MainTwoPartyPto;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,5 +73,17 @@ public abstract class AbstractTwoPartyMemoryRpcPto {
             secondRpc.ownParty().getPartyName(), secondPartyByteLength,
             time
         );
+    }
+
+    protected void runMain(MainTwoPartyPto party1Main, MainTwoPartyPto party2Main) throws InterruptedException {
+        MainParty1Thread serverThread = new MainParty1Thread(firstRpc, secondRpc.ownParty(), party1Main);
+        MainParty2Thread clientThread = new MainParty2Thread(secondRpc, firstRpc.ownParty(), party2Main);
+        serverThread.start();
+        Thread.sleep(1000);
+        clientThread.start();
+        serverThread.join();
+        clientThread.join();
+        Assert.assertTrue(serverThread.getSuccess());
+        Assert.assertTrue(clientThread.getSuccess());
     }
 }

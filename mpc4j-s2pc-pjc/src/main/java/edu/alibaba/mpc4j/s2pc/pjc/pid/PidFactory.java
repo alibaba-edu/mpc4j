@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.bkms20.*;
+import edu.alibaba.mpc4j.s2pc.pjc.pid.czz24.*;
 import edu.alibaba.mpc4j.s2pc.pjc.pid.gmr21.*;
 
 /**
@@ -40,6 +41,10 @@ public class PidFactory implements PtoFactory {
          * GMR21的Sloppy方案
          */
         GMR21_SLOPPY,
+        /**
+         * CZZ22的Pid方案
+         */
+        CZZ24,
     }
 
     /**
@@ -62,6 +67,8 @@ public class PidFactory implements PtoFactory {
                 return new Gmr21SloppyPidServer<>(serverRpc, clientParty, (Gmr21SloppyPidConfig) config);
             case GMR21_MP:
                 return new Gmr21MpPidServer<>(serverRpc, clientParty, (Gmr21MpPidConfig) config);
+            case CZZ24:
+                return new Czz24PidServer<>(serverRpc, clientParty, (Czz24PidConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + PidType.class.getSimpleName() + ": " + type.name());
         }
@@ -87,8 +94,11 @@ public class PidFactory implements PtoFactory {
                 return new Gmr21SloppyPidClient<>(clientRpc, serverParty, (Gmr21SloppyPidConfig) config);
             case GMR21_MP:
                 return new Gmr21MpPidClient<>(clientRpc, serverParty, (Gmr21MpPidConfig) config);
+            case CZZ24:
+                return new Czz24PidClient<>(clientRpc, serverParty, (Czz24PidConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + PidType.class.getSimpleName() + ": " + type.name());
         }
     }
 }
+

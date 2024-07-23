@@ -5,6 +5,7 @@ import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 import java.util.Arrays;
 import java.util.Vector;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * abstract Waksman network.
@@ -34,6 +35,14 @@ abstract class AbstractWaksmanNetwork<T> implements WaksmanNetwork<T> {
      * widths
      */
     private final int[] widths;
+    /**
+     * parallel
+     */
+    protected boolean parallel = true;
+    /**
+     * thread pool
+     */
+    protected ForkJoinPool forkJoinPool;
 
     /**
      * Creates a Waksman network. The permutation is represented by an array. The length of the array is the number of
@@ -55,6 +64,7 @@ abstract class AbstractWaksmanNetwork<T> implements WaksmanNetwork<T> {
             Arrays.fill(network[levelIndex], (byte) -1);
         }
         widths = new int[level];
+        forkJoinPool = new ForkJoinPool(ForkJoinPool.getCommonPoolParallelism());
     }
 
     /**
@@ -79,6 +89,12 @@ abstract class AbstractWaksmanNetwork<T> implements WaksmanNetwork<T> {
         this.network = network;
         widths = new int[level];
         updateWidths();
+        forkJoinPool = new ForkJoinPool(ForkJoinPool.getCommonPoolParallelism());
+    }
+
+    @Override
+    public void setParallel(boolean parallel){
+        this.parallel = parallel;
     }
 
     protected void updateWidths() {

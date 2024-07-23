@@ -54,9 +54,9 @@ public class Gp23ZlCorrConfig extends AbstractMultiPartyPtoConfig implements ZlC
          */
         private final CotConfig cotConfig;
 
-        public Builder(boolean silent) {
-            z2cConfig = Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
-            cotConfig = CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        public Builder(SecurityModel securityModel, boolean silent) {
+            z2cConfig = Z2cFactory.createDefaultConfig(securityModel, silent);
+            cotConfig = CotFactory.createDefaultConfig(securityModel, silent);
         }
 
         @Override

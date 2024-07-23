@@ -10,7 +10,6 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
  * @date 2023/4/20
  */
 public interface MpcZ2Vector extends MpcVector {
-
     /**
      * Get the inner bit vector.
      *

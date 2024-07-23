@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.circuit.operator.UnaryAcOperator;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 /**
  * single Zl circuit sender thread for unary operator.
@@ -16,6 +17,10 @@ class SingleUnaryZlcSenderThread extends Thread {
      * sender
      */
     private final ZlcParty sender;
+    /**
+     * Zl
+     */
+    private final Zl zl;
     /**
      * operator
      */
@@ -41,8 +46,9 @@ class SingleUnaryZlcSenderThread extends Thread {
      */
     private ZlVector sendSecretVector;
 
-    SingleUnaryZlcSenderThread(ZlcParty sender, UnaryAcOperator operator, ZlVector xVector) {
+    SingleUnaryZlcSenderThread(ZlcParty sender, Zl zl, UnaryAcOperator operator, ZlVector xVector) {
         this.sender = sender;
+        this.zl = zl;
         this.operator = operator;
         this.xVector = xVector;
         num = xVector.getNum();
@@ -71,7 +77,7 @@ class SingleUnaryZlcSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.init(num);
+            sender.init(zl.getL(), num);
             // set inputs
             MpcZlVector xPlainMpcVector = sender.create(xVector);
             MpcZlVector x0SecretMpcVector = sender.shareOwn(xVector);

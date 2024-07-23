@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pjc.main.pmid;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
-import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pso.main.psu.PsuConfigUtils;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidConfig;
 import edu.alibaba.mpc4j.s2pc.pjc.pmid.PmidFactory.PmidType;
@@ -26,29 +26,25 @@ public class PmidConfigUtils {
     }
 
     /**
-     * 创建配置项。
+     * Creates config.
      *
-     * @param properties 配置参数。
-     * @return 配置项。
+     * @param properties properties.
+     * @return config.
      */
-    static PmidConfig createConfig(Properties properties) {
-        // 读取协议类型
-        String pmidTypeString = PropertiesUtils.readString(properties, "pmid_pto_name");
-        PmidType pmidType = PmidType.valueOf(pmidTypeString);
+    public static PmidConfig createConfig(Properties properties) {
+        PmidType pmidType = MainPtoConfigUtils.readEnum(PmidType.class, properties, PmidMain.PTO_NAME_KEY);
         switch (pmidType) {
             case ZCL22_MP:
                 return createZcl22MpPmidConfig(properties);
             case ZCL22_SLOPPY:
                 return createZcl22SloppyPmidConfig(properties);
             default:
-                throw new IllegalArgumentException("Invalid " + PmidType.class.getSimpleName() + ": " + pmidTypeString);
+                throw new IllegalArgumentException("Invalid " + PmidType.class.getSimpleName() + ": " + pmidType);
         }
     }
 
     private static Zcl22MpPmidConfig createZcl22MpPmidConfig(Properties properties) {
-        // PSU类型
-        PsuConfig psuConfig = PsuConfigUtils.createPsuConfig(properties);
-
+        PsuConfig psuConfig = PsuConfigUtils.createConfig(properties);
         return new Zcl22MpPmidConfig.Builder()
             .setMpOprfConfig(OprfFactory.createMpOprfDefaultConfig(SecurityModel.SEMI_HONEST))
             .setSigmaOkvsType(Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT)
@@ -57,9 +53,7 @@ public class PmidConfigUtils {
     }
 
     private static Zcl22SloppyPmidConfig createZcl22SloppyPmidConfig(Properties properties) {
-        // PSU类型
-        PsuConfig psuConfig = PsuConfigUtils.createPsuConfig(properties);
-
+        PsuConfig psuConfig = PsuConfigUtils.createConfig(properties);
         return new Zcl22SloppyPmidConfig.Builder()
             .setSloppyOkvsType(Gf2eDokvsType.MEGA_BIN)
             .setSigmaOkvsType(Gf2eDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT)

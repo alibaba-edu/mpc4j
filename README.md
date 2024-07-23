@@ -2,49 +2,53 @@
 
 ## Introduction
 
-Multi-Party Computation for Java (`mpc4j`) is an efficient and easy-to-use Secure Multi-Party Computation (MPC), Homomorphic Encryption (HE) and Differential Privacy (DP) library mainly written in Java.
+Multi-Party Computation for Java (`mpc4j`) is an efficient and easy-to-use Secure Multi-Party Computation (MPC), Homomorphic Encryption (HE), and Differential Privacy (DP) library mainly written in Java.
 
 `mpc4j` aims to provide an academic library for researchers to study and develop MPC/HE/DP in a unified manner. As `mpc4j` tries to provide state-of-the-art MPC/HE/DP implementations, researchers could leverage the library to have fair and quick comparisons between the new algorithms/protocols they proposed and existing ones.
 
 We note that `mpc4j` is mainly focused on research and `mpc4j` assumes a very strong system model. Specifically, `mpc4j` assumes never-crash nodes with a fully synchronized network. In practice, crash-recovery nodes with a partially synchronized network would be a reasonable system model. Aside from the system model, `mpc4j` tries to integrate tools that are suitable to be used in the production environment. We emphasize that additional engineering problems need to be solved if you want to develop your own MPC/DP applications. A reasonable solution would be to implement communication APIs on your own, develop protocols by calling tools in `mpc4j`, and referring protocol implementations in `mpc4j` as a prototype.
 
-From version 1.1.1, one needs to use JDK 17 (or later) to develop and compile `mpc4j`, but all modules except `mpc4j-crypto-simd` can be executed using JDK 8 (or later).
+Since version 1.1.2, `mpc4j` leverages [Vector API](https://openjdk.org/jeps/448) to speedup performance using Java SIMD. We also found that [Foreign Function and Memory API (FFM)](https://docs.oracle.com/en/java/javase/22/core/foreign-function-and-memory-api.html) can help us to do conversions between different primitives more efficiently. One needs to **use JDK 21 (or later)** to develop, compile and run `mpc4j`. We note that this means you may also need to upgrade the underlying IDE (e.g., Intellij IDEA) to new versions.
 
 ### Features
 
 `mpc4j` has the following features:
 
 - **`aarch64` support**: `mpc4j` can run on both `x86_64` and `aarch64`. Researchers can develop and test protocols on Macbook M1 (`aarch64`) and then run experiments on Linux OS (`x86_64`). 
-- **SM series support**: Developers may want to use SM series algorithms (SM2 for public-key operations, SM3 for hashing, and SM4 for block cipher operations) instead of regular algorithms (like secp256k1 for public-key operations, SHA256 for hashing, and AES for block cipher operations). Also, the SM series algorithms are accepted by ISO/IES, so it may be necessary to support SM series algorithms under MPC settings. `mpc4j` leverages [Bouncy Castle](https://www.bouncycastle.org/java.html) to support SM series algorithms.
-- **Pure-Java support**: We try our best to provide an alternative cryptographic tool implementations using pure Java so that researchers can directly start their implementation without worrying about installation for C/C++ libraries.
+- **SM series support**: Developers may want to use SM series algorithms (SM2 for public-key operations, SM3 for hashing, and SM4 for block cipher operations) instead of regular algorithms (like secp256k1 for public-key operations, SHA256 for hashing, and AES for block cipher operations). Also, the SM series algorithms are accepted by ISO/IES, so it may be necessary to support them under MPC settings. `mpc4j` leverages [Bouncy Castle](https://www.bouncycastle.org/java.html) to support SM series algorithms.
+- **Pure-Java support**: We try our best to provide alternative cryptographic tool implementations using pure Java so that researchers can directly start their implementation without worrying about installing C/C++ libraries.
 
 ### Contact
 
 `mpc4j` is mainly developed by Weiran Liu. Feel free to contact me at [liuweiran900217@gmail.com](mailto:liuweiran900217@gmail.com). 
 
-- The submodules involving Fully Homomorphic Encryption (FHE) are mainly developed by an anonymous author Anon\_Trent, [Liqiang Peng](mailto:shelleyatsun@gmail.com) and [Qixian Zhou](https://github.com/qxzhou1010). 
-- The submodules involving secure three-party computations are mainly developed by [Feng Han](hf1996@mail.ustc.edu.cn).
-- The submodules involving Vector Oblivious Linear Evaluation (VOLE) are mainly developed by [Hanwen Feng](mailto:hanw.feng94@gmail.com).
+- The submodules involving Fully Homomorphic Encryption (FHE) were mainly developed by Anon\_Trent (an anonymous author), [Liqiang Peng](mailto:shelleyatsun@gmail.com) and [Qixian Zhou](https://github.com/qxzhou1010).
+- The submodules involving secure three-party computations are mainly developed by [Feng Han](mailto:hf1996@mail.ustc.edu.cn).
+- The submodules involving Vector Oblivious Linear Evaluation (VOLE) are mainly developed by [Hanwen Feng](https://hanwen-feng.github.io/).
 - The components of TFHE are developed by [Zhen Gu](mailto:thuguz15@gmail.com) of Computing Technology Lab (CTL) in Damo, Alibaba. The rest of their TFHE implementation by extending SEAL will be later released in their FHE library.
-- The FourQ-related implementations and mobile PSI-friendly OPRF (i.e., single-query OPRF) are developed by [Qixian Zhou](https://github.com/qxzhou1010). 
-- The submodules for circuits and operations based on the Boolean/arithmetic circuits are mainly developed by [Li Peng](mailto:pengli_email@163.com) and [Feng Han](hf1996@mail.ustc.edu.cn).
+- The FourQ-related implementations and mobile PSI-friendly OPRF (i.e., single-query OPRF) are developed by [Qixian Zhou](https://github.com/qxzhou1010).
+- The submodules for circuits and operations based on the Boolean/arithmetic circuits are mainly developed by [Li Peng](mailto:pengli_email@163.com) and [Feng Han](mailto:hf1996@mail.ustc.edu.cn).
 
 ### Who Uses `mpc4j`
 
-Currently, [DataTrust](https://dp.alibaba.com/product/datatrust) is powered by `mpc4j`. If your project uses `mpc4j` and you do not mind it appearing here, don't hesitate to get in touch with me.
+If your project uses `mpc4j` and you do not mind it appearing here, don't hesitate to get in touch with me.
+
+- [DataTrust](https://dp.alibaba.com/product/datatrust) is powered by `mpc4j`. 
+- The paper ["Scalable and Adaptively Secure Any-Trust Distributed Key Generation and All-hands Checkpointing"](https://eprint.iacr.org/2023/1773.pdf) was accepted by CCS 2024. We thank [Hanwen Feng](https://hanwen-feng.github.io/) to use `mpc4j` for developing their prototypes.
 
 ## Academic Implementations
 
 ## Some Implementations of our Works
 
-If you want to test and evaluate our protocol implementations, compile and run the corresponding jar file with the config file. For example, if you want to run implementations related to PSU in the package `mpc4j-s2pc-pso`, you can first find example config files located in `conf/psu` in `mpc4j-s2pc-pso`, and then run `java -jar mpc4j-s2pc-pso-X.X.X-jar-with-dependencies.jar conf_file_name.txt` separately on two platforms with direct network connections (using the network channel assigned in config files) or on two terminals in one platform (using local network 127.0.0.1). Note that **you need first to run the server and then run the client.** The server and the client implicitly synchronize before running the protocol, and the first step is the client sends something like "hello" to the server. If the server is offline at that time, the program will get stuck.
+If you want to test and evaluate our protocol implementations, compile and run the corresponding jar file with the config file. Since version 1.1.2, if you want to run implementations related to PSU in the package `mpc4j-s2pc-pso`, you can first find example config files located in `conf/psu` in `mpc4j-s2pc-pso`, and then run `java -jar mpc4j-s2pc-pso-X.X.X-jar-with-dependencies.jar conf_file_name.txt server` and `java -jar mpc4j-s2pc-pso-X.X.X-jar-with-dependencies.jar conf_file_name.txt client` separately on two platforms with direct network connections (using the network channel assigned in config files) or on two terminals in one platform (using local network 127.0.0.1). Note that **you need first to run the server and then run the client.** The server and the client implicitly synchronize before running the protocol, and the first step is the client to send something like "hello" to the server. If the server is offline at that time, the program will get stuck. Since version 1.1.2, we move all example configuration files in `test/resources` for the corresponding modules.
 
-- Our paper ["Unbalanced Circuit-PSI from Oblivious Key-Value Retrieval"](https://eprint.iacr.org/2023/1636) was accepted to USENIX Security 2024. Package `ucpsi` in `mpc4j-s2pc-upso` contains the implementation of this paper. The configuration files are under `conf/ucpsi` in `mpc4j-s2pc-upso`.
+- Our paper "Unbalanced Private Set Union with Reduced Computation and Communication" was accepted to ACM CCS 2024. Package `upsu` in `mpc4j-s2pc-upso` contains the implementation of this paper.
+- Our paper ["Unbalanced Circuit-PSI from Oblivious Key-Value Retrieval"](https://eprint.iacr.org/2023/1636) was accepted to USENIX Security 2024. Package `ucpsi` in `mpc4j-s2pc-upso` contains the implementation of this paper.
 - Our paper ["Private Set Operations from Multi-Query Reverse Private Membership Test"](https://eprint.iacr.org/2022/652.pdf) was accepted to PKC 2024. Aside from the C/C++ implementation in [Kunlun](https:// github.com/yuchen1024/Kunlun/mpc.), package `mqrpmt` in `mpc4j-s2pc-opf` contains the implementation of communicative OPRF. 
-- Our paper ["Local Differentially Private Heavy Hitter Detection in Data Streams with Bounded Memory"](https://arxiv.org/pdf/2311.16062.pdf) was accepted to SIGMOD 2024. Package `heavyhitter` in `mpc4j-dp-service` contains the implementation of this paper. The configuration files are under `conf` in `mpc4j-dp-service`.
-- Our paper ["Efficient Private Multiset ID Protocols"](https://eprint.iacr.org/2023/986.pdf) was accepted to ICICS 2023. Package `pmid` in `mpc4j-s2pc-pso` contains the implementation of this paper. The configuration files are under `conf/pmid` in `mpc4j-s2pc-pso`.
-- Our paper ["Linear Private Set Union from Multi-Query Reverse Private Membership Test"](https://eprint.iacr.org/2022/358.pdf) was accepted to USENIX Security 2023. Package `psu` in `mpc4j-s2pc-pso` contains the implementation of this paper. The configuration files are under `conf/psu` in `mpc4j-s2pc-pso`.
-- Our paper ["OpBoost: A Vertical Federated Tree Boosting Framework Based on Order-Preserving Desensitization"](https://arxiv.org/abs/2210.01318) was accepted to VLDB 2023. Module `mpc4j-sml-opboost` contains the implementation of this paper. The configuration files are under `conf` in `mpc4j-sml-opboost`.
+- Our paper ["Local Differentially Private Heavy Hitter Detection in Data Streams with Bounded Memory"](https://arxiv.org/pdf/2311.16062.pdf) was accepted to SIGMOD 2024. Package `heavyhitter` in `mpc4j-dp-service` contains the implementation of this paper.
+- Our paper ["Efficient Private Multiset ID Protocols"](https://eprint.iacr.org/2023/986.pdf) was accepted to ICICS 2023. Package `pmid` in `mpc4j-s2pc-pso` contains the implementation of this paper.
+- Our paper ["Linear Private Set Union from Multi-Query Reverse Private Membership Test"](https://eprint.iacr.org/2022/358.pdf) was accepted to USENIX Security 2023. Package `psu` in `mpc4j-s2pc-pso` contains the implementation of this paper.
+- Our paper ["OpBoost: A Vertical Federated Tree Boosting Framework Based on Order-Preserving Desensitization"](https://arxiv.org/abs/2210.01318) was accepted to VLDB 2023. Module `mpc4j-sml-opboost` contains the implementation of this paper.
 
 ## Some Implementations of Existing Works
 
@@ -81,7 +85,7 @@ Here are some libraries that inspire our implementations.
 - [PSI-analytics](https://github.com/osu-crypto/PSI-analytics): The implementation of the protocols presented in the paper "Private Set Operations from Oblivious Switching," accepted at [PKC 2021](https://eprint.iacr.org/2021/243.pdf). We introduce its switching network implementations in `mpc4j`. See package `benes_network` in `mpc4j-native-tool` for details.
 - [Diffprivlib](https://github.com/IBM/differential-privacy-library): A general-purpose library for experimenting with, investigating, and developing applications in differential privacy. We understand how to organize source codes for implementing differential privacy mechanisms. See `mpc4j-dp-cdp` for details.
 - [b2_exponential_mchanism](https://github.com/cilvento/b2_exponential_mechanism): An exponential mechanism implementation with base-2 differential privacy. We re-implement the base-2 exponential mechanism in `mpc4j`. See package `edu.alibaba.mpc4j.dp.cdp.nomial` for details.
-- [libOTe](https://github.com/osu-crypto/libOTe): Implementations for many Oblivious Transfer (OT) protocols, especially the Silent OT protocol presented in the paper "Silver: Silent VOLE and Oblivious Transfer from Hardness of Decoding Structured LDPC Codes" accepted at [CRYPTO 2021](https://eprint.iacr.org/2021/1150.pdf) (See package `cot` in `mpc4j-s2pc-pcg`).
+- [libOTe](https://github.com/osu-crypto/libOTe): Implementations for many Oblivious Transfer (OT) protocols, especially the Silent OT protocols (See package `cot` in `mpc4j-s2pc-pcg`).
 - [PSU](https://github.com/osu-crypto/PSU): The implementation of the paper "Scalable Private Set Union from Symmetric-Key Techniques," published in [ASIACRYPT 2019](https://eprint.iacr.org/2019/776.pdf). We introduce its fast polynomial interpolation implementations in `mpc4j`. See package `ntl_poly` in `mpc4j-native-tool` for details. The PSU implementation is in package `psu` of `mpc4j-s2pc-pso`.
 - [PSU](https://github.com/dujiajun/PSU): The implementation of the paper "Shuffle-based Private Set Union: Faster and More," published in [USENIX Security 2022](https://eprint.iacr.org/2022/157.pdf). We introduce the idea of how to concurrently run the Oblivious Switching Network (OSN) in `mpc4j`. See package `psu` in `mpc4j-s2pc-pso` for details.
 - [SpOT-PSI](https://github.com/osu-crypto/SpOT-PSI): The implementation of the paper "SpOT-Light: Lightweight Private Set Intersection from Sparse OT Extension," published in [CRYPTO 2019](https://eprint.iacr.org/2019/634.pdf). We introduce many ideas for fast polynomial interpolations in `mpc4j`. See package `polynomial` in `mpc4j-common-tool` for details.

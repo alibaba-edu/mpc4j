@@ -1,17 +1,18 @@
 package edu.alibaba.mpc4j.common.tool.network;
 
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -20,6 +21,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2024/3/28
  */
+@Ignore
 public class PermutationDecomposerEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(PermutationNetworkEfficiencyTest.class);
     /**
@@ -33,7 +35,7 @@ public class PermutationDecomposerEfficiencyTest {
     /**
      * numbers of inputs
      */
-    private static final int[] LOG_N_ARRAY = new int[]{12, 14, 16, 18};
+    private static final int[] LOG_N_ARRAY = new int[]{12, 14, 16, 18, 20};
 
     @Test
     public void testEfficiency() {
@@ -50,25 +52,24 @@ public class PermutationDecomposerEfficiencyTest {
         int n = 1 << logN;
         int t = 1 << logT;
 
-        List<Integer> shuffle = IntStream.range(0, n).boxed().collect(Collectors.toList());
-        Collections.shuffle(shuffle, SECURE_RANDOM);
-        int[] permutation = shuffle.stream().mapToInt(index -> index).toArray();
+        int[] permutation = IntStream.range(0, n).toArray();
+        ArrayUtils.shuffle(permutation, SECURE_RANDOM);
 
         STOP_WATCH.start();
-        PermutationDecomposer decomposer = new PermutationDecomposer(permutation, t);
+        PermutationDecomposer decomposer = new PermutationDecomposer(n, t);
         STOP_WATCH.stop();
         long createTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
         STOP_WATCH.reset();
 
-        Vector<Integer> inputVector = IntStream.range(0, n).boxed().collect(Collectors.toCollection(Vector::new));
+        byte[][] inputVector = IntStream.range(0, n)
+            .mapToObj(i -> IntUtils.nonNegIntToFixedByteArray(i, CommonConstants.BLOCK_BYTE_LENGTH))
+                .toArray(byte[][]::new);
         STOP_WATCH.start();
-        Vector<Integer> outputVector = new Vector<>(inputVector);
-        int[][][] splitGroups = decomposer.getSplitGroups();
-        int[][][] subPermutations = decomposer.getSubPermutations();
+        byte[][] outputVector = BytesUtils.clone(inputVector);
+        decomposer.setPermutation(permutation);
         for (int i = 0; i < decomposer.getD(); i++) {
-            for (int j = 0; j < decomposer.getSubNum(); j++) {
-                outputVector = PermutationNetworkUtils.permutation(splitGroups[i][j], subPermutations[i][j], outputVector);
-            }
+            byte[][][] groups = decomposer.splitVector(outputVector, i);
+            outputVector = decomposer.combineGroups(groups, i);
         }
         STOP_WATCH.stop();
         long permuteTime = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);

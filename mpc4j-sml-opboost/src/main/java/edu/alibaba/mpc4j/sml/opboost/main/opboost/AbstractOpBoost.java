@@ -118,15 +118,14 @@ public abstract class AbstractOpBoost implements OpBoost {
      */
     protected double[] alphas;
 
-    public AbstractOpBoost(Properties properties, OpBoostTaskType taskType) {
+    public AbstractOpBoost(Properties properties, String ownName, OpBoostTaskType taskType) {
         this.properties = properties;
         this.taskType = taskType;
+        ownRpc = RpcPropertiesUtils.readNettyRpcWithOwnName(properties, ownName, "host", "slave");
     }
 
     @Override
     public void init() throws IOException, URISyntaxException {
-        // 设置通信接口
-        ownRpc = RpcPropertiesUtils.readNettyRpc(properties, "host", "slave");
         if (ownRpc.ownParty().getPartyId() == 0) {
             otherParty = ownRpc.getParty(1);
         } else {

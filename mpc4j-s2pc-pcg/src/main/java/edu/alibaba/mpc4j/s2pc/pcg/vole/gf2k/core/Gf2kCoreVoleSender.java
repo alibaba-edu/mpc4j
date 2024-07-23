@@ -14,10 +14,10 @@ public interface Gf2kCoreVoleSender extends TwoPartyPto {
     /**
      * Inits the protocol.
      *
-     * @param maxNum max num.
+     * @param subfieldL subfield L.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(int maxNum) throws MpcAbortException;
+    void init(int subfieldL) throws MpcAbortException;
 
     /**
      * Executes the protocol.

@@ -1,10 +1,15 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.corr;
 
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.corr.zl.ZlCorrConfig;
 import edu.alibaba.mpc4j.s2pc.aby.operator.corr.zl.ZlCorrFactory;
@@ -37,10 +42,6 @@ public class ZlCorrTest extends AbstractTwoPartyMemoryRpcPto {
      * default num
      */
     private static final int DEFAULT_NUM = 10000;
-    /**
-     * default Zl
-     */
-    private static final Zl DEFAULT_ZL = ZlFactory.createInstance(EnvType.STANDARD, 32);
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -49,12 +50,12 @@ public class ZlCorrTest extends AbstractTwoPartyMemoryRpcPto {
         // RRK+20
         configurations.add(new Object[]{
             ZlCorrFactory.ZlCorrType.RRK20.name(),
-            new Rrk20ZlCorrConfig.Builder(true).build()
+            new Rrk20ZlCorrConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
         // GP23
         configurations.add(new Object[]{
             ZlCorrFactory.ZlCorrType.GP23.name(),
-            new Gp23ZlCorrConfig.Builder(true).build()
+            new Gp23ZlCorrConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
 
         return configurations;
@@ -64,10 +65,15 @@ public class ZlCorrTest extends AbstractTwoPartyMemoryRpcPto {
      * the config
      */
     private final ZlCorrConfig config;
+    /**
+     * Zl
+     */
+    private final Zl zl;
 
     public ZlCorrTest(String name, ZlCorrConfig config) {
         super(name);
         this.config = config;
+        zl = ZlFactory.createInstance(EnvType.STANDARD, LongUtils.MAX_L_FOR_MODULE_N - 1);
     }
 
     @Test
@@ -82,32 +88,36 @@ public class ZlCorrTest extends AbstractTwoPartyMemoryRpcPto {
 
     private void testPto(boolean parallel) {
         // create inputs
-        BigInteger n = ZlCorrTest.DEFAULT_ZL.getRangeBound();
+        BigInteger n = zl.getRangeBound();
         BigInteger bound = n.divide(BigInteger.valueOf(3));
         BigInteger[] x = new BigInteger[ZlCorrTest.DEFAULT_NUM];
         BigInteger[] x0 = new BigInteger[ZlCorrTest.DEFAULT_NUM];
         BigInteger[] x1 = new BigInteger[ZlCorrTest.DEFAULT_NUM];
         for (int i = 0; i < ZlCorrTest.DEFAULT_NUM; i++) {
             do {
-                x[i] = new BigInteger(ZlCorrTest.DEFAULT_ZL.getL(), SECURE_RANDOM);
-                x1[i] = new BigInteger(ZlCorrTest.DEFAULT_ZL.getL(), SECURE_RANDOM);
-                x0[i] = new BigInteger(ZlCorrTest.DEFAULT_ZL.getL(), SECURE_RANDOM);
-                x[i] = x0[i].add(x1[i]).mod(n);
-            } while(x[i].compareTo(bound) >= 0 && x[i].subtract(n).abs().compareTo(bound) >= 0);
+                x[i] = zl.createRandom(SECURE_RANDOM);
+                x1[i] = zl.createRandom(SECURE_RANDOM);
+                x0[i] = zl.createRandom(SECURE_RANDOM);
+                x[i] = zl.add(x0[i], x1[i]);
+            } while (x[i].compareTo(bound) >= 0 && x[i].subtract(n).abs().compareTo(bound) >= 0);
         }
-        ZlVector x0Vector = ZlVector.create(ZlCorrTest.DEFAULT_ZL, x0);
-        ZlVector x1Vector = ZlVector.create(ZlCorrTest.DEFAULT_ZL, x1);
+        ZlVector x0Vector = ZlVector.create(zl, x0);
+        ZlVector x1Vector = ZlVector.create(zl, x1);
         SquareZlVector shareX0 = SquareZlVector.create(x0Vector, false);
         SquareZlVector shareX1 = SquareZlVector.create(x1Vector, false);
+        // init z2c
+        Z2cConfig z2cConfig = Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+        Z2cParty z2cSender = Z2cFactory.createSender(firstRpc, secondRpc.ownParty(), z2cConfig);
+        Z2cParty z2cReceiver = Z2cFactory.createReceiver(secondRpc, firstRpc.ownParty(), z2cConfig);
         // init the protocol
-        ZlCorrParty sender = ZlCorrFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        ZlCorrParty receiver = ZlCorrFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
+        ZlCorrParty sender = ZlCorrFactory.createSender(z2cSender, secondRpc.ownParty(), config);
+        ZlCorrParty receiver = ZlCorrFactory.createReceiver(z2cReceiver, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            ZlCorrPartyThread senderThread = new ZlCorrPartyThread(sender, ZlCorrTest.DEFAULT_ZL.getL(), shareX0);
-            ZlCorrPartyThread receiverThread = new ZlCorrPartyThread(receiver, ZlCorrTest.DEFAULT_ZL.getL(), shareX1);
+            ZlCorrPartyThread senderThread = new ZlCorrPartyThread(sender, z2cSender, shareX0);
+            ZlCorrPartyThread receiverThread = new ZlCorrPartyThread(receiver, z2cReceiver, shareX1);
             StopWatch stopWatch = new StopWatch();
             // execute the protocol
             stopWatch.start();

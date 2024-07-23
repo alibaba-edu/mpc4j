@@ -202,13 +202,11 @@ class Prty20PsiPtoDesc implements PtoDesc {
     public static int getMaxL(EnvType envType, SecurityModel securityModel,
                               Gf2eDokvsType paxosType, int serverElementSize, int clientElementSize) {
         switch (securityModel) {
-            case MALICIOUS:
-            case COVERT:
-                return getMaliciousCoderDatawordBitLength(envType, paxosType, serverElementSize, clientElementSize);
-            case SEMI_HONEST:
-            case TRUSTED_DEALER:
             case IDEAL:
+            case SEMI_HONEST:
                 return getSemiHonestCoderDatawordBitLength(serverElementSize, clientElementSize);
+            case MALICIOUS:
+                return getMaliciousCoderDatawordBitLength(envType, paxosType, serverElementSize, clientElementSize);
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel);
         }

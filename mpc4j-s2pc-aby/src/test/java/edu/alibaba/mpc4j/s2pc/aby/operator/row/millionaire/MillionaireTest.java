@@ -5,6 +5,9 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.millionaire.rrk20.Rrk20MillionaireConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -39,6 +42,10 @@ public class MillionaireTest extends AbstractTwoPartyMemoryRpcPto {
      * default l
      */
     private static final int DEFAULT_L = 32;
+    /**
+     * block size in CGS22
+     */
+    private static final int RRK20_M = 4;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -47,7 +54,8 @@ public class MillionaireTest extends AbstractTwoPartyMemoryRpcPto {
         // RRK+20
         configurations.add(new Object[]{
             MillionaireFactory.MillionaireType.RRK20 + " (" + SecurityModel.SEMI_HONEST + ")",
-            new Rrk20MillionaireConfig.Builder(SecurityModel.SEMI_HONEST, false).build()
+            new Rrk20MillionaireConfig.Builder(SecurityModel.SEMI_HONEST, false)
+                .setM(RRK20_M).build()
         });
 
         return configurations;
@@ -137,15 +145,19 @@ public class MillionaireTest extends AbstractTwoPartyMemoryRpcPto {
         // create inputs
         byte[][] xs = MillionaireTestUtils.genSenderInputArray(l, num, SECURE_RANDOM);
         byte[][] ys = MillionaireTestUtils.genReceiverInputArray(l, xs, SECURE_RANDOM);
+        // init z2 circuit
+        Z2cConfig z2cConfig = Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, false);
+        Z2cParty z2cSender = Z2cFactory.createSender(firstRpc, secondRpc.ownParty(), z2cConfig);
+        Z2cParty z2cReceiver = Z2cFactory.createReceiver(secondRpc, firstRpc.ownParty(), z2cConfig);
         // init the protocol
-        MillionaireParty sender = MillionaireFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        MillionaireParty receiver = MillionaireFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
+        MillionaireParty sender = MillionaireFactory.createSender(z2cSender, secondRpc.ownParty(), config);
+        MillionaireParty receiver = MillionaireFactory.createReceiver(z2cReceiver, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            MillionairePartyThread senderThread = new MillionairePartyThread(sender, l, xs);
-            MillionairePartyThread receiverThread = new MillionairePartyThread(receiver, l, ys);
+            MillionairePartyThread senderThread = new MillionairePartyThread(sender, z2cSender, l, xs);
+            MillionairePartyThread receiverThread = new MillionairePartyThread(receiver, z2cReceiver, l, ys);
             StopWatch stopWatch = new StopWatch();
             // execute the protocol
             stopWatch.start();
@@ -179,6 +191,5 @@ public class MillionaireTest extends AbstractTwoPartyMemoryRpcPto {
             Assert.assertEquals(z.get(index), result);
         }
     }
-
 }
 

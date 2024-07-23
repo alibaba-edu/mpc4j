@@ -15,4 +15,11 @@ public interface Z2cConfig extends MultiPartyPtoConfig {
      * @return protocol type.
      */
     Z2cFactory.BcType getPtoType();
+
+    /**
+     * Gets default round num.
+     *
+     * @return default round num.
+     */
+    int defaultRoundNum();
 }

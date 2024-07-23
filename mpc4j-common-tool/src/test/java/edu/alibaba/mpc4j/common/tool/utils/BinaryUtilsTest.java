@@ -10,24 +10,27 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 /**
- * 布尔工具类测试。
+ * Binary utilities test.
  *
  * @author Weiran Liu
  * @date 2021/11/29
  */
 public class BinaryUtilsTest {
     /**
-     * 最大随机测试轮数
+     * random round
      */
-    private static final int MAX_RANDOM_ROUND = 400;
+    private static final int RANDOM_ROUND = 400;
     /**
-     * 随机状态
+     * random state
      */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private final SecureRandom secureRandom;
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public BinaryUtilsTest() {
+        secureRandom = new SecureRandom();
+    }
+
     @Test
-    public void testInvalidBinaryByte() {
+    public void testBinaryByte() {
         // convert binary with length 0 to byte
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByte(new boolean[0]));
         // convert binary with less length to byte
@@ -36,19 +39,16 @@ public class BinaryUtilsTest {
         // convert binary with long length to byte
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByte(new boolean[Byte.SIZE + 1]));
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByte(new boolean[Byte.SIZE * 2]));
-    }
 
-    @Test
-    public void testBinaryByte() {
-        testBinaryByte(new boolean[] {false, false, false, false, false, false, false, false, }, (byte)0b00000000);
-        testBinaryByte(new boolean[] {false, false, false, false, false, false, false, true, }, (byte)0b00000001);
-        testBinaryByte(new boolean[] {false, false, false, false, false, false, true, false, }, (byte)0b00000010);
-        testBinaryByte(new boolean[] {false, false, false, false, false, true, false, false, }, (byte)0b00000100);
-        testBinaryByte(new boolean[] {false, false, false, false, true, false, false, false, }, (byte)0b00001000);
-        testBinaryByte(new boolean[] {false, false, false, true, false, false, false, false, }, (byte)0b00010000);
-        testBinaryByte(new boolean[] {false, false, true, false, false, false, false, false, }, (byte)0b00100000);
-        testBinaryByte(new boolean[] {false, true, false, false, false, false, false, false, }, (byte)0b01000000);
-        testBinaryByte(new boolean[] {true, false, false, false, false, false, false, false, }, (byte)0b10000000);
+        testBinaryByte(new boolean[]{false, false, false, false, false, false, false, false,}, (byte) 0b00000000);
+        testBinaryByte(new boolean[]{false, false, false, false, false, false, false, true,}, (byte) 0b00000001);
+        testBinaryByte(new boolean[]{false, false, false, false, false, false, true, false,}, (byte) 0b00000010);
+        testBinaryByte(new boolean[]{false, false, false, false, false, true, false, false,}, (byte) 0b00000100);
+        testBinaryByte(new boolean[]{false, false, false, false, true, false, false, false,}, (byte) 0b00001000);
+        testBinaryByte(new boolean[]{false, false, false, true, false, false, false, false,}, (byte) 0b00010000);
+        testBinaryByte(new boolean[]{false, false, true, false, false, false, false, false,}, (byte) 0b00100000);
+        testBinaryByte(new boolean[]{false, true, false, false, false, false, false, false,}, (byte) 0b01000000);
+        testBinaryByte(new boolean[]{true, false, false, false, false, false, false, false,}, (byte) 0b10000000);
     }
 
     private void testBinaryByte(boolean[] binary, byte byteValue) {
@@ -58,9 +58,8 @@ public class BinaryUtilsTest {
         Assert.assertArrayEquals(binary, convertBinary);
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
-    public void testInvalidBinaryLong() {
+    public void testBinaryLong() {
         // convert binary with length 0 to long
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLong(new boolean[0]));
         // convert binary with less length to long
@@ -69,22 +68,18 @@ public class BinaryUtilsTest {
         // convert binary with long length to long
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLong(new boolean[Long.SIZE + 1]));
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToLong(new boolean[Long.SIZE * 2]));
-    }
 
-    @Test
-    public void testBinaryLong() {
-        // 0的转换
         boolean[] binary = new boolean[Long.SIZE];
         long longValue = 0;
         testBinaryLong(binary, longValue);
-        // 从前到后转换
+        // from left to right
         binary[0] = true;
         longValue = 0x8000000000000000L;
         testBinaryLong(binary, longValue);
         for (int index = 1; index < Long.SIZE; index++) {
             binary[index - 1] = false;
             binary[index] = true;
-            // 这里要使用无符号移位操作
+            // note that here we need to use >>> instead of >> to shift signed bit
             longValue = longValue >>> 1;
             testBinaryLong(binary, longValue);
         }
@@ -98,7 +93,7 @@ public class BinaryUtilsTest {
     }
 
     @Test
-    public void testInvalidBinaryToByteArray() {
+    public void testBinaryByteArray() {
         // convert binary with less length to byte array
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByteArray(new boolean[1]));
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByteArray(new boolean[Byte.SIZE - 1]));
@@ -106,32 +101,18 @@ public class BinaryUtilsTest {
         // convert binary with long length to byte array
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByteArray(new boolean[Byte.SIZE + 1]));
         Assert.assertThrows(AssertionError.class, () -> BinaryUtils.binaryToByteArray(new boolean[Byte.SIZE * 2 + 1]));
-    }
 
-    @Test
-    public void testConstantBinaryByteArray() {
         testConstantBinaryToByteArray(
-            new boolean[] {false, true, false, false, false, false, true, true,},
-            new byte[] {0b01000011,}
+            new boolean[]{false, true, false, false, false, false, true, true,},
+            new byte[]{0b01000011,}
         );
         testConstantBinaryToByteArray(
-            new boolean[] {
+            new boolean[]{
                 false, false, true, true, true, false, true, false,
                 false, true, false, false, false, false, true, true,
             },
-            new byte[] {0b00111010, 0b01000011,}
+            new byte[]{0b00111010, 0b01000011,}
         );
-    }
-
-    private void testConstantBinaryToByteArray(boolean[] binary, byte[] byteArray) {
-        byte[] convertByteArray = BinaryUtils.binaryToByteArray(binary);
-        Assert.assertArrayEquals(byteArray, convertByteArray);
-        boolean[] convertBinary = BinaryUtils.byteArrayToBinary(byteArray);
-        Assert.assertArrayEquals(binary, convertBinary);
-    }
-
-    @Test
-    public void testRandomBinaryToByteArray() {
         testRandomBinaryToByteArray(0);
         testRandomBinaryToByteArray(1);
         testRandomBinaryToByteArray(2);
@@ -144,11 +125,18 @@ public class BinaryUtilsTest {
         testRandomBinaryToByteArray(CommonConstants.BLOCK_BYTE_LENGTH + 1);
     }
 
+    private void testConstantBinaryToByteArray(boolean[] binary, byte[] byteArray) {
+        byte[] convertByteArray = BinaryUtils.binaryToByteArray(binary);
+        Assert.assertArrayEquals(byteArray, convertByteArray);
+        boolean[] convertBinary = BinaryUtils.byteArrayToBinary(byteArray);
+        Assert.assertArrayEquals(binary, convertBinary);
+    }
+
     private void testRandomBinaryToByteArray(int byteLength) {
         int binaryLength = byteLength * Byte.SIZE;
-        for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
+        for (int i = 0; i < RANDOM_ROUND; i++) {
             boolean[] binary = new boolean[binaryLength];
-            IntStream.range(0, binaryLength).forEach(index -> binary[index] = SECURE_RANDOM.nextBoolean());
+            IntStream.range(0, binaryLength).forEach(index -> binary[index] = secureRandom.nextBoolean());
             byte[] convertByteArray = BinaryUtils.binaryToByteArray(binary);
             boolean[] convertBinary = BinaryUtils.byteArrayToBinary(convertByteArray);
             Assert.assertArrayEquals(binary, convertBinary);
@@ -182,9 +170,9 @@ public class BinaryUtilsTest {
 
     private void testRandomBinaryToLongArray(int longLength) {
         int binaryLength = longLength * Long.SIZE;
-        for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
+        for (int i = 0; i < RANDOM_ROUND; i++) {
             boolean[] binary = new boolean[binaryLength];
-            IntStream.range(0, binaryLength).forEach(index -> binary[index] = SECURE_RANDOM.nextBoolean());
+            IntStream.range(0, binaryLength).forEach(index -> binary[index] = secureRandom.nextBoolean());
             long[] convertLongArray = BinaryUtils.binaryToLongArray(binary);
             boolean[] convertBinary = BinaryUtils.longArrayToBinary(convertLongArray);
             Assert.assertArrayEquals(binary, convertBinary);
@@ -202,31 +190,31 @@ public class BinaryUtilsTest {
     public void testConstantByteArrayToBinary() {
         // 0x03 <-> 11
         testConstantByteArrayBinary(
-            new byte[] {0b00000011, }, new boolean[] {true, true, }
+            new byte[]{0b00000011,}, new boolean[]{true, true,}
         );
         // 0x03 <-> 11
         testConstantByteArrayBinary(
-            new byte[] {0b00000011, }, new boolean[] {false, true, true, }
+            new byte[]{0b00000011,}, new boolean[]{false, true, true,}
         );
         // 0x03 <-> 0011
         testConstantByteArrayBinary(
-            new byte[] {0b00000011, }, new boolean[] {false, false, true, true, }
+            new byte[]{0b00000011,}, new boolean[]{false, false, true, true,}
         );
         // 0x1F <-> 11111
         testConstantByteArrayBinary(
-            new byte[] {0b00011111, }, new boolean[] {true, true, true, true, true, }
+            new byte[]{0b00011111,}, new boolean[]{true, true, true, true, true,}
         );
         // 0x1F <-> 011111
         testConstantByteArrayBinary(
-            new byte[] {0b00011111, }, new boolean[] {false, true, true, true, true, true, }
+            new byte[]{0b00011111,}, new boolean[]{false, true, true, true, true, true,}
         );
         // 0x1F <-> 0011111
         testConstantByteArrayBinary(
-            new byte[] {0b00011111, }, new boolean[] {false, false, true, true, true, true, true, }
+            new byte[]{0b00011111,}, new boolean[]{false, false, true, true, true, true, true,}
         );
         // 0x1F <-> 00011111
         testConstantByteArrayBinary(
-            new byte[] {0b00011111, }, new boolean[] {false, false, false, true, true, true, true, true, }
+            new byte[]{0b00011111,}, new boolean[]{false, false, false, true, true, true, true, true,}
         );
     }
 
@@ -250,8 +238,8 @@ public class BinaryUtilsTest {
     }
 
     private void testRandomLongArrayToBinary(int longLength) {
-        for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            long[] longArray = LongStream.range(0, longLength).map(index -> SECURE_RANDOM.nextLong()).toArray();
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            long[] longArray = LongStream.range(0, longLength).map(index -> secureRandom.nextLong()).toArray();
             boolean[] convertBinary = BinaryUtils.longArrayToBinary(longArray);
             long[] convertLongArray = BinaryUtils.binaryToLongArray(convertBinary);
             Assert.assertArrayEquals(longArray, convertLongArray);
@@ -262,14 +250,14 @@ public class BinaryUtilsTest {
     public void testByteArrayGetBoolean() {
         testByteArrayGetBoolean(
             // 0x43 <-> 01000011
-            new byte[] {0b01000011, },
-            new boolean[] {false, true, false, false, false, false, true, true,
+            new byte[]{0b01000011,},
+            new boolean[]{false, true, false, false, false, false, true, true,
             }
         );
         testByteArrayGetBoolean(
             // 0x3A,0x43 <-> 00111010,01000011
-            new byte[] {0b00111010, 0b01000011, },
-            new boolean[] {
+            new byte[]{0b00111010, 0b01000011,},
+            new boolean[]{
                 false, false, true, true, true, false, true, false,
                 false, true, false, false, false, false, true, true,
             }
@@ -286,9 +274,9 @@ public class BinaryUtilsTest {
     public void testLongArrayGetBoolean() {
         testLongArrayGetBoolean(
             // 0x43,00,00,00,00,00,00,43L
-            new long[] {0b01000011_00000000_00000000_00000000_00000000_00000000_00000000_01000011L, },
+            new long[]{0b01000011_00000000_00000000_00000000_00000000_00000000_00000000_01000011L,},
             // 01000011,00000000,00000000,00000000,00000000,00000000,00000000,01000011
-            new boolean[] {
+            new boolean[]{
                 false, true, false, false, false, false, true, true,
                 false, false, false, false, false, false, false, false,
                 false, false, false, false, false, false, false, false,
@@ -301,12 +289,12 @@ public class BinaryUtilsTest {
         );
         testLongArrayGetBoolean(
             // 0x3A,43,00,00,00,00,00,00L, 0x00,00,00,00,00,00,3A,43L
-            new long[] {
+            new long[]{
                 0b00111010_01000011_00000000_00000000_00000000_00000000_00000000_00000000L,
-                0b00000000_00000000_00000000_00000000_00000000_00000000_00111010_01000011L, },
+                0b00000000_00000000_00000000_00000000_00000000_00000000_00111010_01000011L,},
             // 00111010,01000011,00000000,00000000,00000000,00000000,00000000,00000000
             // 00000000,00000000,00000000,00000000,00000000,00000000,00111010,01000011
-            new boolean[] {
+            new boolean[]{
                 false, false, true, true, true, false, true, false,
                 false, true, false, false, false, false, true, true,
                 false, false, false, false, false, false, false, false,
@@ -335,8 +323,8 @@ public class BinaryUtilsTest {
 
     @Test
     public void testByteArraySetBoolean() {
-        testByteArraySetBoolean(new byte[] {0b01000011, });
-        testByteArraySetBoolean(new byte[] {0b00111010, 0b01000011, });
+        testByteArraySetBoolean(new byte[]{0b01000011,});
+        testByteArraySetBoolean(new byte[]{0b00111010, 0b01000011,});
     }
 
     private void testByteArraySetBoolean(byte[] byteArray) {
@@ -356,8 +344,8 @@ public class BinaryUtilsTest {
 
     @Test
     public void testLongArraySetBoolean() {
-        testLongArraySetBoolean(new long[] {0x4300000000000043L, });
-        testLongArraySetBoolean(new long[] {0x3A43000000000000L, 0x0000000000003A43L, });
+        testLongArraySetBoolean(new long[]{0x4300000000000043L,});
+        testLongArraySetBoolean(new long[]{0x3A43000000000000L, 0x0000000000003A43L,});
     }
 
     private void testLongArraySetBoolean(long[] longArray) {
@@ -376,13 +364,22 @@ public class BinaryUtilsTest {
     }
 
     @Test
-    public void testUncheckByteArrayToBinary(){
-        for(int i = 0; i < 10; i++){
-            byte[] data = new byte[SECURE_RANDOM.nextInt(128) + 1];
-            SECURE_RANDOM.nextBytes(data);
+    public void testUncheckByteArrayToBinary() {
+        // test for byte = 0
+        byte[] data = new byte[0];
+        boolean[] res = BinaryUtils.uncheckByteArrayToBinary(data, 0);
+        Assert.assertArrayEquals(res, new boolean[0]);
+        // test for bit = 0;
+        data = new byte[]{(byte) 0xFF};
+        res = BinaryUtils.uncheckByteArrayToBinary(data, 0);
+        Assert.assertArrayEquals(res, new boolean[0]);
+        // test random
+        for (int i = 0; i < 10; i++) {
+            data = new byte[secureRandom.nextInt(128) + 1];
+            secureRandom.nextBytes(data);
             boolean[] all = BinaryUtils.byteArrayToBinary(data);
-            int keepBit = SECURE_RANDOM.nextInt(data.length << 3);
-            boolean[] res = BinaryUtils.uncheckByteArrayToBinary(data, keepBit);
+            int keepBit = secureRandom.nextInt(data.length << 3);
+            res = BinaryUtils.uncheckByteArrayToBinary(data, keepBit);
             Assert.assertArrayEquals(res, Arrays.copyOfRange(all, all.length - keepBit, all.length));
         }
     }

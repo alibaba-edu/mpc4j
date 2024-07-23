@@ -55,13 +55,9 @@ public class Rrk20ZlCorrConfig extends AbstractMultiPartyPtoConfig implements Zl
         private final LnotConfig lnotConfig;
 
 
-        public Builder(boolean silent) {
-            zlDreluConfig = ZlDreluFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
-            if (silent) {
-                lnotConfig = LnotFactory.createCacheConfig(SecurityModel.SEMI_HONEST);
-            } else {
-                lnotConfig = LnotFactory.createDirectConfig(SecurityModel.SEMI_HONEST);
-            }
+        public Builder(SecurityModel securityModel, boolean silent) {
+            zlDreluConfig = ZlDreluFactory.createDefaultConfig(securityModel, silent);
+            lnotConfig = LnotFactory.createDefaultConfig(securityModel, silent);
         }
 
         @Override

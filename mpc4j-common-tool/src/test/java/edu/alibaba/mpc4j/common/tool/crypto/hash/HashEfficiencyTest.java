@@ -27,65 +27,55 @@ public class HashEfficiencyTest {
      */
     private static final int LOG_N = 16;
     /**
-     * 次数输出格式
-     */
-    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("00");
-    /**
      * 时间输出格式
      */
-    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("00.0000");
+    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.0000");
     /**
-     * 全0消息
+     * stop watch
      */
-    private static final byte[] ZERO_MESSAGE = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-    /**
-     * 秒表
-     */
-    private static final StopWatch STOP_WATCH = new StopWatch();
-    /**
-     * 测试类型
-     */
-    private static final HashType[] TYPES = new HashType[] {
-        HashType.JDK_SHA256,
-        HashType.NATIVE_SHA256,
-        HashType.BC_SHA3_256,
-        HashType.BC_SHA3_512,
-        HashType.BC_BLAKE_2B_160,
-        HashType.NATIVE_BLAKE_2B_160,
-        HashType.NATIVE_BLAKE_3,
-        HashType.BC_SHAKE_128,
-        HashType.BC_SHAKE_256,
-        HashType.BC_SM3,
-    };
+    private final StopWatch stopWatch;
+
+    public HashEfficiencyTest() {
+        stopWatch = new StopWatch();
+    }
 
     @Test
     public void testEfficiency() {
-        LOGGER.info("{}\t{}\t{}\t{}", "                name", "    log(n)", "   out_len", "  hash(us)");
+        LOGGER.info("{}\t{}\t{}\t{}\t{}", "                name", "    log(n)", "   out_len", "  parallel", "  hash(us)");
         for (int logN = 0; logN <= 10; logN++) {
+            testEfficiency(1 << logN);
             testEfficiency(1 << logN);
         }
     }
 
     private void testEfficiency(int outputByteLength) {
-        int n = 1 << LOG_N;
-        for (HashType type : TYPES) {
-            if (outputByteLength <= HashFactory.getUnitByteLength(type)) {
-                Hash hash = HashFactory.createInstance(type, outputByteLength);
-                // 预热
-                IntStream.range(0, n).forEach(index -> hash.digestToBytes(ZERO_MESSAGE));
-                STOP_WATCH.start();
-                IntStream.range(0, n).forEach(index -> hash.digestToBytes(ZERO_MESSAGE));
-                STOP_WATCH.stop();
-                double time = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
-                STOP_WATCH.reset();
-                LOGGER.info("{}\t{}\t{}\t{}",
-                    StringUtils.leftPad(type.name(), 20),
-                    StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
-                    StringUtils.leftPad(String.valueOf(outputByteLength), 10),
-                    StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(time), 10)
-                );
-            }
+        for (HashType type : HashType.values()) {
+            testEfficiency(type, outputByteLength, false);
+            testEfficiency(type, outputByteLength, true);
         }
         LOGGER.info(StringUtils.rightPad("", 60, '-'));
+    }
+
+    private void testEfficiency(HashType type, int outputByteLength, boolean parallel) {
+        int n = 1 << LOG_N;
+        byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        if (outputByteLength <= HashFactory.getUnitByteLength(type)) {
+            Hash hash = HashFactory.createInstance(type, outputByteLength);
+            // warmup
+            IntStream.range(0, n).forEach(index -> hash.digestToBytes(message));
+            IntStream intStream = parallel ? IntStream.range(0, n).parallel() : IntStream.range(0, n);
+            stopWatch.start();
+            intStream.forEach(index -> hash.digestToBytes(message));
+            stopWatch.stop();
+            double time = (double) stopWatch.getTime(TimeUnit.MICROSECONDS) / n;
+            stopWatch.reset();
+            LOGGER.info("{}\t{}\t{}\t{}\t{}",
+                StringUtils.leftPad(type.name(), 20),
+                StringUtils.leftPad(Integer.toString(LOG_N), 10),
+                StringUtils.leftPad(String.valueOf(outputByteLength), 10),
+                StringUtils.leftPad(Boolean.toString(parallel), 10),
+                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(time), 10)
+            );
+        }
     }
 }

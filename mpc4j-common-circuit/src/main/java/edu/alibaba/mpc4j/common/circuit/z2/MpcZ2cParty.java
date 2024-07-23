@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
  */
 public interface MpcZ2cParty {
     /**
-     * get parallel setting
+     * get parallel setting.
      *
      * @return status
      */
@@ -97,7 +97,7 @@ public interface MpcZ2cParty {
      */
     default MpcZ2Vector[] split(MpcZ2Vector mergeVector, int[] bitNums) {
         MpcZ2Vector[] splitVectors = new MpcZ2Vector[bitNums.length];
-        for (int index = 0; index < bitNums.length; index++) {
+        for (int index = bitNums.length - 1; index >= 0; index--) {
             splitVectors[index] = (MpcZ2Vector) mergeVector.split(bitNums[index]);
         }
         assert mergeVector.getNum() == 0 : "merged vector must remain 0 num: " + mergeVector.getNum();
@@ -107,16 +107,24 @@ public interface MpcZ2cParty {
     /**
      * inits the protocol.
      *
-     * @param updateBitNum total number of bits for updates.
+     * @param expectTotalNum expect total number of bits.
      * @throws MpcAbortException if the protocol is abort.
      */
-    void init(long updateBitNum) throws MpcAbortException;
+    void init(int expectTotalNum) throws MpcAbortException;
+
+    /**
+     * Inits the protocol.
+     *
+     * @throws MpcAbortException if the protocol is abort.
+     */
+    void init() throws MpcAbortException;
 
     /**
      * Shares its own vector.
      *
      * @param xi the vector to be shared.
      * @return the shared vector.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     MpcZ2Vector shareOwn(BitVector xi) throws MpcAbortException;
 
@@ -125,6 +133,7 @@ public interface MpcZ2cParty {
      *
      * @param xiArray the vectors to be shared.
      * @return the shared vectors.
+     * @throws MpcAbortException the protocol failure aborts.
      */
     MpcZ2Vector[] shareOwn(BitVector[] xiArray) throws MpcAbortException;
 
@@ -147,9 +156,10 @@ public interface MpcZ2cParty {
     MpcZ2Vector[] shareOther(int[] bitNums) throws MpcAbortException;
 
     /**
-     * Open the vector to all computing parties
+     * Open the vector to all computing parties.
      *
-     * @param xiArray the data to be opened
+     * @param xiArray the data to be opened.
+     * @return the opened vectors.
      * @throws MpcAbortException the protocol failure aborts.
      */
     BitVector[] open(MpcZ2Vector[] xiArray) throws MpcAbortException;
@@ -242,9 +252,9 @@ public interface MpcZ2cParty {
      * @param yi yi.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    default void xori(MpcZ2Vector[] xi, MpcZ2Vector[] yi) throws MpcAbortException{
+    default void xori(MpcZ2Vector[] xi, MpcZ2Vector[] yi) throws MpcAbortException {
         MathPreconditions.checkEqual("xi.length", "yi.length", xi.length, yi.length);
-        for(int i = 0; i < xi.length; i++){
+        for (int i = 0; i < xi.length; i++) {
             xori(xi[i], yi[i]);
         }
     }

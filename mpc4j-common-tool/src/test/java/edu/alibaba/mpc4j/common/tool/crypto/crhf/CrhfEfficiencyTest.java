@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.crhf;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -23,50 +24,49 @@ import java.util.stream.IntStream;
 public class CrhfEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(CrhfEfficiencyTest.class);
     /**
-     * 全0明文
-     */
-    private static final byte[] ZERO_MESSAGE = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-    /**
-     * 秒表
-     */
-    private static final StopWatch STOP_WATCH = new StopWatch();
-    /**
      * log(n)
      */
     private static final int LOG_N = 24;
     /**
-     * 次数输出格式
-     */
-    private static final DecimalFormat LOG_N_DECIMAL_FORMAT = new DecimalFormat("00");
-    /**
      * 时间输出格式
      */
-    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("000.0000");
+    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.0000");
     /**
-     * 测试类型
+     * stop watch
      */
-    private static final CrhfFactory.CrhfType[] TYPES = new CrhfFactory.CrhfType[] {
-        CrhfFactory.CrhfType.MMO,
-        CrhfFactory.CrhfType.MMO_SIGMA,
-    };
+    private final StopWatch stopWatch;
+
+    public CrhfEfficiencyTest() {
+        stopWatch = new StopWatch();
+    }
 
     @Test
     public void testEfficiency() {
-        LOGGER.info("{}\t{}\t{}", "                name", "    log(n)", "  crhf(us)");
-        int n = 1 << LOG_N;
-        for (CrhfFactory.CrhfType type : TYPES) {
+        LOGGER.info("{}\t{}\t{}\t{}", "                name", "    log(n)", "  parallel", "  crhf(us)");
+        for (CrhfType type : CrhfType.values()) {
             Crhf crhf = CrhfFactory.createInstance(EnvType.STANDARD, type);
-            STOP_WATCH.start();
-            IntStream.range(0, n).forEach(index -> crhf.hash(ZERO_MESSAGE));
-            STOP_WATCH.stop();
-            double crhfTime = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
-            STOP_WATCH.reset();
-            LOGGER.info(
-                "{}\t{}\t{}",
-                StringUtils.leftPad(type.name(), 20),
-                StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(crhfTime), 10)
-            );
+            testEfficiency(crhf, false);
+            testEfficiency(crhf, true);
         }
+    }
+
+    private void testEfficiency(Crhf crhf, boolean parallel) {
+        int n = 1 << LOG_N;
+        byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        // warm-up
+        IntStream.range(0, n).forEach(index -> crhf.hash(message));
+        IntStream intStream = parallel ? IntStream.range(0, n).parallel() : IntStream.range(0, n);
+        stopWatch.start();
+        intStream.forEach(index -> crhf.hash(message));
+        stopWatch.stop();
+        double crhfTime = (double) stopWatch.getTime(TimeUnit.MICROSECONDS) / n;
+        stopWatch.reset();
+        LOGGER.info(
+            "{}\t{}\t{}\t{}",
+            StringUtils.leftPad(crhf.getCrhfType().name(), 20),
+            StringUtils.leftPad(Integer.toString(LOG_N), 10),
+            StringUtils.leftPad(Boolean.toString(parallel), 10),
+            StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(crhfTime), 10)
+        );
     }
 }

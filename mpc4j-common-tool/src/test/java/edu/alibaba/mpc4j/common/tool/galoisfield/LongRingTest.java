@@ -36,10 +36,6 @@ public class LongRingTest {
      * random test num
      */
     private static final int MAX_RANDOM = 400;
-    /**
-     * the random state
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -59,7 +55,7 @@ public class LongRingTest {
         }
         int[] ls = new int[]{1, 2, 3, 4, 39, 40, 41, 61, 62};
         // Zl64
-        Zl64Type[] zl64Types = new Zl64Type[]{Zl64Type.JDK, Zl64Type.RINGS};
+        Zl64Type[] zl64Types = new Zl64Type[]{Zl64Type.JDK};
         for (Zl64Type type : zl64Types) {
             // add each l
             for (int l : ls) {
@@ -88,10 +84,15 @@ public class LongRingTest {
      * the LongRing instance
      */
     private final LongRing longRing;
+    /**
+     * random state
+     */
+    private final SecureRandom secureRandom;
 
     public LongRingTest(String name, LongRing longRing) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.longRing = longRing;
+        secureRandom = new SecureRandom();
     }
 
     @Test
@@ -100,7 +101,7 @@ public class LongRingTest {
         // try operating p and q when p is invalid
         final long largeP = (1L << (l + 1));
         final long negativeP = -1L;
-        final long q = longRing.createNonZeroRandom(SECURE_RANDOM);
+        final long q = longRing.createNonZeroRandom(secureRandom);
         // try adding
         Assert.assertThrows(AssertionError.class, () -> longRing.add(largeP, q));
         Assert.assertThrows(AssertionError.class, () -> longRing.add(negativeP, q));
@@ -112,7 +113,7 @@ public class LongRingTest {
         Assert.assertThrows(AssertionError.class, () -> longRing.mul(negativeP, q));
 
         // try operating p and q when q is invalid
-        final long p = longRing.createNonZeroRandom(SECURE_RANDOM);
+        final long p = longRing.createNonZeroRandom(secureRandom);
         final long largeQ = (1L << (l + 1));
         final long negativeQ = -1L;
         // try adding
@@ -123,7 +124,7 @@ public class LongRingTest {
         Assert.assertThrows(AssertionError.class, () -> longRing.sub(p, negativeQ));
         // try multiplying
         Assert.assertThrows(AssertionError.class, () -> longRing.mul(p, largeQ));
-        Assert.assertThrows(AssertionError.class, () -> longRing.sub(p, negativeQ));
+        Assert.assertThrows(AssertionError.class, () -> longRing.mul(p, negativeQ));
 
         // try operating p when p is invalid
         // try negating p
@@ -148,10 +149,10 @@ public class LongRingTest {
     @Test
     public void testCreateRandom() {
         byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(seed);
+        secureRandom.nextBytes(seed);
         // create random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
-            long randomElement = longRing.createRandom(SECURE_RANDOM);
+            long randomElement = longRing.createRandom(secureRandom);
             Assert.assertTrue(longRing.validateElement(randomElement));
         });
         // create random with seed
@@ -169,10 +170,10 @@ public class LongRingTest {
     @Test
     public void testCreateNonZeroRandom() {
         byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(seed);
+        secureRandom.nextBytes(seed);
         // create non-zero random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
-            long randomNonZeroElement = longRing.createNonZeroRandom(SECURE_RANDOM);
+            long randomNonZeroElement = longRing.createNonZeroRandom(secureRandom);
             Assert.assertTrue(longRing.validateElement(randomNonZeroElement));
             Assert.assertTrue(longRing.validateNonZeroElement(randomNonZeroElement));
             Assert.assertFalse(longRing.isZero(randomNonZeroElement));
@@ -194,10 +195,10 @@ public class LongRingTest {
     @Test
     public void testCreateRangeRandom() {
         byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(seed);
+        secureRandom.nextBytes(seed);
         // create range random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
-            long randomElement = longRing.createRangeRandom(SECURE_RANDOM);
+            long randomElement = longRing.createRangeRandom(secureRandom);
             Assert.assertTrue(longRing.validateElement(randomElement));
             Assert.assertTrue(longRing.validateRangeElement(randomElement));
         });
@@ -240,8 +241,8 @@ public class LongRingTest {
         long s;
         long t;
         for (int index = 0; index < MAX_RANDOM; index++) {
-            r = longRing.createRandom(SECURE_RANDOM);
-            s = longRing.createRandom(SECURE_RANDOM);
+            r = longRing.createRandom(secureRandom);
+            s = longRing.createRandom(secureRandom);
             // r + 0 = r
             t = longRing.add(r, zero);
             Assert.assertEquals(r, t);
@@ -298,11 +299,11 @@ public class LongRingTest {
         long t;
         for (int index = 0; index < MAX_RANDOM; index++) {
             // r * 0 = 0
-            r = longRing.createRandom(SECURE_RANDOM);
+            r = longRing.createRandom(secureRandom);
             t = longRing.mul(r, zero);
             Assert.assertEquals(zero, t);
             // r * 1 = r
-            r = longRing.createNonZeroRandom(SECURE_RANDOM);
+            r = longRing.createNonZeroRandom(secureRandom);
             t = longRing.mul(r, one);
             Assert.assertEquals(r, t);
         }
@@ -327,22 +328,25 @@ public class LongRingTest {
         long zero = longRing.createZero();
         long one = longRing.createOne();
         for (int round = 0; round < MAX_RANDOM; round++) {
-            // 0^a = 0
-            long a = longRing.createNonZeroRandom(SECURE_RANDOM);
-            Assert.assertEquals(zero, longRing.pow(zero, a));
+            long e = Integer.toUnsignedLong(secureRandom.nextInt());
+            // 0^e = 0
+            Assert.assertEquals(zero, longRing.pow(zero, e));
+            // 1^e = 1
+            Assert.assertEquals(one, longRing.pow(one, e));
+
+            long a = longRing.createNonZeroRandom(secureRandom);
             // a^0 = 1
             Assert.assertEquals(one, longRing.pow(a, zero));
             // a^1 = a
             Assert.assertEquals(a, longRing.pow(a, one));
-            // 1^a = 1
-            Assert.assertEquals(one, longRing.pow(one, a));
+
         }
     }
 
     @Test
     public void testAddParallel() {
-        long p = longRing.createNonZeroRandom(SECURE_RANDOM);
-        long q = longRing.createNonZeroRandom(SECURE_RANDOM);
+        long p = longRing.createNonZeroRandom(secureRandom);
+        long q = longRing.createNonZeroRandom(secureRandom);
         long addCount = IntStream.range(0, MAX_PARALLEL)
             .parallel()
             .mapToLong(index -> longRing.add(p, q))
@@ -353,7 +357,7 @@ public class LongRingTest {
 
     @Test
     public void testNegParallel() {
-        long p = longRing.createNonZeroRandom(SECURE_RANDOM);
+        long p = longRing.createNonZeroRandom(secureRandom);
         long negCount = IntStream.range(0, MAX_PARALLEL)
             .parallel()
             .mapToLong(index -> longRing.neg(p))
@@ -364,8 +368,8 @@ public class LongRingTest {
 
     @Test
     public void testSubParallel() {
-        long p = longRing.createNonZeroRandom(SECURE_RANDOM);
-        long q = longRing.createNonZeroRandom(SECURE_RANDOM);
+        long p = longRing.createNonZeroRandom(secureRandom);
+        long q = longRing.createNonZeroRandom(secureRandom);
         long addCount = IntStream.range(0, MAX_PARALLEL)
             .parallel()
             .mapToLong(index -> longRing.sub(p, q))
@@ -376,8 +380,8 @@ public class LongRingTest {
 
     @Test
     public void testMulParallel() {
-        long p = longRing.createNonZeroRandom(SECURE_RANDOM);
-        long q = longRing.createNonZeroRandom(SECURE_RANDOM);
+        long p = longRing.createNonZeroRandom(secureRandom);
+        long q = longRing.createNonZeroRandom(secureRandom);
         long mulCount = IntStream.range(0, MAX_PARALLEL)
             .mapToLong(index -> longRing.mul(p, q))
             .distinct()
@@ -388,11 +392,11 @@ public class LongRingTest {
 
     @Test
     public void testModPowParallel() {
-        long p = longRing.createNonZeroRandom(SECURE_RANDOM);
-        long q = longRing.createNonZeroRandom(SECURE_RANDOM);
+        long p = longRing.createNonZeroRandom(secureRandom);
+        long e = Integer.toUnsignedLong(secureRandom.nextInt());
         long mulPowCount = IntStream.range(0, MAX_PARALLEL)
             .parallel()
-            .mapToLong(index -> longRing.pow(p, q))
+            .mapToLong(index -> longRing.pow(p, e))
             .distinct()
             .count();
         Assert.assertEquals(1L, mulPowCount);

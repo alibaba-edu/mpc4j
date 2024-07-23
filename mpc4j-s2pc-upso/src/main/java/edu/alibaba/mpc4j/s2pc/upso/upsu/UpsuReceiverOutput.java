@@ -15,30 +15,30 @@ public class UpsuReceiverOutput {
      */
     private final Set<ByteBuffer> unionSet;
     /**
-     * intersection set size
+     * PSI-CA
      */
-    private final int intersectionSetSize;
+    private final int psica;
 
-    public UpsuReceiverOutput(Set<ByteBuffer> unionSet, int intersectionSetSize) {
+    public UpsuReceiverOutput(Set<ByteBuffer> unionSet, int psica) {
         this.unionSet = unionSet;
-        this.intersectionSetSize = intersectionSetSize;
+        this.psica = psica;
     }
 
     /**
-     * return union set.
+     * Gets the union.
      *
-     * @return union set
+     * @return union.
      */
-    public Set<ByteBuffer> getUnionSet() {
+    public Set<ByteBuffer> getUnion() {
         return unionSet;
     }
 
     /**
-     * return intersection set size.
+     * Gets PSI-CA.
      *
-     * @return intersection set size.
+     * @return PSI-CA.
      */
-    public int getIntersectionSetSize() {
-        return intersectionSetSize;
+    public int getPsica() {
+        return psica;
     }
 }

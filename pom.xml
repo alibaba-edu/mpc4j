@@ -7,7 +7,7 @@
     <groupId>edu.alibaba</groupId>
     <artifactId>mpc4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <modules>
         <module>mpc4j-common-circuit</module>
         <module>mpc4j-common-data</module>
@@ -16,9 +16,9 @@
         <module>mpc4j-common-sampler</module>
         <module>mpc4j-common-structure</module>
         <module>mpc4j-common-tool</module>
+        <module>mpc4j-crypto-algs</module>
         <module>mpc4j-crypto-fhe</module>
         <module>mpc4j-crypto-phe</module>
-        <module>mpc4j-crypto-simd</module>
         <module>mpc4j-dp-cdp</module>
         <module>mpc4j-dp-ldp</module>
         <module>mpc4j-dp-service</module>
@@ -28,19 +28,23 @@
         <module>mpc4j-s2pc-pir</module>
         <module>mpc4j-s2pc-pso</module>
         <module>mpc4j-s2pc-pjc</module>
-        <module>mpc4j-sml-opboost</module>
-        <module>mpc4j-work-psipir</module>
-        <module>mpc4j-crypto-algs</module>
         <module>mpc4j-s2pc-upso</module>
         <module>mpc4j-s3pc-abb3</module>
+        <module>mpc4j-sml-opboost</module>
+        <module>mpc4j-work-dpsi</module>
+        <module>mpc4j-work-psipir</module>
+        <module>mpc4j-work-payable</module>
     </modules>
 
     <properties>
+        <!-- min JDK version is 21 since we need to use SIMD and FFM-->
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.test.skip>true</maven.test.skip>
         <smile.version>2.6.0</smile.version>
-        <slf4j.version>1.7.26</slf4j.version>
+        <slf4j.version>2.0.13</slf4j.version>
     </properties>
 
     <dependencyManagement>
@@ -51,11 +55,11 @@
                 <artifactId>guava</artifactId>
                 <version>32.1.3-jre</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
+            <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on -->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.70</version>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.78.1</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/junit/junit -->
             <dependency>
@@ -84,7 +88,7 @@
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
+                <artifactId>slf4j-reload4j</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
@@ -103,7 +107,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
-                <version>4.1.48.Final</version>
+                <version>4.1.111.Final</version>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -208,6 +212,17 @@
                 <artifactId>lz4-java</artifactId>
                 <version>1.8.0</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>5.2.5</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.opencsv</groupId>
+                <artifactId>opencsv</artifactId>
+                <version>5.9</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -218,8 +233,20 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.5.1</version>
                 <configuration>
-                    <source>8</source>
-                    <target>8</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <compilerArgument>--add-modules=jdk.incubator.vector</compilerArgument>
+<!--                    if we want to introduce preview APIs like FFI, uncomment the following line-->
+<!--                    <compilerArgs>&#45;&#45;enable-preview</compilerArgs>-->
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M3</version> <!-- pick your own version -->
+                <configuration>
+                    <forkCount>1</forkCount>
+                    <argLine>--add-modules=jdk.incubator.vector</argLine>
                 </configuration>
             </plugin>
             <plugin>

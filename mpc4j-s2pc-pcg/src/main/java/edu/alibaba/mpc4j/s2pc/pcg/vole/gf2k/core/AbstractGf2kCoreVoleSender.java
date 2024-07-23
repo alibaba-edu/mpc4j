@@ -6,35 +6,47 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
-import org.bouncycastle.util.encoders.Hex;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2e;
+import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2k;
+import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2kFactory;
 
 import java.util.Arrays;
 
 /**
- * Abstract GF2K-core VOLE sender.
+ * abstract GF2K-core-VOLE sender.
  *
  * @author Weiran Liu
  * @date 2022/9/22
  */
 public abstract class AbstractGf2kCoreVoleSender extends AbstractTwoPartyPto implements Gf2kCoreVoleSender {
     /**
-     * the GF2K instance
+     * field
      */
-    protected final Gf2k gf2k;
+    protected Sgf2k field;
     /**
-     * l
+     * field L
      */
-    protected int l;
+    protected int fieldL;
     /**
-     * byteL
+     * field byte L
      */
-    protected int byteL;
+    protected int fieldByteL;
     /**
-     * max num
+     * subfield
      */
-    private int maxNum;
+    protected Gf2e subfield;
+    /**
+     * subfield L
+     */
+    protected int subfieldL;
+    /**
+     * subfield Byte L
+     */
+    protected int subfieldByteL;
+    /**
+     * r
+     */
+    protected int r;
     /**
      * x
      */
@@ -46,25 +58,25 @@ public abstract class AbstractGf2kCoreVoleSender extends AbstractTwoPartyPto imp
 
     protected AbstractGf2kCoreVoleSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, Gf2kCoreVoleConfig config) {
         super(ptoDesc, senderRpc, receiverParty, config);
-        gf2k = Gf2kFactory.createInstance(envType);
     }
 
-    protected void setInitInput(int maxNum) {
-        l = gf2k.getL();
-        byteL = gf2k.getByteL();
-        MathPreconditions.checkPositive("maxNum", maxNum);
-        this.maxNum = maxNum;
+    protected void setInitInput(int subfieldL) {
+        field = Sgf2kFactory.getInstance(envType, subfieldL);
+        fieldL = field.getL();
+        fieldByteL = field.getByteL();
+        subfield = field.getSubfield();
+        this.subfieldL = subfield.getL();
+        subfieldByteL = subfield.getByteL();
+        r = field.getR();
         initState();
     }
 
     protected void setPtoInput(byte[][] xs) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", xs.length, maxNum);
+        MathPreconditions.checkPositive("num", xs.length);
         num = xs.length;
         this.xs = Arrays.stream(xs)
-            .peek(xi -> Preconditions.checkArgument(
-                gf2k.validateElement(xi), "xi must be in range [0, 2^%s): %s", l, Hex.toHexString(xi)
-            ))
+            .peek(xi -> Preconditions.checkArgument(subfield.validateElement(xi)))
             .toArray(byte[][]::new);
         extraInfo++;
     }

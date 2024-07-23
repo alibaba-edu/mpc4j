@@ -20,6 +20,13 @@ public interface ZpMatrix extends Matrix {
     Zp getZp();
 
     /**
+     * Sets parallel operation.
+     *
+     * @param parallel parallel operation.
+     */
+    void setParallel(boolean parallel);
+
+    /**
      * Gets the assigned row.
      *
      * @param iRow row index.

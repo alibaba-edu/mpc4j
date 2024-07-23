@@ -15,10 +15,9 @@ public interface CoreCotSender extends TwoPartyPto {
      * 初始化协议。
      *
      * @param delta  关联值Δ。
-     * @param maxNum 最大数量。
      * @throws MpcAbortException 如果协议异常中止。
      */
-    void init(byte[] delta, int maxNum) throws MpcAbortException;
+    void init(byte[] delta) throws MpcAbortException;
 
     /**
      * 执行协议。

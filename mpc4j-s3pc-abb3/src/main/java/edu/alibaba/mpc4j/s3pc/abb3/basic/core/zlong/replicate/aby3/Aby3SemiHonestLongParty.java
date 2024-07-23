@@ -60,7 +60,7 @@ public class Aby3SemiHonestLongParty extends AbstractAby3LongParty implements Tr
             LongVector tmp = LongVector.create(data[i]);
             tmp.addi(xiArray[i].getVectors()[0]);
             tmp.addi(xiArray[i].getVectors()[1]);
-            tmp.format(validBitLen);
+            tmp.module(validBitLen);
             return tmp;
         }).toArray(LongVector[]::new);
     }
@@ -77,7 +77,7 @@ public class Aby3SemiHonestLongParty extends AbstractAby3LongParty implements Tr
     @Override
     public LongVector[] open(int validBitLen, MpcLongVector... xiArray) {
         LongVector[] sendData = Arrays.stream(xiArray).map(x -> {
-            x.getVectors()[0].format(validBitLen);
+            x.getVectors()[0].module(validBitLen);
             return x.getVectors()[0];
         }).toArray(LongVector[]::new);
         sendLongVectors(PtoStep.REVEAL_SHARE.ordinal(), rightParty(), sendData);
@@ -88,7 +88,7 @@ public class Aby3SemiHonestLongParty extends AbstractAby3LongParty implements Tr
             LongVector tmp = LongVector.create(data[i]);
             tmp.addi(xiArray[i].getVectors()[0]);
             tmp.addi(xiArray[i].getVectors()[1]);
-            tmp.format(validBitLen);
+            tmp.module(validBitLen);
             return tmp;
         }).toArray(LongVector[]::new);
     }

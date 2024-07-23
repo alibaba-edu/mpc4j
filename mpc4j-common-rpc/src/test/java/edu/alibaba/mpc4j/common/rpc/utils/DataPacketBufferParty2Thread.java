@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.rpc.utils;
 
+import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 import java.util.HashSet;
@@ -13,7 +14,11 @@ import java.util.Set;
  * @author Weiran Liu
  * @date 2023/2/9
  */
-public class DataPacketBufferParty2Thread extends Thread {
+class DataPacketBufferParty2Thread extends Thread {
+    /**
+     * protocol description
+     */
+    private final PtoDesc PTO_DESC = DataPacketTestPtoDesc.getInstance();
     /**
      * data packet buffer
      */
@@ -39,7 +44,7 @@ public class DataPacketBufferParty2Thread extends Thread {
             // put list data
             for (long j = DataPacketBufferTest.LIST_START_INDEX; j < DataPacketBufferTest.LIST_END_INDEX; j++) {
                 DataPacketHeader party2Header = new DataPacketHeader(
-                    0, 0, 0, j, DataPacketBufferTest.PARTY_2_ID, DataPacketBufferTest.PARTY_1_ID
+                    0, PTO_DESC.getPtoId(), 0, j, DataPacketBufferTest.PARTY_2_ID, DataPacketBufferTest.PARTY_1_ID
                 );
                 List<byte[]> party2Payload = new LinkedList<>();
                 party2Payload.add(LongUtils.longToByteArray(j));
@@ -47,13 +52,13 @@ public class DataPacketBufferParty2Thread extends Thread {
             }
             // take set data
             for (long i = DataPacketBufferTest.SET_START_INDEX; i < DataPacketBufferTest.SET_END_INDEX; i++) {
-                List<byte[]> party1Payload = dataPacketBuffer.take(DataPacketBufferTest.PARTY_2_ID).getPayload();
+                List<byte[]> party1Payload = dataPacketBuffer.take(DataPacketBufferTest.PARTY_2_ID, PTO_DESC.getPtoId()).getPayload();
                 payloadSet.add(LongUtils.byteArrayToLong(party1Payload.remove(0)));
             }
             // put set data
             for (long j = DataPacketBufferTest.SET_START_INDEX; j < DataPacketBufferTest.SET_END_INDEX; j++) {
                 DataPacketHeader party2Header = new DataPacketHeader(
-                    0, 0, 0, j, DataPacketBufferTest.PARTY_2_ID, DataPacketBufferTest.PARTY_1_ID
+                    0, PTO_DESC.getPtoId(), 0, j, DataPacketBufferTest.PARTY_2_ID, DataPacketBufferTest.PARTY_1_ID
                 );
                 List<byte[]> party2Payload = new LinkedList<>();
                 party2Payload.add(LongUtils.longToByteArray(j));
@@ -62,7 +67,7 @@ public class DataPacketBufferParty2Thread extends Thread {
             // take list data
             for (long i = DataPacketBufferTest.LIST_START_INDEX; i < DataPacketBufferTest.LIST_END_INDEX; i++) {
                 DataPacketHeader party1Header = new DataPacketHeader(
-                    0, 0, 0, i, DataPacketBufferTest.PARTY_1_ID, DataPacketBufferTest.PARTY_2_ID
+                    0, PTO_DESC.getPtoId(), 0, i, DataPacketBufferTest.PARTY_1_ID, DataPacketBufferTest.PARTY_2_ID
                 );
                 List<byte[]> party1Payload = dataPacketBuffer.take(party1Header).getPayload();
                 payloadList.add(LongUtils.byteArrayToLong(party1Payload.remove(0)));

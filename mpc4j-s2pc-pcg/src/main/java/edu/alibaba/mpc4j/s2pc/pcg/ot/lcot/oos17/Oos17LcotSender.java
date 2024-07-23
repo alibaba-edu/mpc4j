@@ -65,14 +65,14 @@ public class Oos17LcotSender extends AbstractLcotSender {
     }
 
     @Override
-    public void init(int inputBitLength, byte[] delta, int maxNum) throws MpcAbortException {
-        setInitInput(inputBitLength, delta, maxNum);
+    public void init(int l, byte[] delta) throws MpcAbortException {
+        setInitInput(l, delta);
         init();
     }
 
     @Override
-    public byte[] init(int inputBitLength, int maxNum) throws MpcAbortException {
-        setInitInput(inputBitLength, maxNum);
+    public byte[] init(int l) throws MpcAbortException {
+        setInitInput(l);
         init();
         return BytesUtils.clone(delta);
     }
@@ -81,7 +81,7 @@ public class Oos17LcotSender extends AbstractLcotSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        coreCotReceiver.init(outputBitLength);
+        coreCotReceiver.init();
         kdfOtReceiverOutput = new KdfOtReceiverOutput(envType, coreCotReceiver.receive(deltaBinary));
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -206,6 +206,6 @@ public class Oos17LcotSender extends AbstractLcotSender {
         byte[][] qsArray = IntStream.range(0, num)
             .mapToObj(qTransposeMatrix::getColumn)
             .toArray(byte[][]::new);
-        return LcotSenderOutput.create(inputBitLength, delta, qsArray);
+        return LcotSenderOutput.create(l, delta, qsArray);
     }
 }

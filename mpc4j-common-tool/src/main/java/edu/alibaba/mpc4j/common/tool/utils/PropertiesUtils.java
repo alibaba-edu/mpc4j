@@ -62,13 +62,14 @@ public class PropertiesUtils {
      * @return the properties.
      */
     public static Properties loadProperties(String file) {
+        File fileObject = new File(file);
+        LOGGER.info("read config file: " + fileObject.getAbsolutePath());
         try (InputStream input = new FileInputStream(file)) {
             Properties properties = new Properties();
             // load a properties file
             properties.load(input);
             return properties;
         } catch (IOException e) {
-            File fileObject = new File(file);
             throw new IllegalArgumentException("Failed to load config file: " + fileObject.getAbsolutePath());
         }
     }
@@ -204,7 +205,7 @@ public class PropertiesUtils {
      * @param defaultValue the default value.
      * @return the int from the properties.
      */
-    public static int readIntWithDefault(Properties properties, String keyword, int defaultValue) {
+    public static int readInt(Properties properties, String keyword, int defaultValue) {
         String intString = readString(properties, keyword, String.valueOf(defaultValue));
         if ("".equals(intString)) {
             return defaultValue;
@@ -221,20 +222,6 @@ public class PropertiesUtils {
      */
     public static int[] readIntArray(Properties properties, String keyword) {
         String[] intStringArray = readTrimStringArray(properties, keyword);
-        return Arrays.stream(intStringArray)
-            .mapToInt(Integer::parseInt)
-            .toArray();
-    }
-
-    /**
-     * Reads the int array from the properties. If the keyword is not set, return int[0].
-     *
-     * @param properties the properties.
-     * @param keyword    the keyword.
-     * @return the int array from the properties.
-     */
-    public static int[] readIntArrayWithDefault(Properties properties, String keyword) {
-        String[] intStringArray = readTrimStringArrayWithDefault(properties, keyword);
         return Arrays.stream(intStringArray)
             .mapToInt(Integer::parseInt)
             .toArray();
@@ -264,6 +251,18 @@ public class PropertiesUtils {
      */
     public static double readDouble(Properties properties, String keyword) {
         String doubleString = readString(properties, keyword);
+        return Double.parseDouble(doubleString);
+    }
+
+    /**
+     * Reads the double from the properties.
+     *
+     * @param properties the properties.
+     * @param keyword    the keyword.
+     * @return the double from the properties.
+     */
+    public static double readDouble(Properties properties, String keyword, double defaultValue) {
+        String doubleString = readString(properties, keyword, Double.toString(defaultValue));
         return Double.parseDouble(doubleString);
     }
 

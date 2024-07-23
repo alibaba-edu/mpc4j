@@ -84,9 +84,7 @@ public class Prty19LowPsiServer<T> extends AbstractPsiServer<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // init COT
-        int maxL = Prty19PsiUtils.getLowL(maxServerElementSize);
-        coreCotReceiver.init(maxL);
+        coreCotReceiver.init();
         // receive OKVS keys
         DataPacketHeader okvsKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OKVS_KEY.ordinal(), extraInfo,

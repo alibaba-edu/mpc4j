@@ -22,6 +22,17 @@ public class Czz22PsiPtoDesc implements PtoDesc {
      * protocol name
      */
     private static final String PTO_NAME = "CZZ22_PSI";
+
+    enum PtoStep {
+        /**
+         * 服务端运行mqRPMT
+         */
+        SERVER_RUN_MQRPMT,
+        /**
+         * 服务端发送加密集合
+         */
+        SERVER_SEND_ENC_ELEMENTS
+    }
     /**
      * singleton mode
      */

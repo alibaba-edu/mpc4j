@@ -32,6 +32,10 @@ public class DirectLnotSender extends AbstractLnotSender {
      */
     private final Kdf kdf;
     /**
+     * round num
+     */
+    private int roundNum;
+    /**
      * Δ
      */
     private byte[] delta;
@@ -44,12 +48,13 @@ public class DirectLnotSender extends AbstractLnotSender {
     }
 
     @Override
-    public void init(int l, int updateNum) throws MpcAbortException {
-        setInitInput(l, updateNum);
+    public void init(int l, int expectNum) throws MpcAbortException {
+        setInitInput(l, expectNum);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        delta = lcotSender.init(l, updateNum);
+        roundNum = Math.min(config.defaultRoundNum(l), expectNum);
+        delta = lcotSender.init(l);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -65,25 +70,23 @@ public class DirectLnotSender extends AbstractLnotSender {
 
         stopWatch.start();
         LcotSenderOutput lcotSenderOutput = LcotSenderOutput.createEmpty(l, delta);
-        if (num <= updateNum) {
-            lcotSenderOutput.merge(lcotSender.send(num));
-        } else {
-            int currentNum = lcotSenderOutput.getNum();
-            while (currentNum < num) {
-                int roundNum = Math.min((num - currentNum), updateNum);
-                lcotSenderOutput.merge(lcotSender.send(roundNum));
-                currentNum = lcotSenderOutput.getNum();
-            }
+        while (num > lcotSenderOutput.getNum()) {
+            int gapNum = num - lcotSenderOutput.getNum();
+            int eachNum = Math.min(gapNum, roundNum);
+            lcotSenderOutput.merge(lcotSender.send(eachNum));
         }
         stopWatch.stop();
-        long lcotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 2, lcotTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, roundTime);
 
         stopWatch.start();
         // convert LCOT sender output to be LNOT sender output
         int offset = Integer.BYTES - byteL;
-        byte[][][] rsArray = IntStream.range(0, num)
+        IntStream intStream = parallel ? IntStream.range(0, num).parallel() :
+            IntStream.range(0, num);
+
+        byte[][][] rsArray = intStream
             .mapToObj(index -> {
                 byte[][] rs = new byte[n][];
                 byte[] choiceBytes;

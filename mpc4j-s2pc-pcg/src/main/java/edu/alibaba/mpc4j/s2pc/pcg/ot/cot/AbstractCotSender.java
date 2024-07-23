@@ -24,9 +24,9 @@ public abstract class AbstractCotSender extends AbstractTwoPartyPto implements C
      */
     protected byte[] delta;
     /**
-     * update num
+     * expect num
      */
-    protected int updateNum;
+    protected int expectNum;
     /**
      * num
      */
@@ -37,11 +37,11 @@ public abstract class AbstractCotSender extends AbstractTwoPartyPto implements C
         this.config = config;
     }
 
-    protected void setInitInput(byte[] delta, int updateNum) {
+    protected void setInitInput(byte[] delta, int expectNum) {
         MathPreconditions.checkEqual("Δ.length", "λ(B)", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
         this.delta = BytesUtils.clone(delta);
-        MathPreconditions.checkPositive("updateNum", updateNum);
-        this.updateNum = updateNum;
+        MathPreconditions.checkPositive("expect_num", expectNum);
+        this.expectNum = expectNum;
         initState();
     }
 

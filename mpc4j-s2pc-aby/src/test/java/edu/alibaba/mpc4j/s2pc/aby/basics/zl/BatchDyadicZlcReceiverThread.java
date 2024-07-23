@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.circuit.operator.DyadicAcOperator;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 import java.util.Arrays;
 
@@ -18,6 +19,10 @@ class BatchDyadicZlcReceiverThread extends Thread {
      * receiver
      */
     private final ZlcParty receiver;
+    /**
+     * Zl
+     */
+    private final Zl zl;
     /**
      * operator
      */
@@ -51,8 +56,9 @@ class BatchDyadicZlcReceiverThread extends Thread {
      */
     private ZlVector[] recvSecretSecretVectors;
 
-    BatchDyadicZlcReceiverThread(ZlcParty receiver, DyadicAcOperator operator, ZlVector[] xVectors, ZlVector[] yVectors) {
+    BatchDyadicZlcReceiverThread(ZlcParty receiver, Zl zl, DyadicAcOperator operator, ZlVector[] xVectors, ZlVector[] yVectors) {
         this.receiver = receiver;
+        this.zl = zl;
         this.operator = operator;
         this.xVectors = xVectors;
         this.yVectors = yVectors;
@@ -78,7 +84,7 @@ class BatchDyadicZlcReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.init(totalNum);
+            receiver.init(zl.getL(), totalNum);
             // set inputs
             MpcZlVector[] xPlainMpcVectors = Arrays.stream(xVectors)
                 .map(receiver::create)
@@ -87,7 +93,7 @@ class BatchDyadicZlcReceiverThread extends Thread {
                 .map(receiver::create)
                 .toArray(MpcZlVector[]::new);
             int[] bitNums = Arrays.stream(xVectors).mapToInt(ZlVector::getNum).toArray();
-            MpcZlVector[] x1SecretMpcVectors = receiver.shareOther(bitNums);
+            MpcZlVector[] x1SecretMpcVectors = receiver.shareOther(zl, bitNums);
             MpcZlVector[] y1SecretMpcVectors = receiver.shareOwn(yVectors);
             MpcZlVector[] z1PlainPlainMpcVectors, z1PlainSecretMpcVectors;
             MpcZlVector[] z1SecretPlainMpcVectors, z1SecretSecretMpcVectors;

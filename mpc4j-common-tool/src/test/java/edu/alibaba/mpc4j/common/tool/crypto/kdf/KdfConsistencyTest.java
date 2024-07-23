@@ -2,10 +2,10 @@ package edu.alibaba.mpc4j.common.tool.crypto.kdf;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory.KdfType;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -21,7 +21,6 @@ import java.util.Collection;
  * @date 2022/01/07
  */
 @RunWith(Parameterized.class)
-@Ignore
 public class KdfConsistencyTest {
     /**
      * 最大随机轮数
@@ -34,13 +33,24 @@ public class KdfConsistencyTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
-        Collection<Object[]> configurationParams = new ArrayList<>();
-        // BLAKE_2B
-        configurationParams.add(new Object[] {"Blake2b", KdfType.BC_BLAKE_2B, KdfType.NATIVE_BLAKE_2B});
-        // SHA256
-        configurationParams.add(new Object[] {"Sha256", KdfType.JDK_SHA256, KdfType.NATIVE_SHA256});
+        Collection<Object[]> configurations = new ArrayList<>();
 
-        return configurationParams;
+        // STANDARD
+        configurations.add(new Object[]{
+            EnvType.STANDARD.name() + " v.s. " + EnvType.STANDARD_JDK.name(),
+            KdfFactory.getType(EnvType.STANDARD), KdfFactory.getType(EnvType.STANDARD_JDK)
+        });
+        // INLAND
+        configurations.add(new Object[]{
+            EnvType.INLAND.name() + " v.s. " + EnvType.INLAND_JDK.name(),
+            KdfFactory.getType(EnvType.INLAND), KdfFactory.getType(EnvType.INLAND_JDK)
+        });
+        // BLAKE_2B
+        configurations.add(new Object[] {"Blake2b", KdfType.BC_BLAKE_2B, KdfType.NATIVE_BLAKE_2B});
+        // SHA256
+        configurations.add(new Object[] {"Sha256", KdfType.JDK_SHA256, KdfType.NATIVE_SHA256});
+
+        return configurations;
     }
 
     /**

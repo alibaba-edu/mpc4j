@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.opf.oprp;
 
 import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
+import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpFactory.OprpType;
 
 /**
  * OPRP协议配置项。
@@ -14,5 +15,5 @@ public interface OprpConfig extends MultiPartyPtoConfig {
      *
      * @return 协议类型。
      */
-    OprpFactory.OprpType getPtoType();
+    OprpType getPtoType();
 }

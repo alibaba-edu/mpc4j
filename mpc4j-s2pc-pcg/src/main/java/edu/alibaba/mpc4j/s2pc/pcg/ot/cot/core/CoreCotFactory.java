@@ -101,7 +101,6 @@ public class CoreCotFactory implements PtoFactory {
             case IDEAL:
             case SEMI_HONEST:
                 return new Alsz13CoreCotConfig.Builder().build();
-            case COVERT:
             case MALICIOUS:
                 return new Kos15CoreCotConfig.Builder().build();
             default:

@@ -1,19 +1,25 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.lcot;
 
+import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.coder.linear.LinearCoder;
 import edu.alibaba.mpc4j.common.tool.coder.linear.LinearCoderFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 
 /**
- * 2^l选1-COT协议发送方输出。服务端输入Δ，得到q_1,...,q_k，客户端输入选择元组(m_1,...,m_k)，得到t_0,...,t_k。各个参数满足：
+ * 1-out-of-2^l COT sender output.
+ * The sender holds Δ and (q_1,...,q_k). The receiver holds (m_1,...,m_k) and (t_0,...,t_k), with the correlation:
  * <p>
- * q_i ⊕ (C(m_i) ⊙ Δ) = t_i，其中C是一个编码函数。
+ * q_i ⊕ (C(m_i) ⊙ Δ) = t_i, where C is a linear coder.
  * </p>
- * 发送方输出结果满足同态性，即给定q_i ⊕ (C(m_i) ⊙ Δ) = t_i, q_j ⊕ (C(m_j) ⊙ Δ) = t_j，有
+ * The correlation satisfies homomorphism, namely, given q_i ⊕ (C(m_i) ⊙ Δ) = t_i, q_j ⊕ (C(m_j) ⊙ Δ) = t_j, we have:
  * <p>
  * t_{i ⊕ j} = q_{i ⊕ j} ⊕ (C(m_{i ⊕ j}) ⊙ Δ) = q_i ⊕ (C(m_i) ⊙ Δ)) ⊕ (q_j ⊕ (C(m_j) ⊙ Δ))
  * </p>
@@ -23,104 +29,125 @@ import java.util.Arrays;
  */
 public class LcotSenderOutput implements MergedPcgPartyOutput {
     /**
-     * 输入比特长度
+     * input bit length
      */
     private final int inputBitLength;
     /**
-     * 输入字节长度
+     * input byte length
      */
     private final int inputByteLength;
     /**
-     * 输出比特长度
+     * output bit length
      */
     private final int outputBitLength;
     /**
-     * 输出字节长度
+     * output byte length
      */
     private final int outputByteLength;
     /**
-     * 线性编码器
+     * linear coder
      */
     private final LinearCoder linearCoder;
     /**
-     * 关联值Δ
+     * Δ
      */
-    private byte[] delta;
+    private final byte[] delta;
     /**
-     * 矩阵Q
+     * Q
      */
     private byte[][] qsArray;
 
     /**
-     * 创建发送方输出。
+     * Creates a sender output.
      *
-     * @param inputBitLength 输入比特长度。
-     * @param delta          关联值Δ。
-     * @param qsArray        矩阵Q。
-     * @return 发送方输出。
+     * @param inputBitLength input bit length.
+     * @param delta          Δ.
+     * @param qsArray        Q.
+     * @return sender output.
      */
     public static LcotSenderOutput create(int inputBitLength, byte[] delta, byte[][] qsArray) {
-        LcotSenderOutput senderOutput = new LcotSenderOutput(inputBitLength);
-        assert delta.length == senderOutput.outputByteLength
-            && BytesUtils.isReduceByteArray(delta, senderOutput.outputBitLength);
-        senderOutput.delta = BytesUtils.clone(delta);
-        assert qsArray.length > 0 : "QS Length must be greater than 0";
+        LcotSenderOutput senderOutput = new LcotSenderOutput(inputBitLength, delta);
         senderOutput.qsArray = Arrays.stream(qsArray)
-            .peek(q -> {
-                assert q.length == senderOutput.outputByteLength
-                    && BytesUtils.isReduceByteArray(q, senderOutput.outputBitLength);
-            })
+            .peek(q -> Preconditions.checkArgument(
+                BytesUtils.isFixedReduceByteArray(q, senderOutput.outputByteLength, senderOutput.outputBitLength)
+            ))
             .toArray(byte[][]::new);
 
         return senderOutput;
     }
 
     /**
-     * 创建数量为0的发送方输出。
+     * Creates an empty sender output.
      *
-     * @param inputBitLength 输入比特长度。
-     * @param delta          关联值Δ。
-     * @return 数量为0的发送方输出。
+     * @param inputBitLength input bit length.
+     * @param delta          Δ.
+     * @return an empty sender output.
      */
     public static LcotSenderOutput createEmpty(int inputBitLength, byte[] delta) {
-        LcotSenderOutput senderOutput = new LcotSenderOutput(inputBitLength);
-        assert delta.length == senderOutput.outputByteLength
-            && BytesUtils.isReduceByteArray(delta, senderOutput.outputBitLength);
-        senderOutput.delta = BytesUtils.clone(delta);
-        senderOutput.qsArray = new byte[0][senderOutput.outputByteLength];
+        LcotSenderOutput senderOutput = new LcotSenderOutput(inputBitLength, delta);
+        senderOutput.qsArray = new byte[0][];
 
         return senderOutput;
     }
 
     /**
-     * private constructor.
+     * creates a random sender output.
+     *
+     * @param num            num.
+     * @param inputBitLength input bit length.
+     * @param delta          Δ.
+     * @param secureRandom   random state.
+     * @return a random sender output.
      */
-    private LcotSenderOutput(int inputBitLength) {
-        assert inputBitLength > 0 : "InputBitLength must be greater than 0: " + inputBitLength;
+    public static LcotSenderOutput createRandom(int num, int inputBitLength, byte[] delta, SecureRandom secureRandom) {
+        LcotSenderOutput senderOutput = new LcotSenderOutput(inputBitLength, delta);
+        senderOutput.qsArray = BytesUtils.randomByteArrayVector(
+            num, senderOutput.outputByteLength, senderOutput.outputBitLength, secureRandom
+        );
+        return senderOutput;
+
+    }
+
+    /**
+     * private constructor.
+     *
+     * @param inputBitLength input bit length.
+     */
+    private LcotSenderOutput(int inputBitLength, byte[] delta) {
+        MathPreconditions.checkPositive("input_bit_length", inputBitLength);
         this.inputBitLength = inputBitLength;
         inputByteLength = CommonUtils.getByteLength(inputBitLength);
         linearCoder = LinearCoderFactory.getInstance(inputBitLength);
         outputBitLength = linearCoder.getCodewordBitLength();
         outputByteLength = linearCoder.getCodewordByteLength();
+        Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(delta, outputByteLength, outputBitLength));
+        this.delta = BytesUtils.clone(delta);
+    }
+
+    @Override
+    public LcotSenderOutput copy() {
+        LcotSenderOutput copy = new LcotSenderOutput(inputBitLength, delta);
+        copy.qsArray = BytesUtils.clone(qsArray);
+        return copy;
     }
 
     @Override
     public LcotSenderOutput split(int splitNum) {
         int num = getNum();
-        assert splitNum > 0 && splitNum <= num : "split length must be in range (0, " + num + "]: " + splitNum;
-        byte[][] qsSubArray = new byte[splitNum][];
+        MathPreconditions.checkPositiveInRangeClosed("splitNum", splitNum, num);
+        byte[][] qsSplitArray = new byte[splitNum][];
         byte[][] qsRemainArray = new byte[num - splitNum][];
-        System.arraycopy(qsArray, 0, qsSubArray, 0, splitNum);
-        System.arraycopy(qsArray, splitNum, qsRemainArray, 0, num - splitNum);
+        System.arraycopy(qsArray, num - splitNum, qsSplitArray, 0, splitNum);
+        System.arraycopy(qsArray, 0, qsRemainArray, 0, num - splitNum);
         qsArray = qsRemainArray;
 
-        return LcotSenderOutput.create(inputBitLength, delta, qsSubArray);
+        return create(inputBitLength, delta, qsSplitArray);
     }
 
     @Override
     public void reduce(int reduceNum) {
         int num = getNum();
-        assert reduceNum > 0 && reduceNum <= num : "reduceNum must be in range (0, " + num + "]: " + reduceNum;
+        MathPreconditions.checkPositiveInRangeClosed("reduceNum", reduceNum, num);
         if (reduceNum < num) {
             // 如果给定的数量小于当前数量，则裁剪，否则保持原样不动
             byte[][] qsRemainArray = new byte[reduceNum][];
@@ -132,8 +159,8 @@ public class LcotSenderOutput implements MergedPcgPartyOutput {
     @Override
     public void merge(MergedPcgPartyOutput other) {
         LcotSenderOutput that = (LcotSenderOutput) other;
-        assert this.inputBitLength == that.inputBitLength : "InputBitLength mismatch";
-        assert Arrays.equals(this.delta, that.delta) : "Δ mismatch";
+        MathPreconditions.checkEqual("this.inputBitLength", "that.inputBitLength", this.inputBitLength, that.inputBitLength);
+        Preconditions.checkArgument(Arrays.equals(this.delta, that.delta));
         byte[][] mergeQsArray = new byte[this.qsArray.length + that.qsArray.length][];
         System.arraycopy(this.qsArray, 0, mergeQsArray, 0, this.qsArray.length);
         System.arraycopy(that.qsArray, 0, mergeQsArray, this.qsArray.length, that.qsArray.length);
@@ -143,7 +170,7 @@ public class LcotSenderOutput implements MergedPcgPartyOutput {
     /**
      * Gets Rb.
      *
-     * @param index the index.
+     * @param index  the index.
      * @param choice the choice.
      * @return Rb.
      */
@@ -232,5 +259,29 @@ public class LcotSenderOutput implements MergedPcgPartyOutput {
      */
     public LinearCoder getLinearCoder() {
         return linearCoder;
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(inputBitLength)
+            .append(delta)
+            .append(qsArray)
+            .hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof LcotSenderOutput that) {
+            return new EqualsBuilder()
+                .append(this.inputBitLength, that.inputBitLength)
+                .append(this.delta, that.delta)
+                .append(this.qsArray, that.qsArray)
+                .isEquals();
+        }
+        return false;
     }
 }

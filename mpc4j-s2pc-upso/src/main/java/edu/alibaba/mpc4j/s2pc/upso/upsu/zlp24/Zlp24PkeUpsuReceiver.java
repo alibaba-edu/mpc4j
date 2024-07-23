@@ -15,8 +15,8 @@ import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirFactory;
-import edu.alibaba.mpc4j.s2pc.pir.index.batch.BatchIndexPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.IdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.AbstractUpsuReceiver;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.UpsuReceiverOutput;
 import org.bouncycastle.math.ec.ECPoint;
@@ -42,7 +42,7 @@ public class Zlp24PkeUpsuReceiver extends AbstractUpsuReceiver {
     /**
      * batch index PIR server
      */
-    private final BatchIndexPirServer batchIndexPirServer;
+    private final IdxPirServer batchIndexPirServer;
     /**
      * core COT receiver
      */
@@ -90,7 +90,7 @@ public class Zlp24PkeUpsuReceiver extends AbstractUpsuReceiver {
 
     public Zlp24PkeUpsuReceiver(Rpc receiverRpc, Party senderParty, Zlp24PkeUpsuConfig config) {
         super(getInstance(), receiverRpc, senderParty, config);
-        batchIndexPirServer = BatchIndexPirFactory.createServer(receiverRpc, senderParty, config.getBatchIndexPirConfig());
+        batchIndexPirServer = StdIdxPirFactory.createServer(receiverRpc, senderParty, config.getBatchIndexPirConfig());
         addSubPto(batchIndexPirServer);
         coreCotReceiver = CoreCotFactory.createReceiver(receiverRpc, senderParty, config.getCoreCotConfig());
         addSubPto(coreCotReceiver);
@@ -106,7 +106,7 @@ public class Zlp24PkeUpsuReceiver extends AbstractUpsuReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        coreCotReceiver.init(maxSenderElementSize);
+        coreCotReceiver.init();
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

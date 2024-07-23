@@ -1,11 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.polynomial.gf2e;
 
-import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePolyFactory.Gf2ePolyType;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
 /**
  * NTL实现的GF2E多项式插值抽象类。
@@ -23,23 +20,9 @@ public class NtlGf2ePoly extends AbstractGf2ePoly {
      * type
      */
     private static final Gf2ePolyType TYPE = Gf2ePolyType.NTL;
-    /**
-     * 不可约多项式
-     */
-    private final byte[] minBytes;
 
     NtlGf2ePoly(int l) {
         super(l);
-        // 设置不可约多项式，系数个数为l + 1
-        int minNum = l + 1;
-        int minByteNum = CommonUtils.getByteLength(minNum);
-        int minRoundBytes = minByteNum * Byte.SIZE;
-        minBytes = new byte[minByteNum];
-        UnivariatePolynomialZp64 minimalPolynomial = finiteField.getMinimalPolynomial();
-        for (int i = 0; i <= minimalPolynomial.degree(); i++) {
-            boolean coefficient = minimalPolynomial.get(i) != 0L;
-            BinaryUtils.setBoolean(minBytes, minRoundBytes - 1 - i, coefficient);
-        }
     }
 
     @Override
@@ -63,7 +46,7 @@ public class NtlGf2ePoly extends AbstractGf2ePoly {
             assert validPoint(y);
         }
         // 调用本地函数完成插值
-        return NtlNativeGf2ePoly.interpolate(minBytes, byteL, num, xArray, yArray);
+        return NtlNativeGf2ePoly.interpolate(minimalPolynomial, byteL, num, xArray, yArray);
     }
 
     @Override
@@ -89,7 +72,7 @@ public class NtlGf2ePoly extends AbstractGf2ePoly {
         for (byte[] x : xArray) {
             assert validPoint(x);
         }
-        return NtlNativeGf2ePoly.rootInterpolate(minBytes, byteL, num, xArray, y);
+        return NtlNativeGf2ePoly.rootInterpolate(minimalPolynomial, byteL, num, xArray, y);
     }
 
     @Override
@@ -99,7 +82,7 @@ public class NtlGf2ePoly extends AbstractGf2ePoly {
             assert validPoint(coefficient);
         }
         assert validPoint(x);
-        return NtlNativeGf2ePoly.singleEvaluate(minBytes, byteL, coefficients, x);
+        return NtlNativeGf2ePoly.singleEvaluate(minimalPolynomial, byteL, coefficients, x);
     }
 
     @Override
@@ -111,6 +94,6 @@ public class NtlGf2ePoly extends AbstractGf2ePoly {
         for (byte[] x : xArray) {
             assert validPoint(x);
         }
-        return NtlNativeGf2ePoly.evaluate(minBytes, byteL, coefficients, xArray);
+        return NtlNativeGf2ePoly.evaluate(minimalPolynomial, byteL, coefficients, xArray);
     }
 }

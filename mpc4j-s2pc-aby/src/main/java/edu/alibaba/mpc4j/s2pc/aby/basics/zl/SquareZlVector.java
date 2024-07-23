@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.aby.basics.zl;
 
-import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
+import edu.alibaba.mpc4j.common.structure.vector.Vector;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -159,7 +159,7 @@ public class SquareZlVector implements MpcZlVector {
     }
 
     @Override
-    public void merge(MpcVector other) {
+    public void merge(Vector other) {
         SquareZlVector that = (SquareZlVector) other;
         Preconditions.checkArgument(this.plain == that.plain, "plain state mismatch");
         zlVector.merge(that.getZlVector());
@@ -178,8 +178,7 @@ public class SquareZlVector implements MpcZlVector {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof SquareZlVector) {
-            SquareZlVector that = (SquareZlVector) obj;
+        if (obj instanceof SquareZlVector that) {
             return new EqualsBuilder()
                 .append(this.zlVector, that.zlVector)
                 .append(this.plain, that.plain)

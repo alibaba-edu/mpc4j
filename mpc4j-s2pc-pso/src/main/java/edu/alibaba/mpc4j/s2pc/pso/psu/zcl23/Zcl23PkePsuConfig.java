@@ -2,10 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.psu.zcl23;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory.EccDokvsType;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.zp.ZpDokvsFactory.ZpDokvsType;
-import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.zcl23.Zcl23PkeMqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
@@ -19,33 +16,18 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
  */
 public class Zcl23PkePsuConfig extends AbstractMultiPartyPtoConfig implements PsuConfig {
     /**
-     * 核COT协议配置项
+     * ZCL23-PKE-mqRPMT
+     */
+    private final Zcl23PkeMqRpmtConfig zcl23PkeMqRpmtConfig;
+    /**
+     * core COT
      */
     private final CoreCotConfig coreCotConfig;
-    /**
-     * Zp-DOKVS type
-     */
-    private final ZpDokvsType zpDokvsType;
-    /**
-     * ECC-DOKVS type
-     */
-    private final EccDokvsType eccDokvsType;
-    /**
-     * 是否使用压缩椭圆曲线编码
-     */
-    private final boolean compressEncode;
-    /**
-     * 流水线数量
-     */
-    private final int pipeSize;
 
     private Zcl23PkePsuConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.coreCotConfig);
+        super(SecurityModel.SEMI_HONEST, builder.zcl23PkeMqRpmtConfig, builder.coreCotConfig);
+        zcl23PkeMqRpmtConfig = builder.zcl23PkeMqRpmtConfig;
         coreCotConfig = builder.coreCotConfig;
-        eccDokvsType = builder.eccDokvsType;
-        zpDokvsType = EccDokvsFactory.getCorrespondingEccDokvsType(eccDokvsType);
-        compressEncode = builder.compressEncode;
-        pipeSize = builder.pipeSize;
     }
 
     @Override
@@ -53,69 +35,36 @@ public class Zcl23PkePsuConfig extends AbstractMultiPartyPtoConfig implements Ps
         return PsuType.ZCL23_PKE;
     }
 
+    public Zcl23PkeMqRpmtConfig getZcl23PkeMqRpmtConfig() {
+        return zcl23PkeMqRpmtConfig;
+    }
+
     public CoreCotConfig getCoreCotConfig() {
         return coreCotConfig;
     }
 
-    public ZpDokvsType getZpDokvsType() {
-        return zpDokvsType;
-    }
-
-    public EccDokvsType getEccDokvsType() {
-        return eccDokvsType;
-    }
-
-    public boolean getCompressEncode() {
-        return compressEncode;
-    }
-
-    public int getPipeSize() {
-        return pipeSize;
-    }
-
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Zcl23PkePsuConfig> {
         /**
-         * 核COT协议配置项
+         * ZCL23-PKE-mqRPMT
+         */
+        private Zcl23PkeMqRpmtConfig zcl23PkeMqRpmtConfig;
+        /**
+         * core COT
          */
         private CoreCotConfig coreCotConfig;
-        /**
-         * ECC-DOKVS type
-         */
-        private EccDokvsType eccDokvsType;
-        /**
-         * 是否使用压缩椭圆曲线编码
-         */
-        private boolean compressEncode;
-        /**
-         * 流水线数量
-         */
-        private int pipeSize;
 
         public Builder() {
+            zcl23PkeMqRpmtConfig = new Zcl23PkeMqRpmtConfig.Builder().build();
             coreCotConfig = CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-            eccDokvsType = EccDokvsType.H3_NAIVE_CLUSTER_BLAZE_GCT;
-            compressEncode = true;
-            pipeSize = (1 << 8);
+        }
+
+        public Builder setZcl23PkeMqRpmtConfig(Zcl23PkeMqRpmtConfig zcl23PkeMqRpmtConfig) {
+            this.zcl23PkeMqRpmtConfig = zcl23PkeMqRpmtConfig;
+            return this;
         }
 
         public Builder setCoreCotConfig(CoreCotConfig coreCotConfig) {
             this.coreCotConfig = coreCotConfig;
-            return this;
-        }
-
-        public Builder setEccDokvsType(EccDokvsType eccDokvsType) {
-            this.eccDokvsType = eccDokvsType;
-            return this;
-        }
-
-        public Builder setCompressEncode(boolean compressEncode) {
-            this.compressEncode = compressEncode;
-            return this;
-        }
-
-        public Builder setPipeSize(int pipeSize) {
-            MathPreconditions.checkPositive("pipeSize", pipeSize);
-            this.pipeSize = pipeSize;
             return this;
         }
 

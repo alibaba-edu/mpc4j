@@ -45,11 +45,6 @@ public interface TripletZ2cParty extends AbbCoreParty, MpcZ2cParty {
     }
 
     /**
-     * inits the protocol.
-     */
-    void init();
-
-    /**
      * create shared zero vectors
      */
     TripletZ2Vector createShareZeros(int bitNums);
@@ -109,6 +104,7 @@ public interface TripletZ2cParty extends AbbCoreParty, MpcZ2cParty {
      * @return the revealed vectors.
      * @throws MpcAbortException the protocol failure aborts.
      */
+    @Override
     default BitVector revealOwn(MpcZ2Vector xiArray) throws MpcAbortException {
         return revealOwn(new MpcZ2Vector[]{xiArray})[0];
     }
@@ -224,6 +220,7 @@ public interface TripletZ2cParty extends AbbCoreParty, MpcZ2cParty {
      * @param xiArray xi.
      * @param yiArray yi.
      */
+    @Override
     default void xori(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) {
         MathPreconditions.checkEqual("xiArray.length", "yi.length", xiArray.length, yiArray.length);
         IntStream intStream = getParallel() ? IntStream.range(0, xiArray.length).parallel() : IntStream.range(0, xiArray.length);

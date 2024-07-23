@@ -1,51 +1,36 @@
 package edu.alibaba.mpc4j.s2pc.aby.main;
 
+import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
-import edu.alibaba.mpc4j.s2pc.aby.main.corr.ZlCorrMain;
-import edu.alibaba.mpc4j.s2pc.aby.main.millionaire.MillionaireMain;
-import edu.alibaba.mpc4j.s2pc.aby.main.trun.ZlTruncMain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import edu.alibaba.mpc4j.s2pc.aby.main.osn.RosnMain;
 
 import java.util.Properties;
 
 /**
- * ABY main.
+ * Aby3 main
  *
- * @author Liqiang Peng
- * @date 2022/10/12
+ * @author Feng Han
+ * @date 2024/7/10
  */
 public class AbyMain {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbyMain.class);
-
     /**
-     * main.
+     * main function.
      *
-     * @param args one input: config file name.
+     * @param args two arguments, config and party.
      */
     public static void main(String[] args) throws Exception {
         PropertiesUtils.loadLog4jProperties();
-        // read config file
-        LOGGER.info("read PTO config");
         Properties properties = PropertiesUtils.loadProperties(args[0]);
-        // read task type
-        String taskType = PropertiesUtils.readString(properties, "task_type");
-        LOGGER.info("task_type = " + taskType);
-        switch (taskType) {
-            case ZlTruncMain.TASK_NAME:
-                ZlTruncMain zlTruncMain = new ZlTruncMain(properties);
-                zlTruncMain.run();
-                break;
-            case ZlCorrMain.TASK_NAME:
-                ZlCorrMain zlCorrMain = new ZlCorrMain(properties);
-                zlCorrMain.run();
-                break;
-            case MillionaireMain.TASK_NAME:
-                MillionaireMain millionaireMain = new MillionaireMain(properties);
-                millionaireMain.run();
+        String ownName = args[1];
+        String ptoType = MainPtoConfigUtils.readPtoType(properties);
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (ptoType) {
+            case RosnMain.PTO_TYPE_NAME:
+                RosnMain rosnMain = new RosnMain(properties, ownName);
+                rosnMain.runNetty();
                 break;
             default:
-                throw new IllegalArgumentException("Invalid task_type: " + taskType);
+                throw new IllegalArgumentException("Invalid " + MainPtoConfigUtils.PTO_TYPE_KEY + ": " + ptoType);
         }
         System.exit(0);
     }

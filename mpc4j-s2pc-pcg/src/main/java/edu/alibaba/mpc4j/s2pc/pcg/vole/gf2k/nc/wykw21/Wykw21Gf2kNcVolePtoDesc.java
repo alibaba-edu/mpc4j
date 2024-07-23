@@ -5,11 +5,11 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.bsp.Gf2kBspVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.bsp.Gf2kBspVoleFactory.Gf2kBspVoleType;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.Gf2kMspVoleFactory.Gf2kMspVoleType;
-import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.msp.bcg19.Bcg19RegGf2kMspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.bsp.Gf2kBspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.bsp.Gf2kBspVoleFactory.Gf2kBspVoleType;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleFactory.Gf2kMspVoleType;
+import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.bcg19.Bcg19RegGf2kMspVoleConfig;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -40,11 +40,7 @@ class Wykw21Gf2kNcVolePtoDesc implements PtoDesc {
         /**
          * receiver sends setup matrix key
          */
-        RECEIVER_SEND_SETUP_KEY,
-        /**
-         * receiver sends iteration matrix key
-         */
-        RECEIVER_SEND_ITERATION_LEY,
+        RECEIVER_SEND_KEYS,
     }
 
     /**
@@ -134,19 +130,19 @@ class Wykw21Gf2kNcVolePtoDesc implements PtoDesc {
     private static final TIntObjectMap<LpnParams> WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
     static {
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(12, LpnParams.create(2022, 384, 392));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(13, LpnParams.create(2217, 384, 434));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(14, LpnParams.create(2703, 512, 392));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(15, LpnParams.create(3665, 512, 547));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(16, LpnParams.create(5602, 640, 677));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(17, LpnParams.create(9215, 896, 800));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(18, LpnParams.create(16126, 1152, 1101));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(19, LpnParams.create(30349, 1664, 1441));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(20, LpnParams.create(57222, 2944, 1528));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(21, LpnParams.create(112061, 5760, 1517));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(22, LpnParams.create(220488, 11136, 1532));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(23, LpnParams.create(435497, 21760, 1536));
-        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(24, LpnParams.create(861724, 42752, 1534));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(12, LpnParams.create(2147, 384, 419));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(13, LpnParams.create(2342, 384, 461));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(14, LpnParams.create(2833, 512, 413));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(15, LpnParams.create(3789, 512, 567));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(16, LpnParams.create(5734, 640, 694));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(17, LpnParams.create(9335, 896, 811));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(18, LpnParams.create(16253, 1152, 1110));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(19, LpnParams.create(30472, 1664, 1447));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(20, LpnParams.create(57368, 2944, 1532));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(21, LpnParams.create(112133, 5760, 1518));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(22, LpnParams.create(220628, 11136, 1533));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(23, LpnParams.create(435589, 21888, 1527));
+        WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.put(24, LpnParams.create(862271, 42752, 1535));
     }
 
     /**
@@ -155,19 +151,19 @@ class Wykw21Gf2kNcVolePtoDesc implements PtoDesc {
     private static final TIntObjectMap<LpnParams> WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP = new TIntObjectHashMap<>();
 
     static {
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(12, LpnParams.create(6115, 512, 1506));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(13, LpnParams.create(10406, 768, 1445));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(14, LpnParams.create(19085, 1280, 1420));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(15, LpnParams.create(36429, 2176, 1484));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(16, LpnParams.create(71136, 4096, 1503));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(17, LpnParams.create(140279, 7680, 1526));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(18, LpnParams.create(278261, 14592, 1524));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(19, LpnParams.create(554621, 28800, 1532));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(20, LpnParams.create(1105793, 55680, 1536));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(21, LpnParams.create(2209152, 110464, 1535));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(22, LpnParams.create(4414721, 218880, 1536));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(23, LpnParams.create(8824065, 433920, 1536));
-        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(24, LpnParams.create(17638913, 860160, 1536));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(12, LpnParams.create(6242, 512, 1506));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(13, LpnParams.create(10533, 768, 1445));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(14, LpnParams.create(19212, 1280, 1420));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(15, LpnParams.create(36556, 2176, 1484));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(16, LpnParams.create(71263, 4096, 1503));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(17, LpnParams.create(140406, 7680, 1526));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(18, LpnParams.create(278388, 14592, 1524));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(19, LpnParams.create(554748, 28800, 1532));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(20, LpnParams.create(1105920, 55680, 1536));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(21, LpnParams.create(2209279, 110464, 1535));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(22, LpnParams.create(4414848, 218880, 1536));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(23, LpnParams.create(8824192, 433920, 1536));
+        WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.put(24, LpnParams.create(17639040, 860160, 1536));
     }
 
     /**
@@ -192,6 +188,7 @@ class Wykw21Gf2kNcVolePtoDesc implements PtoDesc {
                 Gf2kBspVoleType bcg19RegGf2kBspVoleType = bcg19RegGf2kBspVoleConfig.getPtoType();
                 switch (bcg19RegGf2kBspVoleType) {
                     case WYKW21_SEMI_HONEST:
+                    case GYW23:
                         return WYKW21_SH_BCG19_REG_SETUP_LPN_PARAMS_MAP.get(ceilLogN);
                     case WYKW21_MALICIOUS:
                         return WYKW21_MA_BCG19_REG_SETUP_LPN_PARAMS_MAP.get(ceilLogN);
@@ -229,6 +226,7 @@ class Wykw21Gf2kNcVolePtoDesc implements PtoDesc {
                 Gf2kBspVoleType bcg19RegGf2kBspVoleType = bcg19RegGf2kBspVoleConfig.getPtoType();
                 switch (bcg19RegGf2kBspVoleType) {
                     case WYKW21_SEMI_HONEST:
+                    case GYW23:
                         return WYKW21_SH_BCG19_REG_ITERATION_LPN_PARAMS_MAP.get(ceilLogN);
                     case WYKW21_MALICIOUS:
                         return WYKW21_MA_BCG19_REG_ITERATION_LPN_PARAMS_MAP.get(ceilLogN);

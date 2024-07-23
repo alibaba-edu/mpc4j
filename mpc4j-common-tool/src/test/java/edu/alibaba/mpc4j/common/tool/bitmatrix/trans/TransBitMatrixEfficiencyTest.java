@@ -25,14 +25,6 @@ import java.util.stream.IntStream;
 public class TransBitMatrixEfficiencyTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransBitMatrixEfficiencyTest.class);
     /**
-     * random state
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    /**
-     * stop watch
-     */
-    private static final StopWatch STOP_WATCH = new StopWatch();
-    /**
      * large log(n) for rows / columns
      */
     private static final int LOG_LARGE_N = 18;
@@ -41,36 +33,37 @@ public class TransBitMatrixEfficiencyTest {
      */
     private static final int LOG_SMALL_N = 10;
     /**
-     * 测试类型
+     * random state
      */
-    private static final TransBitMatrixType[] TYPES = new TransBitMatrixType[] {
-        TransBitMatrixType.JDK,
-        TransBitMatrixType.EKLUNDH,
-        TransBitMatrixType.NATIVE,
-        TransBitMatrixType.NATIVE_SPLIT_ROW,
-        TransBitMatrixType.JDK_SPLIT_ROW,
-        TransBitMatrixType.NATIVE_SPLIT_COL,
-        TransBitMatrixType.JDK_SPLIT_COL,
-    };
+    private final SecureRandom secureRandom;
+    /**
+     * stop watch
+     */
+    private final StopWatch stopWatch;
+
+    public TransBitMatrixEfficiencyTest() {
+        secureRandom = new SecureRandom();
+        stopWatch = new StopWatch();
+    }
 
     @Test
     public void testLargeRowEfficiency() {
         LOGGER.info("{}\t{}\t{}\t{}", "                name", "  log(row)", "  log(col)", " trans(ms)");
         int rows = 1 << LOG_LARGE_N;
         int columns = 1 << LOG_SMALL_N;
-        for (TransBitMatrixFactory.TransBitMatrixType type : TYPES) {
+        for (TransBitMatrixType type : TransBitMatrixType.values()) {
             TransBitMatrix a = TransBitMatrixFactory.createInstance(type, rows, columns);
             int rowBytes = CommonUtils.getByteLength(rows);
             IntStream.range(0, columns).forEach(columnIndex -> {
                 byte[] column = new byte[rowBytes];
-                SECURE_RANDOM.nextBytes(column);
+                secureRandom.nextBytes(column);
                 BytesUtils.reduceByteArray(column, rows);
                 a.setColumn(columnIndex, column);
             });
-            STOP_WATCH.start();
+            stopWatch.start();
             a.transpose();
-            STOP_WATCH.stop();
-            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            stopWatch.stop();
+            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             LOGGER.info(
                 "{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
@@ -78,7 +71,7 @@ public class TransBitMatrixEfficiencyTest {
                 StringUtils.leftPad(String.valueOf(LongUtils.ceilLog2(columns)), 10),
                 StringUtils.leftPad(String.valueOf(time), 10)
             );
-            STOP_WATCH.reset();
+            stopWatch.reset();
         }
         LOGGER.info(StringUtils.rightPad("", 60, '-'));
     }
@@ -88,19 +81,19 @@ public class TransBitMatrixEfficiencyTest {
         LOGGER.info("{}\t{}\t{}\t{}", "                name", "  log(row)", "  log(col)", " trans(ms)");
         int rows = 1 << LOG_SMALL_N;
         int columns = 1 << LOG_LARGE_N;
-        for (TransBitMatrixFactory.TransBitMatrixType type : TYPES) {
+        for (TransBitMatrixType type : TransBitMatrixType.values()) {
             TransBitMatrix a = TransBitMatrixFactory.createInstance(type, rows, columns);
             int rowBytes = CommonUtils.getByteLength(rows);
             IntStream.range(0, columns).forEach(columnIndex -> {
                 byte[] column = new byte[rowBytes];
-                SECURE_RANDOM.nextBytes(column);
+                secureRandom.nextBytes(column);
                 BytesUtils.reduceByteArray(column, rows);
                 a.setColumn(columnIndex, column);
             });
-            STOP_WATCH.start();
+            stopWatch.start();
             a.transpose();
-            STOP_WATCH.stop();
-            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            stopWatch.stop();
+            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
             LOGGER.info(
                 "{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
@@ -108,7 +101,7 @@ public class TransBitMatrixEfficiencyTest {
                 StringUtils.leftPad(String.valueOf(LongUtils.ceilLog2(columns)), 10),
                 StringUtils.leftPad(String.valueOf(time), 10)
             );
-            STOP_WATCH.reset();
+            stopWatch.reset();
         }
         LOGGER.info(StringUtils.rightPad("", 60, '-'));
     }

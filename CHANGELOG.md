@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2]
+
+### Added
+
+- [important] Restrict that the minimal JDK version is JDK 21. We merge `mpc4j-crypto-simd` into corresponding modulues.
+- Implement Half-tree introduced in EUROCRYPT 2023.
+- Implement EACode and ECCode introduced in CRYPTO 2022 and CRYPTO 2023, respectively.
+- Implement Secret-shared shuffle introduced in ASIACRYPT 2020.
+- Implement altering module OPRF introduced in CRYPTO 2024.
+- Speedup `GF2E` implementations.
+
+### Changed
+
+- We fully re-organized PIR implementations and now they are more clear and easy to read.
+- We fully re-organized PCG implementations, moving triple, daBit, OSN from `mpc4j-s2pc-opf` to `mpc4j-s2pc-aby`. Based on this modification, we implement a `TrustedDealer` to deal with all PCG generations.
+
+### Fixed
+
+- Fixed a bug for the implementation of order-preserving encryption (EUROCRYPT 2009). Now that order-preserving encryption supports any output range $\mathcal{R}$ conditioned on $|\mathcal{R}| \geq |\mathcal{D}|$ where $|\mathcal{D}|$​ is the input range.
+- Fixed a bug for PSU implementations. Now we can correctly verify if PSU is implemented correctly.
+
 ## \[1.1.1\]
 
 ### Added

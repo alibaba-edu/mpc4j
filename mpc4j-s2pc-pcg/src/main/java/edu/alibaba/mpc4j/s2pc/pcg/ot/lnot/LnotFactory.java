@@ -4,9 +4,9 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.cache.CacheLnotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.cache.CacheLnotReceiver;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.cache.CacheLnotSender;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.cot.CotLnotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.cot.CotLnotReceiver;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.cot.CotLnotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.direct.DirectLnotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.direct.DirectLnotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.direct.DirectLnotSender;
@@ -36,7 +36,7 @@ public class LnotFactory implements PtoFactory {
         /**
          * Cache LNOT
          */
-        CACHE,
+        COT,
     }
 
     /**
@@ -52,8 +52,8 @@ public class LnotFactory implements PtoFactory {
         switch (type) {
             case DIRECT:
                 return new DirectLnotSender(senderRpc, receiverParty, (DirectLnotConfig) config);
-            case CACHE:
-                return new CacheLnotSender(senderRpc, receiverParty, (CacheLnotConfig) config);
+            case COT:
+                return new CotLnotSender(senderRpc, receiverParty, (CotLnotConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + LnotType.class.getSimpleName() + ": " + type.name());
         }
@@ -72,30 +72,25 @@ public class LnotFactory implements PtoFactory {
         switch (type) {
             case DIRECT:
                 return new DirectLnotReceiver(receiverRpc, senderParty, (DirectLnotConfig) config);
-            case CACHE:
-                return new CacheLnotReceiver(receiverRpc, senderParty, (CacheLnotConfig) config);
+            case COT:
+                return new CotLnotReceiver(receiverRpc, senderParty, (CotLnotConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + LnotType.class.getSimpleName() + ": " + type.name());
         }
     }
 
     /**
-     * Creates direct config. This is suitable for generating relatively small number of COTs.
+     * Creates default config.
      *
-     * @param securityModel the security model.
+     * @param securityModel security model.
+     * @param silent if using silent OT.
      * @return the config.
      */
-    public static LnotConfig createDirectConfig(SecurityModel securityModel) {
-        return new DirectLnotConfig.Builder(securityModel).build();
-    }
-
-    /**
-     * Creates cache config.
-     *
-     * @param securityModel the security model.
-     * @return the config.
-     */
-    public static LnotConfig createCacheConfig(SecurityModel securityModel) {
-        return new CacheLnotConfig.Builder(securityModel).build();
+    public static LnotConfig createDefaultConfig(SecurityModel securityModel, boolean silent) {
+        if (silent) {
+            return new CotLnotConfig.Builder(securityModel).build();
+        } else {
+            return new DirectLnotConfig.Builder(securityModel).build();
+        }
     }
 }

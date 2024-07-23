@@ -3,9 +3,10 @@ package edu.alibaba.mpc4j.s2pc.opf.mqrpmt;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.opf.OpfUtils;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory.MqRpmtType;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtConfig;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz22.Czz22ByteEccCwMqRpmtConfig;
-import org.apache.commons.lang3.time.StopWatch;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.czz24.Czz24CwOprfMqRpmtConfig;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.zcl23.Zcl23PkeMqRpmtConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,15 +47,16 @@ public class MqRmptTest extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
+        configurations.add(new Object[]{
+            MqRpmtType.ZCL23_PKE.name(), new Zcl23PkeMqRpmtConfig.Builder().build(),
+        });
         // GMR21
         configurations.add(new Object[]{
-            MqRpmtFactory.MqRpmtType.GMR21.name(),
-            new Gmr21MqRpmtConfig.Builder(false).build(),
+            MqRpmtType.GMR21.name(), new Gmr21MqRpmtConfig.Builder(false).build(),
         });
-        // CZZ22_BYTE_ECC_CW
+        // CZZ24_BYTE_ECC_CW
         configurations.add(new Object[]{
-            MqRpmtFactory.MqRpmtType.CZZ22_BYTE_ECC_CW.name(),
-            new Czz22ByteEccCwMqRpmtConfig.Builder().build(),
+            MqRpmtFactory.MqRpmtType.CZZ24_CW_OPRF.name(), new Czz24CwOprfMqRpmtConfig.Builder().build(),
         });
 
         return configurations;
@@ -77,7 +79,7 @@ public class MqRmptTest extends AbstractTwoPartyMemoryRpcPto {
 
     @Test
     public void test10() {
-        testPto(10, 10, false);
+        testPto(10, 15, false);
     }
 
     @Test
@@ -110,7 +112,7 @@ public class MqRmptTest extends AbstractTwoPartyMemoryRpcPto {
         testPto(LARGE_SIZE, LARGE_SIZE, true);
     }
 
-    private void testPto(int serverSize, int clientSize, boolean parallel) {
+    private void testPto(int serverElementSize, int clientElementSize, boolean parallel) {
         MqRpmtServer server = MqRpmtFactory.createServer(firstRpc, secondRpc.ownParty(), config);
         MqRpmtClient client = MqRpmtFactory.createClient(secondRpc, firstRpc.ownParty(), config);
         server.setParallel(parallel);
@@ -120,28 +122,27 @@ public class MqRmptTest extends AbstractTwoPartyMemoryRpcPto {
         client.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {}，server_size = {}，client_size = {}-----",
-                server.getPtoDesc().getPtoName(), serverSize, clientSize
+                server.getPtoDesc().getPtoName(), serverElementSize, clientElementSize
             );
             // generate sets
-            ArrayList<Set<ByteBuffer>> sets = OpfUtils.generateBytesSets(serverSize, clientSize, ELEMENT_BYTE_LENGTH);
+            ArrayList<Set<ByteBuffer>> sets = OpfUtils.generateBytesSets(serverElementSize, clientElementSize, ELEMENT_BYTE_LENGTH);
             Set<ByteBuffer> serverSet = sets.get(0);
             Set<ByteBuffer> clientSet = sets.get(1);
             MqRpmtServerThread serverThread = new MqRpmtServerThread(server, serverSet, clientSet.size());
             MqRpmtClientThread clientThread = new MqRpmtClientThread(client, clientSet, serverSet.size());
-            StopWatch stopWatch = new StopWatch();
             // start
-            stopWatch.start();
+            STOP_WATCH.start();
             serverThread.start();
             clientThread.start();
             // stop
             serverThread.join();
             clientThread.join();
-            stopWatch.stop();
-            long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
-            stopWatch.reset();
+            STOP_WATCH.stop();
+            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
+            STOP_WATCH.reset();
             // verify
-            ByteBuffer[] serverVector = serverThread.getServerVector();
-            boolean[] containVector = clientThread.getContainVector();
+            ByteBuffer[] serverVector = serverThread.getServerOutput();
+            boolean[] containVector = clientThread.getClientOutput();
             assertOutput(serverVector, clientSet, containVector);
             printAndResetRpc(time);
             // destroy

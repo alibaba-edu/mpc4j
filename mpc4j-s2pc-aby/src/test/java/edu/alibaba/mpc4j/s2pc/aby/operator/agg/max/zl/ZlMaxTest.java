@@ -1,10 +1,14 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl;
 
+import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl.rrk20.Rrk20ZlMaxConfig;
 import org.apache.commons.lang3.time.StopWatch;
@@ -37,32 +41,15 @@ public class ZlMaxTest extends AbstractTwoPartyMemoryRpcPto {
      * large num
      */
     private static final int LARGE_NUM = 1 << 14;
-    /**
-     * small Zl
-     */
-    private static final Zl SMALL_ZL = ZlFactory.createInstance(EnvType.STANDARD, 3);
-    /**
-     * default Zl
-     */
-    private static final Zl DEFAULT_ZL = ZlFactory.createInstance(EnvType.STANDARD, Integer.SIZE);
-    /**
-     * current Zl
-     */
-    private final Zl zl;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // RRK+20, default zl
+        // RRK+20
         configurations.add(new Object[]{
-                ZlMaxFactory.ZlMaxType.RRK20.name() + " (l = " + DEFAULT_ZL.getL() + ")",
-            new Rrk20ZlMaxConfig.Builder(DEFAULT_ZL).build()
-        });
-        // RRK+20, small zl
-        configurations.add(new Object[]{
-                ZlMaxFactory.ZlMaxType.RRK20.name() + " (l = " + SMALL_ZL.getL() + ")",
-            new Rrk20ZlMaxConfig.Builder(SMALL_ZL).build()
+                ZlMaxFactory.ZlMaxType.RRK20.name(),
+            new Rrk20ZlMaxConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
 
         return configurations;
@@ -72,11 +59,15 @@ public class ZlMaxTest extends AbstractTwoPartyMemoryRpcPto {
      * the config
      */
     private final ZlMaxConfig config;
+    /**
+     * Zl
+     */
+    private final Zl zl;
 
     public ZlMaxTest(String name, ZlMaxConfig config) {
         super(name);
         this.config = config;
-        this.zl = config.getZl();
+        this.zl = ZlFactory.createInstance(EnvType.STANDARD, Long.SIZE);
     }
 
     @Test
@@ -141,15 +132,19 @@ public class ZlMaxTest extends AbstractTwoPartyMemoryRpcPto {
         ZlVector x1 = ZlVector.create(zl, randomsX1);
         SquareZlVector shareX0 = SquareZlVector.create(x0, false);
         SquareZlVector shareX1 = SquareZlVector.create(x1, false);
+        // init z2c
+        Z2cConfig z2cConfig = Z2cFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, true);
+        Z2cParty z2cSender = Z2cFactory.createSender(firstRpc, secondRpc.ownParty(), z2cConfig);
+        Z2cParty z2cReceiver = Z2cFactory.createReceiver(secondRpc, firstRpc.ownParty(), z2cConfig);
         // init the protocol
-        ZlMaxParty sender = ZlMaxFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        ZlMaxParty receiver = ZlMaxFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
+        ZlMaxParty sender = ZlMaxFactory.createSender(z2cSender, secondRpc.ownParty(), config);
+        ZlMaxParty receiver = ZlMaxFactory.createReceiver(z2cReceiver, firstRpc.ownParty(), config);
         sender.setParallel(parallel);
         receiver.setParallel(parallel);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            ZlMaxPartyThread senderThread = new ZlMaxPartyThread(sender, shareX0);
-            ZlMaxPartyThread receiverThread = new ZlMaxPartyThread(receiver, shareX1);
+            ZlMaxPartyThread senderThread = new ZlMaxPartyThread(sender, z2cSender, zl, shareX0);
+            ZlMaxPartyThread receiverThread = new ZlMaxPartyThread(receiver, z2cReceiver, zl, shareX1);
             StopWatch stopWatch = new StopWatch();
             // execute the protocol
             stopWatch.start();

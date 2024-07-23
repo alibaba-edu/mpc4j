@@ -137,7 +137,7 @@ public class Rr17EcPsiClient<T> extends AbstractPsiClient<T> {
         prfTag.setKey(hashKeys[2]);
         peqtHash = HashFactory.createInstance(envType, peqtByteLength);
         phaseHashBin = new PhaseHashBin(envType, binNum, maxItemSize, hashKeys[0]);
-        lcotReceiver.init(encodeInputByteLength * Byte.SIZE, binNum * binSize);
+        lcotReceiver.init(encodeInputByteLength * Byte.SIZE);
 
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

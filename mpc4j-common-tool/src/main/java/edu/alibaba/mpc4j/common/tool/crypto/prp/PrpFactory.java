@@ -138,21 +138,31 @@ public class PrpFactory {
     }
 
     /**
+     * Gets type based on environment.
+     *
+     * @param envType environment.
+     * @return type.
+     */
+    public static PrpType getType(EnvType envType) {
+        switch (envType) {
+            case STANDARD:
+            case STANDARD_JDK:
+                return PrpType.JDK_AES;
+            case INLAND:
+            case INLAND_JDK:
+                return PrpType.BC_SM4;
+            default:
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
+        }
+    }
+
+    /**
      * 创建一个新的PRP实例。
      *
      * @param envType 环境类型。
      * @return PRP实例。
      */
     public static Prp createInstance(EnvType envType) {
-        switch (envType) {
-            case STANDARD:
-            case STANDARD_JDK:
-                return new JdkAesPrp();
-            case INLAND:
-            case INLAND_JDK:
-                return new BcSm4Prp();
-            default:
-                throw new IllegalArgumentException("Invalid EnvType: " + envType.name());
-        }
+        return createInstance(getType(envType));
     }
 }

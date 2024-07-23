@@ -59,18 +59,15 @@ public class PmPeqtTest extends AbstractTwoPartyMemoryRpcPto {
 
         // TCL23 + Permute Share and OPRF
         configurations.add(new Object[]{
-            PmPeqtFactory.PmPeqtType.TZL23_PS_OPRF.name(),
-            new Tcl23PsOprfPmPeqtConfig.Builder(true).build(),
+            PmPeqtFactory.PmPeqtType.TZL23_PS_OPRF.name(), new Tcl23PsOprfPmPeqtConfig.Builder().build(),
         });
         // TCL23 + Byte Ecc DDH
         configurations.add(new Object[]{
-            PmPeqtFactory.PmPeqtType.TCL23_BYTE_ECC_DDH.name(),
-            new Tcl23ByteEccDdhPmPeqtConfig.Builder().build(),
+            PmPeqtFactory.PmPeqtType.TCL23_BYTE_ECC_DDH.name(), new Tcl23ByteEccDdhPmPeqtConfig.Builder().build(),
         });
         // TCL23 + Ecc DDH
         configurations.add(new Object[]{
-            PmPeqtFactory.PmPeqtType.TCL23_ECC_DDH.name(),
-            new Tcl23EccDdhPmPeqtConfig.Builder().build(),
+            PmPeqtFactory.PmPeqtType.TCL23_ECC_DDH.name(), new Tcl23EccDdhPmPeqtConfig.Builder().build(),
         });
 
         return configurations;

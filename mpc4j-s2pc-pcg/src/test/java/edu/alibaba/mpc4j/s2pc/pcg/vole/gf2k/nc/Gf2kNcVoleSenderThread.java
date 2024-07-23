@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc;
 
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2k;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleSenderOutput;
 
 /**
@@ -15,6 +16,10 @@ class Gf2kNcVoleSenderThread extends Thread {
      */
     private final Gf2kNcVoleSender sender;
     /**
+     * field
+     */
+    private final Sgf2k field;
+    /**
      * num
      */
     private final int num;
@@ -25,13 +30,13 @@ class Gf2kNcVoleSenderThread extends Thread {
     /**
      * sender output
      */
-    private final Gf2kVoleSenderOutput senderOutput;
+    private Gf2kVoleSenderOutput senderOutput;
 
-    Gf2kNcVoleSenderThread(Gf2kNcVoleSender sender, int num, int round) {
+    Gf2kNcVoleSenderThread(Gf2kNcVoleSender sender, Sgf2k field, int num, int round) {
         this.sender = sender;
+        this.field = field;
         this.num = num;
         this.round = round;
-        senderOutput = Gf2kVoleSenderOutput.createEmpty();
     }
 
     Gf2kVoleSenderOutput getSenderOutput() {
@@ -41,9 +46,13 @@ class Gf2kNcVoleSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.init(num);
+            sender.init(field.getSubfieldL(), num);
             for (int index = 0; index < round; index++) {
-                senderOutput.merge(sender.send());
+                if (senderOutput == null) {
+                    senderOutput = sender.send();
+                } else {
+                    senderOutput.merge(sender.send());
+                }
             }
         } catch (MpcAbortException e) {
             e.printStackTrace();

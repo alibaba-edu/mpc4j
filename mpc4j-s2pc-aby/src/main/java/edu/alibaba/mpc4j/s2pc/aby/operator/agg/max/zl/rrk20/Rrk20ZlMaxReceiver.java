@@ -5,10 +5,11 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.operator.agg.max.zl.AbstractZlMaxParty;
-import edu.alibaba.mpc4j.s2pc.aby.operator.row.greater.zl.ZlGreaterFactory;
-import edu.alibaba.mpc4j.s2pc.aby.operator.row.greater.zl.ZlGreaterParty;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.max2.zl.ZlMax2Factory;
+import edu.alibaba.mpc4j.s2pc.aby.operator.row.max2.zl.ZlMax2Party;
 
 import java.util.concurrent.TimeUnit;
 
@@ -20,14 +21,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class Rrk20ZlMaxReceiver extends AbstractZlMaxParty {
     /**
-     * zl Greater receiver.
+     * zl max2 receiver.
      */
-    private final ZlGreaterParty zlGreaterReceiver;
+    private final ZlMax2Party zlMax2Receiver;
 
-    public Rrk20ZlMaxReceiver(Rpc receiverRpc, Party senderParty, Rrk20ZlMaxConfig config) {
-        super(Rrk20ZlMaxPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        zlGreaterReceiver = ZlGreaterFactory.createReceiver(receiverRpc, senderParty, config.getZlGreaterConfig());
-        addSubPto(zlGreaterReceiver);
+    public Rrk20ZlMaxReceiver(Z2cParty z2cReceiver, Party senderParty, Rrk20ZlMaxConfig config) {
+        super(Rrk20ZlMaxPtoDesc.getInstance(), z2cReceiver.getRpc(), senderParty, config);
+        zlMax2Receiver = ZlMax2Factory.createReceiver(z2cReceiver, senderParty, config.getZlGreaterConfig());
+        addSubPto(zlMax2Receiver);
     }
 
     @Override
@@ -36,7 +37,7 @@ public class Rrk20ZlMaxReceiver extends AbstractZlMaxParty {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        zlGreaterReceiver.init(maxL, maxNum);
+        zlMax2Receiver.init(maxL, maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -68,7 +69,7 @@ public class Rrk20ZlMaxReceiver extends AbstractZlMaxParty {
         int lastNodeNum = num;
         for (int i = 1; i <= logNum; i++) {
             for (int j = 0; j < currentNodeNum; j++) {
-                inputs[j] = zlGreaterReceiver.gt(inputs[j * 2], inputs[j * 2 + 1]);
+                inputs[j] = zlMax2Receiver.max2(inputs[j * 2], inputs[j * 2 + 1]);
             }
             if (lastNodeNum % 2 == 1) {
                 inputs[currentNodeNum] = inputs[lastNodeNum - 1];

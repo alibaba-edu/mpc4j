@@ -5,8 +5,9 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
+import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2e;
+import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2k;
+import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2kFactory;
 
 /**
  * abstract no-choice GF2K-VOLE sender.
@@ -20,9 +21,17 @@ public abstract class AbstractGf2kNcVoleSender extends AbstractTwoPartyPto imple
      */
     private final Gf2kNcVoleConfig config;
     /**
-     * GF2K instance
+     * field
      */
-    protected final Gf2k gf2k;
+    protected Sgf2k field;
+    /**
+     * field
+     */
+    protected Gf2e subfield;
+    /**
+     * subfield L
+     */
+    protected int subfieldL;
     /**
      * num
      */
@@ -31,10 +40,12 @@ public abstract class AbstractGf2kNcVoleSender extends AbstractTwoPartyPto imple
     protected AbstractGf2kNcVoleSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, Gf2kNcVoleConfig config) {
         super(ptoDesc, senderRpc, receiverParty, config);
         this.config = config;
-        gf2k = Gf2kFactory.createInstance(envType);
     }
 
-    protected void setInitInput(int num) {
+    protected void setInitInput(int subfieldL, int num) {
+        field = Sgf2kFactory.getInstance(envType, subfieldL);
+        subfield = field.getSubfield();
+        this.subfieldL = subfieldL;
         MathPreconditions.checkPositiveInRangeClosed("num", num, config.maxNum());
         this.num = num;
         initState();

@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.circuit.zlong;
 
-import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import edu.alibaba.mpc4j.common.structure.vector.LongVector;
+import edu.alibaba.mpc4j.common.structure.vector.Vector;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 import java.security.SecureRandom;
@@ -125,7 +125,7 @@ public class PlainLongVector implements MpcLongVector {
     }
 
     @Override
-    public void merge(MpcVector other) {
+    public void merge(Vector other) {
         PlainLongVector that = (PlainLongVector) other;
         longVector.merge(that.getVectors()[0]);
     }

@@ -1,10 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.aby.basics.zl;
 
-import edu.alibaba.mpc4j.common.circuit.zl.MpcZlParty;
+import edu.alibaba.mpc4j.common.circuit.zl.MpcZlcParty;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 import java.util.Arrays;
 
@@ -14,7 +15,7 @@ import java.util.Arrays;
  * @author Weiran Liu
  * @date 2023/5/10
  */
-public interface ZlcParty extends TwoPartyPto, MpcZlParty {
+public interface ZlcParty extends TwoPartyPto, MpcZlcParty {
     /**
      * Shares its own vector.
      *
@@ -49,28 +50,30 @@ public interface ZlcParty extends TwoPartyPto, MpcZlParty {
     /**
      * Shares other's vector.
      *
+     * @param zl Zl instance.
      * @param num the num to be shared.
      * @return the shared vector.
      * @throws MpcAbortException the protocol failure aborts.
      */
     @Override
-    SquareZlVector shareOther(int num) throws MpcAbortException;
+    SquareZlVector shareOther(Zl zl, int num) throws MpcAbortException;
 
     /**
      * Shares other's vectors.
      *
+     * @param zl Zl instance.
      * @param nums nums for each vector to be shared.
      * @return the shared vectors.
      * @throws MpcAbortException the protocol failure aborts.
      */
     @Override
-    default SquareZlVector[] shareOther(int[] nums) throws MpcAbortException {
+    default SquareZlVector[] shareOther(Zl zl, int[] nums) throws MpcAbortException {
         if (nums.length == 0) {
             return new SquareZlVector[0];
         }
         // share
         int totalNum = Arrays.stream(nums).sum();
-        SquareZlVector mergeShareXi = shareOther(totalNum);
+        SquareZlVector mergeShareXi = shareOther(zl, totalNum);
         // split
         return Arrays.stream(split(mergeShareXi, nums))
             .map(vector -> (SquareZlVector) vector)

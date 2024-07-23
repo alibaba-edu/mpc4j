@@ -8,11 +8,11 @@
 extern "C" {
 #endif
 /*
- * Class:     edu_alibaba_mpc4j_common_tool_network_benes_NativeBenesNetwork
+ * Class:     edu_alibaba_mpc4j_common_tool_network_benes_NativeNetwork
  * Method:    generateBenesNetwork
  * Signature: ([I)[[B
  */
-JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_benes_NativeBenesNetwork_generateBenesNetwork
+JNIEXPORT jobjectArray JNICALL Java_edu_alibaba_mpc4j_common_tool_network_benes_NativeBenesNetwork_generateNetwork
   (JNIEnv *, jobject, jintArray);
 
 #ifdef __cplusplus

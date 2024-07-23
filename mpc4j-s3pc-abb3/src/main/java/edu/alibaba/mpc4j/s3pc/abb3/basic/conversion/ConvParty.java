@@ -18,7 +18,7 @@ public interface ConvParty extends ThreePartyPto {
     /**
      * inits the protocol.
      */
-    void init();
+    void init() throws MpcAbortException;
 
     /**
      * get the required number of tuples according to operation, the first is z2 tuples, the second is long tuples

@@ -40,7 +40,7 @@ class CoreCotSenderThread extends Thread {
     @Override
     public void run() {
         try {
-            sender.init(delta, num);
+            sender.init(delta);
             senderOutput = sender.send(num);
         } catch (MpcAbortException e) {
             e.printStackTrace();

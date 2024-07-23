@@ -13,7 +13,6 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtServer;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -42,10 +41,6 @@ public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
      */
     private final MqRpmtServer mqRpmtServer;
     /**
-     * mq-RPMT config
-     */
-    private final MqRpmtConfig mqRpmtConfig;
-    /**
      * cort COT sender
      */
     private final CoreCotSender coreCotSender;
@@ -57,9 +52,8 @@ public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
     public AbstractMqRpmtPsiServer(PtoDesc ptoDesc, Rpc serverRpc, Party clientParty, MqRpmtPsiConfig config) {
         super(ptoDesc, serverRpc, clientParty, config);
         mqRpmtServer = MqRpmtFactory.createServer(serverRpc, clientParty, config.getMqRpmtConfig());
-        mqRpmtConfig = config.getMqRpmtConfig();
-        coreCotSender = CoreCotFactory.createSender(serverRpc,clientParty,config.getCoreCotConfig());
         addSubPto(mqRpmtServer);
+        coreCotSender = CoreCotFactory.createSender(serverRpc,clientParty,config.getCoreCotConfig());
         addSubPto(coreCotSender);
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
     }
@@ -73,9 +67,8 @@ public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
         int refineMaxServerElementSize = Math.max(maxServerElementSize, 2);
         int refineMaxClientElementSize = Math.max(maxClientElementSize, 2);
         mqRpmtServer.init(refineMaxServerElementSize, refineMaxClientElementSize);
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
-        coreCotSender.init(delta, mqRpmtConfig.getVectorLength(refineMaxServerElementSize, refineMaxClientElementSize));
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        coreCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -128,7 +121,13 @@ public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
         IntStream serverVectorIntStream = IntStream.range(0, serverVector.length);
         serverVectorIntStream = parallel ? serverVectorIntStream.parallel() : serverVectorIntStream;
         List<byte[]> serverCipherPayload = serverVectorIntStream
-            .mapToObj(index -> BytesUtils.xor(rotSenderOutput.getR1(index), serverVector[index].array()))
+            .mapToObj(index -> {
+                if (serverVector[index] == null) {
+                    return BytesUtils.xor(rotSenderOutput.getR1(index), new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+                } else {
+                    return BytesUtils.xor(rotSenderOutput.getR1(index), serverVector[index].array());
+                }
+            })
             .collect(Collectors.toList());
         DataPacketHeader serverCipherHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CIPHER.ordinal(), extraInfo,

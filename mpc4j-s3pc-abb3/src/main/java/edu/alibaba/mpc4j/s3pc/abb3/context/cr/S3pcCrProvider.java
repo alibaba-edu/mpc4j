@@ -310,7 +310,7 @@ public class S3pcCrProvider extends AbstractAbbThreePartyPto {
      * @param arrayNum the number of elements
      */
     public LongVector[] randZeroZl64Vector(int[] arrayNum) {
-        return randZeroZl64Vector(Arrays.stream(arrayNum).sum()).split(arrayNum);
+        return LongVector.split(randZeroZl64Vector(Arrays.stream(arrayNum).sum()), arrayNum);
     }
 
     /**
@@ -385,7 +385,7 @@ public class S3pcCrProvider extends AbstractAbbThreePartyPto {
     public LongVector[] randZl64Vector(int[] dataNum, Party party) {
         int totalNum = Arrays.stream(dataNum).sum();
         LongVector r = LongVector.create(getRandLongArray(totalNum, party));
-        return r.split(dataNum);
+        return LongVector.split(r, dataNum);
     }
 
     /**

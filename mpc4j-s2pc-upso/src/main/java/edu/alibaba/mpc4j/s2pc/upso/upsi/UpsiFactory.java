@@ -89,7 +89,6 @@ public class UpsiFactory implements PtoFactory {
         switch (securityModel) {
             case IDEAL:
             case SEMI_HONEST:
-            case COVERT:
             case MALICIOUS:
                 return new Cmg21UpsiConfig.Builder().build();
             default:

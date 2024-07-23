@@ -25,7 +25,7 @@ public interface Abb3Party extends ThreePartyPto {
     /**
      * initialize the party
      */
-    void init();
+    void init() throws MpcAbortException;
     /**
      * verify the multiplication operations
      */

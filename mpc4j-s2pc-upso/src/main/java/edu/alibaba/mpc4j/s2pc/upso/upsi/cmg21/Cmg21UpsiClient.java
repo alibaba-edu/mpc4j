@@ -1,8 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
@@ -127,12 +125,8 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
         stopWatch.start();
         // generate cuckoo hash bin
         byte[][] hashKeys = generateCuckooHashBin(oprfOutputs);
-        DataPacketHeader hashKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
-            rpc.ownParty().getPartyId(), otherParty().getPartyId()
-        );
         List<byte[]> hashKeyPayload = Arrays.stream(hashKeys).collect(Collectors.toList());
-        rpc.send(DataPacket.fromByteArrayList(hashKeyHeader, hashKeyPayload));
+        sendOtherPartyPayload(PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), hashKeyPayload);
         stopWatch.stop();
         long cuckooHashKeyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -143,11 +137,7 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
             params.getPolyModulusDegree(), params.getPlainModulus(), params.getCoeffModulusBits()
         );
         List<byte[]> publicKeysPayload = generateKeyPairPayload(keyPair);
-        DataPacketHeader publicKeysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_ENCRYPTION_PARAMS.ordinal(), extraInfo,
-            rpc.ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(publicKeysHeader, publicKeysPayload));
+        sendOtherPartyPayload(PtoStep.CLIENT_SEND_ENCRYPTION_PARAMS.ordinal(), publicKeysPayload);
         stopWatch.stop();
         long keyGenTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -161,21 +151,13 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
             .map(i -> Cmg21UpsiNativeUtils.generateQuery(encryptionParams, publicKey, secretKey, i))
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
-        DataPacketHeader queryHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_QUERY.ordinal(), extraInfo,
-            rpc.ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(queryHeader, queryPayload));
+        sendOtherPartyPayload(PtoStep.CLIENT_SEND_QUERY.ordinal(), queryPayload);
         stopWatch.stop();
         long genQueryTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 4, 5, genQueryTime, "Client generates query");
 
-        DataPacketHeader responseHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RESPONSE.ordinal(), extraInfo,
-            otherParty().getPartyId(), rpc.ownParty().getPartyId()
-        );
-        List<byte[]> responsePayload = rpc.receive(responseHeader).getPayload();
+        List<byte[]> responsePayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal());
 
         stopWatch.start();
         // decode reply
@@ -256,8 +238,8 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
             .map(ByteBuffer::array)
             .toArray(byte[][]::new);
         OprfReceiverOutput oprfReceiverOutput = mpOprfReceiver.oprf(oprfReceiverInputs);
-        IntStream intStream = IntStream.range(0, clientElementArrayList.size());
-        intStream = parallel ? intStream.parallel() : intStream;
+        IntStream intStream = parallel ?
+            IntStream.range(0, clientElementArrayList.size()).parallel() : IntStream.range(0, clientElementArrayList.size());
         return intStream
             .mapToObj(i -> ByteBuffer.wrap(oprfReceiverOutput.getPrf(i)))
             .collect(Collectors.toCollection(ArrayList::new));

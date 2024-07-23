@@ -16,9 +16,9 @@ import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eD
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.AbstractMqRpmtClient;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnFactory;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnPartyOutput;
-import edu.alibaba.mpc4j.s2pc.opf.osn.OsnSender;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnPartyOutput;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnSender;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -27,63 +27,63 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * GMR21-mqRPMT协议客户端。
+ * GMR21-mqRPMT client.
  *
  * @author Weiran Liu
  * @date 2022/09/10
  */
 public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
     /**
-     * 布谷鸟哈希所用OPRF发送方
+     * OPRF used in cuckoo hash
      */
     private final OprfSender cuckooHashOprfSender;
     /**
-     * OSN发送方
+     * OSN
      */
-    private final OsnSender osnSender;
+    private final DosnSender dosnSender;
     /**
-     * PEQT协议所用OPRF接收方
+     * OPRF used in PEQT
      */
     private final OprfReceiver peqtOprfReceiver;
     /**
-     * OKVS类型
+     * OKVS type
      */
     private final Gf2eDokvsType okvsType;
     /**
-     * 布谷鸟哈希类型
+     * cuckoo hash type
      */
     private final CuckooHashBinType cuckooHashBinType;
     /**
-     * 布谷鸟哈希函数数量
+     * cuckoo hash num
      */
     private final int cuckooHashNum;
     /**
-     * 多项式有限域哈希
+     * hash for finite field
      */
     private Hash finiteFieldHash;
     /**
-     * OKVS密钥
+     * DOKVS hash keys
      */
     private byte[][] okvsHashKeys;
     /**
-     * 布谷鸟哈希
+     * bin hashes
      */
     private Prf[] binHashes;
     /**
-     * 桶数量
+     * bin num
      */
     private int binNum;
     /**
-     * 向量(s_1, ..., s_m)
+     * (s_1, ..., s_m)
      */
-    private Vector<byte[]> sVector;
+    private byte[][] sVector;
 
     public Gmr21MqRpmtClient(Rpc clientRpc, Party serverParty, Gmr21MqRpmtConfig config) {
         super(Gmr21MqRpmtPtoDesc.getInstance(), clientRpc, serverParty, config);
         cuckooHashOprfSender = OprfFactory.createOprfSender(clientRpc, serverParty, config.getCuckooHashOprfConfig());
         addSubPto(cuckooHashOprfSender);
-        osnSender = OsnFactory.createSender(clientRpc, serverParty, config.getOsnConfig());
-        addSubPto(osnSender);
+        dosnSender = DosnFactory.createSender(clientRpc, serverParty, config.getOsnConfig());
+        addSubPto(dosnSender);
         peqtOprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getPeqtOprfConfig());
         addSubPto(peqtOprfReceiver);
         okvsType = config.getOkvsType();
@@ -101,7 +101,7 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         int maxPrfNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType) * maxClientElementSize;
         // 初始化各个子协议
         cuckooHashOprfSender.init(maxBinNum, maxPrfNum);
-        osnSender.init(maxBinNum);
+        dosnSender.init();
         peqtOprfReceiver.init(maxBinNum);
         // 初始化多项式有限域哈希，根据论文实现，固定为64比特
         finiteFieldHash = HashFactory.createInstance(envType, Gmr21MqRpmtPtoDesc.FINITE_FIELD_BYTE_LENGTH);
@@ -133,10 +133,6 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         setPtoInput(clientElementSet, serverElementSize);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        // 设置最大桶数量
-        binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
-        // 初始化PEQT哈希
-        Hash peqtHash = HashFactory.createInstance(envType, Gmr21MqRpmtPtoDesc.getPeqtByteLength(binNum));
         DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
@@ -144,6 +140,8 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         List<byte[]> cuckooHashKeyPayload = rpc.receive(cuckooHashKeyHeader).getPayload();
 
         stopWatch.start();
+        binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
+        Hash peqtHash = HashFactory.createInstance(envType, Gmr21MqRpmtPtoDesc.getPeqtByteLength(binNum));
         handleCuckooHashKeyPayload(cuckooHashKeyPayload);
         stopWatch.stop();
         long cuckooHashTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -170,7 +168,7 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         logStepInfo(PtoState.PTO_STEP, 3, 5, okvsTime, "Client generates OKVS");
 
         stopWatch.start();
-        OsnPartyOutput osnSenderOutput = osnSender.osn(sVector, Gmr21MqRpmtPtoDesc.FINITE_FIELD_BYTE_LENGTH);
+        DosnPartyOutput osnSenderOutput = dosnSender.dosn(sVector, Gmr21MqRpmtPtoDesc.FINITE_FIELD_BYTE_LENGTH);
         IntStream bOprfIntStream = IntStream.range(0, binNum);
         bOprfIntStream = parallel ? bOprfIntStream.parallel() : bOprfIntStream;
         byte[][] bArray = bOprfIntStream.mapToObj(osnSenderOutput::getShare).toArray(byte[][]::new);
@@ -180,7 +178,6 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         logStepInfo(PtoState.PTO_STEP, 4, 5, osnTime, "Client runs OSN");
 
         stopWatch.start();
-        // 以b为输入调用OPRF
         OprfReceiverOutput peqtOprfReceiverOutput = peqtOprfReceiver.oprf(bArray);
         IntStream bPrimeOprfIntStream = IntStream.range(0, binNum);
         bPrimeOprfIntStream = parallel ? bPrimeOprfIntStream.parallel() : bPrimeOprfIntStream;
@@ -189,7 +186,7 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
             .map(peqtHash::digestToBytes)
             .map(ByteBuffer::wrap)
             .toArray(ByteBuffer[]::new);
-        // 接收aPrimeOprf
+        // receiver a'
         DataPacketHeader aPrimeOprfHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_A_PRIME_OPRFS.ordinal(), extraInfo,
             otherParty().getPartyId(), ownParty().getPartyId()
@@ -199,7 +196,7 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         ByteBuffer[] aPrimeOprfs = aPrimeOprfPayload.stream()
             .map(ByteBuffer::wrap)
             .toArray(ByteBuffer[]::new);
-        // 对比并得到结果
+        // compute the bit vector
         boolean[] containVector = new boolean[binNum];
         IntStream.range(0, binNum).forEach(binIndex ->
             containVector[binIndex] = bPrimeOprfs[binIndex].equals(aPrimeOprfs[binIndex])
@@ -214,7 +211,6 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
     }
 
     private void handleCuckooHashKeyPayload(List<byte[]> cuckooHashKeyPayload) {
-        // 读取哈希函数种子
         binHashes = IntStream.range(0, cuckooHashNum)
             .mapToObj(hashIndex -> {
                 byte[] key = cuckooHashKeyPayload.remove(0);
@@ -233,8 +229,8 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
                 secureRandom.nextBytes(si);
                 return si;
             })
-            .collect(Collectors.toCollection(Vector::new));
-        // 计算OKVS键值
+            .toArray(byte[][]::new);
+        // compute key-value pairs
         Vector<byte[][]> keyArrayVector = IntStream.range(0, cuckooHashNum)
             .mapToObj(hashIndex -> clientElementArrayList.stream()
                 .map(clientElement -> {
@@ -251,7 +247,6 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         // P(y || i) = s_{h_i(y)} ⊕ PRF(k_{h_i(y)}, y || i)
         byte[][] valueArray = IntStream.range(0, cuckooHashNum)
             .mapToObj(hashIndex -> {
-                // 计算OPRF有密码学运算，并发处理
                 IntStream clientElementIntStream = IntStream.range(0, clientElementSize);
                 clientElementIntStream = parallel ? clientElementIntStream.parallel() : clientElementIntStream;
                 return clientElementIntStream
@@ -261,7 +256,7 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
                         int binIndex = binHashes[hashIndex].getInteger(clientElement, binNum);
                         byte[] oprf = cuckooHashOprfSenderOutput.getPrf(binIndex, extendBytes);
                         byte[] value = finiteFieldHash.digestToBytes(oprf);
-                        BytesUtils.xori(value, sVector.elementAt(binIndex));
+                        BytesUtils.xori(value, sVector[binIndex]);
                         return value;
                     })
                     .toArray(byte[][]::new);
@@ -290,7 +285,6 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
             envType, okvsType, cuckooHashNum * clientElementSize,
             Gmr21MqRpmtPtoDesc.FINITE_FIELD_BYTE_LENGTH * Byte.SIZE, okvsHashKeys
         );
-        // OKVS编码可以并行处理
         okvs.setParallelEncode(parallel);
         return Arrays.stream(okvs.encode(keyValueMap, false)).collect(Collectors.toList());
     }

@@ -1,13 +1,16 @@
 package edu.alibaba.mpc4j.s2pc.aby.operator.row.millionaire.rrk20;
 
-import edu.alibaba.mpc4j.common.rpc.*;
+import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
+import edu.alibaba.mpc4j.common.rpc.MpcAbortPreconditions;
+import edu.alibaba.mpc4j.common.rpc.Party;
+import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.millionaire.AbstractMillionaireParty;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory;
@@ -17,7 +20,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotReceiverOutput;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 /**
  * RRK+20 Millionaire Protocol Receiver.
@@ -34,13 +36,19 @@ public class Rrk20MillionaireReceiver extends AbstractMillionaireParty {
      * z2 circuit receiver.
      */
     private final Z2cParty z2cReceiver;
+    /**
+     * bit length of split block
+     */
+    private final int m;
 
-    public Rrk20MillionaireReceiver(Rpc receiverRpc, Party senderParty, Rrk20MillionaireConfig config) {
-        super(Rrk20MillionairePtoDesc.getInstance(), receiverRpc, senderParty, config);
-        lnotReceiver = LnotFactory.createReceiver(receiverRpc, senderParty, config.getLnotConfig());
+    public Rrk20MillionaireReceiver(Z2cParty z2cReceiver, Party senderParty, Rrk20MillionaireConfig config) {
+        super(Rrk20MillionairePtoDesc.getInstance(), z2cReceiver.getRpc(), senderParty, config);
+        lnotReceiver = LnotFactory.createReceiver(z2cReceiver.getRpc(), senderParty, config.getLnotConfig());
         addSubPto(lnotReceiver);
-        z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, config.getZ2cConfig());
+        this.z2cReceiver = z2cReceiver;
         addSubPto(z2cReceiver);
+        this.m = config.getM();
+        MathPreconditions.checkPositiveInRangeClosed("m", m, Byte.SIZE);
     }
 
     @Override
@@ -49,11 +57,9 @@ public class Rrk20MillionaireReceiver extends AbstractMillionaireParty {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // q = l / m, where m = 4
-        int maxByteL = CommonUtils.getByteLength(maxL);
-        int maxQ = maxByteL * 2;
-        z2cReceiver.init(maxNum * (maxQ - 1));
-        lnotReceiver.init(4, maxNum * maxQ);
+        // q = l / m
+        int maxQ = CommonUtils.getUnitNum(maxL, m);
+        lnotReceiver.init(m, maxNum * maxQ);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -64,11 +70,11 @@ public class Rrk20MillionaireReceiver extends AbstractMillionaireParty {
 
     @Override
     public SquareZ2Vector lt(int l, byte[][] ys) throws MpcAbortException {
-        setPtoInput(l, ys);
+        setPtoInput(l, m, ys);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        int[][] partitionInputArray = partitionInputArray();
+        int[][] partitionInputArray = Rrk20MillionaireUtils.partitionInputArray(inputs, m, q);
         stopWatch.stop();
         long prepareTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -108,15 +114,15 @@ public class Rrk20MillionaireReceiver extends AbstractMillionaireParty {
             LnotReceiverOutput lnotReceiverOutputLt = lnotReceiver.receive(partitionInputArray[j]);
             // for v ∈ [2^m], P1 receives lt_{0,j}_1
             DataPacketHeader ltsHeader = new DataPacketHeader(
-                    encodeTaskId, getPtoDesc().getPtoId(), Rrk20MillionairePtoDesc.PtoStep.SENDER_SENDS_S.ordinal(), extraInfo,
-                    otherParty().getPartyId(), ownParty().getPartyId()
+                encodeTaskId, getPtoDesc().getPtoId(), Rrk20MillionairePtoDesc.PtoStep.SENDER_SENDS_S.ordinal(), extraInfo,
+                otherParty().getPartyId(), ownParty().getPartyId()
             );
             List<byte[]> ltsPayload = rpc.receive(ltsHeader).getPayload();
             extraInfo++;
-            MpcAbortPreconditions.checkArgument(ltsPayload.size() == 1 << 4);
+            MpcAbortPreconditions.checkArgument(ltsPayload.size() == 1 << m);
             BitVector[] evsLt = ltsPayload.stream()
-                    .map(lt -> BitVectorFactory.create(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, lt))
-                    .toArray(BitVector[]::new);
+                .map(lt -> BitVectorFactory.create(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, lt))
+                .toArray(BitVector[]::new);
             for (int index = 0; index < num; index++) {
                 // payload
                 int v = lnotReceiverOutputLt.getChoice(index);
@@ -125,17 +131,17 @@ public class Rrk20MillionaireReceiver extends AbstractMillionaireParty {
                 // decrypt
                 lts[j].set(index, evsLt[v].get(index) ^ ((rv[0] % 2) != 0));
             }
-            // for v ∈ [2^4], P1 receives eq_{0,j}_1
+            // for v ∈ [2^m], P1 receives eq_{0,j}_1
             DataPacketHeader eqsHeader = new DataPacketHeader(
-                    encodeTaskId, getPtoDesc().getPtoId(), Rrk20MillionairePtoDesc.PtoStep.SENDER_SENDS_T.ordinal(), extraInfo,
-                    otherParty().getPartyId(), ownParty().getPartyId()
+                encodeTaskId, getPtoDesc().getPtoId(), Rrk20MillionairePtoDesc.PtoStep.SENDER_SENDS_T.ordinal(), extraInfo,
+                otherParty().getPartyId(), ownParty().getPartyId()
             );
             List<byte[]> eqsPayload = rpc.receive(eqsHeader).getPayload();
             extraInfo++;
-            MpcAbortPreconditions.checkArgument(eqsPayload.size() == 1 << 4);
+            MpcAbortPreconditions.checkArgument(eqsPayload.size() == 1 << m);
             BitVector[] evsEq = eqsPayload.stream()
-                    .map(eq -> BitVectorFactory.create(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, eq))
-                    .toArray(BitVector[]::new);
+                .map(eq -> BitVectorFactory.create(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, eq))
+                .toArray(BitVector[]::new);
             for (int index = 0; index < num; index++) {
                 // payload
                 int v = lnotReceiverOutputLt.getChoice(index);
@@ -183,21 +189,5 @@ public class Rrk20MillionaireReceiver extends AbstractMillionaireParty {
             eqs = newEqs;
         }
         return lts[0];
-    }
-
-    private int[][] partitionInputArray() {
-        // P1 parses each of its input element as y_{q-1} || ... || y_{0}, where y_j ∈ {0,1}^4 for all j ∈ [0,q).
-        int[][] partitionInputArray = new int[q][num];
-        IntStream.range(0, num).forEach(index -> {
-            byte[] y = inputs[index];
-            for (int lIndex = 0; lIndex < byteL; lIndex++) {
-                byte lIndexByte = y[lIndex];
-                // the left part
-                partitionInputArray[lIndex * 2][index] = ((lIndexByte & 0xFF) >> 4);
-                // the right part
-                partitionInputArray[lIndex * 2 + 1][index] = (lIndexByte & 0x0F);
-            }
-        });
-        return partitionInputArray;
     }
 }

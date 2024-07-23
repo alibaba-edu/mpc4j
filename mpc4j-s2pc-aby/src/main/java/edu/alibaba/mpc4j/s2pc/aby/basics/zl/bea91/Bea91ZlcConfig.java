@@ -2,11 +2,10 @@ package edu.alibaba.mpc4j.s2pc.aby.basics.zl.bea91;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.ZlcConfig;
-import edu.alibaba.mpc4j.s2pc.aby.basics.zl.ZlcFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlMtgConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlMtgFactory;
+import edu.alibaba.mpc4j.s2pc.aby.basics.zl.ZlcFactory.ZlcType;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.zl.ZlTripleGenConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.zl.ZlTripleGenFactory;
 
 /**
  * Bea91 Zl circuit config.
@@ -16,42 +15,37 @@ import edu.alibaba.mpc4j.s2pc.pcg.mtg.zl.ZlMtgFactory;
  */
 public class Bea91ZlcConfig extends AbstractMultiPartyPtoConfig implements ZlcConfig {
     /**
-     * multiplication triple generation config
+     * Zl triple generation config
      */
-    private final ZlMtgConfig mtgConfig;
+    private final ZlTripleGenConfig zlTripleGenConfig;
 
     private Bea91ZlcConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.mtgConfig);
-        mtgConfig = builder.mtgConfig;
+        super(SecurityModel.SEMI_HONEST, builder.zlTripleGenConfig);
+        zlTripleGenConfig = builder.zlTripleGenConfig;
     }
 
-    public ZlMtgConfig getMtgConfig() {
-        return mtgConfig;
-    }
-
-    @Override
-    public ZlcFactory.ZlType getPtoType() {
-        return ZlcFactory.ZlType.BEA91;
+    public ZlTripleGenConfig getZlTripleGenConfig() {
+        return zlTripleGenConfig;
     }
 
     @Override
-    public Zl getZl() {
-        return mtgConfig.getZl();
+    public ZlcType getPtoType() {
+        return ZlcType.BEA91;
+    }
+
+    @Override
+    public int defaultRoundNum(int l) {
+        return zlTripleGenConfig.defaultRoundNum(l);
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Bea91ZlcConfig> {
         /**
-         * multiplication triple generation config
+         * Zl triple generation config
          */
-        private ZlMtgConfig mtgConfig;
+        private final ZlTripleGenConfig zlTripleGenConfig;
 
-        public Builder(SecurityModel securityModel, Zl zl) {
-            mtgConfig = ZlMtgFactory.createDefaultConfig(securityModel, zl);
-        }
-
-        public Builder setMtgConfig(ZlMtgConfig mtgConfig) {
-            this.mtgConfig = mtgConfig;
-            return this;
+        public Builder(SecurityModel securityModel, boolean silent) {
+            zlTripleGenConfig = ZlTripleGenFactory.createDefaultConfig(securityModel, silent);
         }
 
         @Override

@@ -25,10 +25,6 @@ public abstract class AbstractCoreCotSender extends AbstractTwoPartyPto implemen
      */
     protected boolean[] deltaBinary;
     /**
-     * 最大数量
-     */
-    private int maxNum;
-    /**
      * 数量
      */
     protected int num;
@@ -37,19 +33,17 @@ public abstract class AbstractCoreCotSender extends AbstractTwoPartyPto implemen
         super(ptoDesc, senderRpc, receiverParty, config);
     }
 
-    protected void setInitInput(byte[] delta, int maxNum) {
+    protected void setInitInput(byte[] delta) {
         MathPreconditions.checkEqual("Δ.length", "λ(B)", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
         // 拷贝一份
         this.delta = BytesUtils.clone(delta);
         deltaBinary = BinaryUtils.byteArrayToBinary(delta);
-        MathPreconditions.checkPositive("maxNum", maxNum);
-        this.maxNum = maxNum;
         initState();
     }
 
     protected void setPtoInput(int num) {
         checkInitialized();
-        MathPreconditions.checkPositiveInRangeClosed("num", num, maxNum);
+        MathPreconditions.checkPositive("num", num);
         this.num = num;
         extraInfo++;
     }

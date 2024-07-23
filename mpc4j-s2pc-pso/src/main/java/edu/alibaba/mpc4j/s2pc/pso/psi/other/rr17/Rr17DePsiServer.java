@@ -125,8 +125,8 @@ public class Rr17DePsiServer<T> extends AbstractPsiServer<T> {
         encodeInputByteLength = CommonUtils.getByteLength(l * Byte.SIZE - (int) Math.round(Math.floor(DoubleUtils.log2(binNum))));
 
         // init OT
-        lcotSender.init(encodeInputByteLength * Byte.SIZE, binNum * binSize);
-        lcotInvReceiver.init(encodeInputByteLength * Byte.SIZE, binNum * binSize);
+        lcotSender.init(encodeInputByteLength * Byte.SIZE);
+        lcotInvReceiver.init(encodeInputByteLength * Byte.SIZE);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

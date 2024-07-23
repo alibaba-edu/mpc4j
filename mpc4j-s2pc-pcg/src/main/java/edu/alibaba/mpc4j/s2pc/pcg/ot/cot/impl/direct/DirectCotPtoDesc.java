@@ -47,4 +47,9 @@ class DirectCotPtoDesc implements PtoDesc {
     public String getPtoName() {
         return PTO_NAME;
     }
+
+    /**
+     * max round num
+     */
+    static int MAX_ROUND_NUM = 1 << 22;
 }

@@ -4,6 +4,9 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
+import edu.alibaba.mpc4j.s2pc.pso.psu.czz24.Czz24CwOprfPsuClient;
+import edu.alibaba.mpc4j.s2pc.pso.psu.czz24.Czz24CwOprfPsuConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.czz24.Czz24CwOprfPsuServer;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuClient;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuServer;
@@ -53,6 +56,10 @@ public class PsuFactory implements PtoFactory {
          * ZCL23_SKE方案
          */
         ZCL23_SKE,
+        /**
+         * CZZ22
+         */
+        CZZ24_CW_OPRF,
     }
 
     /**
@@ -78,6 +85,27 @@ public class PsuFactory implements PtoFactory {
                 return new Jsz22SfcPsuServer(serverRpc, clientParty, (Jsz22SfcPsuConfig) config);
             case JSZ22_SFS:
                 return new Jsz22SfsPsuServer(serverRpc, clientParty, (Jsz22SfsPsuConfig) config);
+            case CZZ24_CW_OPRF:
+                return new Czz24CwOprfPsuServer(serverRpc, clientParty, (Czz24CwOprfPsuConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + PsuType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * 构建服务端。
+     *
+     * @param serverRpc   服务端通信接口。
+     * @param clientParty 客户端信息。
+     * @param config      配置项。
+     * @return 服务端。
+     */
+    public static PsuServer createServer(Rpc serverRpc, Party clientParty, Party aiderParty, PsuConfig config) {
+        PsuType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (type) {
+            case ZCL23_SKE:
+                return new Zcl23SkePsuServer(serverRpc, clientParty, aiderParty, (Zcl23SkePsuConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + PsuType.class.getSimpleName() + ": " + type.name());
         }
@@ -106,6 +134,27 @@ public class PsuFactory implements PtoFactory {
                 return new Jsz22SfcPsuClient(clientRpc, serverParty, (Jsz22SfcPsuConfig) config);
             case JSZ22_SFS:
                 return new Jsz22SfsPsuClient(clientRpc, serverParty, (Jsz22SfsPsuConfig) config);
+            case CZZ24_CW_OPRF:
+                return new Czz24CwOprfPsuClient(clientRpc, serverParty, (Czz24CwOprfPsuConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + PsuType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * 构建客户端。
+     *
+     * @param clientRpc   客户端通信接口。
+     * @param serverParty 服务端信息。
+     * @param config      配置项。
+     * @return 客户端。
+     */
+    public static PsuClient createClient(Rpc clientRpc, Party serverParty, Party aiderParty, PsuConfig config) {
+        PsuType type = config.getPtoType();
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (type) {
+            case ZCL23_SKE:
+                return new Zcl23SkePsuClient(clientRpc, serverParty, aiderParty, (Zcl23SkePsuConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + PsuType.class.getSimpleName() + ": " + type.name());
         }
@@ -114,9 +163,10 @@ public class PsuFactory implements PtoFactory {
     public static PsuConfig createDefaultConfig(SecurityModel securityModel) {
         switch (securityModel) {
             case IDEAL:
+            case TRUSTED_DEALER:
+                return new Zcl23SkePsuConfig.Builder(SecurityModel.TRUSTED_DEALER, true).build();
             case SEMI_HONEST:
                 return new Gmr21PsuConfig.Builder(false).build();
-            case COVERT:
             case MALICIOUS:
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());

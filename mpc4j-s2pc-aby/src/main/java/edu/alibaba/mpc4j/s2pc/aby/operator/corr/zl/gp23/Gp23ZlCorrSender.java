@@ -70,8 +70,7 @@ public class Gp23ZlCorrSender extends AbstractZlCorrParty {
 
         stopWatch.start();
         z2cSender.init(maxNum);
-        byte[] delta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(delta);
+        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
         cotSender.init(delta, 2 * maxL * maxNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

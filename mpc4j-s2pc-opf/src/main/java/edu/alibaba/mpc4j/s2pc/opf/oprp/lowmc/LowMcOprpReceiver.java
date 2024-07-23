@@ -10,7 +10,6 @@ import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.AbstractOprpReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprp.OprpReceiverOutput;
@@ -41,15 +40,9 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
      */
     private long[][] roundKeyShares;
 
-    public LowMcOprpReceiver(Rpc receiverRpc, Party senderParty, LowMcOprpConfig config) {
-        super(LowMcOprpPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, config.getZ2cConfig());
-        addSubPto(z2cReceiver);
-    }
-
-    public LowMcOprpReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, LowMcOprpConfig config) {
-        super(LowMcOprpPtoDesc.getInstance(), receiverRpc, senderParty, config);
-        z2cReceiver = Z2cFactory.createReceiver(receiverRpc, senderParty, aiderParty, config.getZ2cConfig());
+    public LowMcOprpReceiver(Z2cParty z2cReceiver, Party senderParty, LowMcOprpConfig config) {
+        super(LowMcOprpPtoDesc.getInstance(), z2cReceiver.getRpc(), senderParty, config);
+        this.z2cReceiver = z2cReceiver;
         addSubPto(z2cReceiver);
     }
 
@@ -59,22 +52,9 @@ public class LowMcOprpReceiver extends AbstractOprpReceiver {
     }
 
     @Override
-    public boolean isInvPrp() {
-        return false;
-    }
-
-    @Override
     public void init(int maxBatchSize) throws MpcAbortException {
         setInitInput(maxBatchSize);
         logPhaseInfo(PtoState.INIT_BEGIN);
-
-        stopWatch.start();
-        // 初始化BC协议
-        z2cReceiver.init(LowMcUtils.SBOX_NUM * 3 * maxRoundBatchSize * LowMcUtils.ROUND);
-        stopWatch.stop();
-        long initBcTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.INIT_STEP, 1, 1, initBcTime);
 
         logPhaseInfo(PtoState.INIT_END);
     }

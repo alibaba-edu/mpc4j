@@ -36,11 +36,15 @@ public class PeqtTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * large num
      */
-    private static final int LARGE_NUM = 1 << 16;
+    private static final int LARGE_NUM = 1 << 20;
     /**
      * default l
      */
-    private static final int DEFAULT_L = Integer.SIZE;
+    private static final int DEFAULT_L = 6;
+    /**
+     * block size in CGS22
+     */
+    private static final int CGS22_M = 5;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -49,7 +53,7 @@ public class PeqtTest extends AbstractTwoPartyMemoryRpcPto {
         // CGS22
         configurations.add(new Object[]{
             PeqtType.CGS22.name() + " (" + SecurityModel.SEMI_HONEST.name() + ")",
-            new Cgs22PeqtConfig.Builder(SecurityModel.SEMI_HONEST, false).build()
+            new Cgs22PeqtConfig.Builder(SecurityModel.SEMI_HONEST, false).setM(CGS22_M).build()
         });
         // NAIVE
         configurations.add(new Object[]{

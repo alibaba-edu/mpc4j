@@ -9,8 +9,9 @@ import org.bouncycastle.util.Pack;
  * The implementation is from Bouncy Castle library SM4Engine, modified here for thread-safe implementation.
  * </p>
  * <p>
- * The implementation here is based on the document http://eprint.iacr.org/2008/329.pdf by Whitfield Diffie and
- * George Ledin, which is a translation of Prof. LU Shu-wang's original standard.
+ * The implementation here is based on the document
+ * <a href="http://eprint.iacr.org/2008/329.pdf">http://eprint.iacr.org/2008/329.pdf</a>
+ * by Whitfield Diffie and George Ledin, which is a translation of Prof. LU Shu-wang's original standard.
  * </p>
  *
  * @author Weiran Liu

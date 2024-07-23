@@ -73,7 +73,7 @@ public class Dcw13PsiClient<T> extends AbstractPsiClient<T> {
         );
         rpc.send(DataPacket.fromByteArrayList(gbfKeyHeader, gbfKeyPayload));
         // init core COT
-        coreCotReceiver.init(maxM);
+        coreCotReceiver.init();
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

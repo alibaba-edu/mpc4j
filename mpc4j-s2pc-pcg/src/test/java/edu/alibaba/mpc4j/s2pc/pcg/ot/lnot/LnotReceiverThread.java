@@ -22,23 +22,14 @@ class LnotReceiverThread extends Thread {
      */
     private final int[] choiceArray;
     /**
-     * update num
-     */
-    private final int updateNum;
-    /**
      * the receiver output
      */
     private LnotReceiverOutput receiverOutput;
 
     LnotReceiverThread(LnotReceiver receiver, int l, int[] choiceArray) {
-        this(receiver, l, choiceArray, choiceArray.length);
-    }
-
-    LnotReceiverThread(LnotReceiver receiver, int l, int[] choiceArray, int updateNum) {
         this.receiver = receiver;
         this.l = l;
         this.choiceArray = choiceArray;
-        this.updateNum = updateNum;
     }
 
     LnotReceiverOutput getReceiverOutput() {
@@ -48,7 +39,7 @@ class LnotReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.init(l, updateNum);
+            receiver.init(l, 1 << 12);
             receiverOutput = receiver.receive(choiceArray);
         } catch (MpcAbortException e) {
             e.printStackTrace();

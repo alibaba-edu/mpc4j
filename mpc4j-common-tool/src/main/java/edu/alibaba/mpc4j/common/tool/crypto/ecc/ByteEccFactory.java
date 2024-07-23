@@ -137,22 +137,41 @@ public class ByteEccFactory {
     }
 
     /**
+     * Gets full type based on environment.
+     *
+     * @param envType environment.
+     * @return full type.
+     */
+    public static ByteEccType getFullType(EnvType envType) {
+        switch (envType) {
+            case STANDARD:
+            case INLAND:
+                return ByteEccType.ED25519_SODIUM;
+            case STANDARD_JDK:
+            case INLAND_JDK:
+                return ByteEccType.ED25519_BC;
+            default:
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
+        }
+    }
+
+    /**
      * 创建字节椭圆曲线。
      *
      * @param envType 环境类型。
      * @return 字节椭圆曲线。
      */
     public static ByteFullEcc createFullInstance(EnvType envType) {
-        switch (envType) {
-            case STANDARD:
-            case INLAND:
-                return createFullInstance(ByteEccType.FOUR_Q);
-            case STANDARD_JDK:
-            case INLAND_JDK:
-                return createFullInstance(ByteEccType.ED25519_BC);
-            default:
-                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
-        }
+        return createFullInstance(getFullType(envType));
+    }
+
+    /**
+     * Creates the fastest full instance.
+     *
+     * @return the fastest full instance.
+     */
+    public static ByteFullEcc createFastestFullInstance() {
+        return FourqByteFullEcc.getInstance();
     }
 
     /**
@@ -185,22 +204,32 @@ public class ByteEccFactory {
     }
 
     /**
+     * Gets mul type based on environment.
+     *
+     * @param envType environment.
+     * @return mul type.
+     */
+    public static ByteEccType getMulType(EnvType envType) {
+        switch (envType) {
+            case STANDARD:
+            case INLAND:
+                return ByteEccType.X25519_SODIUM;
+            case STANDARD_JDK:
+            case INLAND_JDK:
+                return ByteEccType.X25519_BC;
+            default:
+                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
+        }
+    }
+
+    /**
      * 创建乘法字节椭圆曲线。
      *
      * @param envType 环境类型。
      * @return 乘法字节椭圆曲线。
      */
     public static ByteMulEcc createMulInstance(EnvType envType) {
-        switch (envType) {
-            case STANDARD:
-            case INLAND:
-                return createMulInstance(ByteEccType.X25519_SODIUM);
-            case STANDARD_JDK:
-            case INLAND_JDK:
-                return createMulInstance(ByteEccType.X25519_BC);
-            default:
-                throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
-        }
+        return createMulInstance(getMulType(envType));
     }
 
     /**

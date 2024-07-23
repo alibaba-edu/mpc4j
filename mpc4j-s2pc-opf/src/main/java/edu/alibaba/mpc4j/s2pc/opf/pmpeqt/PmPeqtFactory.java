@@ -94,7 +94,6 @@ public class PmPeqtFactory implements PtoFactory {
             case IDEAL:
             case SEMI_HONEST:
                 return new Tcl23ByteEccDdhPmPeqtConfig.Builder().build();
-            case COVERT:
             case MALICIOUS:
             default:
                 throw new IllegalArgumentException(

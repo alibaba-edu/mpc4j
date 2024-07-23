@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory.LnotType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.impl.direct.DirectLnotConfig;
 import org.junit.Assert;
@@ -28,7 +29,7 @@ public class LnotTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * default l
      */
-    private static final int DEFAULT_L = 5;
+    private static final int DEFAULT_L = 4;
     /**
      * default num
      */
@@ -40,7 +41,7 @@ public class LnotTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * large num
      */
-    private static final int LARGE_NUM = 1 << 18;
+    private static final int LARGE_NUM = 1 << 16;
 
 
     @Parameterized.Parameters(name = "{0}")
@@ -49,11 +50,11 @@ public class LnotTest extends AbstractTwoPartyMemoryRpcPto {
 
         // CACHE
         configurations.add(new Object[]{
-            LnotType.CACHE.name() + " (" + SecurityModel.MALICIOUS + ")",
+            LnotType.COT.name() + " (" + SecurityModel.MALICIOUS + ")",
             new DirectLnotConfig.Builder(SecurityModel.MALICIOUS).build(),
         });
         configurations.add(new Object[]{
-            LnotType.CACHE.name() + " (" + SecurityModel.SEMI_HONEST + ")",
+            LnotType.COT.name() + " (" + SecurityModel.SEMI_HONEST + ")",
             new DirectLnotConfig.Builder(SecurityModel.SEMI_HONEST).build(),
         });
         // DIRECT
@@ -154,53 +155,7 @@ public class LnotTest extends AbstractTwoPartyMemoryRpcPto {
             // verify
             LnotSenderOutput senderOutput = senderThread.getSenderOutput();
             LnotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            LnotTestUtils.assertOutput(l, num, senderOutput, receiverOutput);
-            int[] actualChoiceArray = IntStream.range(0, num)
-                .map(receiverOutput::getChoice)
-                .toArray();
-            Assert.assertArrayEquals(choiceArray, actualChoiceArray);
-            printAndResetRpc(time);
-            // destroy
-            new Thread(sender::destroy).start();
-            new Thread(receiver::destroy).start();
-            LOGGER.info("-----test {} end-----", sender.getPtoDesc().getPtoName());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testLessUpdate() {
-        int l = DEFAULT_L;
-        int num = DEFAULT_NUM;
-        LnotSender sender = LnotFactory.createSender(firstRpc, secondRpc.ownParty(), config);
-        LnotReceiver receiver = LnotFactory.createReceiver(secondRpc, firstRpc.ownParty(), config);
-        int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
-        sender.setTaskId(randomTaskId);
-        receiver.setTaskId(randomTaskId);
-        // generate the input
-        int n = (1 << l);
-        int[] choiceArray = IntStream.range(0, num)
-            .map(index -> SECURE_RANDOM.nextInt(n))
-            .toArray();
-        try {
-            LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            LnotSenderThread senderThread = new LnotSenderThread(sender, l, num, num / 2 - 1);
-            LnotReceiverThread receiverThread = new LnotReceiverThread(receiver, l, choiceArray, num / 2 - 1);
-            STOP_WATCH.start();
-            // start
-            senderThread.start();
-            receiverThread.start();
-            // stop
-            senderThread.join();
-            receiverThread.join();
-            STOP_WATCH.stop();
-            long time = STOP_WATCH.getTime(TimeUnit.MILLISECONDS);
-            STOP_WATCH.reset();
-            // verify
-            LnotSenderOutput senderOutput = senderThread.getSenderOutput();
-            LnotReceiverOutput receiverOutput = receiverThread.getReceiverOutput();
-            LnotTestUtils.assertOutput(l, num, senderOutput, receiverOutput);
+            OtTestUtils.assertOutput(num, senderOutput, receiverOutput);
             int[] actualChoiceArray = IntStream.range(0, num)
                 .map(receiverOutput::getChoice)
                 .toArray();

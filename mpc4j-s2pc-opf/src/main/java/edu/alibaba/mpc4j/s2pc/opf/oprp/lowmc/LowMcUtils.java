@@ -18,7 +18,7 @@ import java.util.Objects;
  * @author Weiran Liu
  * @date 2022/02/11
  */
-class LowMcUtils {
+public class LowMcUtils {
     /**
      * private constructor.
      */
@@ -57,11 +57,11 @@ class LowMcUtils {
     /**
      * number of sboxes
      */
-    static final int SBOX_NUM = 10;
+    public static final int SBOX_NUM = 10;
     /**
      * number of rounds
      */
-    static final int ROUND = 20;
+    public static final int ROUND = 20;
     /**
      * r + 1 key extension matrices, each contains 128 × 128 bits.
      */
@@ -128,7 +128,6 @@ class LowMcUtils {
             lowMcInputStreamReader.close();
             lowMcInputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
             throw new IllegalArgumentException("Failed to read LowMc file: " + LOW_MC_FILE);
         }
     }

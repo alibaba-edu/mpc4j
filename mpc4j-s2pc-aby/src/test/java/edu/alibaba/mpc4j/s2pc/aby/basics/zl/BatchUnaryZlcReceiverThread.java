@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.circuit.operator.UnaryAcOperator;
 import edu.alibaba.mpc4j.common.circuit.zl.MpcZlVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
+import edu.alibaba.mpc4j.common.tool.galoisfield.zl.Zl;
 
 import java.util.Arrays;
 
@@ -18,6 +19,10 @@ class BatchUnaryZlcReceiverThread extends Thread {
      * receiver
      */
     private final ZlcParty receiver;
+    /**
+     * Zl
+     */
+    private final Zl zl;
     /**
      * operator
      */
@@ -39,8 +44,9 @@ class BatchUnaryZlcReceiverThread extends Thread {
      */
     private ZlVector[] recvSecretVectors;
 
-    BatchUnaryZlcReceiverThread(ZlcParty receiver, UnaryAcOperator operator, ZlVector[] xVectors) {
+    BatchUnaryZlcReceiverThread(ZlcParty receiver, Zl zl, UnaryAcOperator operator, ZlVector[] xVectors) {
         this.receiver = receiver;
+        this.zl = zl;
         this.operator = operator;
         this.xVectors = xVectors;
         totalNum = Arrays.stream(xVectors).mapToInt(ZlVector::getNum).sum();
@@ -57,13 +63,13 @@ class BatchUnaryZlcReceiverThread extends Thread {
     @Override
     public void run() {
         try {
-            receiver.init(totalNum);
+            receiver.init(zl.getL(), totalNum);
             // set inputs
             MpcZlVector[] xPlainMpcVectors = Arrays.stream(xVectors)
                 .map(receiver::create)
                 .toArray(MpcZlVector[]::new);
             int[] nums = Arrays.stream(xVectors).mapToInt(ZlVector::getNum).toArray();
-            MpcZlVector[] x1SecretMpcVectors = receiver.shareOther(nums);
+            MpcZlVector[] x1SecretMpcVectors = receiver.shareOther(zl, nums);
             MpcZlVector[] z1PlainMpcVectors, z1SecretMpcVectors;
             //noinspection SwitchStatementWithTooFewBranches
             switch (operator) {

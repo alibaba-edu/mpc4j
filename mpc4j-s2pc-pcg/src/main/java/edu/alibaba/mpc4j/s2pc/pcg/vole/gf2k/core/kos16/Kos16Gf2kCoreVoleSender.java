@@ -7,7 +7,6 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kGadget;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSenderOutput;
@@ -22,7 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * KOS16-GF2K-core VOLE sender.
+ * KOS16 GF2K-core-VOLE sender.
  *
  * @author Weiran Liu
  * @date 2023/3/16
@@ -33,17 +32,13 @@ public class Kos16Gf2kCoreVoleSender extends AbstractGf2kCoreVoleSender {
      */
     private final BaseOtSender baseOtSender;
     /**
-     * GF2K gadget
-     */
-    private Gf2kGadget gf2kGadget;
-    /**
      * base OT sender output
      */
     private BaseOtSenderOutput baseOtSenderOutput;
     /**
      * t0
      */
-    private byte[][][] t0;
+    private byte[][][] w0;
 
     public Kos16Gf2kCoreVoleSender(Rpc senderRpc, Party receiverParty, Kos16Gf2kCoreVoleConfig config) {
         super(Kos16Gf2kCoreVolePtoDesc.getInstance(), senderRpc, receiverParty, config);
@@ -52,14 +47,13 @@ public class Kos16Gf2kCoreVoleSender extends AbstractGf2kCoreVoleSender {
     }
 
     @Override
-    public void init(int maxNum) throws MpcAbortException {
-        setInitInput(maxNum);
+    public void init(int subfieldL) throws MpcAbortException {
+        setInitInput(subfieldL);
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        gf2kGadget = new Gf2kGadget(envType);
         baseOtSender.init();
-        baseOtSenderOutput = baseOtSender.send(l);
+        baseOtSenderOutput = baseOtSender.send(fieldL);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -80,40 +74,46 @@ public class Kos16Gf2kCoreVoleSender extends AbstractGf2kCoreVoleSender {
             ownParty().getPartyId(), otherParty().getPartyId()
         );
         rpc.send(DataPacket.fromByteArrayList(matrixHeader, matrixPayLoad));
-        Gf2kVoleSenderOutput senderOutput = generateSenderOutput();
-        t0 = null;
         stopWatch.stop();
         long matrixTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 1, matrixTime);
+        logStepInfo(PtoState.PTO_STEP, 1, 2, matrixTime);
+
+        stopWatch.start();
+        Gf2kVoleSenderOutput senderOutput = generateSenderOutput();
+        w0 = null;
+        stopWatch.stop();
+        long outputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 2, 2, outputTime);
 
         logPhaseInfo(PtoState.PTO_END);
         return senderOutput;
     }
 
     private List<byte[]> generateMatrixPayLoad() {
-        // creates t0 and t1 array, each row in t0/t1 corresponds to an X.
-        t0 = new byte[num][l][];
-        IntStream payLoadStream = IntStream.range(0, num * l);
+        // creates w0 and w1 array, each row in w0 / w1 corresponds to an X.
+        w0 = new byte[num][fieldL][];
+        IntStream payLoadStream = IntStream.range(0, num * fieldL);
         payLoadStream = parallel ? payLoadStream.parallel() : payLoadStream;
         return payLoadStream
             .mapToObj(index -> {
-                // current position in t0 and t1
-                int rowIndex = index / l;
-                int columnIndex = index % l;
-                // Let k0 and k1 be the j-th key pair in bast OT, compute t0[i][j] = PRF(k0，i), t1[i][j] = PRF(k1, i)
-                byte[] t0Seed = ByteBuffer
+                // current position in w^i_0 and w^i_1
+                int rowIndex = index / fieldL;
+                int columnIndex = index % fieldL;
+                // PA sets w^i_0 := PRF(K^i_0, j) and w^i_1 := PRF(K^i_1, j) with w^i_0, w^i_1 ∈ F_p
+                byte[] w0Seed = ByteBuffer
                     .allocate(Long.BYTES + Integer.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                    .putLong(extraInfo).putInt(rowIndex).put(baseOtSenderOutput.getR0(columnIndex))
+                    .putLong(extraInfo).putInt(index).put(baseOtSenderOutput.getR0(columnIndex))
                     .array();
-                byte[] t1Seed = ByteBuffer
+                byte[] w1Seed = ByteBuffer
                     .allocate(Long.BYTES + Integer.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
-                    .putLong(extraInfo).putInt(rowIndex).put(baseOtSenderOutput.getR1(columnIndex))
+                    .putLong(extraInfo).putInt(index).put(baseOtSenderOutput.getR1(columnIndex))
                     .array();
-                t0[rowIndex][columnIndex] = gf2k.createRandom(t0Seed);
-                byte[] t1 = gf2k.createRandom(t1Seed);
-                // Compute u = t0[i,j] - t1[i,j] - x[i]
-                return gf2k.sub(gf2k.sub(t0[rowIndex][columnIndex], t1), xs[rowIndex]);
+                w0[rowIndex][columnIndex] = subfield.createRandom(w0Seed);
+                byte[] w1 = subfield.createRandom(w1Seed);
+                // PA sends τ^i := w^i_0 − w^i_1 − u ∈ F_p to PB.
+                return subfield.sub(subfield.sub(w0[rowIndex][columnIndex], w1), xs[rowIndex]);
             })
             .collect(Collectors.toList());
     }
@@ -122,9 +122,9 @@ public class Kos16Gf2kCoreVoleSender extends AbstractGf2kCoreVoleSender {
         IntStream outputStream = IntStream.range(0, num);
         outputStream = parallel ? outputStream.parallel() : outputStream;
         byte[][] ts = outputStream
-            .mapToObj(index -> gf2kGadget.innerProduct(t0[index]))
+            // PA outputs w = <g,w> ∈ F_pr
+            .mapToObj(index -> field.mixInnerProduct(w0[index]))
             .toArray(byte[][]::new);
-        return Gf2kVoleSenderOutput.create(xs, ts);
+        return Gf2kVoleSenderOutput.create(field, xs, ts);
     }
-
 }

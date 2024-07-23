@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.vector;
 
-import edu.alibaba.mpc4j.common.structure.matrix.MatrixUtils;
+import edu.alibaba.mpc4j.common.structure.StructureUtils;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -19,10 +18,6 @@ import java.util.stream.IntStream;
  */
 public class LongVectorTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(LongVectorTest.class);
-    /**
-     * the random state
-     */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     /**
      * default rows
      */
@@ -35,14 +30,18 @@ public class LongVectorTest {
      * max num
      */
     private static final int MAX_NUM = 64;
+    /**
+     * random state
+     */
+    private final SecureRandom secureRandom;
+
+    public LongVectorTest() {
+        secureRandom = new SecureRandom();
+    }
 
     @Test
     public void testIllegalInputs() {
-        // create a vector with num = 0
-        Assert.assertThrows(IllegalArgumentException.class, () -> LongVector.create(new long[0]));
-        // create a random vector with num = 0
-        Assert.assertThrows(IllegalArgumentException.class, () -> LongVector.createRandom(0, SECURE_RANDOM));
-        LongVector vector = LongVector.createRandom(DEFAULT_NUM, SECURE_RANDOM);
+        LongVector vector = LongVector.createRandom(DEFAULT_NUM, secureRandom);
         // split vector with split num = 0
         Assert.assertThrows(IllegalArgumentException.class, () -> vector.split(0));
         // split vector with split num > num
@@ -62,75 +61,23 @@ public class LongVectorTest {
 
     private void testReduce(int num) {
         // reduce 1
-        LongVector vector1 = LongVector.createRandom(num, SECURE_RANDOM);
+        LongVector vector1 = LongVector.createRandom(num, secureRandom);
         vector1.reduce(1);
         Assert.assertEquals(1, vector1.getNum());
         // reduce all
-        LongVector vectorAll = LongVector.createRandom(num, SECURE_RANDOM);
+        LongVector vectorAll = LongVector.createRandom(num, secureRandom);
         vectorAll.reduce(num);
         Assert.assertEquals(num, vectorAll.getNum());
         if (num > 1) {
             // reduce num - 1
-            LongVector vectorNum = LongVector.createRandom(num, SECURE_RANDOM);
+            LongVector vectorNum = LongVector.createRandom(num, secureRandom);
             vectorNum.reduce(num - 1);
             Assert.assertEquals(num - 1, vectorNum.getNum());
             // reduce half
-            LongVector vectorHalf = LongVector.createRandom(num, SECURE_RANDOM);
+            LongVector vectorHalf = LongVector.createRandom(num, secureRandom);
             vectorHalf.reduce(num / 2);
             Assert.assertEquals(num / 2, vectorHalf.getNum());
         }
-    }
-
-    @Test
-    public void testAllEmptyMerge() {
-        LongVector vector = LongVector.createEmpty();
-        LongVector mergeVector = LongVector.createEmpty();
-        vector.merge(mergeVector);
-        Assert.assertEquals(0, vector.getNum());
-    }
-
-    @Test
-    public void testLeftEmptyMerge() {
-        for (int num = MIN_NUM; num < MAX_NUM; num++) {
-            testLeftEmptyMerge(num);
-        }
-    }
-
-    private void testLeftEmptyMerge(int num) {
-        LongVector vector = LongVector.createEmpty();
-        LongVector mergeVector = LongVector.createRandom(num, SECURE_RANDOM);
-        vector.merge(mergeVector);
-        Assert.assertEquals(num, vector.getNum());
-    }
-
-    @Test
-    public void testRightEmptyMerge() {
-        for (int num = MIN_NUM; num < MAX_NUM; num++) {
-            testRightEmptyMerge(num);
-        }
-    }
-
-    private void testRightEmptyMerge(int num) {
-        LongVector vector = LongVector.createRandom(num, SECURE_RANDOM);
-        LongVector mergeVector = LongVector.createEmpty();
-        vector.merge(mergeVector);
-        Assert.assertEquals(num, vector.getNum());
-    }
-
-    @Test
-    public void testMerge() {
-        for (int num1 = MIN_NUM; num1 < MAX_NUM; num1++) {
-            for (int num2 = MIN_NUM; num2 < MAX_NUM; num2++) {
-                testMerge(num1, num2);
-            }
-        }
-    }
-
-    private void testMerge(int num1, int num2) {
-        LongVector vector = LongVector.createRandom(num1, SECURE_RANDOM);
-        LongVector mergeVector = LongVector.createRandom(num2, SECURE_RANDOM);
-        vector.merge(mergeVector);
-        Assert.assertEquals(num1 + num2, vector.getNum());
     }
 
     @Test
@@ -142,27 +89,43 @@ public class LongVectorTest {
 
     private void testSplit(int num) {
         // split 1
-        LongVector vector1 = LongVector.createRandom(num, SECURE_RANDOM);
+        LongVector vector1 = LongVector.createRandom(num, secureRandom);
         LongVector splitVector1 = vector1.split(1);
         Assert.assertEquals(num - 1, vector1.getNum());
         Assert.assertEquals(1, splitVector1.getNum());
         // split all
-        LongVector vectorAll = LongVector.createRandom(num, SECURE_RANDOM);
+        LongVector vectorAll = LongVector.createRandom(num, secureRandom);
         LongVector splitVectorAll = vectorAll.split(num);
         Assert.assertEquals(0, vectorAll.getNum());
         Assert.assertEquals(num, splitVectorAll.getNum());
         if (num > 1) {
             // split num - 1
-            LongVector vectorNum = LongVector.createRandom(num, SECURE_RANDOM);
+            LongVector vectorNum = LongVector.createRandom(num, secureRandom);
             LongVector splitVectorNum = vectorNum.split(num - 1);
             Assert.assertEquals(1, vectorNum.getNum());
             Assert.assertEquals(num - 1, splitVectorNum.getNum());
             // split half
-            LongVector vectorHalf = LongVector.createRandom(num, SECURE_RANDOM);
+            LongVector vectorHalf = LongVector.createRandom(num, secureRandom);
             LongVector splitVectorHalf = vectorHalf.split(num / 2);
             Assert.assertEquals(num - num / 2, vectorHalf.getNum());
             Assert.assertEquals(num / 2, splitVectorHalf.getNum());
         }
+    }
+
+    @Test
+    public void testMerge() {
+        for (int num1 = 0; num1 < MAX_NUM; num1++) {
+            for (int num2 = 0; num2 < MAX_NUM; num2++) {
+                testMerge(num1, num2);
+            }
+        }
+    }
+
+    private void testMerge(int num1, int num2) {
+        LongVector vector = LongVector.createRandom(num1, secureRandom);
+        LongVector mergeVector = LongVector.createRandom(num2, secureRandom);
+        vector.merge(mergeVector);
+        Assert.assertEquals(num1 + num2, vector.getNum());
     }
 
     @Test
@@ -174,63 +137,92 @@ public class LongVectorTest {
 
     private void testSplitMerge(int num) {
         // split and merge 1
-        LongVector vector1 = LongVector.createRandom(num, SECURE_RANDOM);
+        LongVector vector1 = LongVector.createRandom(num, secureRandom);
         LongVector copyVector1 = vector1.copy();
         LongVector splitVector1 = vector1.split(1);
-        splitVector1.merge(vector1);
-        Assert.assertEquals(copyVector1, splitVector1);
+        vector1.merge(splitVector1);
+        Assert.assertEquals(copyVector1, vector1);
         // split and merge all
-        LongVector vectorAll = LongVector.createRandom(num, SECURE_RANDOM);
+        LongVector vectorAll = LongVector.createRandom(num, secureRandom);
         LongVector copyVectorAll = vectorAll.copy();
         LongVector splitVectorAll = vectorAll.split(num);
-        splitVectorAll.merge(vectorAll);
-        Assert.assertEquals(copyVectorAll, splitVectorAll);
+        vectorAll.merge(splitVectorAll);
+        Assert.assertEquals(copyVectorAll, vectorAll);
         if (num > 1) {
             // split and merge num - 1
-            LongVector vectorNum = LongVector.createRandom(num, SECURE_RANDOM);
+            LongVector vectorNum = LongVector.createRandom(num, secureRandom);
             LongVector copyVectorNum = vectorNum.copy();
             LongVector splitVectorNum = vectorNum.split(num - 1);
-            splitVectorNum.merge(vectorNum);
-            Assert.assertEquals(copyVectorNum, splitVectorNum);
+            vectorNum.merge(splitVectorNum);
+            Assert.assertEquals(copyVectorNum, vectorNum);
             // split half
-            LongVector vectorHalf = LongVector.createRandom(num, SECURE_RANDOM);
+            LongVector vectorHalf = LongVector.createRandom(num, secureRandom);
             LongVector copyVectorHalf = vectorHalf.copy();
             LongVector splitVectorHalf = vectorHalf.split(num / 2);
-            splitVectorHalf.merge(vectorHalf);
-            Assert.assertEquals(copyVectorHalf, splitVectorHalf);
+            vectorHalf.merge(splitVectorHalf);
+            Assert.assertEquals(copyVectorHalf, vectorHalf);
         }
     }
 
     @Test
-    public void testSplitMergeList() {
+    public void testSplitMergeVector() {
         for (int num = MIN_NUM; num < MAX_NUM; num++) {
-            testSplitMergeList(num);
+            testSplitMergeVector(num);
         }
     }
 
-    public void testSplitMergeList(int num){
-        LongVector[] tmp = IntStream.range(0, num).mapToObj(i ->
-            LongVector.createRandom(SECURE_RANDOM.nextInt(MAX_NUM) + 1, SECURE_RANDOM)).toArray(LongVector[]::new);
-        LongVector mergeRes = LongVector.merge(tmp);
-        LongVector[] splitRes = mergeRes.split(Arrays.stream(tmp).mapToInt(LongVector::getNum).toArray());
-        MathPreconditions.checkEqual("splitRes.length", "tmp.length", splitRes.length, tmp.length);
-        for(int i = 0; i < tmp.length; i++){
-            Assert.assertEquals(splitRes[i], tmp[i]);
+    public void testSplitMergeVector(int num) {
+        int[] splits = IntStream.range(0, num).map(i -> secureRandom.nextInt(MAX_NUM) + 1).toArray();
+        LongVector[] expectVectors = IntStream.range(0, num)
+            .mapToObj(i -> LongVector.createRandom(splits[i], secureRandom))
+            .toArray(LongVector[]::new);
+        LongVector vector = LongVector.merge(expectVectors);
+        LongVector[] actualVectors = LongVector.split(vector, splits);
+        MathPreconditions.checkEqual("expectVectors.length", "actualVectors.length", expectVectors.length, actualVectors.length);
+        for (int i = 0; i < expectVectors.length; i++) {
+            Assert.assertEquals(actualVectors[i], expectVectors[i]);
         }
     }
 
     @Test
-    public void testOperateElementsByInterval() {
-        LongVector origin = LongVector.createRandom(MAX_NUM, SECURE_RANDOM);
-        Assert.assertThrows(IllegalArgumentException.class, () -> origin.getElementsByInterval(0, 0, 0));
-        for(int i = 0; i < 10; i++){
-            int tmpSep = SECURE_RANDOM.nextInt(MAX_NUM - 1) + 1;
-            int startPos = SECURE_RANDOM.nextInt(MAX_NUM - tmpSep);
-            int num = (origin.getNum() - startPos) / tmpSep;
-            LongVector tmp = origin.getElementsByInterval(startPos, num, tmpSep);
-            LongVector originCopy = origin.copy();
-            origin.setElementsByInterval(tmp, startPos, num, tmpSep);
-            Assert.assertEquals(originCopy, origin);
+    public void testElementsByInterval() {
+        LongVector vector = LongVector.createRandom(MAX_NUM, secureRandom);
+        for (int i = 0; i < 10; i++) {
+            int interval = secureRandom.nextInt(MAX_NUM - 1) + 1;
+            int pos = secureRandom.nextInt(MAX_NUM - interval);
+            int num = (vector.getNum() - pos) / interval;
+            LongVector intervalVector = vector.getElementsByInterval(pos, num, interval);
+            // verify
+            for (int j = 0; j < num; j++) {
+                Assert.assertEquals(intervalVector.getElement(j), vector.getElement(pos + j * interval));
+            }
+            LongVector copyVector = vector.copy();
+            vector.setElementsByInterval(intervalVector, pos, num, interval);
+            Assert.assertEquals(copyVector, vector);
+        }
+    }
+
+    @Test
+    public void testDecompose() {
+        LongVector vector = LongVector.createRandom(MAX_NUM, secureRandom);
+        // p > 1
+        Assert.assertThrows(IllegalArgumentException.class, () -> LongVector.decompose(vector, 0));
+        Assert.assertThrows(IllegalArgumentException.class, () -> LongVector.decompose(vector, 1));
+
+        for (int i = 0; i < 10; i++) {
+            // p ∈ [2, 12)
+            int p = secureRandom.nextInt(10) + 2;
+            // decompose
+            LongVector[] decomposedVectors = LongVector.decompose(vector, p);
+            // verify one result
+            long value = 0;
+            for (LongVector decomposedVector : decomposedVectors) {
+                value = value * p + decomposedVector.getElement(0);
+            }
+            Assert.assertEquals(vector.getElement(0), value);
+            // compose
+            LongVector composedVector = LongVector.compose(decomposedVectors, p);
+            Assert.assertEquals(vector, composedVector);
         }
     }
 
@@ -240,13 +232,13 @@ public class LongVectorTest {
         LongVector vectorEmpty = LongVector.createEmpty();
         LOGGER.info(vectorEmpty.toString());
         // num = 1
-        LongVector vector1 = LongVector.createRandom(1, SECURE_RANDOM);
+        LongVector vector1 = LongVector.createRandom(1, secureRandom);
         LOGGER.info(vector1.toString());
         // num = DISPLAY_NUM
-        LongVector vectorDisplayNum = LongVector.createRandom(MatrixUtils.DISPLAY_NUM, SECURE_RANDOM);
+        LongVector vectorDisplayNum = LongVector.createRandom(StructureUtils.DISPLAY_NUM, secureRandom);
         LOGGER.info(vectorDisplayNum.toString());
         // num = DISPLAY_NUM + 1
-        LongVector vectorDisplayNum1 = LongVector.createRandom(MatrixUtils.DISPLAY_NUM + 1, SECURE_RANDOM);
+        LongVector vectorDisplayNum1 = LongVector.createRandom(StructureUtils.DISPLAY_NUM + 1, secureRandom);
         LOGGER.info(vectorDisplayNum1.toString());
     }
 }

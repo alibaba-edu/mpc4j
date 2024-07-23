@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.bitmatrix.dense;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
@@ -31,7 +32,7 @@ public class DenseBitMatrixTest {
     /**
      * random state
      */
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private final SecureRandom secureRandom;
     /**
      * round
      */
@@ -57,6 +58,25 @@ public class DenseBitMatrixTest {
     public DenseBitMatrixTest(String name, DenseBitMatrixType type) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.type = type;
+        secureRandom = new SecureRandom();
+    }
+
+    @Test
+    public void testCreateRandom() {
+        testCreateRandom(128, 256);
+        testCreateRandom(256, 128);
+    }
+
+    private void testCreateRandom(int rows, int columns) {
+        DenseBitMatrix denseBitMatrix1, denseBitMatrix2;
+        // create without seed
+        denseBitMatrix1 = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
+        denseBitMatrix2 = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
+        Assert.assertNotEquals(denseBitMatrix1, denseBitMatrix2);
+        // create with same seed
+        denseBitMatrix1 = DenseBitMatrixFactory.createRandom(type, rows, columns, new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        denseBitMatrix2 = DenseBitMatrixFactory.createRandom(type, rows, columns, new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        Assert.assertEquals(denseBitMatrix1, denseBitMatrix2);
     }
 
     @Test
@@ -102,15 +122,15 @@ public class DenseBitMatrixTest {
         DenseBitMatrix inner;
         // random + random = 0
         for (int round = 0; round < ROUND; round++) {
-            DenseBitMatrix random = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+            DenseBitMatrix random = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
             Assert.assertEquals(zero, random.xor(random));
-            inner = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+            inner = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
             inner.xori(inner);
             Assert.assertEquals(zero, inner);
         }
         // random + 0 = random
         for (int round = 0; round < ROUND; round++) {
-            DenseBitMatrix random = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+            DenseBitMatrix random = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
             Assert.assertEquals(random, random.xor(zero));
         }
     }
@@ -127,9 +147,9 @@ public class DenseBitMatrixTest {
     private void testRandomMultiply(int rows, int columns) {
         for (int rightColumns : SIZES) {
             for (int round = 0; round < ROUND; round++) {
-                DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+                DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
                 // 右侧矩阵的行数必须等于左侧矩阵的列数
-                DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, columns, rightColumns, SECURE_RANDOM);
+                DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, columns, rightColumns, secureRandom);
                 // 测试方法：(A * B)^T = B^T * A^T
                 DenseBitMatrix mulTrans = a.multiply(b).transpose(EnvType.STANDARD, false);
                 DenseBitMatrix transMul = b.transpose(EnvType.STANDARD, false)
@@ -150,8 +170,8 @@ public class DenseBitMatrixTest {
 
     private void testLeftMultiply(int rows, int columns) {
         for (int round = 0; round < ROUND; round++) {
-            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, SECURE_RANDOM);
-            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, secureRandom);
+            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
             byte[][] expectArray = a.multiply(b).getByteArrayData();
             // 将a矩阵分别转换成byte[]分别与b矩阵左乘
             byte[][] byteVectorActualArray = IntStream.range(0, rows)
@@ -184,9 +204,9 @@ public class DenseBitMatrixTest {
 
     private void testLeftMultiplyXori(int rows, int columns) {
         for (int round = 0; round < ROUND; round++) {
-            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, SECURE_RANDOM);
-            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
-            DenseBitMatrix c = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, secureRandom);
+            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
+            DenseBitMatrix c = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
             byte[][] expectArray = a.multiply(b).xor(c).getByteArrayData();
             // 将a矩阵分别转换成byte[]分别与b矩阵左乘
             byte[][] byteVectorActualArray = IntStream.range(0, rows)
@@ -199,9 +219,9 @@ public class DenseBitMatrixTest {
             Assert.assertArrayEquals(expectArray, byteVectorActualArray);
         }
         for (int round = 0; round < ROUND; round++) {
-            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, SECURE_RANDOM);
-            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
-            DenseBitMatrix c = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, secureRandom);
+            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
+            DenseBitMatrix c = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
             byte[][] expectArray = a.multiply(b).xor(c).getByteArrayData();
             // 将a矩阵分别转换成boolean[]分别与b矩阵左乘
             byte[][] byteVectorActualArray = IntStream.range(0, rows)
@@ -227,7 +247,7 @@ public class DenseBitMatrixTest {
 
     private void testTranspose(int rows, int columns) {
         for (int round = 0; round < ROUND; round++) {
-            DenseBitMatrix origin = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+            DenseBitMatrix origin = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
             DenseBitMatrix transpose = origin.transpose(EnvType.STANDARD, false);
             DenseBitMatrix recover = transpose.transpose(EnvType.STANDARD, false);
             Assert.assertEquals(origin, recover);
@@ -245,8 +265,8 @@ public class DenseBitMatrixTest {
 
     private void testLeftGf2lMultiply(int rows, int columns) {
         for (int round = 0; round < ROUND; round++) {
-            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, SECURE_RANDOM);
-            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, secureRandom);
+            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
             // 测试方法： (A^T*B)^T = (A.toArrays())*B
             DenseBitMatrix aTranspose = a.transpose(EnvType.STANDARD_JDK, false);
             byte[][] expectArray = aTranspose.multiply(b).transpose(EnvType.STANDARD_JDK, false).getByteArrayData();
@@ -266,9 +286,9 @@ public class DenseBitMatrixTest {
 
     private void testLeftGf2lMultiplyXori(int rows, int columns) {
         for (int round = 0; round < ROUND; round++) {
-            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, SECURE_RANDOM);
-            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
-            DenseBitMatrix c = DenseBitMatrixFactory.createRandom(type, rows, columns, SECURE_RANDOM);
+            DenseBitMatrix a = DenseBitMatrixFactory.createRandom(type, rows, rows, secureRandom);
+            DenseBitMatrix b = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
+            DenseBitMatrix c = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
             // 测试方法： ((A^T*B) + C)^T = (A.toArrays())*B + C^T.toArray()
             DenseBitMatrix aTranspose = a.transpose(EnvType.STANDARD_JDK, false);
             byte[][] expectArray = aTranspose.multiply(b).xor(c).transpose(EnvType.STANDARD_JDK, false).getByteArrayData();

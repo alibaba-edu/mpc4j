@@ -58,7 +58,7 @@ public class Z2SorterTest {
     /**
      * large l
      */
-    private static final int LARGE_L = LongUtils.MAX_L;
+    private static final int LARGE_L = LongUtils.MAX_L_FOR_MODULE_N;
     /**
      * the config
      */

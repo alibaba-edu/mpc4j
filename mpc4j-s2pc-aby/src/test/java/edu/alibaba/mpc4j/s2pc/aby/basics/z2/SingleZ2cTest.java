@@ -44,12 +44,11 @@ public class SingleZ2cTest extends AbstractTwoPartyMemoryRpcPto {
 
         // RRG+21
         configurations.add(new Object[] {
-            Z2cFactory.BcType.RRG21.name(), new Rrg21Z2cConfig.Builder().build()
+            Z2cFactory.BcType.RRG21.name(), new Rrg21Z2cConfig.Builder(true).build()
         });
         // Bea91
         configurations.add(new Object[] {
-            Z2cFactory.BcType.BEA91.name() + " (" + SecurityModel.SEMI_HONEST + ")",
-            new Bea91Z2cConfig.Builder(SecurityModel.SEMI_HONEST).build()
+            Z2cFactory.BcType.BEA91.name(), new Bea91Z2cConfig.Builder(SecurityModel.SEMI_HONEST, true).build()
         });
 
         return configurations;

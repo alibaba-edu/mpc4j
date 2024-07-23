@@ -3,15 +3,14 @@ package edu.alibaba.mpc4j.s2pc.aby.operator.row.millionaire.rrk20;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
-import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.millionaire.AbstractMillionaireParty;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lnot.LnotFactory;
@@ -39,14 +38,19 @@ public class Rrk20MillionaireSender extends AbstractMillionaireParty {
      * z2 circuit sender.
      */
     private final Z2cParty z2cSender;
+    /**
+     * bit length of split block
+     */
+    private final int m;
 
-
-    public Rrk20MillionaireSender(Rpc senderRpc, Party receiverParty, Rrk20MillionaireConfig config) {
-        super(Rrk20MillionairePtoDesc.getInstance(), senderRpc, receiverParty, config);
-        lnotSender = LnotFactory.createSender(senderRpc, receiverParty, config.getLnotConfig());
+    public Rrk20MillionaireSender(Z2cParty z2cSender, Party receiverParty, Rrk20MillionaireConfig config) {
+        super(Rrk20MillionairePtoDesc.getInstance(), z2cSender.getRpc(), receiverParty, config);
+        lnotSender = LnotFactory.createSender(z2cSender.getRpc(), receiverParty, config.getLnotConfig());
         addSubPto(lnotSender);
-        z2cSender = Z2cFactory.createSender(senderRpc, receiverParty, config.getZ2cConfig());
+        this.z2cSender = z2cSender;
         addSubPto(z2cSender);
+        this.m = config.getM();
+        MathPreconditions.checkPositiveInRangeClosed("m", m, Byte.SIZE);
     }
 
     @Override
@@ -55,11 +59,9 @@ public class Rrk20MillionaireSender extends AbstractMillionaireParty {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        // q = l / m, where m = 4
-        int maxByteL = CommonUtils.getByteLength(maxL);
-        int maxQ = maxByteL * 2;
-        z2cSender.init(maxNum * (maxQ - 1));
-        lnotSender.init(4, maxNum * maxQ);
+        // q = l / m
+        int maxQ = CommonUtils.getUnitNum(maxL, m);
+        lnotSender.init(m, maxNum * maxQ);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -70,11 +72,11 @@ public class Rrk20MillionaireSender extends AbstractMillionaireParty {
 
     @Override
     public SquareZ2Vector lt(int l, byte[][] xs) throws MpcAbortException {
-        setPtoInput(l, xs);
+        setPtoInput(l, m, xs);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         stopWatch.start();
-        int[][] partitionInputArray = partitionInputArray();
+        int[][] partitionInputArray = Rrk20MillionaireUtils.partitionInputArray(inputs, m, q);
         stopWatch.stop();
         long prepareTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -109,65 +111,75 @@ public class Rrk20MillionaireSender extends AbstractMillionaireParty {
             eqs[j] = BitVectorFactory.createRandom(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, secureRandom);
         }
         // for j ∈ [0,q) do
+        stopWatch.stop();
+        stopWatch.reset();
+
+        stopWatch.start();
         for (int j = 0; j < q; j++) {
             final int jFinal = j;
-            // P0 & P1 invoke 1-out-of-2^4 OT with P0 as sender.
+            // P0 & P1 invoke 1-out-of-2^m OT with P0 as sender.
             LnotSenderOutput lnotSenderOutput = lnotSender.send(num);
-            // for k ∈ [2^4], P0 sets s_{j,k} ← <lt_{0,j}>_0 ⊕ 1{x_{1,j} < k}
-            IntStream intStream = IntStream.range(0, 1 << 4);
+            // for k ∈ [2^m], P0 sets s_{j,k} ← <lt_{0,j}>_0 ⊕ 1{x_{1,j} < k}
+            IntStream intStream = IntStream.range(0, 1 << m);
             intStream = parallel ? intStream.parallel() : intStream;
             List<byte[]> sPayload = intStream
-                    .mapToObj(k -> {
-                        BitVector s = BitVectorFactory.createRandom(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, secureRandom);
-                        for (int index = 0; index < num; index++) {
-                            byte[] ri = lnotSenderOutput.getRb(index, k);
-                            if (partitionInputArray[index][jFinal] < k) {
-                                // x_j < k, s_{j,k} = Rb ⊕ 1
-                                s.set(index, (ri[0] % 2) == 0);
-                            } else {
-                                // x_j >= k, s_{j,k} = Rb
-                                s.set(index, (ri[0] % 2) != 0);
-                            }
+                .mapToObj(k -> {
+                    BitVector s = BitVectorFactory.createRandom(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, secureRandom);
+                    for (int index = 0; index < num; index++) {
+                        byte[] ri = lnotSenderOutput.getRb(index, k);
+                        if (partitionInputArray[jFinal][index] < k) {
+                            // x_j < k, s_{j,k} = Rb ⊕ 1
+                            s.set(index, (ri[0] % 2) == 0);
+                        } else {
+                            // x_j >= k, s_{j,k} = Rb
+                            s.set(index, (ri[0] % 2) != 0);
                         }
-                        // s_{j,k} ⊕ lts_j
-                        s.xori(lts[jFinal]);
-                        return s.getBytes();
-                    })
-                    .collect(Collectors.toList());
+                    }
+                    // s_{j,k} ⊕ lts_j
+                    s.xori(lts[jFinal]);
+                    return s.getBytes();
+                })
+                .collect(Collectors.toList());
             DataPacketHeader sHeader = new DataPacketHeader(
-                    encodeTaskId, getPtoDesc().getPtoId(), Rrk20MillionairePtoDesc.PtoStep.SENDER_SENDS_S.ordinal(), extraInfo,
-                    ownParty().getPartyId(), otherParty().getPartyId()
+                encodeTaskId, getPtoDesc().getPtoId(), Rrk20MillionairePtoDesc.PtoStep.SENDER_SENDS_S.ordinal(), extraInfo,
+                ownParty().getPartyId(), otherParty().getPartyId()
             );
             extraInfo++;
             rpc.send(DataPacket.fromByteArrayList(sHeader, sPayload));
-            // for k ∈ [2^4], P0 sets t_{j,k} ← <eq_{0,j}>_0 ⊕ 1{x_{1,j} == k}
-            intStream = IntStream.range(0, 1 << 4);
+            // for k ∈ [2^m], P0 sets t_{j,k} ← <eq_{0,j}>_0 ⊕ 1{x_{1,j} == k}
+            intStream = IntStream.range(0, 1 << m);
             intStream = parallel ? intStream.parallel() : intStream;
             List<byte[]> tPayload = intStream
-                    .mapToObj(k -> {
-                        BitVector t = BitVectorFactory.createRandom(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, secureRandom);
-                        for (int index = 0; index < num; index++) {
-                            byte[] ri = lnotSenderOutput.getRb(index, k);
-                            if (partitionInputArray[index][jFinal] == k) {
-                                // x_j == k, eq_{j,k} = Rb ⊕ 1
-                                t.set(index, (ri[0] % 2) == 0);
-                            } else {
-                                // x_j == k, e_{j,k} = Rb
-                                t.set(index, (ri[0] % 2) != 0);
-                            }
+                .mapToObj(k -> {
+                    BitVector t = BitVectorFactory.createRandom(BitVectorFactory.BitVectorType.BYTES_BIT_VECTOR, num, secureRandom);
+                    for (int index = 0; index < num; index++) {
+                        byte[] ri = lnotSenderOutput.getRb(index, k);
+                        if (partitionInputArray[jFinal][index] == k) {
+                            // x_j == k, eq_{j,k} = Rb ⊕ 1
+                            t.set(index, (ri[0] % 2) == 0);
+                        } else {
+                            // x_j == k, e_{j,k} = Rb
+                            t.set(index, (ri[0] % 2) != 0);
                         }
-                        // t_{j,k} ⊕ eqs_j
-                        t.xori(eqs[jFinal]);
-                        return t.getBytes();
-                    })
-                    .collect(Collectors.toList());
+                    }
+                    // t_{j,k} ⊕ eqs_j
+                    t.xori(eqs[jFinal]);
+                    return t.getBytes();
+                })
+                .collect(Collectors.toList());
             DataPacketHeader tHeader = new DataPacketHeader(
-                    encodeTaskId, getPtoDesc().getPtoId(), Rrk20MillionairePtoDesc.PtoStep.SENDER_SENDS_T.ordinal(), extraInfo,
-                    ownParty().getPartyId(), otherParty().getPartyId()
+                encodeTaskId, getPtoDesc().getPtoId(), Rrk20MillionairePtoDesc.PtoStep.SENDER_SENDS_T.ordinal(), extraInfo,
+                ownParty().getPartyId(), otherParty().getPartyId()
             );
             extraInfo++;
             rpc.send(DataPacket.fromByteArrayList(tHeader, tPayload));
         }
+        stopWatch.stop();
+        long convertTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 2, 2, convertTime, "test!");
+
+        stopWatch.start();
         SquareZ2Vector[] ltShares = Arrays.stream(lts).map(v -> SquareZ2Vector.create(v, false)).toArray(SquareZ2Vector[]::new);
         SquareZ2Vector[] eqShares = Arrays.stream(eqs).map(v -> SquareZ2Vector.create(v, false)).toArray(SquareZ2Vector[]::new);
         return new SquareZ2Vector[][]{ltShares, eqShares};
@@ -206,21 +218,5 @@ public class Rrk20MillionaireSender extends AbstractMillionaireParty {
             eqs = newEqs;
         }
         return lts[0];
-    }
-
-    private int[][] partitionInputArray() {
-        // P0 parses each of its input element as x_{q-1} || ... || x_{0}, where x_j ∈ {0,1}^4 for all j ∈ [0,q).
-        int[][] partitionInputArray = new int[num][q];
-        IntStream.range(0, num).forEach(index -> {
-            byte[] x = inputs[index];
-            for (int lIndex = 0; lIndex < byteL; lIndex++) {
-                byte lIndexByte = x[lIndex];
-                // the left part
-                partitionInputArray[index][lIndex * 2] = ((lIndexByte & 0xFF) >> 4);
-                // the right part
-                partitionInputArray[index][lIndex * 2 + 1] = (lIndexByte & 0x0F);
-            }
-        });
-        return partitionInputArray;
     }
 }

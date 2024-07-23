@@ -118,7 +118,6 @@ public class OprfFactory implements PtoFactory {
             case IDEAL:
             case SEMI_HONEST:
                 return new Kkrt16OptOprfConfig.Builder().build();
-            case COVERT:
             case MALICIOUS:
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());
@@ -180,7 +179,6 @@ public class OprfFactory implements PtoFactory {
             case IDEAL:
             case SEMI_HONEST:
                 return new Cm20MpOprfConfig.Builder().build();
-            case COVERT:
             case MALICIOUS:
             default:
                 throw new IllegalArgumentException("Invalid " + SecurityModel.class.getSimpleName() + ": " + securityModel.name());

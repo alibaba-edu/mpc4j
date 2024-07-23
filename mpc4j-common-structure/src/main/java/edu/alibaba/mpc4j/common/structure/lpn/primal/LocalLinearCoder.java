@@ -1,14 +1,11 @@
 package edu.alibaba.mpc4j.common.structure.lpn.primal;
 
-import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 
 import java.nio.ByteBuffer;
@@ -40,21 +37,13 @@ public class LocalLinearCoder implements PrimalLpnCoder {
      */
     private final int k;
     /**
-     * message size (k) in bytes
-     */
-    private final int byteK;
-    /**
-     * offset for k
-     */
-    private final int offsetK;
-    /**
      * code size (n)
      */
     private final int n;
     /**
-     * pseudo-random permutation
+     * matrix
      */
-    private final Prp prp;
+    private final int[][] matrix;
     /**
      * parallel encoding
      */
@@ -82,66 +71,34 @@ public class LocalLinearCoder implements PrimalLpnCoder {
     public LocalLinearCoder(EnvType envType, int k, int n, byte[] seed) {
         MathPreconditions.checkGreater("k", k, D);
         this.k = k;
-        byteK = CommonUtils.getByteLength(k);
-        offsetK = byteK * Byte.SIZE - k;
         MathPreconditions.checkPositive("n", n);
         this.n = n;
         parallel = false;
         // sets PRP
-        prp = PrpFactory.createInstance(envType);
+        Prp prp = PrpFactory.createInstance(envType);
         prp.setKey(seed);
-    }
-
-    @Override
-    public boolean[] encode(boolean[] e) {
-        MathPreconditions.checkEqual("k", "inputs.length", k, e.length);
-        boolean[] w = new boolean[n];
-        IntStream rowIndexIntStream = IntStream.range(0, n);
-        rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
-        rowIndexIntStream.forEach(rowIndex -> {
-            int[] sparseRow = generateSparseRow(rowIndex);
-            for (int j = 0; j < D; j++) {
-                int position = Math.abs(sparseRow[j] % k);
-                w[rowIndex] ^= e[position];
-            }
-        });
-        return w;
-    }
-
-    @Override
-    public byte[] encode(byte[] e) {
-        Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(e, byteK, k), "e.length must be " + k);
-        boolean[] w = new boolean[n];
-        IntStream rowIndexIntStream = IntStream.range(0, n);
-        rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
-        rowIndexIntStream.forEach(rowIndex -> {
-            int[] sparseRow = generateSparseRow(rowIndex);
-            for (int j = 0; j < D; j++) {
-                int position = Math.abs(sparseRow[j] % k);
-                w[rowIndex] ^= BinaryUtils.getBoolean(e, offsetK + position);
-            }
-        });
-        return BinaryUtils.binaryToRoundByteArray(w);
-    }
-
-    @Override
-    public byte[][] encode(byte[][] e) {
-        MathPreconditions.checkEqual("k", "inputs.length", k, e.length);
-        int inputByteLength = e[0].length;
-        // we do not need to verify input length, xori will verify that
-        IntStream rowIndexIntStream = IntStream.range(0, n);
-        rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
-        return rowIndexIntStream
-            .mapToObj(rowIndex -> {
-                int[] sparseRow = generateSparseRow(rowIndex);
-                byte[] output = new byte[inputByteLength];
-                for (int j = 0; j < D; j++) {
-                    int position = Math.abs(sparseRow[j] % k);
-                    BytesUtils.xori(output, e[position]);
+        matrix = IntStream.range(0, n)
+            .mapToObj(i -> {
+                ByteBuffer blockByteBuffer = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH);
+                // block tmp[3]
+                ByteBuffer indexByteBuffer = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH * BLOCK_NUM);
+                for (int blockIndex = 0; blockIndex < BLOCK_NUM; blockIndex++) {
+                    // tmp[m] = makeBlock(i, m)
+                    byte[] block = blockByteBuffer
+                        .putInt(0, i)
+                        .putInt(CommonConstants.BLOCK_BYTE_LENGTH / 2, blockIndex)
+                        .array();
+                    // prp->permute_block(tmp, 3)
+                    indexByteBuffer.put(prp.prp(block));
                 }
-                return output;
+                int[] randomRow = IntUtils.byteArrayToIntArray(indexByteBuffer.array());
+                int[] sparseRow = new int[D];
+                for (int j = 0; j < D; j++) {
+                    sparseRow[j] = Math.abs(randomRow[j] % k);
+                }
+                return sparseRow;
             })
-            .toArray(byte[][]::new);
+            .toArray(int[][]::new);
     }
 
     @Override
@@ -164,20 +121,37 @@ public class LocalLinearCoder implements PrimalLpnCoder {
         return parallel;
     }
 
-    private int[] generateSparseRow(int rowIndex) {
-        // block tmp[3]
-        ByteBuffer indexByteBuffer = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH * BLOCK_NUM);
-        // 不重复分配内存
-        ByteBuffer blockByteBuffer = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH);
-        for (int blockIndex = 0; blockIndex < BLOCK_NUM; blockIndex++) {
-            // tmp[m] = makeBlock(i, m)
-            byte[] block = blockByteBuffer
-                .putInt(0, rowIndex)
-                .putInt(CommonConstants.BLOCK_BYTE_LENGTH / 2, blockIndex)
-                .array();
-            // prp->permute_block(tmp, 3)
-            indexByteBuffer.put(prp.prp(block));
-        }
-        return IntUtils.byteArrayToIntArray(indexByteBuffer.array());
+    @Override
+    public boolean[] encode(boolean[] es) {
+        MathPreconditions.checkEqual("k", "inputs.length", k, es.length);
+        boolean[] ws = new boolean[n];
+        IntStream rowIndexIntStream = IntStream.range(0, n);
+        rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
+        rowIndexIntStream.forEach(rowIndex -> {
+            for (int j = 0; j < D; j++) {
+                int position = matrix[rowIndex][j];
+                ws[rowIndex] ^= es[position];
+            }
+        });
+        return ws;
+    }
+
+    @Override
+    public byte[][] encode(byte[][] es) {
+        MathPreconditions.checkEqual("k", "inputs.length", k, es.length);
+        int byteL = es[0].length;
+        // we do not need to verify input length, xori will verify that
+        IntStream rowIndexIntStream = IntStream.range(0, n);
+        rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
+        return rowIndexIntStream
+            .mapToObj(rowIndex -> {
+                byte[] w = new byte[byteL];
+                for (int j = 0; j < D; j++) {
+                    int position = matrix[rowIndex][j];
+                    BytesUtils.xori(w, es[position]);
+                }
+                return w;
+            })
+            .toArray(byte[][]::new);
     }
 }
