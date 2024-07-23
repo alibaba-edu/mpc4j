@@ -23,7 +23,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Fixed a bug for the implementation of order-preserving encryption (EUROCRYPT 2009). Now that order-preserving encryption supports any output range $\mathcal{R}$ conditioned on $|\mathcal{R}| \geq |\mathcal{D}|$ where $|\mathcal{D}|$​ is the input range.
+- Fixed a bug for the implementation of order-preserving encryption (EUROCRYPT 2009). Now that order-preserving encryption supports any output range $\mathcal{R}$ conditioned on $|\mathcal{R}| \geq |\mathcal{D}|$ where $|\mathcal{D}|$ is the input range.
 - Fixed a bug for PSU implementations. Now we can correctly verify if PSU is implemented correctly.
 
 ## \[1.1.1\]
