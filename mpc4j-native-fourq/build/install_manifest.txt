@@ -1,0 +1,13 @@
+/usr/local/lib/libfourq.so
+/usr/local/include/fp_x64.h
+/usr/local/include/fp_arm64.h
+/usr/local/include/FourQ.h
+/usr/local/include/FourQ_api.h
+/usr/local/include/FourQ_internal.h
+/usr/local/include/FourQ_params.h
+/usr/local/include/FourQ_tables.h
+/usr/local/include/fp.h
+/usr/local/include/random.h
+/usr/local/include/sha512.h
+/usr/local/include/table_lookup.h
+/usr/local/include/test_extras.h
