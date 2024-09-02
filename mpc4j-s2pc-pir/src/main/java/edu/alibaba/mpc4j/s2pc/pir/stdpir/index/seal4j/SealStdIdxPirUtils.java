@@ -10,6 +10,7 @@ import edu.alibaba.mpc4j.crypto.fhe.serialization.Serialization;
 import edu.alibaba.mpc4j.crypto.fhe.zq.Numth;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,9 +26,36 @@ public class SealStdIdxPirUtils {
         // empty
     }
 
+    // [Question: `tryInvertUintMod` is different from the original one in the Seal. Am I handling this correctly?]
+    private static long invertMod(int m, Modulus mod) {
+        long[] inverse = new long[1];
+        boolean success = Numth.tryInvertUintMod(m, mod.value(), inverse);
+
+        if(!success) {
+            throw new ArithmeticException("Modular inversion failed.");
+        }
+
+        return inverse[0];
+    }
+
+    private static int computeExpansionRatio(EncryptionParameters params) {
+        int expansionRatio = 0;
+        int ptBitsPerCoeff = (int) (Math.log(params.plainModulus().value()) / Math.log(2));
+
+        for (Modulus mod : params.coeffModulus()) { // [Question: Why is it a list?]
+            double coeffBitSize = (int) (Math.log(mod.value()) / Math.log(2));
+            expansionRatio += (int) Math.ceil(coeffBitSize / ptBitsPerCoeff);
+        }
+        return expansionRatio;
+    }
+
     private static byte[] serializeEncryptionParams(EncryptionParameters params) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        params.save(outputStream, Serialization.COMPR_MODE_DEFAULT); // [Question: What should I do about the warning?]
+        try {
+            params.save(outputStream, Serialization.COMPR_MODE_DEFAULT); // [Question: What should I do about the warning?]
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return outputStream.toByteArray();
     }
@@ -182,18 +210,6 @@ public class SealStdIdxPirUtils {
         return bytes;
     }
 
-    // [Question: `tryInvertUintMod` is different from the original one in the Seal. Am I handling this correctly?]
-    static int invertMod(int m, Modulus mod) {
-        long[] inverse = new long[1];
-        boolean success = Numth.tryInvertUintMod(m, mod.value(), inverse);
-
-        if(!success) {
-            throw new ArithmeticException("Modular inversion failed.");
-        }
-
-        return (int) inverse[0];
-    }
-
     /**
      * NTT transformation.
      *
@@ -297,6 +313,10 @@ public class SealStdIdxPirUtils {
      * @return expansion ratio.
      */
     static int expansionRatio(byte[] encryptionParams) {
-        return 0;
+        EncryptionParameters params = deserializeEncryptionParams(encryptionParams);
+        SealContext context = new SealContext(params);
+
+        // [Question: why not just passing `encryptionParams`?
+        return computeExpansionRatio(context.lastContextData().parms()) << 1;
     }
 }
