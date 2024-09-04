@@ -73,7 +73,11 @@ public class SealStdIdxPirUtils {
 
     private static byte[] serializePublicKey(PublicKey pk) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        pk.save(outputStream, Serialization.COMPR_MODE_DEFAULT); // [Question: What should I do about the warning?]
+        try {
+            pk.save(outputStream, Serialization.COMPR_MODE_DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return outputStream.toByteArray();
     }
