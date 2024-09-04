@@ -148,14 +148,14 @@ public class SealStdIdxPirUtils {
     }
 
     private static Ciphertext deserializeCiphertext(byte[] ctBytes, SealContext context) {
-        Plaintext pt = new Plaintext();
+        Ciphertext ct = new Ciphertext();
         try {
-            pt.load(context, ctBytes);
+            ct.load(context, ctBytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        return pt;
+        return ct;
     }
 
     private static List<byte[]> serializeCiphertexts(List<SealSerializable<Ciphertext>> ciphertexts) {
@@ -367,7 +367,7 @@ public class SealStdIdxPirUtils {
         int coeffCount = params.polyModulusDegree();
 
         int index = 0;
-        int product = 1;
+        int product = 1; // What is the `product` for?
         for (int n : nvec) {
             int numPtxts = (int) Math.ceil((n + 0.0) / coeffCount);
             List<Ciphertext> queryi = new ArrayList<>();
