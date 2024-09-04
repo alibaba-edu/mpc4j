@@ -52,7 +52,7 @@ public class SealStdIdxPirUtils {
     private static byte[] serializeEncryptionParams(EncryptionParameters params) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
-            params.save(outputStream, Serialization.COMPR_MODE_DEFAULT); // [Question: What should I do about the warning?]
+            params.save(outputStream, Serialization.COMPR_MODE_DEFAULT);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -62,10 +62,11 @@ public class SealStdIdxPirUtils {
 
     private static EncryptionParameters deserializeEncryptionParams(byte[] paramsByte) {
         EncryptionParameters params = new EncryptionParameters();
-        // [Questions:
-        //  -   What should I do about the warning?
-        //  -   Is it OK to pas `null` here instead of the context?]
-        params.load(null, paramsByte);
+        try {
+            params.load(null, paramsByte);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return params;
     }
