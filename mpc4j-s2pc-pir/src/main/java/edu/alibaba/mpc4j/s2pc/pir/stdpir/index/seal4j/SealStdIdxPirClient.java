@@ -9,15 +9,14 @@ import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.AbstractStdIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.PbcableStdIdxPirClient;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import static edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirPtoDesc.PtoStep;
-import static edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirPtoDesc.getInstance;
+import static edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.SealStdIdxPirPtoDesc.PtoStep;
+import static edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.SealStdIdxPirPtoDesc.getInstance;
 
 /**
  * SEAL PIR client.

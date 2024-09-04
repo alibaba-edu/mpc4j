@@ -26,7 +26,6 @@ public class SealStdIdxPirUtils {
         // empty
     }
 
-    // [Question: `tryInvertUintMod` is different from the original one in the Seal. Am I handling this correctly?]
     private static long invertMod(int m, Modulus mod) {
         long[] inverse = new long[1];
         boolean success = Numth.tryInvertUintMod(m, mod.value(), inverse);
@@ -42,7 +41,7 @@ public class SealStdIdxPirUtils {
         int expansionRatio = 0;
         int ptBitsPerCoeff = (int) (Math.log(params.plainModulus().value()) / Math.log(2));
 
-        for (Modulus mod : params.coeffModulus()) { // [Question: Why is it a list?]
+        for (Modulus mod : params.coeffModulus()) {
             double coeffBitSize = (int) (Math.log(mod.value()) / Math.log(2));
             expansionRatio += (int) Math.ceil(coeffBitSize / ptBitsPerCoeff);
         }
@@ -60,10 +59,10 @@ public class SealStdIdxPirUtils {
         return outputStream.toByteArray();
     }
 
-    private static EncryptionParameters deserializeEncryptionParams(byte[] paramsByte) {
+    private static EncryptionParameters deserializeEncryptionParams(byte[] paramsBytes) {
         EncryptionParameters params = new EncryptionParameters();
         try {
-            params.load(null, paramsByte);
+            params.load(null, paramsBytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -82,55 +81,81 @@ public class SealStdIdxPirUtils {
         return outputStream.toByteArray();
     }
 
-    private static PublicKey deserializePublicKey(byte[] pkByte) {
+    private static PublicKey deserializePublicKey(byte[] pkBytes, SealContext context) {
         PublicKey pk = new PublicKey();
-        // [Questions:
-        //  -   What should I do about the warning?
-        //  -   Is it OK to pas `null` here instead of the context?]
-        pk.load(null, pkByte);
+        try {
+            pk.load(context, pkBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return pk;
     }
 
     private static byte[] serializeSecretKey(SecretKey sk) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        sk.save(outputStream, Serialization.COMPR_MODE_DEFAULT); // [Question: What should I do about the warning?]
+        try {
+            sk.save(outputStream, Serialization.COMPR_MODE_DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return outputStream.toByteArray();
     }
 
-    private static SecretKey deserializeSecretKey(byte[] skByte) {
+    private static SecretKey deserializeSecretKey(byte[] skBytes, SealContext context) {
         SecretKey sk = new SecretKey();
-        // [Questions:
-        //  -   What should I do about the warning?
-        //  -   Is it OK to pas `null` here instead of the context?]
-        sk.load(null, skByte);
+        try {
+            sk.load(context, skBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return sk;
     }
 
     static byte[] serializeGaloisKeys(SealSerializable<GaloisKeys> gk) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        gk.save(outputStream, Serialization.COMPR_MODE_DEFAULT); // [Question: What should I do about the warning?]
+        try {
+            gk.save(outputStream, Serialization.COMPR_MODE_DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return outputStream.toByteArray();
     }
 
-    private static GaloisKeys deserializeGaloisKeys(byte[] gkByte) {
+    private static GaloisKeys deserializeGaloisKeys(byte[] gkBytes, SealContext context) {
         GaloisKeys gk = new GaloisKeys();
-        // [Questions:
-        //  -   What should I do about the warning?
-        //  -   Is it OK to pass `null` here instead of the context?]
-        gk.load(null, gkByte);
+        try {
+            gk.load(context, gkBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return gk;
     }
 
     private static byte[] serializeCiphertext(SealSerializable<Ciphertext> ciphertext) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ciphertext.save(outputStream, Serialization.COMPR_MODE_DEFAULT); // [Question: What should I do about the warning?]
+        try {
+            ciphertext.save(outputStream, Serialization.COMPR_MODE_DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return outputStream.toByteArray();
+    }
+
+    private static Ciphertext deserializeCiphertext(byte[] ctBytes, SealContext context) {
+        Plaintext pt = new Plaintext();
+        try {
+            pt.load(context, ctBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return pt;
     }
 
     private static List<byte[]> serializeCiphertexts(List<SealSerializable<Ciphertext>> ciphertexts) {
@@ -139,14 +164,41 @@ public class SealStdIdxPirUtils {
             byte[] bytes = serializeCiphertext(ciphertext);
             list.add(bytes);
         }
+
         return list;
+    }
+
+    private static List<Ciphertext> deserializeCiphertexts(List<byte[]> ciphertextList, SealContext context) {
+        List<Ciphertext> ciphertexts = new ArrayList<>();
+
+        for (byte[] ctBytes : ciphertextList) {
+            Ciphertext ciphertext = deserializeCiphertext(ctBytes, context);
+            ciphertexts.add(ciphertext);
+        }
+
+        return ciphertexts;
     }
 
     private static byte[] serializePlaintext(Plaintext plaintext) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        plaintext.save(outputStream, Serialization.COMPR_MODE_DEFAULT); // [Question: What should I do about the warning?]
+        try {
+            plaintext.save(outputStream, Serialization.COMPR_MODE_DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return outputStream.toByteArray();
+    }
+
+    private static Plaintext deserializePlaintext(byte[] ptBytes, SealContext context) {
+        Plaintext pt = new Plaintext();
+        try {
+            pt.load(context, ptBytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return pt;
     }
 
     private static List<byte[]> serializePlaintexts(List<Plaintext> plaintexts) {
@@ -155,7 +207,17 @@ public class SealStdIdxPirUtils {
             byte[] plaintextBytes = serializePlaintext(plaintext);
             list.add(plaintextBytes);
         }
+
         return list;
+    }
+
+    private static List<Plaintext> deserializePlaintextsArray(byte[][] database, SealContext context) {
+        List<Plaintext> plaintexts = new ArrayList<>();
+        for (byte[] row : database) {
+            plaintexts.add(deserializePlaintext(row, context));
+        }
+
+        return plaintexts;
     }
 
     private static List<Plaintext> deserializePlaintextsFromCoeffWithoutBatchEncode(List<long[]> coeffList, SealContext context) {
@@ -166,6 +228,7 @@ public class SealStdIdxPirUtils {
             plaintext.set(coeffs); // [Question: Correct?]
             plaintexts.add(plaintext);
         }
+
         return  plaintexts;
     }
 
@@ -198,9 +261,8 @@ public class SealStdIdxPirUtils {
         KeyGenerator keygen = new KeyGenerator(context);
         SecretKey sk = keygen.secretKey();
         PublicKey pk = new PublicKey();
-        keygen.createPublicKey(pk); // [Question: Should this be `Serializable`?]
+        keygen.createPublicKey(pk); // [Question: Should this be `SealSerializable`?]
 
-        // [Question: `createStepGaloisKeys` or `createGaloisKeys`. If the Latter, what should I pass for the arguments? Else, what are the differences?]
         SealSerializable<GaloisKeys> gk = keygen.createStepGaloisKeys();
 
         byte[] pkByte = serializePublicKey(pk);
@@ -228,7 +290,7 @@ public class SealStdIdxPirUtils {
         Evaluator evaluator = new Evaluator(context);
         List<Plaintext> plaintexts = deserializePlaintextsFromCoeffWithoutBatchEncode(plaintextList, context);
         for (Plaintext plaintext : plaintexts) {
-            evaluator.transformToNttInplace(plaintext, context.firstParmsId()); // [Question: I forgot how Java works. Here, are we directly modifying `plaintexts`?]
+            evaluator.transformToNttInplace(plaintext, context.firstParmsId());
         }
         return serializePlaintexts(plaintexts);
     }
@@ -248,8 +310,8 @@ public class SealStdIdxPirUtils {
         EncryptionParameters params = deserializeEncryptionParams(encryptionParams);
         SealContext context = new SealContext(params);
 
-        PublicKey pk = deserializePublicKey(publicKey);
-        SecretKey sk = deserializeSecretKey(secretKey);
+        PublicKey pk = deserializePublicKey(publicKey, context);
+        SecretKey sk = deserializeSecretKey(secretKey, context);
 
         Encryptor encryptor = new Encryptor(context, pk, sk);
 
@@ -295,6 +357,27 @@ public class SealStdIdxPirUtils {
      */
     static List<byte[]> generateReply(byte[] encryptionParams, byte[] galoisKey, List<byte[]> queryList,
                                       byte[][] database, int[] nvec) {
+        EncryptionParameters params = deserializeEncryptionParams(encryptionParams);
+        SealContext context = new SealContext(params);
+        Evaluator evaluator = new Evaluator(context);
+        GaloisKeys galoisKeys = deserializeGaloisKeys(galoisKey, context);
+        List<Plaintext> db = deserializePlaintextsArray(database, context);
+        List<Ciphertext> queries = deserializeCiphertexts(queryList, context);
+        List<List<Ciphertext>> query = new ArrayList<>();
+        int coeffCount = params.polyModulusDegree();
+
+        int index = 0;
+        int product = 1;
+        for (int n : nvec) {
+            int numPtxts = (int) Math.ceil((n + 0.0) / coeffCount);
+            List<Ciphertext> queryi = new ArrayList<>();
+            product *= n;
+            for (int j = 0; j < numPtxts; j++) {
+                queryi.add(queries.get(index++));
+            }
+            query.add(queryi);
+        }
+
         return null;
     }
 
@@ -317,11 +400,10 @@ public class SealStdIdxPirUtils {
      * @param encryptionParams encryption params.
      * @return expansion ratio.
      */
-    static int expansionRatio(byte[] encryptionParams) {
+    static int expansionRatio(byte[] encryptionParams) { // [Question: Which one should I pass, `EncryptionParams` vs `byte[]`?
         EncryptionParameters params = deserializeEncryptionParams(encryptionParams);
         SealContext context = new SealContext(params);
 
-        // [Question: why not just passing `encryptionParams`?
         return computeExpansionRatio(context.lastContextData().parms()) << 1;
     }
 }
