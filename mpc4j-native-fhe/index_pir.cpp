@@ -143,7 +143,7 @@ vector<Ciphertext> expand_query(const EncryptionParameters& parms, const Ciphert
         uint32_t index = (index_raw * galois_elts[i]) % (n << 1);
 
         for (uint32_t a = 0; a < temp.size(); a++) {
-            evaluator.apply_galois(temp[a], galois_elts[i], galois_keys,tempctxt_rotated);
+            evaluator.apply_galois(temp[a], galois_elts[i], galois_keys, tempctxt_rotated);
             evaluator.add(temp[a], tempctxt_rotated, newtemp[a]);
             multiply_power_of_X(temp[a], tempctxt_shifted, index_raw, context);
             // cout << "mul by x^pow: " <<
@@ -231,7 +231,6 @@ void multiply_power_of_X(const Ciphertext &encrypted, Ciphertext &destination, u
                                                        destination.data(i) + (j * coeff_count));
         }
     }
-
 }
 
 void plain_decomposition(Plaintext &pt, const SEALContext &context, uint32_t decomp_size, uint32_t base_bit,

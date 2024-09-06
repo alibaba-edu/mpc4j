@@ -5,6 +5,7 @@ import edu.alibaba.mpc4j.crypto.fhe.context.EncryptionParameters;
 import edu.alibaba.mpc4j.crypto.fhe.context.SchemeType;
 import edu.alibaba.mpc4j.crypto.fhe.context.SealContext;
 import edu.alibaba.mpc4j.crypto.fhe.modulus.Modulus;
+import edu.alibaba.mpc4j.crypto.fhe.rq.PolyArithmeticSmallMod;
 import edu.alibaba.mpc4j.crypto.fhe.serialization.SealSerializable;
 import edu.alibaba.mpc4j.crypto.fhe.serialization.Serialization;
 import edu.alibaba.mpc4j.crypto.fhe.zq.Numth;
@@ -15,10 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * SEAL PIR native utils.
+ * SEAL PIR Java utils.
  *
- * @author Liqiang Peng
- * @date 2023/1/17
+ * @author @alarst13
+ * @date   9/4/2024
  */
 public class SealStdIdxPirUtils {
 
@@ -46,6 +47,87 @@ public class SealStdIdxPirUtils {
             expansionRatio += (int) Math.ceil(coeffBitSize / ptBitsPerCoeff);
         }
         return expansionRatio;
+    }
+
+    private static void multiplyPowerOfX(Ciphertext encrypted, Ciphertext destination, int index, SealContext context) {
+        SealContext.ContextData contextData = context.firstContextData();
+        EncryptionParameters params = contextData.parms();
+        int coeffModCount = params.coeffModulus().length;
+        int coeffCount = params.polyModulusDegree();
+        destination.copyFrom(encrypted); // [Question: Correct?]
+
+        for (int j = 0; j < coeffModCount; j++) {
+            PolyArithmeticSmallMod.negacyclicShiftPolyCoeffMod(encrypted.data(), coeffCount, index, params.coeffModulus()[j], destination.data()); // [Question: Am I doing this right?]
+        }
+    }
+
+    private static List<Ciphertext> expandQuery(EncryptionParameters params, Ciphertext encrypted,
+                                                GaloisKeys galoisKeys, int m) {
+        SealContext context = new SealContext(params);
+        Evaluator evaluator = new Evaluator(context);
+
+        // If `m` is not a power of 2, round it up to the nearest power of 2.
+        int logm = (int) Math.ceil(Math.log(m) / Math.ceil(Math.log(2)));
+
+        Plaintext two = new Plaintext("2");
+        List<Integer> galoisElts = new ArrayList<>();
+
+        int n = params.polyModulusDegree();
+        int logn = (int) Math.ceil(Math.log(n) / Math.log(2));
+        if (logm > logn) {
+            throw new IllegalArgumentException("m > n is not allowed.");
+        }
+
+        for (int i = 0; i < logn; i++) {
+            galoisElts.add((n + (1 << i)) / (1 << i)); // [Question: Is there an equivalent to `seal::util::exponentiate_uint(2, i)`.]
+        }
+
+        List<Ciphertext> temp = new ArrayList<>();
+        temp.add(encrypted);
+        Ciphertext tempctxtRotated = new Ciphertext();
+        Ciphertext tempctxtShifted = new Ciphertext();
+        Ciphertext tempctxtRotatedshifted = new Ciphertext();
+
+        for (int j = 0; j < logm - 1; j++) {
+            List<Ciphertext> newtemp = new ArrayList<>(temp.size() << 1);
+            for (int j = 0; j < (temp.size() << 1); j++) {
+                newtemp.add(new Ciphertext());
+            }
+            int idnexRaw = (n << 1) - (1 << j); // [Question: Why `2n - 2^j`? Why not just `-2^j`?]
+            int index = (idnexRaw * galoisElts.get(j)) % (n << 1); // [Question: Why?]
+
+            for (int k = 0; k < temp.size(); k++) {
+                Ciphertext tmpctxt = temp.get(k);
+                evaluator.applyGalois(tmpctxt, galoisElts.get(j), galoisKeys, tempctxtRotated); // Sub(c_0, N/2^j + 1)
+                evaluator.add(tmpctxt, tempctxtRotated, newtemp.get(k)); // c'_k <- c_0 + Sub(c_0, N/2^j + 1)
+                multiplyPowerOfX(tmpctxt, tempctxtShifted, idnexRaw, context); // c_1 <- c_0 * x^{-2^j}
+                multiplyPowerOfX(tempctxtRotated, tempctxtRotatedshifted, index, context); //  Sub(c_1, N/2^j + 1) [Question: How does this work?]
+                evaluator.add(tempctxtShifted, tempctxtRotatedshifted, newtemp.get(k + temp.size())); // c'_{k+2^j} <- c_1 + Sub(c_1, N/2^j + 1)
+            }
+
+            temp = newtemp;
+        }
+
+        List<Ciphertext> newtemp = new ArrayList<>(temp.size() << 1);
+        for (int j = 0; j < (temp.size() << 1); j++) {
+            newtemp.add(new Ciphertext());
+        }
+        int idnexRaw = (n << 1) - (1 << (logm - 1));
+        int index = (idnexRaw * galoisElts.get(logm - 1)) % (n << 1);
+
+        for (int j = 0; j < temp.size(); j++) {
+            if (j >= (m - (1 << (logm - 1)))) {
+                evaluator.multiplyPlain(temp.get(j), two, newtemp.get(j));
+            } else {
+                evaluator.applyGalois(temp.get(j), galoisElts.get(logm - 1), galoisKeys, tempctxtRotated);
+                evaluator.add(temp.get(j), tempctxtRotated, newtemp.get(j));
+                multiplyPowerOfX(temp.get(j), tempctxtShifted, idnexRaw, context);
+                multiplyPowerOfX(tempctxtRotated, tempctxtRotatedshifted, index, context);
+                evaluator.add(tempctxtShifted, tempctxtRotatedshifted, newtemp.get(j + temp.size()));
+            }
+        }
+
+        return new ArrayList<>(newtemp.subList(0, m));
     }
 
     private static byte[] serializeEncryptionParams(EncryptionParameters params) {
@@ -376,6 +458,27 @@ public class SealStdIdxPirUtils {
                 queryi.add(queries.get(index++));
             }
             query.add(queryi);
+        }
+
+        List<Plaintext> curPTs = db;
+        List<Plaintext> intermediatePTs = new ArrayList<>();
+        int expansionRatio = computeExpansionRatio(params);
+        for (int i = 0; i < nvec.length; i++) {
+            List<Ciphertext> expandedQuery = new ArrayList<>();
+            for (int j = 0; j < query.get(i).size(); j++) {
+                int total = coeffCount;
+                if (j == query.get(i).size() - 1) {
+                    total = nvec[i] % coeffCount;
+                    if (total == 0) {
+                        total = coeffCount;
+                    }
+                }
+                List<Ciphertext> expandedQuery_j = expandQuery(params, query.get(i).get(j), galoisKeys, total);
+                expandedQuery.addAll(expandedQuery_j);
+            }
+            if (expandedQuery.size() != nvec[i]) { // [Question: Why `expandedQuery.size()` is always 0 (according to the warning)?]
+                throw new IllegalArgumentException("Size mismatch! Expected size: " + nvec.length + ", but got: " + expandedQuery.size());
+            }
         }
 
         return null;
