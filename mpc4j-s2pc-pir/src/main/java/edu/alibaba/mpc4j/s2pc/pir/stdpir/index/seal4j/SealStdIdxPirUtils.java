@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j;
 
 import edu.alibaba.mpc4j.crypto.fhe.*;
 import edu.alibaba.mpc4j.crypto.fhe.context.EncryptionParameters;
+import edu.alibaba.mpc4j.crypto.fhe.context.ParmsId;
 import edu.alibaba.mpc4j.crypto.fhe.context.SchemeType;
 import edu.alibaba.mpc4j.crypto.fhe.context.SealContext;
 import edu.alibaba.mpc4j.crypto.fhe.modulus.Modulus;
@@ -25,6 +26,65 @@ public class SealStdIdxPirUtils {
 
     private SealStdIdxPirUtils() {
         // empty
+    }
+
+    private static List<Plaintext> decomposeToPlaintexts(EncryptionParameters params, Ciphertext ct) {
+        int ptBitsPerCoeff = (int) (Math.log(params.plainModulus().value()) / Math.log(2));
+        int coeffCount = params.polyModulusDegree();
+        int coeffModCount = params.coeffModulus().length;
+        int ptBitMask = (1 << ptBitsPerCoeff) - 1;
+        List<Plaintext> result = new ArrayList<>(computeExpansionRatio(params) * ct.size());
+
+        for (int polyIndex = 0; polyIndex < ct.size(); ++polyIndex) {
+            for (int coeffModIndex = 0; coeffModIndex < coeffModCount; ++coeffModIndex) {
+                double coeffBitSize = Math.log(params.coeffModulus()[coeffModIndex].value()) / Math.log(2);
+                int localExpansionRatio = (int) (Math.ceil(coeffBitSize / ptBitsPerCoeff));
+                int shift = 0;
+                for (int i = 0; i < localExpansionRatio; ++i) {
+                    Plaintext pt  = new Plaintext(coeffCount);
+
+                    for (int c = 0; c < coeffCount; ++c) {
+                        long coeff = ct.data()[polyIndex * (coeffModIndex * coeffModCount + c)];
+                        pt.set(c, (coeff >> shift) & ptBitMask);
+                    }
+                    result.add(pt);
+                    shift += ptBitsPerCoeff;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static void composeToCiphertext(EncryptionParameters params, List<Plaintext> pts, Ciphertext ct) {
+        composeToCiphertext(params, pts, pts.size() / computeExpansionRatio(params), ct);
+    }
+
+    private static void composeToCiphertext(EncryptionParameters params, List<Plaintext> pts, int ctPolyCount, Ciphertext ct) {
+        int ptBitsPerCoeff = (int) (Math.log(params.plainModulus().value()) / Math.log(2));
+        int coeffCount = params.polyModulusDegree();
+        int coeffModCount = params.coeffModulus().length;
+
+        for (int polyIndex = 0; polyIndex < ctPolyCount; ++polyIndex) {
+            for (int coeffModIndex = 0; coeffModIndex < coeffModCount; ++coeffModIndex) {
+                double coeffBitSize = Math.log(params.coeffModulus()[coeffModIndex].value()) / Math.log(2);
+                int localExpansionRatio = (int) (Math.ceil(coeffBitSize / ptBitsPerCoeff));
+                int shift = 0;
+                int ptIndex = 0;
+                for (int i = 0; i < localExpansionRatio; ++i) {
+                    Plaintext pt  = new Plaintext(coeffCount);
+
+                    for (int c = 0; c < coeffCount; ++c) {
+                        if (shift == 0)
+                            ct.data()[polyIndex * (coeffModIndex * coeffCount + c)] = pt.get(c);
+                        else
+                            ct.data()[polyIndex * (coeffModIndex * coeffCount + c)] += (pt.get(c) << shift);
+                    }
+                    ptIndex++;
+                    shift += ptBitsPerCoeff;
+                }
+            }
+        }
     }
 
     private static long invertMod(int m, Modulus mod) {
@@ -54,10 +114,13 @@ public class SealStdIdxPirUtils {
         EncryptionParameters params = contextData.parms();
         int coeffModCount = params.coeffModulus().length;
         int coeffCount = params.polyModulusDegree();
+        int encryptedCount = encrypted.size();
         destination.copyFrom(encrypted); // [Question: Correct?]
 
-        for (int j = 0; j < coeffModCount; j++) {
-            PolyArithmeticSmallMod.negacyclicShiftPolyCoeffMod(encrypted.data(), coeffCount, index, params.coeffModulus()[j], destination.data()); // [Question: Am I doing this right?]
+        for (int i = 0; i < encryptedCount; i++) {
+            for (int j = 0; j < coeffModCount; j++) {
+                PolyArithmeticSmallMod.negacyclicShiftPolyCoeffMod(encrypted.data(), i * (j * coeffCount), coeffCount, index, params.coeffModulus()[j], destination.data(), i * (j * coeffCount)); // [Question: Correct?]
+            }
         }
     }
 
@@ -90,7 +153,7 @@ public class SealStdIdxPirUtils {
 
         for (int j = 0; j < logm - 1; j++) {
             List<Ciphertext> newtemp = new ArrayList<>(temp.size() << 1);
-            for (int j = 0; j < (temp.size() << 1); j++) {
+            for (int i = 0; i < (temp.size() << 1); i++) {
                 newtemp.add(new Ciphertext());
             }
             int idnexRaw = (n << 1) - (1 << j); // [Question: Why `2n - 2^j`? Why not just `-2^j`?]
@@ -109,21 +172,22 @@ public class SealStdIdxPirUtils {
         }
 
         List<Ciphertext> newtemp = new ArrayList<>(temp.size() << 1);
-        for (int j = 0; j < (temp.size() << 1); j++) {
+        for (int i = 0; i < (temp.size() << 1); i++) {
             newtemp.add(new Ciphertext());
         }
         int idnexRaw = (n << 1) - (1 << (logm - 1));
         int index = (idnexRaw * galoisElts.get(logm - 1)) % (n << 1);
 
-        for (int j = 0; j < temp.size(); j++) {
-            if (j >= (m - (1 << (logm - 1)))) {
-                evaluator.multiplyPlain(temp.get(j), two, newtemp.get(j));
+        for (int k = 0; k < temp.size(); k++) {
+            Ciphertext tmpctxt = temp.get(k);
+            if (k >= (m - (1 << (logm - 1)))) {
+                evaluator.multiplyPlain(tmpctxt, two, newtemp.get(k)); // [Question: Why?]
             } else {
-                evaluator.applyGalois(temp.get(j), galoisElts.get(logm - 1), galoisKeys, tempctxtRotated);
-                evaluator.add(temp.get(j), tempctxtRotated, newtemp.get(j));
-                multiplyPowerOfX(temp.get(j), tempctxtShifted, idnexRaw, context);
+                evaluator.applyGalois(tmpctxt, galoisElts.get(logm - 1), galoisKeys, tempctxtRotated);
+                evaluator.add(tmpctxt, tempctxtRotated, newtemp.get(k));
+                multiplyPowerOfX(tmpctxt, tempctxtShifted, idnexRaw, context);
                 multiplyPowerOfX(tempctxtRotated, tempctxtRotatedshifted, index, context);
-                evaluator.add(tempctxtShifted, tempctxtRotatedshifted, newtemp.get(j + temp.size()));
+                evaluator.add(tempctxtShifted, tempctxtRotatedshifted, newtemp.get(k + temp.size()));
             }
         }
 
@@ -218,6 +282,17 @@ public class SealStdIdxPirUtils {
         return gk;
     }
 
+    private static byte[] serializeCiphertext(Ciphertext ciphertext) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            ciphertext.save(outputStream, Serialization.COMPR_MODE_DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return outputStream.toByteArray();
+    }
+
     private static byte[] serializeCiphertext(SealSerializable<Ciphertext> ciphertext) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
@@ -240,15 +315,31 @@ public class SealStdIdxPirUtils {
         return ct;
     }
 
-    private static List<byte[]> serializeCiphertexts(List<SealSerializable<Ciphertext>> ciphertexts) {
+    private static <T> List<byte[]> serializeCiphertexts(List<T> ciphertexts) {
         List<byte[]> list = new ArrayList<>();
-        for (SealSerializable<Ciphertext> ciphertext : ciphertexts) {
-            byte[] bytes = serializeCiphertext(ciphertext);
+        for (T ciphertext : ciphertexts) {
+            byte[] bytes;
+            if (ciphertext instanceof Ciphertext)
+                bytes = serializeCiphertext((Ciphertext) ciphertext);
+            else if (ciphertext instanceof SealSerializable)
+                bytes = serializeCiphertext((SealSerializable<Ciphertext>) ciphertext);
+            else {
+                throw  new IllegalArgumentException("Unsupported type");
+            }
             list.add(bytes);
         }
-
         return list;
     }
+
+//    private static List<byte[]> serializeCiphertexts(List<Ciphertext> ciphertexts) {
+//        List<byte[]> list = new ArrayList<>();
+//        for (Ciphertext ciphertext : ciphertexts) {
+//            byte[] bytes = serializeCiphertext(ciphertext);
+//            list.add(bytes);
+//        }
+//
+//        return list;
+//    }
 
     private static List<Ciphertext> deserializeCiphertexts(List<byte[]> ciphertextList, SealContext context) {
         List<Ciphertext> ciphertexts = new ArrayList<>();
@@ -449,18 +540,18 @@ public class SealStdIdxPirUtils {
         int coeffCount = params.polyModulusDegree();
 
         int index = 0;
-        int product = 1; // What is the `product` for?
+        int product = 1; // [Question: What is the `product` for?]
         for (int n : nvec) {
             int numPtxts = (int) Math.ceil((n + 0.0) / coeffCount);
             List<Ciphertext> queryi = new ArrayList<>();
-            product *= n;
+            product = product * n;
             for (int j = 0; j < numPtxts; j++) {
                 queryi.add(queries.get(index++));
             }
             query.add(queryi);
         }
 
-        List<Plaintext> curPTs = db;
+        List<Plaintext> curPTs = List.copyOf(db); // [Question: Correct?]
         List<Plaintext> intermediatePTs = new ArrayList<>();
         int expansionRatio = computeExpansionRatio(params);
         for (int i = 0; i < nvec.length; i++) {
@@ -475,13 +566,49 @@ public class SealStdIdxPirUtils {
                 }
                 List<Ciphertext> expandedQuery_j = expandQuery(params, query.get(i).get(j), galoisKeys, total);
                 expandedQuery.addAll(expandedQuery_j);
+                expandedQuery_j.clear(); // [Question: Correct?]
             }
-            if (expandedQuery.size() != nvec[i]) { // [Question: Why `expandedQuery.size()` is always 0 (according to the warning)?]
+            if (expandedQuery.size() != nvec[i]) {
                 throw new IllegalArgumentException("Size mismatch! Expected size: " + nvec.length + ", but got: " + expandedQuery.size());
             }
+            for (Ciphertext c : expandedQuery) {
+                evaluator.transformToNttInplace(c);
+            }
+            if (i > 0) {
+                for (Plaintext p : curPTs) {
+                    evaluator.transformToNttInplace(p, context.firstParmsId());
+                }
+            }
+            product /= nvec[i];
+            List<Ciphertext> intermediateCiphertexts = new ArrayList<>();
+            for (int j = 0; j < product; j++) {
+                intermediateCiphertexts.add(new Ciphertext());
+            }
+            Ciphertext temp = new Ciphertext();
+            for (int j = 0; j < product; j++) {
+                evaluator.multiplyPlain(expandedQuery.getFirst(), curPTs.get(j), intermediateCiphertexts.get(j));
+                for (int k = 0; k < nvec[i]; k++) {
+                    evaluator.multiplyPlain(expandedQuery.get(k), curPTs.get(k + j * product), temp);
+                    evaluator.addInplace(intermediateCiphertexts.get(j), temp);
+                }
+            }
+            for (Ciphertext intermediateCiphertext : intermediateCiphertexts) {
+                evaluator.transformToNttInplace(intermediateCiphertext);
+            }
+            if (i == nvec.length - 1) {
+                return  serializeCiphertexts(intermediateCiphertexts);
+            } else {
+                intermediatePTs.clear();
+                intermediatePTs = new ArrayList<>(expansionRatio * product);
+                for (int rr = 0; rr < product; rr++) {
+                    evaluator.modSwitchToInplace(intermediateCiphertexts.get(rr), context.lastParmsId());
+                    List<Plaintext> plains = decomposeToPlaintexts(context.lastContextData().parms(), intermediateCiphertexts.get(rr));
+                    intermediatePTs.addAll(plains);
+                }
+                product = intermediatePTs.size();
+            }
         }
-
-        return null;
+        throw new RuntimeException("Generate response failed!");
     }
 
     /**
@@ -494,7 +621,49 @@ public class SealStdIdxPirUtils {
      * @return BFV plaintext.
      */
     static long[] decryptReply(byte[] encryptionParams, byte[] secretKey, List<byte[]> response, int dimension) {
-        return null;
+        EncryptionParameters params = deserializeEncryptionParams(encryptionParams);
+        SealContext context = new SealContext(params);
+        SecretKey sk = deserializeSecretKey(secretKey, context);
+        Decryptor decryptor = new Decryptor(context, sk);
+        params = context.lastContextData().parms();
+        ParmsId parmsId = context.lastParmsId();
+        int expRatio = computeExpansionRatio(params);
+        int recursionLevel = dimension;
+        List<Ciphertext> temp = deserializeCiphertexts(response, context);
+        int ciphertextSize = temp.size();
+        for (int i = 0; i < recursionLevel; i++) {
+            List<Ciphertext> newtemp = new ArrayList<>();
+            List<Plaintext> tempplain = new ArrayList<>();
+            for (int j = 0; j < temp.size(); j++) {
+                Plaintext ptxt = new Plaintext();
+                decryptor.decrypt(temp.get(i), ptxt);
+                tempplain.add(ptxt);
+                if ((j + 1) % (expRatio * ciphertextSize) == 0 && j > 0) {
+                    Ciphertext combined = new Ciphertext(context, parmsId);
+                    composeToCiphertext(params, tempplain, combined);
+                    newtemp.add(combined);
+                    tempplain.clear();
+                }
+            }
+            if (i == recursionLevel - 1) {
+                if (temp.size() != 1) {
+                    throw new RuntimeException("Decode response failed!");
+                }
+
+                Plaintext firstPlain = tempplain.getFirst();
+                long[] coeffArray = new long[firstPlain.coeffCount()];
+
+                for (int ii = 0; ii < firstPlain.coeffCount(); ii++) {
+                    coeffArray[ii] = firstPlain.get(ii);
+                }
+
+                return  coeffArray;
+            } else {
+                tempplain.clear();
+                temp = newtemp;
+            }
+        }
+        throw new RuntimeException("Generate response failed!");
     }
 
     /**
