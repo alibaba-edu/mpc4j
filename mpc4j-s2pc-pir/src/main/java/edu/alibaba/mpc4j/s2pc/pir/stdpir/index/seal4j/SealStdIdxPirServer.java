@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirPtoDesc.PtoStep;
-import static edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirPtoDesc.getInstance;
+import static edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.SealStdIdxPirPtoDesc.PtoStep;
+import static edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.SealStdIdxPirPtoDesc.getInstance;
 
 /**
  * SEAL PIR server.

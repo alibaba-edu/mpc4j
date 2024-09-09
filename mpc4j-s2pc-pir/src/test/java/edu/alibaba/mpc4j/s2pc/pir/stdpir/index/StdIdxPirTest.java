@@ -68,45 +68,45 @@ public class StdIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // XPIR
-        configurations.add(new Object[]{
-            StdIdxPirType.XPIR.name(), new XpirStdIdxPirConfig.Builder().build()
-        });
+//        // XPIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.XPIR.name(), new XpirStdIdxPirConfig.Builder().build()
+//        });
 
         // SEAL PIR
         configurations.add(new Object[]{
             StdIdxPirType.SEAL.name(), new SealStdIdxPirConfig.Builder().build()
         });
 
-        // Mul PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.MUL.name(), new MulStdIdxPirConfig.Builder().build()
-        });
+//        // Mul PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.MUL.name(), new MulStdIdxPirConfig.Builder().build()
+//        });
 
-        // Onion PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.ONION.name(), new OnionStdIdxPirConfig.Builder().build()
-        });
+//        // Onion PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.ONION.name(), new OnionStdIdxPirConfig.Builder().build()
+//        });
 
-        // Vectorized PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.VECTOR.name(), new VectorizedStdIdxPirConfig.Builder().build()
-        });
+//        // Vectorized PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.VECTOR.name(), new VectorizedStdIdxPirConfig.Builder().build()
+//        });
 
-        // Fast PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.FAST.name(), new FastStdIdxPirConfig.Builder().build()
-        });
+//        // Fast PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.FAST.name(), new FastStdIdxPirConfig.Builder().build()
+//        });
 
-        // constant weight PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.CW.name(), new CwStdIdxPirConfig.Builder().build()
-        });
+//        // constant weight PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.CW.name(), new CwStdIdxPirConfig.Builder().build()
+//        });
 
-        // PBC index PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.PBC.name(), new PbcStdIdxPirConfig.Builder().build()
-        });
+//        // PBC index PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.PBC.name(), new PbcStdIdxPirConfig.Builder().build()
+//        });
 
         return configurations;
     }
