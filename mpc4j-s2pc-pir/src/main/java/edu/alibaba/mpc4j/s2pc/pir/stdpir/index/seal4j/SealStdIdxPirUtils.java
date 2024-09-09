@@ -24,6 +24,8 @@ import java.util.List;
  */
 public class SealStdIdxPirUtils {
 
+    private static SealContext sealContext;
+
     private SealStdIdxPirUtils() {
         // empty
     }
@@ -208,7 +210,7 @@ public class SealStdIdxPirUtils {
     private static EncryptionParameters deserializeEncryptionParams(byte[] paramsBytes) {
         EncryptionParameters params = new EncryptionParameters();
         try {
-            params.load(null, paramsBytes);
+            params.load(sealContext, paramsBytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -417,6 +419,8 @@ public class SealStdIdxPirUtils {
         EncryptionParameters params = new EncryptionParameters(SchemeType.BFV);
         params.setPolyModulusDegree(polyModulusDegree);
         params.setPlainModulus(plainModulus);
+
+        sealContext = new SealContext(params);
 
         return serializeEncryptionParams(params);
     }
