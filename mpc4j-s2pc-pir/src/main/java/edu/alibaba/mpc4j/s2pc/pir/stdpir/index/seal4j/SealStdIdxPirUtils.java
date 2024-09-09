@@ -672,7 +672,7 @@ public class SealStdIdxPirUtils {
      * @param encryptionParams encryption params.
      * @return expansion ratio.
      */
-    static int expansionRatio(byte[] encryptionParams) {
+    static int expansionRatio(byte[] encryptionParams) { // [Question: Which one should I pass, `EncryptionParams` vs `byte[]`?
         EncryptionParameters params = deserializeEncryptionParams(encryptionParams);
         SealContext context = new SealContext(params);
 
