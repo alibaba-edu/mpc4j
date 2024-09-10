@@ -5,6 +5,7 @@ import edu.alibaba.mpc4j.crypto.fhe.context.EncryptionParameters;
 import edu.alibaba.mpc4j.crypto.fhe.context.ParmsId;
 import edu.alibaba.mpc4j.crypto.fhe.context.SchemeType;
 import edu.alibaba.mpc4j.crypto.fhe.context.SealContext;
+import edu.alibaba.mpc4j.crypto.fhe.modulus.CoeffModulus;
 import edu.alibaba.mpc4j.crypto.fhe.modulus.Modulus;
 import edu.alibaba.mpc4j.crypto.fhe.rq.PolyArithmeticSmallMod;
 import edu.alibaba.mpc4j.crypto.fhe.serialization.SealSerializable;
@@ -23,8 +24,6 @@ import java.util.List;
  * @date   9/4/2024
  */
 public class SealStdIdxPirUtils {
-
-    private static SealContext sealContext;
 
     private SealStdIdxPirUtils() {
         // empty
@@ -143,8 +142,10 @@ public class SealStdIdxPirUtils {
             throw new IllegalArgumentException("m > n is not allowed.");
         }
 
-        for (int i = 0; i < logn; i++) {
-            galoisElts.add((n + (1 << i)) / (1 << i)); // [Question: Is there an equivalent to `seal::util::exponentiate_uint(2, i)`.]
+        for (int j = 0; j < logn; j++) {
+            galoisElts.add((n + (1 << j)) / (1 << j)); // [Question: Is there an equivalent to `seal::util::exponentiate_uint(2, j)`.]
+            System.out.println(galoisElts.get(j));
+            System.out.println(galoisKeys.hasKey(galoisElts.get(j)));
         }
 
         List<Ciphertext> temp = new ArrayList<>();
@@ -155,39 +156,39 @@ public class SealStdIdxPirUtils {
 
         for (int j = 0; j < logm - 1; j++) {
             List<Ciphertext> newtemp = new ArrayList<>(temp.size() << 1);
-            for (int i = 0; i < (temp.size() << 1); i++) {
+            for (int k = 0; k < (temp.size() << 1); k++) {
                 newtemp.add(new Ciphertext());
             }
-            int idnexRaw = (n << 1) - (1 << j); // [Question: Why `2n - 2^j`? Why not just `-2^j`?]
-            int index = (idnexRaw * galoisElts.get(j)) % (n << 1); // [Question: Why?]
+            int indexRaw = (n << 1) - (1 << j); // [Question: Why `2n - 2^j`? Why not just `-2^j`?]
+            int index = (indexRaw * galoisElts.get(j)) % (n << 1); // [Question: Why?]
 
             for (int k = 0; k < temp.size(); k++) {
                 Ciphertext tmpctxt = temp.get(k);
                 evaluator.applyGalois(tmpctxt, galoisElts.get(j), galoisKeys, tempctxtRotated); // Sub(c_0, N/2^j + 1)
                 evaluator.add(tmpctxt, tempctxtRotated, newtemp.get(k)); // c'_k <- c_0 + Sub(c_0, N/2^j + 1)
-                multiplyPowerOfX(tmpctxt, tempctxtShifted, idnexRaw, context); // c_1 <- c_0 * x^{-2^j}
+                multiplyPowerOfX(tmpctxt, tempctxtShifted, indexRaw, context); // c_1 <- c_0 * x^{-2^j}
                 multiplyPowerOfX(tempctxtRotated, tempctxtRotatedshifted, index, context); //  Sub(c_1, N/2^j + 1) [Question: How does this work?]
                 evaluator.add(tempctxtShifted, tempctxtRotatedshifted, newtemp.get(k + temp.size())); // c'_{k+2^j} <- c_1 + Sub(c_1, N/2^j + 1)
             }
 
             temp = newtemp;
         }
-
+        // Last step of the loop
         List<Ciphertext> newtemp = new ArrayList<>(temp.size() << 1);
-        for (int i = 0; i < (temp.size() << 1); i++) {
+        for (int k = 0; k < (temp.size() << 1); k++) {
             newtemp.add(new Ciphertext());
         }
-        int idnexRaw = (n << 1) - (1 << (logm - 1));
-        int index = (idnexRaw * galoisElts.get(logm - 1)) % (n << 1);
+        int indexRaw = (n << 1) - (1 << (logm - 1));
+        int index = (indexRaw * galoisElts.get(logm - 1)) % (n << 1);
 
         for (int k = 0; k < temp.size(); k++) {
             Ciphertext tmpctxt = temp.get(k);
             if (k >= (m - (1 << (logm - 1)))) {
-                evaluator.multiplyPlain(tmpctxt, two, newtemp.get(k)); // [Question: Why?]
+                evaluator.multiplyPlain(tmpctxt, two, newtemp.get(k)); // Plain multiplication by 2 [Question: Why?]
             } else {
                 evaluator.applyGalois(tmpctxt, galoisElts.get(logm - 1), galoisKeys, tempctxtRotated);
                 evaluator.add(tmpctxt, tempctxtRotated, newtemp.get(k));
-                multiplyPowerOfX(tmpctxt, tempctxtShifted, idnexRaw, context);
+                multiplyPowerOfX(tmpctxt, tempctxtShifted, indexRaw, context);
                 multiplyPowerOfX(tempctxtRotated, tempctxtRotatedshifted, index, context);
                 evaluator.add(tempctxtShifted, tempctxtRotatedshifted, newtemp.get(k + temp.size()));
             }
@@ -210,7 +211,7 @@ public class SealStdIdxPirUtils {
     private static EncryptionParameters deserializeEncryptionParams(byte[] paramsBytes) {
         EncryptionParameters params = new EncryptionParameters();
         try {
-            params.load(sealContext, paramsBytes);
+            params.load(null, paramsBytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -419,8 +420,7 @@ public class SealStdIdxPirUtils {
         EncryptionParameters params = new EncryptionParameters(SchemeType.BFV);
         params.setPolyModulusDegree(polyModulusDegree);
         params.setPlainModulus(plainModulus);
-
-        sealContext = new SealContext(params);
+        params.setCoeffModulus(CoeffModulus.bfvDefault(polyModulusDegree, CoeffModulus.SecLevelType.TC128));
 
         return serializeEncryptionParams(params);
     }
@@ -540,7 +540,7 @@ public class SealStdIdxPirUtils {
         GaloisKeys galoisKeys = deserializeGaloisKeys(galoisKey, context);
         List<Plaintext> db = deserializePlaintextsArray(database, context);
         List<Ciphertext> queries = deserializeCiphertexts(queryList, context);
-        List<List<Ciphertext>> query = new ArrayList<>();
+        List<List<Ciphertext>> queries_processed = new ArrayList<>();
         int coeffCount = params.polyModulusDegree();
 
         int index = 0;
@@ -552,28 +552,29 @@ public class SealStdIdxPirUtils {
             for (int j = 0; j < numPtxts; j++) {
                 queryi.add(queries.get(index++));
             }
-            query.add(queryi);
+            queries_processed.add(queryi);
         }
 
-        List<Plaintext> curPTs = List.copyOf(db); // [Question: Correct?]
+        List<Plaintext> curPTs = db;
         List<Plaintext> intermediatePTs = new ArrayList<>();
         int expansionRatio = computeExpansionRatio(params);
         for (int i = 0; i < nvec.length; i++) {
             List<Ciphertext> expandedQuery = new ArrayList<>();
-            for (int j = 0; j < query.get(i).size(); j++) {
+            for (int j = 0; j < queries_processed.get(i).size(); j++) {
                 int total = coeffCount;
-                if (j == query.get(i).size() - 1) {
+                if (j == queries_processed.get(i).size() - 1) {
                     total = nvec[i] % coeffCount;
                     if (total == 0) {
                         total = coeffCount;
                     }
                 }
-                List<Ciphertext> expandedQuery_j = expandQuery(params, query.get(i).get(j), galoisKeys, total);
+                List<Ciphertext> expandedQuery_j = expandQuery(params, queries_processed.get(i).get(j), galoisKeys, total);
                 expandedQuery.addAll(expandedQuery_j);
-                expandedQuery_j.clear(); // [Question: Correct?]
+                expandedQuery_j.clear();
             }
+            // [Start from here...]
             if (expandedQuery.size() != nvec[i]) {
-                throw new IllegalArgumentException("Size mismatch! Expected size: " + nvec.length + ", but got: " + expandedQuery.size());
+                throw new IllegalArgumentException("Size mismatch! Expected size: " + nvec[i] + ", but got: " + expandedQuery.size());
             }
             for (Ciphertext c : expandedQuery) {
                 evaluator.transformToNttInplace(c);

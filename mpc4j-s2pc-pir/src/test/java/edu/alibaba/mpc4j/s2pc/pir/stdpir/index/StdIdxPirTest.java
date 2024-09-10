@@ -75,7 +75,7 @@ public class StdIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
 
         // SEAL PIR
         configurations.add(new Object[]{
-            StdIdxPirType.SEAL.name(), new SealStdIdxPirConfig.Builder().build()
+                StdIdxPirType.SEAL.name(), new SealStdIdxPirConfig.Builder().build()
         });
 
 //        // Mul PIR
