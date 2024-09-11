@@ -143,7 +143,7 @@ public class SealStdIdxPirUtils {
         }
 
         for (int j = 0; j < logn; j++) {
-            galoisElts.add((n + (1 << j)) / (1 << j)); // [Question: Is there an equivalent to `seal::util::exponentiate_uint(2, j)`.]
+            galoisElts.add((n + (1 << j)) / (1 << j));
             System.out.println(galoisElts.get(j));
             System.out.println(galoisKeys.hasKey(galoisElts.get(j)));
         }
