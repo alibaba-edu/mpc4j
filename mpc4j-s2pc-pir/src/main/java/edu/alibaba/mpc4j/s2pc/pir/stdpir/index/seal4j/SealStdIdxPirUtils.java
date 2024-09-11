@@ -144,8 +144,6 @@ public class SealStdIdxPirUtils {
 
         for (int j = 0; j < logn; j++) {
             galoisElts.add((n + (1 << j)) / (1 << j));
-            System.out.println(galoisElts.get(j));
-            System.out.println(galoisKeys.hasKey(galoisElts.get(j)));
         }
 
         List<Ciphertext> temp = new ArrayList<>();
@@ -167,7 +165,7 @@ public class SealStdIdxPirUtils {
                 evaluator.applyGalois(tmpctxt, galoisElts.get(j), galoisKeys, tempctxtRotated); // Sub(c_0, N/2^j + 1)
                 evaluator.add(tmpctxt, tempctxtRotated, newtemp.get(k)); // c'_k <- c_0 + Sub(c_0, N/2^j + 1)
                 multiplyPowerOfX(tmpctxt, tempctxtShifted, indexRaw, context); // c_1 <- c_0 * x^{-2^j}
-                multiplyPowerOfX(tempctxtRotated, tempctxtRotatedshifted, index, context); //  Sub(c_1, N/2^j + 1) [Question: How does this work?]
+                multiplyPowerOfX(tempctxtRotated, tempctxtRotatedshifted, index, context); // Sub(c_1, N/2^j + 1) [Question: How does this work?]
                 evaluator.add(tempctxtShifted, tempctxtRotatedshifted, newtemp.get(k + temp.size())); // c'_{k+2^j} <- c_1 + Sub(c_1, N/2^j + 1)
             }
 
@@ -591,7 +589,7 @@ public class SealStdIdxPirUtils {
                 }
             }
             product /= nvec[i];
-            List<Ciphertext> intermediateCiphertexts = new ArrayList<>();
+            List<Ciphertext> intermediateCiphertexts = new ArrayList<>(product);
             for (int j = 0; j < product; j++) {
                 intermediateCiphertexts.add(new Ciphertext());
             }
@@ -604,13 +602,14 @@ public class SealStdIdxPirUtils {
                 }
             }
             for (Ciphertext intermediateCiphertext : intermediateCiphertexts) {
-                evaluator.transformToNttInplace(intermediateCiphertext);
+                evaluator.transformFromNttInplace(intermediateCiphertext);
             }
             if (i == nvec.length - 1) {
                 return  serializeCiphertexts(intermediateCiphertexts);
             } else {
                 intermediatePTs.clear();
                 intermediatePTs = new ArrayList<>(expansionRatio * product);
+                curPTs = intermediatePTs;
                 for (int rr = 0; rr < product; rr++) {
                     evaluator.modSwitchToInplace(intermediateCiphertexts.get(rr), context.lastParmsId());
                     List<Plaintext> plains = decomposeToPlaintexts(context.lastContextData().parms(), intermediateCiphertexts.get(rr));
@@ -683,7 +682,7 @@ public class SealStdIdxPirUtils {
      * @param encryptionParams encryption params.
      * @return expansion ratio.
      */
-    static int expansionRatio(byte[] encryptionParams) { // [Question: Which one should I pass, `EncryptionParams` vs `byte[]`?
+    static int expansionRatio(byte[] encryptionParams) {
         EncryptionParameters params = deserializeEncryptionParams(encryptionParams);
         SealContext context = new SealContext(params);
 
