@@ -440,7 +440,13 @@ public class SealStdIdxPirUtils {
         PublicKey pk = new PublicKey();
         keygen.createPublicKey(pk); // [Question: Should this be `SealSerializable`?]
 
-        SealSerializable<GaloisKeys> gk = keygen.createStepGaloisKeys();
+        int n = params.polyModulusDegree();
+        int logn = (int) Math.ceil(Math.log(n) / Math.log(2));
+        int[] galoisElts = new int[logn];
+        for (int j = 0; j < logn; j++) {
+            galoisElts[j] = (n + (1 << j)) / (1 << j);
+        }
+        SealSerializable<GaloisKeys> gk = keygen.createGaloisKeys(galoisElts);
 
         byte[] pkByte = serializePublicKey(pk);
         byte[] skByte = serializeSecretKey(sk);
