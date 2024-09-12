@@ -3,6 +3,8 @@ package edu.alibaba.mpc4j.s2pc.pir.stdpir.index.params;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirClientThread;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirServerThread;
@@ -18,6 +20,7 @@ import org.junit.runners.Parameterized;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 /**
  * SEAL PIR params test.
@@ -107,6 +110,13 @@ public class SealPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
     }
 
     public void testPto(int l, boolean parallel) {
+
+//        IntStream.range(0, rows)
+//                .mapToObj(index -> BitVectorFactory.createRandom(l, secureRandom))
+//                .toArray(BitVector[]::new);
+
+//        BitVector[] data =
+
         NaiveDatabase database = NaiveDatabase.createRandom(l, n, secureRandom);
         SealStdIdxPirServer server = new SealStdIdxPirServer(firstRpc, secondRpc.ownParty(), config);
         SealStdIdxPirClient client = new SealStdIdxPirClient(secondRpc, firstRpc.ownParty(), config);
