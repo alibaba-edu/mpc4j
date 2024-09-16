@@ -45,7 +45,7 @@ public class SealStdIdxPirUtils {
                     Plaintext pt  = new Plaintext(coeffCount);
 
                     for (int c = 0; c < coeffCount; ++c) {
-                        long coeff = ct.data()[polyIndex * (coeffModIndex * coeffModCount + c)];
+                        long coeff = ct.data()[polyIndex * (coeffModIndex * coeffModCount + c)]; // [Question: Correct?]
                         pt.set(c, (coeff >> shift) & ptBitMask);
                     }
                     result.add(pt);
@@ -65,7 +65,7 @@ public class SealStdIdxPirUtils {
         int ptBitsPerCoeff = (int) (Math.log(params.plainModulus().value()) / Math.log(2));
         int coeffCount = params.polyModulusDegree();
         int coeffModCount = params.coeffModulus().length;
-
+        ct.resize(ctPolyCount);
         for (int polyIndex = 0; polyIndex < ctPolyCount; ++polyIndex) {
             for (int coeffModIndex = 0; coeffModIndex < coeffModCount; ++coeffModIndex) {
                 double coeffBitSize = Math.log(params.coeffModulus()[coeffModIndex].value()) / Math.log(2);
