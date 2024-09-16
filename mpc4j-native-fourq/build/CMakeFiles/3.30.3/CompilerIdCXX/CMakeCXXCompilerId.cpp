@@ -15,13 +15,7 @@
 /* Version number components: V=Version, R=Revision, P=Patch
    Version date components:   YYYY=Year, MM=Month,   DD=Day  */
 
-#if defined(__COMO__)
-# define COMPILER_ID "Comeau"
-  /* __COMO_VERSION__ = VRR */
-# define COMPILER_VERSION_MAJOR DEC(__COMO_VERSION__ / 100)
-# define COMPILER_VERSION_MINOR DEC(__COMO_VERSION__ % 100)
-
-#elif defined(__INTEL_COMPILER) || defined(__ICC)
+#if defined(__INTEL_COMPILER) || defined(__ICC)
 # define COMPILER_ID "Intel"
 # if defined(_MSC_VER)
 #  define SIMULATE_ID "MSVC"
@@ -328,6 +322,13 @@
   # define COMPILER_VERSION_MINOR DEC(__ARMCOMPILER_VERSION/10000 % 100)
   # define COMPILER_VERSION_PATCH DEC(__ARMCOMPILER_VERSION/100   % 100)
 # define COMPILER_VERSION_INTERNAL DEC(__ARMCOMPILER_VERSION)
+
+#elif defined(__clang__) && defined(__ti__)
+# define COMPILER_ID "TIClang"
+  # define COMPILER_VERSION_MAJOR DEC(__ti_major__)
+  # define COMPILER_VERSION_MINOR DEC(__ti_minor__)
+  # define COMPILER_VERSION_PATCH DEC(__ti_patchlevel__)
+# define COMPILER_VERSION_INTERNAL DEC(__ti_version__)
 
 #elif defined(__clang__)
 # define COMPILER_ID "Clang"
@@ -664,6 +665,14 @@ char const *info_cray = "INFO" ":" "compiler_wrapper[CrayPrgEnv]";
 #  define ARCHITECTURE_ID ""
 # endif
 
+#elif defined(__clang__) && defined(__ti__)
+# if defined(__ARM_ARCH)
+#  define ARCHITECTURE_ID "Arm"
+
+# else /* unknown architecture */
+#  define ARCHITECTURE_ID ""
+# endif
+
 #elif defined(__TI_COMPILER_VERSION__)
 # if defined(__TI_ARM__)
 #  define ARCHITECTURE_ID "ARM"
@@ -797,32 +806,73 @@ char const* info_arch = "INFO" ":" "arch[" ARCHITECTURE_ID "]";
 
 
 
-#if defined(__INTEL_COMPILER) && defined(_MSVC_LANG) && _MSVC_LANG < 201403L
-#  if defined(__INTEL_CXX11_MODE__)
-#    if defined(__cpp_aggregate_nsdmi)
-#      define CXX_STD 201402L
-#    else
-#      define CXX_STD 201103L
-#    endif
+#define CXX_STD_98 199711L
+#define CXX_STD_11 201103L
+#define CXX_STD_14 201402L
+#define CXX_STD_17 201703L
+#define CXX_STD_20 202002L
+#define CXX_STD_23 202302L
+
+#if defined(__INTEL_COMPILER) && defined(_MSVC_LANG)
+#  if _MSVC_LANG > CXX_STD_17
+#    define CXX_STD _MSVC_LANG
+#  elif _MSVC_LANG == CXX_STD_17 && defined(__cpp_aggregate_paren_init)
+#    define CXX_STD CXX_STD_20
+#  elif _MSVC_LANG > CXX_STD_14 && __cplusplus > CXX_STD_17
+#    define CXX_STD CXX_STD_20
+#  elif _MSVC_LANG > CXX_STD_14
+#    define CXX_STD CXX_STD_17
+#  elif defined(__INTEL_CXX11_MODE__) && defined(__cpp_aggregate_nsdmi)
+#    define CXX_STD CXX_STD_14
+#  elif defined(__INTEL_CXX11_MODE__)
+#    define CXX_STD CXX_STD_11
 #  else
-#    define CXX_STD 199711L
+#    define CXX_STD CXX_STD_98
 #  endif
 #elif defined(_MSC_VER) && defined(_MSVC_LANG)
-#  define CXX_STD _MSVC_LANG
+#  if _MSVC_LANG > __cplusplus
+#    define CXX_STD _MSVC_LANG
+#  else
+#    define CXX_STD __cplusplus
+#  endif
+#elif defined(__NVCOMPILER)
+#  if __cplusplus == CXX_STD_17 && defined(__cpp_aggregate_paren_init)
+#    define CXX_STD CXX_STD_20
+#  else
+#    define CXX_STD __cplusplus
+#  endif
+#elif defined(__INTEL_COMPILER) || defined(__PGI)
+#  if __cplusplus == CXX_STD_11 && defined(__cpp_namespace_attributes)
+#    define CXX_STD CXX_STD_17
+#  elif __cplusplus == CXX_STD_11 && defined(__cpp_aggregate_nsdmi)
+#    define CXX_STD CXX_STD_14
+#  else
+#    define CXX_STD __cplusplus
+#  endif
+#elif (defined(__IBMCPP__) || defined(__ibmxl__)) && defined(__linux__)
+#  if __cplusplus == CXX_STD_11 && defined(__cpp_aggregate_nsdmi)
+#    define CXX_STD CXX_STD_14
+#  else
+#    define CXX_STD __cplusplus
+#  endif
+#elif __cplusplus == 1 && defined(__GXX_EXPERIMENTAL_CXX0X__)
+#  define CXX_STD CXX_STD_11
 #else
 #  define CXX_STD __cplusplus
 #endif
 
 const char* info_language_standard_default = "INFO" ":" "standard_default["
-#if CXX_STD > 202002L
+#if CXX_STD > CXX_STD_23
+  "26"
+#elif CXX_STD > CXX_STD_20
   "23"
-#elif CXX_STD > 201703L
+#elif CXX_STD > CXX_STD_17
   "20"
-#elif CXX_STD >= 201703L
+#elif CXX_STD > CXX_STD_14
   "17"
-#elif CXX_STD >= 201402L
+#elif CXX_STD > CXX_STD_11
   "14"
-#elif CXX_STD >= 201103L
+#elif CXX_STD >= CXX_STD_11
   "11"
 #else
   "98"

@@ -1,4 +1,4 @@
-/usr/local/lib/libfourq.so
+/usr/local/lib/libfourq.dylib
 /usr/local/include/fp_x64.h
 /usr/local/include/fp_arm64.h
 /usr/local/include/FourQ.h

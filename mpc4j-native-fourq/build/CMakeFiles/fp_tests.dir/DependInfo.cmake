@@ -8,8 +8,8 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/root/mpc4j/mpc4j-native-fourq/tests/fp_tests.c" "CMakeFiles/fp_tests.dir/tests/fp_tests.c.o" "gcc" "CMakeFiles/fp_tests.dir/tests/fp_tests.c.o.d"
-  "/root/mpc4j/mpc4j-native-fourq/tests/test_extras.c" "CMakeFiles/fp_tests.dir/tests/test_extras.c.o" "gcc" "CMakeFiles/fp_tests.dir/tests/test_extras.c.o.d"
+  "/Users/mehrkish/IdeaProjects/mpc4j/mpc4j-native-fourq/tests/fp_tests.c" "CMakeFiles/fp_tests.dir/tests/fp_tests.c.o" "gcc" "CMakeFiles/fp_tests.dir/tests/fp_tests.c.o.d"
+  "/Users/mehrkish/IdeaProjects/mpc4j/mpc4j-native-fourq/tests/test_extras.c" "CMakeFiles/fp_tests.dir/tests/test_extras.c.o" "gcc" "CMakeFiles/fp_tests.dir/tests/test_extras.c.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

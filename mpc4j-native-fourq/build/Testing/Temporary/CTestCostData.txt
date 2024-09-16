@@ -1,6 +1,0 @@
-crypto_tests 2 0.00044135
-ecc_tests 0 0
-fp_tests 0 0
----
-ecc_tests
-fp_tests

@@ -45,7 +45,7 @@ public class SealStdIdxPirUtils {
                     Plaintext pt  = new Plaintext(coeffCount);
 
                     for (int c = 0; c < coeffCount; ++c) {
-                        long coeff = ct.data()[polyIndex * (coeffModIndex * coeffModCount + c)];
+                        long coeff = ct.data()[ct.getPolyOffset(polyIndex) + (coeffModIndex * coeffModCount + c)]; // [Question: Correct?]
                         pt.set(c, (coeff >> shift) & ptBitMask);
                     }
                     result.add(pt);
@@ -65,21 +65,21 @@ public class SealStdIdxPirUtils {
         int ptBitsPerCoeff = (int) (Math.log(params.plainModulus().value()) / Math.log(2));
         int coeffCount = params.polyModulusDegree();
         int coeffModCount = params.coeffModulus().length;
-
+        ct.resize(ctPolyCount);
+        int ptIndex = 0;
         for (int polyIndex = 0; polyIndex < ctPolyCount; ++polyIndex) {
             for (int coeffModIndex = 0; coeffModIndex < coeffModCount; ++coeffModIndex) {
                 double coeffBitSize = Math.log(params.coeffModulus()[coeffModIndex].value()) / Math.log(2);
                 int localExpansionRatio = (int) (Math.ceil(coeffBitSize / ptBitsPerCoeff));
                 int shift = 0;
-                int ptIndex = 0;
                 for (int i = 0; i < localExpansionRatio; ++i) {
-                    Plaintext pt  = new Plaintext(coeffCount);
+                    Plaintext pt  = pts.get(ptIndex);
 
-                    for (int c = 0; c < coeffCount; ++c) {
+                    for (int c = 0; c < pt.coeffCount(); ++c) {
                         if (shift == 0)
-                            ct.data()[polyIndex * (coeffModIndex * coeffCount + c)] = pt.get(c);
+                            ct.data()[ct.getPolyOffset(polyIndex) + (coeffModIndex * coeffCount + c)] = pt.get(c);
                         else
-                            ct.data()[polyIndex * (coeffModIndex * coeffCount + c)] += (pt.get(c) << shift);
+                            ct.data()[ct.getPolyOffset(polyIndex) + (coeffModIndex * coeffCount + c)] += (pt.get(c) << shift);
                     }
                     ptIndex++;
                     shift += ptBitsPerCoeff;
@@ -119,8 +119,9 @@ public class SealStdIdxPirUtils {
         destination.copyFrom(encrypted); // [Question: Correct?]
 
         for (int i = 0; i < encryptedCount; i++) {
+            int offset = encrypted.getPolyOffset(i);
             for (int j = 0; j < coeffModCount; j++) {
-                PolyArithmeticSmallMod.negacyclicShiftPolyCoeffMod(encrypted.data(), i * (j * coeffCount), coeffCount, index, params.coeffModulus()[j], destination.data(), i * (j * coeffCount)); // [Question: Correct?]
+                PolyArithmeticSmallMod.negacyclicShiftPolyCoeffMod(encrypted.data(), offset + (j * coeffCount), coeffCount, index, params.coeffModulus()[j], destination.data(), offset + (j * coeffCount)); // [Question: Correct?]
             }
         }
     }
@@ -544,7 +545,7 @@ public class SealStdIdxPirUtils {
         GaloisKeys galoisKeys = deserializeGaloisKeys(galoisKey, context);
         List<Plaintext> db = deserializePlaintextsArray(database, context);
         List<Ciphertext> queries = deserializeCiphertexts(queryList, context);
-        List<List<Ciphertext>> queries_processed = new ArrayList<>();
+        List<List<Ciphertext>> query = new ArrayList<>();
         int coeffCount = params.polyModulusDegree();
 
         int index = 0;
@@ -556,23 +557,23 @@ public class SealStdIdxPirUtils {
             for (int j = 0; j < numPtxts; j++) {
                 queryi.add(queries.get(index++));
             }
-            queries_processed.add(queryi);
+            query.add(queryi);
         }
 
-        List<Plaintext> curPTs = db;
+        List<Plaintext> cur = db;
         List<Plaintext> intermediatePTs = new ArrayList<>();
         int expansionRatio = computeExpansionRatio(params);
         for (int i = 0; i < nvec.length; i++) {
             List<Ciphertext> expandedQuery = new ArrayList<>();
-            for (int j = 0; j < queries_processed.get(i).size(); j++) {
+            for (int j = 0; j < query.get(i).size(); j++) {
                 int total = coeffCount;
-                if (j == queries_processed.get(i).size() - 1) {
+                if (j == query.get(i).size() - 1) {
                     total = nvec[i] % coeffCount;
                     if (total == 0) {
                         total = coeffCount;
                     }
                 }
-                List<Ciphertext> expandedQuery_j = expandQuery(params, queries_processed.get(i).get(j), galoisKeys, total);
+                List<Ciphertext> expandedQuery_j = expandQuery(params, query.get(i).get(j), galoisKeys, total);
                 expandedQuery.addAll(expandedQuery_j);
                 expandedQuery_j.clear();
             }
@@ -584,7 +585,7 @@ public class SealStdIdxPirUtils {
                 evaluator.transformToNttInplace(c);
             }
             if (i > 0) {
-                for (Plaintext p : curPTs) {
+                for (Plaintext p : cur) {
                     evaluator.transformToNttInplace(p, context.firstParmsId());
                 }
             }
@@ -595,9 +596,9 @@ public class SealStdIdxPirUtils {
             }
             Ciphertext temp = new Ciphertext();
             for (int j = 0; j < product; j++) {
-                evaluator.multiplyPlain(expandedQuery.getFirst(), curPTs.get(j), intermediateCiphertexts.get(j));
-                for (int k = 0; k < nvec[i]; k++) {
-                    evaluator.multiplyPlain(expandedQuery.get(k), curPTs.get(k + j * product), temp);
+                evaluator.multiplyPlain(expandedQuery.getFirst(), cur.get(j), intermediateCiphertexts.get(j));
+                for (int k = 1; k < nvec[i]; k++) {
+                    evaluator.multiplyPlain(expandedQuery.get(k), cur.get(j + k * product), temp);
                     evaluator.addInplace(intermediateCiphertexts.get(j), temp);
                 }
             }
@@ -609,12 +610,13 @@ public class SealStdIdxPirUtils {
             } else {
                 intermediatePTs.clear();
                 intermediatePTs = new ArrayList<>(expansionRatio * product);
-                curPTs = intermediatePTs;
+                cur = intermediatePTs;
                 for (int rr = 0; rr < product; rr++) {
                     evaluator.modSwitchToInplace(intermediateCiphertexts.get(rr), context.lastParmsId());
                     List<Plaintext> plains = decomposeToPlaintexts(context.lastContextData().parms(), intermediateCiphertexts.get(rr));
                     intermediatePTs.addAll(plains);
                 }
+
                 product = intermediatePTs.size();
             }
         }
@@ -638,24 +640,24 @@ public class SealStdIdxPirUtils {
         params = context.lastContextData().parms();
         ParmsId parmsId = context.lastParmsId();
         int expRatio = computeExpansionRatio(params);
-        int recursionLevel = dimension;
         List<Ciphertext> temp = deserializeCiphertexts(response, context);
-        int ciphertextSize = temp.size();
-        for (int i = 0; i < recursionLevel; i++) {
+        int ciphertextSize = temp.getFirst().size();
+        for (int i = 0; i < dimension; i++) {
             List<Ciphertext> newtemp = new ArrayList<>();
             List<Plaintext> tempplain = new ArrayList<>();
             for (int j = 0; j < temp.size(); j++) {
                 Plaintext ptxt = new Plaintext();
-                decryptor.decrypt(temp.get(i), ptxt);
+                decryptor.decrypt(temp.get(j), ptxt);
                 tempplain.add(ptxt);
                 if ((j + 1) % (expRatio * ciphertextSize) == 0 && j > 0) {
                     Ciphertext combined = new Ciphertext(context, parmsId);
                     composeToCiphertext(params, tempplain, combined);
+                    System.out.println(combined.size());
                     newtemp.add(combined);
                     tempplain.clear();
                 }
             }
-            if (i == recursionLevel - 1) {
+            if (i == dimension - 1) {
                 if (temp.size() != 1) {
                     throw new RuntimeException("Decode response failed!");
                 }

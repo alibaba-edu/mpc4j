@@ -19,8 +19,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/fourq.dir/schnorrq.c.o.d"
   "CMakeFiles/fourq.dir/sha512/sha512.c.o"
   "CMakeFiles/fourq.dir/sha512/sha512.c.o.d"
+  "lib/libfourq.dylib"
   "lib/libfourq.pdb"
-  "lib/libfourq.so"
 )
 
 # Per-language clean rules from dependency scanning.

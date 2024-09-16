@@ -52,19 +52,19 @@ public class SealPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
                 StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (1-dimension)",
                 new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(4096, 20, 1)).build()
         });
-//        configurations.add(new Object[]{
-//                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (1-dimension)",
-//                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(8192, 20, 1)).build()
-//        });
-//        // SEAL PIR (2-dimension)
-//        configurations.add(new Object[]{
-//                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (2-dimension)",
-//                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(4096, 20, 2)).build()
-//        });
-//        configurations.add(new Object[]{
-//                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (2-dimension)",
-//                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(8192, 20, 2)).build()
-//        });
+        configurations.add(new Object[]{
+                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (1-dimension)",
+                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(8192, 20, 1)).build()
+        });
+        // SEAL PIR (2-dimension)
+        configurations.add(new Object[]{
+                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (2-dimension)",
+                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(4096, 20, 2)).build()
+        });
+        configurations.add(new Object[]{
+                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (2-dimension)",
+                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(8192, 20, 2)).build()
+        });
 
         return configurations;
     }
@@ -99,6 +99,7 @@ public class SealPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
         testPto(DEFAULT_ELEMENT_BIT_LENGTH, true);
     }
 
+    // Failed
     @Test
     public void testLargeElementSealPir() {
         testPto(LARGE_ELEMENT_BIT_LENGTH, true);
