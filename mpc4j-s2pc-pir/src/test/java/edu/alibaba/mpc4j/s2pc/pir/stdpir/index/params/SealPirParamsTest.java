@@ -114,7 +114,6 @@ public class SealPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
     }
 
     public void testPto(int l, boolean parallel) {
-
         NaiveDatabase database = NaiveDatabase.createRandom(l, n, secureRandom);
         SealStdIdxPirServer server = new SealStdIdxPirServer(firstRpc, secondRpc.ownParty(), config);
         SealStdIdxPirClient client = new SealStdIdxPirClient(secondRpc, firstRpc.ownParty(), config);

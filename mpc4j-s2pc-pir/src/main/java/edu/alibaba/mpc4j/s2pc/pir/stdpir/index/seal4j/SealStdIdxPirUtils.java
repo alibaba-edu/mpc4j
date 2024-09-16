@@ -332,17 +332,7 @@ public class SealStdIdxPirUtils {
         }
         return list;
     }
-
-//    private static List<byte[]> serializeCiphertexts(List<Ciphertext> ciphertexts) {
-//        List<byte[]> list = new ArrayList<>();
-//        for (Ciphertext ciphertext : ciphertexts) {
-//            byte[] bytes = serializeCiphertext(ciphertext);
-//            list.add(bytes);
-//        }
-//
-//        return list;
-//    }
-
+    
     private static List<Ciphertext> deserializeCiphertexts(List<byte[]> ciphertextList, SealContext context) {
         List<Ciphertext> ciphertexts = new ArrayList<>();
 
