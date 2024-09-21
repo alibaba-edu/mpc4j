@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.fast.FastStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.mul.MulStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.onion.OnionStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.pbc.PbcStdIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.Seal4jStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.xpir.XpirStdIdxPirConfig;
@@ -75,7 +76,10 @@ public class StdIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
 
         // SEAL PIR
         configurations.add(new Object[]{
-            StdIdxPirType.SEAL.name(), new SealStdIdxPirConfig.Builder().build()
+                StdIdxPirType.SEAL.name(), new SealStdIdxPirConfig.Builder().build()
+        });
+        configurations.add(new Object[]{
+                StdIdxPirType.SEAL4J.name(), new Seal4jStdIdxPirConfig.Builder().build()
         });
 
         // Mul PIR

@@ -23,6 +23,9 @@ import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.pbc.PbcStdIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.Seal4jStdIdxPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.Seal4jStdIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.Seal4jStdIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirServer;
@@ -56,6 +59,7 @@ public class StdIdxPirFactory implements PtoFactory {
          * Seal PIR
          */
         SEAL,
+        SEAL4J,
         /**
          * Onion PIR
          */
@@ -99,6 +103,9 @@ public class StdIdxPirFactory implements PtoFactory {
             case SEAL -> {
                 return new SealStdIdxPirServer(serverRpc, clientParty, (SealStdIdxPirConfig) config);
             }
+            case SEAL4J -> {
+                return new Seal4jStdIdxPirServer(serverRpc, clientParty, (Seal4jStdIdxPirConfig) config);
+            }
             case MUL -> {
                 return new MulStdIdxPirServer(serverRpc, clientParty, (MulStdIdxPirConfig) config);
             }
@@ -139,6 +146,9 @@ public class StdIdxPirFactory implements PtoFactory {
             }
             case SEAL -> {
                 return new SealStdIdxPirClient(clientRpc, serverParty, (SealStdIdxPirConfig) config);
+            }
+            case SEAL4J -> {
+                return new Seal4jStdIdxPirClient(clientRpc, serverParty, (Seal4jStdIdxPirConfig) config);
             }
             case MUL -> {
                 return new MulStdIdxPirClient(clientRpc, serverParty, (MulStdIdxPirConfig) config);
@@ -181,6 +191,9 @@ public class StdIdxPirFactory implements PtoFactory {
             case SEAL -> {
                 return new SealStdIdxPirServer(serverRpc, clientParty, (SealStdIdxPirConfig) config);
             }
+            case SEAL4J -> {
+                return new Seal4jStdIdxPirServer(serverRpc, clientParty, (Seal4jStdIdxPirConfig) config);
+            }
             case MUL -> {
                 return new MulStdIdxPirServer(serverRpc, clientParty, (MulStdIdxPirConfig) config);
             }
@@ -215,6 +228,9 @@ public class StdIdxPirFactory implements PtoFactory {
             }
             case SEAL -> {
                 return new SealStdIdxPirClient(clientRpc, serverParty, (SealStdIdxPirConfig) config);
+            }
+            case SEAL4J -> {
+                return new Seal4jStdIdxPirClient(clientRpc, serverParty, (Seal4jStdIdxPirConfig) config);
             }
             case MUL -> {
                 return new MulStdIdxPirClient(clientRpc, serverParty, (MulStdIdxPirConfig) config);

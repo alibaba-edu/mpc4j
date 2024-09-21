@@ -6,10 +6,10 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirClientThread;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirServerThread;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirClient;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirParams;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.Seal4jStdIdxPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.Seal4jStdIdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.Seal4jStdIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal4j.Seal4jStdIdxPirParams;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,7 +26,7 @@ import java.util.Collection;
  * @date 2024/7/15
  */
 @RunWith(Parameterized.class)
-public class SealPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
+public class Seal4jPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * default element bit length
      */
@@ -44,23 +44,23 @@ public class SealPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // SEAL PIR (1-dimension)
+        // SEAL4J PIR (1-dimension)
         configurations.add(new Object[]{
-                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (1-dimension)",
-                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(4096, 20, 1)).build()
+                StdIdxPirFactory.StdIdxPirType.SEAL4J.name() + " (1-dimension)",
+                new Seal4jStdIdxPirConfig.Builder().setParams(new Seal4jStdIdxPirParams(4096, 20, 1)).build()
         });
         configurations.add(new Object[]{
-                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (1-dimension)",
-                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(8192, 20, 1)).build()
+                StdIdxPirFactory.StdIdxPirType.SEAL4J.name() + " (1-dimension)",
+                new Seal4jStdIdxPirConfig.Builder().setParams(new Seal4jStdIdxPirParams(8192, 20, 1)).build()
         });
-        // SEAL PIR (2-dimension)
+        // SEAL4J PIR (2-dimension)
         configurations.add(new Object[]{
-                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (2-dimension)",
-                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(4096, 20, 2)).build()
+                StdIdxPirFactory.StdIdxPirType.SEAL4J.name() + " (2-dimension)",
+                new Seal4jStdIdxPirConfig.Builder().setParams(new Seal4jStdIdxPirParams(4096, 20, 2)).build()
         });
         configurations.add(new Object[]{
-                StdIdxPirFactory.StdIdxPirType.SEAL.name() + " (2-dimension)",
-                new SealStdIdxPirConfig.Builder().setParams(new SealStdIdxPirParams(8192, 20, 2)).build()
+                StdIdxPirFactory.StdIdxPirType.SEAL4J.name() + " (2-dimension)",
+                new Seal4jStdIdxPirConfig.Builder().setParams(new Seal4jStdIdxPirParams(8192, 20, 2)).build()
         });
 
         return configurations;
@@ -69,7 +69,7 @@ public class SealPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * config
      */
-    private final SealStdIdxPirConfig config;
+    private final Seal4jStdIdxPirConfig config;
     /**
      * database size
      */
@@ -79,7 +79,7 @@ public class SealPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
      */
     private final SecureRandom secureRandom;
 
-    public SealPirParamsTest(String name, SealStdIdxPirConfig config) {
+    public Seal4jPirParamsTest(String name, Seal4jStdIdxPirConfig config) {
         super(name);
         this.config = config;
         n = 1 << 12;
@@ -108,8 +108,8 @@ public class SealPirParamsTest extends AbstractTwoPartyMemoryRpcPto {
 
     public void testPto(int l, boolean parallel) {
         NaiveDatabase database = NaiveDatabase.createRandom(l, n, secureRandom);
-        SealStdIdxPirServer server = new SealStdIdxPirServer(firstRpc, secondRpc.ownParty(), config);
-        SealStdIdxPirClient client = new SealStdIdxPirClient(secondRpc, firstRpc.ownParty(), config);
+        Seal4jStdIdxPirServer server = new Seal4jStdIdxPirServer(firstRpc, secondRpc.ownParty(), config);
+        Seal4jStdIdxPirClient client = new Seal4jStdIdxPirClient(secondRpc, firstRpc.ownParty(), config);
         server.setParallel(parallel);
         client.setParallel(parallel);
         StdIdxPirServerThread serverThread = new StdIdxPirServerThread(server, database, 1, false);
