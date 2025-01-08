@@ -37,7 +37,6 @@ If your project uses `mpc4j` and you do not mind it appearing here, don't hesita
 
 - [DataTrust](https://dp.alibaba.com/product/datatrust) is powered by `mpc4j`. 
 - The paper ["Scalable Multi-Party Private Set Union from Multi-query Secret-shared Private membership Test"](https://eprint.iacr.org/2023/1413.pdf) was accepted by AISACRYPT 2023. We thank Xiang Liu for using LowMC parameters in `mpc4j`.
-- 
 - The paper ["Scalable and Adaptively Secure Any-Trust Distributed Key Generation and All-hands Checkpointing"](https://eprint.iacr.org/2023/1773.pdf) was accepted by CCS 2024. We thank [Hanwen Feng](https://hanwen-feng.github.io/) to use `mpc4j` for developing their prototypes.
 
 ## Academic Implementations
