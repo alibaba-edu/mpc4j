@@ -145,7 +145,6 @@ public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         int[] xs = arity3ByteFusePosition.positions(key);
         IntVector e = IntVector.createTernary(filterLength, secureRandom);
         IntVector qu = b.add(e);
-        qu.addi(e);
         for (int x : xs) {
             qu.addi(x, 1 << (Integer.SIZE - Byte.SIZE));
         }
