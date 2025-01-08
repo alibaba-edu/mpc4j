@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.network;
 
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory.PermutationNetworkType;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -35,7 +34,7 @@ public class PermutationNetworkEfficiencyTest {
     /**
      * numbers of inputs
      */
-    private static final int[] PERMUTATION_NUM_ARRAY = new int[] {1 << 12, 1 << 14, 1 << 16, 1 << 18, 1 << 20};
+    private static final int[] PERMUTATION_NUM_ARRAY = new int[]{1 << 12, 1 << 14, 1 << 16, 1 << 18, 1 << 20};
 
     @Test
     public void testEfficiency() {
@@ -47,8 +46,7 @@ public class PermutationNetworkEfficiencyTest {
 
     private void testEfficiency(int num) {
         for (PermutationNetworkType type : PermutationNetworkType.values()) {
-            int[] permutation = IntStream.range(0, num).toArray();
-            ArrayUtils.shuffle(permutation, SECURE_RANDOM);
+            int[] permutation = PermutationNetworkUtils.randomPermutation(num, SECURE_RANDOM);
 
             STOP_WATCH.start();
             PermutationNetwork<Integer> network = PermutationNetworkFactory.createInstance(type, permutation);

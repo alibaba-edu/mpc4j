@@ -68,6 +68,16 @@ public interface Ecc {
     }
 
     /**
+     * Returns the byte length of encode result
+     *
+     * @param compressed compress encoding or not.
+     * @return the byte length
+     */
+    default int getEncodeByteLen(boolean compressed) {
+        return getG().getEncoded(compressed).length;
+    }
+
+    /**
      * Returns a random EC point.
      *
      * @param secureRandom the random state.

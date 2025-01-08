@@ -96,6 +96,9 @@ public class SealStdIdxPirClient extends AbstractStdIdxPirClient implements Pbca
             );
             int plaintextSize = CommonUtils.getUnitNum(n, elementSizeOfPlaintext);
             dimensionSize = PirUtils.computeDimensionLength(plaintextSize, params.getDimension());
+            for (int j : dimensionSize) {
+                MpcAbortPreconditions.checkArgument(j <= params.getPolyModulusDegree());
+            }
             stopWatch.stop();
             long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
             stopWatch.reset();

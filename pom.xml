@@ -7,18 +7,16 @@
     <groupId>edu.alibaba</groupId>
     <artifactId>mpc4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.1.2</version>
+    <version>1.1.3-SNAPSHOT</version>
     <modules>
         <module>mpc4j-common-circuit</module>
         <module>mpc4j-common-data</module>
-        <module>mpc4j-common-jnagmp</module>
         <module>mpc4j-common-rpc</module>
         <module>mpc4j-common-sampler</module>
         <module>mpc4j-common-structure</module>
         <module>mpc4j-common-tool</module>
         <module>mpc4j-crypto-algs</module>
         <module>mpc4j-crypto-fhe</module>
-        <module>mpc4j-crypto-phe</module>
         <module>mpc4j-dp-cdp</module>
         <module>mpc4j-dp-ldp</module>
         <module>mpc4j-dp-service</module>
@@ -37,9 +35,9 @@
     </modules>
 
     <properties>
-        <!-- min JDK version is 21 since we need to use SIMD and FFM-->
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <!-- min JDK version is 17 since we need to use SIMD-->
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.test.skip>true</maven.test.skip>
@@ -126,12 +124,6 @@
                 <artifactId>differentialprivacy</artifactId>
                 <version>1.0.0</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/net.java.dev.jna/jna -->
-            <dependency>
-                <groupId>net.java.dev.jna</groupId>
-                <artifactId>jna</artifactId>
-                <version>5.11.0</version>
-            </dependency>
             <dependency>
                 <groupId>ml.dmlc</groupId>
                 <artifactId>xgboost4j_2.12</artifactId>
@@ -158,41 +150,11 @@
                 <artifactId>smile-io</artifactId>
                 <version>${smile.version}</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/org.bytedeco/openblas -->
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>openblas</artifactId>
-                <version>0.3.21-1.5.8</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>javacpp-platform</artifactId>
-                <version>1.5.8</version>
-            </dependency>
-            <!-- https://mvnrepository.com/artifact/org.bytedeco/openblas-platform -->
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>openblas-platform</artifactId>
-                <version>0.3.21-1.5.8</version>
-            </dependency>
-            <!-- https://mvnrepository.com/artifact/org.bytedeco/arpack-ng-platform -->
-            <dependency>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>arpack-ng-platform</artifactId>
-                <version>3.8.0-1.5.8</version>
-            </dependency>
-
             <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-csv -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-csv</artifactId>
                 <version>1.9.0</version>
-            </dependency>
-            <!-- https://mvnrepository.com/artifact/org.openjdk.jol/jol-core -->
-            <dependency>
-                <groupId>org.openjdk.jol</groupId>
-                <artifactId>jol-core</artifactId>
-                <version>0.16</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/org.roaringbitmap/RoaringBitmap -->
             <dependency>
@@ -223,6 +185,18 @@
                 <artifactId>opencsv</artifactId>
                 <version>5.9</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/com.carrotsearch/hppc -->
+            <dependency>
+                <groupId>com.carrotsearch</groupId>
+                <artifactId>hppc</artifactId>
+                <version>0.10.0</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.ehcache/sizeof -->
+            <dependency>
+                <groupId>org.ehcache</groupId>
+                <artifactId>sizeof</artifactId>
+                <version>0.4.4</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -237,7 +211,7 @@
                     <target>${maven.compiler.target}</target>
                     <compilerArgument>--add-modules=jdk.incubator.vector</compilerArgument>
 <!--                    if we want to introduce preview APIs like FFI, uncomment the following line-->
-<!--                    <compilerArgs>&#45;&#45;enable-preview</compilerArgs>-->
+                    <compilerArgs>--enable-preview</compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

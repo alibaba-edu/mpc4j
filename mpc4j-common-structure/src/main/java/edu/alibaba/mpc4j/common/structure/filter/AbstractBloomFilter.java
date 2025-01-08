@@ -173,12 +173,7 @@ abstract class AbstractBloomFilter<T> implements BloomFilter<T> {
     }
 
     @Override
-    public double ratio() {
-        return (double) storage.length / itemByteLength;
-    }
-
-    @Override
-    public void merge(MergeFilter<T> other) {
+    public void merge(BloomFilter<T> other) {
         Preconditions.checkArgument(this.getClass().equals(other.getClass()));
         AbstractBloomFilter<T> that = (AbstractBloomFilter<T>) other;
         // max size should be the same

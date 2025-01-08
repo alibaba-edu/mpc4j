@@ -14,6 +14,7 @@ Besides Bloom Filter, we implement some filter algorithms in `mpc4j-common-tool`
 
 - Wang, Minmei, and Mingxun Zhou. Vacuum Filters: More Space-efficient and Faster Replacement for Bloom and Cuckoo Filters. VLDB 2019.
 - Fan, Bin, Dave G. Andersen, Michael Kaminsky, and Michael D. Mitzenmacher. Cuckoo Filter: Practically Better than Bloom.  CoNEXT 2014, ACM, pp. 75-88.
+- Daniel Kales, Christian Rechberger, Thomas Schneider, Matthias Senker, and Christian Weinert. Mobile Private Contact Discovery at Scale. USENIX Security 2019, pp. 1447-1464. 2019. (This paper introduces optimizations for Cuckoo Filter)
 
 ### Cuckoo Hash
 
@@ -43,6 +44,10 @@ We implement some cryptographic tools in `mpc4j-common-tool`. We believe these t
 - Pinkas, Benny, Mike Rosulek, Ni Trieu, and Avishay Yanai. SpOT-light: Lightweight Private Set Intersection from Sparse OT Extension. CRYPTO 2019, Part III, Springer International Publishing, pp. 401-431.
 - Kolesnikov, Vladimir, Mike Rosulek, Ni Trieu, and Xiao Wang. Scalable Private Set Union from Symmetric-key Techniques. ASIACRYPT 2019, Part II, Cham: Springer International Publishing, pp. 636-666.
 
+### Indexes in Database Fields
+
+- Paolo Ferragina, and Giorgio Vinciguerra. The PGM-index: A Fully-dynamic Compressed Learned Index with Provable Worst-case Bounds. Proceedings of the VLDB Endowment 13, no. 8 (2020): 1162-1175.
+
 ## Cryptographic Primitives
 
 - Boldyreva, Alexandra, Nathan Chenette, Younho Lee, and Adam O’neill. Order-preserving symmetric encryption. EUROCRYPT 2009, pp. 224-241, 2009.
@@ -64,6 +69,7 @@ Oblivious Key-Value Storage (OKVS) is a very implement data structure abstractio
 - Rindal, Peter, and Phillipp Schoppmann. VOLE-PSI: Fast OPRF and Circuit-PSI from Vector-OLE. EUROCRYPT 2021, Part II, Cham: Springer International Publishing, pp. 901-930.
 - Pinkas, Benny, Mike Rosulek, Ni Trieu, and Avishay Yanai. PSI from PaXoS: Fast, Malicious Private Set Intersection. EUROCRYPT 2020, Part II, Cham: Springer International Publishing, pp. 739-767.
 - Pinkas, Benny, Thomas Schneider, Oleksandr Tkachenko, and Avishay Yanai. Efficient Circuit-Based PSI with Linear Communication. EUROCRYPT 2019, Part III, Springer International Publishing, pp. 122-153.
+- Thomas Mueller Graf, and Daniel Lemire. Binary Fuse Filters: Fast and Smaller than XOR Filters. Journal of Experimental Algorithmics (JEA) 27, no. 1 (2022): 1-15. We note that Binary Fuse FIlters can be seen as a special case of OKVS.
 
 ## Frequency Oracle with Local Differential Privacy
 
@@ -152,6 +158,7 @@ We re-implement many index PIR schemes in `mpc4j-s2pc-pir`. We note that we lear
 - Ali, Asra, Tancrede Lepoint, Sarvar Patel, Mariana Raykova, Phillipp Schoppmann, Karn Seth, and Kevin Yeo. Communication–computation Trade-offs in PIR. USENIX Security 2021, pp. 1811-1828.
 - Mahdavi, Rasoul Akhavan, and Florian Kerschbaum. Constant-weight PIR: Single-round Keyword PIR via Constant-weight Equality Operators. USENIX Security 2022, pp. 1723-1740.
 - Henzinger, Alexandra, Matthew M. Hong, Henry Corrigan-Gibbs, Sarah Meiklejohn, and Vinod Vaikuntanathan. One Server for the Price of Two: Simple and Fast Single-server Private Information Retrieval. USENIX Security 2023.
+- Alex Davidson, Gonçalo Pestana, and Sofía Celi. FrodoPIR: Simple, Scalable, Single-server Private Information Retrieval. Proceedings on Privacy Enhancing Technologies (2023).
 
 ### Keyword PIR and Unbalanced PSI
 
@@ -161,11 +168,14 @@ We implement Keyword PIR (also known as Labeled PSI) in `mpc4j-s2pc-pir` and unb
 - Chen, Hao, Zhicong Huang, Kim Laine, and Peter Rindal. Labeled PSI from Fully Homomorphic Encryption with Malicious Security. CCS 2018, ACM, pp. 1223-1237.
 - Chen, Hao, Kim Laine, and Peter Rindal. Fast Private Set Intersection from Homomorphic Encryption. CCS 2017, ACM, pp. 1243-1255.
 - Ahmad, Ishtiyaque, Divyakant Agrawal, Amr El Abbadi, and Trinabh Gupta. Pantheon: Private Retrieval from Public Key-Value Store. VLDB 2022, pp. 643-656.
+- Sofía Celi, and Alex Davidson. Call Me By My Name: Simple, Practical Private Information Retrieval for Keyword Queries. CCS 2024, pp. 4107-4121.
 
 ### Client-preprocessing PIR
 
 - Zhou, Mingxun, Andrew Park, Elaine Shi, and Wenting Zheng. Piano: Extremely Simple, Single-Server PIR with Sublinear Server Computation. S\&P 2024.
 - Mughees, Muhammad Haris, I. Sun, and Ling Ren. Simple and Practical Amortized Sublinear Private Information Retrieval. Cryptology ePrint Archive (2023).
+- Celi, Sofía, and Alex Davidson. Call Me By My Name: Simple, Practical Private Information Retrieval for Keyword Queries. Cryptology ePrint Archive, Paper 2024/92.
+- Hoover, Alexander, Sarvar Patel, Giuseppe Persiano, and Kevin Yeo. Plinko: Single-Server PIR with Efficient Updates via Invertible PRFs. Cryptology ePrint Archive, Paper 2024/318.
 
 ## Private Set Operation
 

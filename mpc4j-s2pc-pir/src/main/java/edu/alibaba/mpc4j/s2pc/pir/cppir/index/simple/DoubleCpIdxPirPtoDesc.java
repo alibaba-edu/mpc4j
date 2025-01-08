@@ -2,14 +2,15 @@ package edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple;
 
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 /**
  * Double client-specific preprocessing index PIR protocol description. The protocol comes from the following paper:
  * <p>
  * Alexandra Henzinger, Matthew M. Hong, Henry Corrigan-Gibbs, Sarah Meiklejohn, and Vinod Vaikuntanathan.
- * One Server for the Price of Two: Simple and Fast Single-Server Private Information Retrieval.
- * To appear in 2023 USENIX Security Symposium. The implementation is based on
+ * One Server for the Price of Two: Simple and Fast Single-Server Private Information Retrieval. USENIX Security 2023.
  * </p>
+ * The implementation is based on
  * <a href="https://github.com/ahenzinger/simplepir">https://github.com/ahenzinger/simplepir</a>.
  *
  * @author Weiran Liu
@@ -78,11 +79,20 @@ class DoubleCpIdxPirPtoDesc implements PtoDesc {
     }
 
     /**
-     * the secret dimension, Section 4.2 of the paper requires n = 2^10
+     * Computes the matrix size.
+     *
+     * @param n     number of entries.
+     * @return (rows, columns).
      */
-    static final int N = 1 << 10;
-    /**
-     * error distribution: (0, σ) - discrete Gaussian distribution, Section 4.2 of the paper requires σ = 6.4,
-     */
-    static final double SIGMA = 6.4;
+    static int[] getMatrixSize(int n) {
+        MathPreconditions.checkPositive("n", n);
+        // we treat plaintext modulus as p = 2^8, so that the database can be seen as N rows and 1 columns.
+        int rows = (int) Math.ceil(Math.sqrt(n));
+        // ensure that each row can contain at least one element
+        rows = Math.max(rows, 1);
+        int columns = (int) Math.ceil((double) n / rows);
+        assert (long) rows * columns >= n;
+
+        return new int[]{rows, columns};
+    }
 }

@@ -1,13 +1,11 @@
 package edu.alibaba.mpc4j.common.tool.network.benes;
 
-import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory.PermutationNetworkType;
 import edu.alibaba.mpc4j.common.tool.network.benes.BenesNetworkFactory.BenesNetworkType;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 import java.util.Arrays;
 import java.util.Stack;
-import java.util.concurrent.ForkJoinTask;
 import java.util.stream.IntStream;
 
 /**
@@ -94,10 +92,10 @@ class JdkBenesNetwork<T> extends AbstractBenesNetwork<T> {
                 // 对应的index是不是来自于上半个网络
                 int rightFromTop = path[perms[i]];
                 rightNet[permIndex + partSrcIndex] = (byte) rightFromTop;
-                if(rightFromTop == 0){
+                if (rightFromTop == 0) {
                     subTopDests[partSrcIndex] = perms[i++] >> 1;
                     subBottomDests[partSrcIndex] = perms[i++] >> 1;
-                }else{
+                } else {
                     subBottomDests[partSrcIndex] = perms[i++] >> 1;
                     subTopDests[partSrcIndex] = perms[i++] >> 1;
                 }
@@ -106,20 +104,10 @@ class JdkBenesNetwork<T> extends AbstractBenesNetwork<T> {
             if (subN % 2 == 1) {
                 subBottomDests[subN / 2] = perms[subN - 1] >> 1;
             }
-            if (parallel && n > PermutationNetworkFactory.PARALLEL_THRESHOLD && forkJoinPool.getParallelism() - forkJoinPool.getActiveThreadCount() > 0) {
-                ForkJoinTask<?> topTask = forkJoinPool.submit(() ->
-                    genBenesRoute(subLogN - 1, levelIndex + 1, permIndex, subTopDests));
-                ForkJoinTask<?> subTask = forkJoinPool.submit(() ->
-                    genBenesRoute(subLogN - 1, levelIndex + 1, permIndex + subN / 4, subBottomDests)
-                );
-                topTask.join();
-                subTask.join();
-            } else {
-                // create top subnetwork, with (log(N) - 1) levels
-                genBenesRoute(subLogN - 1, levelIndex + 1, permIndex, subTopDests);
-                // create bottom subnetwork with (log(N) - 1) levels.
-                genBenesRoute(subLogN - 1, levelIndex + 1, permIndex + subN / 4, subBottomDests);
-            }
+            // create top subnetwork, with (log(N) - 1) levels
+            genBenesRoute(subLogN - 1, levelIndex + 1, permIndex, subTopDests);
+            // create bottom subnetwork with (log(N) - 1) levels.
+            genBenesRoute(subLogN - 1, levelIndex + 1, permIndex + subN / 4, subBottomDests);
         }
     }
 

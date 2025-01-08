@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.filter;
 
+import edu.alibaba.mpc4j.common.structure.filter.BloomFilterFactory.BloomFilterType;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
@@ -11,9 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * naive random Bloom Filter. We refer to the following implementation:
- * <p></p>
- * https://github.com/google/guava/blob/master/guava/src/com/google/common/hash/BloomFilter.java
+ * naive random Bloom Filter. We refer to the implementation
+ * <a href="https://github.com/google/guava/blob/master/guava/src/com/google/common/hash/BloomFilter.java">BloomFilter.java</a>.
  * <p></p>
  * The theory about Bloom Filter is shown in the following paper:
  * <p></p>
@@ -28,10 +28,6 @@ public class NaiveRandomBloomFilter<T> extends AbstractBloomFilter<T> {
      * When m = n log_2(e) * log_2(1/p), HASH_NUM = log_2(1/p)
      */
     private static final int HASH_NUM = CommonConstants.STATS_BIT_LENGTH;
-    /**
-     * hash key num = 1
-     */
-    static final int HASH_KEY_NUM = 1;
     /**
      * type
      */
@@ -102,6 +98,11 @@ public class NaiveRandomBloomFilter<T> extends AbstractBloomFilter<T> {
 
     NaiveRandomBloomFilter(EnvType envType, int maxSize, int m, byte[] key, int size, byte[] storage, int itemByteLength) {
         super(FILTER_TYPE, envType, maxSize, m, HASH_NUM, key, size, storage, itemByteLength);
+    }
+
+    @Override
+    public BloomFilterType getBloomFilterType() {
+        return BloomFilterType.NAIVE_RANDOM_BLOOM_FILTER;
     }
 
     @Override

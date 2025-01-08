@@ -44,13 +44,21 @@ public class FilterFactory {
          */
         DISTINCT_BLOOM_FILTER,
         /**
-         * Cuckoo Filter
+         * Naive Cuckoo Filter
          */
-        CUCKOO_FILTER,
+        NAIVE_CUCKOO_FILTER,
         /**
-         * Vacuum Filter
+         * Mobile Cuckoo Filter
          */
-        VACUUM_FILTER,
+        MOBILE_CUCKOO_FILTER,
+        /**
+         * Naive Vacuum Filter
+         */
+        NAIVE_VACUUM_FILTER,
+        /**
+         * Mobile Vacuum Filter
+         */
+        MOBILE_VACUUM_FILTER,
     }
 
     /**
@@ -60,22 +68,11 @@ public class FilterFactory {
      * @return hash key num.
      */
     public static int getHashKeyNum(FilterType type) {
-        switch (type) {
-            case SET_FILTER:
-                return SetFilter.HASH_KEY_NUM;
-            case NAIVE_RANDOM_BLOOM_FILTER:
-                return NaiveRandomBloomFilter.HASH_KEY_NUM;
-            case SPARSE_RANDOM_BLOOM_FILTER:
-                return SparseRandomBloomFilter.HASH_KEY_NUM;
-            case DISTINCT_BLOOM_FILTER:
-                return DistinctBloomFilter.HASH_KEY_NUM;
-            case CUCKOO_FILTER:
-                return CuckooFilter.HASH_KEY_NUM;
-            case VACUUM_FILTER:
-                return VacuumFilter.HASH_KEY_NUM;
-            default:
-                throw new IllegalArgumentException("Invalid " + FilterType.class.getSimpleName() + ": " + type);
-        }
+        return switch (type) {
+            case SET_FILTER -> SetFilter.HASH_KEY_NUM;
+            case NAIVE_RANDOM_BLOOM_FILTER, SPARSE_RANDOM_BLOOM_FILTER, DISTINCT_BLOOM_FILTER -> BloomFilter.getHashKeyNum();
+            case NAIVE_CUCKOO_FILTER, MOBILE_CUCKOO_FILTER, NAIVE_VACUUM_FILTER, MOBILE_VACUUM_FILTER -> CuckooFilter.getHashKeyNum();
+        };
     }
 
     /**
@@ -87,24 +84,18 @@ public class FilterFactory {
      * @param keys    keys.
      * @return an empty filter.
      */
-    public static <X> Filter<X> load(EnvType envType, FilterType type, int maxSize, byte[][] keys) {
+    public static <X> Filter<X> createFilter(EnvType envType, FilterType type, int maxSize, byte[][] keys) {
         MathPreconditions.checkEqual("keys.length", "hashNum", keys.length, getHashKeyNum(type));
-        switch (type) {
-            case SET_FILTER:
-                return SetFilter.create(maxSize);
-            case NAIVE_RANDOM_BLOOM_FILTER:
-                return NaiveRandomBloomFilter.create(envType, maxSize, keys[0]);
-            case SPARSE_RANDOM_BLOOM_FILTER:
-                return SparseRandomBloomFilter.create(envType, maxSize, keys[0]);
-            case DISTINCT_BLOOM_FILTER:
-                return DistinctBloomFilter.create(envType, maxSize, keys[0]);
-            case CUCKOO_FILTER:
-                return CuckooFilter.create(envType, maxSize, keys);
-            case VACUUM_FILTER:
-                return VacuumFilter.create(envType, maxSize, keys);
-            default:
-                throw new IllegalArgumentException("Invalid " + FilterType.class.getSimpleName() + ": " + type);
-        }
+        return switch (type) {
+            case SET_FILTER -> SetFilter.create(maxSize);
+            case NAIVE_RANDOM_BLOOM_FILTER -> NaiveRandomBloomFilter.create(envType, maxSize, keys[0]);
+            case SPARSE_RANDOM_BLOOM_FILTER -> SparseRandomBloomFilter.create(envType, maxSize, keys[0]);
+            case DISTINCT_BLOOM_FILTER -> DistinctBloomFilter.create(envType, maxSize, keys[0]);
+            case NAIVE_CUCKOO_FILTER -> NaiveCuckooFilter.create(envType, maxSize, keys);
+            case MOBILE_CUCKOO_FILTER -> MobileCuckooFilter.create(envType, maxSize, keys);
+            case NAIVE_VACUUM_FILTER -> NaiveVacuumFilter.create(envType, maxSize, keys);
+            case MOBILE_VACUUM_FILTER -> MobileVacuumFilter.create(envType, maxSize, keys);
+        };
     }
 
     /**
@@ -116,85 +107,33 @@ public class FilterFactory {
      * @param secureRandom the random state to generate keys.
      * @return an empty filter.
      */
-    public static <X> Filter<X> load(EnvType envType, FilterType type, int maxSize, SecureRandom secureRandom) {
+    public static <X> Filter<X> createFilter(EnvType envType, FilterType type, int maxSize, SecureRandom secureRandom) {
         int hashKeyNum = getHashKeyNum(type);
         byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, secureRandom);
-        return load(envType, type, maxSize, keys);
+        return createFilter(envType, type, maxSize, keys);
     }
 
-    /**
-     * Creates an empty merge filter.
-     *
-     * @param envType environment.
-     * @param type    filter type.
-     * @param maxSize max number of elements.
-     * @param keys    keys.
-     * @return an empty merge filter.
-     */
-    public static <X> MergeFilter<X> createMergeFilter(EnvType envType, FilterType type, int maxSize, byte[][] keys) {
-        MathPreconditions.checkEqual("keys.length", "hashNum", keys.length, getHashKeyNum(type));
-        switch (type) {
-            case SET_FILTER:
-                return SetFilter.create(maxSize);
-            case NAIVE_RANDOM_BLOOM_FILTER:
-                return NaiveRandomBloomFilter.create(envType, maxSize, keys[0]);
-            case SPARSE_RANDOM_BLOOM_FILTER:
-                return SparseRandomBloomFilter.create(envType, maxSize, keys[0]);
-            case DISTINCT_BLOOM_FILTER:
-                return DistinctBloomFilter.create(envType, maxSize, keys[0]);
-            default:
-                throw new IllegalArgumentException("Invalid " + FilterType.class.getSimpleName() + ": " + type);
-        }
-    }
 
     /**
-     * Creates the filter from {@code List<byte[]>}.
+     * Loads the filter from {@code List<byte[]>}.
      *
      * @param envType       environment.
      * @param byteArrayList the {@code List<byte[]>}.
      * @return the filter.
      */
-    public static <X> Filter<X> load(EnvType envType, List<byte[]> byteArrayList) {
-        Preconditions.checkArgument(byteArrayList.size() >= 1);
+    public static <X> Filter<X> loadFilter(EnvType envType, List<byte[]> byteArrayList) {
+        Preconditions.checkArgument(!byteArrayList.isEmpty());
         int filterTypeOrdinal = IntUtils.byteArrayToInt(byteArrayList.get(0));
         FilterType filterType = FilterType.values()[filterTypeOrdinal];
-        switch (filterType) {
-            case SET_FILTER:
-                return SetFilter.load(byteArrayList);
-            case NAIVE_RANDOM_BLOOM_FILTER:
-                return NaiveRandomBloomFilter.load(envType, byteArrayList);
-            case SPARSE_RANDOM_BLOOM_FILTER:
-                return SparseRandomBloomFilter.load(envType, byteArrayList);
-            case DISTINCT_BLOOM_FILTER:
-                return DistinctBloomFilter.load(envType, byteArrayList);
-            case CUCKOO_FILTER:
-                return CuckooFilter.load(envType, byteArrayList);
-            case VACUUM_FILTER:
-                return VacuumFilter.load(envType, byteArrayList);
-            default:
-                throw new IllegalArgumentException("Invalid " + FilterType.class.getSimpleName() + ": " + filterType);
-        }
-    }
-
-    /**
-     * Creates an empty bloom filter.
-     *
-     * @param envType environment.
-     * @param type    filter type.
-     * @param maxSize max number of elements.
-     * @param key     key.
-     * @return an empty bloom filter.
-     */
-    public static <X> BloomFilter<X> createBloomFilter(EnvType envType, FilterType type, int maxSize, byte[] key) {
-        switch (type) {
-            case NAIVE_RANDOM_BLOOM_FILTER:
-                return NaiveRandomBloomFilter.create(envType, maxSize, key);
-            case SPARSE_RANDOM_BLOOM_FILTER:
-                return SparseRandomBloomFilter.create(envType, maxSize, key);
-            case DISTINCT_BLOOM_FILTER:
-                return DistinctBloomFilter.create(envType, maxSize, key);
-            default:
-                throw new IllegalArgumentException("Invalid " + FilterType.class.getSimpleName() + ": " + type);
-        }
+        return switch (filterType) {
+            case SET_FILTER -> SetFilter.load(byteArrayList);
+            case NAIVE_RANDOM_BLOOM_FILTER -> NaiveRandomBloomFilter.load(envType, byteArrayList);
+            case SPARSE_RANDOM_BLOOM_FILTER -> SparseRandomBloomFilter.load(envType, byteArrayList);
+            case DISTINCT_BLOOM_FILTER -> DistinctBloomFilter.load(envType, byteArrayList);
+            case NAIVE_CUCKOO_FILTER -> NaiveCuckooFilter.load(envType, byteArrayList);
+            case MOBILE_CUCKOO_FILTER -> MobileCuckooFilter.load(envType, byteArrayList);
+            case NAIVE_VACUUM_FILTER -> NaiveVacuumFilter.load(envType, byteArrayList);
+            case MOBILE_VACUUM_FILTER -> MobileVacuumFilter.load(envType, byteArrayList);
+        };
     }
 }

@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +48,7 @@ public class EmptyPadHashBinEfficiencyTest {
 
     @Test
     public void testEfficiency() {
-        LOGGER.info("  hash_num\t    log(n)\t   data(B)\t insert(s)\t    pad(s)\t memory(B)");
+        LOGGER.info("  hash_num\t    log(n)\t insert(s)\t    pad(s)");
         testEfficiency(14);
         testEfficiency(16);
         testEfficiency(18);
@@ -59,7 +58,6 @@ public class EmptyPadHashBinEfficiencyTest {
         int n = 1 << logN;
         for (int hashNum : HASH_NUMS) {
             List<ByteBuffer> items = HashBinTestUtils.randomByteBufferItems(n);
-            long dataMemory = GraphLayout.parseInstance(items).totalSize();
             byte[][] keys = CommonUtils.generateRandomKeys(hashNum, HashBinTestUtils.SECURE_RANDOM);
             // 桶数量与元素数量一致，近似等于对应CuckooHash的要求
             EmptyPadHashBin<ByteBuffer> hashBin = new EmptyPadHashBin<>(EnvType.STANDARD, n, n, keys);
@@ -69,21 +67,17 @@ public class EmptyPadHashBinEfficiencyTest {
             STOP_WATCH.stop();
             double insertTime = (double)STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / 1000;
             STOP_WATCH.reset();
-            // bin memory
-            long binMemory = GraphLayout.parseInstance(hashBin).totalSize();
             // 填充元素
             STOP_WATCH.start();
             hashBin.insertPaddingItems(EMPTY_ITEM);
             STOP_WATCH.stop();
             double emptyPadTime = (double)STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / 1000;
             STOP_WATCH.reset();
-            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}",
+            LOGGER.info("{}\t{}\t{}\t{}",
                 StringUtils.leftPad(String.valueOf(hashNum), 10),
                 StringUtils.leftPad(NUM_DECIMAL_FORMAT.format(logN), 10),
-                StringUtils.leftPad(String.valueOf(dataMemory), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(insertTime), 10),
-                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(emptyPadTime), 10),
-                StringUtils.leftPad(String.valueOf(binMemory), 10)
+                StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(emptyPadTime), 10)
             );
         }
         LOGGER.info(StringUtils.rightPad("", 60, '-'));

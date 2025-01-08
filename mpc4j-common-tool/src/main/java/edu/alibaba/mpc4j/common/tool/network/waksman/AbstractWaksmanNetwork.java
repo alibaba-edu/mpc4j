@@ -5,7 +5,7 @@ import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 import java.util.Arrays;
 import java.util.Vector;
-import java.util.concurrent.ForkJoinPool;
+import java.util.stream.IntStream;
 
 /**
  * abstract Waksman network.
@@ -36,13 +36,17 @@ abstract class AbstractWaksmanNetwork<T> implements WaksmanNetwork<T> {
      */
     private final int[] widths;
     /**
-     * parallel
+     * whether the current permutation is programmed, which means map2SwitchIndex and map2InputIndex are not null
      */
-    protected boolean parallel = true;
+    private boolean isProgrammed = false;
     /**
-     * thread pool
+     * the index of switch, if the wire is directly linked, then the value is -1
      */
-    protected ForkJoinPool forkJoinPool;
+    private int[][] layerSwitchIndexes;
+    /**
+     * the input index of each wire
+     */
+    private int[][] fixedLayerPermutations;
 
     /**
      * Creates a Waksman network. The permutation is represented by an array. The length of the array is the number of
@@ -64,7 +68,6 @@ abstract class AbstractWaksmanNetwork<T> implements WaksmanNetwork<T> {
             Arrays.fill(network[levelIndex], (byte) -1);
         }
         widths = new int[level];
-        forkJoinPool = new ForkJoinPool(ForkJoinPool.getCommonPoolParallelism());
     }
 
     /**
@@ -89,12 +92,6 @@ abstract class AbstractWaksmanNetwork<T> implements WaksmanNetwork<T> {
         this.network = network;
         widths = new int[level];
         updateWidths();
-        forkJoinPool = new ForkJoinPool(ForkJoinPool.getCommonPoolParallelism());
-    }
-
-    @Override
-    public void setParallel(boolean parallel){
-        this.parallel = parallel;
     }
 
     protected void updateWidths() {
@@ -366,6 +363,203 @@ abstract class AbstractWaksmanNetwork<T> implements WaksmanNetwork<T> {
             T temp41 = subSrcs.elementAt(1);
             subSrcs.set(0, temp41);
             subSrcs.set(1, temp40);
+        }
+    }
+
+    @Override
+    public int[][] getFixedLayerPermutations() {
+        if (!isProgrammed) {
+            program();
+        }
+        return fixedLayerPermutations;
+    }
+
+    @Override
+    public int[][] getLayerSwitchIndexes() {
+        if (!isProgrammed) {
+            program();
+        }
+        return layerSwitchIndexes;
+    }
+
+    /**
+     * generate fixed layer permutations and layer switch indexes.
+     */
+    private void program() {
+        assert !isProgrammed && layerSwitchIndexes == null && fixedLayerPermutations == null;
+        int logN = LongUtils.ceilLog2(n);
+        layerSwitchIndexes = new int[level][n];
+        fixedLayerPermutations = new int[level][n];
+        program(logN, 0, 0, 0, IntStream.range(0, n).toArray());
+        // padding right half of the layer switch indexes
+        int halfLevel = (level + 1) / 2;
+        for (int levelIndex = halfLevel; levelIndex < level; levelIndex++) {
+            System.arraycopy(layerSwitchIndexes[level - 1 - levelIndex], 0, layerSwitchIndexes[levelIndex], 0, n);
+        }
+        isProgrammed = true;
+    }
+
+    private void program(int subLogN, int levelIndex, int switchIndex, int targetIndex, int[] sourceIndex) {
+        int subN = sourceIndex.length;
+        if (subN == 2) {
+            assert (subLogN == 1 || subLogN == 2);
+            if (subLogN == 1) {
+                programSingleLevel(levelIndex, switchIndex, targetIndex, sourceIndex);
+            } else {
+                programPadSingleLevel(levelIndex, switchIndex, targetIndex, sourceIndex);
+            }
+        } else if (subN == 3) {
+            assert subLogN == 2;
+            programTripleLevel(levelIndex, switchIndex, targetIndex, sourceIndex);
+        } else if (subN == 4) {
+            assert (subLogN == 2 || subLogN == 3);
+            if (subLogN == 2) {
+                programQuadrupleLevel(levelIndex, switchIndex, targetIndex, sourceIndex);
+            } else {
+                programPadQuadrupleLevel(levelIndex, switchIndex, targetIndex, sourceIndex);
+            }
+        } else {
+            // 输入的index就是传进来的index
+            System.arraycopy(sourceIndex, 0, fixedLayerPermutations[levelIndex], targetIndex, subN);
+            int subLevel = 2 * subLogN - 1;
+            int subTopN = subN / 2;
+            int subBottomN = subN - subTopN;
+            int[] subTopIndex = new int[subTopN];
+            int[] subBottomIndex = new int[subBottomN];
+            for (int i = 0; i < subTopN; i++) {
+                int evenIndex = targetIndex + 2 * i;
+                int oddIndex = evenIndex + 1;
+                subTopIndex[i] = evenIndex;
+                subBottomIndex[i] = oddIndex;
+                layerSwitchIndexes[levelIndex][evenIndex] = switchIndex + i;
+                layerSwitchIndexes[levelIndex][oddIndex] = switchIndex + i;
+            }
+            // add more gate for the bottom subnetwork with an odd number of inputs.
+            if (subN % 2 == 1) {
+                int lastIndex = targetIndex + subN - 1;
+                subBottomIndex[subBottomN - 1] = lastIndex;
+                layerSwitchIndexes[levelIndex][lastIndex] = -1;
+                fixedLayerPermutations[levelIndex][lastIndex] = sourceIndex[subN - 1];
+            }
+            // iteratively evaluate the middle network
+            // the input array are odd number and even number of this range [targetIndex, targetIndex + subN)
+            program(subLogN - 1, levelIndex + 1, switchIndex, targetIndex, subTopIndex);
+            program(subLogN - 1, levelIndex + 1, switchIndex + subN / 4, targetIndex + subTopN, subBottomIndex);
+            // evaluate right-part of the network
+            int rightLevel = levelIndex + subLevel - 1;
+            for (int i = 0; i < subTopN; i++) {
+                int evenIndex = targetIndex + 2 * i;
+                int oddIndex = evenIndex + 1;
+                fixedLayerPermutations[rightLevel][evenIndex] = targetIndex + i;
+                fixedLayerPermutations[rightLevel][oddIndex] = targetIndex + i + subTopN;
+            }
+            // add more gate for the bottom subnetwork with an odd number of inputs.
+            if (subN % 2 == 1) {
+                int lastIndex = targetIndex + subN - 1;
+                fixedLayerPermutations[rightLevel][lastIndex] = lastIndex;
+            }
+        }
+    }
+
+    private void programSingleLevel(int levelIndex, int switchIndex, int targetIndex, int[] subIndex) {
+        // level-1 single gate, the gate must be a switching gate (█)
+        assert subIndex.length == 2;
+        System.arraycopy(subIndex, 0, fixedLayerPermutations[levelIndex], targetIndex, 2);
+        layerSwitchIndexes[levelIndex][targetIndex] = switchIndex;
+        layerSwitchIndexes[levelIndex][targetIndex + 1] = switchIndex;
+    }
+
+    private void programPadSingleLevel(int levelIndex, int switchIndex, int targetIndex, int[] subIndex) {
+        // level-3 single gate, the left and the right gate must be an empty gate (□)
+        assert subIndex.length == 2;
+        // first layer, direct copy input index
+        System.arraycopy(subIndex, 0, fixedLayerPermutations[levelIndex], targetIndex, 2);
+        for (int i = levelIndex + 1; i < levelIndex + 3; i++) {
+            fixedLayerPermutations[i][targetIndex] = targetIndex;
+            fixedLayerPermutations[i][targetIndex + 1] = targetIndex + 1;
+        }
+        // the permute index are the same
+        for (int i = levelIndex; i < levelIndex + 2; i++) {
+            layerSwitchIndexes[i][targetIndex] = switchIndex;
+            layerSwitchIndexes[i][targetIndex + 1] = switchIndex;
+        }
+    }
+
+    private void programTripleLevel(int levelIndex, int switchIndex, int targetIndex, int[] subIndex) {
+        // level-3 triple gates, all gates must be in the form (█ □ █)
+        //                                                      □ █ □
+        assert subIndex.length == 3;
+        // first layer, direct copy input index
+        System.arraycopy(subIndex, 0, fixedLayerPermutations[levelIndex], targetIndex, 3);
+        // second and third layer, the input direct from the corresponding position
+        for (int i = levelIndex + 1; i < levelIndex + 3; i++) {
+            for (int j = targetIndex; j < targetIndex + 3; j++) {
+                fixedLayerPermutations[i][j] = j;
+            }
+        }
+        // map is the same
+        for (int i = levelIndex; i < levelIndex + 2; i++) {
+            int startIndex = i == levelIndex + 1 ? targetIndex + 1 : targetIndex;
+            for (int j = 0; j < 2; j++) {
+                layerSwitchIndexes[i][j + startIndex] = switchIndex;
+            }
+        }
+        layerSwitchIndexes[levelIndex][targetIndex + 2] = -1;
+        layerSwitchIndexes[levelIndex + 1][targetIndex] = -1;
+    }
+
+    private void programQuadrupleLevel(int levelIndex, int switchIndex, int targetIndex, int[] subIndex) {
+        // level-3 quadruple gates, all gates must be in the form (█ █ █)
+        //                                                         █ █ □
+        assert subIndex.length == 4;
+        // first layer, direct copy input index
+        System.arraycopy(subIndex, 0, fixedLayerPermutations[levelIndex], targetIndex, 4);
+        // second layer
+        fixedLayerPermutations[levelIndex + 1][targetIndex] = targetIndex;
+        fixedLayerPermutations[levelIndex + 1][targetIndex + 1] = targetIndex + 2;
+        fixedLayerPermutations[levelIndex + 1][targetIndex + 2] = targetIndex + 1;
+        fixedLayerPermutations[levelIndex + 1][targetIndex + 3] = targetIndex + 3;
+        // third layer
+        fixedLayerPermutations[levelIndex + 2][targetIndex] = targetIndex;
+        fixedLayerPermutations[levelIndex + 2][targetIndex + 1] = targetIndex + 2;
+        fixedLayerPermutations[levelIndex + 2][targetIndex + 2] = targetIndex + 1;
+        fixedLayerPermutations[levelIndex + 2][targetIndex + 3] = targetIndex + 3;
+        // the index of gate
+        for (int i = levelIndex; i < levelIndex + 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                layerSwitchIndexes[i][targetIndex + j] = switchIndex;
+                layerSwitchIndexes[i][targetIndex + 2 + j] = switchIndex + 1;
+            }
+        }
+    }
+
+    private void programPadQuadrupleLevel(int levelIndex, int switchIndex, int targetIndex, int[] subIndex) {
+        // level-5 quadruple gates, all gates must be in the form (█ □ █ □ █)
+        //                                                         █ □ █ □ □
+        assert subIndex.length == 4;
+        // layer 0, direct copy input index
+        System.arraycopy(subIndex, 0, fixedLayerPermutations[levelIndex], targetIndex, 4);
+        // layer 1 & 3
+        for (int i = targetIndex; i < targetIndex + 4; i++) {
+            fixedLayerPermutations[levelIndex + 1][i] = i;
+            fixedLayerPermutations[levelIndex + 3][i] = i;
+        }
+        // change layer 2
+        fixedLayerPermutations[levelIndex + 2][targetIndex] = targetIndex;
+        fixedLayerPermutations[levelIndex + 2][targetIndex + 1] = targetIndex + 2;
+        fixedLayerPermutations[levelIndex + 2][targetIndex + 2] = targetIndex + 1;
+        fixedLayerPermutations[levelIndex + 2][targetIndex + 3] = targetIndex + 3;
+        // layer 4
+        fixedLayerPermutations[levelIndex + 4][targetIndex] = targetIndex;
+        fixedLayerPermutations[levelIndex + 4][targetIndex + 1] = targetIndex + 2;
+        fixedLayerPermutations[levelIndex + 4][targetIndex + 2] = targetIndex + 1;
+        fixedLayerPermutations[levelIndex + 4][targetIndex + 3] = targetIndex + 3;
+        // the index of gate
+        for (int i = levelIndex; i < levelIndex + 3; i++) {
+            for (int j = 0; j < 2; j++) {
+                layerSwitchIndexes[i][targetIndex + j] = switchIndex;
+                layerSwitchIndexes[i][targetIndex + 2 + j] = switchIndex + 1;
+            }
         }
     }
 

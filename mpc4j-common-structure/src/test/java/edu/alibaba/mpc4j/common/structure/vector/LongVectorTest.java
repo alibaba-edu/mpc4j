@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -18,6 +19,10 @@ import java.util.stream.IntStream;
  */
 public class LongVectorTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(LongVectorTest.class);
+    /**
+     * random round
+     */
+    private static final int RANDOM_ROUND = 100;
     /**
      * default rows
      */
@@ -223,6 +228,67 @@ public class LongVectorTest {
             // compose
             LongVector composedVector = LongVector.compose(decomposedVectors, p);
             Assert.assertEquals(vector, composedVector);
+        }
+    }
+
+    @Test
+    public void testOperations() {
+        // addition
+        LongVector actual = LongVector.createRandom(MAX_NUM, secureRandom);
+        long[] expect = Arrays.copyOf(actual.getElements(), MAX_NUM);
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            LongVector random = LongVector.createRandom(MAX_NUM, secureRandom);
+            actual = actual.add(random);
+            IntStream.range(0, MAX_NUM).forEach(j -> expect[j] += random.getElement(j));
+            Assert.assertArrayEquals(expect, actual.getElements());
+        }
+        // negation
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            actual = actual.neg();
+            IntStream.range(0, MAX_NUM).forEach(j -> expect[j] = - expect[j]);
+            Assert.assertArrayEquals(expect, actual.getElements());
+        }
+        // subtraction
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            LongVector random = LongVector.createRandom(MAX_NUM, secureRandom);
+            actual = actual.sub(random);
+            IntStream.range(0, MAX_NUM).forEach(j -> expect[j] -= random.getElement(j));
+            Assert.assertArrayEquals(expect, actual.getElements());
+        }
+        // multiplication
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            LongVector random = LongVector.createRandom(MAX_NUM, secureRandom);
+            actual = actual.mul(random);
+            IntStream.range(0, MAX_NUM).forEach(j -> expect[j] *= random.getElement(j));
+            Assert.assertArrayEquals(expect, actual.getElements());
+        }
+
+        // in-place addition
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            LongVector random = LongVector.createRandom(MAX_NUM, secureRandom);
+            actual.addi(random);
+            IntStream.range(0, MAX_NUM).forEach(j -> expect[j] += random.getElement(j));
+            Assert.assertArrayEquals(expect, actual.getElements());
+        }
+        // in-place negation
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            actual.negi();
+            IntStream.range(0, MAX_NUM).forEach(j -> expect[j] = - expect[j]);
+            Assert.assertArrayEquals(expect, actual.getElements());
+        }
+        // in-place subtraction
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            LongVector random = LongVector.createRandom(MAX_NUM, secureRandom);
+            actual.subi(random);
+            IntStream.range(0, MAX_NUM).forEach(j -> expect[j] -= random.getElement(j));
+            Assert.assertArrayEquals(expect, actual.getElements());
+        }
+        // in-place multiplication
+        for (int i = 0; i < RANDOM_ROUND; i++) {
+            LongVector random = LongVector.createRandom(MAX_NUM, secureRandom);
+            actual.muli(random);
+            IntStream.range(0, MAX_NUM).forEach(j -> expect[j] *= random.getElement(j));
+            Assert.assertArrayEquals(expect, actual.getElements());
         }
     }
 

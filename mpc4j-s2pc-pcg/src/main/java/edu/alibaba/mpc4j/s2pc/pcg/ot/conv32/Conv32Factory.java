@@ -4,6 +4,9 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.ccot.CcotConv32Config;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.ccot.CcotConv32Receiver;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.ccot.CcotConv32Sender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.scot.ScotConv32Config;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.scot.ScotConv32Receiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.scot.ScotConv32Sender;
@@ -33,6 +36,10 @@ public class Conv32Factory implements PtoFactory {
      */
     public enum Conv32Type {
         /**
+         * core COT
+         */
+        CCOT,
+        /**
          * silent COT
          */
         SCOT,
@@ -57,6 +64,8 @@ public class Conv32Factory implements PtoFactory {
     public static Conv32Party createSender(Rpc senderRpc, Party receiverParty, Conv32Config config) {
         Conv32Type type = config.getPtoType();
         switch (type) {
+            case CCOT:
+                return new CcotConv32Sender(senderRpc, receiverParty, (CcotConv32Config) config);
             case SCOT:
                 return new ScotConv32Sender(senderRpc, receiverParty, (ScotConv32Config) config);
             case SVOLE:
@@ -79,6 +88,8 @@ public class Conv32Factory implements PtoFactory {
     public static Conv32Party createReceiver(Rpc receiverRpc, Party senderParty, Conv32Config config) {
         Conv32Type type = config.getPtoType();
         switch (type) {
+            case CCOT:
+                return new CcotConv32Receiver(receiverRpc, senderParty, (CcotConv32Config) config);
             case SCOT:
                 return new ScotConv32Receiver(receiverRpc, senderParty, (ScotConv32Config) config);
             case SVOLE:
@@ -99,6 +110,8 @@ public class Conv32Factory implements PtoFactory {
      */
     public static Conv32Config createDefaultConfig(SecurityModel securityModel, Conv32Type conv32Type) {
         switch (conv32Type) {
+            case CCOT:
+                return new CcotConv32Config.Builder(securityModel).build();
             case SCOT:
                 return new ScotConv32Config.Builder(securityModel).build();
             case SVOLE:

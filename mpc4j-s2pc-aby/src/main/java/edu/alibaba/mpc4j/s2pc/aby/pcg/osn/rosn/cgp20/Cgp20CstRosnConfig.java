@@ -5,6 +5,9 @@ import com.google.common.math.IntMath;
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.network.decomposer.PermutationDecomposerFactory.DecomposerType;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.st.pst.PstConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.st.pst.cgp20.Cgp20PstConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.sst.SstConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.sst.cgp20.Cgp20SstConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.CstRosnConfig;
@@ -26,6 +29,22 @@ public class Cgp20CstRosnConfig extends AbstractMultiPartyPtoConfig implements C
      */
     private final int t;
     /**
+     * max nt in one batch
+     */
+    private final int maxNt4Batch;
+    /**
+     * max storage in one batch
+     */
+    private final long maxCache4Batch;
+    /**
+     * permutation decomposer type
+     */
+    private final DecomposerType decomposerType;
+    /**
+     * PST
+     */
+    private final PstConfig pstConfig;
+    /**
      * BST
      */
     private final BstConfig bstConfig;
@@ -39,11 +58,25 @@ public class Cgp20CstRosnConfig extends AbstractMultiPartyPtoConfig implements C
     private final CotConfig cotConfig;
 
     private Cgp20CstRosnConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.bstConfig, builder.sstConfig, builder.cotConfig);
-        this.t = builder.t;
+        super(SecurityModel.SEMI_HONEST, builder.bstConfig, builder.bstConfig, builder.sstConfig, builder.cotConfig);
+        t = builder.t;
+        maxNt4Batch = builder.maxNt4Batch;
+        maxCache4Batch = builder.maxCache4Batch;
+        decomposerType = builder.decomposerType;
+        pstConfig = builder.pstConfig;
         bstConfig = builder.bstConfig;
         sstConfig = builder.sstConfig;
         cotConfig = builder.cotConfig;
+    }
+
+    @Override
+    public DecomposerType getDecomposerType() {
+        return decomposerType;
+    }
+
+    @Override
+    public PstConfig getPstConfig() {
+        return pstConfig;
     }
 
     @Override
@@ -67,6 +100,16 @@ public class Cgp20CstRosnConfig extends AbstractMultiPartyPtoConfig implements C
     }
 
     @Override
+    public int getMaxNt4Batch() {
+        return maxNt4Batch;
+    }
+
+    @Override
+    public long getMaxCache4Batch() {
+        return maxCache4Batch;
+    }
+
+    @Override
     public RosnType getPtoType() {
         return RosnType.CGP20_CST;
     }
@@ -76,6 +119,22 @@ public class Cgp20CstRosnConfig extends AbstractMultiPartyPtoConfig implements C
          * t
          */
         private final int t;
+        /**
+         * t
+         */
+        private int maxNt4Batch;
+        /**
+         * max storage in one batch
+         */
+        private long maxCache4Batch;
+        /**
+         * permutation decomposer type
+         */
+        private DecomposerType decomposerType;
+        /**
+         * PST
+         */
+        private final PstConfig pstConfig;
         /**
          * BST
          */
@@ -95,9 +154,28 @@ public class Cgp20CstRosnConfig extends AbstractMultiPartyPtoConfig implements C
             // T = 2^t
             Preconditions.checkArgument(IntMath.isPowerOfTwo(t), "T must be a power of 2: %s", t);
             this.t = t;
+            maxNt4Batch = CstRosnConfig.DEFAULT_MAX_NT_FRO_BATCH;
+            maxCache4Batch = CstRosnConfig.DEFAULT_MAX_CACHE_FRO_BATCH;
+            decomposerType = DecomposerType.CGP20;
             bstConfig = new Cgp20BstConfig.Builder().build();
+            pstConfig = new Cgp20PstConfig.Builder(silent).setBstConfig((Cgp20BstConfig) bstConfig).build();
             sstConfig = new Cgp20SstConfig.Builder().build();
             cotConfig = CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        }
+
+        public Builder setMaxNt4Batch(int maxNt4Batch) {
+            this.maxNt4Batch = maxNt4Batch;
+            return this;
+        }
+
+        public Builder setMaxCache4Batch(long maxCache4Batch) {
+            this.maxCache4Batch = maxCache4Batch;
+            return this;
+        }
+
+        public Builder setDecomposerType(DecomposerType decomposerType) {
+            this.decomposerType = decomposerType;
+            return this;
         }
 
         @Override

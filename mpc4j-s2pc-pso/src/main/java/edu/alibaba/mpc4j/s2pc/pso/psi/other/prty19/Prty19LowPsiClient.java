@@ -189,7 +189,7 @@ public class Prty19LowPsiClient<T> extends AbstractPsiClient<T> {
         List<byte[]> serverPrfsPayload = rpc.receive(serverPrfHeader).getPayload();
 
         stopWatch.start();
-        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, serverPrfsPayload);
+        Filter<byte[]> serverPrfFilter = FilterFactory.loadFilter(envType, serverPrfsPayload);
         Set<T> intersection = IntStream.range(0, clientElementSize)
             .mapToObj(index -> {
                 T element = clientElementArrayList.get(index);

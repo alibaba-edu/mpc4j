@@ -172,7 +172,7 @@ public class Prty20PsiServer<T> extends AbstractPsiServer<T> {
         // randomly permuted
         Collections.shuffle(serverPrfs, secureRandom);
         // create filter
-        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> serverPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         serverPrfs.forEach(serverPrfFilter::put);
         List<byte[]> serverPrfFilterPayload = serverPrfFilter.save();
         DataPacketHeader serverPrfFilterHeader = new DataPacketHeader(

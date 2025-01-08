@@ -210,21 +210,28 @@ public class IntVector implements RingVector {
     /**
      * Creates a Gaussian sample vector.
      *
-     * @param num   the num.
-     * @param sigma the width parameter σ.
+     * @param num          the num.
+     * @param sigma        the width parameter σ.
+     * @param secureRandom random state.
      * @return a vector.
      */
-    public static IntVector createGaussian(int num, double sigma) {
+    public static IntVector createGaussian(int num, double sigma, SecureRandom secureRandom) {
         IntVector vector = new IntVector();
-        DiscGaussSampler discGaussSampler = createInstance(DiscGaussSamplerType.CONVOLUTION, 0, sigma);
-        vector.elements = IntStream.range(0, num).map(i -> {
-            int noise = discGaussSampler.sample();
-            // we need to correct negative noise
-            if (noise < 0) {
-                noise = -noise;
-            }
-            return noise;
-        }).toArray();
+        DiscGaussSampler discGaussSampler = createInstance(DiscGaussSamplerType.CONVOLUTION, secureRandom, 0, sigma);
+        vector.elements = IntStream.range(0, num).map(i -> discGaussSampler.sample()).toArray();
+        return vector;
+    }
+
+    /**
+     * Creates a ternary sample vector, i.e., a ternary vector by sampling randomly from {-1, 0, 1}.
+     *
+     * @param num num.
+     * @param secureRandom random state.
+     * @return a vector.
+     */
+    public static IntVector createTernary(int num, SecureRandom secureRandom) {
+        IntVector vector = new IntVector();
+        vector.elements = IntStream.range(0, num).map(i -> secureRandom.nextInt(3) - 1).toArray();
         return vector;
     }
 
@@ -358,6 +365,19 @@ public class IntVector implements RingVector {
     public void shiftRighti(int bit) {
         for (int i = 0; i < elements.length; i++) {
             elements[i] = elements[i] >>> bit;
+        }
+    }
+
+    /**
+     * Rounds to the nearest byte.
+     */
+    public void roundToBytei() {
+        for (int i = 0; i < elements.length; i++) {
+            if ((elements[i] & 0x00800000) > 0) {
+                elements[i] = ((elements[i] >>> (Integer.SIZE - Byte.SIZE)) + 1) & 0xFF;
+            } else {
+                elements[i] = (elements[i] >>> (Integer.SIZE - Byte.SIZE)) & 0xFF;
+            }
         }
     }
 
@@ -540,5 +560,10 @@ public class IntVector implements RingVector {
             .mapToObj(String::valueOf)
             .toArray(String[]::new);
         return this.getClass().getSimpleName() + ": " + Arrays.toString(stringData);
+    }
+
+    public int innerMul(IntVector other) {
+        MathPreconditions.checkEqual("this.num", "that.num", this.getNum(), other.getNum());
+        return IntStream.range(0, this.getNum()).map(i -> elements[i] * other.elements[i]).sum();
     }
 }

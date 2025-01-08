@@ -19,6 +19,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static edu.alibaba.mpc4j.s2pc.pir.stdpir.kw.pantheon.PantheonStdKwPirPtoDesc.PtoStep;
+import static edu.alibaba.mpc4j.s2pc.pir.stdpir.kw.pantheon.PantheonStdKwPirPtoDesc.getInstance;
+
 /**
  * Pantheon standard keyword PIR client.
  *
@@ -44,7 +47,7 @@ public class PantheonStdKwPirClient<T> extends AbstractStdKwPirClient<T> {
     private boolean isPadding = false;
 
     public PantheonStdKwPirClient(Rpc clientRpc, Party serverParty, PantheonStdKwPirConfig config) {
-        super(PantheonStdKwPirPtoDesc.getInstance(), clientRpc, serverParty, config);
+        super(getInstance(), clientRpc, serverParty, config);
         params = config.getParams();
     }
 
@@ -56,15 +59,15 @@ public class PantheonStdKwPirClient<T> extends AbstractStdKwPirClient<T> {
 
         stopWatch.start();
         params.initPirParams(n, byteL * Byte.SIZE);
-        List<byte[]> prfKeyPayload = receiveOtherPartyPayload(PantheonStdKwPirPtoDesc.PtoStep.SERVER_SEND_PRF_KEY.ordinal());
+        List<byte[]> prfKeyPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_PRF_KEY.ordinal());
         MpcAbortPreconditions.checkArgument(prfKeyPayload.size() == 1);
-        prfKey = prfKeyPayload.getFirst();
+        prfKey = prfKeyPayload.get(0);
         if (CommonUtils.getUnitNum(byteL * Byte.SIZE, params.getPlainModulusSize()) % 2 == 1) {
             isPadding = true;
         }
         Pair<List<byte[]>, List<byte[]>> keyPair = generateKeyPair();
         clientKeys = keyPair.getLeft();
-        sendOtherPartyPayload(PantheonStdKwPirPtoDesc.PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), keyPair.getRight());
+        sendOtherPartyPayload(PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal(), keyPair.getRight());
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -110,11 +113,11 @@ public class PantheonStdKwPirClient<T> extends AbstractStdKwPirClient<T> {
     }
 
     private byte[] recover() throws MpcAbortException {
-        List<byte[]> responsePayload = receiveOtherPartyPayload(PantheonStdKwPirPtoDesc.PtoStep.SERVER_SEND_RESPONSE.ordinal());
+        List<byte[]> responsePayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal());
         MpcAbortPreconditions.checkArgument(responsePayload.size() == 1);
-        byte[] response = responsePayload.getFirst();
+        byte[] response = responsePayload.get(0);
         int slotCount = params.getPolyModulusDegree() / 2;
-        long[] coeffs = PantheonStdKwPirNativeUtils.decodeReply(params.encryptionParams, clientKeys.getFirst(), response);
+        long[] coeffs = PantheonStdKwPirNativeUtils.decodeReply(params.encryptionParams, clientKeys.get(0), response);
         long[] items = new long[params.pirColumnNumPerObj];
         int index = IntStream.range(0, slotCount).filter(i -> coeffs[i] != 0).findFirst().orElse(-1);
         if (index >= 0) {
@@ -147,7 +150,7 @@ public class PantheonStdKwPirClient<T> extends AbstractStdKwPirClient<T> {
         byte[] queryPayload = PantheonStdKwPirNativeUtils.generateQuery(
             params.encryptionParams, clientKeys.get(1), clientKeys.get(0), query
         );
-        sendOtherPartyPayload(PantheonStdKwPirPtoDesc.PtoStep.CLIENT_SEND_QUERY.ordinal(), Collections.singletonList(queryPayload));
+        sendOtherPartyPayload(PtoStep.CLIENT_SEND_QUERY.ordinal(), Collections.singletonList(queryPayload));
     }
 
     private List<ByteBuffer> computeKeysPrf(ArrayList<T> keys) {

@@ -11,9 +11,8 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Coins for generating pseudo-random boolean values under a root key and a seed.
- * <p></p>
- * The implementation is modified from https://github.com/ssavvides/jope/blob/master/src/jope/Coins.java.
+ * Coins for generating pseudo-random boolean values under a root key and a seed. The implementation is modified from
+ * <a href="https://github.com/ssavvides/jope/blob/master/src/jope/Coins.java">Coins.java</a>.
  *
  * @author Weiran Liu
  * @date 2024/1/6

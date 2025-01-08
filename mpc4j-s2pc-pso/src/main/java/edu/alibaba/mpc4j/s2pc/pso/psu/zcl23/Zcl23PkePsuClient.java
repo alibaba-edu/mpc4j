@@ -71,7 +71,7 @@ public class Zcl23PkePsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long mqRpmtTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 3, mqRpmtTime, "Client runs mqRPMT");
+        logStepInfo(PtoState.PTO_STEP, 1, 2, mqRpmtTime, "Client runs mqRPMT");
 
         stopWatch.start();
         int coreCotNum = choices.length;
@@ -85,8 +85,7 @@ public class Zcl23PkePsuClient extends AbstractPsuClient {
         ArrayList<byte[]> encArrayList = new ArrayList<>(encPayload);
         // Y \cup Z
         Prg encPrg = PrgFactory.createInstance(envType, elementByteLength);
-        IntStream decIntStream = IntStream.range(0, coreCotNum);
-        decIntStream = parallel ? decIntStream.parallel() : decIntStream;
+        IntStream decIntStream = parallel ? IntStream.range(0, coreCotNum).parallel() : IntStream.range(0, coreCotNum);
         Set<ByteBuffer> union = decIntStream
             .mapToObj(index -> {
                 if (choices[index]) {
@@ -104,7 +103,7 @@ public class Zcl23PkePsuClient extends AbstractPsuClient {
         stopWatch.stop();
         long unionTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 3, 3, unionTime, "Client handles union");
+        logStepInfo(PtoState.PTO_STEP, 2, 2, unionTime, "Client handles union");
 
         logPhaseInfo(PtoState.PTO_END);
         return new PsuClientOutput(union, psica);

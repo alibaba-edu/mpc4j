@@ -1,6 +1,9 @@
 package edu.alibaba.mpc4j.common.tool.hash;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
+import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hash.LongHashFactory.LongHashType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -31,15 +34,11 @@ public class LongHashEfficiencyTest {
     /**
      * decimal format for time
      */
-    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("00.0000");
+    private static final DecimalFormat TIME_DECIMAL_FORMAT = new DecimalFormat("0.0000");
     /**
      * all 0 data
      */
     private static final byte[] ZERO_DATA = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-    /**
-     * the stop watch
-     */
-    private static final StopWatch STOP_WATCH = new StopWatch();
     /**
      * the type
      */
@@ -47,6 +46,21 @@ public class LongHashEfficiencyTest {
         LongHashType.XX_HASH_64,
         LongHashType.BOB_HASH_64,
     };
+
+    /**
+     * the stop watch
+     */
+    private final StopWatch stopWatch;
+    /**
+     * we also want to compare efficiency with PRF
+     */
+    private final Prf prf;
+
+    public LongHashEfficiencyTest() {
+        stopWatch = new StopWatch();
+        prf = PrfFactory.createInstance(EnvType.STANDARD, Long.BYTES);
+        prf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+    }
 
     @Test
     public void testEfficiency() {
@@ -56,17 +70,30 @@ public class LongHashEfficiencyTest {
             LongHash longHash = LongHashFactory.createInstance(type);
             // warmup
             IntStream.range(0, n).forEach(index -> longHash.hash(ZERO_DATA));
-            STOP_WATCH.start();
+            stopWatch.start();
             // efficiency test
             IntStream.range(0, n).forEach(index -> longHash.hash(ZERO_DATA));
-            STOP_WATCH.stop();
-            double time = (double) STOP_WATCH.getTime(TimeUnit.MICROSECONDS) / n;
-            STOP_WATCH.reset();
+            stopWatch.stop();
+            double time = (double) stopWatch.getTime(TimeUnit.MICROSECONDS) / n;
+            stopWatch.reset();
             LOGGER.info("{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
                 StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(time), 10)
             );
         }
+        // compare with PRF, warmup
+        IntStream.range(0, n).forEach(index -> prf.getLong(ZERO_DATA, Long.MAX_VALUE));
+        stopWatch.start();
+        // efficiency test
+        IntStream.range(0, n).forEach(index -> prf.getLong(ZERO_DATA, Long.MAX_VALUE));
+        stopWatch.stop();
+        double time = (double) stopWatch.getTime(TimeUnit.MICROSECONDS) / n;
+        stopWatch.reset();
+        LOGGER.info("{}\t{}\t{}",
+            StringUtils.leftPad(prf.getPrfType().name(), 20),
+            StringUtils.leftPad(LOG_N_DECIMAL_FORMAT.format(LOG_N), 10),
+            StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(time), 10)
+        );
     }
 }

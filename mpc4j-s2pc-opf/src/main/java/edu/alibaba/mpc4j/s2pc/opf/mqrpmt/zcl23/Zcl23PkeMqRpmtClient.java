@@ -1,8 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.opf.mqrpmt.zcl23;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.zp.ZpDokvs;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.zp.ZpDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.zp.ZpDokvsFactory.ZpDokvsType;
@@ -87,21 +85,13 @@ public class Zcl23PkeMqRpmtClient extends AbstractMqRpmtClient {
         y = ecc.multiply(ecc.getG(), x);
         List<byte[]> pkPayload = new LinkedList<>();
         pkPayload.add(ecc.encode(y, compressEncode));
-        DataPacketHeader pkHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PK.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(pkHeader, pkPayload));
+        sendOtherPartyPayload(PtoStep.CLIENT_SEND_PK.ordinal(), pkPayload);
         stopWatch.stop();
         long pkTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.INIT_STEP, 1, 2, pkTime);
 
-        DataPacketHeader keysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_DOKVS_KEYS.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> keysPayload = rpc.receive(keysHeader).getPayload();
+        List<byte[]> keysPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_DOKVS_KEYS.ordinal());
 
         stopWatch.start();
         int dokvsHashKeyNum = ZpDokvsFactory.getHashKeyNum(zpDokvsType);
@@ -126,17 +116,9 @@ public class Zcl23PkeMqRpmtClient extends AbstractMqRpmtClient {
         stopWatch.start();
         generateDokvsPayload();
         // DOKVS KEM
-        DataPacketHeader kemDokvsHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_DOKVS_KEM.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(kemDokvsHeader, kemDokvsPayload));
+        sendOtherPartyEqualSizePayload(PtoStep.CLIENT_SEND_DOKVS_KEM.ordinal(), kemDokvsPayload);
         // DOKVS ciphertext
-        DataPacketHeader ctDokvsHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_DOKVS_CT.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(ctDokvsHeader, ctDokvsPayload));
+        sendOtherPartyEqualSizePayload(PtoStep.CLIENT_SEND_DOKVS_CT.ordinal(), ctDokvsPayload);
         stopWatch.stop();
         long dokvsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -199,11 +181,7 @@ public class Zcl23PkeMqRpmtClient extends AbstractMqRpmtClient {
         int round;
         for (round = 0; round < pipelineTime; round++) {
             // receive KEM
-            DataPacketHeader reRandKemHeader = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RERAND_KEM.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> reRandKemPayload = rpc.receive(reRandKemHeader).getPayload();
+            List<byte[]> reRandKemPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RERAND_KEM.ordinal());
             MpcAbortPreconditions.checkArgument(reRandKemPayload.size() == pipeSize);
             // decode KEM
             Stream<byte[]> reRandKemStream = reRandKemPayload.stream();
@@ -212,11 +190,7 @@ public class Zcl23PkeMqRpmtClient extends AbstractMqRpmtClient {
                 .map(ecc::decode)
                 .toArray(ECPoint[]::new);
             // receive ciphertext
-            DataPacketHeader reRandCtHeader = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RERAND_CT.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> reRandCtPayload = rpc.receive(reRandCtHeader).getPayload();
+            List<byte[]> reRandCtPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RERAND_CT.ordinal());
             MpcAbortPreconditions.checkArgument(reRandCtPayload.size() == pipeSize);
             // decode ciphertext
             Stream<byte[]> reRandCtStream = reRandCtPayload.stream();
@@ -238,11 +212,7 @@ public class Zcl23PkeMqRpmtClient extends AbstractMqRpmtClient {
         int remain = serverElementSize - round * pipeSize;
         if (remain > 0) {
             // receive KEM
-            DataPacketHeader reRandKemHeader = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RERAND_KEM.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> reRandKemPayload = rpc.receive(reRandKemHeader).getPayload();
+            List<byte[]> reRandKemPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RERAND_KEM.ordinal());
             MpcAbortPreconditions.checkArgument(reRandKemPayload.size() == remain);
             // decode KEM
             Stream<byte[]> reRandKemStream = reRandKemPayload.stream();
@@ -251,11 +221,7 @@ public class Zcl23PkeMqRpmtClient extends AbstractMqRpmtClient {
                 .map(ecc::decode)
                 .toArray(ECPoint[]::new);
             // receive ciphertext
-            DataPacketHeader reRandCtHeader = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RERAND_CT.ordinal(), extraInfo,
-                otherParty().getPartyId(), ownParty().getPartyId()
-            );
-            List<byte[]> reRandCtPayload = rpc.receive(reRandCtHeader).getPayload();
+            List<byte[]> reRandCtPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RERAND_CT.ordinal());
             MpcAbortPreconditions.checkArgument(reRandCtPayload.size() == remain);
             // decode ciphertext
             Stream<byte[]> reRandCtStream = reRandCtPayload.stream();

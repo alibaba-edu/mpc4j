@@ -11,7 +11,6 @@ import edu.alibaba.mpc4j.s2pc.aby.pcg.st.sst.SstReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.sst.SstSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
-import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -253,11 +252,7 @@ public class BstTest extends AbstractTwoPartyMemoryRpcPto {
 
     private int[][] randomPiArray(int batchNum, int eachNum) {
         return IntStream.range(0, batchNum)
-            .mapToObj(batchIndex -> {
-                int[] pi = IntStream.range(0, eachNum).toArray();
-                ArrayUtils.shuffle(pi, SECURE_RANDOM);
-                return pi;
-            })
+            .mapToObj(batchIndex -> PermutationNetworkUtils.randomPermutation(eachNum, SECURE_RANDOM))
             .toArray(int[][]::new);
     }
 

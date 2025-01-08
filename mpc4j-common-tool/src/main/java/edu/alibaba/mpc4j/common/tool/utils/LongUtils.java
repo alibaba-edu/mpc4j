@@ -100,6 +100,9 @@ public class LongUtils {
      */
     public static long fixedByteArrayToLong(byte[] value) {
         assert value.length > 0 && value.length <= Long.BYTES;
+        if (value.length == Long.BYTES) {
+            return byteArrayToLong(value);
+        }
         long result = 0L;
         for (byte b : value) {
             result = (result << Byte.SIZE) + (b & 0xFF);

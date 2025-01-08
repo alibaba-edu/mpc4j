@@ -5,11 +5,12 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
-import edu.alibaba.mpc4j.common.structure.matrix.Z3ByteMatrix;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
+
+import java.util.Arrays;
 
 /**
  * abstract (F3, F2)-sowOPRF sender.
@@ -33,7 +34,7 @@ public abstract class AbstractF32SowOprfSender extends AbstractTwoPartyPto imple
     /**
      * matrix A
      */
-    protected Z3ByteMatrix matrixA;
+    protected F32WprfMatrix matrixA;
     /**
      * matrix B
      */
@@ -50,11 +51,14 @@ public abstract class AbstractF32SowOprfSender extends AbstractTwoPartyPto imple
     protected AbstractF32SowOprfSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, F32SowOprfConfig config) {
         super(ptoDesc, senderRpc, receiverParty, config);
         z3Field = new Z3ByteField();
-        f32Wprf = new F32Wprf(z3Field, new byte[CommonConstants.BLOCK_BYTE_LENGTH], new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        byte[] seedA = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] seedB = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        Arrays.fill(seedB, (byte) 0xFF);
+        f32Wprf = new F32Wprf(z3Field, seedA, seedB, config.getMatrixType());
         matrixA = f32Wprf.getMatrixA();
         matrixB = f32Wprf.getMatrixB();
         key = f32Wprf.keyGen(secureRandom);
-
+        f32Wprf.init(key);
     }
 
     protected void setInitInput(int expectBatchSize) {
@@ -72,11 +76,10 @@ public abstract class AbstractF32SowOprfSender extends AbstractTwoPartyPto imple
         checkInitialized();
         MathPreconditions.checkPositive("batchSize", batchSize);
         this.batchSize = batchSize;
-        extraInfo++;
     }
 
     @Override
     public byte[] prf(byte[] x) {
-        return f32Wprf.prf(key, x);
+        return f32Wprf.prf(x);
     }
 }

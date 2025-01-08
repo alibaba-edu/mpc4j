@@ -2,6 +2,9 @@ package edu.alibaba.mpc4j.s2pc.pso.main.psu;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory.RosnType;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.zcl23.Zcl23PkeMqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
@@ -25,6 +28,10 @@ import java.util.Properties;
  * @date 2022/02/16
  */
 public class PsuConfigUtils {
+    /**
+     * CP_INX_PIR_TYPE name
+     */
+    public final static String ROSN_TYPE = "rosn_type";
     /**
      * private constructor.
      */
@@ -66,8 +73,11 @@ public class PsuConfigUtils {
 
     private static Gmr21PsuConfig generateGmr21PsuConfig(Properties properties) {
         boolean silent = MainPtoConfigUtils.readSilentCot(properties);
+        RosnType rosnType = MainPtoConfigUtils.readEnum(RosnType.class, properties, ROSN_TYPE);
+        RosnConfig rosnConfig = RosnFactory.createRosnConfig(rosnType, silent);
         Gmr21MqRpmtConfig gmr21MqRpmtConfig = new Gmr21MqRpmtConfig.Builder(silent)
             .setOkvsType(Gf2eDokvsType.MEGA_BIN)
+            .setRosnConfig(rosnConfig)
             .build();
         return new Gmr21PsuConfig.Builder(silent)
             .setGmr21MqRpmtConfig(gmr21MqRpmtConfig)
@@ -91,12 +101,16 @@ public class PsuConfigUtils {
 
     private static Jsz22SfcPsuConfig createJsz22SfcPsuConfig(Properties properties) {
         boolean silent = MainPtoConfigUtils.readSilentCot(properties);
-        return new Jsz22SfcPsuConfig.Builder(silent).build();
+        RosnType rosnType = MainPtoConfigUtils.readEnum(RosnType.class, properties, ROSN_TYPE);
+        RosnConfig rosnConfig = RosnFactory.createRosnConfig(rosnType, silent);
+        return new Jsz22SfcPsuConfig.Builder(silent).setRosnConfig(rosnConfig).build();
     }
 
     private static Jsz22SfsPsuConfig createJsz22SfsPsuConfig(Properties properties) {
         boolean silent = MainPtoConfigUtils.readSilentCot(properties);
-        return new Jsz22SfsPsuConfig.Builder(silent).build();
+        RosnType rosnType = MainPtoConfigUtils.readEnum(RosnType.class, properties, ROSN_TYPE);
+        RosnConfig rosnConfig = RosnFactory.createRosnConfig(rosnType, silent);
+        return new Jsz22SfsPsuConfig.Builder(silent).setRosnConfig(rosnConfig).build();
     }
 
     private static Czz24CwOprfPsuConfig createCzz24CwOprfPsuConfig() {

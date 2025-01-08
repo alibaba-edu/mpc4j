@@ -22,7 +22,7 @@ class Alpr21CpKsPirDesc implements PtoDesc {
     /**
      * protocol name
      */
-    private static final String PTO_NAME = "ALPR21_KS_CPPIR";
+    private static final String PTO_NAME = "ALPR21_CP_KS_PIR";
 
     /**
      * protocol step

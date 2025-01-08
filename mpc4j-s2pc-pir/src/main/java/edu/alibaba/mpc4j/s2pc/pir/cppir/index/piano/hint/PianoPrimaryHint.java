@@ -10,20 +10,6 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
  */
 public interface PianoPrimaryHint extends PianoHint {
     /**
-     * Expands all offsets for all chunks. The total number of indexes are chunkNum.
-     *
-     * @return all offsets for all chunks.
-     */
-    default int[] expandOffset() {
-        int chunkNum = getChunkNum();
-        int[] offsets = new int[chunkNum];
-        for (int chunkId = 0; chunkId < chunkNum; chunkId++) {
-            offsets[chunkId] = expandOffset(chunkId);
-        }
-        return offsets;
-    }
-
-    /**
      * Gets if the given x is in the indexes.
      *
      * @param x the given x.
@@ -40,4 +26,19 @@ public interface PianoPrimaryHint extends PianoHint {
 
         return offset == expandOffset;
     }
+
+    /**
+     * Gets the programmed index if the hint needs to be further amended; otherwise (the hint is a direct primary hint
+     * or the hint has been amended), return -1.
+     *
+     * @return the programmed index if the hint needs to be further amended, or -1 if it does not need to be amended.
+     */
+    int getAmendIndex();
+
+    /**
+     * Amends the parity.
+     *
+     * @param parity parity.
+     */
+    void amendParity(byte[] parity);
 }

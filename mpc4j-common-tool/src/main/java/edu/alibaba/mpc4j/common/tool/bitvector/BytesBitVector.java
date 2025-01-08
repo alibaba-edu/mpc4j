@@ -163,6 +163,11 @@ public class BytesBitVector implements BitVector {
     }
 
     @Override
+    public int bitCount() {
+        return BytesUtils.bitCount(bytes);
+    }
+
+    @Override
     public int byteNum() {
         return byteNum;
     }

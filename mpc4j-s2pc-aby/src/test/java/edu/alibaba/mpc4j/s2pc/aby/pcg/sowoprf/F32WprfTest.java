@@ -3,12 +3,19 @@ package edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.F32WprfMatrixFactory.F32WprfMatrixType;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * (F3, F2)-wPRF test.
@@ -16,7 +23,24 @@ import java.util.Arrays;
  * @author Weiran Liu
  * @date 2024/5/24
  */
+@RunWith(Parameterized.class)
 public class F32WprfTest {
+    /**
+     * random round
+     */
+    private static final int RANDOM_ROUND = 1000;
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> configurations() {
+        Collection<Object[]> configurations = new ArrayList<>();
+
+        configurations.add(new Object[]{F32WprfMatrixType.NAIVE});
+        configurations.add(new Object[]{F32WprfMatrixType.BYTE});
+        configurations.add(new Object[]{F32WprfMatrixType.LONG});
+
+        return configurations;
+    }
+
     /**
      * Z3-field
      */
@@ -26,16 +50,16 @@ public class F32WprfTest {
      */
     private final SecureRandom secureRandom;
     /**
-     * PRF
+     * weak PRF
      */
-    private final F32Wprf f32Wprf;
+    private final F32Wprf wprf;
 
-    public F32WprfTest() {
+    public F32WprfTest(F32WprfMatrixType type) {
         z3Field = new Z3ByteField();
         secureRandom = new SecureRandom();
         byte[] seedA = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
         byte[] seedB = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
-        f32Wprf = new F32Wprf(z3Field, seedA, seedB);
+        wprf = new F32Wprf(z3Field, seedA, seedB, type);
     }
 
     @Test
@@ -43,42 +67,56 @@ public class F32WprfTest {
         int inputLength = F32Wprf.getInputLength();
         int outputByteLength = F32Wprf.getOutputByteLength();
         byte[] key1, key2;
-        byte[] input1, input2;
-        byte[] output1, output2;
+        byte[] input1, input2, output1, output2;
         // fix key and input
-        key1 = f32Wprf.keyGen(secureRandom);
-        key2 = BytesUtils.clone(key1);
+        key1 = wprf.keyGen(secureRandom);
         input1 = z3Field.createRandoms(inputLength, secureRandom);
-        input2 = Arrays.copyOf(input1, input1.length);
-        output1 = f32Wprf.prf(key1, input1);
-        output2 = f32Wprf.prf(key2, input2);
+        wprf.init(key1);
+        output1 = wprf.prf(input1);
         Assert.assertEquals(outputByteLength, output1.length);
-        Assert.assertEquals(outputByteLength, output2.length);
-        // two results are equal
+        // repeat and get same result
+        input2 = BytesUtils.clone(input1);
+        output2 = wprf.prf(input2);
         Assert.assertEquals(ByteBuffer.wrap(output1), ByteBuffer.wrap(output2));
-
         // fix key but change input
-        key1 = f32Wprf.keyGen(secureRandom);
-        key2 = BytesUtils.clone(key1);
-        input1 = z3Field.createRandoms(inputLength, secureRandom);
         input2 = z3Field.createRandoms(inputLength, secureRandom);
-        output1 = f32Wprf.prf(key1, input1);
-        output2 = f32Wprf.prf(key2, input2);
-        Assert.assertEquals(outputByteLength, output1.length);
+        output2 = wprf.prf(input2);
         Assert.assertEquals(outputByteLength, output2.length);
-        // two results are not equal
         Assert.assertNotEquals(ByteBuffer.wrap(output1), ByteBuffer.wrap(output2));
-
         // fix input but change key
-        key1 = f32Wprf.keyGen(secureRandom);
-        key2 = f32Wprf.keyGen(secureRandom);
-        input1 = z3Field.createRandoms(inputLength, secureRandom);
-        input2 = Arrays.copyOf(input1, input1.length);
-        output1 = f32Wprf.prf(key1, input1);
-        output2 = f32Wprf.prf(key2, input2);
-        Assert.assertEquals(outputByteLength, output1.length);
+        key2 = wprf.keyGen(secureRandom);
+        wprf.init(key2);
+        output2 = wprf.prf(input1);
         Assert.assertEquals(outputByteLength, output2.length);
-        // two results are not equal
         Assert.assertNotEquals(ByteBuffer.wrap(output1), ByteBuffer.wrap(output2));
+    }
+
+    @Test
+    public void testRandom() {
+        byte[] key = wprf.keyGen(secureRandom);
+        // same key, same inputs
+        byte[] input = z3Field.createRandoms(F32Wprf.getInputLength(), secureRandom);
+        wprf.init(key);
+        Set<ByteBuffer> set = IntStream.range(0, RANDOM_ROUND)
+            .mapToObj(i -> wprf.prf(input))
+            .map(ByteBuffer::wrap)
+            .collect(Collectors.toSet());
+        Assert.assertEquals(1, set.size());
+        // same key, random inputs
+        set = IntStream.range(0, RANDOM_ROUND)
+            .mapToObj(i -> BytesUtils.randomByteArray(F23Wprf.getInputByteLength(), secureRandom))
+            .map(ByteBuffer::wrap)
+            .collect(Collectors.toSet());
+        Assert.assertEquals(RANDOM_ROUND, set.size());
+        // different key, same input
+        set = IntStream.range(0, RANDOM_ROUND)
+            .mapToObj(i -> {
+                byte[] randomKey = wprf.keyGen(secureRandom);
+                wprf.init(randomKey);
+                return wprf.prf(input);
+            })
+            .map(ByteBuffer::wrap)
+            .collect(Collectors.toSet());
+        Assert.assertEquals(RANDOM_ROUND, set.size());
     }
 }

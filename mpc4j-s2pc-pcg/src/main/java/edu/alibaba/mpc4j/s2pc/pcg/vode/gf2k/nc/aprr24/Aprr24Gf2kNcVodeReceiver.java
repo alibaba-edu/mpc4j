@@ -135,7 +135,7 @@ public class Aprr24Gf2kNcVodeReceiver extends AbstractGf2kNcVodeReceiver {
 
         stopWatch.start();
         // y = v * A + s
-        byte[][] initY = matrixInitA.encode(vInitGf2kVodeReceiverOutput.getQ());
+        byte[][] initY = matrixInitA.encodeBlock(vInitGf2kVodeReceiverOutput.getQ());
         IntStream.range(0, initN).forEach(index ->
             field.addi(initY[index], bInitGf2kMspVodeReceiverOutput.getQ(index))
         );
@@ -173,7 +173,7 @@ public class Aprr24Gf2kNcVodeReceiver extends AbstractGf2kNcVodeReceiver {
 
         stopWatch.start();
         // y = v * A + s
-        byte[][] y = matrixA.encode(vGf2kVodeReceiverOutput.getQ());
+        byte[][] y = matrixA.encodeBlock(vGf2kVodeReceiverOutput.getQ());
         IntStream.range(0, iterationN).forEach(index ->
             field.addi(y[index], bGf2kMspVodeReceiverOutput.getQ(index))
         );

@@ -111,6 +111,9 @@ public class MulStdIdxPirServer extends AbstractStdIdxPirServer implements Pbcab
             );
             plaintextSize = CommonUtils.getUnitNum(database.rows(), elementSizeOfPlaintext);
             dimensionSize = PirUtils.computeDimensionLength(plaintextSize, params.getDimension());
+            for (int j : dimensionSize) {
+                MpcAbortPreconditions.checkArgument(j <= params.getPolyModulusDegree());
+            }
             // encode database
             IntStream intStream = parallel ? IntStream.range(0, partitionSize).parallel() : IntStream.range(0, partitionSize);
             encodedDatabase = intStream

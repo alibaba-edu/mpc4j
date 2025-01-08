@@ -5,7 +5,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
-import edu.alibaba.mpc4j.s2pc.pso.psu.PsuConfig;
+import edu.alibaba.mpc4j.s2pc.pso.psu.OoPsuConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
 
 /**
@@ -14,7 +14,7 @@ import edu.alibaba.mpc4j.s2pc.pso.psu.PsuFactory.PsuType;
  * @author Weiran Liu
  * @date 2022/02/15
  */
-public class Gmr21PsuConfig extends AbstractMultiPartyPtoConfig implements PsuConfig {
+public class Gmr21PsuConfig extends AbstractMultiPartyPtoConfig implements OoPsuConfig {
     /**
      * GMR21-mqRPMT config
      */

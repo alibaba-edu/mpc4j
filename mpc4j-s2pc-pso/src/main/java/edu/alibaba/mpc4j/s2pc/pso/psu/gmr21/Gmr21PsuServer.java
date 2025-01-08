@@ -11,7 +11,7 @@ import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtServer;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
-import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractPsuServer;
+import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractOoPsuServer;
 import edu.alibaba.mpc4j.s2pc.pso.psu.gmr21.Gmr21PsuPtoDesc.PtoStep;
 
 import java.nio.ByteBuffer;
@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2022/02/15
  */
-public class Gmr21PsuServer extends AbstractPsuServer {
+public class Gmr21PsuServer extends AbstractOoPsuServer {
     /**
      * GMR21-mqRPMT
      */
@@ -59,6 +59,21 @@ public class Gmr21PsuServer extends AbstractPsuServer {
         logStepInfo(PtoState.INIT_STEP, 1, 1, initTime);
 
         logPhaseInfo(PtoState.INIT_END);
+    }
+
+    @Override
+    public void preCompute(int serverElementSize, int clientElementSize, int elementByteLength) throws MpcAbortException {
+        checkPrecomputeInput(serverElementSize, clientElementSize, elementByteLength);
+
+        logPhaseInfo(PtoState.PTO_BEGIN, "Pre-computation");
+        stopWatch.start();
+        gmr21MqRpmtServer.preCompute(serverElementSize);
+        stopWatch.stop();
+        long precomputeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 1, 1, precomputeTime);
+
+        logPhaseInfo(PtoState.PTO_END, "Pre-computation");
     }
 
     @Override

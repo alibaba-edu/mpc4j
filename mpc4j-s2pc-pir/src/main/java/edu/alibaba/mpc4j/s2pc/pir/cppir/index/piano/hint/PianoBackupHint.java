@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pir.cppir.index.piano.hint;
 
-import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.crypto.prp.FixedKeyPrp;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -22,13 +22,15 @@ public class PianoBackupHint extends AbstractPianoHint {
     /**
      * Creates a hint with a random hint ID.
      *
+     * @param fixedKeyPrp  fixed key PRP.
      * @param chunkSize    chunk size.
      * @param chunkNum     chunk num.
      * @param l            parity bit length.
      * @param secureRandom the random state.
      */
-    public PianoBackupHint(int chunkSize, int chunkNum, int l, int puncturedChunkId, SecureRandom secureRandom) {
-        super(chunkSize, chunkNum, l);
+    public PianoBackupHint(FixedKeyPrp fixedKeyPrp,
+                           int chunkSize, int chunkNum, int l, int puncturedChunkId, SecureRandom secureRandom) {
+        super(fixedKeyPrp, chunkSize, chunkNum, l);
         MathPreconditions.checkNonNegativeInRange("puncturedChunkId", puncturedChunkId, chunkNum);
         this.puncturedChunkId = puncturedChunkId;
         secureRandom.nextBytes(hintId);
@@ -46,8 +48,28 @@ public class PianoBackupHint extends AbstractPianoHint {
     @Override
     public int expandOffset(int chunkId) {
         MathPreconditions.checkNonNegativeInRange("chunk ID", chunkId, chunkNum);
-        Preconditions.checkArgument(chunkId != puncturedChunkId);
-        return getInteger(chunkId);
+        if (chunkId == puncturedChunkId) {
+            return -1;
+        } else {
+            return getInteger(chunkId);
+        }
+    }
+
+    @Override
+    public int[] expandOffsets() {
+        int[] offsets = getIntegers();
+        offsets[puncturedChunkId] = -1;
+        return offsets;
+    }
+
+    @Override
+    public int[] expandPrpBlockOffsets(int blockChunkId) {
+        MathPreconditions.checkNonNegativeInRange("chunk ID", blockChunkId, chunkNum);
+        int[] offsets = getPrpBlockIntegers(blockChunkId);
+        if (puncturedChunkId - blockChunkId >= 0 && puncturedChunkId - blockChunkId < offsets.length) {
+            offsets[puncturedChunkId - blockChunkId] = -1;
+        }
+        return offsets;
     }
 
     @Override
@@ -64,13 +86,12 @@ public class PianoBackupHint extends AbstractPianoHint {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof PianoBackupHint)) {
+        if (!(obj instanceof PianoBackupHint that)) {
             return false;
         }
         if (this == obj) {
             return true;
         }
-        PianoBackupHint that = (PianoBackupHint) obj;
         return new EqualsBuilder()
             .append(this.chunkSize, that.chunkSize)
             .append(this.chunkNum, that.chunkNum)

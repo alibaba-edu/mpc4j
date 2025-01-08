@@ -5,6 +5,7 @@ import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pir.main.cppir.index.CpIdxPirMain;
 import edu.alibaba.mpc4j.s2pc.pir.main.cppir.keyword.SingleCpKsPirMain;
 import edu.alibaba.mpc4j.s2pc.pir.main.kspir.SingleKsPirMain;
+import edu.alibaba.mpc4j.s2pc.pir.main.kwpir.StdKwPirMain;
 
 import java.util.Properties;
 
@@ -30,13 +31,16 @@ public class PirMain {
                 CpIdxPirMain cpIdxPirMain = new CpIdxPirMain(properties, ownName);
                 cpIdxPirMain.runNetty();
                 break;
-            case SingleCpKsPirMain.PTO_NAME_KEY:
+            case SingleCpKsPirMain.PTO_TYPE_NAME:
                 SingleCpKsPirMain singleCpKsPirMain = new SingleCpKsPirMain(properties, ownName);
                 singleCpKsPirMain.runNetty();
                 break;
-            case SingleKsPirMain.PTO_NAME_KEY:
-                SingleKsPirMain singleKwPirMain = new SingleKsPirMain(properties, ownName);
-                singleKwPirMain.runNetty();
+            case SingleKsPirMain.PTO_TYPE_NAME:
+                SingleKsPirMain singleKsPirMain = new SingleKsPirMain(properties, ownName);
+                singleKsPirMain.runNetty();
+            case StdKwPirMain.PTO_NAME_KEY:
+                StdKwPirMain stdKwPirMain = new StdKwPirMain(properties, ownName);
+                stdKwPirMain.runNetty();
                 break;
             default:
                 throw new IllegalArgumentException("Invalid pto_type: " + ptoType);

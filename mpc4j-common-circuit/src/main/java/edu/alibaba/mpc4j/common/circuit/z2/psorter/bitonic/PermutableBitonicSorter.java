@@ -57,7 +57,7 @@ public class PermutableBitonicSorter extends AbstractPermutationSorter {
     }
 
     @Override
-    public long getAndGateNum(int dataNum, int dataDim){
+    public long getAndGateNum(int dataNum, int dataDim) {
         int logM = LongUtils.ceilLog2(dataNum);
         int dataExtendNum = CommonUtils.getByteLength(dataNum) << 3;
         long compareNum = (long) logM * (logM + 1) / 2 * dataExtendNum;
@@ -67,7 +67,7 @@ public class PermutableBitonicSorter extends AbstractPermutationSorter {
     /**
      * get the multiplication factor of number of AND gate in compare
      */
-    public int getCmpGateParam(int dataDim){
+    public int getCmpGateParam(int dataDim) {
         return 1;
     }
 
@@ -131,10 +131,10 @@ public class PermutableBitonicSorter extends AbstractPermutationSorter {
         if (needStable | needPermutation) {
             // the reason for reverse: set the index of initial permutation to reverse order to reduce the cost of the following comparison
             assert this.payloadArrays != null;
-            if(party.getParallel()){
+            if (party.getParallel()) {
                 Arrays.stream(this.xiArray).parallel().forEach(MpcZ2Vector::reverseBits);
                 Arrays.stream(this.payloadArrays).parallel().forEach(MpcZ2Vector::reverseBits);
-            }else{
+            } else {
                 Arrays.stream(this.xiArray).forEach(MpcZ2Vector::reverseBits);
                 Arrays.stream(this.payloadArrays).forEach(MpcZ2Vector::reverseBits);
             }
@@ -159,20 +159,21 @@ public class PermutableBitonicSorter extends AbstractPermutationSorter {
     }
 
     private void dealBigLevel(int level) throws MpcAbortException {
-        int originXiLen = xiArray.length, originPayloadLen = payloadArrays.length;
+        int originXiLen = xiArray.length;
+        int originPayloadLen = payloadArrays == null ? 0 : payloadArrays.length;
         int log2 = LongUtils.ceilLog2(sortedNum);
         MpcZ2Vector[] noUsed = null;
-        if(needStable || needPermutation){
+        if (needStable || needPermutation) {
             // if the sorter is stable, or we need permutation, we can only compare and switch the last (level + 1) bits of permutation
             noUsed = Arrays.copyOfRange(payloadArrays, originPayloadLen - log2, originPayloadLen - level - 1);
             MpcZ2Vector[] currentY = new MpcZ2Vector[originPayloadLen - log2 + (needStable ? 0 : level + 1)];
             System.arraycopy(payloadArrays, 0, currentY, 0, originPayloadLen - log2);
-            if(needStable){
+            if (needStable) {
                 MpcZ2Vector[] currentX = new MpcZ2Vector[originXiLen + level + 1];
                 System.arraycopy(xiArray, 0, currentX, 0, originXiLen);
                 System.arraycopy(payloadArrays, originPayloadLen - level - 1, currentX, originXiLen, level + 1);
                 xiArray = currentX;
-            }else{
+            } else {
                 System.arraycopy(payloadArrays, originPayloadLen - level - 1, currentY, originPayloadLen - log2, level + 1);
             }
             payloadArrays = currentY;
@@ -180,15 +181,15 @@ public class PermutableBitonicSorter extends AbstractPermutationSorter {
         for (int i = 0; i <= level; i++) {
             dealOneIter(level, i);
         }
-        if(needStable || needPermutation){
+        if (needStable || needPermutation) {
             MpcZ2Vector[] currentY = new MpcZ2Vector[originPayloadLen];
             System.arraycopy(payloadArrays, 0, currentY, 0, originPayloadLen - log2);
             assert noUsed != null;
             System.arraycopy(noUsed, 0, currentY, originPayloadLen - log2, noUsed.length);
-            if(needStable){
+            if (needStable) {
                 System.arraycopy(xiArray, originXiLen, currentY, originPayloadLen - level - 1, level + 1);
                 xiArray = Arrays.copyOf(xiArray, originXiLen);
-            }else{
+            } else {
                 System.arraycopy(payloadArrays, originPayloadLen - log2, currentY, originPayloadLen - level - 1, level + 1);
             }
             payloadArrays = currentY;

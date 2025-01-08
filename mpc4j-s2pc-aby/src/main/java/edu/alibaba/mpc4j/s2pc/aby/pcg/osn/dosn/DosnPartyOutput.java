@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 import java.util.stream.IntStream;
@@ -24,7 +23,6 @@ public class DosnPartyOutput {
     public DosnPartyOutput(byte[][] shareVector) {
         MathPreconditions.checkGreater("shareVector.length", shareVector.length, 1);
         byteLength = shareVector[0].length;
-        MathPreconditions.checkGreaterOrEqual("byte_length", byteLength, CommonConstants.STATS_BYTE_LENGTH);
         IntStream.range(0, shareVector.length).forEach(i -> {
             byte[] share = shareVector[i];
             MathPreconditions.checkEqual(

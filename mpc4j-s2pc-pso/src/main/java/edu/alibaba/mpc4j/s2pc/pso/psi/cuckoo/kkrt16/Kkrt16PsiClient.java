@@ -203,7 +203,7 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
 
     private void handleServerBinPrfPayload(List<byte[]> serverBinPrfPayload) throws MpcAbortException {
         try {
-            Filter<byte[]> serverBinPrfFilter = FilterFactory.load(envType, serverBinPrfPayload);
+            Filter<byte[]> serverBinPrfFilter = FilterFactory.loadFilter(envType, serverBinPrfPayload);
             serverBinPrfFilterArrayList.add(serverBinPrfFilter);
         } catch (IllegalArgumentException e) {
             throw new MpcAbortException();
@@ -212,7 +212,7 @@ public class Kkrt16PsiClient<T> extends AbstractPsiClient<T> {
 
     private void handleServerStashPrfPayload(List<byte[]> serverStashPrfPayload) throws MpcAbortException {
         try {
-            Filter<byte[]> serverStashPrfFilter = FilterFactory.load(envType, serverStashPrfPayload);
+            Filter<byte[]> serverStashPrfFilter = FilterFactory.loadFilter(envType, serverStashPrfPayload);
             serverStashPrfFilterArrayList.add(serverStashPrfFilter);
         } catch (IllegalArgumentException e) {
             throw new MpcAbortException();

@@ -135,7 +135,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
 
         stopWatch.start();
         // y = v * A + s
-        byte[][] initY = matrixInitA.encode(vInitCotSenderOutput.getR0Array());
+        byte[][] initY = matrixInitA.encodeBlock(vInitCotSenderOutput.getR0Array());
         IntStream.range(0, initN).forEach(index ->
             BytesUtils.xori(initY[index], sInitMspCotSenderOutput.getR0(index))
         );
@@ -166,7 +166,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
 
         stopWatch.start();
         // y = v * A + s
-        byte[][] y = matrixA.encode(vCotSenderOutput.getR0Array());
+        byte[][] y = matrixA.encodeBlock(vCotSenderOutput.getR0Array());
         IntStream.range(0, iterationN).forEach(index ->
             BytesUtils.xori(y[index], sMspCotSenderOutput.getR0(index))
         );

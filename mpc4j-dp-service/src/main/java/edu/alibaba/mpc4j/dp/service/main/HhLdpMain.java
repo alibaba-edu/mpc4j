@@ -18,7 +18,6 @@ import edu.alibaba.mpc4j.dp.service.structure.NaiveStreamCounter;
 import edu.alibaba.mpc4j.dp.service.tool.StreamDataUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -225,7 +224,7 @@ public class HhLdpMain {
         correctHeavyHitters = new ArrayList<>(correctHeavyHitterMap.keySet());
         String correctHeavyHitterString = correctOrderedList.subList(0, k).stream()
             .map(entry -> entry.getKey() + ": " + entry.getValue())
-            .collect(Collectors.toList()).toString();
+            .toList().toString();
         LOGGER.info("Correct heavy hitters: {}", correctHeavyHitterString);
     }
 
@@ -272,13 +271,13 @@ public class HhLdpMain {
         // write warmup_percentage
         printWriter.println("warmup_percentage = " + warmupPercentage);
         // write tab
-        String tab = "name\tε_w\tα\tγ_h\ts_time(s)\tc_time(s)\tcomm.(B)\tcontext(B)\tmem.(B)\t" +
+        String tab = "name\tε_w\tα\tγ_h\ts_time(s)\tc_time(s)\tcomm.(B)\tcontext(B)\t" +
             "warmup_ndcg\twarmup_precision\tndcg\tprecision\tabe\tre";
         printWriter.println(tab);
-        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             "                name", "         ε", "         α", "       γ_h",
             "           s_time(s)", "           c_time(s)",
-            "            comm.(B)", "         context (B)","             mem.(B)",
+            "            comm.(B)", "         context (B)",
             "         warmup_ndcg", "    warmup_precision",
             "                ndcg", "           precision", "                 abe", "                  re"
         );
@@ -393,7 +392,6 @@ public class HhLdpMain {
             clientStopWatch.stop();
             long clientTimeMs = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
             clientStopWatch.reset();
-            long memoryBytes = GraphLayout.parseInstance(heavyGuardian).totalSize();
             // heavy hitter map
             Map<String, Double> heavyHitterMap = heavyGuardian.getRecordItemSet().stream()
                 .collect(Collectors.toMap(item -> item, item -> (double) heavyGuardian.query(item)));
@@ -409,7 +407,6 @@ public class HhLdpMain {
             metrics.setClientTimeMs(clientTimeMs);
             metrics.setPayloadBytes(payloadBytes.longValue());
             metrics.setContextBytes(0L);
-            metrics.setMemoryBytes(memoryBytes);
             metrics.setNdcg(HeavyHitterMetrics.ndcg(heavyHitters, correctHeavyHitters));
             metrics.setPrecision(HeavyHitterMetrics.precision(heavyHitters, correctHeavyHitters));
             metrics.setAbe(HeavyHitterMetrics.absoluteError(heavyHitterMap, correctHeavyHitterMap));
@@ -634,7 +631,6 @@ public class HhLdpMain {
         clientStopWatch.stop();
         long clientTimeMs = clientStopWatch.getTime(TimeUnit.MILLISECONDS);
         clientStopWatch.reset();
-        long memoryBytes = GraphLayout.parseInstance(server).totalSize();
         // final information
         Map<String, Double> heavyHitterMap = server.heavyHitters();
         Preconditions.checkArgument(heavyHitterMap.size() == k);
@@ -646,7 +642,6 @@ public class HhLdpMain {
         metrics.setClientTimeMs(clientTimeMs);
         metrics.setPayloadBytes(payloadBytes.longValue());
         metrics.setContextBytes(contextBytes.longValue());
-        metrics.setMemoryBytes(memoryBytes);
         metrics.setNdcg(HeavyHitterMetrics.ndcg(heavyHitters, correctHeavyHitters));
         metrics.setPrecision(HeavyHitterMetrics.precision(heavyHitters, correctHeavyHitters));
         metrics.setAbe(HeavyHitterMetrics.absoluteError(heavyHitterMap, correctHeavyHitterMap));
@@ -663,14 +658,13 @@ public class HhLdpMain {
         double clientTime = aggMetrics.getClientTimeSecond();
         long payloadBytes = aggMetrics.getPayloadBytes();
         long contextBytes = aggMetrics.getContextBytes();
-        long memoryBytes = aggMetrics.getMemoryBytes();
         double warmupNdcg = aggMetrics.getWarmupNdcg();
         double warmupPrecision = aggMetrics.getWarmupPrecision();
         double ndcg = aggMetrics.getNdcg();
         double precision = aggMetrics.getPrecision();
         double abe = aggMetrics.getAbe();
         double re = aggMetrics.getRe();
-        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             StringUtils.leftPad(typeString, 20),
             StringUtils.leftPad(windowEpsilonString, 10),
             StringUtils.leftPad(alphaString, 10),
@@ -679,7 +673,6 @@ public class HhLdpMain {
             StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(clientTime), 20),
             StringUtils.leftPad(INTEGER_DECIMAL_FORMAT.format(payloadBytes), 20),
             StringUtils.leftPad(INTEGER_DECIMAL_FORMAT.format(contextBytes), 20),
-            StringUtils.leftPad(INTEGER_DECIMAL_FORMAT.format(memoryBytes), 20),
             StringUtils.leftPad(DOUBLE_DECIMAL_FORMAT.format(warmupNdcg), 20),
             StringUtils.leftPad(DOUBLE_DECIMAL_FORMAT.format(warmupPrecision), 20),
             StringUtils.leftPad(DOUBLE_DECIMAL_FORMAT.format(ndcg), 20),
@@ -689,7 +682,7 @@ public class HhLdpMain {
         );
         printWriter.println(
             typeString + "\t" + windowEpsilonString + "\t" + alphaString + "\t" + gammaString + "\t"
-                + serverTime + "\t" + clientTime + "\t" + payloadBytes + "\t" + contextBytes + "\t" + memoryBytes + "\t"
+                + serverTime + "\t" + clientTime + "\t" + payloadBytes + "\t" + contextBytes + "\t"
                 + warmupNdcg + "\t" + warmupPrecision + "\t" + ndcg + "\t" + precision + "\t" + abe + "\t" + re
         );
     }

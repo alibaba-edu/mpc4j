@@ -128,7 +128,7 @@ public class Czz24CwOprfMqRpmtServer extends AbstractMqRpmtServer {
             .collect(Collectors.toList());
         // shuffle
         Collections.shuffle(peqtPayload, secureRandom);
-        Filter<byte[]> filter = FilterFactory.load(envType, filterType, clientElementSize, secureRandom);
+        Filter<byte[]> filter = FilterFactory.createFilter(envType, filterType, clientElementSize, secureRandom);
         peqtPayload.forEach(filter::put);
         return filter.save();
     }

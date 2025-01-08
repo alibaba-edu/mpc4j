@@ -26,7 +26,7 @@ class MqRpmtPsiPtoDesc implements PtoDesc {
         /**
          * server sends encrypted elements
          */
-        SERVER_SEND_CIPHER,
+        SERVER_SEND_BIT_VECTOR,
     }
 
     /**

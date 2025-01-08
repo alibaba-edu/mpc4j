@@ -57,6 +57,13 @@ public interface BitVector {
     int bitNum();
 
     /**
+     * Gets the number of 1's in the bit vector.
+     *
+     * @return number of 1's in the bit vector.
+     */
+    int bitCount();
+
+    /**
      * Get the number of bytes in the bit vector.
      *
      * @return the number of bytes in the bit vector.

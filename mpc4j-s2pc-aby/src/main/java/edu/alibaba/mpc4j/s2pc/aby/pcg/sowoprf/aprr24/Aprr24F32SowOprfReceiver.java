@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * APRP24 (F3, F2)-sowOPRF receiver.
+ * APRR24 (F3, F2)-sowOPRF receiver.
  *
  * @author Weiran Liu
  * @date 2024/6/6
@@ -151,7 +151,7 @@ public class Aprr24F32SowOprfReceiver extends AbstractF32SowOprfReceiver {
         stopWatch.stop();
         long hsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logSubStepInfo(PtoState.PTO_STEP, currentBatchIndex, 1, 4, hsTime);
+        logSubStepInfo(PtoState.PTO_STEP, currentBatchIndex + 1, 1, 4, hsTime);
 
         stopWatch.start();
         // P0 computes f := x −_3 h0 −_3 h1
@@ -176,7 +176,7 @@ public class Aprr24F32SowOprfReceiver extends AbstractF32SowOprfReceiver {
         stopWatch.stop();
         long w1Time = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logSubStepInfo(PtoState.PTO_STEP, currentBatchIndex, 2, 4, w1Time);
+        logSubStepInfo(PtoState.PTO_STEP, currentBatchIndex + 1, 2, 4, w1Time);
 
         stopWatch.start();
         // P0, P1 invoke Conv32 with w_i as the input for P_i. Let v1 be the output for P1.
@@ -188,7 +188,7 @@ public class Aprr24F32SowOprfReceiver extends AbstractF32SowOprfReceiver {
         stopWatch.stop();
         long v1Time = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logSubStepInfo(PtoState.PTO_STEP, currentBatchIndex, 3, 4, v1Time, "P0, P1 invoke Conv32");
+        logSubStepInfo(PtoState.PTO_STEP, currentBatchIndex + 1, 3, 4, v1Time, "P0, P1 invoke Conv32");
 
         stopWatch.start();
         // P1 outputs B · v1.
@@ -205,7 +205,7 @@ public class Aprr24F32SowOprfReceiver extends AbstractF32SowOprfReceiver {
         stopWatch.stop();
         long s1Time = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logSubStepInfo(PtoState.PTO_STEP, currentBatchIndex, 4, 4, s1Time);
+        logSubStepInfo(PtoState.PTO_STEP, currentBatchIndex + 1, 4, 4, s1Time);
 
         return s1s;
     }

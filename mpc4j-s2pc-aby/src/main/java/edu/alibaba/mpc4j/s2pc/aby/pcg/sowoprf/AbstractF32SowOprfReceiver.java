@@ -6,7 +6,6 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
-import edu.alibaba.mpc4j.common.structure.matrix.Z3ByteMatrix;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrix;
@@ -15,7 +14,7 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
 import java.util.Arrays;
 
 /**
- * abstract
+ * abstract (F3, F2)-sowOPRF receiver.
  *
  * @author Weiran Liu
  * @date 2024/6/6
@@ -32,7 +31,7 @@ public abstract class AbstractF32SowOprfReceiver extends AbstractTwoPartyPto imp
     /**
      * matrix A
      */
-    protected Z3ByteMatrix matrixA;
+    protected F32WprfMatrix matrixA;
     /**
      * matrix B
      */
@@ -53,7 +52,10 @@ public abstract class AbstractF32SowOprfReceiver extends AbstractTwoPartyPto imp
     protected AbstractF32SowOprfReceiver(PtoDesc ptoDesc, Rpc receiverRpc, Party senderParty, F32SowOprfConfig config) {
         super(ptoDesc, receiverRpc, senderParty, config);
         z3Field = new Z3ByteField();
-        f32Wprf = new F32Wprf(z3Field, new byte[CommonConstants.BLOCK_BYTE_LENGTH], new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        byte[] seedA = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] seedB = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        Arrays.fill(seedB, (byte) 0xFF);
+        f32Wprf = new F32Wprf(z3Field, seedA, seedB, config.getMatrixType());
         matrixA = f32Wprf.getMatrixA();
         matrixB = f32Wprf.getMatrixB();
     }
@@ -81,6 +83,5 @@ public abstract class AbstractF32SowOprfReceiver extends AbstractTwoPartyPto imp
                 }
             })
             .toArray(byte[][]::new);
-        extraInfo++;
     }
 }

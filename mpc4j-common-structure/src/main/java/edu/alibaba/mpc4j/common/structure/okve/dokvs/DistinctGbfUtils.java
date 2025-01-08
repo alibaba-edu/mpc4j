@@ -1,11 +1,10 @@
 package edu.alibaba.mpc4j.common.structure.okve.dokvs;
 
+import edu.alibaba.mpc4j.common.structure.okve.OkveHashUtils;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
-import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 
 /**
  * distinct GBF utilities.
@@ -52,34 +51,6 @@ public class DistinctGbfUtils {
      * @return sparse positions for the given key.
      */
     public static <X> int[] sparsePositions(Prf hash, X key, int m) {
-        // check the output byte length of the hash function
-        assert hash.getOutputByteLength() == SPARSE_HASH_NUM * Integer.BYTES;
-        assert SPARSE_HASH_NUM <= m;
-        byte[] keyBytes = ObjectUtils.objectToByteArray(key);
-        int[] hashes = IntUtils.byteArrayToIntArray(hash.getBytes(keyBytes));
-        // we now use the method provided in VOLE-PSI to get distinct hash indexes
-        for (int j = 0; j < SPARSE_HASH_NUM; j++) {
-            // hj = r % (m - j)
-            int modulus = m - j;
-            int hj = Math.abs(hashes[j] % modulus);
-            int i = 0;
-            int end = j;
-            // for each previous hi <= hj, we set hj = hj + 1.
-            while (i != end) {
-                if (hashes[i] <= hj) {
-                    hj++;
-                } else {
-                    break;
-                }
-                i++;
-            }
-            // now we now that all hi > hj, we place the value
-            while (i != end) {
-                hashes[end] = hashes[end - 1];
-                end--;
-            }
-            hashes[i] = hj;
-        }
-        return hashes;
+        return OkveHashUtils.distinctPositions(hash, key, SPARSE_HASH_NUM, m);
     }
 }

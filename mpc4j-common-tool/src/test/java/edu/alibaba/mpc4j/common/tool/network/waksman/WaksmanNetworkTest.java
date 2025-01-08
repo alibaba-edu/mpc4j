@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.network.waksman;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetworkFactory.WaksmanNetworkType;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,7 +42,7 @@ public class WaksmanNetworkTest {
         // JDK
         configurations.add(new Object[]{WaksmanNetworkType.JDK.name(), WaksmanNetworkType.JDK,});
         // Native
-        configurations.add(new Object[] {WaksmanNetworkType.NATIVE.name(), WaksmanNetworkType.NATIVE,});
+        configurations.add(new Object[]{WaksmanNetworkType.NATIVE.name(), WaksmanNetworkType.NATIVE,});
 
         return configurations;
     }
@@ -91,6 +91,7 @@ public class WaksmanNetworkTest {
         Vector<Integer> outputVector = waksmanNetwork.permutation(inputVector);
         int[] output = outputVector.stream().mapToInt(i -> i).toArray();
         Assert.assertArrayEquals(new int[]{4, 2, 1, 6, 7, 3, 8, 5, 0}, output);
+
     }
 
     @Test
@@ -139,12 +140,28 @@ public class WaksmanNetworkTest {
     }
 
     private void testSwitchCount(int n, int expectSwitchCount) {
-        int[] pi = IntStream.range(0, n).toArray();
-        ArrayUtils.shuffle(pi, SECURE_RANDOM);
+        int[] pi = PermutationNetworkUtils.randomPermutation(n, SECURE_RANDOM);
         // test the generated network has that number of switches.
         WaksmanNetwork<Integer> network = WaksmanNetworkFactory.createInstance(type, pi);
         Assert.assertEquals(expectSwitchCount, network.getSwitchCount());
         // test the Factory returns the correct number of switches.
         Assert.assertEquals(expectSwitchCount, WaksmanNetworkFactory.getSwitchCount(n));
+    }
+
+    @Test
+    public void testFixedLayerPermutations() {
+        int[] pi = PermutationNetworkUtils.randomPermutation(9, SECURE_RANDOM);
+        WaksmanNetwork<Integer> network = WaksmanNetworkFactory.createInstance(type, pi);
+        int[][] actual = network.getFixedLayerPermutations();
+        int[][] expect = new int[][]{
+            new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8},
+            new int[]{0, 2, 4, 6, 1, 3, 5, 7, 8},
+            new int[]{0, 1, 2, 3, 4, 6, 5, 7, 8},
+            new int[]{0, 2, 1, 3, 4, 5, 6, 7, 8},
+            new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8},
+            new int[]{0, 2, 1, 3, 4, 6, 5, 7, 8},
+            new int[]{0, 4, 1, 5, 2, 6, 3, 7, 8},
+        };
+        Assert.assertArrayEquals(expect, actual);
     }
 }

@@ -133,7 +133,7 @@ public class Czz24CwOprfMqRpmtClient extends AbstractMqRpmtClient {
     }
 
     private boolean[] handlePeqtPayload(List<byte[]> peqtPayload, ByteBuffer[] clientPeqtArray) {
-        Filter<byte[]> filter = FilterFactory.load(envType, peqtPayload);
+        Filter<byte[]> filter = FilterFactory.loadFilter(envType, peqtPayload);
         boolean[] containVector = new boolean[serverElementSize];
         IntStream.range(0, serverElementSize).forEach(serverElementIndex -> {
             if (filter.mightContain(clientPeqtArray[serverElementIndex].array())) {

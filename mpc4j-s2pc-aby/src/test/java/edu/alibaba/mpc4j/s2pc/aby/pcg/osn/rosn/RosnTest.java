@@ -6,8 +6,10 @@ import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.OsnTestUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory.RosnType;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.cgp20.Cgp20CstRosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.gmr21.Gmr21FlatNetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.gmr21.Gmr21NetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.lll24.Lll24CstRosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.lll24.Lll24FlatNetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.lll24.Lll24NetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.ms13.Ms13NetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.prrs24.Prrs24OprfRosnConfig;
@@ -69,9 +71,25 @@ public class RosnTest extends AbstractTwoPartyMemoryRpcPto {
             RosnType.PRRS24_OPRF.name() + " (" + Conv32Type.SCOT + ")",
             new Prrs24OprfRosnConfig.Builder(Conv32Type.SCOT).build(),
         });
+        // MS13_NET
+        configurations.add(new Object[]{
+            RosnType.MS13_NET.name(), new Ms13NetRosnConfig.Builder(false).build(),
+        });
+        // GMR21_NET
+        configurations.add(new Object[]{
+            RosnType.GMR21_NET.name(), new Gmr21NetRosnConfig.Builder(false).build(),
+        });
+        // GMR21_FLAT_NET
+        configurations.add(new Object[]{
+            RosnType.GMR21_FLAT_NET.name(), new Gmr21FlatNetRosnConfig.Builder(false).build(),
+        });
         // LLL24_NET
         configurations.add(new Object[]{
             RosnType.LLL24_NET.name(), new Lll24NetRosnConfig.Builder(false).build(),
+        });
+        // LLL24_FLAT_NET
+        configurations.add(new Object[]{
+            RosnType.LLL24_FLAT_NET.name(), new Lll24FlatNetRosnConfig.Builder(false).build(),
         });
         // LLL24_CST
         configurations.add(new Object[]{
@@ -87,14 +105,7 @@ public class RosnTest extends AbstractTwoPartyMemoryRpcPto {
         configurations.add(new Object[]{
             RosnType.CGP20_CST.name() + " (T = 16)", new Cgp20CstRosnConfig.Builder(16, false).build(),
         });
-        // GMR21_NET
-        configurations.add(new Object[]{
-            RosnType.GMR21_NET.name(), new Gmr21NetRosnConfig.Builder(false).build(),
-        });
-        // MS13_NET
-        configurations.add(new Object[]{
-            RosnType.MS13_NET.name(), new Ms13NetRosnConfig.Builder(false).build(),
-        });
+
 
         return configurations;
     }

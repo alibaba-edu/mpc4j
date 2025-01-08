@@ -47,6 +47,10 @@ class PianoCpIdxPirPtoDesc implements PtoDesc {
          * server send response
          */
         SERVER_SEND_RESPONSE,
+        /**
+         * server send update
+         */
+        SERVER_SEND_UPDATE,
     }
 
     /**

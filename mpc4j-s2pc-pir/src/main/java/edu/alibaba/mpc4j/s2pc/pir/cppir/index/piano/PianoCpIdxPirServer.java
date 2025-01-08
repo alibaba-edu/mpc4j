@@ -1,11 +1,18 @@
 package edu.alibaba.mpc4j.s2pc.pir.cppir.index.piano;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.StreamCpIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.piano.PianoCpIdxPirPtoDesc.PtoStep;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.piano.hint.PianoHint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -19,7 +26,8 @@ import java.util.concurrent.TimeUnit;
  * @author Weiran Liu
  * @date 2023/8/25
  */
-public class PianoCpIdxPirServer extends AbstractCpIdxPirServer {
+public class PianoCpIdxPirServer extends AbstractCpIdxPirServer implements StreamCpIdxPirServer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PianoCpIdxPirServer.class);
     /**
      * chunk size
      */
@@ -85,15 +93,18 @@ public class PianoCpIdxPirServer extends AbstractCpIdxPirServer {
     private void preprocessing() throws MpcAbortException {
         stopWatch.start();
         // stream sending the database
-        for (int chunkId = 0; chunkId < chunkNum; chunkId++) {
-            // concatenate database into the whole byte buffer
-            ByteBuffer byteBuffer = ByteBuffer.allocate(byteL * chunkSize);
-            for (int offset = 0; offset < chunkSize; offset++) {
-                byteBuffer.put(paddingDatabase.getBytesData(chunkId * chunkSize + offset));
+        for (int blockChunkId = 0; blockChunkId < chunkNum; blockChunkId += PianoHint.PRP_BLOCK_OFFSET_NUM) {
+            LOGGER.info("preprocessing {} / {}", blockChunkId + 1, chunkNum);
+            // send batched chunks
+            for (int chunkId = blockChunkId; chunkId < blockChunkId + PianoHint.PRP_BLOCK_OFFSET_NUM && chunkId < chunkNum; chunkId++) {
+                // concatenate database into the whole byte buffer
+                ByteBuffer byteBuffer = ByteBuffer.allocate(byteL * chunkSize);
+                for (int offset = 0; offset < chunkSize; offset++) {
+                    byteBuffer.put(paddingDatabase.getBytesData(chunkId * chunkSize + offset));
+                }
+                List<byte[]> streamRequestPayload = Collections.singletonList(byteBuffer.array());
+                sendOtherPartyPayload(PtoStep.SERVER_SEND_STREAM_DATABASE_REQUEST.ordinal(), streamRequestPayload);
             }
-            List<byte[]> streamRequestPayload = Collections.singletonList(byteBuffer.array());
-            sendOtherPartyPayload(PtoStep.SERVER_SEND_STREAM_DATABASE_REQUEST.ordinal(), streamRequestPayload);
-
             // receive response
             List<byte[]> streamResponsePayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_STREAM_DATABASE_RESPONSE.ordinal());
             MpcAbortPreconditions.checkArgument(streamResponsePayload.isEmpty());
@@ -109,37 +120,25 @@ public class PianoCpIdxPirServer extends AbstractCpIdxPirServer {
     @Override
     public void pir(int batchNum) throws MpcAbortException {
         setPtoInput(batchNum);
+        logPhaseInfo(PtoState.PTO_BEGIN);
 
         for (int i = 0; i < batchNum; i++) {
+            LOGGER.info("query {} / {}", i + 1, batchNum);
             List<byte[]> queryRequestPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_QUERY.ordinal());
             int queryRequestSize = queryRequestPayload.size();
             MpcAbortPreconditions.checkArgument(queryRequestSize == 0 || queryRequestSize == 1);
             if (queryRequestSize == 0) {
-                // response empty query
-                responseEmptyQuery();
+                sendOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal(), new LinkedList<>());
             } else {
                 // response actual query
                 respondActualQuery(queryRequestPayload);
             }
         }
-    }
-
-    private void responseEmptyQuery() {
-        logPhaseInfo(PtoState.PTO_BEGIN);
-
-        stopWatch.start();
-        sendOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal(), new LinkedList<>());
-        stopWatch.stop();
-        long responseTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 1, responseTime, "Server responses miss query");
 
         logPhaseInfo(PtoState.PTO_END);
     }
 
     private void respondActualQuery(List<byte[]> queryRequestPayload) throws MpcAbortException {
-        logPhaseInfo(PtoState.PTO_BEGIN);
-
         stopWatch.start();
         byte[] queryByteArray = queryRequestPayload.get(0);
         MpcAbortPreconditions.checkArgument(queryByteArray.length == Short.BYTES * (chunkNum - 1));
@@ -180,16 +179,49 @@ public class PianoCpIdxPirServer extends AbstractCpIdxPirServer {
         }
         List<byte[]> queryResponsePayload = Collections.singletonList(byteBuffer.array());
         sendOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal(), queryResponsePayload);
-        // increase current query num
-        currentQueryNum++;
         stopWatch.stop();
         long responseTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 1, responseTime, "Server responses actual query");
+        logStepInfo(
+            PtoState.PTO_STEP, 1, 1, responseTime,
+            "Server responses " + (currentQueryNum + 1) + "-th actual query"
+        );
+
+        currentQueryNum++;
         // when query num exceeds the maximum, rerun preprocessing.
-        if (currentQueryNum >= roundQueryNum) {
+        if (currentQueryNum > roundQueryNum) {
             preprocessing();
         }
+    }
+
+    @Override
+    public void update(int[] xs, byte[][] entries) {
+        MathPreconditions.checkEqual("xs.length", "entries.length", xs.length, entries.length);
+        logPhaseInfo(PtoState.PTO_BEGIN);
+
+        for (int round = 0; round < xs.length; round++) {
+            stopWatch.start();
+            int x = xs[round];
+            byte[] entry = entries[round];
+            MathPreconditions.checkNonNegativeInRange("x", x, n);
+            Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(entry, byteL, l));
+            // δ ← (i, D[i] ⊕ d)
+            byte[] delta = new byte[byteL];
+            BytesUtils.xori(delta, paddingDatabase.getBytesData(x));
+            BytesUtils.xori(delta, entry);
+            // D[i] ← d
+            paddingDatabase.setBytesData(x, entry);
+            // Return δ
+            List<byte[]> serverUpdatePayload = new LinkedList<>();
+            serverUpdatePayload.add(IntUtils.intToByteArray(x));
+            serverUpdatePayload.add(delta);
+            sendOtherPartyPayload(PtoStep.SERVER_SEND_UPDATE.ordinal(), serverUpdatePayload);
+            stopWatch.stop();
+            long updateTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+            stopWatch.reset();
+            logStepInfo(PtoState.PTO_STEP, 1, 1, updateTime, "Server updates " + (round + 1) + "-th entry");
+        }
+
         logPhaseInfo(PtoState.PTO_END);
     }
 }

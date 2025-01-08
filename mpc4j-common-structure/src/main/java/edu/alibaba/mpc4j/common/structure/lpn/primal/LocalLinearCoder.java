@@ -5,6 +5,7 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 
@@ -16,9 +17,9 @@ import java.util.stream.IntStream;
  * <p></p>
  * The generation matrix of d-LLC is an n * k bit matrix. In each row, only d < k positions are 1, others are all 0.
  * <p></p>
- * The implementation is based on the following code in emp-ot:
- * <p></p>
- * https://github.com/emp-toolkit/emp-ot/blob/master/emp-ot/ferret/lpn_f2.h
+ * See <a href="https://github.com/emp-toolkit/emp-ot/blob/master/emp-ot/ferret/lpn_f2.h">lpn_f2.h</a> in emp-ot for
+ * details.
+ *
  *
  * @author Weiran Liu
  * @date 2022/01/31
@@ -91,7 +92,7 @@ public class LocalLinearCoder implements PrimalLpnCoder {
                     // prp->permute_block(tmp, 3)
                     indexByteBuffer.put(prp.prp(block));
                 }
-                int[] randomRow = IntUtils.byteArrayToIntArray(indexByteBuffer.array());
+                int[] randomRow = IntUtils.randomByteArrayToIntArray(indexByteBuffer.array());
                 int[] sparseRow = new int[D];
                 for (int j = 0; j < D; j++) {
                     sparseRow[j] = Math.abs(randomRow[j] % k);
@@ -137,9 +138,9 @@ public class LocalLinearCoder implements PrimalLpnCoder {
     }
 
     @Override
-    public byte[][] encode(byte[][] es) {
-        MathPreconditions.checkEqual("k", "inputs.length", k, es.length);
-        int byteL = es[0].length;
+    public byte[][] encode(byte[][] e) {
+        MathPreconditions.checkEqual("k", "inputs.length", k, e.length);
+        int byteL = e[0].length;
         // we do not need to verify input length, xori will verify that
         IntStream rowIndexIntStream = IntStream.range(0, n);
         rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
@@ -148,9 +149,29 @@ public class LocalLinearCoder implements PrimalLpnCoder {
                 byte[] w = new byte[byteL];
                 for (int j = 0; j < D; j++) {
                     int position = matrix[rowIndex][j];
-                    BytesUtils.xori(w, es[position]);
+                    BytesUtils.xori(w, e[position]);
                 }
                 return w;
+            })
+            .toArray(byte[][]::new);
+    }
+
+    @Override
+    public byte[][] encodeBlock(byte[][] e) {
+        MathPreconditions.checkEqual("k", "inputs.length", k, e.length);
+        // we do not need to verify input length, xori will verify that
+        IntStream rowIndexIntStream = IntStream.range(0, n);
+        rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
+        return rowIndexIntStream
+            .mapToObj(rowIndex -> {
+                long[] w = new long[CommonConstants.BLOCK_LONG_LENGTH];
+                for (int j = 0; j < D; j++) {
+                    int position = matrix[rowIndex][j];
+                    BlockUtils.xori(w, e[position]);
+                }
+                byte[] result = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                BlockUtils.toByteArray(w, result);
+                return result;
             })
             .toArray(byte[][]::new);
     }

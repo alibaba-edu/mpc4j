@@ -3,12 +3,16 @@ package edu.alibaba.mpc4j.s2pc.aby.main.osn;
 import com.google.common.base.Preconditions;
 import com.google.common.math.IntMath;
 import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.network.decomposer.PermutationDecomposerFactory.DecomposerType;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory.RosnType;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.cgp20.Cgp20CstRosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.gmr21.Gmr21FlatNetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.gmr21.Gmr21NetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.lll24.Lll24CstRosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.lll24.Lll24FlatNetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.lll24.Lll24NetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.ms13.Ms13NetRosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.prrs24.Prrs24OprfRosnConfig;
@@ -26,7 +30,19 @@ public class RosnConfigUtils {
     /**
      * decompose length
      */
+    private static final String DECOMPOSER_TYPE = "decomposer_type";
+    /**
+     * decompose length
+     */
     private static final String DECOMPOSE_LEN = "decompose_t";
+    /**
+     * max nt
+     */
+    private static final String LOG_MAX_NT_FOR_BATCH = "log_max_nt";
+    /**
+     * max storage for one batch
+     */
+    private static final String LOG_MAX_CACHE_FOR_BATCH = "log_max_cache";
     /**
      * con32 type
      */
@@ -50,12 +66,16 @@ public class RosnConfigUtils {
         switch (rosnType) {
             case LLL24_NET:
                 return createLll24NetOsnConfig(properties);
+            case LLL24_FLAT_NET:
+                return createLll24FlatNetOsnConfig(properties);
             case LLL24_CST:
                 return createLll24CstOsnConfig(properties);
             case MS13_NET:
                 return createMs13NetOsnConfig(properties);
             case GMR21_NET:
                 return createGmr21NetOsnConfig(properties);
+            case GMR21_FLAT_NET:
+                return createGmrFlatNetOsnConfig(properties);
             case CGP20_CST:
                 return createCgp20CstOsnConfig(properties);
             case PRRS24_OPRF:
@@ -70,11 +90,22 @@ public class RosnConfigUtils {
         return new Lll24NetRosnConfig.Builder(silent).build();
     }
 
+    private static RosnConfig createLll24FlatNetOsnConfig(Properties properties) {
+        boolean silent = MainPtoConfigUtils.readSilentCot(properties);
+        return new Lll24FlatNetRosnConfig.Builder(silent).build();
+    }
+
     private static RosnConfig createLll24CstOsnConfig(Properties properties) {
         int t = PropertiesUtils.readInt(properties, DECOMPOSE_LEN, 32);
         Preconditions.checkArgument(IntMath.isPowerOfTwo(t), "T must be a power of 2: %s", t);
+        int logMaxNt = PropertiesUtils.readInt(properties, LOG_MAX_NT_FOR_BATCH, 28);
+        MathPreconditions.checkPositiveInRangeClosed("1 < logMaxNt <= 31", logMaxNt, 31);
+        int logMaxCache = PropertiesUtils.readInt(properties, LOG_MAX_CACHE_FOR_BATCH, 32);
+        MathPreconditions.checkPositive("logMaxCache", logMaxCache);
+        String decomposerTypeStr = PropertiesUtils.readString(properties, DECOMPOSER_TYPE, "LLL24");
+        DecomposerType decomposerType = DecomposerType.valueOf(decomposerTypeStr);
         boolean silent = MainPtoConfigUtils.readSilentCot(properties);
-        return new Lll24CstRosnConfig.Builder(t, silent).build();
+        return new Lll24CstRosnConfig.Builder(t, silent).setDecomposerType(decomposerType).setMaxNt4Batch(1 << logMaxNt).setMaxCache4Batch(1L << logMaxCache).build();
     }
 
     private static RosnConfig createMs13NetOsnConfig(Properties properties) {
@@ -87,11 +118,22 @@ public class RosnConfigUtils {
         return new Gmr21NetRosnConfig.Builder(silent).build();
     }
 
+    private static RosnConfig createGmrFlatNetOsnConfig(Properties properties) {
+        boolean silent = MainPtoConfigUtils.readSilentCot(properties);
+        return new Gmr21FlatNetRosnConfig.Builder(silent).build();
+    }
+
     private static RosnConfig createCgp20CstOsnConfig(Properties properties) {
         int t = PropertiesUtils.readInt(properties, DECOMPOSE_LEN, 32);
         Preconditions.checkArgument(IntMath.isPowerOfTwo(t), "T must be a power of 2: %s", t);
+        int logMaxNt = PropertiesUtils.readInt(properties, LOG_MAX_NT_FOR_BATCH, 28);
+        MathPreconditions.checkPositiveInRangeClosed("1 < logMaxNt <= 31", logMaxNt, 31);
+        int logMaxCache = PropertiesUtils.readInt(properties, LOG_MAX_CACHE_FOR_BATCH, 32);
+        MathPreconditions.checkPositive("logMaxCache", logMaxCache);
+        String decomposerTypeStr = PropertiesUtils.readString(properties, DECOMPOSER_TYPE, "LLL24");
+        DecomposerType decomposerType = DecomposerType.valueOf(decomposerTypeStr);
         boolean silent = MainPtoConfigUtils.readSilentCot(properties);
-        return new Cgp20CstRosnConfig.Builder(t, silent).build();
+        return new Cgp20CstRosnConfig.Builder(t, silent).setDecomposerType(decomposerType).setMaxNt4Batch(1 << logMaxNt).setMaxCache4Batch(1L << logMaxCache).build();
     }
 
     private static RosnConfig createPrrs24OprfOsnConfig(Properties properties) {

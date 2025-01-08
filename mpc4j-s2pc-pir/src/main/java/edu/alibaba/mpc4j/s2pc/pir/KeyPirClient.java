@@ -11,15 +11,16 @@ import java.util.ArrayList;
  * @author Liqiang Peng
  * @date 2024/7/22
  */
-public interface KeyPirClient<T> extends TwoPartyPto {/**
- * Client initializes the protocol.
- *
- * @param n           database size.
- * @param l           value bit length.
- * @param maxBatchNum max batch num.
- * @throws MpcAbortException the protocol failure aborts.
- */
-void init(int n, int l, int maxBatchNum) throws MpcAbortException;
+public interface KeyPirClient<T> extends TwoPartyPto {
+    /**
+    * Client initializes the protocol.
+    *
+    * @param n           database size.
+    * @param l           value bit length.
+    * @param maxBatchNum max batch num.
+    * @throws MpcAbortException the protocol failure aborts.
+    */
+    void init(int n, int l, int maxBatchNum) throws MpcAbortException;
 
     /**
      * Client initializes the protocol.
@@ -40,7 +41,6 @@ void init(int n, int l, int maxBatchNum) throws MpcAbortException;
      * @throws MpcAbortException the protocol failure aborts.
      */
     byte[][] pir(ArrayList<T> keys) throws MpcAbortException;
-
 
     /**
      * Client executes the protocol.

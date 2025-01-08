@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.lll24;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
@@ -63,6 +64,35 @@ public class Lll24DosnSender extends AbstractDosnSender {
         logStepInfo(PtoState.PTO_STEP, 1, 2, rosnTime);
 
         stopWatch.start();
+        innerOsn(senderOutput);
+        stopWatch.stop();
+        long maskInputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 2, 2, maskInputTime);
+
+        logPhaseInfo(PtoState.PTO_END);
+        return new DosnPartyOutput(senderOutput.getBs());
+    }
+
+    @Override
+    public DosnPartyOutput dosn(byte[][] inputVector, int byteLength, RosnSenderOutput senderOutput) throws MpcAbortException {
+        Preconditions.checkArgument(senderOutput.getNum() == inputVector.length);
+        Preconditions.checkArgument(senderOutput.getByteLength() == byteLength);
+        setPtoInput(inputVector, byteLength);
+        logPhaseInfo(PtoState.PTO_BEGIN);
+
+        stopWatch.start();
+        innerOsn(senderOutput);
+        stopWatch.stop();
+        long maskInputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 1, 1, maskInputTime);
+
+        logPhaseInfo(PtoState.PTO_END);
+        return new DosnPartyOutput(senderOutput.getBs());
+    }
+
+    private void innerOsn(RosnSenderOutput senderOutput){
         // P1 also sends m = x + a^(1)
         byte[][] as = senderOutput.getAs();
         IntStream intStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
@@ -70,11 +100,5 @@ public class Lll24DosnSender extends AbstractDosnSender {
             .mapToObj(index -> BytesUtils.xor(inputVector[index], as[index]))
             .collect(Collectors.toList());
         sendOtherPartyPayload(PtoStep.SENDER_SEND_MASK_INPUT.ordinal(), maskInputDataPacketPayload);
-        stopWatch.stop();
-        long maskInputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 2, 2, maskInputTime);
-
-        return new DosnPartyOutput(senderOutput.getBs());
     }
 }

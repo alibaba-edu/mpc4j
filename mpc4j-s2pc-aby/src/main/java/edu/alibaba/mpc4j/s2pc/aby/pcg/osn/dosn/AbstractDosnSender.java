@@ -4,7 +4,6 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 
 import java.util.stream.IntStream;
@@ -44,7 +43,6 @@ public abstract class AbstractDosnSender extends AbstractTwoPartyPto implements 
 
     protected void setPtoInput(byte[][] inputVector, int byteLength) {
         checkInitialized();
-        MathPreconditions.checkGreaterOrEqual("byteLength", byteLength, CommonConstants.STATS_BYTE_LENGTH);
         this.byteLength = byteLength;
         MathPreconditions.checkGreater("num", inputVector.length, 1);
         IntStream.range(0, inputVector.length).forEach(i -> {

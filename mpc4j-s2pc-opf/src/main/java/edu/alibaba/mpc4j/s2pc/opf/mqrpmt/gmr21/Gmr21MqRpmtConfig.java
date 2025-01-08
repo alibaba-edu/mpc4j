@@ -2,16 +2,19 @@ package edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.lll24.Lll24DosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnConfig;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfConfig;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnConfig;
-import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
 
 /**
  * GMR21-mqRPMT config.
@@ -33,6 +36,10 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
      */
     private final DosnConfig dosnConfig;
     /**
+     * random-OSN
+     */
+    private final RosnConfig rosnConfig;
+    /**
      * OKVS type
      */
     private final Gf2eDokvsType okvsType;
@@ -46,6 +53,7 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
         cuckooHashOprfConfig = builder.cuckooHashOprfConfig;
         peqtOprfConfig = builder.peqtOprfConfig;
         dosnConfig = builder.dosnConfig;
+        rosnConfig = builder.rosnConfig;
         okvsType = builder.okvsType;
         cuckooHashBinType = builder.cuckooHashBinType;
     }
@@ -74,6 +82,10 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
         return dosnConfig;
     }
 
+    public RosnConfig getRosnConfig() {
+        return rosnConfig;
+    }
+
     public Gf2eDokvsType getOkvsType() {
         return okvsType;
     }
@@ -94,7 +106,11 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
         /**
          * OSN
          */
-        private final DosnConfig dosnConfig;
+        private DosnConfig dosnConfig;
+        /**
+         * random-OSN
+         */
+        private RosnConfig rosnConfig;
         /**
          * OKVS type
          */
@@ -108,6 +124,7 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
             cuckooHashOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
             peqtOprfConfig = OprfFactory.createOprfDefaultConfig(SecurityModel.SEMI_HONEST);
             dosnConfig = DosnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+            rosnConfig = RosnFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
             okvsType = Gf2eDokvsType.MEGA_BIN;
             // this type is used in the GMR21 implementation
             // see https://github.com/osu-crypto/PSI-analytics/blob/master/test/psi_analytics_eurocrypt19_test.cpp#L35
@@ -121,6 +138,12 @@ public class Gmr21MqRpmtConfig extends AbstractMultiPartyPtoConfig implements Mq
 
         public Builder setCuckooHashBinType(CuckooHashBinType cuckooHashBinType) {
             this.cuckooHashBinType = cuckooHashBinType;
+            return this;
+        }
+
+        public Builder setRosnConfig(RosnConfig rosnConfig) {
+            this.rosnConfig = rosnConfig;
+            this.dosnConfig = new Lll24DosnConfig.Builder(rosnConfig).build();
             return this;
         }
 

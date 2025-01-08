@@ -101,11 +101,11 @@ public class H3TcFinderTest {
     }
 
     /**
-     * 2哈希-布谷鸟图
+     * cuckoo table
      */
     private final H3CuckooTable<String> h3CuckooTable;
     /**
-     * 剩余边数量
+     * remained dataset size
      */
     private final int remainedDataSetSize;
 

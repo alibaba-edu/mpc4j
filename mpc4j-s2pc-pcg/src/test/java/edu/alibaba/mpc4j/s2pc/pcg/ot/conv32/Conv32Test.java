@@ -7,6 +7,7 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.Conv32Factory.Conv32Type;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.ccot.CcotConv32Config;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.scot.ScotConv32Config;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.svode.SvodeConv32Config;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.svole.SvoleConv32Config;
@@ -39,6 +40,11 @@ public class Conv32Test extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
+        // CCOT
+        configurations.add(new Object[] {
+            Conv32Type.CCOT.name() + " (" + SecurityModel.SEMI_HONEST + ")",
+            new CcotConv32Config.Builder(SecurityModel.SEMI_HONEST).build(),
+        });
         // SVODE
         configurations.add(new Object[] {
             Conv32Type.SVODE.name() + " (" + SecurityModel.SEMI_HONEST + ")",

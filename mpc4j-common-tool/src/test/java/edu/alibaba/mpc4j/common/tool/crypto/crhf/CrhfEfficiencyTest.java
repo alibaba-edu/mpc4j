@@ -43,9 +43,14 @@ public class CrhfEfficiencyTest {
     @Test
     public void testEfficiency() {
         LOGGER.info("{}\t{}\t{}\t{}", "                name", "    log(n)", "  parallel", "  crhf(us)");
+        // non-parallel
         for (CrhfType type : CrhfType.values()) {
             Crhf crhf = CrhfFactory.createInstance(EnvType.STANDARD, type);
             testEfficiency(crhf, false);
+        }
+        // parallel
+        for (CrhfType type : CrhfType.values()) {
+            Crhf crhf = CrhfFactory.createInstance(EnvType.STANDARD, type);
             testEfficiency(crhf, true);
         }
     }

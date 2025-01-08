@@ -4,8 +4,6 @@ import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractMultiPartyPtoConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtConfig;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotConfig;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pso.psi.mqrpmt.MqRpmtPsiConfig;
 import edu.alibaba.mpc4j.s2pc.pso.psi.PsiFactory.PsiType;
 
@@ -20,15 +18,10 @@ public class Gmr21PsiConfig extends AbstractMultiPartyPtoConfig implements MqRpm
      * mq-RPMT config
      */
     private final MqRpmtConfig mqRpmtConfig;
-    /**
-     * core COT config
-     */
-    private final CoreCotConfig coreCotConfig;
 
     private Gmr21PsiConfig(Builder builder) {
-        super(SecurityModel.SEMI_HONEST, builder.mqRpmtConfig, builder.coreCotConfig);
+        super(SecurityModel.SEMI_HONEST, builder.mqRpmtConfig);
         mqRpmtConfig = builder.mqRpmtConfig;
-        coreCotConfig = builder.coreCotConfig;
     }
 
     @Override
@@ -41,27 +34,14 @@ public class Gmr21PsiConfig extends AbstractMultiPartyPtoConfig implements MqRpm
         return mqRpmtConfig;
     }
 
-    @Override
-    public CoreCotConfig getCoreCotConfig() {return coreCotConfig; }
-
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Gmr21PsiConfig> {
         /**
          * mq-RPMT config
          */
         private final MqRpmtConfig mqRpmtConfig;
-        /**
-         * core COT config
-         */
-        private CoreCotConfig coreCotConfig;
 
         public Builder(boolean silent) {
             mqRpmtConfig = new Gmr21MqRpmtConfig.Builder(silent).build();
-            coreCotConfig = CoreCotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST);
-        }
-
-        public Builder setCoreCotConfig(CoreCotConfig coreCotConfig) {
-            this.coreCotConfig = coreCotConfig;
-            return this;
         }
 
         @Override

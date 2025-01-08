@@ -258,7 +258,7 @@ public class Prty19FastPsiServer<T> extends AbstractPsiServer<T> {
             .collect(Collectors.toList());
         Collections.shuffle(serverElementPrfs, secureRandom);
         // create filter
-        Filter<byte[]> prfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> prfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         serverElementPrfs.forEach(prfFilter::put);
         return prfFilter.save();
     }

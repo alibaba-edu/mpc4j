@@ -2,19 +2,14 @@ package edu.alibaba.mpc4j.s2pc.pso.psi.mqrpmt;
 
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtClient;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotReceiverOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtServer;
 import edu.alibaba.mpc4j.s2pc.pso.psi.AbstractPsiClient;
 import edu.alibaba.mpc4j.s2pc.pso.psi.mqrpmt.MqRpmtPsiPtoDesc.PtoStep;
 
@@ -36,13 +31,9 @@ import java.util.stream.Stream;
  */
 public abstract class AbstractMqRpmtPsiClient<T> extends AbstractPsiClient<T> {
     /**
-     * mq-RPMT client
+     * mq-RPMT server
      */
-    private final MqRpmtClient mqRpmtClient;
-    /**
-     * core COT receiver
-     */
-    private final CoreCotReceiver coreCotReceiver;
+    private final MqRpmtServer mqRpmtServer;
     /**
      * hash
      */
@@ -50,10 +41,8 @@ public abstract class AbstractMqRpmtPsiClient<T> extends AbstractPsiClient<T> {
 
     public AbstractMqRpmtPsiClient(PtoDesc ptoDesc, Rpc clientRpc, Party serverParty, MqRpmtPsiConfig config) {
         super(ptoDesc, clientRpc, serverParty, config);
-        mqRpmtClient = MqRpmtFactory.createClient(clientRpc, serverParty, config.getMqRpmtConfig());
-        addSubPto(mqRpmtClient);
-        coreCotReceiver = CoreCotFactory.createReceiver(clientRpc, serverParty, config.getCoreCotConfig());
-        addSubPto(coreCotReceiver);
+        mqRpmtServer = MqRpmtFactory.createServer(clientRpc, serverParty, config.getMqRpmtConfig());
+        addSubPto(mqRpmtServer);
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
     }
 
@@ -65,8 +54,7 @@ public abstract class AbstractMqRpmtPsiClient<T> extends AbstractPsiClient<T> {
         stopWatch.start();
         int refineMaxClientElementSize = Math.max(maxClientElementSize, 2);
         int refineMaxServerElementSize = Math.max(maxServerElementSize, 2);
-        mqRpmtClient.init(refineMaxClientElementSize, refineMaxServerElementSize);
-        coreCotReceiver.init();
+        mqRpmtServer.init(refineMaxClientElementSize, refineMaxServerElementSize);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -98,43 +86,22 @@ public abstract class AbstractMqRpmtPsiClient<T> extends AbstractPsiClient<T> {
         stopWatch.stop();
         long setupTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 4, setupTime, "Client init elements");
+        logStepInfo(PtoState.PTO_STEP, 1, 3, setupTime, "Client init elements");
 
         stopWatch.start();
-        boolean[] clientVector = mqRpmtClient.mqRpmt(clientHashElementMap.keySet(), refineServerElementSize);
+        ByteBuffer[] clientVector = mqRpmtServer.mqRpmt(clientHashElementMap.keySet(), refineServerElementSize);
         stopWatch.stop();
         long mqRpmtTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 2, 4, mqRpmtTime, "Client runs mq-RPMT");
+        logStepInfo(PtoState.PTO_STEP, 2, 3, mqRpmtTime, "Client runs mq-RPMT");
+
+        List<byte[]> serverBitVectorPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_BIT_VECTOR.ordinal());
 
         stopWatch.start();
-        CotReceiverOutput cotReceiverOutput = coreCotReceiver.receive(clientVector);
-        RotReceiverOutput rotReceiverOutput = new RotReceiverOutput(envType, CrhfType.MMO, cotReceiverOutput);
-        stopWatch.stop();
-        long cotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 3, 4, cotTime, "Client runs ROT");
-
-        DataPacketHeader serverCipherHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CIPHER.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> serverCipherPayload = rpc.receive(serverCipherHeader).getPayload();
-
-        stopWatch.start();
-        MpcAbortPreconditions.checkArgument(serverCipherPayload.size() == clientVector.length);
-        byte[][] serverCiphers = serverCipherPayload.toArray(new byte[0][]);
-        IntStream clientVectorStream = IntStream.range(0, clientVector.length);
-        clientVectorStream = parallel ? clientVectorStream.parallel() : clientVectorStream;
-        Set<T> intersection = clientVectorStream
-            .mapToObj(index -> {
-                if (clientVector[index]) {
-                    byte[] r1 = rotReceiverOutput.getRb(index);
-                    return ByteBuffer.wrap(BytesUtils.xor(r1, serverCiphers[index]));
-                } else {
-                    return null;
-                }
-            })
+        MpcAbortPreconditions.checkArgument(serverBitVectorPayload.size() == 1);
+        BitVector serverBitVector = BitVectorFactory.create(clientVector.length, serverBitVectorPayload.get(0));
+        Set<T> intersection = IntStream.range(0, clientVector.length)
+            .mapToObj(index -> serverBitVector.get(index) ? clientVector[index] : null)
             .filter(Objects::nonNull)
             .map(clientHashElementMap::get)
             .filter(Objects::nonNull)

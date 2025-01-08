@@ -27,6 +27,7 @@ public class PianoCpIdxPirUtils {
         MathPreconditions.checkPositive("n", n);
         // ChunkSize is 2√n and round up to the next power of 2.
         // Here we use a more generalized ChunkSize, and we require ChunkSize must be greater than 1
+//        return Math.max((int) Math.ceil(Math.sqrt(n) / 2 / Math.sqrt(2)), 2);
         return Math.max((int) Math.ceil(Math.sqrt(n)), 2);
     }
 
@@ -53,10 +54,10 @@ public class PianoCpIdxPirUtils {
         MathPreconditions.checkPositive("n", n);
         // when n = 1, log(1) = 0, so we would have an invalid parameter. Here we manually let log(n) = 1 for n = 1.
         if (n == 1) {
-            return (int) Math.floor(Math.sqrt(n));
+            return (int) Math.ceil(Math.sqrt(n));
         } else {
             // for other cases, we just support Q=(√n) * ln(n) queries.
-            return (int) Math.floor(Math.sqrt(n) * Math.log(n));
+            return (int) Math.ceil(Math.sqrt(n) * Math.log(n));
         }
     }
 

@@ -139,10 +139,10 @@ public class VectorizedStdIdxPirClient extends AbstractStdIdxPirClient implement
         stopWatch.start();
         List<byte[]> keyPair = VectorizedStdIdxPirNativeUtils.keyGen(params.getEncryptionParams());
         assert (keyPair.size() == 4);
-        publicKey = keyPair.removeFirst();
-        secretKey = keyPair.removeFirst();
-        byte[] relinKeys = keyPair.removeFirst();
-        byte[] galoisKeys = keyPair.removeFirst();
+        publicKey = keyPair.remove(0);
+        secretKey = keyPair.remove(0);
+        byte[] relinKeys = keyPair.remove(0);
+        byte[] galoisKeys = keyPair.remove(0);
         List<byte[]> publicKeysPayload = new ArrayList<>();
         publicKeysPayload.add(publicKey);
         publicKeysPayload.add(relinKeys);

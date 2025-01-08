@@ -189,7 +189,7 @@ public class Prty19LowPsiServer<T> extends AbstractPsiServer<T> {
         // randomly permuted
         Collections.shuffle(serverElementPrfs, secureRandom);
         // create filter
-        Filter<byte[]> filter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> filter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         serverElementPrfs.forEach(filter::put);
         List<byte[]> serverPrfsPayload = filter.save();
         DataPacketHeader serverPrfsHeader = new DataPacketHeader(

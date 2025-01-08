@@ -185,7 +185,7 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
             .collect(Collectors.toList());
         Collections.shuffle(binPrfList, secureRandom);
         // constructing filter
-        Filter<byte[]> binPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> binPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         binPrfList.forEach(binPrfFilter::put);
         return binPrfFilter.save();
     }
@@ -202,7 +202,7 @@ public class Kkrt16PsiServer<T> extends AbstractPsiServer<T> {
             }).collect(Collectors.toList());
         Collections.shuffle(serverStashPrfList, secureRandom);
         // constructing filter
-        Filter<byte[]> stashPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> stashPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         serverStashPrfList.forEach(stashPrfFilter::put);
         return stashPrfFilter.save();
     }

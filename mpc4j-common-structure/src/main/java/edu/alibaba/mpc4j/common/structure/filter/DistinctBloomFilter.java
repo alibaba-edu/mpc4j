@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.filter;
 
+import edu.alibaba.mpc4j.common.structure.filter.BloomFilterFactory.BloomFilterType;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
@@ -24,10 +25,6 @@ public class DistinctBloomFilter<T> extends AbstractBloomFilter<T> {
      * When m = n log_2(e) * log_2(1/p), HASH_NUM = log_2(1/p)
      */
     private static final int HASH_NUM = CommonConstants.STATS_BIT_LENGTH;
-    /**
-     * hash key num = 1
-     */
-    public static final int HASH_KEY_NUM = 1;
     /**
      * type
      */
@@ -99,6 +96,11 @@ public class DistinctBloomFilter<T> extends AbstractBloomFilter<T> {
 
     DistinctBloomFilter(EnvType envType, int maxSize, int m, byte[] key, int size, byte[] storage, int itemByteLength) {
         super(FILTER_TYPE, envType, maxSize, m, HASH_NUM, key, size, storage, itemByteLength);
+    }
+
+    @Override
+    public BloomFilterType getBloomFilterType() {
+        return BloomFilterType.DISTINCT_BLOOM_FILTER;
     }
 
     @Override

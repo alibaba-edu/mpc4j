@@ -9,6 +9,7 @@ import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -188,6 +189,24 @@ public class Zl64Vector implements RingVector {
         System.arraycopy(elements, 0, remainElements, 0, num - splitNum);
         elements = remainElements;
         return Zl64Vector.create(zl64, splitElements);
+    }
+
+    /**
+     * splits the vector.
+     *
+     * @param nums nums for each of the split vector.
+     * @return the split vectors.
+     */
+    public Zl64Vector[] split(int[] nums) {
+        int num = this.getNum();
+        MathPreconditions.checkEqual("sum(nums)", "mergeVector.getNum()", Arrays.stream(nums).sum(), num);
+        long[][] spRes = new long[nums.length][];
+        for (int i = 0, startPos = 0; i < nums.length; i++) {
+            spRes[i] = Arrays.copyOfRange(this.elements, startPos, startPos + nums[i]);
+            startPos += nums[i];
+        }
+        this.elements = new long[0];
+        return Arrays.stream(spRes).map(x -> Zl64Vector.create(this.getZl64(), x)).toArray(Zl64Vector[]::new);
     }
 
     @Override

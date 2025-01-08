@@ -209,7 +209,7 @@ public class Rr17DePsiServer<T> extends AbstractPsiServer<T> {
 
         Collections.shuffle(prfList, secureRandom);
         // constructing filter
-        Filter<byte[]> prfFilter = FilterFactory.load(envType, filterType, serverElementSize * binSize, secureRandom);
+        Filter<byte[]> prfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize * binSize, secureRandom);
         prfList.forEach(prfFilter::put);
         return prfFilter.save();
     }

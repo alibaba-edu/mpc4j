@@ -137,7 +137,7 @@ public class Dcw13PsiClient<T> extends AbstractPsiClient<T> {
         List<byte[]> serverPrfFilterPayload = rpc.receive(serverPrfFilterHeader).getPayload();
 
         stopWatch.start();
-        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, serverPrfFilterPayload);
+        Filter<byte[]> serverPrfFilter = FilterFactory.loadFilter(envType, serverPrfFilterPayload);
         Set<T> intersection = IntStream.range(0, clientElementSize)
             .mapToObj(elementIndex -> {
                 T y = clientElementArrayList.get(elementIndex);

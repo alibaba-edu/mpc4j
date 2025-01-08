@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,8 +73,6 @@ public class FoLdpEfficiencyTest {
         FoLdpType.OLH,
         // Binary Local Hash
         FoLdpType.BLH,
-        // RAPPOR
-        FoLdpType.RAPPOR,
         // Optimized Unary Encoding
         FoLdpType.OUE,
         // Symmetric Unary Encoding
@@ -92,9 +89,9 @@ public class FoLdpEfficiencyTest {
 
     @Test
     public void testEfficiency() throws IOException {
-        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}",
+        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}",
             "                name", "         ε", "            variance",
-            " s_time(s)", " c_time(s)", "  comm.(B)", "   mem.(B)"
+            " s_time(s)", " c_time(s)", "  comm.(B)"
         );
         for (double epsilon : EPSILONS) {
             testEfficiency(epsilon);
@@ -136,15 +133,13 @@ public class FoLdpEfficiencyTest {
             CLIENT_STOP_WATCH.stop();
             double clientTime = (double) CLIENT_STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / 1000;
             CLIENT_STOP_WATCH.reset();
-            long memory = GraphLayout.parseInstance(server).totalSize();
-            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(type.name(), 20),
                 StringUtils.leftPad(EPSILON_DECIMAL_FORMAT.format(epsilon), 10),
                 StringUtils.leftPad(INTEGER_DECIMAL_FORMAT.format(variance), 20),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(serverTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(clientTime), 10),
-                StringUtils.leftPad(INTEGER_DECIMAL_FORMAT.format(payloadBytes), 10),
-                StringUtils.leftPad(INTEGER_DECIMAL_FORMAT.format(memory), 10)
+                StringUtils.leftPad(INTEGER_DECIMAL_FORMAT.format(payloadBytes), 10)
             );
         }
         LOGGER.info(StringUtils.rightPad("", 60, '-'));

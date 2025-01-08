@@ -82,10 +82,9 @@ public class WaksmanNetworkFactory {
         switch (envType) {
             case STANDARD_JDK:
             case INLAND_JDK:
-                return new JdkWaksmanNetwork<>(permutationMap);
             case STANDARD:
             case INLAND:
-                return new NativeWaksmanNetwork<>(permutationMap);
+                return new JdkWaksmanNetwork<>(permutationMap);
             default:
                 throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }

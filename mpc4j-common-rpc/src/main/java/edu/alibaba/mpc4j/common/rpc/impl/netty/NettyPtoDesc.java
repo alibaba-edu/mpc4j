@@ -32,6 +32,10 @@ class NettyPtoDesc implements PtoDesc {
          */
         SERVER_CONNECT,
         /**
+         * 客户端连接
+         */
+        CLIENT_CONFIRM,
+        /**
          * 客户端同步
          */
         CLIENT_SYNCHRONIZE,

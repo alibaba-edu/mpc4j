@@ -81,7 +81,7 @@ public class StdKsPirTest extends AbstractTwoPartyMemoryRpcPto {
     public void testPir(int byteL, StdKsPirConfig config, boolean parallel) {
         List<Set<ByteBuffer>> randomSets = PirUtils.generateByteBufferSets(SERVER_MAP_SIZE, CLIENT_SET_SIZE, 1);
         Map<ByteBuffer, byte[]> keyValueMap = PirUtils.generateKeywordByteBufferLabelMap(
-            randomSets.getFirst(), byteL
+            randomSets.get(0), byteL
         );
         // create instances
         StdKsPirServer<ByteBuffer> server = StdKsPirFactory.createServer(firstRpc, secondRpc.ownParty(), config);
@@ -90,7 +90,7 @@ public class StdKsPirTest extends AbstractTwoPartyMemoryRpcPto {
         server.setParallel(parallel);
         client.setParallel(parallel);
         StdKsPirServerThread serverThread = new StdKsPirServerThread(server, keyValueMap, byteL * Byte.SIZE, CLIENT_SET_SIZE);
-        ArrayList<ByteBuffer> keys = new ArrayList<>(randomSets.getLast());
+        ArrayList<ByteBuffer> keys = new ArrayList<>(randomSets.get(1));
         StdKsPirClientThread clientThread = new StdKsPirClientThread(
             client, keys, SERVER_MAP_SIZE, byteL * Byte.SIZE
         );

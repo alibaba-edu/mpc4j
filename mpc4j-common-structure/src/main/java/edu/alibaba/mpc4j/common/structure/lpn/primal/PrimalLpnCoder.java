@@ -30,4 +30,12 @@ public interface PrimalLpnCoder extends LpnCoder {
      * @return GF2E vector w = (w_1, ..., w_n).
      */
     byte[][] encode(byte[][] e);
+
+    /**
+     * Encodes block vector e = (e_1, ..., e_k) to block vector w = (w_1, ..., w_n).
+     *
+     * @param e block vector e = (e_1, ..., e_k).
+     * @return block vector w = (w_1, ..., w_n).
+     */
+    byte[][] encodeBlock(byte[][] e);
 }

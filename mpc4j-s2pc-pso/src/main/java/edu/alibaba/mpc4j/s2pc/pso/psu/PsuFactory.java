@@ -100,6 +100,28 @@ public class PsuFactory implements PtoFactory {
      * @param config      配置项。
      * @return 服务端。
      */
+    public static OoPsuServer createOoPsuServer(Rpc serverRpc, Party clientParty, OoPsuConfig config) {
+        PsuType type = config.getPtoType();
+        switch (type) {
+            case GMR21:
+                return new Gmr21PsuServer(serverRpc, clientParty, (Gmr21PsuConfig) config);
+            case JSZ22_SFC:
+                return new Jsz22SfcPsuServer(serverRpc, clientParty, (Jsz22SfcPsuConfig) config);
+            case JSZ22_SFS:
+                return new Jsz22SfsPsuServer(serverRpc, clientParty, (Jsz22SfsPsuConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + PsuType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * 构建服务端。
+     *
+     * @param serverRpc   服务端通信接口。
+     * @param clientParty 客户端信息。
+     * @param config      配置项。
+     * @return 服务端。
+     */
     public static PsuServer createServer(Rpc serverRpc, Party clientParty, Party aiderParty, PsuConfig config) {
         PsuType type = config.getPtoType();
         //noinspection SwitchStatementWithTooFewBranches
@@ -136,6 +158,28 @@ public class PsuFactory implements PtoFactory {
                 return new Jsz22SfsPsuClient(clientRpc, serverParty, (Jsz22SfsPsuConfig) config);
             case CZZ24_CW_OPRF:
                 return new Czz24CwOprfPsuClient(clientRpc, serverParty, (Czz24CwOprfPsuConfig) config);
+            default:
+                throw new IllegalArgumentException("Invalid " + PsuType.class.getSimpleName() + ": " + type.name());
+        }
+    }
+
+    /**
+     * 构建客户端。
+     *
+     * @param clientRpc   客户端通信接口。
+     * @param serverParty 服务端信息。
+     * @param config      配置项。
+     * @return 客户端。
+     */
+    public static OoPsuClient createOoPsuClient(Rpc clientRpc, Party serverParty, OoPsuConfig config) {
+        PsuType type = config.getPtoType();
+        switch (type) {
+            case GMR21:
+                return new Gmr21PsuClient(clientRpc, serverParty, (Gmr21PsuConfig) config);
+            case JSZ22_SFC:
+                return new Jsz22SfcPsuClient(clientRpc, serverParty, (Jsz22SfcPsuConfig) config);
+            case JSZ22_SFS:
+                return new Jsz22SfsPsuClient(clientRpc, serverParty, (Jsz22SfsPsuConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + PsuType.class.getSimpleName() + ": " + type.name());
         }

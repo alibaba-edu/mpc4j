@@ -1,6 +1,6 @@
 /*
  * Created by pengliqiang on 2022/7/14.
- * This implementation is based on the public domain SealPIR in APSI project:
+ * This implementation is based on the public domain in APSI project:
  * <p>
  * https://github.com/microsoft/APSI/blob/95ff2cbad3e523e3788a5f8e4baf4638fbf0c6c7/sender/apsi/bin_bundle.cpp
  * </p>

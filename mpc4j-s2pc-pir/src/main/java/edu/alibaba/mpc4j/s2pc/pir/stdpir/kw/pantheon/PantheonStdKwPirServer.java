@@ -20,6 +20,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static edu.alibaba.mpc4j.s2pc.pir.stdpir.kw.pantheon.PantheonStdKwPirPtoDesc.PtoStep;
+import static edu.alibaba.mpc4j.s2pc.pir.stdpir.kw.pantheon.PantheonStdKwPirPtoDesc.getInstance;
+
 /**
  * Pantheon standard keyword PIR server.
  *
@@ -65,7 +68,7 @@ public class PantheonStdKwPirServer<T> extends AbstractStdKwPirServer<T> {
     private boolean isPadding = false;
 
     public PantheonStdKwPirServer(Rpc serverRpc, Party clientParty, PantheonStdKwPirConfig config) {
-        super(PantheonStdKwPirPtoDesc.getInstance(), serverRpc, clientParty, config);
+        super(getInstance(), serverRpc, clientParty, config);
         params = config.getParams();
     }
 
@@ -85,7 +88,7 @@ public class PantheonStdKwPirServer<T> extends AbstractStdKwPirServer<T> {
         Map<ByteBuffer, byte[]> keywordPrfLabelMap = IntStream.range(0, n)
             .boxed()
             .collect(Collectors.toMap(keysPrf::get, i -> keyValueMap.get(keysList.get(i)), (a, b) -> b));
-        sendOtherPartyPayload(PantheonStdKwPirPtoDesc.PtoStep.SERVER_SEND_PRF_KEY.ordinal(), Collections.singletonList(prfKey));
+        sendOtherPartyPayload(PtoStep.SERVER_SEND_PRF_KEY.ordinal(), Collections.singletonList(prfKey));
         stopWatch.stop();
         long prfTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -105,7 +108,7 @@ public class PantheonStdKwPirServer<T> extends AbstractStdKwPirServer<T> {
         stopWatch.reset();
         logStepInfo(PtoState.INIT_STEP, 3, 4, labelEncodeTime, "Server encodes label");
 
-        List<byte[]> serverKeysPayload = receiveOtherPartyPayload(PantheonStdKwPirPtoDesc.PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal());
+        List<byte[]> serverKeysPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal());
 
         stopWatch.start();
         MpcAbortPreconditions.checkArgument(serverKeysPayload.size() == 3);
@@ -140,9 +143,9 @@ public class PantheonStdKwPirServer<T> extends AbstractStdKwPirServer<T> {
     }
 
     private void answer() throws MpcAbortException {
-        List<byte[]> queryPayload = receiveOtherPartyPayload(PantheonStdKwPirPtoDesc.PtoStep.CLIENT_SEND_QUERY.ordinal());
+        List<byte[]> queryPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_QUERY.ordinal());
         MpcAbortPreconditions.checkArgument(queryPayload.size() == 1);
-        byte[] query = queryPayload.getFirst();
+        byte[] query = queryPayload.get(0);
         List<byte[]> expandedQuery = PantheonStdKwPirNativeUtils.expandQuery(
             params.encryptionParams, galoisKeys, masks, query, params.colNum
         );
@@ -158,7 +161,7 @@ public class PantheonStdKwPirServer<T> extends AbstractStdKwPirServer<T> {
         byte[] responsePayload = PantheonStdKwPirNativeUtils.processPir(
             params.encryptionParams, galoisKeys, encodedLabel, rowResults, params.pirColumnNumPerObj
         );
-        sendOtherPartyPayload(PantheonStdKwPirPtoDesc.PtoStep.SERVER_SEND_RESPONSE.ordinal(), Collections.singletonList(responsePayload));
+        sendOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal(), Collections.singletonList(responsePayload));
     }
 
     private List<ByteBuffer> computeKeysPrf(ArrayList<T> keys) {

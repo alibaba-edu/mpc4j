@@ -6,10 +6,10 @@ import edu.alibaba.mpc4j.common.structure.matrix.IntMatrix;
 import edu.alibaba.mpc4j.common.structure.vector.IntVector;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirServer;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpPbcIdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.PbcCpIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirPtoDesc.PtoStep;
 
 import java.util.Collections;
@@ -24,7 +24,11 @@ import java.util.stream.IntStream;
  * @author Liqiang Peng
  * @date 2023/9/18
  */
-public class SimpleCpIdxPirServer extends AbstractCpIdxPirServer implements CpPbcIdxPirServer {
+public class SimpleCpIdxPirServer extends AbstractCpIdxPirServer implements PbcCpIdxPirServer {
+    /**
+     * LWE dimension
+     */
+    private final int dimension;
     /**
      * columns
      */
@@ -32,10 +36,12 @@ public class SimpleCpIdxPirServer extends AbstractCpIdxPirServer implements CpPb
     /**
      * transpose database database
      */
-    private IntMatrix tdb;
+    private IntMatrix[] tdbs;
 
     public SimpleCpIdxPirServer(Rpc serverRpc, Party clientParty, SimpleCpIdxPirConfig config) {
         super(SimpleCpIdxPirPtoDesc.getInstance(), serverRpc, clientParty, config);
+        GaussianLweParam gaussianLweParam = config.getGaussianLweParam();
+        dimension = gaussianLweParam.getDimension();
     }
 
     @Override
@@ -54,43 +60,48 @@ public class SimpleCpIdxPirServer extends AbstractCpIdxPirServer implements CpPb
         logStepInfo(PtoState.INIT_STEP, 1, 2, seedTime, "Server generates seed");
 
         stopWatch.start();
-        // we treat plaintext modulus as p = 2^8, so that the database can be seen as N rows and byteL columns.
-        long entryNum = (long) byteL * n;
-        int sqrt = (int) Math.ceil(Math.sqrt(entryNum));
-        // ensure that each row can contain at least one element
-        sqrt = Math.max(sqrt, byteL);
-        // we make DB rows a little bit larger than rows to ensure each column can contain more data.
-        int rowElementNum = CommonUtils.getUnitNum(sqrt, byteL);
-        int rows = rowElementNum * byteL;
-        columns = (int) Math.ceil((double) entryNum / rows);
-        assert (long) rows * columns >= entryNum;
+        int subByteL = Math.min(byteL, SimpleCpIdxPirPtoDesc.getMaxSubByteL(n));
+        int[] sizes = SimpleCpIdxPirPtoDesc.getMatrixSize(n, byteL);
+        int rows = sizes[0];
+        columns = sizes[1];
+        int partition = sizes[2];
         // create database
-        IntMatrix db = IntMatrix.createZeros(rows, columns);
+        IntMatrix[] dbs = IntStream.range(0, partition)
+            .mapToObj(p -> IntMatrix.createZeros(rows, columns))
+            .toArray(IntMatrix[]::new);
         int i = 0;
         int j = 0;
         for (int dataIndex = 0; dataIndex < database.rows(); dataIndex++) {
             byte[] element = database.getBytesData(dataIndex);
             assert element.length == byteL;
-            for (byte b : element) {
-                db.set(i, j, (b & 0xFF));
+            byte[] paddingElement = BytesUtils.paddingByteArray(element, subByteL * partition);
+            // encode each row into partition databases
+            for (int entryIndex = 0; entryIndex < subByteL; entryIndex++) {
+                for (int p = 0; p < partition; p++) {
+                    dbs[p].set(i, j, (paddingElement[p * subByteL + entryIndex] & 0xFF));
+                }
                 i++;
-            }
-            // change column index
-            if (i == rows) {
-                i = 0;
-                j++;
+                // change column index
+                if (i == rows) {
+                    i = 0;
+                    j++;
+                }
             }
         }
         // create hint
-        IntMatrix matrixA = IntMatrix.createRandom(columns, SimpleCpIdxPirPtoDesc.N, seed);
-        IntMatrix hint = db.mul(matrixA);
-        IntStream hintIntStream = parallel ? IntStream.range(0, rows).parallel() : IntStream.range(0, rows);
-        List<byte[]> hintPayload = hintIntStream
-            .mapToObj(rowIndex -> IntUtils.intArrayToByteArray(hint.getRow(rowIndex).getElements()))
-            .collect(Collectors.toList());
-        sendOtherPartyPayload(PtoStep.SERVER_SEND_HINT.ordinal(), hintPayload);
+        IntMatrix matrixA = IntMatrix.createRandom(columns, dimension, seed);
+        tdbs = new IntMatrix[partition];
+        IntStream intStream = parallel ? IntStream.range(0, partition).parallel() : IntStream.range(0, partition);
+        IntMatrix[] hint = intStream.mapToObj(p -> dbs[p].mul(matrixA)).toArray(IntMatrix[]::new);
         // transpose database
-        tdb = db.transpose();
+        IntStream.range(0, partition).forEach(p -> {
+            IntStream hintIntStream = parallel ? IntStream.range(0, rows).parallel() : IntStream.range(0, rows);
+            List<byte[]> hintPayload = hintIntStream
+                .mapToObj(rowIndex -> IntUtils.intArrayToByteArray(hint[p].getRow(rowIndex).getElements()))
+                .collect(Collectors.toList());
+            sendOtherPartyPayload(PtoStep.SERVER_SEND_HINT.ordinal(), hintPayload);
+            tdbs[p] = dbs[p].transpose();
+        });
         stopWatch.stop();
         long hintTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -124,8 +135,11 @@ public class SimpleCpIdxPirServer extends AbstractCpIdxPirServer implements CpPb
         IntVector qu = IntVector.create(IntUtils.byteArrayToIntArray(clientQueryPayload.get(0)));
         MpcAbortPreconditions.checkArgument(qu.getNum() == columns);
         // generate response
-        IntVector ans = tdb.leftMul(qu);
-        List<byte[]> responsePayload = Collections.singletonList(IntUtils.intArrayToByteArray(ans.getElements()));
+        IntStream pIntStream = parallel ? IntStream.range(0, tdbs.length).parallel() : IntStream.range(0, tdbs.length);
+        List<byte[]> responsePayload = pIntStream
+            .mapToObj(p -> tdbs[p].leftMul(qu))
+            .map(ans -> IntUtils.intArrayToByteArray(ans.getElements()))
+            .toList();
         sendOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal(), responsePayload);
     }
 }

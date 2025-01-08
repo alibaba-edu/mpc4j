@@ -174,7 +174,7 @@ public class Prty20PsiClient<T> extends AbstractPsiClient<T> {
         List<byte[]> serverPrfFilterPayload = rpc.receive(serverPrfFilterHeader).getPayload();
 
         stopWatch.start();
-        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, serverPrfFilterPayload);
+        Filter<byte[]> serverPrfFilter = FilterFactory.loadFilter(envType, serverPrfFilterPayload);
         Set<T> intersection = clientH2ElementMap.entrySet().stream()
             .map(entry -> {
                 if (serverPrfFilter.mightContain(entry.getKey().array())) {

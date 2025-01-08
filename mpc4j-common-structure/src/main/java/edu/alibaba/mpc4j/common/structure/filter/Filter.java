@@ -7,7 +7,7 @@ import java.util.List;
  * - 如果过滤器判断一个元素在过滤器中，则这个元素有一定的概率实际上不在过滤器中，
  * - 如果过滤器判断一个元素不在过滤器中，则这个元素一定不在过滤器中。
  * 过滤器接口函数参考Google Guava中BloomFilter的接口进行抽象。
- *
+ * <p></p>
  * Filter offers an approximate containment test with one-sided error:
  * if it claims that an element is contained in it, this might be in error,
  * but if it claims that an element is not contained in it, then this is definitely true.
@@ -54,11 +54,16 @@ public interface Filter<T> {
     void put(T data);
 
     /**
-     * 返回过滤器的数据压缩率。
+     * Gets the current byte size of the filter.
      *
-     * @return 过滤器的数据压缩率。
+     * @return current byte size of the filter.
      */
-    double ratio();
+    default long byteSize() {
+        List<byte[]> byteArrayList = save();
+        return byteArrayList.stream()
+            .mapToLong(element -> element.length)
+            .sum();
+    }
 
     /**
      * Packets the filter into {@code List<byte[]>}.

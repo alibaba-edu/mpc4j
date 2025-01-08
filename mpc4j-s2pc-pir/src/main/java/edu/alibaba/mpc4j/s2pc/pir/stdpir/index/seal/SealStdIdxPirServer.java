@@ -94,7 +94,7 @@ public class SealStdIdxPirServer extends AbstractStdIdxPirServer implements Pbca
 
             stopWatch.start();
             MpcAbortPreconditions.checkArgument(serverKeys.size() == 1);
-            this.galoisKeys = serverKeys.getFirst();
+            this.galoisKeys = serverKeys.get(0);
             int maxPartitionBitLength = params.getPolyModulusDegree() * params.getPlainModulusBitLength();
             partitionBitLength = Math.min(maxPartitionBitLength, database.getL());
             partitionByteLength = CommonUtils.getByteLength(partitionBitLength);
@@ -105,6 +105,9 @@ public class SealStdIdxPirServer extends AbstractStdIdxPirServer implements Pbca
             );
             plaintextSize = CommonUtils.getUnitNum(database.rows(), elementSizeOfPlaintext);
             dimensionSize = PirUtils.computeDimensionLength(plaintextSize, params.getDimension());
+            for (int j : dimensionSize) {
+                MpcAbortPreconditions.checkArgument(j <= params.getPolyModulusDegree());
+            }
             // encode database
             IntStream intStream = parallel ? IntStream.range(0, partitionSize).parallel() : IntStream.range(0, partitionSize);
             encodedDatabase = intStream

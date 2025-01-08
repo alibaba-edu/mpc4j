@@ -7,8 +7,9 @@ import edu.alibaba.mpc4j.common.structure.vector.IntVector;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirServer;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpPbcIdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.PbcCpIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.DoubleCpIdxPirPtoDesc.PtoStep;
 
 import java.nio.IntBuffer;
@@ -23,11 +24,15 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2024/7/8
  */
-public class DoubleCpIdxPirServer extends AbstractCpIdxPirServer implements CpPbcIdxPirServer {
+public class DoubleCpIdxPirServer extends AbstractCpIdxPirServer implements PbcCpIdxPirServer {
     /**
      * κ
      */
     private static final int KAPPA = Integer.SIZE / Byte.SIZE;
+    /**
+     * LWE dimension
+     */
+    private final int dimension;
     /**
      * rows, i.e., ℓ
      */
@@ -51,6 +56,8 @@ public class DoubleCpIdxPirServer extends AbstractCpIdxPirServer implements CpPb
 
     public DoubleCpIdxPirServer(Rpc serverRpc, Party clientParty, DoubleCpIdxPirConfig config) {
         super(DoubleCpIdxPirPtoDesc.getInstance(), serverRpc, clientParty, config);
+        GaussianLweParam gaussianLweParam = config.getGaussianLweParam();
+        dimension = gaussianLweParam.getDimension();
     }
 
     @Override
@@ -70,19 +77,16 @@ public class DoubleCpIdxPirServer extends AbstractCpIdxPirServer implements CpPb
         logStepInfo(PtoState.INIT_STEP, 1, 2, seedTime);
 
         stopWatch.start();
-        // we treat plaintext modulus as p = 2^8, so that the database can be seen as N rows and 1 columns.
-        rows = (int) Math.ceil(Math.sqrt(n));
-        // ensure that each row can contain at least one element
-        rows = Math.max(rows, 1);
-        columns = (int) Math.ceil((double) n / rows);
-        assert (long) rows * columns >= n;
+        int[] sizes = DoubleCpIdxPirPtoDesc.getMatrixSize(n);
+        rows = sizes[0];
+        columns = sizes[1];
         tdb = new IntMatrix[byteL];
         transposeExtendHintS = new IntMatrix[byteL][KAPPA];
         byte[][] byteArrayDatabase = database.getBytesData();
         // A1 ∈ Z_q^{m × n}, here we directly generated the transposed version
-        IntMatrix transposeMatrixA1 = IntMatrix.createRandom(DoubleCpIdxPirPtoDesc.N, columns, seedMatrixA1);
+        IntMatrix transposeMatrixA1 = IntMatrix.createRandom(dimension, columns, seedMatrixA1);
         // A2 ∈ Z_q^{ℓ × n}
-        matrixA2 = IntMatrix.createRandom(rows, DoubleCpIdxPirPtoDesc.N, seedMatrixA2);
+        matrixA2 = IntMatrix.createRandom(rows, dimension, seedMatrixA2);
         // each hint_c ∈ Z_q^{n × n}, we totally have [byteL]×[κ] hint_c
         final IntMatrix[][] hintC = new IntMatrix[byteL][KAPPA];
         IntStream byteIndexIntStream = parallel ? IntStream.range(0, byteL).parallel() : IntStream.range(0, byteL);
@@ -106,8 +110,8 @@ public class DoubleCpIdxPirServer extends AbstractCpIdxPirServer implements CpPb
         List<byte[]> hintPayload = IntStream.range(0, byteL * KAPPA)
             .mapToObj(t -> {
                 IntMatrix hintMatrix = hintC[t / KAPPA][t % KAPPA];
-                IntBuffer intBuffer = IntBuffer.allocate(DoubleCpIdxPirPtoDesc.N * DoubleCpIdxPirPtoDesc.N);
-                for (int i = 0; i < DoubleCpIdxPirPtoDesc.N; i++) {
+                IntBuffer intBuffer = IntBuffer.allocate(dimension * dimension);
+                for (int i = 0; i < dimension; i++) {
                     intBuffer.put(hintMatrix.getRow(i).getElements());
                 }
                 return IntUtils.intArrayToByteArray(intBuffer.array());
@@ -165,12 +169,12 @@ public class DoubleCpIdxPirServer extends AbstractCpIdxPirServer implements CpPb
                     .mapToObj(k -> {
                         IntMatrix transposeHintS1 = transposeExtendHintS[byteIndex][k].copy();
                         for (int t = 0; t < rows; t++) {
-                            transposeHintS1.set(t, DoubleCpIdxPirPtoDesc.N, ans1[k].getElement(t));
+                            transposeHintS1.set(t, dimension, ans1[k].getElement(t));
                         }
                         return transposeHintS1.leftMul(c2);
                     })
                     .toArray(IntVector[]::new);
-                IntBuffer ansBuffer = IntBuffer.allocate(KAPPA * DoubleCpIdxPirPtoDesc.N + KAPPA * (DoubleCpIdxPirPtoDesc.N + 1));
+                IntBuffer ansBuffer = IntBuffer.allocate(KAPPA * dimension + KAPPA * (dimension + 1));
                 for (int k = 0; k < KAPPA; k++) {
                     ansBuffer.put(hs[k].getElements());
                 }

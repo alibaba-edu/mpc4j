@@ -25,6 +25,10 @@ public class CrhfFactory {
          */
         MMO,
         /**
+         * fixed key MMO(x)
+         */
+        FIXED_KEY_MMO,
+        /**
          * MMO_σ(x) using JDK
          */
         JDK_MMO_SIGMA,
@@ -44,6 +48,7 @@ public class CrhfFactory {
     public static Crhf createInstance(EnvType envType, CrhfType type) {
         return switch (type) {
             case MMO -> new MmoCrhf(envType);
+            case FIXED_KEY_MMO -> new FixedKeyMmoCrhf(envType);
             case JDK_MMO_SIGMA -> new JdkMmoSigmaCrhf(envType);
             case SIMD_MMO_SIGMA -> new SimdMmoSigmaCrhf(envType);
         };

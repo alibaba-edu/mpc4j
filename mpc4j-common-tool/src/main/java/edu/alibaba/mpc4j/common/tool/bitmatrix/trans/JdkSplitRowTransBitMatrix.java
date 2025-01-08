@@ -11,6 +11,8 @@ import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory.Trans
 class JdkSplitRowTransBitMatrix extends AbstractSplitRowTransBitMatrix {
 
     JdkSplitRowTransBitMatrix(int rows, int columns) {
+        // for android
+//        super(TransBitMatrixType.JDK, rows, columns);
         super(TransBitMatrixType.JDK_SIMD, rows, columns);
     }
 

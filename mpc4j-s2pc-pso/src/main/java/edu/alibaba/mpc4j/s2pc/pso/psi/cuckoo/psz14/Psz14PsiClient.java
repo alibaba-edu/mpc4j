@@ -168,7 +168,7 @@ public class Psz14PsiClient<T> extends AbstractPsiClient<T> {
                 otherParty().getPartyId(), ownParty().getPartyId()
             );
             List<byte[]> serverBinPrfFilterPayload = rpc.receive(serverBinPrfFilterHeader).getPayload();
-            Filter<byte[]> serverBinPrfFilter = FilterFactory.load(envType, serverBinPrfFilterPayload);
+            Filter<byte[]> serverBinPrfFilter = FilterFactory.loadFilter(envType, serverBinPrfFilterPayload);
             serverBinPrfFilterArrayList.add(serverBinPrfFilter);
             extraInfo++;
         }
@@ -181,7 +181,7 @@ public class Psz14PsiClient<T> extends AbstractPsiClient<T> {
                 otherParty().getPartyId(), ownParty().getPartyId()
             );
             List<byte[]> serverStashPrfFilterPayload = rpc.receive(serverStashPrfFilterHeader).getPayload();
-            Filter<byte[]> serverStashPrfFilter = FilterFactory.load(envType, serverStashPrfFilterPayload);
+            Filter<byte[]> serverStashPrfFilter = FilterFactory.loadFilter(envType, serverStashPrfFilterPayload);
             serverStashPrfFilterArrayList.add(serverStashPrfFilter);
             extraInfo++;
         }

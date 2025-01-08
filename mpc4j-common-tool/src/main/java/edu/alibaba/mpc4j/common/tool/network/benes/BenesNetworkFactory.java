@@ -82,10 +82,9 @@ public class BenesNetworkFactory {
         switch (envType) {
             case STANDARD_JDK:
             case INLAND_JDK:
-                return new JdkBenesNetwork<>(permutationMap);
             case STANDARD:
             case INLAND:
-                return new NativeBenesNetwork<>(permutationMap);
+                return new JdkBenesNetwork<>(permutationMap);
             default:
                 throw new IllegalArgumentException("Invalid " + EnvType.class.getSimpleName() + ": " + envType.name());
         }

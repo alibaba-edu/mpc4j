@@ -85,7 +85,7 @@ public class FastStdIdxPirServer extends AbstractStdIdxPirServer implements Pbca
 
             stopWatch.start();
             MpcAbortPreconditions.checkArgument(serverKeys.size() == 1);
-            this.galoisKeys = serverKeys.getFirst();
+            this.galoisKeys = serverKeys.get(0);
             int byteLength = database.getByteL();
             if (byteLength % 2 == 1) {
                 byteLength++;

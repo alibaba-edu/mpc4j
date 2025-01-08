@@ -108,7 +108,7 @@ public class Cmg21UpsiServer<T> extends AbstractUpsiServer<T> {
 
         stopWatch.start();
         List<List<HashBinEntry<ByteBuffer>>> hashBins = generateCompleteHashBin(prfOutputList, hashKeys);
-        int binSize = hashBins.getFirst().size();
+        int binSize = hashBins.get(0).size();
         List<long[][]> encodeDatabase = UpsoUtils.encodeDatabase(
             zp64Poly, hashBins, binSize, params.getPlainModulus(), params.getMaxPartitionSizePerBin(),
             params.getItemEncodedSlotSize(), params.getItemPerCiphertext(), params.getBinNum(),

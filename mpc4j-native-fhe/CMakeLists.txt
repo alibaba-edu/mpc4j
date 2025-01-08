@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(mpc4j_native_fhe)
 
 # Import Microsoft SEAL
-find_package(SEAL 4.0.0 EXACT REQUIRED)
+find_package(SEAL REQUIRED)
 if(NOT SEAL_FOUND)
     message(FATAL_ERROR "Microsoft SEAL: not found")
 else()

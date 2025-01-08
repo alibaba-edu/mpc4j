@@ -166,7 +166,7 @@ public class LabelpsiStdKsPirClient<T> extends AbstractStdKsPirClient<T> {
         Stream<long[][]> encodedQueryStream = parallel ? encodedQueryList.stream().parallel() : encodedQueryList.stream();
         return encodedQueryStream
             .map(i -> LabelpsiStdKsPirNativeUtils.generateQuery(
-                params.getEncryptionParams(), clientKeys.getFirst(), clientKeys.get(1), i)
+                params.getEncryptionParams(), clientKeys.get(0), clientKeys.get(1), i)
             )
             .flatMap(Collection::stream)
             .collect(Collectors.toList());

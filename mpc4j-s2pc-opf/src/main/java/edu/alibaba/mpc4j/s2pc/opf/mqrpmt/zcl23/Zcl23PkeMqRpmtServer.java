@@ -1,8 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.opf.mqrpmt.zcl23;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvs;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory.EccDokvsType;
@@ -46,6 +44,10 @@ public class Zcl23PkeMqRpmtServer extends AbstractMqRpmtServer {
      */
     private final Ecc ecc;
     /**
+     * byte of encoded result of ecc
+     */
+    private final int eccEncodeByteLen;
+    /**
      * DOKVS hash keys
      */
     private byte[][] dokvsHashKeys;
@@ -72,6 +74,7 @@ public class Zcl23PkeMqRpmtServer extends AbstractMqRpmtServer {
         compressEncode = config.getCompressEncode();
         pipeSize = config.getPipeSize();
         ecc = EccFactory.createInstance(envType);
+        eccEncodeByteLen = ecc.getEncodeByteLen(compressEncode);
     }
 
     @Override
@@ -91,21 +94,13 @@ public class Zcl23PkeMqRpmtServer extends AbstractMqRpmtServer {
                 return key;
             })
             .toArray(byte[][]::new);
-        DataPacketHeader keysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_DOKVS_KEYS.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(keysHeader, keysPayload));
+        sendOtherPartyPayload(PtoStep.SERVER_SEND_DOKVS_KEYS.ordinal(), keysPayload);
         stopWatch.stop();
         long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.INIT_STEP, 1, 2, keyTime);
 
-        DataPacketHeader pkHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PK.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> pkPayload = rpc.receive(pkHeader).getPayload();
+        List<byte[]> pkPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_PK.ordinal());
 
         stopWatch.start();
         MpcAbortPreconditions.checkArgument(pkPayload.size() == 1);
@@ -130,18 +125,10 @@ public class Zcl23PkeMqRpmtServer extends AbstractMqRpmtServer {
         logPhaseInfo(PtoState.PTO_BEGIN);
 
         // DOKVS KEM
-        DataPacketHeader kemDokvsHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_DOKVS_KEM.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> kemDokvsPayload = rpc.receive(kemDokvsHeader).getPayload();
+        List<byte[]> kemDokvsPayload = receiveOtherPartyEqualSizePayload(PtoStep.CLIENT_SEND_DOKVS_KEM.ordinal(), clientElementSize, eccEncodeByteLen);
 
         // DOKVS ciphertext
-        DataPacketHeader ctDokvsHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_DOKVS_CT.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> ctDokvsPayload = rpc.receive(ctDokvsHeader).getPayload();
+        List<byte[]> ctDokvsPayload = receiveOtherPartyEqualSizePayload(PtoStep.CLIENT_SEND_DOKVS_CT.ordinal(), clientElementSize, eccEncodeByteLen);
 
         stopWatch.start();
         handleDokvsPayload(kemDokvsPayload, ctDokvsPayload);
@@ -195,11 +182,7 @@ public class Zcl23PkeMqRpmtServer extends AbstractMqRpmtServer {
                 .map(kem -> ecc.encode(kem, compressEncode))
                 .collect(Collectors.toList());
             // send KEM
-            DataPacketHeader reRandKemHeader = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RERAND_KEM.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(reRandKemHeader, reRandKemPayload));
+            sendOtherPartyPayload(PtoStep.SERVER_SEND_RERAND_KEM.ordinal(), reRandKemPayload);
             // compute ciphertext
             IntStream ctIntStream = IntStream.range(0, pipeSize);
             ctIntStream = parallel ? ctIntStream.parallel() : ctIntStream;
@@ -211,11 +194,7 @@ public class Zcl23PkeMqRpmtServer extends AbstractMqRpmtServer {
                 .map(ct -> ecc.encode(ct, compressEncode))
                 .collect(Collectors.toList());
             // send ciphertext
-            DataPacketHeader reRandCtHeader = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RERAND_CT.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(reRandCtHeader, reRandCtPayload));
+            sendOtherPartyPayload(PtoStep.SERVER_SEND_RERAND_CT.ordinal(), reRandCtPayload);
             extraInfo++;
         }
         int remain = serverElementSize - round * pipeSize;
@@ -232,11 +211,7 @@ public class Zcl23PkeMqRpmtServer extends AbstractMqRpmtServer {
                 .map(kem -> ecc.encode(kem, compressEncode))
                 .collect(Collectors.toList());
             // send KEM
-            DataPacketHeader reRandKemHeader = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RERAND_KEM.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(reRandKemHeader, reRandKemPayload));
+            sendOtherPartyPayload(PtoStep.SERVER_SEND_RERAND_KEM.ordinal(), reRandKemPayload);
             // compute ciphertext
             IntStream ctIntStream = IntStream.range(0, remain);
             ctIntStream = parallel ? ctIntStream.parallel() : ctIntStream;
@@ -248,11 +223,7 @@ public class Zcl23PkeMqRpmtServer extends AbstractMqRpmtServer {
                 .map(ct -> ecc.encode(ct, compressEncode))
                 .collect(Collectors.toList());
             // send ciphertext
-            DataPacketHeader reRandCtHeader = new DataPacketHeader(
-                encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_RERAND_CT.ordinal(), extraInfo,
-                ownParty().getPartyId(), otherParty().getPartyId()
-            );
-            rpc.send(DataPacket.fromByteArrayList(reRandCtHeader, reRandCtPayload));
+            sendOtherPartyPayload(PtoStep.SERVER_SEND_RERAND_CT.ordinal(), reRandCtPayload);
             extraInfo++;
         }
     }

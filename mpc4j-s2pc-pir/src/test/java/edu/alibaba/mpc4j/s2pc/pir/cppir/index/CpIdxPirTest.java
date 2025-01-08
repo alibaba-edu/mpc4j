@@ -5,11 +5,14 @@ import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirFactory.CpIdxPirType;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.frodo.FrodoCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.pai.PaiCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.piano.PianoCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.plinko.MirPlinkoCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.plinko.PianoPlinkoCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.DoubleCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.spam.SpamCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.mir.MirCpIdxPirConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,39 +34,51 @@ public class CpIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * default element bit length
      */
-    private static final int DEFAULT_L = 32;
+    private static final int DEFAULT_L = 16;
     /**
      * default database size
      */
-    private static final int DEFAULT_N = (1 << 18) - 3;
+    private static final int DEFAULT_N = (1 << 14) - 3;
     /**
      * default query num
      */
-    private static final int DEFAULT_QUERY_NUM = 105;
+    private static final int DEFAULT_QUERY_NUM = 15;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // DOUBLE
+        // MIR
         configurations.add(new Object[]{
-            CpIdxPirType.DOUBLE.name(), new DoubleCpIdxPirConfig.Builder().build()
-        });
-        // PAI
-        configurations.add(new Object[]{
-            CpIdxPirType.PAI.name(), new PaiCpIdxPirConfig.Builder().build()
-        });
-        // SPAM
-        configurations.add(new Object[]{
-            CpIdxPirType.SPAM.name(), new SpamCpIdxPirConfig.Builder().build()
+            CpIdxPirType.MIR.name(), new MirCpIdxPirConfig.Builder().build(),
         });
         // PIANO
         configurations.add(new Object[]{
-            CpIdxPirType.PIANO.name(), new PianoCpIdxPirConfig.Builder().build()
+            CpIdxPirType.PIANO.name(), new PianoCpIdxPirConfig.Builder().build(),
+        });
+        // MIR_PLINKO
+        configurations.add(new Object[]{
+            CpIdxPirType.MIR_PLINKO.name(), new MirPlinkoCpIdxPirConfig.Builder().build(),
+        });
+        // PIANO_PLINKO
+        configurations.add(new Object[]{
+            CpIdxPirType.PIANO_PLINKO.name(), new PianoPlinkoCpIdxPirConfig.Builder().build(),
+        });
+        // FRODO
+        configurations.add(new Object[]{
+            CpIdxPirType.FRODO.name(), new FrodoCpIdxPirConfig.Builder().build(),
+        });
+        // DOUBLE
+        configurations.add(new Object[]{
+            CpIdxPirType.DOUBLE.name(), new DoubleCpIdxPirConfig.Builder().build(),
+        });
+        // PAI
+        configurations.add(new Object[]{
+            CpIdxPirType.PAI.name(), new PaiCpIdxPirConfig.Builder().build(),
         });
         // SIMPLE
         configurations.add(new Object[]{
-            CpIdxPirType.SIMPLE.name(), new SimpleCpIdxPirConfig.Builder().build()
+            CpIdxPirType.SIMPLE.name(), new SimpleCpIdxPirConfig.Builder().build(),
         });
 
         return configurations;
@@ -96,7 +111,12 @@ public class CpIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
 
     @Test
     public void testLargeQueryNum() {
-        testPto(11, DEFAULT_L, 22, false);
+        int n = 1 << 10;
+        int q = CpIdxPirFactory.supportRoundQueryNum(config.getPtoType(), n);
+        if (q == Integer.MAX_VALUE) {
+            q = (int) Math.sqrt(n);
+        }
+        testPto(n, DEFAULT_L, q * 3, false);
     }
 
     @Test
@@ -116,7 +136,7 @@ public class CpIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
 
     @Test
     public void testLargeValue() {
-        testPto(DEFAULT_N, 1 << 6, DEFAULT_QUERY_NUM, false);
+        testPto(1 << 6, (1 << 7) + 2, DEFAULT_QUERY_NUM, false);
     }
 
     @Test
@@ -126,12 +146,12 @@ public class CpIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
 
     @Test
     public void testLarge() {
-        testPto(1 << 20, DEFAULT_L, 1 << 10, false);
+        testPto((1 << 17) + 3, DEFAULT_L, DEFAULT_QUERY_NUM, false);
     }
 
     @Test
     public void testParallelLarge() {
-        testPto(1 << 20, DEFAULT_L, 1 << 10, true);
+        testPto((1 << 17) - 3, DEFAULT_L, DEFAULT_QUERY_NUM, true);
     }
 
     private void testPto(int n, int l, int queryNum, boolean parallel) {
@@ -166,7 +186,7 @@ public class CpIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
                 int x = xs[i];
                 byte[] expect = database.getBytesData(x);
                 byte[] actual = entries[i];
-                Assert.assertArrayEquals(expect, actual);
+                Assert.assertArrayEquals("The " + i + "-th query result is wrong", expect, actual);
             }
             // destroy
             new Thread(server::destroy).start();

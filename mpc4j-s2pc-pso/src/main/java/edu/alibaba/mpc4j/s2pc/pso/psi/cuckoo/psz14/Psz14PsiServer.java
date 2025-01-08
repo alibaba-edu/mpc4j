@@ -166,7 +166,7 @@ public class Psz14PsiServer<T> extends AbstractPsiServer<T> {
             .map(x -> getBinPrf(x, hashIndex, lcotSenderOutput))
             .collect(Collectors.toList());
         Collections.shuffle(binPrfs, secureRandom);
-        Filter<byte[]> binPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> binPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         binPrfs.forEach(binPrfFilter::put);
         return binPrfFilter.save();
     }
@@ -197,7 +197,7 @@ public class Psz14PsiServer<T> extends AbstractPsiServer<T> {
             .map(x -> getStashPrf(x, stashIndex, lcotSenderOutput))
             .collect(Collectors.toList());
         Collections.shuffle(serverStashPrfList, secureRandom);
-        Filter<byte[]> stashPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> stashPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         serverStashPrfList.forEach(stashPrfFilter::put);
         return stashPrfFilter.save();
     }

@@ -1,10 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.utils;
 
 import com.google.common.math.BigIntegerMath;
-import edu.alibaba.mpc4j.common.jnagmp.Gmp;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -14,13 +11,12 @@ import java.util.Arrays;
 /**
  * 大整数工具类，主要完成很多代数计算。
  * 部分代码来自于：
- * https://github.com/n1analytics/javallier/blob/master/src/main/java/com/n1analytics/paillier/util/BigIntegerUtil.java
+ * <a href="https://github.com/n1analytics/javallier/blob/master/src/main/java/com/n1analytics/paillier/util/BigIntegerUtil.java">BigIntegerUtil.java</a>
  *
  * @author Weiran Liu
  * @date 2020/09/19
  */
 public class BigIntegerUtils {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BigIntegerUtils.class);
     /**
      * 用{@code BigInteger}表示的最小{@code long}值
      */
@@ -41,32 +37,6 @@ public class BigIntegerUtils {
      * 2的大整数表示
      */
     public static final BigInteger BIGINT_2 = BigInteger.valueOf(2);
-    /**
-     * 如果可以成功调用GMP库，则此变量将被设置为true
-     */
-    public static final boolean USE_GMP;
-
-    /*
-     * 检查是否可以使用GMP库
-     */
-    static {
-        USE_GMP = canLoadGmp();
-    }
-
-    /**
-     * 尝试载入GMP库。如果成功，返回true，否则返回false。
-     *
-     * @return 是否可以成功载入GMP库。
-     */
-    private static boolean canLoadGmp() {
-        try {
-            Gmp.checkLoaded();
-            return true;
-        } catch (Error e) {
-            LOGGER.warn("无法载入GMP库，将使用Java原生modPow函数实现模幂运算，性能较差", e);
-            return false;
-        }
-    }
 
     /**
      * 私有构造函数。
@@ -198,14 +168,7 @@ public class BigIntegerUtils {
      * @return (base ^ exponent) mod modulus。
      */
     public static BigInteger modPow(BigInteger base, BigInteger exponent, BigInteger modulus) {
-        if (USE_GMP) {
-            // Gmp library can't handle negative exponents
-            return exponent.signum() < 0
-                ? BigIntegerUtils.modInverse(Gmp.modPowInsecure(base, exponent.negate(), modulus), modulus)
-                : Gmp.modPowInsecure(base, exponent, modulus);
-        } else {
-            return base.modPow(exponent, modulus);
-        }
+        return base.modPow(exponent, modulus);
     }
 
     /**
@@ -217,11 +180,7 @@ public class BigIntegerUtils {
      * @throws ArithmeticException 如果乘法逆元不存在。
      */
     public static BigInteger modInverse(BigInteger a, BigInteger modulus) throws ArithmeticException {
-        if (USE_GMP) {
-            return Gmp.modInverse(a, modulus);
-        } else {
-            return a.modInverse(modulus);
-        }
+        return a.modInverse(modulus);
     }
 
     /**
@@ -377,7 +336,7 @@ public class BigIntegerUtils {
     /**
      * Returns the base-2 logarithm of {@code x}. The source code is from Maarten Bodewes:
      * <p>
-     * http://stackoverflow.com/questions/739532/logarithm-of-a-bigdecimal
+     * <a href="http://stackoverflow.com/questions/739532/logarithm-of-a-bigdecimal">Logarithm of a BigDecimal</a>
      * </p>
      *
      * @param x the input x.

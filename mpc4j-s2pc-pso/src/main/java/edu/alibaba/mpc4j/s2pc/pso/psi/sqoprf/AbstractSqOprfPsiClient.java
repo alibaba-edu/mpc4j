@@ -93,7 +93,7 @@ public abstract class AbstractSqOprfPsiClient<T> extends AbstractPsiClient<T> {
         List<byte[]> serverPrfPayload = rpc.receive(serverPrfFilterHeader).getPayload();
 
         stopWatch.start();
-        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, serverPrfPayload);
+        Filter<byte[]> serverPrfFilter = FilterFactory.loadFilter(envType, serverPrfPayload);
         Set<T> intersection = IntStream.range(0, clientElementSize)
             .mapToObj(elementIndex -> {
                 T element = clientElementArrayList.get(elementIndex);

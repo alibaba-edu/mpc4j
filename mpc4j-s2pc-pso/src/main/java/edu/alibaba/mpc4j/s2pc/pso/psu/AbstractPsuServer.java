@@ -24,11 +24,11 @@ public abstract class AbstractPsuServer extends AbstractTwoPartyPto implements P
     /**
      * 服务端最大元素数量
      */
-    private int maxServerElementSize;
+    protected int maxServerElementSize;
     /**
      * 客户端最大元素数量
      */
-    private int maxClientElementSize;
+    protected int maxClientElementSize;
     /**
      * 服务端元素数组
      */

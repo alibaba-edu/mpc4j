@@ -90,7 +90,7 @@ public class Cm20MpOprfSenderOutput implements MpOprfSenderOutput {
     public byte[] getPrf(byte[] input) {
         byte[] extendPrf = f.getBytes(h1.digestToBytes(input));
         // F: {0, 1}^λ × {0, 1}^{2λ} → [m]^w
-        int[] encode = IntUtils.byteArrayToIntArray(extendPrf);
+        int[] encode = IntUtils.randomByteArrayToIntArray(extendPrf);
         for (int index = 0; index < w; index++) {
             encode[index] = Math.abs(encode[index] % n) + nOffset;
         }

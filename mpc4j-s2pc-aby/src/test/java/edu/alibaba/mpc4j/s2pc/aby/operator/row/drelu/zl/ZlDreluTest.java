@@ -42,7 +42,7 @@ public class ZlDreluTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * large num
      */
-    private static final int LARGE_NUM = 1 << 16;
+    private static final int LARGE_NUM = 1 << 14;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {

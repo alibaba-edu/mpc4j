@@ -15,12 +15,12 @@ public interface KeyPirServer<T> extends TwoPartyPto {
     /**
      * Server initializes the protocol.
      *
-     * @param keyValueMap   key-value map.
-     * @param l             l.
-     * @param matchBatchNum match batch num.
+     * @param keyValueMap key-value map.
+     * @param l           l.
+     * @param maxBatchNum max batch num.
      * @throws MpcAbortException the protocol failure aborts.
      */
-    void init(Map<T, byte[]> keyValueMap, int l, int matchBatchNum) throws MpcAbortException;
+    void init(Map<T, byte[]> keyValueMap, int l, int maxBatchNum) throws MpcAbortException;
 
     /**
      * Server initializes the protocol.

@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.lll24;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.lll24.Lll24DosnPtoDesc.PtoStep;
@@ -9,6 +10,7 @@ import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnReceiver;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnReceiverOutput;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -58,19 +60,42 @@ public class Lll24DosnReceiver extends AbstractDosnReceiver {
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 2, rosnTime);
 
-        List<byte[]> maskInputDataPacketPayload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_MASK_INPUT.ordinal());
-
         stopWatch.start();
-        MpcAbortPreconditions.checkArgument(maskInputDataPacketPayload.size() == num);
-        byte[][] maskInputBytes = maskInputDataPacketPayload.toArray(new byte[0][]);
-        byte[][] delta = receiverOutput.getDeltas();
-        IntStream intStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
-        intStream.forEach(i -> BytesUtils.xori(delta[i], maskInputBytes[pi[i]]));
+        byte[][] delta = innerOsn(receiverOutput);
         stopWatch.stop();
         long maskInputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 2, 2, maskInputTime);
 
+        logPhaseInfo(PtoState.PTO_END);
         return new DosnPartyOutput(delta);
+    }
+
+    @Override
+    public DosnPartyOutput dosn(int[] pi, int byteLength, RosnReceiverOutput receiverOutput) throws MpcAbortException {
+        Preconditions.checkArgument(Arrays.equals(pi, receiverOutput.getPi()));
+        Preconditions.checkArgument(receiverOutput.getByteLength() == byteLength);
+        setPtoInput(pi, byteLength);
+        logPhaseInfo(PtoState.PTO_BEGIN);
+
+        stopWatch.start();
+        byte[][] delta = innerOsn(receiverOutput);
+        stopWatch.stop();
+        long maskInputTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 1, 1, maskInputTime);
+
+        logPhaseInfo(PtoState.PTO_END);
+        return new DosnPartyOutput(delta);
+    }
+
+    private byte[][] innerOsn(RosnReceiverOutput receiverOutput) throws MpcAbortException {
+        List<byte[]> maskInputDataPacketPayload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_MASK_INPUT.ordinal());
+        MpcAbortPreconditions.checkArgument(maskInputDataPacketPayload.size() == num);
+        byte[][] maskInputBytes = maskInputDataPacketPayload.toArray(new byte[0][]);
+        byte[][] delta = receiverOutput.getDeltas();
+        IntStream intStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
+        intStream.forEach(i -> BytesUtils.xori(delta[i], maskInputBytes[pi[i]]));
+        return delta;
     }
 }

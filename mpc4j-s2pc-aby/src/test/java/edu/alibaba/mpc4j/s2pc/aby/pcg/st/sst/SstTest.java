@@ -9,7 +9,6 @@ import edu.alibaba.mpc4j.s2pc.aby.pcg.st.sst.cgp20.Cgp20SstConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.sst.lll24.Lll24SstConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
-import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -98,7 +97,7 @@ public class SstTest extends AbstractTwoPartyMemoryRpcPto {
     @Test
     public void testDefault() {
         for (int num = 2; num <= DEFAULT_NUM; num++) {
-            int[] pi = randomPi(num);
+            int[] pi = PermutationNetworkUtils.randomPermutation(num, SECURE_RANDOM);
             testPto(pi, DEFAULT_BYTE_LENGTH, false);
         }
     }
@@ -106,20 +105,20 @@ public class SstTest extends AbstractTwoPartyMemoryRpcPto {
     @Test
     public void testDefaultParallel() {
         for (int num = 2; num <= DEFAULT_NUM; num++) {
-            int[] pi = randomPi(num);
+            int[] pi = PermutationNetworkUtils.randomPermutation(num, SECURE_RANDOM);
             testPto(pi, DEFAULT_BYTE_LENGTH, true);
         }
     }
 
     @Test
     public void testShortByteLength() {
-        int[] pi = randomPi(DEFAULT_NUM);
+        int[] pi = PermutationNetworkUtils.randomPermutation(DEFAULT_NUM, SECURE_RANDOM);
         testPto(pi, SHORT_BYTE_LENGTH, true);
     }
 
     @Test
     public void testLargeByteLength() {
-        int[] pi = randomPi(DEFAULT_NUM);
+        int[] pi = PermutationNetworkUtils.randomPermutation(DEFAULT_NUM, SECURE_RANDOM);
         testPto(pi, LARGE_BYTE_LENGTH, true);
     }
 
@@ -127,7 +126,7 @@ public class SstTest extends AbstractTwoPartyMemoryRpcPto {
     public void testLarge() {
         //noinspection UnnecessaryLocalVariable
         int num = LARGE_NUM;
-        int[] pi = randomPi(num);
+        int[] pi = PermutationNetworkUtils.randomPermutation(num, SECURE_RANDOM);
         testPto(pi, DEFAULT_BYTE_LENGTH, false);
     }
 
@@ -135,7 +134,7 @@ public class SstTest extends AbstractTwoPartyMemoryRpcPto {
     public void testLargeParallel() {
         //noinspection UnnecessaryLocalVariable
         int num = LARGE_NUM;
-        int[] pi = randomPi(num);
+        int[] pi = PermutationNetworkUtils.randomPermutation(num, SECURE_RANDOM);
         testPto(pi, DEFAULT_BYTE_LENGTH, true);
     }
 
@@ -188,7 +187,7 @@ public class SstTest extends AbstractTwoPartyMemoryRpcPto {
                 int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
                 sender.setTaskId(randomTaskId);
                 receiver.setTaskId(randomTaskId);
-                int[] pi = randomPi(num);
+                int[] pi = PermutationNetworkUtils.randomPermutation(num, SECURE_RANDOM);
                 byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
                 CotSenderOutput preSenderOutput = CotSenderOutput.createRandom(
                     SstFactory.getPrecomputeNum(config, num), delta, SECURE_RANDOM
@@ -221,12 +220,6 @@ public class SstTest extends AbstractTwoPartyMemoryRpcPto {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-
-    private int[] randomPi(int num) {
-        int[] pi = IntStream.range(0, num).toArray();
-        ArrayUtils.shuffle(pi, SECURE_RANDOM);
-        return pi;
     }
 
     private void assertOutput(int[] pi, SstSenderOutput senderOutput, SstReceiverOutput receiverOutput) {

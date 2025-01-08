@@ -148,7 +148,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
             initX[eIndex] = !initX[eIndex];
         }
         // z = w * A + r
-        byte[][] initZ = matrixInitA.encode(wInitCotReceiverOutput.getRbArray());
+        byte[][] initZ = matrixInitA.encodeBlock(wInitCotReceiverOutput.getRbArray());
         IntStream.range(0, initN).forEach(index ->
             BytesUtils.xori(initZ[index], rInitMspCotReceiverOutput.getRb(index))
         );
@@ -180,7 +180,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         stopWatch.start();
         // x = u * A + e, z = w * A + r
         boolean[] x = matrixA.encode(wCotReceiverOutput.getChoices());
-        byte[][] z = matrixA.encode(wCotReceiverOutput.getRbArray());
+        byte[][] z = matrixA.encodeBlock(wCotReceiverOutput.getRbArray());
         for (int eIndex : rMspCotReceiverOutput.getAlphaArray()) {
             x[eIndex] = !x[eIndex];
         }

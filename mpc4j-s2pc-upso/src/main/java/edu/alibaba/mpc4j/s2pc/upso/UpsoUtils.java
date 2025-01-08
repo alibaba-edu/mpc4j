@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.tool.polynomial.power.PowersDag;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.crypto.fhe.context.ParmsId;
-import edu.alibaba.mpc4j.crypto.fhe.context.SealContext;
+import edu.alibaba.mpc4j.crypto.swhe.seal.context.ParmsId;
+import edu.alibaba.mpc4j.crypto.swhe.seal.context.SealContext;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 

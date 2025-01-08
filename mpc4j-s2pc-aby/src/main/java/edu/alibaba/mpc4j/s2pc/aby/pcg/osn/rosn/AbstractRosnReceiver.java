@@ -5,7 +5,6 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 
@@ -44,7 +43,6 @@ public abstract class AbstractRosnReceiver extends AbstractTwoPartyPto implement
 
     protected void setPtoInput(int[] pi, int byteLength) {
         checkInitialized();
-        MathPreconditions.checkGreaterOrEqual("byteLength", byteLength, CommonConstants.STATS_BYTE_LENGTH);
         this.byteLength = byteLength;
         Preconditions.checkArgument(PermutationNetworkUtils.validPermutation(pi));
         MathPreconditions.checkGreater("n", pi.length, 1);

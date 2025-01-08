@@ -57,7 +57,7 @@ public class Ra17ByteEccPsiConfig extends AbstractMultiPartyPtoConfig implements
 
         public Builder() {
             sqOprfConfig = new Ra17ByteEccSqOprfConfig.Builder().build();
-            filterType = FilterType.CUCKOO_FILTER;
+            filterType = FilterType.NAIVE_CUCKOO_FILTER;
         }
 
         public Builder setFilterType(FilterType filterType) {

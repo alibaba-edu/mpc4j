@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.pto.TwoPartyPto;
 
 /**
- * (F3, F2)-sowOPRF sender. The sender (P0) hss key k ∈ F_2^n, where n = 4λ.
+ * (F3, F2)-sowOPRF sender. The sender (P0) has key k ∈ F_2^n, where n = 4λ.
  *
  * @author Weiran Liu
  * @date 2024/6/6

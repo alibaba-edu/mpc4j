@@ -97,8 +97,8 @@ public class LabelpsiStdKsPirServer<T> extends AbstractStdKsPirServer<T> {
 
         List<byte[]> serverKeysPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal());
         MpcAbortPreconditions.checkArgument(serverKeysPayload.size() == 2, "Failed to receive BFV public keys payload");
-        this.publicKey = serverKeysPayload.removeFirst();
-        this.relinKeys = serverKeysPayload.removeFirst();
+        this.publicKey = serverKeysPayload.remove(0);
+        this.relinKeys = serverKeysPayload.remove(0);
 
         stopWatch.start();
         // generate prf

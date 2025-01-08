@@ -136,9 +136,9 @@ public class VectorizedStdIdxPirServer extends AbstractStdIdxPirServer implement
         MpcAbortPreconditions.checkArgument(publicKeysPayload.size() == 3);
 
         stopWatch.start();
-        publicKey = publicKeysPayload.removeFirst();
-        relinKeys = publicKeysPayload.removeFirst();
-        galoisKeys = publicKeysPayload.removeFirst();
+        publicKey = publicKeysPayload.remove(0);
+        relinKeys = publicKeysPayload.remove(0);
+        galoisKeys = publicKeysPayload.remove(0);
         // vectorized batch pir setup
         int perServerCapacity = params.getPolyModulusDegree() / params.firstTwoDimensionSize;
         serverNum = CommonUtils.getUnitNum(binNum, perServerCapacity);

@@ -93,7 +93,7 @@ public class LabelpsiKsPirTest extends AbstractTwoPartyMemoryRpcPto {
     public void testPir(LabelpsiStdKsPirParams params, int byteL, LabelpsiStdKsPirConfig config, boolean parallel) {
         int retrievalSize = params.maxRetrievalSize();
         List<Set<ByteBuffer>> randomSets = PirUtils.generateByteBufferSets(SERVER_MAP_SIZE, retrievalSize, 1);
-        Map<ByteBuffer, byte[]> keyValueMap = PirUtils.generateKeywordByteBufferLabelMap(randomSets.getFirst(), byteL);
+        Map<ByteBuffer, byte[]> keyValueMap = PirUtils.generateKeywordByteBufferLabelMap(randomSets.get(0), byteL);
         // create instances
         LabelpsiStdKsPirServer<ByteBuffer> server = new LabelpsiStdKsPirServer<>(firstRpc, secondRpc.ownParty(), config);
         LabelpsiStdKsPirClient<ByteBuffer> client = new LabelpsiStdKsPirClient<>(secondRpc, firstRpc.ownParty(), config);
@@ -101,7 +101,7 @@ public class LabelpsiKsPirTest extends AbstractTwoPartyMemoryRpcPto {
         server.setParallel(parallel);
         client.setParallel(parallel);
         StdKsPirServerThread serverThread = new StdKsPirServerThread(server, keyValueMap, byteL * Byte.SIZE, retrievalSize);
-        ArrayList<ByteBuffer> keys = new ArrayList<>(randomSets.getLast());
+        ArrayList<ByteBuffer> keys = new ArrayList<>(randomSets.get(1));
         StdKsPirClientThread clientThread = new StdKsPirClientThread(client, keys, SERVER_MAP_SIZE, byteL * Byte.SIZE);
         try {
             serverThread.start();

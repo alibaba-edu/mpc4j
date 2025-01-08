@@ -198,6 +198,18 @@ public class ZlDatabase implements Database {
         return data[index];
     }
 
+    /**
+     * Sets data.
+     *
+     * @param index index.
+     * @param entry data.
+     */
+    public void setBytesData(int index, byte[] entry) {
+        MathPreconditions.checkNonNegativeInRange("index", index, data.length);
+        Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(entry, byteL, l));
+        data[index] = entry;
+    }
+
     @Override
     public BigInteger[] getBigIntegerData() {
         return Arrays.stream(data)

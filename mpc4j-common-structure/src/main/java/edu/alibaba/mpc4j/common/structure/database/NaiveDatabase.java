@@ -235,6 +235,18 @@ public class NaiveDatabase implements Database {
             .toArray(byte[][]::new);
     }
 
+    /**
+     * Sets data.
+     *
+     * @param index index.
+     * @param entry data.
+     */
+    public void setBytesData(int index, byte[] entry) {
+        MathPreconditions.checkNonNegativeInRange("index", index, data.length);
+        Preconditions.checkArgument(BytesUtils.isFixedReduceByteArray(entry, byteL, l));
+        data[index] = BitVectorFactory.create(l, entry);
+    }
+
     @Override
     public byte[] getBytesData(int index) {
         return data[index].getBytes();

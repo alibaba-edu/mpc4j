@@ -100,6 +100,32 @@ public class PermutationNetworkUtils {
      * @param inputVector the input vector.
      * @return the permuted input vector.
      */
+    public static Integer[] permutation(int[] permutation, Integer[] inputVector) {
+        assert validPermutation(permutation);
+        assert permutation.length == inputVector.length;
+        int n = permutation.length;
+        // Creates the actual permutation map
+        TIntIntMap map = new TIntIntHashMap(n);
+        IntStream.range(0, n).forEach(inputPosition -> map.put(permutation[inputPosition], inputPosition));
+        Integer[] outputVector = new Integer[n];
+        IntStream.range(0, n).forEach(inputPosition ->
+            outputVector[map.get(inputPosition)] = inputVector[inputPosition]
+        );
+
+        return outputVector;
+    }
+
+    /**
+     * Permutes the input vector by the given permutation map. For example, if permutation = [3, 1, 2, 0], then we set:
+     * <li>the 3-th element to the 0-th position.</li>
+     * <li>the 1-th element to the 1-th position.</li>
+     * <li>the 2-th element to the 2-th position.</li>
+     * <li>the 0-th element to the 3-th position.</li>
+     *
+     * @param permutation the permutation map.
+     * @param inputVector the input vector.
+     * @return the permuted input vector.
+     */
     public static byte[][] permutation(int[] permutation, byte[][] inputVector) {
         assert validPermutation(permutation);
         assert permutation.length == inputVector.length;

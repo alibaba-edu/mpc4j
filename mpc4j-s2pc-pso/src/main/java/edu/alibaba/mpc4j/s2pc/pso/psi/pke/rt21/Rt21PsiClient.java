@@ -212,7 +212,7 @@ public class Rt21PsiClient<T> extends AbstractPsiClient<T> {
     }
 
     private Set<T> handlePeqtPayload(byte[][] kArray, List<byte[]> peqtPayload) {
-        Filter<byte[]> peqtFilter = FilterFactory.load(envType, peqtPayload);
+        Filter<byte[]> peqtFilter = FilterFactory.loadFilter(envType, peqtPayload);
         IntStream clientElementIntStream = IntStream.range(0, clientElementSize);
         clientElementIntStream = parallel ? clientElementIntStream.parallel() : clientElementIntStream;
         return clientElementIntStream

@@ -39,6 +39,31 @@ public class DataPacketBuffer {
     }
 
     /**
+     * Takes a data packet that matches the header immediately. If there is no match, return null.
+     *
+     * @param header the header.
+     * @return data packet that matches the header; null if there is no matching data packet.
+     */
+    public synchronized DataPacket takeImmediately(DataPacketHeader header) throws InterruptedException {
+        assert (header != null);
+        // if there is no target data packet in the buffer, waiting until new data packet is added.
+        if (!dataPacketBuffer.containsKey(header)) {
+            return null;
+        } else {
+            return DataPacket.fromByteArrayList(header, dataPacketBuffer.remove(header));
+        }
+    }
+
+    /**
+     * delete the specific message
+     *
+     * @param header the header.
+     */
+    public synchronized void clearBuffer(DataPacketHeader header) {
+        dataPacketBuffer.remove(header);
+    }
+
+    /**
      * Takes a data packet that matches the header.
      *
      * @param header the header.

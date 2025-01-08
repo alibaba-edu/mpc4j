@@ -179,7 +179,7 @@ public class PsuTest extends AbstractTwoPartyMemoryRpcPto {
         server.setTaskId(randomTaskId);
         client.setTaskId(randomTaskId);
         try {
-            LOGGER.info("-----test {}，server_size = {}，client_size = {}-----",
+            LOGGER.info("-----test {}, server_size = {}, client_size = {}-----",
                 server.getPtoDesc().getPtoName(), serverSize, clientSize
             );
             // generate sets

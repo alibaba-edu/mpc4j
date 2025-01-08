@@ -52,6 +52,8 @@ public class CrhfTest {
         configurations.add(new Object[] {CrhfType.SIMD_MMO_SIGMA.name(), CrhfType.SIMD_MMO_SIGMA, });
         // JDK_MMO_SIGMA
         configurations.add(new Object[] {CrhfType.JDK_MMO_SIGMA.name(), CrhfType.JDK_MMO_SIGMA, });
+        // FIXED_KEY_MMO
+        configurations.add(new Object[] {CrhfType.FIXED_KEY_MMO.name(), CrhfType.FIXED_KEY_MMO, });
         // MMO
         configurations.add(new Object[] {CrhfType.MMO.name(), CrhfType.MMO, });
 
@@ -59,7 +61,7 @@ public class CrhfTest {
     }
 
     /**
-     * 测试类型
+     * type
      */
     public final CrhfType type;
 

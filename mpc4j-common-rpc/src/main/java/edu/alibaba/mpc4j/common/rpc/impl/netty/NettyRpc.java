@@ -18,6 +18,8 @@ import edu.alibaba.mpc4j.common.tool.utils.SerializeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -85,6 +87,8 @@ public class NettyRpc implements Rpc {
         Preconditions.checkArgument(partySet.size() > 1, "Party set size must be greater than 1");
         // 参与方自身必须在所有参与方之中
         Preconditions.checkArgument(partySet.contains(ownParty), "Party set must contain own party");
+        // TEST whether the current port is in use
+        testPortInUse(ownParty.getPort());
         this.ownParty = ownParty;
         ownPartyId = ownParty.getPartyId();
         // 按照参与方索引值，将参与方信息插入到ID映射中
@@ -97,6 +101,21 @@ public class NettyRpc implements Rpc {
         // 用于父线程和server子线程的同步，parties设置成2
         cyclicBarrier = new CyclicBarrier(2);
         dataPacketBuffer = new DataPacketBuffer();
+    }
+
+    /**
+     * If the current port is in use, exit.
+     *
+     * @param port port.
+     */
+    public void testPortInUse(int port) {
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            serverSocket.setReuseAddress(true);
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.error("configure error, port: {} may be already in use. please check the running process or change the port", port);
+            System.exit(1);
+        }
     }
 
     @Override
@@ -129,18 +148,27 @@ public class NettyRpc implements Rpc {
                     Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_CONNECT.ordinal(),
                     ownPartyId, otherPartyId
                 );
-                send(DataPacket.fromByteArrayList(clientConnectHeader, new LinkedList<>()));
-                LOGGER.debug(
-                    "{} requests connection with {}",
-                    partyIdHashMap.get(ownPartyId), partyIdHashMap.get(otherPartyId)
-                );
-                // 再获得对方的回复
                 DataPacketHeader serverConnectHeader = new DataPacketHeader(
                     Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.SERVER_CONNECT.ordinal(),
                     otherPartyId, ownPartyId
                 );
-                receive(serverConnectHeader);
-                LOGGER.debug(
+                DataPacketHeader clientConfirmHeader = new DataPacketHeader(
+                    Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_CONFIRM.ordinal(),
+                    ownPartyId, otherPartyId
+                );
+
+                send(DataPacket.fromByteArrayList(clientConnectHeader, new LinkedList<>()));
+                // 再获得对方的回复
+                while (receiveWithSleep(serverConnectHeader) == null) {
+                    LOGGER.info(
+                        "{} requests connection with {}",
+                        partyIdHashMap.get(ownPartyId), partyIdHashMap.get(otherPartyId)
+                    );
+                    send(DataPacket.fromByteArrayList(clientConnectHeader, new LinkedList<>()));
+                }
+                send(DataPacket.fromByteArrayList(clientConfirmHeader, new LinkedList<>()));
+                dataPacketBuffer.clearBuffer(serverConnectHeader);
+                LOGGER.info(
                     "{} successfully make connection with {}",
                     partyIdHashMap.get(ownPartyId), partyIdHashMap.get(otherPartyId)
                 );
@@ -150,24 +178,62 @@ public class NettyRpc implements Rpc {
                     Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_CONNECT.ordinal(),
                     otherPartyId, ownPartyId
                 );
-                LOGGER.debug(
-                    "{} requests being connected with {}",
-                    partyIdHashMap.get(ownPartyId), partyIdHashMap.get(otherPartyId)
-                );
-                receive(clientConnectHeader);
-                // 再回复给对方
                 DataPacketHeader serverConnectHeader = new DataPacketHeader(
                     Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.SERVER_CONNECT.ordinal(),
                     ownPartyId, otherPartyId
                 );
+                DataPacketHeader clientConfirmHeader = new DataPacketHeader(
+                    Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_CONFIRM.ordinal(),
+                    otherPartyId, ownPartyId
+                );
+
+                while (receiveWithSleep(clientConnectHeader) == null) {
+                    LOGGER.info(
+                        "{} requests being connected with {}",
+                        partyIdHashMap.get(ownPartyId), partyIdHashMap.get(otherPartyId)
+                    );
+                }
+
                 send(DataPacket.fromByteArrayList(serverConnectHeader, new LinkedList<>()));
-                LOGGER.debug(
+                while (receiveWithSleep(clientConfirmHeader) == null) {
+                    LOGGER.info(
+                        "{} requests confirm from {}",
+                        partyIdHashMap.get(ownPartyId), partyIdHashMap.get(otherPartyId)
+                    );
+                    send(DataPacket.fromByteArrayList(serverConnectHeader, new LinkedList<>()));
+                }
+                dataPacketBuffer.clearBuffer(clientConnectHeader);
+                dataPacketBuffer.clearBuffer(clientConfirmHeader);
+                LOGGER.info(
                     "{} successfully make connection with {}",
                     partyIdHashMap.get(ownPartyId), partyIdHashMap.get(otherPartyId)
                 );
             }
         });
         LOGGER.info("{} connected", ownParty);
+    }
+
+    /**
+     * Sleep for a while and then try to immediately receive data packet that matches the header from buffer.
+     *
+     * @param header header.
+     * @return data packet that matches the header; null if there is no such data packet.
+     */
+    private DataPacket receiveWithSleep(DataPacketHeader header) {
+        Preconditions.checkArgument(
+            ownPartyId == header.getReceiverId(), "Receiver ID must be %s", ownPartyId
+        );
+        Preconditions.checkArgument(
+            partyIdHashMap.containsKey(header.getSenderId()),
+            "Party set does not contain Sender ID = %s", header.getSenderId()
+        );
+        try {
+            Thread.sleep(100);
+            return dataPacketBuffer.takeImmediately(header);
+        } catch (InterruptedException e) {
+            // 线程中断，不需要等待，直接返回空
+            return null;
+        }
     }
 
     @Override

@@ -1,13 +1,11 @@
 package edu.alibaba.mpc4j.common.tool.network.waksman;
 
-import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory.PermutationNetworkType;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetworkFactory.WaksmanNetworkType;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 
 import java.util.Arrays;
 import java.util.Stack;
-import java.util.concurrent.ForkJoinTask;
 import java.util.stream.IntStream;
 
 /**
@@ -82,10 +80,6 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                 path[subN - 1] = 1;
                 path[perms[subN - 1]] = 1;
                 // if values - 1 == perm[values - 1], then the last one is also a direct link. Handle other cases.
-//                if (perms[subN - 1] != subN - 1) {
-//                    int idx = perms[invPerms[subN - 1] ^ 1];
-//                    depthFirstSearch(path, perms, invPerms, idx);
-//                }
                 if (perms[subN - 1] != subN - 1) {
                     int idx = perms[subN - 1] ^ 1;
                     depthFirstSearch(path, perms, invPerms, idx);
@@ -94,9 +88,6 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                 int index = perms[subN - 1];
                 path[index] = 1;
                 depthFirstSearch(path, perms, invPerms, index ^ 1);
-
-//                // handling even n
-//                evenDepthFirstSearch(path, perms, invPerms);
             }
             // set other switches
             for (int i = 0; i < subN; ++i) {
@@ -114,10 +105,10 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                 // 对应的index是不是来自于上半个网络
                 int rightFromTop = path[perms[i]];
                 rightNet[permIndex + partSrcIndex] = (byte) rightFromTop;
-                if(rightFromTop == 0){
+                if (rightFromTop == 0) {
                     subTopDests[partSrcIndex] = perms[i++] >> 1;
                     subBottomDests[partSrcIndex] = perms[i++] >> 1;
-                }else{
+                } else {
                     subBottomDests[partSrcIndex] = perms[i++] >> 1;
                     subTopDests[partSrcIndex] = perms[i++] >> 1;
                 }
@@ -129,21 +120,10 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
                 // remove one switch for the even case.
                 network[levelIndex + subLevel - 1][permIndex + subN / 2 - 1] = 2;
             }
-
-            if (parallel && n > PermutationNetworkFactory.PARALLEL_THRESHOLD && forkJoinPool.getParallelism() - forkJoinPool.getActiveThreadCount() > 0) {
-                ForkJoinTask<?> topTask = forkJoinPool.submit(() ->
-                    genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex, subTopDests));
-                ForkJoinTask<?> subTask = forkJoinPool.submit(() ->
-                    genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex + subN / 4, subBottomDests)
-                );
-                topTask.join();
-                subTask.join();
-            } else {
-                // create top subnetwork, with (log(N) - 1) levels
-                genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex, subTopDests);
-                // create bottom subnetwork with (log(N) - 1) levels.
-                genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex + subN / 4, subBottomDests);
-            }
+            // create top subnetwork, with (log(N) - 1) levels
+            genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex, subTopDests);
+            // create bottom subnetwork with (log(N) - 1) levels.
+            genWaksmanRoute(subLogN - 1, levelIndex + 1, permIndex + subN / 4, subBottomDests);
         }
     }
 
@@ -437,28 +417,6 @@ class JdkWaksmanNetwork<T> extends AbstractWaksmanNetwork<T> {
     private void depthFirstSearch(int[] path, int[] perms, int[] invPerms, int idx) {
         Stack<int[]> stack = new Stack<>();
         stack.push(new int[]{idx, 0});
-        while (!stack.empty()) {
-            int[] pair = stack.pop();
-            path[pair[0]] = pair[1];
-            // if the next item in the vertical array is unassigned
-            if (path[pair[0] ^ 1] < 0) {
-                // the next item is always assigned the opposite of this item,
-                // unless it was part of path/cycle of previous node
-                stack.push(new int[]{pair[0] ^ 1, pair[1] ^ 1});
-            }
-            idx = perms[invPerms[pair[0]] ^ 1];
-            if (path[idx] < 0) {
-                stack.push(new int[]{idx, pair[1] ^ 1});
-            }
-        }
-    }
-
-    private void evenDepthFirstSearch(int[] path, int[] perms, int[] invPerms) {
-        assert path.length > 4 && path.length % 2 == 0;
-        // set the last path to be 0
-        int idx = perms[path.length - 1];
-        Stack<int[]> stack = new Stack<>();
-        stack.push(new int[]{idx, 1});
         while (!stack.empty()) {
             int[] pair = stack.pop();
             path[pair[0]] = pair[1];

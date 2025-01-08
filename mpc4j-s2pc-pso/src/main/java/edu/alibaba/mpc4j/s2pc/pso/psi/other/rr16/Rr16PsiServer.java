@@ -174,7 +174,7 @@ public class Rr16PsiServer<T> extends AbstractPsiServer<T> {
 
         // construct the filter
         stopWatch.start();
-        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> serverPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         serverPrfs.forEach(serverPrfFilter::put);
         List<byte[]> serverPrfFilterPayload = serverPrfFilter.save();
         DataPacketHeader serverPrfFilterHeader = new DataPacketHeader(

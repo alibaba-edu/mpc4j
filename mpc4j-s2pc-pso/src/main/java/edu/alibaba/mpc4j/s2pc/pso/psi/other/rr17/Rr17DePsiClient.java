@@ -199,7 +199,7 @@ public class Rr17DePsiClient<T> extends AbstractPsiClient<T> {
 
     private Set<T> handleServerPrf(List<byte[]> serverPrfPayload) {
         int peqtHashInputLength = lcotReceiverOutput.getOutputByteLength() + encodeInputByteLength;
-        serverPrfFilter = FilterFactory.load(envType, serverPrfPayload);
+        serverPrfFilter = FilterFactory.loadFilter(envType, serverPrfPayload);
         // Iterating over hash buckets in hash table
         IntStream intStream = parallel ? IntStream.range(0, binNum * binSize).parallel() : IntStream.range(0, binNum * binSize);
         Set<T> intersection = intStream.mapToObj(elementIndex -> {

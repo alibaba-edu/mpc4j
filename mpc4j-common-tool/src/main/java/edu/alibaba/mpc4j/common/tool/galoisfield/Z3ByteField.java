@@ -189,4 +189,18 @@ public class Z3ByteField implements ByteField {
     public boolean validateNonZeroElement(byte p) {
         return p == 1 || p == 2;
     }
+
+    /**
+     * mod.
+     *
+     * @param p p.
+     * @return p mod 3.
+     */
+    public byte mod(int p) {
+        byte output = (byte) (p % 3);
+        if (output < 0) {
+            output += PRIME;
+        }
+        return output;
+    }
 }

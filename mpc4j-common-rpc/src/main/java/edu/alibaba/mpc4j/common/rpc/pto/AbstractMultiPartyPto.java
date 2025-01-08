@@ -31,7 +31,7 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
     /**
      * default display log level
      */
-    private static final int DEFAULT_DISPLAY_LOG_LEVEL = 2;
+    private static final int DEFAULT_DISPLAY_LOG_LEVEL = 1;
     /**
      * max msg size
      */
@@ -332,17 +332,16 @@ public abstract class AbstractMultiPartyPto implements MultiPartyPto {
      */
     protected List<byte[]> receiveEqualSizePayload(int stepId, Party sendParty, int num, int byteLength) {
         int maxSendNum = MAX_SIZE_MSG / byteLength;
-        List<byte[]> receiveMsgPayload;
         if (maxSendNum >= num) {
             return receivePayload(stepId, sendParty);
         } else {
-            receiveMsgPayload = new ArrayList<>(num);
+            List<byte[]> receiveMsgPayload = new ArrayList<>(num);
             int recBatchNum = (int) Math.ceil(num * 1.0 / maxSendNum);
             for (int i = 0; i < recBatchNum; i++) {
                 receiveMsgPayload.addAll(receivePayload(stepId, sendParty));
             }
+            return receiveMsgPayload;
         }
-        return receiveMsgPayload;
     }
 
     @Override

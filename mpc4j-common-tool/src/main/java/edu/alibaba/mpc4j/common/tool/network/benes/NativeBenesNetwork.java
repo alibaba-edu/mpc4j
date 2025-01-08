@@ -6,7 +6,9 @@ import edu.alibaba.mpc4j.common.tool.network.benes.BenesNetworkFactory.BenesNetw
 
 /**
  * native Benes Network. The implementation is inspired by:
- * <p>https://github.com/osu-crypto/PSI-analytics/blob/master/psi_analytics_eurocrypt19/common/benes.cpp</p>
+ * <a href="https://github.com/osu-crypto/PSI-analytics/blob/master/psi_analytics_eurocrypt19/common/benes.cpp">
+ * benes.cpp
+ * </a>
  *
  * @author Weiran Liu
  * @date 2024/3/20

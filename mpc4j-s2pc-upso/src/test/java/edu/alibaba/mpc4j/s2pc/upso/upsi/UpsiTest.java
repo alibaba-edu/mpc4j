@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.upso.upsi;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiConfig;
-import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21j.Cmg21jUpsiConfig;
+import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21JavaUpsiConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,7 +51,7 @@ public class UpsiTest extends AbstractTwoPartyMemoryRpcPto {
         });
         // CMG21 + JAVA
         configurations.add(new Object[]{
-            UpsiFactory.UpsiType.CMG21J.name(), new Cmg21jUpsiConfig.Builder().build()
+            UpsiFactory.UpsiType.CMG21_JAVA.name(), new Cmg21JavaUpsiConfig.Builder().build()
         });
 
         return configurations;

@@ -7,9 +7,9 @@ import edu.alibaba.mpc4j.common.rpc.pto.PtoFactory;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiClient;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiConfig;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiServer;
-import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21j.Cmg21jUpsiClient;
-import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21j.Cmg21jUpsiConfig;
-import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21j.Cmg21jUpsiServer;
+import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21JavaUpsiClient;
+import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21JavaUpsiConfig;
+import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21JavaUpsiServer;
 
 /**
  * UPSI factory.
@@ -30,13 +30,13 @@ public class UpsiFactory implements PtoFactory {
      */
     public enum UpsiType {
         /**
-         * CMG21
+         * CMG21 (Native version)
          */
         CMG21,
         /**
-         * CMG21J
+         * CMG21 (Java version)
          */
-        CMG21J,
+        CMG21_JAVA,
     }
 
     /**
@@ -52,8 +52,8 @@ public class UpsiFactory implements PtoFactory {
         switch (type) {
             case CMG21:
                 return new Cmg21UpsiServer<>(serverRpc, clientParty, (Cmg21UpsiConfig) config);
-            case CMG21J:
-                return new Cmg21jUpsiServer<>(serverRpc, clientParty, (Cmg21jUpsiConfig) config);
+            case CMG21_JAVA:
+                return new Cmg21JavaUpsiServer<>(serverRpc, clientParty, (Cmg21JavaUpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + UpsiType.class.getSimpleName() + ": " + type.name());
         }
@@ -72,8 +72,8 @@ public class UpsiFactory implements PtoFactory {
         switch (type) {
             case CMG21:
                 return new Cmg21UpsiClient<>(clientRpc, serverParty, (Cmg21UpsiConfig) config);
-            case CMG21J:
-                return new Cmg21jUpsiClient<>(clientRpc, serverParty, (Cmg21jUpsiConfig) config);
+            case CMG21_JAVA:
+                return new Cmg21JavaUpsiClient<>(clientRpc, serverParty, (Cmg21JavaUpsiConfig) config);
             default:
                 throw new IllegalArgumentException("Invalid " + UpsiType.class.getSimpleName() + ": " + type.name());
         }

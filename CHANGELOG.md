@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[1.1.3\]
+
+### Added
+
+- [important] We update `rpc` implementations and now we do not further request starting parties in sequence.
+- We implement FrodoPIR introduced in PETS 2023.
+- We implement ChalametPIR introduced in CCS 2024, together with binary fuse filter.
+- We implement PGM-index introduced in VLDB 2020.
+- We implement various sorting algorithms in 2PC.
+- We implement Plinko introduced in ePrint 2023. We introduce `update` API for client-preprocessing PIR.
+- We implement Alternating-Moduli PRFs in CRYPTO 2024.
+- We introduce offline/online paradigm for PSU.
+
+### Changed
+
+- We refine implementations for Permutation Network with speedup.
+- We refine implementations for Bloom Filter, Cuckoo Filter and Vacuum Filter with speedup (inspired by the Mobile Private Contact Discovery paper in USENIX Security 2019).
+- We refine implementations for Piano and MIR PIR with speedup.
+- We introduce `UNSAFE` for faster type convertions.
+- We introduce iterator for BFV implementations in `mpc4j-crypto-fhe`.
+
+### Removed
+
+- We remove `mpc4j-common-jnagmp` since we meet bugs when using JNA-GMP on Mac M3.
+- We remove `mpc4j-crypto-phe`  since PHE is no longer neceesary for `mpc4j`.
+- We add functions supporting large data (>2G) transmissions in `mpc4j-common-rpc`. 
+
+### Fixed
+
+- We fix the bug in implementing SimplePIR. Now the rounding operation is implemented correctly.
+- We fix the bug for generating $n \ge 2^{22}$ for PSO. Thanks Binbin Tu for reporting this bug.
+
 ## [1.1.2]
 
 ### Added

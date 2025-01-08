@@ -3,11 +3,14 @@ package edu.alibaba.mpc4j.s2pc.pir.main.cppir.index;
 import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirFactory.CpIdxPirType;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.frodo.FrodoCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.piano.PianoCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.pai.PaiCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.plinko.MirPlinkoCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.plinko.PianoPlinkoCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.DoubleCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.spam.SpamCpIdxPirConfig;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.mir.MirCpIdxPirConfig;
 
 import java.util.Properties;
 
@@ -37,8 +40,8 @@ class CpIdxPirConfigUtils {
             case PIANO -> {
                 return new PianoCpIdxPirConfig.Builder().build();
             }
-            case SPAM -> {
-                return new SpamCpIdxPirConfig.Builder().build();
+            case MIR -> {
+                return new MirCpIdxPirConfig.Builder().build();
             }
             case SIMPLE -> {
                 return new SimpleCpIdxPirConfig.Builder().build();
@@ -48,6 +51,15 @@ class CpIdxPirConfigUtils {
             }
             case DOUBLE -> {
                 return new DoubleCpIdxPirConfig.Builder().build();
+            }
+            case FRODO -> {
+                return new FrodoCpIdxPirConfig.Builder().build();
+            }
+            case PIANO_PLINKO -> {
+                return new PianoPlinkoCpIdxPirConfig.Builder().build();
+            }
+            case MIR_PLINKO -> {
+                return new MirPlinkoCpIdxPirConfig.Builder().build();
             }
             default -> throw new IllegalArgumentException("Invalid " + CpIdxPirType.class.getSimpleName() + ": " + cpIdxPirType.name());
         }

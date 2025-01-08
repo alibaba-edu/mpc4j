@@ -1,8 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psu.jsz22;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
@@ -12,21 +10,28 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
+import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
-import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
-import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSender;
-import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSenderOutput;
+import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnPartyOutput;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnReceiver;
-import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractPsuServer;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnReceiver;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSender;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
+import edu.alibaba.mpc4j.s2pc.pso.psu.AbstractOoPsuServer;
 import edu.alibaba.mpc4j.s2pc.pso.psu.jsz22.Jsz22SfcPsuPtoDesc.PtoStep;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -38,11 +43,15 @@ import java.util.stream.Stream;
  * @author Weiran Liu
  * @date 2022/03/14
  */
-public class Jsz22SfcPsuServer extends AbstractPsuServer {
+public class Jsz22SfcPsuServer extends AbstractOoPsuServer {
     /**
      * OSN接收方
      */
     private final DosnReceiver dosnReceiver;
+    /**
+     * OSN
+     */
+    private final RosnReceiver rosnReceiver;
     /**
      * OPRF发送方
      */
@@ -76,6 +85,10 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
      */
     private Prf[] hashes;
     /**
+     * 映射
+     */
+    private int[] pi;
+    /**
      * 交换映射
      */
     private int[] inversePi;
@@ -87,11 +100,17 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
      * OPRF发送方输出
      */
     OprfSenderOutput oprfSenderOutput;
+    /**
+     * save the precomputed rosn result
+     */
+    private RosnReceiverOutput rosnReceiverOutput;
 
     public Jsz22SfcPsuServer(Rpc serverRpc, Party clientParty, Jsz22SfcPsuConfig config) {
         super(Jsz22SfcPsuPtoDesc.getInstance(), serverRpc, clientParty, config);
         dosnReceiver = DosnFactory.createReceiver(serverRpc, clientParty, config.getOsnConfig());
         addSubPto(dosnReceiver);
+        rosnReceiver = RosnFactory.createReceiver(serverRpc, clientParty, config.getRosnConfig());
+        addSubPto(rosnReceiver);
         oprfSender = OprfFactory.createOprfSender(serverRpc, clientParty, config.getOprfConfig());
         addSubPto(oprfSender);
         coreCotSender = CoreCotFactory.createSender(serverRpc, clientParty, config.getCoreCotConfig());
@@ -111,6 +130,7 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
         int maxPrfNum = CuckooHashBinFactory.getHashNum(cuckooHashBinType) * maxServerElementSize;
         // 初始化各个子协议
         dosnReceiver.init();
+        rosnReceiver.init();
         oprfSender.init(maxBinNum, maxPrfNum);
         byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
         coreCotSender.init(delta);
@@ -123,6 +143,23 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
     }
 
     @Override
+    public void preCompute(int serverElementSize, int clientElementSize, int elementByteLength) throws MpcAbortException {
+        checkPrecomputeInput(serverElementSize, clientElementSize, elementByteLength);
+
+        logPhaseInfo(PtoState.PTO_BEGIN, "Pre-computation");
+        stopWatch.start();
+        int precomputeBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, clientElementSize);
+        int[] precomputePi = PermutationNetworkUtils.randomPermutation(precomputeBinNum, secureRandom);
+        rosnReceiverOutput = rosnReceiver.rosn(precomputePi, elementByteLength);
+        stopWatch.stop();
+        long precomputeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 1, 1, precomputeTime);
+
+        logPhaseInfo(PtoState.PTO_END, "Pre-computation");
+    }
+
+    @Override
     public void psu(Set<ByteBuffer> serverElementSet, int clientElementSize, int elementByteLength)
         throws MpcAbortException {
         setPtoInput(serverElementSet, clientElementSize, elementByteLength);
@@ -130,26 +167,21 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
 
         stopWatch.start();
         binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, clientElementSize);
-        // 初始化OPRF哈希
-        oprfOutputByteLength = Jsz22SfcPsuPtoDesc.getOprfByteLength(binNum);
-        oprfOutputMap = HashFactory.createInstance(getEnvType(), oprfOutputByteLength);
-        // 构造交换映射
-        List<Integer> piList = IntStream.range(0, binNum)
-            .boxed()
-            .collect(Collectors.toList());
-        Collections.shuffle(piList, secureRandom);
-        int[] pi = piList.stream().mapToInt(permutation -> permutation).toArray();
-        // 构造交换映射的逆映射
+        if (validPrecomputation()) {
+            pi = IntUtils.clone(rosnReceiverOutput.getPi());
+        } else {
+            pi = PermutationNetworkUtils.randomPermutation(binNum, secureRandom);
+        }
         inversePi = new int[binNum];
         for (int index = 0; index < binNum; index++) {
             inversePi[pi[index]] = index;
         }
+        // 初始化OPRF哈希
+        oprfOutputByteLength = Jsz22SfcPsuPtoDesc.getOprfByteLength(binNum);
+        oprfOutputMap = HashFactory.createInstance(getEnvType(), oprfOutputByteLength);
+
         // 设置布谷鸟哈希
-        DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> cuckooHashKeyPayload = rpc.receive(cuckooHashKeyHeader).getPayload();
+        List<byte[]> cuckooHashKeyPayload = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal());
         handleCuckooHashKeyPayload(cuckooHashKeyPayload);
         stopWatch.stop();
         long cuckooHashTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -159,7 +191,14 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
         stopWatch.start();
         // S and R invoke the ideal functionality F_{PS}.
         // S acts as P_1 with a permutation π, obtains the shuffled shares {a'_1, a'_2, ... , a'_b}.
-        DosnPartyOutput osnReceiverOutput = dosnReceiver.dosn(pi, elementByteLength);
+        DosnPartyOutput osnReceiverOutput;
+        if (validPrecomputation()) {
+            // if osn is pre-computed
+            osnReceiverOutput = dosnReceiver.dosn(pi, elementByteLength, rosnReceiverOutput);
+            rosnReceiverOutput = null;
+        } else {
+            osnReceiverOutput = dosnReceiver.dosn(pi, elementByteLength);
+        }
         aPrimeArray = IntStream.range(0, binNum)
             .mapToObj(osnReceiverOutput::getShare)
             .toArray(byte[][]::new);
@@ -180,11 +219,7 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
         stopWatch.start();
         // For j ∈ [γ], S computes q_j = π^{−1}(h_j(x'_i))
         List<byte[]> serverOprfPayload = generateServerOprfPayload();
-        DataPacketHeader serverOprfHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_OPRFS.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(serverOprfHeader, serverOprfPayload));
+        sendOtherPartyEqualSizePayload(PtoStep.SERVER_SEND_OPRFS.ordinal(), serverOprfPayload);
         stopWatch.stop();
         long checkTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -194,8 +229,7 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
         // 加密数据
         CotSenderOutput cotSenderOutput = coreCotSender.send(serverElementSize);
         Prg encPrg = PrgFactory.createInstance(envType, elementByteLength);
-        IntStream encIntStream = IntStream.range(0, serverElementSize);
-        encIntStream = parallel ? encIntStream.parallel() : encIntStream;
+        IntStream encIntStream = parallel ? IntStream.range(0, serverElementSize).parallel() : IntStream.range(0, serverElementSize);
         List<byte[]> encPayload = encIntStream
             .mapToObj(index -> {
                 // do not need CRHF since we call prg
@@ -204,17 +238,19 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
                 return ciphertext;
             })
             .collect(Collectors.toList());
-        DataPacketHeader encHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_ENC_ELEMENTS.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(encHeader, encPayload));
+        sendOtherPartyPayload(PtoStep.SERVER_SEND_ENC_ELEMENTS.ordinal(), encPayload);
         stopWatch.stop();
         long encTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 5, 5, encTime);
 
         logPhaseInfo(PtoState.PTO_END);
+    }
+
+    private boolean validPrecomputation() {
+        return rosnReceiverOutput != null
+            && rosnReceiverOutput.getNum() == binNum
+            && rosnReceiverOutput.getByteLength() == elementByteLength;
     }
 
     private void handleCuckooHashKeyPayload(List<byte[]> cuckooHashKeyPayload) throws MpcAbortException {
@@ -229,8 +265,7 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
     }
 
     private List<byte[]> generateServerOprfPayload() {
-        Stream<ByteBuffer> serverElementStream = serverElementArrayList.stream();
-        serverElementStream = parallel ? serverElementStream.parallel() : serverElementStream;
+        Stream<ByteBuffer> serverElementStream = parallel ? serverElementArrayList.stream().parallel() : serverElementArrayList.stream();
         List<byte[]> serverOprfPayload = serverElementStream
             .map(element -> {
                 int[] positions = Arrays.stream(hashes)
@@ -253,7 +288,9 @@ public class Jsz22SfcPsuServer extends AbstractPsuServer {
             .flatMap(Arrays::stream)
             .collect(Collectors.toList());
         oprfSenderOutput = null;
+        pi = null;
         inversePi = null;
+        aPrimeArray = null;
         return serverOprfPayload;
     }
 }

@@ -6,6 +6,7 @@ import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory.DosnType;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory.RosnType;
 
 /**
  * Decision OSN config.
@@ -31,6 +32,11 @@ public class Lll24DosnConfig extends AbstractMultiPartyPtoConfig implements Dosn
     @Override
     public DosnType getPtoType() {
         return DosnType.LLL24;
+    }
+
+    @Override
+    public RosnType getRosnType() {
+        return rosnConfig.getPtoType();
     }
 
     public static class Builder implements org.apache.commons.lang3.builder.Builder<Lll24DosnConfig> {

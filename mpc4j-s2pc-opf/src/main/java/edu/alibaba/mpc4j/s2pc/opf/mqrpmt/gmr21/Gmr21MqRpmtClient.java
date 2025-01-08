@@ -1,8 +1,10 @@
 package edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
+import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
@@ -10,15 +12,15 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.AbstractMqRpmtClient;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtPtoDesc.PtoStep;
-import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnPartyOutput;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnSender;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnFactory;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnSender;
+import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnSenderOutput;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.AbstractMqRpmtClient;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.gmr21.Gmr21MqRpmtPtoDesc.PtoStep;
+import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -41,6 +43,10 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
      * OSN
      */
     private final DosnSender dosnSender;
+    /**
+     * random-OSN
+     */
+    private final RosnSender rosnSender;
     /**
      * OPRF used in PEQT
      */
@@ -77,6 +83,10 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
      * (s_1, ..., s_m)
      */
     private byte[][] sVector;
+    /**
+     * save the precomputed rosn result
+     */
+    private RosnSenderOutput rosnSenderOutput;
 
     public Gmr21MqRpmtClient(Rpc clientRpc, Party serverParty, Gmr21MqRpmtConfig config) {
         super(Gmr21MqRpmtPtoDesc.getInstance(), clientRpc, serverParty, config);
@@ -84,6 +94,8 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         addSubPto(cuckooHashOprfSender);
         dosnSender = DosnFactory.createSender(clientRpc, serverParty, config.getOsnConfig());
         addSubPto(dosnSender);
+        rosnSender = RosnFactory.createSender(clientRpc, serverParty, config.getRosnConfig());
+        addSubPto(rosnSender);
         peqtOprfReceiver = OprfFactory.createOprfReceiver(clientRpc, serverParty, config.getPeqtOprfConfig());
         addSubPto(peqtOprfReceiver);
         okvsType = config.getOkvsType();
@@ -102,6 +114,7 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         // 初始化各个子协议
         cuckooHashOprfSender.init(maxBinNum, maxPrfNum);
         dosnSender.init();
+        rosnSender.init();
         peqtOprfReceiver.init(maxBinNum);
         // 初始化多项式有限域哈希，根据论文实现，固定为64比特
         finiteFieldHash = HashFactory.createInstance(envType, Gmr21MqRpmtPtoDesc.FINITE_FIELD_BYTE_LENGTH);
@@ -111,11 +124,7 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         logStepInfo(PtoState.INIT_STEP, 1, 2, initTime);
 
         stopWatch.start();
-        DataPacketHeader keysHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_KEYS.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> keysPayload = rpc.receive(keysHeader).getPayload();
+        List<byte[]> keysPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_KEYS.ordinal());
         int okvsHashKeyNum = Gf2eDokvsFactory.getHashKeyNum(okvsType);
         MpcAbortPreconditions.checkArgument(keysPayload.size() == okvsHashKeyNum);
         // 初始化OKVS密钥
@@ -128,16 +137,28 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         logPhaseInfo(PtoState.INIT_END);
     }
 
+    /**
+     * Do pre-computation.
+     *
+     * @param serverSetSize server set size.
+     */
+    public void preCompute(int serverSetSize) throws MpcAbortException {
+        checkInitialized();
+        MathPreconditions.checkGreater("serverSetSize", serverSetSize, 1);
+        MathPreconditions.checkLessOrEqual("serverSetSize", serverSetSize, maxServerElementSize);
+
+        logPhaseInfo(PtoState.PTO_BEGIN, "pre-compute OSN");
+        int precomputeBinNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverSetSize);
+        rosnSenderOutput = rosnSender.rosn(precomputeBinNum, Gmr21MqRpmtPtoDesc.FINITE_FIELD_BYTE_LENGTH);
+        logPhaseInfo(PtoState.INIT_END);
+    }
+
     @Override
     public boolean[] mqRpmt(Set<ByteBuffer> clientElementSet, int serverElementSize) throws MpcAbortException {
         setPtoInput(clientElementSet, serverElementSize);
         logPhaseInfo(PtoState.PTO_BEGIN);
 
-        DataPacketHeader cuckooHashKeyHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> cuckooHashKeyPayload = rpc.receive(cuckooHashKeyHeader).getPayload();
+        List<byte[]> cuckooHashKeyPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal());
 
         stopWatch.start();
         binNum = CuckooHashBinFactory.getBinNum(cuckooHashBinType, serverElementSize);
@@ -157,20 +178,22 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
 
         stopWatch.start();
         List<byte[]> okvsPayload = generateOkvsPayload(cuckooHashOprfSenderOutput);
-        DataPacketHeader okvsHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OKVS.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(okvsHeader, okvsPayload));
+        sendOtherPartyPayload(PtoStep.CLIENT_SEND_OKVS.ordinal(), okvsPayload);
         stopWatch.stop();
         long okvsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 3, 5, okvsTime, "Client generates OKVS");
 
         stopWatch.start();
-        DosnPartyOutput osnSenderOutput = dosnSender.dosn(sVector, Gmr21MqRpmtPtoDesc.FINITE_FIELD_BYTE_LENGTH);
-        IntStream bOprfIntStream = IntStream.range(0, binNum);
-        bOprfIntStream = parallel ? bOprfIntStream.parallel() : bOprfIntStream;
+        DosnPartyOutput osnSenderOutput;
+        if (validPrecomputation()) {
+            // this means the pre-computation is valid
+            osnSenderOutput = dosnSender.dosn(sVector, Gmr21MqRpmtPtoDesc.FINITE_FIELD_BYTE_LENGTH, rosnSenderOutput);
+            rosnSenderOutput = null;
+        } else {
+            osnSenderOutput = dosnSender.dosn(sVector, Gmr21MqRpmtPtoDesc.FINITE_FIELD_BYTE_LENGTH);
+        }
+        IntStream bOprfIntStream = parallel ? IntStream.range(0, binNum).parallel() : IntStream.range(0, binNum);
         byte[][] bArray = bOprfIntStream.mapToObj(osnSenderOutput::getShare).toArray(byte[][]::new);
         stopWatch.stop();
         long osnTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -179,19 +202,14 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
 
         stopWatch.start();
         OprfReceiverOutput peqtOprfReceiverOutput = peqtOprfReceiver.oprf(bArray);
-        IntStream bPrimeOprfIntStream = IntStream.range(0, binNum);
-        bPrimeOprfIntStream = parallel ? bPrimeOprfIntStream.parallel() : bPrimeOprfIntStream;
+        IntStream bPrimeOprfIntStream = parallel ? IntStream.range(0, binNum).parallel() : IntStream.range(0, binNum);
         ByteBuffer[] bPrimeOprfs = bPrimeOprfIntStream
             .mapToObj(peqtOprfReceiverOutput::getPrf)
             .map(peqtHash::digestToBytes)
             .map(ByteBuffer::wrap)
             .toArray(ByteBuffer[]::new);
         // receiver a'
-        DataPacketHeader aPrimeOprfHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_A_PRIME_OPRFS.ordinal(), extraInfo,
-            otherParty().getPartyId(), ownParty().getPartyId()
-        );
-        List<byte[]> aPrimeOprfPayload = rpc.receive(aPrimeOprfHeader).getPayload();
+        List<byte[]> aPrimeOprfPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_A_PRIME_OPRFS.ordinal());
         MpcAbortPreconditions.checkArgument(aPrimeOprfPayload.size() == binNum);
         ByteBuffer[] aPrimeOprfs = aPrimeOprfPayload.stream()
             .map(ByteBuffer::wrap)
@@ -208,6 +226,10 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
 
         logPhaseInfo(PtoState.PTO_END);
         return containVector;
+    }
+
+    private boolean validPrecomputation() {
+        return rosnSenderOutput != null && binNum == rosnSenderOutput.getNum();
     }
 
     private void handleCuckooHashKeyPayload(List<byte[]> cuckooHashKeyPayload) {
@@ -247,8 +269,7 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         // P(y || i) = s_{h_i(y)} ⊕ PRF(k_{h_i(y)}, y || i)
         byte[][] valueArray = IntStream.range(0, cuckooHashNum)
             .mapToObj(hashIndex -> {
-                IntStream clientElementIntStream = IntStream.range(0, clientElementSize);
-                clientElementIntStream = parallel ? clientElementIntStream.parallel() : clientElementIntStream;
+                IntStream clientElementIntStream = parallel ? IntStream.range(0, clientElementSize).parallel() : IntStream.range(0, clientElementSize);
                 return clientElementIntStream
                     .mapToObj(clientElementIndex -> {
                         byte[] clientElement = clientElementArrayList.get(clientElementIndex).array();
@@ -266,8 +287,7 @@ public class Gmr21MqRpmtClient extends AbstractMqRpmtClient {
         ByteBuffer[] keyArray = IntStream.range(0, cuckooHashNum)
             .mapToObj(hashIndex -> {
                 // 计算OPRF有密码学运算，并发处理
-                IntStream clientElementIntStream = IntStream.range(0, clientElementSize);
-                clientElementIntStream = parallel ? clientElementIntStream.parallel() : clientElementIntStream;
+                IntStream clientElementIntStream = parallel ? IntStream.range(0, clientElementSize).parallel() : IntStream.range(0, clientElementSize);
                 return clientElementIntStream
                     .mapToObj(clientElementIndex -> keyArrayVector.elementAt(hashIndex)[clientElementIndex])
                     .toArray(byte[][]::new);

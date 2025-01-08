@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.filter;
 
+import edu.alibaba.mpc4j.common.structure.filter.BloomFilterFactory.BloomFilterType;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
@@ -20,10 +21,6 @@ import java.util.*;
  * @date 2020/09/30
  */
 public class SparseRandomBloomFilter<T> extends AbstractBloomFilter<T> {
-    /**
-     * hash key num = 1
-     */
-    static final int HASH_KEY_NUM = 1;
     /**
      * max number of supported elements (in log size)
      */
@@ -177,6 +174,11 @@ public class SparseRandomBloomFilter<T> extends AbstractBloomFilter<T> {
         super(FILTER_TYPE, envType, maxSize, m,
             SparseRandomBloomFilter.getHashNum(maxSize),
             key, size, storage, itemByteLength);
+    }
+
+    @Override
+    public BloomFilterType getBloomFilterType() {
+        return BloomFilterType.SPARSE_RANDOM_BLOOM_FILTER;
     }
 
     @Override

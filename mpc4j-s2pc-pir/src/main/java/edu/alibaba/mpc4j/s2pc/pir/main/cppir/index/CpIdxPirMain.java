@@ -15,7 +15,6 @@ import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirServer;
 import org.bouncycastle.util.encoders.Hex;
-import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -238,7 +237,7 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
         String tab = "Party ID\tServer Set Size\tQuery Num\tIs Parallel\tThread Num"
             + "\tInit Time(ms)\tInit DataPacket Num\tInit Payload Bytes(B)\tInit Send Bytes(B)"
-            + "\tPto  Time(ms)\tPto  DataPacket Num\tPto  Payload Bytes(B)\tPto  Send Bytes(B)\t Memory";
+            + "\tPto  Time(ms)\tPto  DataPacket Num\tPto  Payload Bytes(B)\tPto  Send Bytes(B)";
         printWriter.println(tab);
         LOGGER.info("{} ready for run", clientRpc.ownParty().getPartyName());
         clientRpc.connect();
@@ -317,7 +316,6 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        long memory = GraphLayout.parseInstance(client).totalSize();
         long initDataPacketNum = client.getRpc().getSendDataPacketNum();
         long initPayloadByteLength = client.getRpc().getPayloadByteLength();
         long initSendByteLength = client.getRpc().getSendByteLength();
@@ -340,8 +338,7 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
             + "\t" + client.getParallel()
             + "\t" + ForkJoinPool.getCommonPoolParallelism()
             + "\t" + initTime + "\t" + initDataPacketNum + "\t" + initPayloadByteLength + "\t" + initSendByteLength
-            + "\t" + ptoTime + "\t" + ptoDataPacketNum + "\t" + ptoPayloadByteLength + "\t" + ptoSendByteLength
-            + "\t" + memory;
+            + "\t" + ptoTime + "\t" + ptoDataPacketNum + "\t" + ptoPayloadByteLength + "\t" + ptoSendByteLength;
         printWriter.println(info);
         client.getRpc().synchronize();
         client.getRpc().reset();

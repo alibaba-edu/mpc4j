@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * APRP24 (F3, F2)-sowOPRF protocol description. The protocol comes from the following paper:
+ * APRR24 (F3, F2)-sowOPRF protocol description. The protocol comes from the following paper:
  * <p>
  * Navid Alamati, Guru-Vamsi Policharla, Srinivasan Raghuraman, and Peter Rindal. Improved Alternating Moduli PRFs and
  * Post-Quantum Signatures. To appear in CRYPTO 2024.

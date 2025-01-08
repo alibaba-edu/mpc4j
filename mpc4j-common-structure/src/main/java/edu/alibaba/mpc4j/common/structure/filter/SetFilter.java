@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * @author Weiran Liu
  * @date 2020/06/30
  */
-public class SetFilter<T> implements MergeFilter<T> {
+public class SetFilter<T> implements Filter<T> {
     /**
      * filter type
      */
@@ -140,11 +140,6 @@ public class SetFilter<T> implements MergeFilter<T> {
     }
 
     @Override
-    public double ratio() {
-        return 1.0;
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof SetFilter)) {
             return false;
@@ -169,13 +164,5 @@ public class SetFilter<T> implements MergeFilter<T> {
             .append(size())
             .append(set)
             .toHashCode();
-    }
-
-    @Override
-    public void merge(MergeFilter<T> other) {
-        SetFilter<T> that = (SetFilter<T>) other;
-        MathPreconditions.checkEqual("this.maxSize", "that.maxSize", this.maxSize, that.maxSize);
-        MathPreconditions.checkLessOrEqual("merge size", this.size() + that.size(), maxSize);
-        set.addAll(that.set);
     }
 }

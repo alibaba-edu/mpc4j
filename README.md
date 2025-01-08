@@ -8,7 +8,9 @@ Multi-Party Computation for Java (`mpc4j`) is an efficient and easy-to-use Secur
 
 We note that `mpc4j` is mainly focused on research and `mpc4j` assumes a very strong system model. Specifically, `mpc4j` assumes never-crash nodes with a fully synchronized network. In practice, crash-recovery nodes with a partially synchronized network would be a reasonable system model. Aside from the system model, `mpc4j` tries to integrate tools that are suitable to be used in the production environment. We emphasize that additional engineering problems need to be solved if you want to develop your own MPC/DP applications. A reasonable solution would be to implement communication APIs on your own, develop protocols by calling tools in `mpc4j`, and referring protocol implementations in `mpc4j` as a prototype.
 
-Since version 1.1.2, `mpc4j` leverages [Vector API](https://openjdk.org/jeps/448) to speedup performance using Java SIMD. We also found that [Foreign Function and Memory API (FFM)](https://docs.oracle.com/en/java/javase/22/core/foreign-function-and-memory-api.html) can help us to do conversions between different primitives more efficiently. One needs to **use JDK 21 (or later)** to develop, compile and run `mpc4j`. We note that this means you may also need to upgrade the underlying IDE (e.g., Intellij IDEA) to new versions.
+Since version 1.1.3, `mpc4j` no longer uses [Javallier](https://github.com/n1analytics/javallier) to support partially homomorphic encryption, and [JNA GMP project](https://github.com/square/jna-gmp) to support faster `BigInteger` exponent operations. The reason is that we did test on MacBook M3 and found unknown bugs when invoking `libgmp` on MacBook M3. Since we upgraded JDK to 17, and we can use [GraalVM](https://www.graalvm.org/) to obtain more efficient operations on JDK with the help of AoT, we can directly use pure JDK implementations for `BigInteger`. Therefore, we remove these two modulus in `mpc4j`.
+
+Since version 1.1.3, `mpc4j` leverages [Vector API](https://openjdk.org/jeps/448) to speedup performance using Java SIMD. One needs to **use JDK 17 (or later)** to develop, compile and run `mpc4j`. We note that this means you may also need to upgrade the underlying IDE (e.g., Intellij IDEA) to new versions. We further found that [Foreign Function and Memory API (FFM)](https://docs.oracle.com/en/java/javase/22/core/foreign-function-and-memory-api.html) can help us to do conversions between different primitives more efficiently. This requires using JDK 21. However, we need to consider running `mpc4j` on Android platforms for specific applications, but current Android platform only supports JDK 17. See [Java versions in Android builds](https://developer.android.com/build/jdks) for details (access date: Oct. 11, 2024). Therefore, we have not introduced FFM into `mpc4j` and force our JDK version as 17.
 
 ### Features
 
@@ -23,7 +25,7 @@ Since version 1.1.2, `mpc4j` leverages [Vector API](https://openjdk.org/jeps/448
 `mpc4j` is mainly developed by Weiran Liu. Feel free to contact me at [liuweiran900217@gmail.com](mailto:liuweiran900217@gmail.com). 
 
 - The submodules involving Fully Homomorphic Encryption (FHE) were mainly developed by Anon\_Trent (an anonymous author), [Liqiang Peng](mailto:shelleyatsun@gmail.com) and [Qixian Zhou](https://github.com/qxzhou1010).
-- The submodules involving secure three-party computations are mainly developed by [Feng Han](mailto:hf1996@mail.ustc.edu.cn).
+- The submodules involving secure 2PC and 3PC are mainly developed by [Feng Han](mailto:hf1996@mail.ustc.edu.cn).
 - The submodules involving Vector Oblivious Linear Evaluation (VOLE) are mainly developed by [Hanwen Feng](https://hanwen-feng.github.io/).
 - The components of TFHE are developed by [Zhen Gu](mailto:thuguz15@gmail.com) of Computing Technology Lab (CTL) in Damo, Alibaba. The rest of their TFHE implementation by extending SEAL will be later released in their FHE library.
 - The FourQ-related implementations and mobile PSI-friendly OPRF (i.e., single-query OPRF) are developed by [Qixian Zhou](https://github.com/qxzhou1010).
@@ -34,6 +36,8 @@ Since version 1.1.2, `mpc4j` leverages [Vector API](https://openjdk.org/jeps/448
 If your project uses `mpc4j` and you do not mind it appearing here, don't hesitate to get in touch with me.
 
 - [DataTrust](https://dp.alibaba.com/product/datatrust) is powered by `mpc4j`. 
+- The paper ["Scalable Multi-Party Private Set Union from Multi-query Secret-shared Private membership Test"](https://eprint.iacr.org/2023/1413.pdf) was accepted by AISACRYPT 2023. We thank Xiang Liu for using LowMC parameters in `mpc4j`.
+- 
 - The paper ["Scalable and Adaptively Secure Any-Trust Distributed Key Generation and All-hands Checkpointing"](https://eprint.iacr.org/2023/1773.pdf) was accepted by CCS 2024. We thank [Hanwen Feng](https://hanwen-feng.github.io/) to use `mpc4j` for developing their prototypes.
 
 ## Academic Implementations
@@ -63,10 +67,8 @@ If you want to test and evaluate our protocol implementations, compile and run t
 Here are some libraries that are included in `mpc4j`.
 
 - [smile](https://github.com/haifengl/smile): A fast and comprehensive machine learning, NLP, linear algebra, graph, interpolation, and visualization system in Java and Scala. We understand many details of implementing machine learning tasks from this library. We also introduce some codes into `mpc4j` for the dataset management and our privacy-preserving federated GBDT implementation. See packages `edu.alibaba.mpc4j.common.data` in `mpc4j-common-data` and package `edu.alibaba.mpc4j.sml.smile` in `mpc4j-sml-opboost` for details. Note that we introduce source codes that are released only under [the GNU Lesser General Public License v3.0 (LGPLv3)](https://www.gnu.org/licenses/lgpl-3.0.en.html).
-- [Javallier](https://github.com/n1analytics/javallier): A Java library for [Paillier partially homomorphic encryption](https://en.wikipedia.org/wiki/Paillier_cryptosystem) based on [python-paillier](https://github.com/NICTA/python-paillier), with modifications to additionally support other schemes and optimizations. See `mpc4j-crypto-phe` for details.
-- [JNA GMP project](https://github.com/square/jna-gmp): A JNA wrapper around the [GNU Multiple Precision Arithmetic Library](http://gmplib.org/). We modify the code for supporting the `aarch64` system. See `mpc4j-common-jna-gmp` for details.
 - [Bouncy Castle](https://www.bouncycastle.org/java.html): A Java implementation of cryptographic algorithms, developed by the Legion of the Bouncy Castle, a registered Australian Charity. We understand many details of how to efficiently implement cryptographic algorithms using Java. We introduce its [X25519](https://github.com/bcgit/bc-java/blob/master/core/src/main/java/org/bouncycastle/math/ec/rfc7748/X25519.java) and [Ed25519](https://github.com/bcgit/bc-java/blob/master/core/src/main/java/org/bouncycastle/math/ec/rfc8032/Ed25519.java) implementations in `mpc4j` to support efficient Elliptic Curve Cryptographic (ECC) operations. See package `edu.alibaba.mpc4j.common.tool.crypto.ecc.bc` in `mpc4j-common-tool` for details.
-- [Rings](https://rings.readthedocs.io): An efficient, lightweight library for commutative algebra. We understand how to efficiently do algebra operations from this library. We wrap its polynomial interpolation implementations in `mpc4j`. See package `edu.alibaba.mpc4j.common.tool.polynomial` in `mpc4j-common-tool` for details. We also provide `JdkIntegersZp` that uses [JNA GMP](https://github.com/square/jna-gmp) to implement operations in $\mathbb{Z}_p$. See `JdkIntegersZp` in `mpc4j-common-tool` for details.
+- [Rings](https://rings.readthedocs.io): An efficient, lightweight library for commutative algebra. We understand how to efficiently do algebra operations from this library. We wrap its polynomial interpolation implementations in `mpc4j`. See package `edu.alibaba.mpc4j.common.tool.polynomial` in `mpc4j-common-tool` for details. We also provide `JdkIntegersZp` to implement operations in $\mathbb{Z}_p$ purely using JDK. See `JdkIntegersZp` in `mpc4j-common-tool` for details.
 - [blake2](https://github.com/BLAKE2/BLAKE2): Faster cryptographic hash function implementations. We introduce its original implementations and compare the efficiency with Java counterparts provided by [Bouncy Castle](https://www.bouncycastle.org/java.html) and other hash functions (e.g., [blake3](https://github.com/BLAKE3-team/BLAKE3)). See `crypto/blake2` in `mpc4j-native-tool` for details.
 - [blake3](https://github.com/BLAKE3-team/BLAKE3): Much faster cryptographic hash function implementations. We introduce its original implementations and compare the efficiency with Java counterparts provided by [Bouncy Castle](https://www.bouncycastle.org/java.html) and other hash functions (e.g., [blake2](https://github.com/BLAKE2/BLAKE2)). See `crypto/blake3` in `mpc4j-native-tool` for details.
 - [emp-toolkit](https://github.com/emp-toolkit): Efficient bit-matrix transpose (See `bit_matrix_trans` in `mpc4j-native-tool`), AES-NI implementations (See `crypto/aes.h` in `mpc4j-native-tool`), efficient $GF(2^\kappa)$ operations (See `gf2k` in `mpc4j-native-tool`).
@@ -74,12 +76,14 @@ Here are some libraries that are included in `mpc4j`.
 - [xgboost-predictor](https://github.com/h2oai/xgboost-predictor): Pure Java implementation of [XGBoost](https://github.com/dmlc/xgboost/) predictor for online prediction tasks. This work is released under the [Apache Public License 2.0](http://www.apache.org/licenses/LICENSE-2.0). We understand the format of the XGBoost model from this library. We also introduce some codes in `mpc4j` for our privacy-preserving federated XGBoost implementation. See packages `ai.h2o.algos.tree` and `biz.k11i.xgboost` in `mpc4j-sml-opboost` for details.
 - [curve25519-elisabeth](https://github.com/cryptography-cafe/curve25519-elisabeth): A pure-Java implementation of group operations on Curve25519. We introduce its ED25519 and [Ristretto](https://ristretto.group/) implementation in `mpc4j `. See package `crypto/ecc/cafe` for details.
 - [FourQlib](https://github.com/microsoft/FourQlib): A library that implements essential elliptic curve and cryptographic functions based on FourQ, a high-security, high-performance elliptic curve that targets the 128-bit security level. We rewrite `makefile` so that now FourQ can run on MacBook.
+- [fastfilter_java](https://github.com/FastFilter/fastfilter_java): A library that implements Fast Approximate Membership Filters in Java. It includes XOR binary fuse filter, which is used in Chamalet PIR described in the paper "Call Me By My Name : Simple , Practical Private Information Retrieval for Keyword Queries" (ACM CCS 2024). We import its source code and make several changes. Access date: Jul. 25, 2024. 
+- [hppc](https://github.com/carrotsearch/hppc): Collections of primitive types (maps, sets, stacks, lists) with open internals and an API twist. The branch `c9497dfabff240787aa0f5ac7a8f4ad70117ea72` includes pure-Java implementation of [PGM-Index](https://pgm.di.unipi.it/">https://pgm.di.unipi.it/). We import its source code and make several changes. Access date: Jul. 28, 2024.
 
 ### Inspired Libraries
 
 Here are some libraries that inspire our implementations.
 
-- [mobile_psi_cpp](https://github.com/contact-discovery/mobile_psi_cpp): A C++ library implementing several OPRF protocols and using them for Private Set Intersection. We introduce its LowMC parameters and encryption implementations in `mpc4j`. See `edu.alibaba.mpc4j.common.tool.crypto.prp.JdkBytesLowMcPrp` and `edu.alibaba.mpc4j.common.tool.crypto.prp.JdkLongsLowMcPrp` in `mpc4j-common-tool` for details.
+- [mobile_psi_cpp](https://github.com/contact-discovery/mobile_psi_cpp): A C++ library implementing several OPRF protocols and using them for Private Set Intersection. We introduce its LowMC parameters and encryption implementations in `mpc4j`. See `edu.alibaba.mpc4j.common.tool.crypto.prp.JdkBytesLowMcPrp` and `edu.alibaba.mpc4j.common.tool.crypto.prp.JdkLongsLowMcPrp` in `mpc4j-common-tool` for details. We also introduce its Cuckoo Filter optimizations in `mpc4j`.
 - [emp-toolkit](https://github.com/emp-toolkit): We follow the implementation of the Silent OT protocol presented in the paper "Ferret: Fast Extension for coRRElated oT with Small Communication," accepted at [CCS 2020](https://eprint.iacr.org/2020/924.pdf) (See `cot` in `mpc4j-s2pc-pcg`).
 - [Kunlun](https://github.com/yuchen1024/Kunlun): A C++ wrapper for OpenSSL, making it handy to use without worrying about cumbersome memory management and memorizing complex interfaces. Based on this wrapper, Kunlun builds an efficient and modular crypto library. We introduce its OpenSSL wrapper for Elliptic Curve and the Window Method implementation in `mpc4j`, see `ecc_openssl` in `mpc4j-native-tool` for details. 
 - [PSI-analytics](https://github.com/osu-crypto/PSI-analytics): The implementation of the protocols presented in the paper "Private Set Operations from Oblivious Switching," accepted at [PKC 2021](https://eprint.iacr.org/2021/243.pdf). We introduce its switching network implementations in `mpc4j`. See package `benes_network` in `mpc4j-native-tool` for details.
@@ -99,6 +103,8 @@ Here are some libraries that inspire our implementations.
 - [VOLE-PSI](https://github.com/Visa-Research/volepsi): VOLE-PSI implements the protocols described in "VOLE-PSI: Fast OPRF and Circuit-PSI from Vector-OLE" and "Blazing Fast PSI from Improved OKVS and Subfield VOLE". We understand how to implement "Blazing fast OKVS" and many details of how to refine our implementation.
 - [Piano-PIR](https://github.com/pianopir/Piano-PIR): This is a prototype implementation of the Piano private information retrieval(PIR) algorithm that allows a client to access a database without the server knowing the querying index. We understand many details of the implementation.
 - [jope](https://github.com/ssavvides/jope): A POC implementation of Order-preserving encryption in Java based on the work described in: "Order-Preserving Symmetric Encryption", Alexandra Boldyreva, Nathan Chenette, Younho Lee and Adam O’Neill. Based on its code, we introduce and implement OPE in `mpc4j`.
+- [incpir](https://github.com/eniac/incpir/tree/main/inc-pir): This is the implementation of the "Incremental Offline/Online PIR" described in the paper "Incremental Offline/Online PIR" (USENIX Security 2022). We understand how to implement small-domain PRG from [adprp.cpp](https://github.com/eniac/incpir/blob/main/inc-pir/src/adprp.cpp). Access date: Oct. 11, 2024.
+- [S3PIR](https://github.com/renling/S3PIR): This is the implementation of the MIR scheme described in the paper "Simple and Practical Sublinear Private Information Retrieval Using Dummy Subsets" (ACM CCS 2024). We update several implementation details based on their implementation. Access date: Oct. 11, 2024.
 
 ## Acknowledge
 
@@ -120,7 +126,7 @@ This library is licensed under Apache License 2.0.
 
 ### C/C++ Modules
 
-Most of the codes are in Java, except for very efficient implementations in C/C++. You need [OpenSSL](https://www.openssl.org/), [GMP](https://gmplib.org/), [NTL](https://libntl.org/), [libsodium](https://doc.libsodium.org/installation), and FourQ that we rewrite (in `mpc4j-native-fourq`) to compile `mpc4j-native-tool` and [SEAL 4.0.0](https://github.com/microsoft/SEAL) to compile `mpc4j-native-fhe`. Please see README.md in `mpc4j-native-fourq`, `mpc4j-native-cool` and `mpc4j-native-fhe` on how to install C/C++ dependencies.
+Most of the codes are in Java, except for very efficient implementations in C/C++. You need [OpenSSL](https://www.openssl.org/), [GMP](https://gmplib.org/), [NTL](https://libntl.org/), [libsodium](https://doc.libsodium.org/installation), and FourQ that we rewrite (in `mpc4j-native-fourq`) to compile `mpc4j-native-tool` and [SEAL](https://github.com/microsoft/SEAL) (version higher than 4.0.0) to compile `mpc4j-native-fhe`. Please see README.md in `mpc4j-native-fourq`, `mpc4j-native-cool` and `mpc4j-native-fhe` on how to install C/C++ dependencies.
 
 After successfully installing C/C++ library `mpc4j-native-fourq` and obtaining the compiled C/C++ libraries (named `libmpc4j-native-tool` and `libmpc4j-native-fhe`, respectively), you need to assign the native library location when running `mpc4j` using `-Djava.library.path`.
 
@@ -132,7 +138,7 @@ We note that you may need to run test cases in `mpc4j-s2pc-pir` separately, espe
 
 ### Performances
 
-We have received a lot of suggestions and some performance reports from users. We thank [Dr. Yongha Son](https://github.com/yonghaason) for providing performance reports for Private Set Union (PSU) on his development platform (Intel Xeon 3.5GHz) under the **Unit Test**. He reported that:
+We have received a lot of suggestions and some performance reports from users. We thank [Dr. Yongha Son](https://yonghaason.github.io/) for providing performance reports for Private Set Union (PSU) on his development platform (Intel Xeon 3.5GHz) under the **Unit Test**. The report results are formally shown in their paper ["Revisiting Shuffle-based Private Set Unions with Reduced Communication"](https://eprint.iacr.org/2024/1560.pdf). He reported that:
 
 > Well, I tested other protocols, particularly [JSZ22 SFC](https://eprint.iacr.org/2022/157.pdf), [GMR21](https://eprint.iacr.org/2021/243.pdf), and [KRTW19](https://eprint.iacr.org/2019/776.pdf), from unit tests.
 >
@@ -167,6 +173,51 @@ Simply ignoring the error is OK, but many test cases in `mpc4j` would fail since
 1. In module `mpc4j-common-tool`, find `ByteEccFactory` in package `edu.alibaba.mpc4j.common.tool.crypto.ecc`.
 2. Find the function `public static ByteFullEcc createFullInstance(EnvType envType)`.
 3. Change `return createFullInstance(ByteEccType.FOUR_Q);` to `return createFullInstance(ByteEccType.ED25519_SODIUM);`.
+
+### Notes for RAPPOR Implementation in `mpc4j-dp-service`
+
+RAPPOR implementation requires LASSO and Ridge regressions in the server side, for which we uses LASSO and Ridge regressions in [smile](https://github.com/haifengl/smile). We note that smile requires additional configurations to run LASSO and Ridge regressions.
+
+> Some algorithms rely on BLAS and LAPACK (e.g. manifold learning, some clustering algorithms, Gaussian Process regression, MLP, etc.). To use these algorithms, you should include OpenBLAS for optimized matrix computation:
+>
+> ```
+> libraryDependencies ++= Seq(
+>       "org.bytedeco" % "javacpp"   % "1.5.8"        classifier "macosx-x86_64" classifier "windows-x86_64" classifier "linux-x86_64" classifier "linux-arm64" classifier "linux-ppc64le" classifier "android-arm64" classifier "ios-arm64",
+>       "org.bytedeco" % "openblas"  % "0.3.21-1.5.8" classifier "macosx-x86_64" classifier "windows-x86_64" classifier "linux-x86_64" classifier "linux-arm64" classifier "linux-ppc64le" classifier "android-arm64" classifier "ios-arm64",
+>       "org.bytedeco" % "arpack-ng" % "3.8.0-1.5.8"  classifier "macosx-x86_64" classifier "windows-x86_64" classifier "linux-x86_64" classifier "linux-arm64" classifier "linux-ppc64le"
+>     )
+> ```
+
+To sucessfully run RAPPOR, one also needs to add dependencies in `pom.xml` of `mpc4j-dp-service`.
+
+```xml
+<dependency>
+    <groupId>org.bytedeco</groupId>
+    <artifactId>openblas</artifactId>
+    <version>0.3.21-1.5.8</version>
+</dependency>
+<dependency>
+    <groupId>org.bytedeco</groupId>
+    <artifactId>javacpp-platform</artifactId>
+    <version>1.5.8</version>
+</dependency>
+<dependency>
+    <groupId>org.bytedeco</groupId>
+    <artifactId>openblas-platform</artifactId>
+    <version>0.3.21-1.5.8</version>
+</dependency>
+<dependency>
+    <groupId>org.bytedeco</groupId>
+    <artifactId>arpack-ng-platform</artifactId>
+    <version>3.8.0-1.5.8</version>
+</dependency>
+```
+
+### Notes for Running PSO on Very Large Sets
+
+`mpc4j` requires PSO to take `Set` as inputs. For PSO experiements, `mpc4j` uses `Set<ByteBuffer>` . However, when running PSO on very large sets, it is possible that `Set<ByteBuffer>` does not successfully contain the assigned number of elements, leading to unexpected Exceptions when running experiments. This happens with probability with the size of sets $n$ increases, especially when $n > 2^{20}$.
+
+If you meet problems when running experiments for $n > 2^{20}$, you can simply try deleting files in the path `temp` and rerun experiments. We are trying to fix this bug in the next version.
 
 ## Development
 

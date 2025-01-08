@@ -24,10 +24,6 @@ public class HhLdpMetrics {
      */
     private long contextBytes;
     /**
-     * memory bytes
-     */
-    private long memoryBytes;
-    /**
      * warmup NDCG
      */
     private double warmupNdcg;
@@ -82,14 +78,6 @@ public class HhLdpMetrics {
 
     public void setContextBytes(long contextBytes) {
         this.contextBytes = contextBytes;
-    }
-
-    public long getMemoryBytes() {
-        return memoryBytes;
-    }
-
-    public void setMemoryBytes(long memoryBytes) {
-        this.memoryBytes = memoryBytes;
     }
 
     public double getWarmupNdcg() {

@@ -151,6 +151,11 @@ public class BigIntegerBitVector implements BitVector {
     }
 
     @Override
+    public int bitCount() {
+        return bigInteger.bitCount();
+    }
+
+    @Override
     public int byteNum() {
         return byteNum;
     }

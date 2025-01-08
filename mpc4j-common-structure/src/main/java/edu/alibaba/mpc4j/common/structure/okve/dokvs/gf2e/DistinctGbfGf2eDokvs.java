@@ -37,11 +37,6 @@ public class DistinctGbfGf2eDokvs<T> extends AbstractGbfGf2eDokvs<T> {
     }
 
     @Override
-    public int sparsePositionNum() {
-        return DistinctGbfUtils.SPARSE_HASH_NUM;
-    }
-
-    @Override
     public Gf2eDokvsFactory.Gf2eDokvsType getType() {
         return Gf2eDokvsFactory.Gf2eDokvsType.DISTINCT_GBF;
     }

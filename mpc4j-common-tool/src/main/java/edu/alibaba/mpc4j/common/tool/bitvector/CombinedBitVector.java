@@ -54,15 +54,13 @@ public class CombinedBitVector implements BitVector {
 
     private static BitVector create(BitVector bitVector) {
         CombinedBitVector combinedBitVector = new CombinedBitVector();
-        switch (bitVector.getType()) {
-            case BYTES_BIT_VECTOR:
-            case BIGINTEGER_BIT_VECTOR:
+        return switch (bitVector.getType()) {
+            case BYTES_BIT_VECTOR, BIGINTEGER_BIT_VECTOR -> {
                 combinedBitVector.innerBitVector = bitVector;
-                return combinedBitVector;
-            case COMBINED_BIT_VECTOR:
-            default:
-                throw new IllegalStateException();
-        }
+                yield combinedBitVector;
+            }
+            default -> throw new IllegalStateException();
+        };
     }
 
     /**
@@ -135,6 +133,11 @@ public class CombinedBitVector implements BitVector {
     @Override
     public int bitNum() {
         return innerBitVector.bitNum();
+    }
+
+    @Override
+    public int bitCount() {
+        return innerBitVector.bitCount();
     }
 
     @Override
@@ -231,8 +234,7 @@ public class CombinedBitVector implements BitVector {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof BitVector) {
-            BitVector that = (BitVector) obj;
+        if (obj instanceof BitVector that) {
             return new EqualsBuilder()
                 .append(this.getBytes(), that.getBytes())
                 .append(this.bitNum(), that.bitNum())

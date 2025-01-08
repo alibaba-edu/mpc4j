@@ -3,11 +3,9 @@ package edu.alibaba.mpc4j.s2pc.pir.cppir.index.piano.hint;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
-import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
-import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.crypto.prp.FixedKeyPrp;
 
 import java.nio.ByteBuffer;
 
@@ -19,14 +17,9 @@ import java.nio.ByteBuffer;
  */
 public abstract class AbstractPianoHint implements PianoHint {
     /**
-     * PRP with a fixed key
+     * fixed key PRP
      */
-    protected static final Prp PRP = PrpFactory.createInstance(PrpType.JDK_AES);
-
-    static {
-        PRP.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
-    }
-
+    protected final FixedKeyPrp fixedKeyPrp;
     /**
      * chunk size
      */
@@ -52,7 +45,8 @@ public abstract class AbstractPianoHint implements PianoHint {
      */
     protected final byte[] parity;
 
-    protected AbstractPianoHint(int chunkSize, int chunkNum, int l) {
+    protected AbstractPianoHint(FixedKeyPrp fixedKeyPrp, int chunkSize, int chunkNum, int l) {
+        this.fixedKeyPrp = fixedKeyPrp;
         MathPreconditions.checkPositive("chunkSize", chunkSize);
         this.chunkSize = chunkSize;
         MathPreconditions.checkPositive("chunkNum", chunkNum);
@@ -73,11 +67,61 @@ public abstract class AbstractPianoHint implements PianoHint {
      * @return the integer.
      */
     protected int getInteger(int chunkId) {
+        int prpBlockId = chunkId / PRP_BLOCK_OFFSET_NUM;
+        int prpBlockIndex = Math.abs(chunkId % PRP_BLOCK_OFFSET_NUM);
         byte[] prpInput = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH)
             .put(hintId)
-            .putShort((short) chunkId)
+            .putShort((short) prpBlockId)
             .array();
-        return Math.abs(ByteBuffer.wrap(PRP.prp(prpInput)).getInt() % chunkSize);
+        byte[] prpOutput = fixedKeyPrp.prp(prpInput);
+        int j = prpBlockIndex * 2;
+        int offset = ((prpOutput[j] & 0xFF) << Byte.SIZE) + (prpOutput[j + 1] & 0xFF);
+        return Math.abs(offset % chunkSize);
+    }
+
+    protected int[] getIntegers() {
+        int chunkNum = getChunkNum();
+        int[] offsets = new int[chunkNum];
+        int index = 0;
+        int prpBlockId = 0;
+        boolean done = false;
+        while (!done) {
+            byte[] prpInput = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH)
+                .put(hintId)
+                .putShort((short) prpBlockId)
+                .array();
+            byte[] prpOutput = fixedKeyPrp.prp(prpInput);
+            for (int prpBlockIndex = 0; prpBlockIndex < PRP_BLOCK_OFFSET_NUM; prpBlockIndex++) {
+                int j = prpBlockIndex * 2;
+                int offset = ((prpOutput[j] & 0xFF) << Byte.SIZE) + ((prpOutput[j + 1] & 0xFF));
+                offsets[index] = Math.abs(offset % chunkSize);
+                index++;
+                if (index >= chunkNum) {
+                    done = true;
+                    break;
+                }
+            }
+            prpBlockId++;
+        }
+        return offsets;
+    }
+
+    protected int[] getPrpBlockIntegers(int blockChunkId) {
+        assert blockChunkId % PRP_BLOCK_OFFSET_NUM == 0;
+        int prpBlockId = blockChunkId / PRP_BLOCK_OFFSET_NUM;
+        int num = (prpBlockId + 1) * PRP_BLOCK_OFFSET_NUM >= chunkNum ? chunkNum - prpBlockId * PRP_BLOCK_OFFSET_NUM : PRP_BLOCK_OFFSET_NUM;
+        byte[] prpInput = ByteBuffer.allocate(CommonConstants.BLOCK_BYTE_LENGTH)
+            .put(hintId)
+            .putShort((short) prpBlockId)
+            .array();
+        byte[] prpOutput = fixedKeyPrp.prp(prpInput);
+        int[] offsets = new int[num];
+        for (int prpBlockIndex = 0; prpBlockIndex < num; prpBlockIndex++) {
+            int j = prpBlockIndex * 2;
+            int offset = ((prpOutput[j] & 0xFF) << Byte.SIZE) + (prpOutput[j + 1] & 0xFF);
+            offsets[prpBlockIndex] = Math.abs(offset % chunkSize);
+        }
+        return offsets;
     }
 
     @Override

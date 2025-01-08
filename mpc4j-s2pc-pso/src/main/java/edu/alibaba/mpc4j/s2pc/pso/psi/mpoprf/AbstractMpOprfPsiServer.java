@@ -117,7 +117,7 @@ public abstract class AbstractMpOprfPsiServer<T> extends AbstractPsiServer<T> {
             .collect(Collectors.toList());
         Collections.shuffle(serverPrfs, secureRandom);
         // construct the filter
-        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> serverPrfFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         serverPrfs.forEach(serverPrfFilter::put);
         List<byte[]> serverPrfFilterPayload = serverPrfFilter.save();
         DataPacketHeader serverPrfFilterHeader = new DataPacketHeader(

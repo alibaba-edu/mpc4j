@@ -40,7 +40,7 @@ public abstract class AbstractMqRpmtServer extends AbstractTwoPartyPto implement
     /**
      * max server element size.
      */
-    private int maxServerElementSize;
+    protected int maxServerElementSize;
     /**
      * max client element size.
      */

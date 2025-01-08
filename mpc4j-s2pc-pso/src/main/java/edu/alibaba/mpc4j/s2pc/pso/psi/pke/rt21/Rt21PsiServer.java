@@ -193,7 +193,7 @@ public class Rt21PsiServer<T> extends AbstractPsiServer<T> {
             .collect(Collectors.toList());
         Collections.shuffle(serverPeqtList, secureRandom);
         // create filter
-        Filter<byte[]> peqtFilter = FilterFactory.load(envType, filterType, serverElementSize, secureRandom);
+        Filter<byte[]> peqtFilter = FilterFactory.createFilter(envType, filterType, serverElementSize, secureRandom);
         serverPeqtList.forEach(peqtFilter::put);
         return peqtFilter.save();
     }

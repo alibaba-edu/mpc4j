@@ -11,7 +11,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,11 +102,6 @@ public class HhLdpEfficiencyTest {
                 FoLdpType.BLH, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
             );
             CONFIGS.add(new FoHhLdpConfig.Builder(blhFoLdpConfig, DEFAULT_K).build());
-            // RAPPOR
-            FoLdpConfig rapporFoLdpConfig = FoLdpFactory.createDefaultConfig(
-                FoLdpType.RAPPOR, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
-            );
-            CONFIGS.add(new FoHhLdpConfig.Builder(rapporFoLdpConfig, DEFAULT_K).build());
             // Optimized Unary Encoding
             FoLdpConfig oueFoLdpConfig = FoLdpFactory.createDefaultConfig(
                 FoLdpType.OUE, LdpTestDataUtils.CONNECT_DATA_DOMAIN, epsilon
@@ -161,8 +155,8 @@ public class HhLdpEfficiencyTest {
 
     @Test
     public void testEfficiency() throws IOException {
-        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", "                name",
-            "         ε", " s_time(s)", " c_time(s)", "  comm.(B)", "   mem.(B)",
+        LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}", "                name",
+            "         ε", " s_time(s)", " c_time(s)", "  comm.(B)",
             "      ndcg", " precision", "       abe", "        re"
             );
         for (HhLdpConfig config : CONFIGS) {
@@ -207,7 +201,6 @@ public class HhLdpEfficiencyTest {
             CLIENT_STOP_WATCH.stop();
             double clientTime = (double) CLIENT_STOP_WATCH.getTime(TimeUnit.MILLISECONDS) / 1000;
             CLIENT_STOP_WATCH.reset();
-            long memory = GraphLayout.parseInstance(server).totalSize();
             // result
             int k = config.getK();
             Map<String, Integer> expectHeavyHitterMap = LdpTestDataUtils.CORRECT_CONNECT_COUNT_ORDER_LIST
@@ -224,13 +217,12 @@ public class HhLdpEfficiencyTest {
             double precision = HeavyHitterMetrics.precision(actualHeavyHitter, expectHeavyHitter);
             double abe = HeavyHitterMetrics.absoluteError(actualHeavyHitterMap, expectHeavyHitterMap);
             double re = HeavyHitterMetrics.relativeError(actualHeavyHitterMap, expectHeavyHitterMap);
-            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            LOGGER.info("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 StringUtils.leftPad(name, 20),
                 StringUtils.leftPad(DOUBLE_DECIMAL_FORMAT.format(config.getWindowEpsilon()), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(serverTime), 10),
                 StringUtils.leftPad(TIME_DECIMAL_FORMAT.format(clientTime), 10),
                 StringUtils.leftPad(INTEGER_DECIMAL_FORMAT.format(payloadBytes), 10),
-                StringUtils.leftPad(INTEGER_DECIMAL_FORMAT.format(memory), 10),
                 StringUtils.leftPad(DOUBLE_DECIMAL_FORMAT.format(ndcg), 10),
                 StringUtils.leftPad(DOUBLE_DECIMAL_FORMAT.format(precision), 10),
                 StringUtils.leftPad(DOUBLE_DECIMAL_FORMAT.format(abe), 10),

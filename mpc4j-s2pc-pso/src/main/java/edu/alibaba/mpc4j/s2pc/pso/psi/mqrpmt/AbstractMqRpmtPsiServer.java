@@ -5,28 +5,22 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
+import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtClient;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
-import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtServer;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotSenderOutput;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
-import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 import edu.alibaba.mpc4j.s2pc.pso.psi.AbstractPsiServer;
 import edu.alibaba.mpc4j.s2pc.pso.psi.mqrpmt.MqRpmtPsiPtoDesc.PtoStep;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -37,13 +31,9 @@ import java.util.stream.Stream;
  */
 public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
     /**
-     * mq-RPMT server
+     * mq-RPMT client
      */
-    private final MqRpmtServer mqRpmtServer;
-    /**
-     * cort COT sender
-     */
-    private final CoreCotSender coreCotSender;
+    private final MqRpmtClient mqRpmtClient;
     /**
      * hash
      */
@@ -51,10 +41,8 @@ public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
 
     public AbstractMqRpmtPsiServer(PtoDesc ptoDesc, Rpc serverRpc, Party clientParty, MqRpmtPsiConfig config) {
         super(ptoDesc, serverRpc, clientParty, config);
-        mqRpmtServer = MqRpmtFactory.createServer(serverRpc, clientParty, config.getMqRpmtConfig());
-        addSubPto(mqRpmtServer);
-        coreCotSender = CoreCotFactory.createSender(serverRpc,clientParty,config.getCoreCotConfig());
-        addSubPto(coreCotSender);
+        mqRpmtClient = MqRpmtFactory.createClient(serverRpc, clientParty, config.getMqRpmtConfig());
+        addSubPto(mqRpmtClient);
         hash = HashFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
     }
 
@@ -66,9 +54,7 @@ public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
         stopWatch.start();
         int refineMaxServerElementSize = Math.max(maxServerElementSize, 2);
         int refineMaxClientElementSize = Math.max(maxClientElementSize, 2);
-        mqRpmtServer.init(refineMaxServerElementSize, refineMaxClientElementSize);
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
-        coreCotSender.init(delta);
+        mqRpmtClient.init(refineMaxServerElementSize, refineMaxClientElementSize);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -100,44 +86,26 @@ public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
         stopWatch.stop();
         long setupTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 1, 4, setupTime, "Server init elements");
+        logStepInfo(PtoState.PTO_STEP, 1, 3, setupTime, "Server init elements");
 
         stopWatch.start();
-        ByteBuffer[] serverVector = mqRpmtServer.mqRpmt(serverHashElementSet, refineClientElementSize);
+        boolean[] serverVector = mqRpmtClient.mqRpmt(serverHashElementSet, refineClientElementSize);
         stopWatch.stop();
         long mqRpmtTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 2, 4, mqRpmtTime, "Server runs mq-RPMT");
+        logStepInfo(PtoState.PTO_STEP, 2, 3, mqRpmtTime, "Server runs mq-RPMT");
 
         stopWatch.start();
-        CotSenderOutput cotSenderOutput =  coreCotSender.send(serverVector.length);
-        RotSenderOutput rotSenderOutput = new RotSenderOutput(envType, CrhfType.MMO, cotSenderOutput);
-        stopWatch.stop();
-        long rotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 3, 4, rotTime, "Server runs ROT");
-
-        stopWatch.start();
-        IntStream serverVectorIntStream = IntStream.range(0, serverVector.length);
-        serverVectorIntStream = parallel ? serverVectorIntStream.parallel() : serverVectorIntStream;
-        List<byte[]> serverCipherPayload = serverVectorIntStream
-            .mapToObj(index -> {
-                if (serverVector[index] == null) {
-                    return BytesUtils.xor(rotSenderOutput.getR1(index), new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
-                } else {
-                    return BytesUtils.xor(rotSenderOutput.getR1(index), serverVector[index].array());
-                }
-            })
-            .collect(Collectors.toList());
-        DataPacketHeader serverCipherHeader = new DataPacketHeader(
-            encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SERVER_SEND_CIPHER.ordinal(), extraInfo,
-            ownParty().getPartyId(), otherParty().getPartyId()
-        );
-        rpc.send(DataPacket.fromByteArrayList(serverCipherHeader, serverCipherPayload));
+        BitVector serverBitVector = BitVectorFactory.createZeros(serverVector.length);
+        for (int i = 0; i < serverVector.length; i++) {
+            serverBitVector.set(i, serverVector[i]);
+        }
+        List<byte[]> serverBitVectorPayload = Collections.singletonList(serverBitVector.getBytes());
+        sendOtherPartyPayload(PtoStep.SERVER_SEND_BIT_VECTOR.ordinal(), serverBitVectorPayload);
         stopWatch.stop();
         long serverCipherTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 4, 4, serverCipherTime, "Server sends encrypted elements");
+        logStepInfo(PtoState.PTO_STEP, 3, 3, serverCipherTime, "Server sends bit vector");
 
         logPhaseInfo(PtoState.PTO_END);
     }

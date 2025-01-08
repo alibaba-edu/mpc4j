@@ -1,5 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.utils;
 
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.security.SecureRandom;
@@ -21,6 +24,23 @@ public class IntUtils {
      * maximal signed power of 2
      */
     public static final int MAX_SIGNED_POWER_OF_TWO = 1 << (Integer.SIZE - 2);
+    /**
+     * unsafe API.
+     * See <a href="https://howtodoinjava.com/java-examples/usage-of-class-sun-misc-unsafe/">Usage of class sun.misc.Unsafe</a>
+     * for a good explanations with examples. We also note that <code>Unsafe</code> locates in different places in JDK 8
+     * and JDK 17.
+     */
+    private static final Unsafe UNSAFE;
+
+    static {
+        try {
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            UNSAFE = (Unsafe) field.get(null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * private constructor.
@@ -129,7 +149,7 @@ public class IntUtils {
             assert bytes.length == Integer.BYTES : "byte.length must be equal to " + Integer.BYTES + ": " + bytes.length;
             output = ByteBuffer.wrap(bytes).getInt();
         }
-        assert output >= 0 && output <= bound: "the output must be in range [0, " + bound + "]: " + output;
+        assert output >= 0 && output <= bound : "the output must be in range [0, " + bound + "]: " + output;
         return output;
     }
 
@@ -211,15 +231,28 @@ public class IntUtils {
     public static int[] byteArrayToIntArray(byte[] byteArray) {
         assert (byteArray.length > 0 && byteArray.length % Integer.BYTES == 0);
         /*
-         * 不能用ByteBuffer.warp(byteArray).asIntBuffer().array()操作，因为此时的IntBuffer是readOnly的，无法array()。
-         * 尝试使用了Unsafe技术进行快速类型转换，实验表明：
-         * 1. Unsafe在拷贝前还需要先把每个int对应的byte[0],byte[1],byte[2],byte[3]转换为byte[3],byte[2],byte[1],byte[0]
-         * 2. 即便如此，这里仍然涉及内存拷贝，实际测试性能甚至比下述转换方法更慢
+         * cannot use ByteBuffer.warp(byteArray).asIntBuffer().array(), since IntBuffer is readOnly and cannot array().
+         * we tried to use Unsafe, but tests show that when using Unsafe, we need to ahead of time convert
+         * byte[0],byte[1],byte[2],byte[3] to byte[3],byte[2],byte[1],byte[0], which involves additional costs.
          */
         int[] intArray = new int[byteArray.length / Integer.BYTES];
         IntBuffer intBuffer = ByteBuffer.wrap(byteArray).asIntBuffer();
         IntStream.range(0, intBuffer.capacity()).forEach(index -> intArray[index] = intBuffer.get());
 
+        return intArray;
+    }
+
+    /**
+     * Converts a random <code>byte[]</code> to <code>int[]</code>. We do not care about Endian problem in this case
+     * so that we can use more efficient way.
+     *
+     * @param byteArray byte array.
+     * @return int array.
+     */
+    public static int[] randomByteArrayToIntArray(byte[] byteArray) {
+        assert (byteArray.length > 0 && byteArray.length % Integer.BYTES == 0);
+        int[] intArray = new int[byteArray.length / Integer.BYTES];
+        UNSAFE.copyMemory(byteArray, Unsafe.ARRAY_BYTE_BASE_OFFSET, intArray, Unsafe.ARRAY_INT_BASE_OFFSET, byteArray.length);
         return intArray;
     }
 

@@ -47,7 +47,7 @@ public class CuckooTableSingletonTcFinder<T> implements CuckooTableTcFinder<T> {
             // 只添加度大于等于1的顶点
             Set<T> cuckooGraphVertexDataSet = cuckooGraph.get(vertex);
             Set<T> coreCuckooGraphVertexDataSet;
-            if (cuckooGraphVertexDataSet.size() > 0) {
+            if (!cuckooGraphVertexDataSet.isEmpty()) {
                 // 复制一份
                 coreCuckooGraphVertexDataSet = new HashSet<>(cuckooGraphVertexDataSet);
             } else {
@@ -74,7 +74,7 @@ public class CuckooTableSingletonTcFinder<T> implements CuckooTableTcFinder<T> {
             }
         }
         // 开始遍历节点
-        while (singletonQueue.size() > 0) {
+        while (!singletonQueue.isEmpty()) {
             // 仍然存在Singleton，提取出来一个删掉
             int singletonVertex = singletonQueue.get(0);
             singletonQueue.removeAt(0);

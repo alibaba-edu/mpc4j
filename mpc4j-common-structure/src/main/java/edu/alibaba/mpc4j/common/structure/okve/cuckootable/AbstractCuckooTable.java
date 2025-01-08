@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.okve.cuckootable;
 
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 
 import java.nio.ByteBuffer;
@@ -60,7 +61,7 @@ abstract class AbstractCuckooTable<T> implements CuckooTable<T> {
 
     @Override
     public void addData(int[] vertices, T data) {
-        assert vertices.length == hashNum;
+        MathPreconditions.checkEqual("hash_num", "vertices.length", hashNum, vertices.length);
         // 不需要验证vertices是否包含相同的顶点索引值，因为2哈希-布谷鸟图允许重复的定点索引值
         for (int vertex : vertices) {
             assert vertex >= 0 && vertex < numOfVertices;

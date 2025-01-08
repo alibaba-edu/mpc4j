@@ -203,7 +203,7 @@ public class Rr16PsiClient<T> extends AbstractPsiClient<T> {
             otherParty().getPartyId(), ownParty().getPartyId()
         );
         List<byte[]> serverPrfFilterPayload = rpc.receive(serverPrfFilterHeader).getPayload();
-        Filter<byte[]> serverPrfFilter = FilterFactory.load(envType, serverPrfFilterPayload);
+        Filter<byte[]> serverPrfFilter = FilterFactory.loadFilter(envType, serverPrfFilterPayload);
         Set<T> intersection = IntStream.range(0, clientElementSize)
             .mapToObj(elementIndex -> {
                 T element = clientElementArrayList.get(elementIndex);

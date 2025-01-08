@@ -222,8 +222,8 @@ public class Prty19FastPsiClient<T> extends AbstractPsiClient<T> {
         List<byte[]> serverPrf1Payload = rpc.receive(serverPrf1Header).getPayload();
 
         stopWatch.start();
-        Filter<byte[]> prf0Filter = FilterFactory.load(envType, serverPrf0Payload);
-        Filter<byte[]> prf1Filter = FilterFactory.load(envType, serverPrf1Payload);
+        Filter<byte[]> prf0Filter = FilterFactory.loadFilter(envType, serverPrf0Payload);
+        Filter<byte[]> prf1Filter = FilterFactory.loadFilter(envType, serverPrf1Payload);
         Set<T> intersection = IntStream.range(0, binNum)
             .mapToObj(binIndex -> IntStream.range(0, binSize)
                 .mapToObj(index -> {

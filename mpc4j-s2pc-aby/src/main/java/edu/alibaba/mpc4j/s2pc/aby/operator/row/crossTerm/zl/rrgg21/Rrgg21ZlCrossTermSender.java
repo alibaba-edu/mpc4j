@@ -84,8 +84,7 @@ public class Rrgg21ZlCrossTermSender extends AbstractZlCrossTermSender {
         MpcAbortPreconditions.checkArgument(encPayload.size() == m);
 
         stopWatch.start();
-        IntStream intStream = IntStream.range(0, m);
-        intStream = parallel ? intStream.parallel() : intStream;
+        IntStream intStream = parallel ? IntStream.range(0, m).parallel() : IntStream.range(0, m);
         intStream.forEach(i -> {
             BigInteger t = BigIntegerUtils.byteArrayToBigInteger(cotReceiverOutput[i].getRb(0))
                 .mod(outputZl.getRangeBound());

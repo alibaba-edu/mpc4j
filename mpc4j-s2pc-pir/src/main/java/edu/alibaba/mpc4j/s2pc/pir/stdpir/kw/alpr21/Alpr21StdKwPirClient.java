@@ -67,7 +67,7 @@ public class Alpr21StdKwPirClient<T> extends AbstractStdKwPirClient<T> {
         stopWatch.start();
         List<byte[]> prfKeyPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_PRF_KEY.ordinal());
         MpcAbortPreconditions.checkArgument(prfKeyPayload.size() == 1);
-        prfKey = prfKeyPayload.getFirst();
+        prfKey = prfKeyPayload.get(0);
         List<byte[]> cuckooHashKeysPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal());
         MpcAbortPreconditions.checkArgument(cuckooHashKeysPayload.size() == getHashNum(cuckooHashBinType));
         hashKeys = cuckooHashKeysPayload.toArray(new byte[0][]);

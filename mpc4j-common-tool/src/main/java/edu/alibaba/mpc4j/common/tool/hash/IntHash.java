@@ -1,7 +1,5 @@
 package edu.alibaba.mpc4j.common.tool.hash;
 
-import java.nio.ByteBuffer;
-
 /**
  * Non-cryptographic hash function that outputs 32-bit integers.
  *
@@ -32,4 +30,17 @@ public interface IntHash {
      * @return the generated 32-bit integer.
      */
     int hash(byte[] data, int seed);
+
+    /**
+     * Generate a 32-bit integer based on the input data, the seed, and the bound.
+     *
+     * @param data the input data.
+     * @param seed the seed.
+     * @param bound bound.
+     * @return the generated 32-bit integer.
+     */
+    default int hash(byte[] data, int seed, int bound) {
+        assert bound > 0;
+        return Math.abs(hash(data, seed) % bound);
+    }
 }

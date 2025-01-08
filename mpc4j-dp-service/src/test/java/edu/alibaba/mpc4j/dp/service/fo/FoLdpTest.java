@@ -22,6 +22,35 @@ import java.util.stream.Stream;
 
 /**
  * Frequency Oracle LDP test.
+ * <p></p>
+ * RAPPOR uses LASSO and Ridge regressions in (<a href="https://github.com/haifengl/smile">smile</a>). Recall that:
+ * <p>
+ * Some algorithms rely on BLAS and LAPACK (e.g. manifold learning, some clustering algorithms, Gaussian Process
+ * regression, MLP, etc.). To use these algorithms, you should include OpenBLAS for optimized matrix computation.
+ * </p>
+ * To make it runs correctly, we need to add the following dependencies in pom.xml:
+ * <pre>
+ * &lt;dependency>
+ *     &lt;groupId>org.bytedeco&lt;/groupId>
+ *     &lt;artifactId>openblas&lt;/artifactId>
+ *     &lt;version>0.3.21-1.5.8&lt;/version>
+ * &lt;/dependency>
+ * &lt;dependency>
+ *     &lt;groupId>org.bytedeco&lt;/groupId>
+ *     &lt;artifactId>javacpp-platform&lt;/artifactId>
+ *     &lt;version>1.5.8&lt;/version>
+ * &lt;/dependency>
+ * &lt;dependency>
+ *     &lt;groupId>org.bytedeco&lt;/groupId>
+ *     &lt;artifactId>openblas-platform&lt;/artifactId>
+ *     &lt;version>0.3.21-1.5.8&lt;/version>
+ * &lt;/dependency>
+ * &lt;dependency>
+ *     &lt;groupId>org.bytedeco&lt;/groupId>
+ *     &lt;artifactId>arpack-ng-platform&lt;/artifactId>
+ *     &lt;version>3.8.0-1.5.8&lt;/version>
+ * &lt;/dependency>
+ * </pre>
  *
  * @author Weiran Liu
  * @date 2023/1/16
@@ -84,8 +113,8 @@ public class FoLdpTest {
         configurations.add(new Object[]{FoLdpType.OLH.name(), FoLdpType.OLH,});
         // Binary Local Hash
         configurations.add(new Object[]{FoLdpType.BLH.name(), FoLdpType.BLH,});
-        // RAPPOR
-        configurations.add(new Object[]{FoLdpType.RAPPOR.name(), FoLdpType.RAPPOR,});
+        // RAPPOR. Add required dependencies and un-comment it to test.
+        // configurations.add(new Object[]{FoLdpType.RAPPOR.name(), FoLdpType.RAPPOR,});
         // Optimized Unary Encoding
         configurations.add(new Object[]{FoLdpType.OUE.name(), FoLdpType.OUE,});
         // Symmetric Unary Encoding
