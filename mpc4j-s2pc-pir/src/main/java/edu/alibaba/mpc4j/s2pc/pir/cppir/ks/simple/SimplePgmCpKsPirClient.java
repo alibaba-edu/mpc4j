@@ -10,6 +10,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.AbstractCpKsPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.HintCpKsPirClient;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ import static edu.alibaba.mpc4j.s2pc.pir.cppir.ks.simple.SimplePgmCpKsPirDesc.*;
  * @author Liqiang Peng
  * @date 2024/8/2
  */
-public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
+public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> implements HintCpKsPirClient<T> {
     /**
      * LWE dimension
      */
@@ -44,13 +45,21 @@ public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
      */
     private Hash idxHash;
     /**
+     * transpose matrix A
+     */
+    private IntMatrix transposeMatrixA;
+    /**
+     * transpose hint matrix
+     */
+    private IntMatrix[] transposeHintMatrix;
+    /**
      * secret key s ← Z_q^n, As
      */
-    private IntVector as;
+    private IntVector[] ass;
     /**
      * hint · s
      */
-    private IntVector[] hs;
+    private IntVector[][] hss;
     /**
      * rows
      */
@@ -107,10 +116,8 @@ public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         byte[] seed = seedPayload.get(0);
         MpcAbortPreconditions.checkArgument(seed.length == CommonConstants.BLOCK_BYTE_LENGTH);
         IntMatrix matrixA = IntMatrix.createRandom(columns, dimension, seed);
-        IntMatrix transposeMatrixA = matrixA.transpose();
-        IntVector s = IntVector.createRandom(dimension, secureRandom);
-        as = transposeMatrixA.leftMul(s);
-        IntMatrix[] transposeHint = new IntMatrix[partition];
+        transposeMatrixA = matrixA.transpose();
+        transposeHintMatrix = new IntMatrix[partition];
         for (int p = 0; p < partition; p++) {
             List<byte[]> hintPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_HINT.ordinal());
             MpcAbortPreconditions.checkArgument(hintPayload.size() == rows);
@@ -120,15 +127,14 @@ public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
                 .map(IntVector::create)
                 .toArray(IntVector[]::new);
             IntMatrix hint = IntMatrix.create(hintVectors);
-            transposeHint[p] = hint.transpose();
+            transposeHintMatrix[p] = hint.transpose();
         }
-        // generate s and s · hint
-        IntStream intStream = parallel ? IntStream.range(0, partition).parallel() : IntStream.range(0, partition);
-        hs = intStream.mapToObj(p -> transposeHint[p].leftMul(s)).toArray(IntVector[]::new);
         stopWatch.stop();
         long initSimplePirTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.INIT_STEP, 2, 2, initSimplePirTime, "Client stores hints");
+
+        updateKeys();
 
         logPhaseInfo(PtoState.INIT_END);
     }
@@ -140,7 +146,7 @@ public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
 
         stopWatch.start();
         for (int i = 0; i < batchNum; i++) {
-            query(keys.get(i));
+            query(keys.get(i), i);
         }
         stopWatch.stop();
         long queryTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -150,7 +156,7 @@ public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         stopWatch.start();
         byte[][] entries = new byte[batchNum][];
         for (int i = 0; i < batchNum; i++) {
-            entries[i] = decode(keys.get(i));
+            entries[i] = decode(keys.get(i), i);
         }
         stopWatch.stop();
         long recoverTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -161,20 +167,20 @@ public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         return entries;
     }
 
-    private void query(T key) {
+    private void query(T key, int i) {
         byte[] byteIdx = idxHash.digestToBytes(ObjectUtils.objectToByteArray(key));
         long keyIdx = LongUtils.byteArrayToLong(byteIdx);
         int[] index = pgmIndex.approximateIndexRangeOf(keyIdx);
         int colIdx = index[0] < 0 ? secureRandom.nextInt(columns) : index[0] / dataRows;
         // client generates qu, qu = A * s + e + q/p * u_i_col
         IntVector e = IntVector.createGaussian(columns, sigma, secureRandom);
-        IntVector qu = as.add(e);
+        IntVector qu = ass[i].add(e);
         qu.addi(colIdx, 1 << (Integer.SIZE - Byte.SIZE));
         List<byte[]> queryPayload = Collections.singletonList(IntUtils.intArrayToByteArray(qu.getElements()));
         sendOtherPartyPayload(PtoStep.CLIENT_SEND_QUERY.ordinal(), queryPayload);
     }
 
-    private byte[] decode(T key) throws MpcAbortException {
+    private byte[] decode(T key, int i) throws MpcAbortException {
         List<byte[]> responsePayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal());
         MpcAbortPreconditions.checkArgument(responsePayload.size() == partition);
         IntVector[] ansArray = responsePayload.stream()
@@ -183,12 +189,12 @@ public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         for (IntVector ans : ansArray) {
             MpcAbortPreconditions.checkArgument(ans.getNum() == rows);
         }
-        for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < rows; j++) {
             ByteBuffer entryByteBuffer = ByteBuffer.allocate(partition);
             for (int p = 0; p < partition; p++) {
-                IntVector d = ansArray[p].sub(hs[p]);
+                IntVector d = ansArray[p].sub(hss[i][p]);
                 byte partitionEntry;
-                int element = d.getElement(i);
+                int element = d.getElement(j);
                 if ((element & 0x00800000) > 0) {
                     partitionEntry = (byte) ((element >>> (Integer.SIZE - Byte.SIZE)) + 1);
                 } else {
@@ -204,5 +210,20 @@ public class SimplePgmCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
             }
         }
         return null;
+    }
+
+    @Override
+    public void updateKeys() {
+        ass = new IntVector[maxBatchNum];
+        hss = new IntVector[maxBatchNum][partition];
+        IntStream batchIntStream = parallel ? IntStream.range(0, maxBatchNum).parallel() : IntStream.range(0, maxBatchNum);
+        batchIntStream.forEach(batchIndex -> {
+            IntVector s = IntVector.createRandom(dimension, secureRandom);
+            ass[batchIndex] = transposeMatrixA.leftMul(s);
+            // generate s and s · hint
+            hss[batchIndex] = IntStream.range(0, partition)
+                .mapToObj(p -> transposeHintMatrix[p].leftMul(s))
+                .toArray(IntVector[]::new);
+        });
     }
 }

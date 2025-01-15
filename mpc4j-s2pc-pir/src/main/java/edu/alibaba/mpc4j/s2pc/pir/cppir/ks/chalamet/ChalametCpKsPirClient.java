@@ -13,6 +13,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.AbstractCpKsPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.HintCpKsPirClient;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,19 +29,27 @@ import static edu.alibaba.mpc4j.s2pc.pir.cppir.ks.chalamet.ChalametCpKsPirDesc.*
  * @author Liqiang Peng
  * @date 2024/8/2
  */
-public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
+public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> implements HintCpKsPirClient<T> {
     /**
      * fuse position
      */
     private Arity3ByteFusePosition<T> arity3ByteFusePosition;
     /**
+     * seed for Matrix A
+     */
+    private byte[] seedMatrixA;
+    /**
+     * hint matrix M
+     */
+    private IntMatrix matrixM;
+    /**
      * b = s · A
      */
-    private IntVector b;
+    private IntVector[] bs;
     /**
      * c = s · M
      */
-    private IntVector c;
+    private IntVector[] cs;
     /**
      * filter length
      */
@@ -74,8 +83,8 @@ public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         stopWatch.start();
         List<byte[]> matrixSeedPayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_SEED.ordinal());
         MpcAbortPreconditions.checkArgument(matrixSeedPayload.size() == 1);
-        byte[] matrixSeed = matrixSeedPayload.get(0);
-        MpcAbortPreconditions.checkArgument(matrixSeed.length == CommonConstants.BLOCK_BYTE_LENGTH);
+        seedMatrixA = matrixSeedPayload.get(0);
+        MpcAbortPreconditions.checkArgument(seedMatrixA.length == CommonConstants.BLOCK_BYTE_LENGTH);
         stopWatch.stop();
         long seedTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -88,27 +97,12 @@ public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
             .map(IntUtils::byteArrayToIntArray)
             .map(IntVector::create)
             .toArray(IntVector[]::new);
-        IntMatrix matrixM = IntMatrix.create(hintVectors);
-        // s ← (χ)^n
-        IntVector s = IntVector.createTernary(N, secureRandom);
-        // b ← s · A, where A ∈ Z_q^{n×m}
-        IntHash intHash = new BobIntHash();
-        IntStream intStream = parallel ? IntStream.range(0, filterLength).parallel() : IntStream.range(0, filterLength);
-        int[] bArray = intStream
-            .map(i -> {
-                int[] col = IntStream.range(0, N)
-                    .map(j -> intHash.hash(matrixSeed, j * filterLength + i))
-                    .toArray();
-                return s.innerMul(IntVector.create(col));
-            })
-            .toArray();
-        b = IntVector.create(bArray);
-        // c ← s · M
-        c = matrixM.leftMul(s);
-        stopWatch.stop();
+        matrixM = IntMatrix.create(hintVectors);
         long hintTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.INIT_STEP, 3, 3, hintTime, "Client stores hints");
+
+        updateKeys();
 
         logPhaseInfo(PtoState.INIT_END);
     }
@@ -120,7 +114,7 @@ public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
 
         stopWatch.start();
         for (int i = 0; i < batchNum; i++) {
-            query(keys.get(i));
+            query(keys.get(i), i);
         }
         stopWatch.stop();
         long queryTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -130,7 +124,7 @@ public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         stopWatch.start();
         byte[][] entries = new byte[batchNum][];
         for (int i = 0; i < batchNum; i++) {
-            entries[i] = decode(keys.get(i));
+            entries[i] = decode(keys.get(i), i);
         }
         stopWatch.stop();
         long recoverTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -141,10 +135,10 @@ public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         return entries;
     }
 
-    private void query(T key) {
+    private void query(T key, int i) {
         int[] xs = arity3ByteFusePosition.positions(key);
         IntVector e = IntVector.createTernary(filterLength, secureRandom);
-        IntVector qu = b.add(e);
+        IntVector qu = bs[i].add(e);
         for (int x : xs) {
             qu.addi(x, 1 << (Integer.SIZE - Byte.SIZE));
         }
@@ -152,11 +146,11 @@ public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         sendOtherPartyPayload(PtoStep.CLIENT_SEND_QUERY.ordinal(), queryPayload);
     }
 
-    private byte[] decode(T key) throws MpcAbortException {
+    private byte[] decode(T key, int i) throws MpcAbortException {
         List<byte[]> responsePayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal());
         MpcAbortPreconditions.checkArgument(responsePayload.size() == 1);
         IntVector ans = IntVector.create(IntUtils.byteArrayToIntArray(responsePayload.get(0)));
-        ans.subi(c);
+        ans.subi(cs[i]);
         MpcAbortPreconditions.checkArgument(ans.getNum() == byteL + DIGEST_BYTE_L);
         byte[] entry = new byte[byteL + DIGEST_BYTE_L];
         for (int entryIndex = 0; entryIndex < byteL + DIGEST_BYTE_L; entryIndex++) {
@@ -174,5 +168,40 @@ public class ChalametCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void updateKeys() {
+        stopWatch.start();
+        bs = new IntVector[maxBatchNum];
+        cs = new IntVector[maxBatchNum];
+        // s ← (χ)^n
+        IntVector[] ss = IntStream.range(0, maxBatchNum)
+            .mapToObj(batchIndex -> IntVector.createTernary(N, secureRandom))
+            .toArray(IntVector[]::new);
+        IntHash intHash = new BobIntHash();
+        int[][] bArrays = new int[maxBatchNum][filterLength];
+        IntStream intStream = parallel ? IntStream.range(0, filterLength).parallel() : IntStream.range(0, filterLength);
+        intStream.forEach(i -> {
+            // b ← s · A, where A ∈ Z_q^{n×m}
+            int[] col = IntStream.range(0, N)
+                .map(j -> intHash.hash(seedMatrixA, j * filterLength + i))
+                .toArray();
+            IntVector colIntVector = IntVector.create(col);
+            for (int batchIndex = 0; batchIndex < maxBatchNum; batchIndex++) {
+                bArrays[batchIndex][i] = ss[batchIndex].innerMul(colIntVector);
+            }
+        });
+        IntStream batchIndexStream = parallel ? IntStream.range(0, maxBatchNum).parallel() : IntStream.range(0, maxBatchNum);
+        batchIndexStream.forEach(batchIndex -> {
+            // b ← s · A, where A ∈ Z_q^{n×m}
+            bs[batchIndex] = IntVector.create(bArrays[batchIndex]);
+            // c ← s · M
+            cs[batchIndex] = matrixM.leftMul(ss[batchIndex]);
+        });
+        stopWatch.stop();
+        long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 1, 1, keyTime, "Client updates keys");
     }
 }

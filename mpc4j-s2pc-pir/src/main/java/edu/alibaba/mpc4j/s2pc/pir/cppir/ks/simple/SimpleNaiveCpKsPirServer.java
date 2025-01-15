@@ -14,6 +14,7 @@ import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.AbstractCpKsPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.HintCpKsPirServer;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,7 +30,7 @@ import static edu.alibaba.mpc4j.s2pc.pir.cppir.ks.simple.SimpleNaiveCpKsPirDesc.
  * @author Liqiang Peng
  * @date 2024/8/2
  */
-public class SimpleNaiveCpKsPirServer<T> extends AbstractCpKsPirServer<T> {
+public class SimpleNaiveCpKsPirServer<T> extends AbstractCpKsPirServer<T> implements HintCpKsPirServer<T> {
     /**
      * simple index PIR server
      */

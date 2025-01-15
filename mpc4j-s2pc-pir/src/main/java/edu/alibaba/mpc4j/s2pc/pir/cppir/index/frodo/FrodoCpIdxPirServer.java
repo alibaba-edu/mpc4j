@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirServer;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.PbcCpIdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.HintCpIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.frodo.FrodoCpIdxPirPtoDesc.PtoStep;
 
 import java.util.Collections;
@@ -22,7 +22,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2024/7/24
  */
-public class FrodoCpIdxPirServer extends AbstractCpIdxPirServer implements PbcCpIdxPirServer {
+public class FrodoCpIdxPirServer extends AbstractCpIdxPirServer implements HintCpIdxPirServer {
     /**
      * database
      */

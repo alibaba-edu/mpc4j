@@ -10,6 +10,7 @@ import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.SimpleCpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.AbstractCpKsPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.HintCpKsPirClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,7 @@ import static edu.alibaba.mpc4j.s2pc.pir.cppir.ks.simple.SimpleNaiveCpKsPirDesc.
  * @author Liqiang Peng
  * @date 2024/8/2
  */
-public class SimpleNaiveCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
+public class SimpleNaiveCpKsPirClient<T> extends AbstractCpKsPirClient<T> implements HintCpKsPirClient<T> {
     /**
      * simple index PIR client
      */
@@ -104,16 +105,16 @@ public class SimpleNaiveCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
     private void query(T key) {
         int[] xs = arity3ByteFusePosition.positions(key);
         for (int i = 0; i < arity3ByteFusePosition.arity(); i++) {
-            simpleCpIdxPirClient.query(xs[i]);
+            simpleCpIdxPirClient.query(xs[i], i);
         }
     }
 
     private byte[] decode(T key) throws MpcAbortException {
         int[] xs = arity3ByteFusePosition.positions(key);
         byte[][] entries = new byte[arity3ByteFusePosition.arity()][];
-        entries[0] = simpleCpIdxPirClient.recover(xs[0]);
+        entries[0] = simpleCpIdxPirClient.recover(xs[0], 0);
         for (int i = 1; i < arity3ByteFusePosition.arity(); i++) {
-            entries[i] = simpleCpIdxPirClient.recover(xs[i]);
+            entries[i] = simpleCpIdxPirClient.recover(xs[i], i);
             addi(entries[0], entries[i], byteL + DIGEST_BYTE_L);
         }
         byte[] actualDigest = BytesUtils.clone(entries[0], 0, DIGEST_BYTE_L);
@@ -130,5 +131,10 @@ public class SimpleNaiveCpKsPirClient<T> extends AbstractCpKsPirClient<T> {
         for (int i = 0; i < byteLength; i++) {
             p[i] += q[i];
         }
+    }
+
+    @Override
+    public void updateKeys() {
+        simpleCpIdxPirClient.updateKeys();
     }
 }

@@ -12,6 +12,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.AbstractCpKsPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.HintCpKsPirServer;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +28,7 @@ import static edu.alibaba.mpc4j.s2pc.pir.cppir.ks.simple.SimplePgmCpKsPirDesc.*;
  * @author Liqiang Peng
  * @date 2024/8/2
  */
-public class SimplePgmCpKsPirServer<T> extends AbstractCpKsPirServer<T> {
+public class SimplePgmCpKsPirServer<T> extends AbstractCpKsPirServer<T> implements HintCpKsPirServer<T> {
     /**
      * LWE dimension
      */

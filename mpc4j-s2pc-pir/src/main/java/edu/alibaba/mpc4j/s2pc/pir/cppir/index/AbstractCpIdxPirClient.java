@@ -31,7 +31,7 @@ public abstract class AbstractCpIdxPirClient extends AbstractTwoPartyPto impleme
     /**
      * mat batch num
      */
-    private int maxBatchNum;
+    protected int maxBatchNum;
     /**
      * batch num
      */

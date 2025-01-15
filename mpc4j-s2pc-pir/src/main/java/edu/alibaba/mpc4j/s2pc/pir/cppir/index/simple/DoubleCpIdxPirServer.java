@@ -9,7 +9,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirServer;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.PbcCpIdxPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.HintCpIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.DoubleCpIdxPirPtoDesc.PtoStep;
 
 import java.nio.IntBuffer;
@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2024/7/8
  */
-public class DoubleCpIdxPirServer extends AbstractCpIdxPirServer implements PbcCpIdxPirServer {
+public class DoubleCpIdxPirServer extends AbstractCpIdxPirServer implements HintCpIdxPirServer {
     /**
      * κ
      */

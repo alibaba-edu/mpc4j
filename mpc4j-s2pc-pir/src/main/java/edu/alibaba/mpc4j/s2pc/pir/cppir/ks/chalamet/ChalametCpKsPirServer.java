@@ -14,6 +14,7 @@ import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.AbstractCpKsPirServer;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.HintCpKsPirServer;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +28,7 @@ import static edu.alibaba.mpc4j.s2pc.pir.cppir.ks.chalamet.ChalametCpKsPirDesc.*
  * @author Liqiang Peng
  * @date 2024/8/2
  */
-public class ChalametCpKsPirServer<T> extends AbstractCpKsPirServer<T> {
+public class ChalametCpKsPirServer<T> extends AbstractCpKsPirServer<T> implements HintCpKsPirServer<T> {
     /**
      * database
      */

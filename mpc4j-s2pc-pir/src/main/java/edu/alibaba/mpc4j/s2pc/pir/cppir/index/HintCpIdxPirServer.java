@@ -4,13 +4,12 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.s2pc.pir.IdxPirServer;
 
 /**
- * client-specific preprocessing index PIR server where the scheme supports batch query using
- * probabilistic batch code (PBC) technique.
+ * Hint-based client-specific preprocessing index PIR.
  *
  * @author Liqiang Peng
  * @date 2024/7/15
  */
-public interface PbcCpIdxPirServer extends IdxPirServer {
+public interface HintCpIdxPirServer extends IdxPirServer {
     /**
      * Answers the query.
      *

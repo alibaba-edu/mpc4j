@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.structure.vector.IntVector;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirClient;
-import edu.alibaba.mpc4j.s2pc.pir.cppir.index.PbcCpIdxPirClient;
+import edu.alibaba.mpc4j.s2pc.pir.cppir.index.HintCpIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.simple.DoubleCpIdxPirPtoDesc.PtoStep;
 
 import java.nio.IntBuffer;
@@ -21,7 +21,7 @@ import java.util.stream.IntStream;
  * @author Weiran Liu
  * @date 2024/7/8
  */
-public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcCpIdxPirClient {
+public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements HintCpIdxPirClient {
     /**
      * κ
      */
@@ -43,25 +43,33 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
      */
     private int columns;
     /**
+     * transpose matrix A1
+     */
+    private IntMatrix transposeMatrixA1;
+    /**
+     * transpose matrix A2
+     */
+    private IntMatrix transposeMatrixA2;
+    /**
      * each hint_c ∈ Z_q^{n × n}, we totally have [byteL]×[κ] hint_c
      */
     private IntMatrix[][] transposeExtendHintC;
     /**
      * s_1 ← Z_q^n, generate for each [byteL]
      */
-    private IntVector[] s1s;
+    private IntVector[][] s1s;
     /**
      * c1 ← A1 · s1
      */
-    private IntVector[] c1s;
+    private IntVector[][] c1s;
     /**
      * s_1 ← Z_q^n, generate for each [byteL]
      */
-    private IntVector[] s2s;
+    private IntVector[][] s2s;
     /**
      * c2 ← A2 · s2
      */
-    private IntVector[] c2s;
+    private IntVector[][] c2s;
 
     public DoubleCpIdxPirClient(Rpc clientRpc, Party serverParty, DoubleCpIdxPirConfig config) {
         super(DoubleCpIdxPirPtoDesc.getInstance(), clientRpc, serverParty, config);
@@ -82,13 +90,13 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
         int[] sizes = DoubleCpIdxPirPtoDesc.getMatrixSize(n);
         rows = sizes[0];
         columns = sizes[1];
-        // A1 ∈ Z_q^{m × n}, here we directly generated the transposed version
         byte[] seedMatrixA1 = seedPayload.get(0);
-        IntMatrix transposeMatrixA1 = IntMatrix.createRandom(dimension, columns, seedMatrixA1);
-        // A2 ∈ Z_q^{ℓ × n}
         byte[] seedMatrixA2 = seedPayload.get(1);
+        // A1 ∈ Z_q^{m × n}, here we directly generated the transposed version
+        transposeMatrixA1 = IntMatrix.createRandom(dimension, columns, seedMatrixA1);
+        // A2 ∈ Z_q^{ℓ × n}
         IntMatrix matrixA2 = IntMatrix.createRandom(rows, dimension, seedMatrixA2);
-        IntMatrix transposeMatrixA2 = matrixA2.transpose();
+        transposeMatrixA2 = matrixA2.transpose();
         stopWatch.stop();
         long seedTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -105,12 +113,7 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
         for (int[] hint : hintIntArray) {
             MpcAbortPreconditions.checkArgument(hint.length == dimension * dimension);
         }
-        s1s = new IntVector[byteL];
-        c1s = new IntVector[byteL];
-        s2s = new IntVector[byteL];
-        c2s = new IntVector[byteL];
-        IntStream byteIndexIntStream = parallel ? IntStream.range(0, byteL).parallel() : IntStream.range(0, byteL);
-        byteIndexIntStream.forEach(byteIndex -> {
+        for (int byteIndex = 0; byteIndex < byteL; byteIndex++) {
             int offset = byteIndex * KAPPA;
             for (int k = 0; k < KAPPA; k++) {
                 // parse hint_c
@@ -126,16 +129,13 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
                 IntMatrix extendHintC = hintC.concat(IntVector.createZeros(dimension));
                 transposeExtendHintC[byteIndex][k] = extendHintC.transpose();
             }
-            // generate s1 and s2
-            s1s[byteIndex] = IntVector.createRandom(dimension, secureRandom);
-            c1s[byteIndex] = transposeMatrixA1.leftMul(s1s[byteIndex]);
-            s2s[byteIndex] = IntVector.createRandom(dimension, secureRandom);
-            c2s[byteIndex] = transposeMatrixA2.leftMul(s2s[byteIndex]);
-        });
+        }
         stopWatch.stop();
         long hintTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.INIT_STEP, 2, 2, hintTime);
+
+        updateKeys();
 
         logPhaseInfo(PtoState.INIT_END);
     }
@@ -147,7 +147,7 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
 
         stopWatch.start();
         for (int i = 0; i < batchNum; i++) {
-            query(xs[i]);
+            query(xs[i], i);
         }
         stopWatch.stop();
         long queryTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -157,7 +157,7 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
         stopWatch.start();
         byte[][] entries = new byte[batchNum][];
         for (int i = 0; i < batchNum; i++) {
-            entries[i] = recover(xs[i]);
+            entries[i] = recover(xs[i], i);
         }
         stopWatch.stop();
         long recoverTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -168,7 +168,7 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
     }
 
     @Override
-    public void query(int x) {
+    public void query(int x, int i) {
         IntStream byteIndexIntStream = parallel ? IntStream.range(0, byteL).parallel() : IntStream.range(0, byteL);
         List<byte[]> queryPayload = byteIndexIntStream
             .mapToObj(byteIndex -> {
@@ -179,10 +179,10 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
                 IntVector e1 = IntVector.createGaussian(columns, sigma, secureRandom);
                 IntVector e2 = IntVector.createGaussian(rows, sigma, secureRandom);
                 // Compute c1 ← (A1 · s1 + e1 + Δ · u_i_col)
-                IntVector c1 = c1s[byteIndex].add(e1);
+                IntVector c1 = c1s[i][byteIndex].add(e1);
                 c1.addi(iColumn, 1 << (Integer.SIZE - Byte.SIZE));
                 // Compute c2 ← (A2 · s2 + e2 + Δ · u_i_row)
-                IntVector c2 = c2s[byteIndex].add(e2);
+                IntVector c2 = c2s[i][byteIndex].add(e2);
                 c2.addi(iRow, 1 << (Integer.SIZE - Byte.SIZE));
                 int[] c1c2 = new int[columns + rows];
                 System.arraycopy(c1.getElements(), 0, c1c2, 0, columns);
@@ -194,7 +194,7 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
     }
 
     @Override
-    public byte[] recover(int x) throws MpcAbortException {
+    public byte[] recover(int x, int i) throws MpcAbortException {
         List<byte[]> responsePayload = receiveOtherPartyPayload(PtoStep.SERVER_SEND_RESPONSE.ordinal());
         MpcAbortPreconditions.checkArgument(responsePayload.size() == byteL);
         byte[] entry = new byte[byteL];
@@ -228,14 +228,14 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
                 for (int t = 0; t < dimension; t++) {
                     transposeHintCh.set(t, dimension, hs[k].getElement(t));
                 }
-                IntVector temp = transposeHintCh.leftMul(s2s[byteIndex]);
+                IntVector temp = transposeHintCh.leftMul(s2s[i][byteIndex]);
                 ansh2[k].subi(temp);
                 ansh2[k].roundToBytei();
             }
             IntVector h1a1 = IntVector.composeByteVector(ansh2);
             int d = h1a1.getElement(dimension);
             IntVector innerProduct = IntVector.create(Arrays.copyOfRange(h1a1.getElements(), 0, dimension));
-            innerProduct.muli(s1s[byteIndex]);
+            innerProduct.muli(s1s[i][byteIndex]);
             int sum = innerProduct.sum();
             d = d - sum;
             if ((d & 0x00800000) > 0) {
@@ -245,5 +245,28 @@ public class DoubleCpIdxPirClient extends AbstractCpIdxPirClient implements PbcC
             }
         });
         return entry;
+    }
+
+    @Override
+    public void updateKeys() {
+        stopWatch.start();
+        s1s = new IntVector[maxBatchNum][byteL];
+        c1s = new IntVector[maxBatchNum][byteL];
+        s2s = new IntVector[maxBatchNum][byteL];
+        c2s = new IntVector[maxBatchNum][byteL];
+        IntStream batchIntStream = parallel ? IntStream.range(0, maxBatchNum).parallel() : IntStream.range(0, maxBatchNum);
+        batchIntStream.forEach(batchIndex -> {
+            for (int byteIndex = 0; byteIndex < byteL; byteIndex++) {
+                // generate s1 and s2
+                s1s[batchIndex][byteIndex] = IntVector.createRandom(dimension, secureRandom);
+                c1s[batchIndex][byteIndex] = transposeMatrixA1.leftMul(s1s[batchIndex][byteIndex]);
+                s2s[batchIndex][byteIndex] = IntVector.createRandom(dimension, secureRandom);
+                c2s[batchIndex][byteIndex] = transposeMatrixA2.leftMul(s2s[batchIndex][byteIndex]);
+            }
+        });
+        stopWatch.stop();
+        long keyTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 1, 1, keyTime, "Client updates keys");
     }
 }

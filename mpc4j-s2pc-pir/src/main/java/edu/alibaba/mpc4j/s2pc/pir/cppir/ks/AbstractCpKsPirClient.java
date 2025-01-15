@@ -40,7 +40,7 @@ public abstract class AbstractCpKsPirClient<T> extends AbstractTwoPartyPto imple
     /**
      * max batch num
      */
-    private int maxBatchNum;
+    protected int maxBatchNum;
     /**
      * batch num
      */
