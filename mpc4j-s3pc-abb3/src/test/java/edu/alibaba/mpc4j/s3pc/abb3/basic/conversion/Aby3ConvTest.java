@@ -56,7 +56,6 @@ public class Aby3ConvTest extends AbstractThreePartyMemoryRpcPto {
     };
 
     private static final boolean USE_MT_TEST_MODE = false;
-    private static final String TUPLE_DIR = "./";
 
     private static final int BATCH_NUM = 2;
 
@@ -140,8 +139,8 @@ public class Aby3ConvTest extends AbstractThreePartyMemoryRpcPto {
         TripletProviderConfig providerConfig;
         if (isMalicious && USE_MT_TEST_MODE) {
             providerConfig = new TripletProviderConfig.Builder(true)
-                .setRpZ2MtpConfig(RpMtProviderFactory.createZ2MtpConfigTestMode(TUPLE_DIR))
-                .setRpZl64MtpConfig(RpMtProviderFactory.createZl64MtpConfigTestMode(TUPLE_DIR))
+                .setRpZ2MtpConfig(RpMtProviderFactory.createZ2MtpConfigTestMode())
+                .setRpZl64MtpConfig(RpMtProviderFactory.createZl64MtpConfigTestMode())
                 .build();
         } else {
             providerConfig = new TripletProviderConfig.Builder(isMalicious).build();

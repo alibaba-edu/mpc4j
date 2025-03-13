@@ -25,7 +25,7 @@ public interface ConvParty extends ThreePartyPto {
      *
      * @param op           the required operation
      * @param inputDataNum size of input data in each dimension
-     * @param dataDim      input data dimension
+     * @param dataDim      the dim of the input arithmetic array or the dim of the input binary matrix; otherwise, 1
      * @param bitLen       required bit length or bit index
      */
     long[] getTupleNum(ConvOp op, int inputDataNum, int dataDim, int bitLen);

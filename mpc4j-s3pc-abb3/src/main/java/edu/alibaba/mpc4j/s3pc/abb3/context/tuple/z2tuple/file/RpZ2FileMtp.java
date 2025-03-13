@@ -64,11 +64,6 @@ public class RpZ2FileMtp extends AbstractRpZ2Mtp implements RpZ2Mtp {
     }
 
     @Override
-    public RpZ2EnvParty getEnv() {
-        return rpZ2Mtg.getEnv();
-    }
-
-    @Override
     protected void fillBuffer() throws MpcAbortException {
         if (allFileName == null) {
             updateFileList();

@@ -42,11 +42,6 @@ public class RpZ2BufferMtp extends AbstractRpZ2Mtp implements RpZ2Mtp {
     }
 
     @Override
-    public RpZ2EnvParty getEnv() {
-        return rpZ2Mtg.getEnv();
-    }
-
-    @Override
     protected void fillBuffer() throws MpcAbortException {
         buffer = Arrays.stream(rpZ2Mtg.genMtOnline()).map(TripletRpZ2Vector::mergeWithPadding).toArray(TripletRpZ2Vector[]::new);
         currentByteIndex = 0;

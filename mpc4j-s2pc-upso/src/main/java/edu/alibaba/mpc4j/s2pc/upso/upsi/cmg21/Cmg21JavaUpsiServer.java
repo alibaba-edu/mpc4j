@@ -8,11 +8,11 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64PolyFactory;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.crypto.swhe.seal.*;
-import edu.alibaba.mpc4j.crypto.swhe.seal.context.EncryptionParameters;
-import edu.alibaba.mpc4j.crypto.swhe.seal.context.ParmsId;
-import edu.alibaba.mpc4j.crypto.swhe.seal.context.SchemeType;
-import edu.alibaba.mpc4j.crypto.swhe.seal.context.SealContext;
+import edu.alibaba.mpc4j.crypto.fhe.seal.*;
+import edu.alibaba.mpc4j.crypto.fhe.seal.context.EncryptionParameters;
+import edu.alibaba.mpc4j.crypto.fhe.seal.context.ParmsId;
+import edu.alibaba.mpc4j.crypto.fhe.seal.context.SchemeType;
+import edu.alibaba.mpc4j.crypto.fhe.seal.context.SealContext;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfSender;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
@@ -396,7 +396,7 @@ public class Cmg21JavaUpsiServer<T> extends AbstractUpsiServer<T> {
         int degree = coeffs.length - 1;
         Ciphertext evaluated = new Ciphertext(), cipherTemp = new Ciphertext(), tempIn = new Ciphertext();
         evaluated.resize(context, parmsId, 3);
-        evaluated.setIsNttForm(false);
+        evaluated.setNttForm(false);
         int psHighDegreePowers = degree / psHighDegree;
         // Calculate polynomial for i=1,...,ps_high_degree_powers-1
         for (int i = 1; i < psHighDegreePowers; i++) {
@@ -484,7 +484,7 @@ public class Cmg21JavaUpsiServer<T> extends AbstractUpsiServer<T> {
         int degree = coeffs.length - 1;
         Ciphertext evaluated = new Ciphertext(), cipherTemp = new Ciphertext(), tempIn = new Ciphertext();
         evaluated.resize(context, parmsId, 3);
-        evaluated.setIsNttForm(false);
+        evaluated.setNttForm(false);
         for (int i = 1; i <= degree; i++) {
             evaluator.multiplyPlain(powers[i - 1], plaintexts[i], cipherTemp);
             if (i == 1) {

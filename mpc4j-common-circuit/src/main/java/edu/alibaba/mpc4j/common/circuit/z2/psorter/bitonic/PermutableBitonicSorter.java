@@ -57,21 +57,6 @@ public class PermutableBitonicSorter extends AbstractPermutationSorter {
     }
 
     @Override
-    public long getAndGateNum(int dataNum, int dataDim) {
-        int logM = LongUtils.ceilLog2(dataNum);
-        int dataExtendNum = CommonUtils.getByteLength(dataNum) << 3;
-        long compareNum = (long) logM * (logM + 1) / 2 * dataExtendNum;
-        return compareNum * (dataDim + logM) * (1 + getCmpGateParam(dataDim + logM));
-    }
-
-    /**
-     * get the multiplication factor of number of AND gate in compare
-     */
-    public int getCmpGateParam(int dataDim) {
-        return 1;
-    }
-
-    @Override
     public MpcZ2Vector[] sort(MpcZ2Vector[][] xiArrays, boolean needPermutation, boolean needStable) throws MpcAbortException {
         return sort(xiArrays, null, PlainZ2Vector.createOnes(xiArrays.length), needPermutation, needStable);
     }
@@ -89,6 +74,8 @@ public class PermutableBitonicSorter extends AbstractPermutationSorter {
         if (sortedNum == 1) {
             if (needPermutation) {
                 return party.setPublicValues(new BitVector[]{BitVectorFactory.createZeros(1)});
+            }else{
+                return null;
             }
         }
         if (dir == null) {

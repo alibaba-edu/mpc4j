@@ -39,17 +39,12 @@ public class RippleCarryAdder extends AbstractAdder {
      * @return (carry_out bit, result).
      */
     public MpcZ2Vector[] addOneBit(MpcZ2Vector x, MpcZ2Vector y, MpcZ2Vector c) throws MpcAbortException {
-//        MpcZ2Vector[] z = new MpcZ2Vector[2];
         MpcZ2Vector t1 = party.xor(x, c);
         MpcZ2Vector t2 = party.xor(y, c);
         t1 = party.and(t1, t2);
         party.xori(t2, x);
         party.xori(t1, c);
         return new MpcZ2Vector[]{t2, t1};
-//        z[0] = party.xor(x, t2);
-//        t1 = party.and(t1, t2);
-//        z[1] = party.xor(c, t1);
-//        return z;
     }
 
     /**
@@ -61,7 +56,6 @@ public class RippleCarryAdder extends AbstractAdder {
      * @return (carry_out bit, result).
      */
     public MpcZ2Vector[][] addOneBit(MpcZ2Vector[] x, MpcZ2Vector[] y, MpcZ2Vector[] c) throws MpcAbortException {
-//        MpcZ2Vector[][] z = new MpcZ2Vector[2][];
         MpcZ2Vector[] t1 = party.xor(x, c);
         MpcZ2Vector[] t2 = party.xor(y, c);
         t1 = party.and(t1, t2);

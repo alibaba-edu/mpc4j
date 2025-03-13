@@ -2,6 +2,8 @@ package edu.alibaba.mpc4j.common.circuit.z2;
 
 import edu.alibaba.mpc4j.common.circuit.z2.adder.Adder;
 import edu.alibaba.mpc4j.common.circuit.z2.adder.AdderFactory;
+import edu.alibaba.mpc4j.common.circuit.z2.comparator.Comparator;
+import edu.alibaba.mpc4j.common.circuit.z2.comparator.ComparatorFactory;
 import edu.alibaba.mpc4j.common.circuit.z2.multiplier.Multiplier;
 import edu.alibaba.mpc4j.common.circuit.z2.multiplier.MultiplierFactory;
 import edu.alibaba.mpc4j.common.circuit.z2.psorter.Psorter;
@@ -26,6 +28,10 @@ public class Z2IntegerCircuit extends AbstractZ2Circuit {
      */
     private final Adder adder;
     /**
+     * adder.
+     */
+    private final Comparator comparator;
+    /**
      * multiplier.
      */
     private final Multiplier multiplier;
@@ -46,6 +52,7 @@ public class Z2IntegerCircuit extends AbstractZ2Circuit {
         super(party);
         this.party = party;
         this.adder = AdderFactory.createAdder(config.getAdderType(), this);
+        this.comparator = ComparatorFactory.createComparator(config.getComparatorType(), this);
         this.multiplier = MultiplierFactory.createMultiplier(config.getMultiplierType(), this);
         this.sorter = SorterFactory.createSorter(config.getSorterType(), this);
         this.pSorter = PsorterFactory.createPsorter(config.getPsorterType(), this);
@@ -155,9 +162,7 @@ public class Z2IntegerCircuit extends AbstractZ2Circuit {
      * @throws MpcAbortException the protocol failure aborts.
      */
     public MpcZ2Vector leq(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) throws MpcAbortException {
-        checkInputs(xiArray, yiArray);
-        MpcZ2Vector[] result = sub(yiArray, xiArray);
-        return mux(new MpcZ2Vector[]{party.not(result[0])} , new MpcZ2Vector[]{yiArray[0]}, party.xor(xiArray[0], yiArray[0]))[0];
+        return comparator.leq(xiArray, yiArray);
     }
 
     public void sort(MpcZ2Vector[][] xiArray) throws MpcAbortException {

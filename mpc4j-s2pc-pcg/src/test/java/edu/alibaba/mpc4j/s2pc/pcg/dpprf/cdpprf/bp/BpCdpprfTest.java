@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.BpCdpprfFactory.BpCdpprfType;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.gyw23.Gyw23BpCdpprfConfig;
@@ -308,7 +309,7 @@ public class BpCdpprfTest extends AbstractTwoPartyMemoryRpcPto {
                 } else {
                     Assert.assertArrayEquals(eachSenderOutput.getV0(index), eachReceiverOutput.getV1(index));
                 }
-                BytesUtils.xori(actualDelta, eachSenderOutput.getV0(index));
+                BlockUtils.xori(actualDelta, eachSenderOutput.getV0(index));
             });
             Assert.assertArrayEquals(senderOutput.getDelta(), actualDelta);
         });

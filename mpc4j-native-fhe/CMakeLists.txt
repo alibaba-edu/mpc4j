@@ -71,8 +71,7 @@ add_library(
         pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_index_cw_CwStdIdxPirNativeUtils.cpp
         pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_index_fast_FastStdIdxPirNativeUtils.cpp
         pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_ks_labelpsi_LabelpsiStdKsPirNativeUtils.cpp
-        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_kw_pantheon_PantheonStdKwPirNativeUtils.cpp
-)
+        pir/std/edu_alibaba_mpc4j_s2pc_pir_stdpir_kw_pantheon_PantheonStdKwPirNativeUtils.cpp)
 # 链接SEAL库
 if(TARGET SEAL::seal)
     target_link_libraries(mpc4j-native-fhe PUBLIC SEAL::seal)

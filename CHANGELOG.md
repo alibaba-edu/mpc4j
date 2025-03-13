@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[1.1.4\]
+
+### Added
+
+- [important] Now the Java implementation of SEAL is fully compatible with SEAL 4.0.0. That is, one can use SEAL to serialize any parameters then use our Java implementation to deserialize, and verse visa.
+- [important] We implement CKKS in the Java implementation of SEAL.
+- [important] We merge the implementation of our paper SCAPE into `mpc4j` (See submodule `mpc4j-work-scape`).
+
 ## \[1.1.3\]
 
 ### Added

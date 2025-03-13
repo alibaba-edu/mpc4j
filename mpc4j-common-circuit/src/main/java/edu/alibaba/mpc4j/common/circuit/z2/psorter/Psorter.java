@@ -12,14 +12,6 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
  */
 public interface Psorter {
     /**
-     * get the estimated number of AND gate
-     *
-     * @param dataNum input data number
-     * @param dataDim data dimension
-     */
-    long getAndGateNum(int dataNum, int dataDim);
-
-    /**
      * get the permutation representing the sort of xiArrays in ascending order.
      *
      * @param xiArrays        xi arrays, in column form.

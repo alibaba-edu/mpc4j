@@ -33,6 +33,9 @@ public class Z2VectorUtils {
      */
     public static byte[][] returnCompareResultMask(int log2) {
         byte[][] compareResultMask = new byte[log2 - 1][];
+        if(log2 == 1){
+            return new byte[][]{new byte[]{0}};
+        }
         // the first three masks are 01010101..., 00110011..., 00001111...
         int byteNum = log2 < 4 ? 1 : 1 << (log2 - 4);
         IntStream.range(0, log2 - 1).parallel().forEach(i -> {

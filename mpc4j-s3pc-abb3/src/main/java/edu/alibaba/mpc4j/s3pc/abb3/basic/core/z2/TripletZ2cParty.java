@@ -9,8 +9,8 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.core.AbbCoreParty;
-import edu.alibaba.mpc4j.s3pc.abb3.structure.z2.replicate.TripletRpZ2Vector;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.z2.TripletZ2Vector;
+import edu.alibaba.mpc4j.s3pc.abb3.structure.z2.replicate.TripletRpZ2Vector;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -180,6 +180,22 @@ public interface TripletZ2cParty extends AbbCoreParty, MpcZ2cParty {
      */
     @Override
     TripletZ2Vector[] and(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray);
+
+    /**
+     * Vector MUX operation.
+     *
+     * @param xiArray xi array.
+     * @param yiArray yi array.
+     * @param c       c.
+     * @return zi array, such that for each j, z[i] = (c ? y[i] : x[i])
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    default TripletZ2Vector[] mux(TripletZ2Vector[] xiArray, TripletZ2Vector[] yiArray, TripletZ2Vector c) {
+        MathPreconditions.checkEqual("xiArray.length", "yiArray.length", xiArray.length, yiArray.length);
+        MathPreconditions.checkEqual("xiArray[0].bitNum()", "c.bitNum()", xiArray[0].bitNum(), c.bitNum());
+        TripletZ2Vector[] ciArray = IntStream.range(0, xiArray.length).mapToObj(i -> c).toArray(TripletZ2Vector[]::new);
+        return xor(and(xor(xiArray, yiArray), ciArray), xiArray);
+    }
 
     /**
      * XOR operation.

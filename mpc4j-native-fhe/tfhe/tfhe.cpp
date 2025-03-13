@@ -33,7 +33,7 @@ namespace seal
         for (size_t i = 0; i < rlwe_count; i++) {
             RLWECipher tmp(context_);
             encrypt_zero(tmp);
-            cipher.emplace_back(move(tmp));
+            cipher.emplace_back(std::move(tmp));
         }
         Plaintext scaled_plain(poly_modulus_degree * coeff_modulus_size);
         auto scaled_plain_iter = util::RNSIter(scaled_plain.data(), poly_modulus_degree);

@@ -238,7 +238,7 @@ public class PropertiesUtils {
         String[] intLogStringArray = readTrimStringArray(properties, keyword);
         return Arrays.stream(intLogStringArray)
             .mapToInt(Integer::parseInt)
-            .peek(logIntValue -> MathPreconditions.checkPositiveInRange("log(n)", logIntValue, Integer.SIZE))
+            .peek(logIntValue -> MathPreconditions.checkNonNegativeInRange("log(n)", logIntValue, Integer.SIZE))
             .toArray();
     }
 

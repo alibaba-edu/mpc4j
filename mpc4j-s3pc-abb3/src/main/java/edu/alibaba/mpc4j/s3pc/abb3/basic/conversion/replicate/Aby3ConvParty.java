@@ -56,7 +56,7 @@ public interface Aby3ConvParty extends ConvParty {
      */
     @Override
     default TripletRpZ2Vector[][] a2b(MpcLongVector[] data, int bitNum) throws MpcAbortException {
-        TripletRpLongVector[] type = (TripletRpLongVector[]) data;
+        TripletRpLongVector[] type = Arrays.stream (data).map(ea -> (TripletRpLongVector) ea).toArray(TripletRpLongVector[]::new);
         TripletRpLongVector all = TripletRpLongVector.mergeWithPadding(type);
         TripletRpZ2Vector[] tmp = a2b(all, bitNum);
         int[] bits = Arrays.stream(type).mapToInt(TripletRpLongVector::getNum).toArray();

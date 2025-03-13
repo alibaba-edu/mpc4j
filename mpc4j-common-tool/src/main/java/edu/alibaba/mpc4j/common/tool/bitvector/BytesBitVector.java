@@ -401,6 +401,8 @@ public class BytesBitVector implements BitVector {
             BytesUtils.shiftRighti(bytes, n);
             bytes = BytesUtils.copyByteArray(bytes, CommonUtils.getByteLength(bitNum));
         }
+        byteNum = bytes.length;
+        offset = byteNum * Byte.SIZE - bitNum;
     }
 
     @Override

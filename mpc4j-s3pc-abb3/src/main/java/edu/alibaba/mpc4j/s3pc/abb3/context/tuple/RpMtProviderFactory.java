@@ -2,18 +2,22 @@ package edu.alibaba.mpc4j.s3pc.abb3.context.tuple;
 
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.s3pc.abb3.context.cr.S3pcCrProvider;
-import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.RpZ2Mtp;
-import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.RpZ2MtpConfig;
-import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.buffer.RpZ2BufferMtpConfig;
-import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.buffer.RpZ2BufferMtp;
-import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.file.RpZ2FileMtp;
-import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.file.RpZ2FileMtpConfig;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.RpLongMtp;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.RpLongMtpConfig;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.buffer.RpLongBufferMtp;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.buffer.RpLongBufferMtpConfig;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.file.RpLongFileMtp;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.file.RpLongFileMtpConfig;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.simulate.RpLongSimMtp;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.simulate.RpLongSimMtpConfig;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.RpZ2Mtp;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.RpZ2MtpConfig;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.buffer.RpZ2BufferMtp;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.buffer.RpZ2BufferMtpConfig;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.file.RpZ2FileMtp;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.file.RpZ2FileMtpConfig;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.simulate.RpZ2SimMtp;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.simulate.RpZ2SimMtpConfig;
 
 /**
  * factory of mtp for replicated 3p sharing
@@ -34,6 +38,10 @@ public class RpMtProviderFactory {
          * generate mt online and store in buffer
          */
         BUFFER,
+        /**
+         * simulate the multiplication tuple generation with common known keys
+         */
+        SIMULATE,
     }
 
     public enum FilePtoWorkType {
@@ -58,6 +66,8 @@ public class RpMtProviderFactory {
                 return new RpZ2FileMtp(rpc, (RpZ2FileMtpConfig) config, crProvider);
             case BUFFER:
                 return new RpZ2BufferMtp(rpc, (RpZ2BufferMtpConfig) config, crProvider);
+            case SIMULATE:
+                return new RpZ2SimMtp(rpc, (RpZ2SimMtpConfig) config, crProvider);
             default:
                 throw new IllegalArgumentException("Invalid " + MtProviderType.class.getSimpleName() + ": " + type.name());
         }
@@ -70,17 +80,19 @@ public class RpMtProviderFactory {
                 return new RpLongFileMtp(rpc, (RpLongFileMtpConfig) config, crProvider);
             case BUFFER:
                 return new RpLongBufferMtp(rpc, (RpLongBufferMtpConfig) config, crProvider);
+            case SIMULATE:
+                return new RpLongSimMtp(rpc, (RpLongSimMtpConfig) config, crProvider);
             default:
                 throw new IllegalArgumentException("Invalid " + MtProviderType.class.getSimpleName() + ": " + type.name());
         }
     }
 
-    public static RpZ2MtpConfig createZ2MtpConfigTestMode(String fileDir){
-        return new RpZ2FileMtpConfig.Builder(FilePtoWorkType.TEST, fileDir).build();
+    public static RpZ2MtpConfig createZ2MtpConfigTestMode() {
+        return new RpZ2SimMtpConfig.Builder().build();
     }
 
-    public static RpLongMtpConfig createZl64MtpConfigTestMode(String fileDir){
-        return new RpLongFileMtpConfig.Builder(FilePtoWorkType.TEST, fileDir).build();
+    public static RpLongMtpConfig createZl64MtpConfigTestMode() {
+        return new RpLongSimMtpConfig.Builder().build();
     }
 
     public static RpZ2MtpConfig createDefaultZ2MtpConfig(){

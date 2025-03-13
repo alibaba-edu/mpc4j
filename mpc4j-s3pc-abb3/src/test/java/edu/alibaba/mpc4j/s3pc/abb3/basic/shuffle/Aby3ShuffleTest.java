@@ -56,6 +56,7 @@ public class Aby3ShuffleTest extends AbstractThreePartyMemoryRpcPto {
     public static final ShuffleOp[] opAll = new ShuffleOp[]{
         ShuffleOp.B_SHUFFLE_ROW,
         ShuffleOp.B_SHUFFLE_COLUMN,
+        ShuffleOp.B_INV_SHUFFLE_COLUMN,
         ShuffleOp.B_PERMUTE_NETWORK,
         ShuffleOp.B_SWITCH_NETWORK,
         ShuffleOp.B_DUPLICATE_NETWORK,
@@ -68,7 +69,6 @@ public class Aby3ShuffleTest extends AbstractThreePartyMemoryRpcPto {
     };
 
     private static final boolean USE_MT_TEST_MODE = false;
-    private static final String TUPLE_DIR = "./";
 
     private static final int B_BATCH_NUM = 64;
 
@@ -131,19 +131,19 @@ public class Aby3ShuffleTest extends AbstractThreePartyMemoryRpcPto {
     public void testEachMiddleSize() {
         for (ShuffleOp op : opAll) {
             ShuffleOp[] single = new ShuffleOp[]{op};
-            testOpi(false, single, new int[]{MIDDLE_SIZE, B_BATCH_NUM}, new int[]{MIDDLE_SIZE, A_BATCH_NUM});
+            testOpi(true, single, new int[]{MIDDLE_SIZE, B_BATCH_NUM}, new int[]{MIDDLE_SIZE, A_BATCH_NUM});
         }
     }
 
     @Test
     public void testAllLargeSize() {
-        testOpi(false, opAll, new int[]{LARGE_SIZE, B_BATCH_NUM}, new int[]{LARGE_SIZE, A_BATCH_NUM});
+        testOpi(true, opAll, new int[]{LARGE_SIZE, B_BATCH_NUM}, new int[]{LARGE_SIZE, A_BATCH_NUM});
     }
     @Test
     public void testEachLargeSize() {
         for(ShuffleOp op : opAll){
             ShuffleOp[] single = new ShuffleOp[]{op};
-            testOpi(false, single, new int[]{LARGE_SIZE, B_BATCH_NUM}, new int[]{LARGE_SIZE, A_BATCH_NUM});
+            testOpi(true, single, new int[]{LARGE_SIZE, B_BATCH_NUM}, new int[]{LARGE_SIZE, A_BATCH_NUM});
         }
     }
 
@@ -153,8 +153,8 @@ public class Aby3ShuffleTest extends AbstractThreePartyMemoryRpcPto {
         TripletProviderConfig providerConfig;
         if (isMalicious && USE_MT_TEST_MODE) {
             providerConfig = new TripletProviderConfig.Builder(true)
-                .setRpZ2MtpConfig(RpMtProviderFactory.createZ2MtpConfigTestMode(TUPLE_DIR))
-                .setRpZl64MtpConfig(RpMtProviderFactory.createZl64MtpConfigTestMode(TUPLE_DIR))
+                .setRpZ2MtpConfig(RpMtProviderFactory.createZ2MtpConfigTestMode())
+                .setRpZl64MtpConfig(RpMtProviderFactory.createZl64MtpConfigTestMode())
                 .build();
         } else {
             providerConfig = new TripletProviderConfig.Builder(isMalicious).build();
@@ -258,7 +258,7 @@ public class Aby3ShuffleTest extends AbstractThreePartyMemoryRpcPto {
         }
     }
 
-    private void verifyBsRes(ShuffleOp op, BcShuffleRes[] data) {
+    private void verifyBsRes(ShuffleOp op, BcShuffleRes[] data) throws MpcAbortException {
         LOGGER.info("verifying " + op.name());
         switch (op) {
             case B_SHUFFLE_ROW:
@@ -267,6 +267,14 @@ public class Aby3ShuffleTest extends AbstractThreePartyMemoryRpcPto {
             case B_SHUFFLE_COLUMN:
                 testBinaryContain(data[0].input, data[0].output, false);
                 break;
+            case B_INV_SHUFFLE_COLUMN:{
+                BigInteger[] inputBig = ZlDatabase.create(EnvType.STANDARD, true, data[0].input).getBigIntegerData();
+                BigInteger[] outputBig = ZlDatabase.create(EnvType.STANDARD, true, data[0].output).getBigIntegerData();
+                for(int i = 0; i < inputBig.length; i++) {
+                    Assert.assertEquals(outputBig[data[0].fun[i]], inputBig[i]);
+                }
+                break;
+            }
             case B_PERMUTE_NETWORK:
             case B_SWITCH_NETWORK: {
                 for (BcShuffleRes oneRes : data) {

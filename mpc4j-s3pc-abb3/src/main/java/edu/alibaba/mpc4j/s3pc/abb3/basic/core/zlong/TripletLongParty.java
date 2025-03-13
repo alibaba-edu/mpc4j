@@ -77,6 +77,15 @@ public interface TripletLongParty extends AbbCoreParty, MpcLongParty {
     void addi(MpcLongVector xi, long constValue);
 
     /**
+     * if invOrder compute: res[i] = \sum_i^n{data[i]} + prefixData, else compute: res[i] = \sum_0^i{data[i]} + prefixData
+     *
+     * @param invOrder whether the adder is performed from behind to front
+     * @param data data vector
+     * @param prefixData prefix data
+     */
+    TripletLongVector rowAdderWithPrefix(TripletLongVector data, TripletLongVector prefixData, boolean invOrder);
+
+    /**
      * verify mul result
      *
      * @throws MpcAbortException if the protocol is abort.

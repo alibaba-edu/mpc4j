@@ -13,13 +13,13 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.s3pc.abb3.basic.shuffle.ShuffleOperations.ShuffleOp;
-import edu.alibaba.mpc4j.s3pc.abb3.basic.shuffle.replicate.Aby3ShufflePtoDesc.PtoStep;
-import edu.alibaba.mpc4j.s3pc.abb3.basic.utils.ShuffleUtils;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.core.z2.TripletZ2cParty;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.core.zlong.TripletLongParty;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.core.zlong.replicate.mac.Cgh18RpLongParty;
+import edu.alibaba.mpc4j.s3pc.abb3.basic.shuffle.ShuffleOperations.ShuffleOp;
+import edu.alibaba.mpc4j.s3pc.abb3.basic.shuffle.replicate.Aby3ShufflePtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.utils.MatrixUtils;
+import edu.alibaba.mpc4j.s3pc.abb3.basic.utils.ShuffleUtils;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.z2.replicate.TripletRpZ2Vector;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.zlong.TripletLongVector;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.zlong.replicate.TripletRpLongMacVector;
@@ -40,6 +40,9 @@ import java.util.stream.IntStream;
  */
 public class Aby3MalShuffleParty extends AbstractAby3ShuffleParty implements Aby3ShuffleParty {
     private static final Logger LOGGER = LoggerFactory.getLogger(Aby3MalShuffleParty.class);
+    /**
+     * Specific required mac party
+     */
     private final Cgh18RpLongParty macParty;
 
     public Aby3MalShuffleParty(TripletZ2cParty z2cParty, TripletLongParty zl64cParty, Cgh18RpLongParty macParty, Aby3ShuffleConfig config) {
@@ -62,6 +65,7 @@ public class Aby3MalShuffleParty extends AbstractAby3ShuffleParty implements Aby
         switch (op) {
             case B_SHUFFLE_ROW:
             case B_SHUFFLE_COLUMN:
+            case B_INV_SHUFFLE_COLUMN:
                 return 4L * inputDataNum * getBinaryShuffleParam();
             case B_PERMUTE_NETWORK: {
                 int maxNum = Math.max(inputDataNum, outputDataNum);
@@ -329,6 +333,59 @@ public class Aby3MalShuffleParty extends AbstractAby3ShuffleParty implements Aby
         verifyShufflePairColumn(shuffleInput, midRes);
         verifyShufflePairColumn(midRes, extendRes);
         logStepInfo(PtoState.PTO_STEP, "shuffleColumn", 4, 4, resetAndGetTime(), "verify shuffle column");
+
+        logPhaseInfo(PtoState.PTO_END);
+        return Arrays.copyOf(extendRes, data.length);
+    }
+
+    @Override
+    public MpcZ2Vector[] invShuffleColumn(int[][] pai, MpcZ2Vector... data) throws MpcAbortException {
+        MathPreconditions.checkEqual("pai.length", "2", pai.length, 2);
+        MathPreconditions.checkEqual("pai[0].length", "pai[1].length", pai[0].length, pai[1].length);
+        logPhaseInfo(PtoState.PTO_BEGIN);
+
+        stopWatch.start();
+        int k = getBinaryShuffleParam();
+        int bitLen = pai[0].length;
+        int[] randomBitNums = IntStream.range(0, k).map(i -> bitLen).toArray();
+        int[] allBitNums = IntStream.range(0, k + data.length).map(i -> bitLen).toArray();
+        TripletRpZ2Vector[] randoms = crProvider.randRpShareZ2Vector(randomBitNums);
+        TripletRpZ2Vector[] shuffleInput = new TripletRpZ2Vector[data.length + k];
+        IntStream.range(0, data.length).forEach(i -> shuffleInput[i] = (TripletRpZ2Vector) data[i]);
+        System.arraycopy(randoms, 0, shuffleInput, data.length, randoms.length);
+        logStepInfo(PtoState.PTO_STEP, "invShuffle column", 1, 4, resetAndGetTime(), "append mask");
+
+        stopWatch.start();
+        BitVector[] d2p = trans3To2Sharing(shuffleInput, rpc.getParty(1), rpc.getParty(2));
+        int[] mu = null;
+        if (selfId >= 1) {
+            d2p = ShuffleUtils.applyPermutationToRows(d2p, ShuffleUtils.invOfPermutation(pai[selfId & 1]));
+        } else {
+            mu = ShuffleUtils.invOfPermutation(ShuffleUtils.applyPermutation(pai[0], pai[1]));
+        }
+        TripletRpZ2Vector[] midRes = trans2To3Sharing(d2p, rpc.getParty(1), rpc.getParty(2), allBitNums);
+        logStepInfo(PtoState.PTO_STEP, "invShuffle column", 2, 4, resetAndGetTime(), "P1-P2 invShuffle");
+
+        stopWatch.start();
+        d2p = trans3To2SharingTranspose(midRes, bitLen, rpc.getParty(0), rpc.getParty(1));
+        if (selfId == 0) {
+            d2p = ShuffleUtils.applyPermutation(d2p, mu);
+        } else if (selfId == 1) {
+            d2p = ShuffleUtils.applyPermutation(d2p, ShuffleUtils.invOfPermutation(pai[0]));
+            sendBitVectors(PtoStep.SHUFFLE_MSG.ordinal(), rightParty(), d2p);
+        } else {
+            int[] receiveBitNums = new int[pai[0].length];
+            Arrays.fill(receiveBitNums, k + data.length);
+            d2p = receiveBitVectors(PtoStep.SHUFFLE_MSG.ordinal(), leftParty(), receiveBitNums);
+            d2p = ShuffleUtils.applyPermutation(d2p, ShuffleUtils.invOfPermutation(pai[1]));
+        }
+        TripletRpZ2Vector[] extendRes = trans2To3SharingTranspose(d2p, rpc.getParty(0), rpc.getParty(2), bitLen, shuffleInput.length);
+        logStepInfo(PtoState.PTO_STEP, "invShuffle column", 3, 4, resetAndGetTime(), "P0-P2 P0-P1 invShuffle");
+
+        stopWatch.start();
+        verifyShufflePairColumn(shuffleInput, midRes);
+        verifyShufflePairColumn(midRes, extendRes);
+        logStepInfo(PtoState.PTO_STEP, "invShuffle column", 4, 4, resetAndGetTime(), "verify shuffle column");
 
         logPhaseInfo(PtoState.PTO_END);
         return Arrays.copyOf(extendRes, data.length);
@@ -640,7 +697,9 @@ public class Aby3MalShuffleParty extends AbstractAby3ShuffleParty implements Aby
     public TripletRpLongMacVector[] permuteNetwork(MpcLongVector[] input, int[] fun, int targetLen,
                                                    Party programmer, Party sender, Party receiver) throws MpcAbortException {
         LOGGER.info("P{} start trans3To2Sharing in A permuteNetwork", rpc.ownParty().getPartyId());
-        LongVector[] d2p = trans3To2Sharing((TripletRpLongVector[]) input, programmer, sender, targetLen);
+        LongVector[] d2p = trans3To2Sharing(
+            Arrays.stream(input).map(each -> (TripletRpLongVector) each).toArray(TripletRpLongVector[]::new),
+            programmer, sender, targetLen);
         int columnLength = Math.max(input[0].getNum(), targetLen);
         LOGGER.info("P{} start permuteNetworkImplWithData in A permuteNetwork", rpc.ownParty().getPartyId());
         d2p = this.permuteNetworkImplWithData(d2p, fun, columnLength, programmer, sender, receiver);

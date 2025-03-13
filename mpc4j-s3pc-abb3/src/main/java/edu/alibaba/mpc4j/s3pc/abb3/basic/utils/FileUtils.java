@@ -9,7 +9,10 @@ import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -21,18 +24,30 @@ import java.util.Arrays;
 public class FileUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileUtils.class);
 
+    /**
+     * write binary data into file
+     */
     public static void writeFile(BitVector[] data, String filePath){
         writeByteFile(filePath, bitVectorToFileMsg(data));
     }
 
+    /**
+     * read binary data from file
+     */
     public static BitVector[] readFileIntoBitVectors(String filePath, boolean deleteFlag){
         return fileMsgToBitVector(readByteFile(filePath, deleteFlag));
     }
 
+    /**
+     * write long data into file
+     */
     public static void writeFile(long[][] data, String filePath){
         writeByteFile(filePath, longMatrixToFileMsg(data));
     }
 
+    /**
+     * read long data from file
+     */
     public static long[][] readFileIntoLongMatrix(String filePath, boolean deleteFlag){
         return fileMsgToLongMatrix(readByteFile(filePath, deleteFlag));
     }
@@ -203,7 +218,7 @@ public class FileUtils {
         }
         // 删除文件夹中的所有文件包括子文件夹
         File[] files = dirFile.listFiles();
-        if (files != null && files.length > 0) {
+        if (files != null) {
             for (File file : files) {
                 // 删除子文件
                 if (file.isFile()) {

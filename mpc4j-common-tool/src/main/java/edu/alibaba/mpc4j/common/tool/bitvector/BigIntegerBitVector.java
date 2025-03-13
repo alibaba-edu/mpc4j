@@ -340,6 +340,7 @@ public class BigIntegerBitVector implements BitVector {
         MathPreconditions.checkNonNegativeInRangeClosed("n", n, bitNum);
         bigInteger = bigInteger.shiftRight(n);
         bitNum -= n;
+        byteNum = CommonUtils.getByteLength(bitNum);
     }
 
     @Override

@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.RpZ2Mtp;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.RpZ2MtpConfig;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.buffer.RpZ2BufferMtpConfig;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.file.RpZ2FileMtpConfig;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.simulate.RpZ2SimMtpConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +52,11 @@ public class RpZ2MtpTest extends AbstractThreePartyMemoryRpcPto {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
+
+        configurations.add(new Object[]{
+            MtProviderType.SIMULATE.name(),
+            new RpZ2SimMtpConfig.Builder().build()
+        });
 
         configurations.add(new Object[]{
             MtProviderType.BUFFER.name(),

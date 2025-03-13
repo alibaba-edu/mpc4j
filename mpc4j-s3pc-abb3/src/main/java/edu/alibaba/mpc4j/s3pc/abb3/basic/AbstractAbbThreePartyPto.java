@@ -37,12 +37,18 @@ public abstract class AbstractAbbThreePartyPto extends AbstractThreePartyPto {
      * index of message that this party sends to or receives from his right party
      */
     protected int indexSendToRight, indexReceiveFromRight;
+    /**
+     * whether it is the top protocol or not
+     */
+    protected boolean isTop;
+
     protected AbstractAbbThreePartyPto(PtoDesc ptoDesc, Rpc rpc, Party leftParty, Party rightParty, MultiPartyPtoConfig config) {
         super(ptoDesc, rpc, leftParty, rightParty, config);
         indexSendToLeft = 0;
         indexReceiveFromLeft = 0;
         indexSendToRight = 0;
         indexReceiveFromRight = 0;
+        isTop = true;
     }
 
     protected AbstractAbbThreePartyPto(PtoDesc ptoDesc, Rpc rpc, MultiPartyPtoConfig config) {
@@ -53,6 +59,7 @@ public abstract class AbstractAbbThreePartyPto extends AbstractThreePartyPto {
         indexReceiveFromLeft = 0;
         indexSendToRight = 0;
         indexReceiveFromRight = 0;
+        isTop = true;
     }
 
     protected void addMultiSubPto(MultiPartyPto... subPtos){
@@ -61,6 +68,20 @@ public abstract class AbstractAbbThreePartyPto extends AbstractThreePartyPto {
         }
     }
 
+    @Override
+    protected void addSubPto(MultiPartyPto pto) {
+        super.addSubPto(pto);
+        if (pto instanceof AbstractAbbThreePartyPto) {
+            ((AbstractAbbThreePartyPto) pto).disTop();
+        }
+    }
+
+    /**
+     * the current protocol is not the top protocol
+     */
+    public void disTop() {
+        isTop = false;
+    }
 
     protected void logStepInfo(PtoState ptoState, String funcName, int stepIndex, int totalStepIndex, long time) {
         assert stepIndex >= 0 && stepIndex <= totalStepIndex
@@ -115,18 +136,14 @@ public abstract class AbstractAbbThreePartyPto extends AbstractThreePartyPto {
     }
 
     protected List<byte[]> receive(int stepId, Party fromParty){
-//        LOGGER.info("{} waiting for msg from {} step id:{}, info:{}, ptoID:{}", rpc.ownParty().getPartyId(), fromParty.getPartyId(), stepId, fromParty.equals(leftParty()) ? indexReceiveFromLeft : indexReceiveFromRight, getPtoDesc().getPtoId());
         int info = fromParty.equals(leftParty()) ? indexReceiveFromLeft++ : indexReceiveFromRight++;
         DataPacketHeader header = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), stepId, info,
             fromParty.getPartyId(), ownParty().getPartyId()
         );
-        List<byte[]> data = rpc.receive(header).getPayload();
-//        LOGGER.info("{} received msg from {} step id:{}, info:{}, ptoID:{}", rpc.ownParty().getPartyId(), fromParty.getPartyId(), stepId, fromParty.equals(leftParty()) ? indexReceiveFromLeft - 1 : indexReceiveFromRight - 1, getPtoDesc().getPtoId());
-        return data;
+        return rpc.receive(header).getPayload();
     }
     protected void send(int stepId, Party toParty, List<byte[]> data){
-//        LOGGER.info("{} send msg to {} step id:{}, info:{}, ptoID:{}", rpc.ownParty().getPartyId(), toParty.getPartyId(), stepId, toParty.equals(leftParty()) ? indexSendToLeft : indexSendToRight, getPtoDesc().getPtoId());
         int info = toParty.equals(leftParty()) ? indexSendToLeft++ : indexSendToRight++;
         DataPacketHeader header = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), stepId, info,

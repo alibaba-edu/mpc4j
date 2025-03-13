@@ -63,6 +63,10 @@ public class CpKsPirTest extends AbstractTwoPartyMemoryRpcPto {
         configurations.add(new Object[]{
             CpKsPirType.SIMPLE_NAIVE.name(), new SimpleNaiveCpKsPirConfig.Builder().build()
         });
+        // Chalamet
+        configurations.add(new Object[]{
+            CpKsPirType.CHALAMET.name(), new ChalametCpKsPirConfig.Builder().build()
+        });
         // PAI (CKS)
         configurations.add(new Object[]{
             CpKsPirType.PAI_CKS.name(), new PaiCpCksPirConfig.Builder().build()
@@ -94,10 +98,6 @@ public class CpKsPirTest extends AbstractTwoPartyMemoryRpcPto {
             new Alpr21CpKsPirConfig.Builder()
                 .setCpIdxPirConfig(new SimpleCpIdxPirConfig.Builder().build())
                 .build()
-        });
-        // Chalamet
-        configurations.add(new Object[]{
-            CpKsPirType.CHALAMET.name(), new ChalametCpKsPirConfig.Builder().build()
         });
 
         return configurations;

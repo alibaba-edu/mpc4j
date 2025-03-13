@@ -63,11 +63,6 @@ public class RpLongFileMtp extends AbstractRpLongMtp implements RpLongMtp {
     }
 
     @Override
-    public RpLongEnvParty getEnv() {
-        return rpLongMtg.getEnv();
-    }
-
-    @Override
     protected void fillBuffer() throws MpcAbortException {
         if (allFileName == null) {
             updateFileList();

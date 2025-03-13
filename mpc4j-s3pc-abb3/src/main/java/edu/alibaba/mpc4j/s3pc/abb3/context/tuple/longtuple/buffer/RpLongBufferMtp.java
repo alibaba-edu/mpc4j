@@ -4,12 +4,12 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.PartyState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.s3pc.abb3.context.cr.S3pcCrProvider;
-import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.buffer.RpZ2BufferMtpPtoDesc;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.AbstractRpLongMtp;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.RpLongMtp;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.env.RpLongEnvParty;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.generator.RpLongMtg;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.generator.RpLongMtgFactory;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.z2tuple.buffer.RpZ2BufferMtpPtoDesc;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.zlong.replicate.TripletRpLongVector;
 
 import java.util.Arrays;
@@ -40,11 +40,6 @@ public class RpLongBufferMtp extends AbstractRpLongMtp implements RpLongMtp {
         }
         rpLongMtg.init(totalBit);
         initState();
-    }
-
-    @Override
-    public RpLongEnvParty getEnv() {
-        return rpLongMtg.getEnv();
     }
 
     @Override

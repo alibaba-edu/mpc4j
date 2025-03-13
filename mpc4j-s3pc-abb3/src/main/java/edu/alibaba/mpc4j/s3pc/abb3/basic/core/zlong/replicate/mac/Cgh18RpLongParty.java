@@ -188,8 +188,8 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
             LongVector.create(Arrays.stream(xi.getElements()).map(each -> each * key).toArray())
         ).toArray(LongVector[]::new);
         return TripletRpLongMacVector.create(currentMacIndex, new LongVector[]{
-            selfId == 0 ? xi : LongVector.createZeros(xi.getNum()),
-            selfId == 2 ? xi : LongVector.createZeros(xi.getNum())
+            selfId == 0 ? xi.copy() : LongVector.createZeros(xi.getNum()),
+            selfId == 2 ? xi.copy() : LongVector.createZeros(xi.getNum())
         }, macRes);
     }
 
@@ -596,6 +596,57 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
         }
     }
 
+    @Override
+    public TripletLongVector rowAdderWithPrefix(TripletLongVector data, TripletLongVector prefixData, boolean invOrder){
+        TripletRpLongMacVector res;
+        long[][] tmp = new long[2][data.getNum()];
+        int startIndex = invOrder ? data.getNum() - 1 : 0;
+        int endIndex = invOrder ? 0 : data.getNum() - 1;
+        for (int dim = 0; dim < 2; dim++) {
+            long[] originData = data.getVectors()[dim].getElements();
+            tmp[dim][startIndex] = prefixData.getVectors()[dim].getElement(0) + originData[startIndex];
+            if(invOrder){
+                for (int i = startIndex - 1; i >= 0; i--) {
+                    tmp[dim][i] = tmp[dim][i + 1] + originData[i];
+                }
+            }else{
+                for (int i = 1; i < data.getNum(); i++) {
+                    tmp[dim][i] = tmp[dim][i - 1] + originData[i];
+                }
+            }
+        }
+        if (data instanceof TripletRpLongMacVector && prefixData instanceof TripletRpLongMacVector) {
+            TripletRpLongMacVector tmpInput = (TripletRpLongMacVector) data;
+            TripletRpLongMacVector tmpPrefix = (TripletRpLongMacVector) prefixData;
+            if (tmpInput.getMacIndex() == currentMacIndex) {
+                if (tmpPrefix.getMacIndex() != currentMacIndex) {
+                    TripletRpLongMacVector[] in = new TripletRpLongMacVector[]{tmpPrefix};
+                    genMac(in);
+                    tmpPrefix.setMacVec(in[0].getMacVec());
+                }
+                long[][] tmpMac = new long[2][data.getNum()];
+                for (int dim = 0; dim < 2; dim++) {
+                    long[] originData = tmpInput.getMacVec()[dim].getElements();
+                    tmpMac[dim][startIndex] = tmpPrefix.getMacVec()[dim].getElement(0) + originData[startIndex];
+                    if(invOrder){
+                        for (int i = startIndex - 1; i >= 0; i--) {
+                            tmpMac[dim][i] = tmpMac[dim][i + 1] + originData[i];
+                        }
+                    }else{
+                        for (int i = 1; i < data.getNum(); i++) {
+                            tmpMac[dim][i] = tmpMac[dim][i - 1] + originData[i];
+                        }
+                    }
+                }
+                res = TripletRpLongMacVector.create(currentMacIndex, tmp, tmpMac);
+                prefixData.setElements(res, endIndex, 0, 1);
+                return res;
+            }
+        }
+        res = (TripletRpLongMacVector) create(false, tmp);
+        prefixData.setElements(res, endIndex, 0, 1);
+        return res;
+    }
 
     @Override
     public void verifyMul() throws MpcAbortException {

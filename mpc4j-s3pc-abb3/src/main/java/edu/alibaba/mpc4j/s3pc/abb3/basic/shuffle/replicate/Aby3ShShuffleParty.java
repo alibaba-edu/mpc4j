@@ -11,11 +11,11 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.s3pc.abb3.basic.core.z2.TripletZ2cParty;
+import edu.alibaba.mpc4j.s3pc.abb3.basic.core.zlong.TripletLongParty;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.shuffle.ShuffleOperations.ShuffleOp;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.shuffle.replicate.Aby3ShufflePtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.utils.ShuffleUtils;
-import edu.alibaba.mpc4j.s3pc.abb3.basic.core.z2.TripletZ2cParty;
-import edu.alibaba.mpc4j.s3pc.abb3.basic.core.zlong.TripletLongParty;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.z2.replicate.TripletRpZ2Vector;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.zlong.replicate.TripletRpLongVector;
 import org.apache.commons.lang3.time.StopWatch;
@@ -178,6 +178,46 @@ public class Aby3ShShuffleParty extends AbstractAby3ShuffleParty implements Aby3
     }
 
     @Override
+    public TripletRpZ2Vector[] invShuffleColumn(int[][] pai, MpcZ2Vector... data) throws MpcAbortException {
+        logPhaseInfo(PtoState.PTO_BEGIN);
+        MathPreconditions.checkEqual("pai.length", "2", pai.length, 2);
+        MathPreconditions.checkEqual("pai[0].length", "pai[1].length", pai[0].length, pai[1].length);
+        int[] transBit = new int[pai[0].length];
+        Arrays.fill(transBit, data.length);
+
+        stopWatch.start();
+        TripletRpZ2Vector[] tmp = Arrays.stream(data).map(ea -> (TripletRpZ2Vector) ea).toArray(TripletRpZ2Vector[]::new);
+        BitVector[] d2p = trans3To2SharingTranspose(tmp, pai[0].length, rpc.getParty(1), rpc.getParty(2));
+        logStepInfo(PtoState.PTO_STEP, "invShuffle", 1, 3, resetAndGetTime(), "trans 3-sharing to 2-sharing");
+
+        stopWatch.start();
+        if (selfId == 0) {
+            int[] mu = ShuffleUtils.invOfPermutation(ShuffleUtils.applyPermutation(pai[0], pai[1]));
+            d2p = receiveBitVectors(PtoStep.COMM_WITH_SPECIFIC_PARTY.ordinal(), leftParty(), transBit);
+            reRand2pShare(d2p, rightParty());
+            d2p = ShuffleUtils.applyPermutation(d2p, mu);
+        } else if (selfId == 1) {
+            d2p = ShuffleUtils.applyPermutation(d2p, ShuffleUtils.invOfPermutation(pai[1]));
+            reRand2pShare(d2p, leftParty());
+            d2p = ShuffleUtils.applyPermutation(d2p, ShuffleUtils.invOfPermutation(pai[0]));
+            sendBitVectors(PtoStep.COMM_WITH_SPECIFIC_PARTY.ordinal(), rightParty(), d2p);
+        } else {
+            d2p = ShuffleUtils.applyPermutation(d2p, ShuffleUtils.invOfPermutation(pai[0]));
+            sendBitVectors(PtoStep.COMM_WITH_SPECIFIC_PARTY.ordinal(), rightParty(), d2p);
+            d2p = receiveBitVectors(PtoStep.COMM_WITH_SPECIFIC_PARTY.ordinal(), leftParty(), transBit);
+            d2p = ShuffleUtils.applyPermutation(d2p, ShuffleUtils.invOfPermutation(pai[1]));
+        }
+        logStepInfo(PtoState.PTO_STEP, "invShuffle", 2, 3, resetAndGetTime(), "shuffling data");
+
+        stopWatch.start();
+        TripletRpZ2Vector[] res = trans2To3SharingTranspose(d2p, rpc.getParty(0), rpc.getParty(2), pai[0].length, data.length);
+        logStepInfo(PtoState.PTO_STEP, "invShuffle", 3, 3, resetAndGetTime(), "trans 2-sharing to 3-sharing");
+
+        logPhaseInfo(PtoState.PTO_END);
+        return res;
+    }
+
+    @Override
     public TripletRpLongVector[] shuffle(int[][] pai, MpcLongVector... data) throws MpcAbortException {
         logPhaseInfo(PtoState.PTO_BEGIN);
         MathPreconditions.checkEqual("pai.length", "2", pai.length, 2);
@@ -215,57 +255,6 @@ public class Aby3ShShuffleParty extends AbstractAby3ShuffleParty implements Aby3
         logPhaseInfo(PtoState.PTO_END);
         return res;
     }
-
-//    @Override
-//    public TripletRpZl64Vector[] shuffle(int[][] pai, MpcLongVector... data) throws MpcAbortException {
-//        logPhaseInfo(PtoState.PTO_BEGIN);
-//        MathPreconditions.checkEqual("pai.length", "2", pai.length, 2);
-//        MathPreconditions.checkEqual("pai[0].length", "pai[1].length", pai[0].length, pai[1].length);
-//
-//        stopWatch.start();
-//        LongVector[] d2p;
-//        TripletRpZl64Vector[] rand = crProvider.randRpShareZl64Vector(Arrays.stream(data).mapToInt(MpcLongVector::getNum).toArray());
-//        logStepInfo(PtoState.PTO_STEP, "shuffle", 1, 3, resetAndGetTime(), "generate randomness");
-//
-//        stopWatch.start();
-//        if (selfId == 0) {
-//            d2p = Arrays.stream(data).map(each -> each.getVectors()[0].add(each.getVectors()[1])).toArray(LongVector[]::new);
-//            d2p = ShuffleUtils.applyPermutationToRows(d2p, pai[0]);
-//            for(int i = 0; i < d2p.length; i++){
-//                d2p[i].subi(rand[i].getVectors()[0]);
-//            }
-//            d2p = ShuffleUtils.applyPermutationToRows(d2p, pai[1]);
-//            for(int i = 0; i < d2p.length; i++){
-//                d2p[i].subi(rand[i].getVectors()[1]);
-//            }
-//            sendLongVectors(PtoStep.COMM_WITH_SPECIFIC_PARTY.ordinal(), leftParty(), d2p);
-//        } else if (selfId == 1) {
-//            d2p = receiveLongVectors(PtoStep.COMM_WITH_SPECIFIC_PARTY.ordinal(), rightParty());
-//            d2p = ShuffleUtils.applyPermutationToRows(d2p, pai[0]);
-//            for(int i = 0; i < d2p.length; i++){
-//                d2p[i].addi(rand[i].getVectors()[0]);
-//            }
-//            d2p = ShuffleUtils.applyPermutationToRows(d2p, pai[1]);
-//        } else {
-//            d2p = Arrays.stream(data).map(each -> each.getVectors()[0]).toArray(LongVector[]::new);
-//            d2p = ShuffleUtils.applyPermutationToRows(d2p, pai[1]);
-//            for(int i = 0; i < d2p.length; i++){
-//                d2p[i].addi(rand[i].getVectors()[1]);
-//            }
-//            sendLongVectors(PtoStep.COMM_WITH_SPECIFIC_PARTY.ordinal(), leftParty(), d2p);
-//            d2p = receiveLongVectors(PtoStep.COMM_WITH_SPECIFIC_PARTY.ordinal(), rightParty());
-//            d2p = ShuffleUtils.applyPermutationToRows(d2p, pai[0]);
-//        }
-//        logStepInfo(PtoState.PTO_STEP, "shuffle", 2, 3, resetAndGetTime(), "shuffling data");
-//
-//        stopWatch.start();
-//        int[] targetDataNums = Arrays.stream(data).mapToInt(MpcLongVector::getNum).toArray();
-//        TripletRpZl64Vector[] res = trans2To3Sharing(d2p, rpc.getParty(1), rpc.getParty(2), targetDataNums);
-//        logStepInfo(PtoState.PTO_STEP, "shuffle", 3, 3, resetAndGetTime(), "trans 2-sharing to 3-sharing");
-//
-//        logPhaseInfo(PtoState.PTO_END);
-//        return res;
-//    }
 
     @Override
     public LongVector[] shuffleOpen(int[][] pai, MpcLongVector... data) throws MpcAbortException {
@@ -547,7 +536,9 @@ public class Aby3ShShuffleParty extends AbstractAby3ShuffleParty implements Aby3
     @Override
     public MpcLongVector[] permuteNetwork(MpcLongVector[] input, int[] fun, int targetLen,
                                           Party programmer, Party sender, Party receiver) throws MpcAbortException {
-        LongVector[] d2p = trans3To2Sharing((TripletRpLongVector[]) input, programmer, sender, targetLen);
+        LongVector[] d2p = trans3To2Sharing(
+            Arrays.stream(input).map(ea -> (TripletRpLongVector) ea).toArray(TripletRpLongVector[]::new),
+            programmer, sender, targetLen);
         int maxLength = Math.max(input[0].getNum(), targetLen);
         d2p = this.permuteNetworkImplWithData(d2p, fun, maxLength, programmer, sender, receiver);
         return trans2To3Sharing(d2p, programmer, receiver, IntStream.range(0, input.length).map(i -> targetLen).toArray());

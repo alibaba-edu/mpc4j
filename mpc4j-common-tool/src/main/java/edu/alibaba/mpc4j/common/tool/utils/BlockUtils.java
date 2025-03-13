@@ -15,11 +15,11 @@ public class BlockUtils {
     /**
      * byte length
      */
-    private static final int BYTE_LENGTH = CommonConstants.BLOCK_BYTE_LENGTH;
+    public static final int BYTE_LENGTH = CommonConstants.BLOCK_BYTE_LENGTH;
     /**
      * long length
      */
-    private static final int LONG_LENGTH = CommonConstants.BLOCK_LONG_LENGTH;
+    public static final int LONG_LENGTH = CommonConstants.BLOCK_LONG_LENGTH;
     /**
      * unsafe API.
      * See <a href="https://howtodoinjava.com/java-examples/usage-of-class-sun-misc-unsafe/">Usage of class sun.misc.Unsafe</a>
@@ -43,6 +43,19 @@ public class BlockUtils {
      */
     private BlockUtils() {
         // empty
+    }
+
+    /**
+     * Clones a block.
+     *
+     * @param x x.
+     * @return cloned x.
+     */
+    public static byte[] clone(byte[] x) {
+        assert x.length == BYTE_LENGTH;
+        byte[] y = new byte[BYTE_LENGTH];
+        System.arraycopy(x, 0, y, 0, BYTE_LENGTH);
+        return y;
     }
 
     /**
@@ -70,5 +83,76 @@ public class BlockUtils {
         assert x.length == LONG_LENGTH;
         assert y.length == BYTE_LENGTH;
         UNSAFE.copyMemory(x, Unsafe.ARRAY_LONG_BASE_OFFSET, y, Unsafe.ARRAY_BYTE_BASE_OFFSET, BYTE_LENGTH);
+    }
+
+    /**
+     * In-place XOR operation. The result is placed in x.
+     *
+     * @param x x.
+     * @param y y.
+     */
+    public static byte[] xor(byte[] x, byte[] y) {
+        assert x.length == BYTE_LENGTH;
+        assert y.length == BYTE_LENGTH;
+        byte[] z = new byte[BYTE_LENGTH];
+        // trivial implementation is the fastest one
+        for (int j = 0; j < BYTE_LENGTH; j++) {
+            z[j] = (byte) (x[j] ^ y[j]);
+        }
+        return z;
+    }
+
+    /**
+     * In-place XOR operation. The result is placed in x.
+     *
+     * @param x x.
+     * @param y y.
+     */
+    public static void xori(byte[] x, byte[] y) {
+        assert x.length == BYTE_LENGTH;
+        assert y.length == BYTE_LENGTH;
+        // use UNSAFE to do operations
+        for (int j = 0; j < LONG_LENGTH; j++) {
+            long xLong = UNSAFE.getLong(x, Unsafe.ARRAY_BYTE_BASE_OFFSET + Long.BYTES * j);
+            long yLong = UNSAFE.getLong(y, Unsafe.ARRAY_BYTE_BASE_OFFSET + Long.BYTES * j);
+            xLong ^= yLong;
+            UNSAFE.getAndSetLong(x, Unsafe.ARRAY_BYTE_BASE_OFFSET + Long.BYTES * j, xLong);
+        }
+    }
+
+    /**
+     * AND operation.
+     *
+     * @param x x.
+     * @param y y.
+     * @return x AND y.
+     */
+    public static byte[] and(byte[] x, byte[] y) {
+        assert x.length == BYTE_LENGTH;
+        assert y.length == BYTE_LENGTH;
+        byte[] z = new byte[BYTE_LENGTH];
+        // trivial implementation is the fastest one
+        for (int j = 0; j < BYTE_LENGTH; j++) {
+            z[j] = (byte) (x[j] & y[j]);
+        }
+        return z;
+    }
+
+    /**
+     * In-place XOR operation. The result is placed in x.
+     *
+     * @param x x.
+     * @param y y.
+     */
+    public static void andi(byte[] x, byte[] y) {
+        assert x.length == BYTE_LENGTH;
+        assert y.length == BYTE_LENGTH;
+        // use UNSAFE to do operations
+        for (int j = 0; j < LONG_LENGTH; j++) {
+            long xLong = UNSAFE.getLong(x, Unsafe.ARRAY_BYTE_BASE_OFFSET + Long.BYTES * j);
+            long yLong = UNSAFE.getLong(y, Unsafe.ARRAY_BYTE_BASE_OFFSET + Long.BYTES * j);
+            xLong &= yLong;
+            UNSAFE.getAndSetLong(x, Unsafe.ARRAY_BYTE_BASE_OFFSET + Long.BYTES * j, xLong);
+        }
     }
 }

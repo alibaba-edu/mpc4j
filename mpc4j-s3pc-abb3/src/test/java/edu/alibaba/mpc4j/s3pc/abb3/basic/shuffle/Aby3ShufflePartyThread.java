@@ -149,6 +149,7 @@ public class Aby3ShufflePartyThread extends Thread {
                         break;
                     case B_SHUFFLE_COLUMN:
                     case B_SHUFFLE_ROW:
+                    case B_INV_SHUFFLE_COLUMN:
                     case B_SWITCH_NETWORK:
                     case B_PERMUTE_NETWORK:
                     case B_DUPLICATE_NETWORK:
@@ -312,6 +313,7 @@ public class Aby3ShufflePartyThread extends Thread {
 
     public void testBcShuffle(ShuffleOp op, int[] bitOutputLen) throws MpcAbortException {
         LOGGER.info("testing {}", op.toString());
+        TripletProvider tripletProvider = shuffleParty.getProvider();
         BitVector[] plainData = null;
         TripletRpZ2Vector[] input;
         MpcZ2Vector[][] output;
@@ -345,6 +347,22 @@ public class Aby3ShufflePartyThread extends Thread {
             }
             case B_SHUFFLE_COLUMN: {
                 output = new MpcZ2Vector[][]{shuffleParty.shuffleColumn(input)};
+                break;
+            }
+            case B_INV_SHUFFLE_COLUMN: {
+                int[][] rand = tripletProvider.getCrProvider().getRandIntArray(longNum);
+                int[][] pai = Arrays.stream(rand).map(ShuffleUtils::permutationGeneration).toArray(int[][]::new);
+                output = new MpcZ2Vector[][]{shuffleParty.invShuffleColumn(pai, input)};
+                Rpc rpc = shuffleParty.getRpc();
+                DataPacketHeader header = new DataPacketHeader(0, 0, 0, 1, 0);
+                if (rpc.ownParty().getPartyId() == 0) {
+                    byte[] pai2Byte = rpc.receive(header).getPayload().get(0);
+                    int[] pai2 = IntUtils.byteArrayToIntArray(pai2Byte);
+                    fun = new int[][]{ShuffleUtils.applyPermutation(ShuffleUtils.applyPermutation(pai[0], pai[1]), pai2)};
+                } else if (rpc.ownParty().getPartyId() == 1) {
+                    byte[] pai2Byte = IntUtils.intArrayToByteArray(pai[1]);
+                    rpc.send(DataPacket.fromByteArrayList(header, Collections.singletonList(pai2Byte)));
+                }
                 break;
             }
             case B_PERMUTE_NETWORK: {

@@ -58,6 +58,15 @@ public interface ShuffleParty extends ThreePartyPto {
     MpcZ2Vector[] shuffleColumn(int[][] pai, MpcZ2Vector... data) throws MpcAbortException;
 
     /**
+     * shuffle the data with predetermined permutation in the inverse order, whose result is Y = pai^{-1} · X
+     *
+     * @param data data to be shuffled
+     * @param pai  predetermined permutation
+     * @throws MpcAbortException if the protocol is abort.
+     */
+    MpcZ2Vector[] invShuffleColumn(int[][] pai, MpcZ2Vector... data) throws MpcAbortException;
+
+    /**
      * randomly shuffle the data, the elements are stored in column
      *
      * @param data data to be shuffled

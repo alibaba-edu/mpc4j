@@ -66,8 +66,8 @@ public abstract class AbstractAby3Z2cParty extends AbstractTripletZ2cParty imple
     @Override
     public TripletRpZ2Vector[] setPublicValues(BitVector[] data) {
         return Arrays.stream(data).map(x -> TripletRpZ2Vector.create(
-            selfId == 0 ? x : BitVectorFactory.createZeros(x.bitNum()),
-            selfId == 2 ? x : BitVectorFactory.createZeros(x.bitNum()))).toArray(TripletRpZ2Vector[]::new);
+            selfId == 0 ? x.copy() : BitVectorFactory.createZeros(x.bitNum()),
+            selfId == 2 ? x.copy() : BitVectorFactory.createZeros(x.bitNum()))).toArray(TripletRpZ2Vector[]::new);
     }
 
     @Override
@@ -190,6 +190,9 @@ public abstract class AbstractAby3Z2cParty extends AbstractTripletZ2cParty imple
         if (xi.isPlain()) {
             xi.getBitVector().noti();
         } else {
+//            if (selfId != 1) {
+//                xi.getBitVectors()[selfId >> 1].noti();
+//            }
             Arrays.stream(xi.getBitVectors()).forEach(BitVector::noti);
         }
     }

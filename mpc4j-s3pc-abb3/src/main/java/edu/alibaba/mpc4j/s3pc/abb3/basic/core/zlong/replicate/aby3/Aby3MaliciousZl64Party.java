@@ -74,8 +74,6 @@ public class Aby3MaliciousZl64Party extends AbstractAby3LongParty implements Tri
         memoryBuffer = new LinkedList<>();
     }
 
-
-
     @Override
     public TripletRpLongVector[] shareOwn(LongVector[] xiArray) throws MpcAbortException {
         // 1. generate a shared random vector, and reveal it to data owner

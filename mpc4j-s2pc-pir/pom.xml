@@ -5,7 +5,7 @@
     <parent>
         <artifactId>mpc4j</artifactId>
         <groupId>edu.alibaba</groupId>
-        <version>1.1.3-SNAPSHOT</version>
+        <version>1.1.4-alpha</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -25,39 +25,33 @@
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-rpc</artifactId>
-            <version>1.1.3-SNAPSHOT</version>
+            <version>1.1.4-alpha</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-structure</artifactId>
-            <version>1.1.3-SNAPSHOT</version>
+            <version>1.1.4-alpha</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-crypto-algs</artifactId>
-            <version>1.1.3-SNAPSHOT</version>
+            <version>1.1.4-alpha</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-s2pc-aby</artifactId>
-            <version>1.1.3-SNAPSHOT</version>
+            <version>1.1.4-alpha</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-s2pc-opf</artifactId>
-            <version>1.1.3-SNAPSHOT</version>
+            <version>1.1.4-alpha</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-s2pc-pso</artifactId>
-            <version>1.1.3-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.alibaba</groupId>
-            <artifactId>mpc4j-crypto-fhe</artifactId>
-            <version>1.1.3-SNAPSHOT</version>
-            <scope>compile</scope>
+            <version>1.1.4-alpha</version>
         </dependency>
     </dependencies>
 

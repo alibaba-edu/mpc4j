@@ -66,8 +66,8 @@ public abstract class AbstractAby3LongParty extends AbstractTripletLongParty imp
     @Override
     public TripletRpLongVector setPublicValue(LongVector xi) {
         return TripletRpLongVector.create(
-            selfId == 0 ? xi : LongVector.createZeros(xi.getNum()),
-            selfId == 2 ? xi : LongVector.createZeros(xi.getNum()));
+            selfId == 0 ? xi.copy() : LongVector.createZeros(xi.getNum()),
+            selfId == 2 ? xi.copy() : LongVector.createZeros(xi.getNum()));
     }
 
     @Override
@@ -235,6 +235,30 @@ public abstract class AbstractAby3LongParty extends AbstractTripletLongParty imp
                 xi.setVectors(xi.getVectors()[0], LongVector.create(newArray));
             }
         }
+    }
+
+    @Override
+    public TripletLongVector rowAdderWithPrefix(TripletLongVector data, TripletLongVector prefixData, boolean invOrder){
+        MathPreconditions.checkEqual("prefixData.getNum()", "1", prefixData.getNum(), 1);
+        long[][] tmp = new long[2][data.getNum()];
+        int startIndex = invOrder ? data.getNum() - 1 : 0;
+        int endIndex = invOrder ? 0 : data.getNum() - 1;
+        for(int dim = 0; dim < 2; dim++){
+            long[] originData = data.getVectors()[dim].getElements();
+            tmp[dim][startIndex] = prefixData.getVectors()[dim].getElement(0) + originData[startIndex];
+            if(invOrder){
+                for(int i = startIndex - 1; i >= 0; i--){
+                    tmp[dim][i] = tmp[dim][i + 1] + originData[i];
+                }
+            }else{
+                for(int i = 1; i < data.getNum(); i++){
+                    tmp[dim][i] = tmp[dim][i - 1] + originData[i];
+                }
+            }
+        }
+        TripletRpLongVector res = TripletRpLongVector.create(tmp);
+        prefixData.setElements(res, endIndex, 0, 1);
+        return res;
     }
 
     /**

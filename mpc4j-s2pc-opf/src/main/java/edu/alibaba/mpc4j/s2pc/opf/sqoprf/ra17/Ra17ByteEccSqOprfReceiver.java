@@ -41,7 +41,6 @@ public class Ra17ByteEccSqOprfReceiver extends AbstractSqOprfReceiver {
     public Ra17ByteEccSqOprfReceiver(Rpc receiverRpc, Party senderParty, Ra17ByteEccSqOprfConfig config) {
         super(Ra17ByteEccSqOprfPtoDesc.getInstance(), receiverRpc, senderParty, config);
         byteFullEcc = ByteEccFactory.createFullInstance(envType);
-//        byteFullEcc = ByteEccFactory.createFastestFullInstance();
         kdf = KdfFactory.createInstance(envType);
     }
 

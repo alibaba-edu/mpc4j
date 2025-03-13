@@ -270,7 +270,8 @@ public class ShuffleUtils {
         for(TripletZ2Vector each : input){
             assert each instanceof TripletRpZ2Vector;
         }
-        return applyPermutationToRows((TripletRpZ2Vector[]) input, pai);
+        TripletRpZ2Vector[] permInput = Arrays.stream(input).map(each -> (TripletRpZ2Vector) each).toArray(TripletRpZ2Vector[]::new);
+        return applyPermutationToRows(permInput, pai);
     }
 
     public static TripletRpZ2Vector[] applyPermutationToRows(TripletRpZ2Vector[] input, int[] pai) throws MpcAbortException {

@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+// package for api
+package edu.alibaba.work.femur.service.api;
+
+import "google/protobuf/empty.proto";
+
+// FemurStatus
+enum FemurStatus {
+    SERVER_NOT_INIT = 0;
+    SERVER_NOT_KVDB = 1;
+    SERVER_SUCC_RES = 2;
+    CLIENT_NOT_REGS = 3;
+    HINT_V_MISMATCH = 4;
+}
+
+// Client Register Request
+message RegisterRequest {
+    repeated bytes register_request_payload = 1;
+}
+
+// client Register Response
+message RegisterResponse {
+    FemurStatus code = 1;
+    repeated bytes register_response_payload = 2;
+}
+
+// Hint Response
+message HintResponse {
+    FemurStatus code = 1;
+    repeated bytes hints_response_payload = 2;
+}
+
+// Client Query Request
+message QueryRequest {
+    repeated bytes query_request_payload = 1;
+}
+
+// Client Query Response
+message QueryResponse {
+    FemurStatus code = 1;
+    repeated bytes query_response_payload = 2;
+}
+
+// service
+service FemurServicePirServer {
+    // client register
+    rpc register(RegisterRequest) returns (RegisterResponse);
+    // client hint request
+    rpc getHint(google.protobuf.Empty) returns (HintResponse);
+    // client PIR query
+    rpc query(QueryRequest) returns (QueryResponse);
+}

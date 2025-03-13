@@ -52,4 +52,12 @@ public class CommonConstants {
      * 统计安全性字节长度
      */
     public static final int STATS_BYTE_LENGTH = 5;
+    /**
+     * leaf epsilon parameter used to build PGM-index.
+     */
+    public static final int PGM_INDEX_LEAF_EPSILON = 64;
+    /**
+     * recursive epsilon range used to build this index.
+     */
+    public static final int PGM_INDEX_RECURSIVE_EPSILON = 32;
 }

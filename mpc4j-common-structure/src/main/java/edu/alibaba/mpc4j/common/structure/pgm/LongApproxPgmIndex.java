@@ -16,6 +16,37 @@ import java.nio.ByteBuffer;
  * @date 2024/8/1
  */
 public class LongApproxPgmIndex {
+
+    /**
+     * Gets left bound (inclusive).
+     *
+     * @param epsilon epsilon.
+     * @return left bound (inclusive).
+     */
+    public static int leftBound(int epsilon) {
+        return epsilon - 1;
+    }
+
+    /**
+     * Gets right bound (exclusive).
+     *
+     * @param epsilon epsilon.
+     * @return right bound (exclusive).
+     */
+    public static int rightBound(int epsilon) {
+        return epsilon + 3;
+    }
+
+    /**
+     * Gets bound.
+     *
+     * @param epsilon epsilon.
+     * @return bound.
+     */
+    public static int bound(int epsilon) {
+        return leftBound(epsilon) + rightBound(epsilon);
+    }
+
     /**
      * Empty immutable PGM-Index.
      */

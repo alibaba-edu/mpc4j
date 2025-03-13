@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.RpLongMtp;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.RpLongMtpConfig;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.buffer.RpLongBufferMtpConfig;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.file.RpLongFileMtpConfig;
+import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.longtuple.simulate.RpLongSimMtpConfig;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +52,11 @@ public class RpLongMtpTest extends AbstractThreePartyMemoryRpcPto {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
+
+        configurations.add(new Object[]{
+            MtProviderType.SIMULATE.name() + "_SIMULATE",
+            new RpLongSimMtpConfig.Builder().build()
+        });
 
         configurations.add(new Object[]{
             MtProviderType.BUFFER.name(),

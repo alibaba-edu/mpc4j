@@ -166,15 +166,6 @@ public class ByteEccFactory {
     }
 
     /**
-     * Creates the fastest full instance.
-     *
-     * @return the fastest full instance.
-     */
-    public static ByteFullEcc createFastestFullInstance() {
-        return FourqByteFullEcc.getInstance();
-    }
-
-    /**
      * 创建乘法字节椭圆曲线。
      *
      * @param byteEccType 字节椭圆曲线类型。

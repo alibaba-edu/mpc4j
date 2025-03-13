@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.circuit.z2;
 
 import edu.alibaba.mpc4j.common.circuit.CircuitConfig;
 import edu.alibaba.mpc4j.common.circuit.z2.adder.AdderFactory;
+import edu.alibaba.mpc4j.common.circuit.z2.comparator.ComparatorFactory.ComparatorType;
 import edu.alibaba.mpc4j.common.circuit.z2.multiplier.MultiplierFactory;
 import edu.alibaba.mpc4j.common.circuit.z2.psorter.PsorterFactory;
 import edu.alibaba.mpc4j.common.circuit.z2.psorter.PsorterFactory.SorterTypes;
@@ -19,6 +20,10 @@ public class Z2CircuitConfig implements CircuitConfig {
      */
     private AdderFactory.AdderTypes adderType;
     /**
+     * Comparator type.
+     */
+    private ComparatorType comparatorType;
+    /**
      * Multiplier type.
      */
     private MultiplierFactory.MultiplierTypes multiplierType;
@@ -33,6 +38,7 @@ public class Z2CircuitConfig implements CircuitConfig {
 
     private Z2CircuitConfig(Builder builder) {
         setAdderType(builder.adderType);
+        setComparatorType(builder.comparatorType);
         setMultiplierType(builder.multiplierType);
         setSorterType(builder.sorterType);
         this.pSorterType = builder.pSorterType;
@@ -44,6 +50,14 @@ public class Z2CircuitConfig implements CircuitConfig {
 
     public void setAdderType(AdderFactory.AdderTypes adderType) {
         this.adderType = adderType;
+    }
+
+    public void setComparatorType(ComparatorType comparatorType) {
+        this.comparatorType = comparatorType;
+    }
+
+    public ComparatorType getComparatorType() {
+        return comparatorType;
     }
 
     public MultiplierFactory.MultiplierTypes getMultiplierType() {
@@ -71,6 +85,10 @@ public class Z2CircuitConfig implements CircuitConfig {
          */
         private AdderFactory.AdderTypes adderType;
         /**
+         * Comparator type.
+         */
+        private ComparatorType comparatorType;
+        /**
          * Multiplier type.
          */
         private MultiplierFactory.MultiplierTypes multiplierType;
@@ -85,6 +103,7 @@ public class Z2CircuitConfig implements CircuitConfig {
 
         public Builder() {
             adderType = AdderFactory.AdderTypes.RIPPLE_CARRY;
+            comparatorType = ComparatorType.SERIAL_COMPARATOR;
             multiplierType = MultiplierFactory.MultiplierTypes.SHIFT_ADD;
             sorterType = SorterFactory.SorterTypes.BITONIC;
             pSorterType = PsorterFactory.SorterTypes.BITONIC;
@@ -92,6 +111,11 @@ public class Z2CircuitConfig implements CircuitConfig {
 
         public Builder setAdderType(AdderFactory.AdderTypes adderType) {
             this.adderType = adderType;
+            return this;
+        }
+
+        public Builder setComparatorType(ComparatorType comparatorType) {
+            this.comparatorType = comparatorType;
             return this;
         }
 

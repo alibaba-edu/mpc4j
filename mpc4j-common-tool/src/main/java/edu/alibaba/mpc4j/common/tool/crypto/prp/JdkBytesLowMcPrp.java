@@ -17,20 +17,17 @@ import java.util.stream.IntStream;
  * 实现细节：
  * 1. Sbox从右到左构造，即byte[16]的0、3、...、27比特为a，第1、4、7、...、28比特为b，第2、5、8、...、29比特为c。
  * 2. 总轮数为r，则密钥扩展矩阵K_0、...、K_r，线性变换矩阵L_1、...、L_r、常数值C_1、...、C_r以Hex编码的形式保存在文件中。
- * 文件名称为lowmc_128_128_r.txt。
- *
- * - 源代码参考：https://github.com/LowMC/lowmc
- *
- * LowMPC相关原理：
- * - 加密原理：Albrecht M R, Rechberger C, Schneider T, et al. Ciphers for MPC and FHE. EUROCRYPT 2015, Springer, Cham,
+ * 文件名称为lowmc_128_128_r.txt。源代码参考：<a href="https://github.com/LowMC/lowmc">lowmc</a>.
+ * <p>
+ * LowMC加密原理：Albrecht M R, Rechberger C, Schneider T, et al. Ciphers for MPC and FHE. EUROCRYPT 2015, Springer, Cham,
  * pp. 430-454.
- *
+ * <p>
  * The Sbox is specified in Figure 2, and coincides with the Sbox used for PRINTcipher.
  * S(a, b, c) = (a ⊕ (b ⊙ c), a ⊕ b ⊕ (a ⊙ c), a ⊕ b ⊕ c ⊕ (a ⊙ b).
- *
- * - 解密电路：Liu F, Isobe T, Meier W. Cryptanalysis of full LowMC and LowMC-M with algebraic techniques. CRYPTO 2021.
+ * <p>
+ * LowMC解密电路：Liu F, Isobe T, Meier W. Cryptanalysis of full LowMC and LowMC-M with algebraic techniques. CRYPTO 2021.
  * Springer, Cham, pp. 368-401.
- *
+ * <p>
  * Denote the 3-bit input and output of the S-box by (x_0, x_1, x_2) and (z_0, z_1, z_2), respectively. Based on
  * the definition of the S-box, the following relations hold:
  * z_0 = x_0 ⊕ (x_1 ⊙ x_2), z_1 = x_0 ⊕ x_1 ⊕ (x_0 ⊙ x_2), z_2 = x_0 ⊕ x_1 ⊕ x_2 ⊕ (x_0 ⊙ x_1).
@@ -310,24 +307,15 @@ public class JdkBytesLowMcPrp implements Prp {
 
     @Override
     public PrpFactory.PrpType getPrpType() {
-        switch (round) {
-            case 20:
-                return PrpFactory.PrpType.JDK_BYTES_LOW_MC_20;
-            case 21:
-                return PrpFactory.PrpType.JDK_BYTES_LOW_MC_21;
-            case 23:
-                return PrpFactory.PrpType.JDK_BYTES_LOW_MC_23;
-            case 32:
-                return PrpFactory.PrpType.JDK_BYTES_LOW_MC_32;
-            case 192:
-                return PrpFactory.PrpType.JDK_BYTES_LOW_MC_192;
-            case 208:
-                return PrpFactory.PrpType.JDK_BYTES_LOW_MC_208;
-            case 287:
-                return PrpFactory.PrpType.JDK_BYTES_LOW_MC_287;
-            default:
-                throw new IllegalStateException("Unknown LowMc type with round = " + round);
-
-        }
+        return switch (round) {
+            case 20 -> PrpFactory.PrpType.JDK_BYTES_LOW_MC_20;
+            case 21 -> PrpFactory.PrpType.JDK_BYTES_LOW_MC_21;
+            case 23 -> PrpFactory.PrpType.JDK_BYTES_LOW_MC_23;
+            case 32 -> PrpFactory.PrpType.JDK_BYTES_LOW_MC_32;
+            case 192 -> PrpFactory.PrpType.JDK_BYTES_LOW_MC_192;
+            case 208 -> PrpFactory.PrpType.JDK_BYTES_LOW_MC_208;
+            case 287 -> PrpFactory.PrpType.JDK_BYTES_LOW_MC_287;
+            default -> throw new IllegalStateException("Unknown LowMc type with round = " + round);
+        };
     }
 }
