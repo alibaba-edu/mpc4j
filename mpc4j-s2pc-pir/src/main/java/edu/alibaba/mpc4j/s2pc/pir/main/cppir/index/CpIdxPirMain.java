@@ -246,7 +246,7 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
         taskId++;
         for (int setSizeIndex = 0; setSizeIndex < serverSetSizeNum; setSizeIndex++) {
             int serverSetSize = serverSetSizes[setSizeIndex];
-            List<Integer> indexList = readClientRetrievalIndexList(queryNum);
+            List<Integer> indexList = readClientRetrievalIndexList(queryNum, serverSetSize);
             runClient(clientRpc, serverParty, config, taskId, indexList, serverSetSize, entryBitLength, parallel, printWriter);
             taskId++;
         }
@@ -271,6 +271,22 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
         return indexList;
     }
 
+    private List<Integer> readClientRetrievalIndexList(int retrievalSize, int elementSize) throws IOException {
+        LOGGER.info("Client read retrieval list");
+        InputStreamReader inputStreamReader = new InputStreamReader(
+                new FileInputStream(PirUtils.getClientFileName(PirUtils.BYTES_CLIENT_PREFIX, retrievalSize, elementSize)),
+                CommonConstants.DEFAULT_CHARSET
+        );
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+        List<Integer> indexList = bufferedReader.lines()
+                .map(Hex::decode)
+                .map(IntUtils::byteArrayToInt)
+                .collect(Collectors.toCollection(ArrayList::new));
+        bufferedReader.close();
+        inputStreamReader.close();
+        return indexList;
+    }
+
     private void warmupClient(Rpc clientRpc, Party serverParty, CpIdxPirConfig config, int taskId)
         throws IOException, MpcAbortException {
         LOGGER.info(
@@ -278,7 +294,7 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
             clientRpc.ownParty().getPartyName(), WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH, WARMUP_QUERY_NUM,
             false
         );
-        List<Integer> indexList = readClientRetrievalIndexList(WARMUP_QUERY_NUM);
+        List<Integer> indexList = readClientRetrievalIndexList(WARMUP_QUERY_NUM, WARMUP_SERVER_SET_SIZE);
         CpIdxPirClient client = CpIdxPirFactory.createClient(clientRpc, serverParty, config);
         client.setTaskId(taskId);
         client.setParallel(false);
