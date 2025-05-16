@@ -7,8 +7,9 @@ package edu.alibaba.mpc4j.crypto.fhe.seal.serialization;
  * a large number of zero bytes in the output. Any compression algorithm should
  * be able to clean up these zero bytes and hence compress both ciphertext and
  * key data.
- * <p></p>
- * The implementation is from https://github.com/microsoft/SEAL/blob/main/native/src/seal/serialization.h#23
+ * <p>
+ * The implementation is from
+ * <a href="https://github.com/microsoft/SEAL/blob/main/native/src/seal/serialization.h#23">serialization.h</a>.
  *
  * @author Weiran Liu
  * @date 2023/12/11
@@ -57,15 +58,11 @@ public enum ComprModeType {
      * @return the corresponding SchemeType.
      */
     public static ComprModeType getByValue(int value) {
-        switch (value) {
-            case 0:
-                return NONE;
-            case 1:
-                return ZLIB;
-            case 2:
-                return ZSTD;
-            default:
-                throw new IllegalArgumentException("no match compression mode for given value");
-        }
+        return switch (value) {
+            case 0 -> NONE;
+            case 1 -> ZLIB;
+            case 2 -> ZSTD;
+            default -> throw new IllegalArgumentException("no match compression mode for given value");
+        };
     }
 }

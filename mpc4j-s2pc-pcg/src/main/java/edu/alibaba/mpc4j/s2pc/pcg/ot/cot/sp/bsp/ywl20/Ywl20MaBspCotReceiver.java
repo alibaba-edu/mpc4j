@@ -11,7 +11,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfReceiver;
@@ -101,7 +101,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
 
         stopWatch.start();
         List<byte[]> randomOracleKeyPayload = new LinkedList<>();
-        byte[] randomOracleKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] randomOracleKey = BlockUtils.zeroBlock();
         secureRandom.nextBytes(randomOracleKey);
         randomOracleKeyPayload.add(randomOracleKey);
         DataPacketHeader randomOracleKeyHeader = new DataPacketHeader(
@@ -201,7 +201,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
 
     private BspCotReceiverOutput generateReceiverOutput(List<byte[]> correlatePayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(correlatePayload.size() == batchNum);
-        byte[][] correlateByteArrays = correlatePayload.toArray(new byte[0][]);
+        byte[][] correlateByteArrays = correlatePayload.toArray(byte[][]::new);
         IntStream batchIndexIntStream = IntStream.range(0, batchNum);
         batchIndexIntStream = parallel ? batchIndexIntStream.parallel() : batchIndexIntStream;
         SspCotReceiverOutput[] sspCotReceiverOutputs = batchIndexIntStream
@@ -210,7 +210,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
                 // computes w[α]
                 for (int i = 0; i < eachNum; i++) {
                     if (i != alphaArray[batchIndex]) {
-                        BytesUtils.xori(correlateByteArrays[batchIndex], rbArray[i]);
+                        BlockUtils.xori(correlateByteArrays[batchIndex], rbArray[i]);
                     }
                 }
                 rbArray[alphaArray[batchIndex]] = correlateByteArrays[batchIndex];
@@ -222,17 +222,17 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
 
     private List<byte[]> generateCheckChoicePayload() {
         // R computes ϕ := Σ_{i ∈ [m]} χ_{α_l}^l ∈ F_{2^κ}
-        byte[] phi = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] phi = BlockUtils.zeroBlock();
         for (int l = 0; l < batchNum; l++) {
             byte[] indexMessage = ByteBuffer.allocate(Long.BYTES + Integer.BYTES + Integer.BYTES)
                 .putLong(extraInfo).putInt(l).putInt(alphaArray[l]).array();
             // Sample χ_α
             byte[] chiAlpha = randomOracle.getBytes(indexMessage);
-            BytesUtils.xori(phi, chiAlpha);
+            BlockUtils.xori(phi, chiAlpha);
         }
         // R sends x' := x + x^* ∈ F_2^κ to S
         byte[] xStar = BinaryUtils.binaryToByteArray(checkCotReceiverOutput.getChoices());
-        BytesUtils.xori(phi, xStar);
+        BlockUtils.xori(phi, xStar);
         List<byte[]> checkChoicePayload = new LinkedList<>();
         checkChoicePayload.add(phi);
         return checkChoicePayload;
@@ -240,11 +240,11 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
 
     private byte[] computeExpectHashValue(BspCotReceiverOutput receiverOutput) {
         // R computes Z :=  Σ_{i ∈ [κ]} (z^*[i]·X^i) ∈ F_{2^κ}
-        byte[] z = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] z = BlockUtils.zeroBlock();
         for (int checkIndex = 0; checkIndex < CommonConstants.BLOCK_BIT_LENGTH; checkIndex++) {
             byte[] zi = checkCotReceiverOutput.getRb(checkIndex);
             // z^*[i]·X^i
-            byte[] xi = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            byte[] xi = BlockUtils.zeroBlock();
             BinaryUtils.setBoolean(xi, checkIndex, true);
             gf2k.muli(zi, xi);
             // z += z^*[i]·X^i
@@ -256,7 +256,7 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
         lIntStream = parallel ? lIntStream.parallel() : lIntStream;
         byte[][] ws = lIntStream
             .mapToObj(l -> {
-                byte[] w = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                byte[] w = BlockUtils.zeroBlock();
                 for (int i = 0; i < eachNum; i++) {
                     // samples uniform {χ_i}_{i ∈ [n]}
                     byte[] indexMessage = ByteBuffer.allocate(Long.BYTES + Integer.BYTES + Integer.BYTES)
@@ -265,13 +265,13 @@ public class Ywl20MaBspCotReceiver extends AbstractBspCotReceiver {
                     // χ[i]·w[i]
                     gf2k.muli(chi, receiverOutput.get(l).getRb(i));
                     // w += χ[i]·w[i]
-                    BytesUtils.xori(w, chi);
+                    BlockUtils.xori(w, chi);
                 }
                 return w;
             })
             .toArray(byte[][]::new);
         // W := Σ_{i ∈ [n]} (χ[i]·w[i]) + Z
-        byte[] w = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] w = BlockUtils.zeroBlock();
         for (int l = 0; l < batchNum; l++) {
             gf2k.addi(w, ws[l]);
         }

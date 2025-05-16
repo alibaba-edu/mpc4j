@@ -17,6 +17,7 @@ import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.gmr21.Gmr21FlatNetRosnPtoDesc.Pto
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -125,6 +126,10 @@ public class Gmr21FlatNetRosnReceiver extends AbstractNetRosnReceiver {
         }
         receiverShareVector = new byte[num][byteLength];
         for (int levelIndex = 0; levelIndex < level; levelIndex++) {
+            if (level >= 39 && levelIndex % 4 == 0) {
+                sendOtherPartyEqualSizePayload(PtoStep.SYNCHRONIZE_MSG.ordinal(), Collections.singletonList(new byte[]{0}));
+            }
+
             List<byte[]> switchCorrectionPayload = receiveOtherPartyEqualSizePayload(PtoStep.SENDER_SEND_SWITCH_CORRECTIONS.ordinal(),
                 width, byteLength);
             handleCotReceiverOutputs(cotReceiverOutputs[levelIndex]);

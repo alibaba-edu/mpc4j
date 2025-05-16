@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
+import edu.alibaba.mpc4j.common.tool.hashbin.primitive.ArraySimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -49,7 +49,7 @@ public class Ywl20UniMspCotSender extends AbstractMspCotSender {
     /**
      * hash bin
      */
-    private SimpleIntHashBin intHashBin;
+    private ArraySimpleIntHashBin intHashBin;
     /**
      * position map
      */
@@ -131,7 +131,7 @@ public class Ywl20UniMspCotSender extends AbstractMspCotSender {
         m = IntCuckooHashBinFactory.getBinNum(Ywl20UniMspCotUtils.INT_CUCKOO_HASH_BIN_TYPE, t);
         byte[][] keys = hashKeysPayload.toArray(new byte[0][]);
         // Initialize m empty buckets {B_j}_{j ∈ [m]}.
-        intHashBin = new SimpleIntHashBin(envType, m, num, keys);
+        intHashBin = new ArraySimpleIntHashBin(envType, m, num, keys);
         // For each x ∈ [n], i ∈ [τ], compute j := h_i(x) and add x into bucket B_j.
         int[] xs = IntStream.range(0, num).toArray();
         intHashBin.insertItems(xs);

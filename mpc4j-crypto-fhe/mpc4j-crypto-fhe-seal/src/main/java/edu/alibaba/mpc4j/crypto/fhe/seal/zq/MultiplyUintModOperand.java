@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.fhe.seal.zq;
 
-import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 import org.apache.commons.lang3.builder.MultilineRecursiveToStringStyle;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
@@ -41,7 +41,7 @@ public class MultiplyUintModOperand {
      *
      * @param modulus a modulus.
      */
-    public void setQuotient(Modulus modulus) {
+    public void setQuotient(AbstractModulus modulus) {
         assert operand < modulus.value();
         long[] wideQuotient = new long[2];
         // 2^64 * operand
@@ -57,7 +57,7 @@ public class MultiplyUintModOperand {
      * @param newOperand a new operand, a 64-bit value.
      * @param modulus    a modulus.
      */
-    public void set(long newOperand, Modulus modulus) {
+    public void set(long newOperand, AbstractModulus modulus) {
         assert newOperand < modulus.value();
         operand = newOperand;
         setQuotient(modulus);

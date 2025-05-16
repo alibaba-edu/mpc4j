@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.lnot;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
@@ -87,18 +88,14 @@ public class LnotOutputTest {
         // create a sender output with less rs
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[][][] rsArray = IntStream.range(0, MAX_NUM)
-                .mapToObj(index ->
-                    BytesUtils.randomByteArrayVector(n - 1, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom)
-                )
+                .mapToObj(index -> BlockUtils.randomBlocks(n - 1, secureRandom))
                 .toArray(byte[][][]::new);
             LnotSenderOutput.create(l, rsArray);
         });
         // create a sender output with more rs
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[][][] rsArray = IntStream.range(0, MAX_NUM)
-                .mapToObj(index ->
-                    BytesUtils.randomByteArrayVector(n + 1, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom)
-                )
+                .mapToObj(index -> BlockUtils.randomBlocks(n + 1, secureRandom))
                 .toArray(byte[][][]::new);
             LnotSenderOutput.create(l, rsArray);
         });
@@ -111,14 +108,14 @@ public class LnotOutputTest {
             int[] choices = IntStream.range(0, MIN_NUM)
                 .map(index -> IntUtils.randomNonNegative(n, secureRandom))
                 .toArray();
-            byte[][] rbArray = BytesUtils.randomByteArrayVector(MAX_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] rbArray = BlockUtils.randomBlocks(MAX_NUM, secureRandom);
             LnotReceiverOutput.create(l, choices, rbArray);
         });
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             int[] choices = IntStream.range(0, MAX_NUM)
                 .map(index -> IntUtils.randomNonNegative(n, secureRandom))
                 .toArray();
-            byte[][] rbArray = BytesUtils.randomByteArrayVector(MIN_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] rbArray = BlockUtils.randomBlocks(MIN_NUM, secureRandom);
             LnotReceiverOutput.create(l, choices, rbArray);
         });
         // create a receiver with negative choice
@@ -126,7 +123,7 @@ public class LnotOutputTest {
             int[] choices = IntStream.range(0, MAX_NUM)
                 .map(index -> -1)
                 .toArray();
-            byte[][] rbArray = BytesUtils.randomByteArrayVector(MIN_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] rbArray = BlockUtils.randomBlocks(MIN_NUM, secureRandom);
             LnotReceiverOutput.create(l, choices, rbArray);
         });
         // create a receiver with large choice
@@ -134,7 +131,7 @@ public class LnotOutputTest {
             int[] choices = IntStream.range(0, MAX_NUM)
                 .map(index -> n)
                 .toArray();
-            byte[][] rbArray = BytesUtils.randomByteArrayVector(MIN_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] rbArray = BlockUtils.randomBlocks(MIN_NUM, secureRandom);
             LnotReceiverOutput.create(l, choices, rbArray);
         });
         // create a receiver output with mis-matched num
@@ -142,14 +139,14 @@ public class LnotOutputTest {
             int[] choices = IntStream.range(0, MAX_NUM)
                 .map(index -> IntUtils.randomNonNegative(n, secureRandom))
                 .toArray();
-            byte[][] rbArray = BytesUtils.randomByteArrayVector(MIN_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] rbArray = BlockUtils.randomBlocks(MIN_NUM, secureRandom);
             LnotReceiverOutput.create(l, choices, rbArray);
         });
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             int[] choices = IntStream.range(0, MIN_NUM)
                 .map(index -> IntUtils.randomNonNegative(n, secureRandom))
                 .toArray();
-            byte[][] rbArray = BytesUtils.randomByteArrayVector(MAX_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] rbArray = BlockUtils.randomBlocks(MAX_NUM, secureRandom);
             LnotReceiverOutput.create(l, choices, rbArray);
         });
         // create a receiver output with short rb

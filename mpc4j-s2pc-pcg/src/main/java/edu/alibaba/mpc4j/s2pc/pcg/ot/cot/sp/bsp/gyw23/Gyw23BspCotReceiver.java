@@ -1,8 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.gyw23;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.BpCdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.BpCdpprfReceiver;
@@ -133,11 +132,11 @@ public class Gyw23BspCotReceiver extends AbstractBspCotReceiver {
                     // R sets w[i] = X_i^h for i ∈ [n] \ {α}
                     byte[][] rbArray = bpCdpprfReceiverOutput.get(batchIndex).getV1Array();
                     // computes w[α] = ⊕_{j ∈ [0, 2^n), j ≠ α} X_n^j d
-                    rbArray[alpha] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    rbArray[alpha] = BlockUtils.zeroBlock();
                     // j ∈ [0, 2^n), j ≠ α
                     for (int j = 0; j < (1 << h); j++) {
                         if (j != alpha) {
-                            BytesUtils.xori(rbArray[alpha], rbArray[j]);
+                            BlockUtils.xori(rbArray[alpha], rbArray[j]);
                         }
                     }
                     // total number of elements is 2^h, reduce to num

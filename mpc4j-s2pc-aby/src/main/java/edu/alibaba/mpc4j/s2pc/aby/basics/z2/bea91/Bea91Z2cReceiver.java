@@ -1,9 +1,13 @@
 package edu.alibaba.mpc4j.s2pc.aby.basics.z2.bea91;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2Vector;
 import edu.alibaba.mpc4j.common.rpc.*;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.AbstractZ2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
@@ -11,12 +15,14 @@ import edu.alibaba.mpc4j.s2pc.aby.basics.z2.bea91.Bea91Z2cPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.Z2Triple;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.z2.Z2TripleGenFactory;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.z2.Z2TripleGenParty;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 /**
  * Bea91 Z2 circuit receiver.
@@ -29,17 +35,35 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
      * multiplication triple generation receiver
      */
     private final Z2TripleGenParty z2TripleGenReceiver;
+    /**
+     * COT receiver
+     */
+    private final CotReceiver cotReceiver;
+    /**
+     * COT sender
+     */
+    private final CotSender cotSender;
 
     public Bea91Z2cReceiver(Rpc receiverRpc, Party senderParty, Bea91Z2cConfig config) {
         super(Bea91Z2cPtoDesc.getInstance(), receiverRpc, senderParty, config);
         z2TripleGenReceiver = Z2TripleGenFactory.createReceiver(receiverRpc, senderParty, config.getZ2TripleGenConfig());
         addSubPto(z2TripleGenReceiver);
+        CotConfig cotConfig = config.getCotConfig();
+        cotReceiver = CotFactory.createReceiver(receiverRpc, senderParty, cotConfig);
+        addSubPto(cotReceiver);
+        cotSender = CotFactory.createSender(receiverRpc, senderParty, cotConfig);
+        addSubPto(cotSender);
     }
 
     public Bea91Z2cReceiver(Rpc receiverRpc, Party senderParty, Party aiderParty, Bea91Z2cConfig config) {
         super(Bea91Z2cPtoDesc.getInstance(), receiverRpc, senderParty, config);
         z2TripleGenReceiver = Z2TripleGenFactory.createReceiver(receiverRpc, senderParty, aiderParty, config.getZ2TripleGenConfig());
         addSubPto(z2TripleGenReceiver);
+        CotConfig cotConfig = config.getCotConfig();
+        cotReceiver = CotFactory.createReceiver(receiverRpc, senderParty, cotConfig);
+        addSubPto(cotReceiver);
+        cotSender = CotFactory.createSender(receiverRpc, senderParty, cotConfig);
+        addSubPto(cotSender);
     }
 
     @Override
@@ -49,6 +73,10 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
 
         stopWatch.start();
         z2TripleGenReceiver.init(expectTotalNum);
+        // since storing many COT outputs would lead to memory exception, here we generate COT when necessary
+        cotReceiver.init(expectTotalNum);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
+        cotSender.init(delta, expectTotalNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -265,5 +293,92 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
             logPhaseInfo(PtoState.PTO_END, "and");
             return z1SquareVector;
         }
+    }
+
+    @Override
+    public SquareZ2Vector[] and(MpcZ2Vector f, MpcZ2Vector[] xiArray) throws MpcAbortException {
+        SquareZ2Vector[] xis = Arrays.stream(xiArray).map(each -> (SquareZ2Vector) each).toArray(SquareZ2Vector[]::new);
+        boolean xIsPlain = xiArray[0].isPlain();
+        for (MpcZ2Vector mpcZ2Vector : xiArray) {
+            MathPreconditions.checkEqual("f.bitNum()", "xiArray[i].bitNum()", f.bitNum(), mpcZ2Vector.bitNum());
+            Preconditions.checkArgument(mpcZ2Vector.isPlain() == xIsPlain);
+        }
+        if (xIsPlain || f.isPlain()) {
+            // xi and f are both plain
+            SquareZ2Vector[] res = new SquareZ2Vector[xiArray.length];
+            for (int i = 0; i < xiArray.length; i++) {
+                res[i] = and(f, xiArray[i]);
+            }
+            return res;
+        } else {
+            // xi or yi is secret, ci is secret
+            logPhaseInfo(PtoState.PTO_BEGIN, "mux");
+
+            stopWatch.start();
+            // P1 invokes an instance of COT, where P1 is the receiver with inputs x1.
+            byte[] fBytes = f.getBitVector().getBytes();
+            boolean[] fBinary = BinaryUtils.byteArrayToBinary(fBytes, f.bitNum());
+            CotReceiverOutput cotReceiverOutput = cotReceiver.receive(fBinary);
+            // P1 invokes an instance of COT, where P1 is the sender.
+            CotSenderOutput cotSenderOutput = cotSender.send(f.bitNum());
+            stopWatch.stop();
+            long cotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+            stopWatch.reset();
+            logStepInfo(PtoState.PTO_STEP, 1, 3, cotTime);
+
+            int targetDim = xis.length;
+
+            stopWatch.start();
+            List<byte[]> delta1Payload = new LinkedList<>();
+            BitVector[][] otSendMask = handleOtSenderOutput(cotSenderOutput, targetDim);
+            for (int i = 0; i < targetDim; i++) {
+                otSendMask[1][i].xori(otSendMask[0][i]);
+                otSendMask[1][i].xori(xis[i].getBitVector());
+                delta1Payload.add(otSendMask[1][i].getBytes());
+            }
+            sendOtherPartyPayload(PtoStep.RECEIVER_SEND_DELTA1.ordinal(), delta1Payload);
+            stopWatch.stop();
+            long delta1Time = stopWatch.getTime(TimeUnit.MILLISECONDS);
+            stopWatch.reset();
+            logStepInfo(PtoState.PTO_STEP, 2, 3, delta1Time);
+
+            stopWatch.start();
+            BitVector[] otRecMask = handleOtReceiverOutput(cotReceiverOutput, targetDim);
+            List<byte[]> delta0Payload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_DELTA0.ordinal());
+            MpcAbortPreconditions.checkArgument(delta0Payload.size() == targetDim);
+            IntStream intStream = parallel ? IntStream.range(0, targetDim).parallel() : IntStream.range(0, targetDim);
+            SquareZ2Vector[] resVec = intStream.mapToObj(i -> {
+                BitVector delta0Vector = BitVectorFactory.create(f.bitNum(), delta0Payload.get(i));
+                delta0Vector.andi(f.getBitVector());
+                delta0Vector.xori(otRecMask[i]);
+                delta0Vector.xori(otSendMask[0][i]);
+                delta0Vector.xori(f.getBitVector().and(xis[i].getBitVector()));
+                return SquareZ2Vector.create(delta0Vector, false);
+            }).toArray(SquareZ2Vector[]::new);
+            stopWatch.stop();
+            long delta0Time = stopWatch.getTime(TimeUnit.MILLISECONDS);
+            stopWatch.reset();
+
+            logStepInfo(PtoState.PTO_STEP, 3, 3, delta0Time);
+
+            logPhaseInfo(PtoState.PTO_END, "mux");
+            return resVec;
+        }
+
+    }
+
+    @Override
+    public SquareZ2Vector[] mux(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray, MpcZ2Vector ci) throws MpcAbortException {
+        SquareZ2Vector[] xis = Arrays.stream(xiArray).map(each -> (SquareZ2Vector) each).toArray(SquareZ2Vector[]::new);
+        SquareZ2Vector[] yis = Arrays.stream(yiArray).map(each -> (SquareZ2Vector) each).toArray(SquareZ2Vector[]::new);
+        setDyadicOperatorInput(xis, yis);
+        SquareZ2Vector c = (SquareZ2Vector) ci;
+
+        SquareZ2Vector[] xorRes = IntStream.range(0, xis.length).mapToObj(i -> xor(xis[i], yis[i])).toArray(SquareZ2Vector[]::new);
+        SquareZ2Vector[] res = and(c, xorRes);
+        for (int i = 0; i < xis.length; i++) {
+            xori(res[i], xis[i]);
+        }
+        return res;
     }
 }

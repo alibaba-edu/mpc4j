@@ -3,14 +3,10 @@ package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.bsp.gyw23;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
@@ -24,7 +20,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.bsp.gyw23.Gyw23Gf2kBspVolePtoDesc
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.ssp.Gf2kSspVoleSenderOutput;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -267,7 +262,7 @@ public class Gyw23Gf2kBspVoleSender extends AbstractGf2kBspVoleSender {
                 ggmTree.add(new byte[0][]);
                 byte[][] lastLevel = new byte[1 << h][];
                 byte[] kn = notBinaryAlphaArray[batchIndex][h - 1] ? cn1 : cn0;
-                field.subi(kn, hash.hash(BytesUtils.xor(mu, cotReceiverOutput.getRb(cotOffset + h - 1))));
+                field.subi(kn, hash.hash(BlockUtils.xor(mu, cotReceiverOutput.getRb(cotOffset + h - 1))));
                 int alphaStar = notBinaryAlphaArray[batchIndex][h - 1] ? 1 : 0;
                 lastLevel[alphaStar] = kn;
                 lastLevel[alphaArray[batchIndex]] = field.createZero();
@@ -305,11 +300,11 @@ public class Gyw23Gf2kBspVoleSender extends AbstractGf2kBspVoleSender {
                 byte[][] kbs = new byte[h - 1][];
                 System.arraycopy(cns, 0, kbs, 0, h - 1);
                 for (int i = 0; i < h - 1; i++) {
-                    BytesUtils.xori(kbs[i], cotReceiverOutput.getRb(cotOffset + i));
+                    BlockUtils.xori(kbs[i], cotReceiverOutput.getRb(cotOffset + i));
                 }
                 // K_n^{!α_n} = c_n^{r_n} - H(µ ⊕ M[r_n])
                 byte[] kn = notBinaryAlphaArray[batchIndex][h - 1] ? cn1 : cn0;
-                field.subi(kn, hash.hash(BytesUtils.xor(mu, cotReceiverOutput.getRb(cotOffset + h - 1))));
+                field.subi(kn, hash.hash(BlockUtils.xor(mu, cotReceiverOutput.getRb(cotOffset + h - 1))));
                 // create ggm three
                 ArrayList<byte[][]> ggmTree = new ArrayList<>(h + 1);
                 // place the level-0 key with an empty key
@@ -338,15 +333,16 @@ public class Gyw23Gf2kBspVoleSender extends AbstractGf2kBspVoleSender {
                                 // K_i^{2j} = H(K_{i - 1}^{j})
                                 currentLevel[2 * j] = hash.hash(previousLevel[j]);
                                 // K_i^{2j + 1} = K_{i - 1}^{j} - K_i^{2j}
-                                currentLevel[2 * j + 1] = BytesUtils.xor(previousLevel[j], currentLevel[2 * j]);
+                                currentLevel[2 * j + 1] = BlockUtils.xor(previousLevel[j], currentLevel[2 * j]);
                             }
                         }
                         // compute the remaining seeds
                         int alphaStar = (alphaPrefix << 1) + notAlphaiInt;
-                        currentLevel[alphaStar] = kb;
+                        currentLevel[alphaStar] = BlockUtils.zeroBlock();
+                        BlockUtils.xori(currentLevel[alphaStar], kb);
                         for (int j = 0; j < (1 << (i - 1)); j++) {
                             if (j != alphaPrefix) {
-                                BytesUtils.xori(currentLevel[alphaStar], currentLevel[2 * j + notAlphaiInt]);
+                                BlockUtils.xori(currentLevel[alphaStar], currentLevel[2 * j + notAlphaiInt]);
                             }
                         }
                     }
@@ -359,15 +355,14 @@ public class Gyw23Gf2kBspVoleSender extends AbstractGf2kBspVoleSender {
                 boolean notAlphaH = notBinaryAlphaArray[batchIndex][h - 1];
                 int intAlphaH = notAlphaH ? 0 : 1;
                 int intNotAlphaH = notAlphaH ? 1 : 0;
-                byte[] one = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                Arrays.fill(one, (byte) 0b11111111);
+                byte[] one = BlockUtils.allOneBlock();
                 // for j ∈ [0, 2^{n−1}), j != α_1 ... α_{n−1}, b ∈ {0, 1} do: X_n^{2j+b} = H(X^j_{n - 1} ⊕ b)
                 for (int j = 0; j < (1 << (h - 1)); j++) {
                     if (j != alphaPrefix) {
                         // K_i^{2j} = H(K_{i - 1}^{j})
                         lastLevel[2 * j] = hash.hash(previousLastLevel[j]);
                         // K_i^{2j + 1} = K_{i - 1}^{j} - K_i^{2j}
-                        lastLevel[2 * j + 1] = hash.hash(BytesUtils.xor(previousLastLevel[j], one));
+                        lastLevel[2 * j + 1] = hash.hash(BlockUtils.xor(previousLastLevel[j], one));
                     }
                 }
                 // X^{α_1 ... α_{n−1} !α_n} = K_n^{!α_n} - Σ_{j ∈ [0, 2^h), j ≠ α} {X_n^{2j + !α_n}}

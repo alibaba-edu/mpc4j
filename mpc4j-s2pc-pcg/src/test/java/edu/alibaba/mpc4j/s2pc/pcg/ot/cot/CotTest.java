@@ -2,9 +2,8 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.silent.SilentCotConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.impl.direct.DirectCotConfig;
@@ -108,7 +107,7 @@ public class CotTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             boolean[] choices = BinaryUtils.randomBinary(num, SECURE_RANDOM);
             CotSenderThread senderThread = new CotSenderThread(sender, delta, num);
             CotReceiverThread receiverThread = new CotReceiverThread(receiver, choices);
@@ -148,7 +147,7 @@ public class CotTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} (multiple round) start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             boolean[] choices = BinaryUtils.randomBinary(DEFAULT_NUM, SECURE_RANDOM);
             CotSenderThread senderThread = new CotSenderThread(sender, delta, num, num / 2 - 1);
             CotReceiverThread receiverThread = new CotReceiverThread(receiver, choices, num / 2 - 1);

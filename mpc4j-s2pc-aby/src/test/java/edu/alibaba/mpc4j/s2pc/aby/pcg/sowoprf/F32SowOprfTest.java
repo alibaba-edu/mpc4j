@@ -35,7 +35,7 @@ public class F32SowOprfTest extends AbstractTwoPartyMemoryRpcPto {
     /**
      * large batch size
      */
-    private static final int LARGE_BATCH_SIZE = (1 << 14) - 1;
+    private static final int LARGE_BATCH_SIZE = (1 << 14) - 13;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {

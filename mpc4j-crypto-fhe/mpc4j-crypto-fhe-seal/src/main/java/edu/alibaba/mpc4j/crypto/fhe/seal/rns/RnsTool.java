@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.crypto.fhe.seal.rns;
 
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.CoeffIterator;
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.RnsIterator;
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.ntt.NttTables;
 import edu.alibaba.mpc4j.crypto.fhe.seal.ntt.NttTool;
@@ -118,20 +119,20 @@ public class RnsTool {
     /**
      * m_tilde = 2^32
      */
-    private Modulus mTilde;
+    private AbstractModulus mTilde;
     /**
      * m_sk
      */
-    private Modulus mSk;
+    private AbstractModulus mSk;
     /**
      * t, i.e., the plaintext modulus
      */
-    private Modulus t;
+    private AbstractModulus t;
     /**
      * γ, an integer co-prime to {q_1, ..., q_k}, γ ≡ 1 (mod 2n).
      * There is a trade-off between the size of γ and the error bound. SEAL chooses γ ~ 2^61.
      */
-    private Modulus gamma;
+    private AbstractModulus gamma;
     /**
      * |(q_k)^{-1}|_t
      */
@@ -148,7 +149,7 @@ public class RnsTool {
      * @param coeffModulus      the coefficient modulus.
      * @param plainModulus      the plaintext modulus.
      */
-    public RnsTool(int polyModulusDegree, RnsBase coeffModulus, Modulus plainModulus) {
+    public RnsTool(int polyModulusDegree, RnsBase coeffModulus, AbstractModulus plainModulus) {
         initialize(polyModulusDegree, coeffModulus, plainModulus);
     }
 
@@ -159,7 +160,7 @@ public class RnsTool {
      * @param q                 the coefficient modulus.
      * @param t                 the plaintext modulus.
      */
-    private void initialize(int polyModulusDegree, RnsBase q, Modulus t) {
+    private void initialize(int polyModulusDegree, RnsBase q, AbstractModulus t) {
         // Return if q is out of bounds
         if (q.size() < Constants.SEAL_COEFF_MOD_COUNT_MIN || q.size() > Constants.SEAL_COEFF_MOD_COUNT_MAX) {
             throw new IllegalArgumentException("rns base is invalid.");
@@ -212,7 +213,7 @@ public class RnsTool {
         // Set up t-gamma base if t_ is non-zero (using BFV)
         if (!this.t.isZero()) {
             baseTGammaSize = 2;
-            baseTGamma = new RnsBase(new Modulus[]{t, gamma});
+            baseTGamma = new RnsBase(new AbstractModulus[]{t, gamma});
         }
         // Generate the B_sk NTTTables; these are used for NTT after base extension to B_sk
         baseBskNttTables = new NttTables[baseBskSize];
@@ -223,16 +224,16 @@ public class RnsTool {
         }
         if (!this.t.isZero()) {
             // Set up BaseConvTool for q --> {t}
-            baseQToTConv = new BaseConverter(baseQ, new RnsBase(new Modulus[]{this.t}));
+            baseQToTConv = new BaseConverter(baseQ, new RnsBase(new AbstractModulus[]{this.t}));
         }
         // Set up BaseConverter for q --> B_sk
         baseQToBskConv = new BaseConverter(baseQ, baseBsk);
         // Set up BaseConverter for q --> {m_tilde}
-        baseQToMTildeConv = new BaseConverter(baseQ, new RnsBase(new Modulus[]{mTilde}));
+        baseQToMTildeConv = new BaseConverter(baseQ, new RnsBase(new AbstractModulus[]{mTilde}));
         // Set up BaseConverter for B --> q
         baseBToQConv = new BaseConverter(baseB, baseQ);
         // Set up BaseConverter for B --> {m_sk}
-        baseBToMskConv = new BaseConverter(baseB, new RnsBase(new Modulus[]{mSk}));
+        baseBToMskConv = new BaseConverter(baseB, new RnsBase(new AbstractModulus[]{mSk}));
         if (baseTGamma != null) {
             // Set up BaseConverter for q --> {t, gamma}
             baseQToTGammaConv = new BaseConverter(baseQ, baseTGamma);
@@ -658,7 +659,7 @@ public class RnsTool {
         CoeffIterator lastInput = poly.coeffIter[baseQSize - 1];
 
         // add (q_k - 1) / 2 to (ct mod q_k) to change from flooring to rounding
-        Modulus lastModulus = baseQ.getBase(baseQSize - 1);
+        AbstractModulus lastModulus = baseQ.getBase(baseQSize - 1);
         long half = lastModulus.value() >>> 1;
         PolyArithmeticSmallMod.addPolyScalarCoeffMod(lastInput, coeffCount, half, lastModulus, lastInput);
 
@@ -697,7 +698,7 @@ public class RnsTool {
         NttTool.inverseNttNegacyclicHarvey(lastInput, rnsNttTables[baseQSize - 1]);
 
         // add (q_k - 1) / 2 to change from flooring to rounding
-        Modulus lastModulus = baseQ.getBase(baseQSize - 1);
+        AbstractModulus lastModulus = baseQ.getBase(baseQSize - 1);
         long half = lastModulus.value() >>> 1;
         PolyArithmeticSmallMod.addPolyScalarCoeffMod(lastInput, coeffCount, half, lastModulus, lastInput);
 
@@ -743,17 +744,32 @@ public class RnsTool {
         }
     }
 
-    public void modTAndDivideQLastInplace(RnsIterator input) {
+    /**
+     * In-place computes mod T and divide last q.
+     * <p>
+     * This is invoked by <code>encrypt_zero_internal</code> in <code>Encryptor</code> and <code>mod_switch_scale_to_next</code>
+     * in <code>Evaluator</code> for BGV scheme we do not implement BGV yet. So, it is not invoked in the current version.
+     * <p>
+     * This is updated for SEAL v4.1.2.
+     *
+     * @param input RNS iterator.
+     * @param rns_ntt_tables RNS NTT tables.
+     */
+    public void mod_t_and_divide_q_last_ntt_inplace(RnsIterator input, final NttTables[] rns_ntt_tables) {
         int modulus_size = baseQ.size();
-        final Modulus[] curr_modulus = baseQ.getBase();
-        final Modulus plain_modulus = t;
+        final AbstractModulus[] curr_modulus = baseQ.getBase();
+        final AbstractModulus plain_modulus = t;
         long last_modulus_value = curr_modulus[modulus_size - 1].value();
 
         // SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(neg_c_last_mod_t, coeff_count_, pool);
         CoeffIterator neg_c_last_mod_t = CoeffIterator.allocate(coeffCount);
         // neg_c_last_mod_t = - c_last (mod t)
-        // modulo_poly_coeffs(CoeffIter(input[modulus_size - 1]), coeff_count_, plain_modulus, neg_c_last_mod_t);
-        PolyArithmeticSmallMod.moduloPolyCoeff(input.coeffIter[modulus_size - 1], coeffCount, plain_modulus, neg_c_last_mod_t);
+        // CoeffIter c_last = input[modulus_size - 1];
+        CoeffIterator c_last = input.coeffIter[modulus_size - 1];
+        // inverse_ntt_negacyclic_harvey(c_last, rns_ntt_tables[modulus_size - 1]);
+        NttTool.inverseNttNegacyclicHarvey(c_last, rns_ntt_tables[modulus_size - 1]);
+        // modulo_poly_coeffs(c_last, coeff_count_, plain_modulus, neg_c_last_mod_t);
+        PolyArithmeticSmallMod.moduloPolyCoeff(c_last, coeffCount, plain_modulus, neg_c_last_mod_t);
         // negate_poly_coeffmod(neg_c_last_mod_t, coeff_count_, plain_modulus, neg_c_last_mod_t);
         PolyArithmeticSmallMod.negatePolyCoeffMod(neg_c_last_mod_t, coeffCount, plain_modulus, neg_c_last_mod_t);
         if (invQLastModT != 1) {
@@ -768,11 +784,12 @@ public class RnsTool {
         // SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(delta_mod_q_i, coeff_count_, pool);
         CoeffIterator delta_mod_q_i = CoeffIterator.allocate(coeffCount);
 
-        // SEAL_ITERATE(iter(input, curr_modulus, inv_q_last_mod_q_), modulus_size - 1, [&](auto I) {
+        // SEAL_ITERATE(iter(input, curr_modulus, inv_q_last_mod_q_, rns_ntt_tables), modulus_size - 1, [&](auto I)
         for (int i = 0; i < modulus_size - 1; i++) {
             CoeffIterator get_0_I = input.coeffIter[i];
-            Modulus get_1_I = curr_modulus[i];
+            AbstractModulus get_1_I = curr_modulus[i];
             MultiplyUintModOperand get_2_I = invQLastModQ[i];
+            NttTables get_3_I = rns_ntt_tables[i];
             // delta_mod_q_i = neg_c_last_mod_t (mod q_i)
             // modulo_poly_coeffs(neg_c_last_mod_t, coeff_count_, get<1>(I), delta_mod_q_i);
             PolyArithmeticSmallMod.moduloPolyCoeff(neg_c_last_mod_t, coeffCount, get_1_I, delta_mod_q_i);
@@ -785,16 +802,22 @@ public class RnsTool {
             );
 
             // c_i = c_i - c_last - neg_c_last_mod_t * q_last (mod 2q_i)
-            // const uint64_t two_times_q_i = get<1>(I).value() << 1;
-            final long two_times_q_i = get_1_I.value() << 1;
-
-            // SEAL_ITERATE(iter(get<0>(I), delta_mod_q_i, input[modulus_size - 1]), coeff_count_, [&](auto J)
+            // SEAL_ITERATE(iter(delta_mod_q_i, c_last), coeff_count_, [&](auto J)
             for (int j = 0; j < coeffCount; i++) {
-                // get<0>(J) += two_times_q_i - barrett_reduce_64(get<2>(J), get<1>(I)) - get<1>(J);
+                // get<0>(J) = add_uint_mod(get<0>(J), barrett_reduce_64(get<1>(J), get<1>(I)), get<1>(I));
                 long get_0_J = get_0_I.getCoeff(j);
-                long get_2_J = input.coeffIter[modulus_size - 1].getCoeff(j);
                 long get_1_J = delta_mod_q_i.getCoeff(j);
-                get_0_J += two_times_q_i - UintArithmeticSmallMod.barrettReduce64(get_2_J, get_1_I) - get_1_J;
+                get_0_J = UintArithmeticSmallMod.addUintMod(get_0_J, UintArithmeticSmallMod.barrettReduce64(get_1_J, get_1_I), get_1_I);
+                get_0_I.setCoeff(j, get_0_J);
+            }
+            // ntt_negacyclic_harvey(delta_mod_q_i, get<3>(I));
+            NttTool.nttNegacyclicHarvey(delta_mod_q_i,get_3_I);
+            // SEAL_ITERATE(iter(get<0>(I), delta_mod_q_i), coeff_count_, [&](auto J)
+            for (int j = 0; j < coeffCount; j++) {
+                // get<0>(J) = sub_uint_mod(get<0>(J), get<1>(J), get<1>(I));
+                long get_0_J = get_0_I.getCoeff(j);
+                long get_1_J = delta_mod_q_i.getCoeff(j);
+                get_0_J = UintArithmeticSmallMod.subUintMod(get_0_J, get_1_J, get_1_I);
                 get_0_I.setCoeff(j, get_0_J);
             }
 
@@ -806,11 +829,14 @@ public class RnsTool {
 
     /**
      * Compute decryption mod t.
+     * <p>
+     * This is invoked by <code>bgv_decrypt</code> in <code>Decryptor</code> and we do not implement BGV yet. So, it is
+     * not invoked in the current version.
      *
      * @param phase       ciphertext.
      * @param destination destination.
      */
-    public void decryptModT(RnsIterator phase, CoeffIterator destination) {
+    public void decrypt_modt(RnsIterator phase, CoeffIterator destination) {
         // Use exact base conversion rather than convert the base through the compose API
         baseQToTConv.exactConvertArray(phase, destination);
     }
@@ -883,7 +909,7 @@ public class RnsTool {
      *
      * @return m_tilde.
      */
-    public Modulus getMTilde() {
+    public AbstractModulus getMTilde() {
         return mTilde;
     }
 
@@ -892,7 +918,7 @@ public class RnsTool {
      *
      * @return m_sk.
      */
-    public Modulus getMsk() {
+    public AbstractModulus getMsk() {
         return mSk;
     }
 
@@ -901,7 +927,7 @@ public class RnsTool {
      *
      * @return plaintext modulus t.
      */
-    public Modulus getT() {
+    public AbstractModulus getT() {
         return t;
     }
 
@@ -910,7 +936,7 @@ public class RnsTool {
      *
      * @return γ.
      */
-    public Modulus getGamma() {
+    public AbstractModulus getGamma() {
         return gamma;
     }
 

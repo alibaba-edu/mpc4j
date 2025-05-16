@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.common.structure.filter;
 
 import edu.alibaba.mpc4j.common.structure.filter.BloomFilterFactory.BloomFilterType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.*;
@@ -13,7 +12,7 @@ import java.util.*;
 
 /**
  * sparse random Bloom Filter, which have larger m than naive Bloom Filter. This Bloom Filter is used in the paper:
- * <p></p>
+ * <p>
  * Rindal P, Rosulek M. Improved private set intersection against malicious adversaries. EUROCRYPT 2017. Springer, Cham,
  * 2017: 235-259.
  *
@@ -161,7 +160,7 @@ public class SparseRandomBloomFilter<T> extends AbstractBloomFilter<T> {
         // item byte length
         int itemByteLength = headerByteBuffer.getInt();
         // key
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] key = BlockUtils.zeroBlock();
         headerByteBuffer.get(key);
 
         // read storage

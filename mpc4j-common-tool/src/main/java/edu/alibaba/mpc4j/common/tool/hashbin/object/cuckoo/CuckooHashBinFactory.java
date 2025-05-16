@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 import java.security.SecureRandom;
 import java.util.Collection;
@@ -87,21 +87,15 @@ public class CuckooHashBinFactory {
                                                            int maxItemSize, byte[][] keys) {
         checkInputs(type, maxItemSize, keys);
         // 单哈希布谷鸟哈希必须要指定桶大小，因此不允许通过此函数构建单哈希布谷鸟哈希。
-        switch (type) {
-            case NAIVE_2_HASH:
-            case NAIVE_3_HASH:
-            case NAIVE_4_HASH:
-            case NAIVE_5_HASH:
-                return new NaiveCuckooHashBin<>(envType, type, maxItemSize, keys);
-            case NO_STASH_NAIVE:
-                return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, keys);
-            case NO_STASH_PSZ18_3_HASH:
-            case NO_STASH_PSZ18_4_HASH:
-            case NO_STASH_PSZ18_5_HASH:
-                return new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, keys);
-            default:
+        return switch (type) {
+            case NAIVE_2_HASH, NAIVE_3_HASH, NAIVE_4_HASH, NAIVE_5_HASH ->
+                new NaiveCuckooHashBin<>(envType, type, maxItemSize, keys);
+            case NO_STASH_NAIVE -> new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, keys);
+            case NO_STASH_PSZ18_3_HASH, NO_STASH_PSZ18_4_HASH, NO_STASH_PSZ18_5_HASH ->
+                new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, keys);
+            default ->
                 throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
-        }
+        };
     }
 
     /**
@@ -125,7 +119,7 @@ public class CuckooHashBinFactory {
         while (!success) {
             try {
                 // construct the cuckoo hash bin iteratively and test if the stash is empty
-                hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
+                hashKeys = BlockUtils.randomBlocks(hashNum, secureRandom);
                 cuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(envType, type, maxItemSize, hashKeys);
                 cuckooHashBin.insertItems(items);
                 success = true;
@@ -158,7 +152,7 @@ public class CuckooHashBinFactory {
         while (!success) {
             try {
                 // construct the cuckoo hash bin iteratively and test if the stash is empty
-                hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
+                hashKeys = BlockUtils.randomBlocks(hashNum, secureRandom);
                 cuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(envType, type, maxItemSize, hashKeys);
                 cuckooHashBin.insertItems(items);
                 if (cuckooHashBin.itemNumInStash() == 0) {
@@ -186,23 +180,14 @@ public class CuckooHashBinFactory {
     public static <T> CuckooHashBin<T> createCuckooHashBin(EnvType envType, CuckooHashBinType type,
                                                            int maxItemSize, int binNum, byte[][] keys) {
         checkInputs(type, maxItemSize, binNum, keys);
-        switch (type) {
-            case NO_STASH_ONE_HASH:
-                return new OneHashCuckooHashBin<>(envType, binNum, keys);
-            case NAIVE_2_HASH:
-            case NAIVE_3_HASH:
-            case NAIVE_4_HASH:
-            case NAIVE_5_HASH:
-                return new NaiveCuckooHashBin<>(envType, type, maxItemSize, binNum, keys);
-            case NO_STASH_NAIVE:
-                return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
-            case NO_STASH_PSZ18_3_HASH:
-            case NO_STASH_PSZ18_4_HASH:
-            case NO_STASH_PSZ18_5_HASH:
-                return new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, binNum, keys);
-            default:
-                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
-        }
+        return switch (type) {
+            case NO_STASH_ONE_HASH -> new OneHashCuckooHashBin<>(envType, binNum, keys);
+            case NAIVE_2_HASH, NAIVE_3_HASH, NAIVE_4_HASH, NAIVE_5_HASH ->
+                new NaiveCuckooHashBin<>(envType, type, maxItemSize, binNum, keys);
+            case NO_STASH_NAIVE -> new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
+            case NO_STASH_PSZ18_3_HASH, NO_STASH_PSZ18_4_HASH, NO_STASH_PSZ18_5_HASH ->
+                new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, binNum, keys);
+        };
     }
 
     /**
@@ -212,21 +197,11 @@ public class CuckooHashBinFactory {
      * @return true if the given type is no-stash cuckoo hash bin type.
      */
     public static boolean isNoStashType(CuckooHashBinType type) {
-        switch (type) {
-            case NO_STASH_ONE_HASH:
-            case NO_STASH_NAIVE:
-            case NO_STASH_PSZ18_3_HASH:
-            case NO_STASH_PSZ18_4_HASH:
-            case NO_STASH_PSZ18_5_HASH:
-                return true;
-            case NAIVE_2_HASH:
-            case NAIVE_3_HASH:
-            case NAIVE_4_HASH:
-            case NAIVE_5_HASH:
-                return false;
-            default:
-                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
-        }
+        return switch (type) {
+            case NO_STASH_ONE_HASH, NO_STASH_NAIVE, NO_STASH_PSZ18_3_HASH, NO_STASH_PSZ18_4_HASH,
+                 NO_STASH_PSZ18_5_HASH -> true;
+            case NAIVE_2_HASH, NAIVE_3_HASH, NAIVE_4_HASH, NAIVE_5_HASH -> false;
+        };
     }
 
     /**
@@ -244,16 +219,13 @@ public class CuckooHashBinFactory {
         Preconditions.checkArgument(isNoStashType(type));
         checkInputs(type, maxItemSize, keys);
         // 单哈希布谷鸟哈希必须要指定桶大小，因此不允许通过此函数构建单哈希布谷鸟哈希。
-        switch (type) {
-            case NO_STASH_NAIVE:
-                return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, keys);
-            case NO_STASH_PSZ18_3_HASH:
-            case NO_STASH_PSZ18_4_HASH:
-            case NO_STASH_PSZ18_5_HASH:
-                return new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, keys);
-            default:
+        return switch (type) {
+            case NO_STASH_NAIVE -> new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, keys);
+            case NO_STASH_PSZ18_3_HASH, NO_STASH_PSZ18_4_HASH, NO_STASH_PSZ18_5_HASH ->
+                new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, keys);
+            default ->
                 throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
-        }
+        };
     }
 
     /**
@@ -271,18 +243,14 @@ public class CuckooHashBinFactory {
                                                                          int maxItemSize, int binNum, byte[][] keys) {
         Preconditions.checkArgument(isNoStashType(type));
         checkInputs(type, maxItemSize, binNum, keys);
-        switch (type) {
-            case NO_STASH_ONE_HASH:
-                return new OneHashCuckooHashBin<>(envType, binNum, keys);
-            case NO_STASH_NAIVE:
-                return new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
-            case NO_STASH_PSZ18_3_HASH:
-            case NO_STASH_PSZ18_4_HASH:
-            case NO_STASH_PSZ18_5_HASH:
-                return new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, binNum, keys);
-            default:
+        return switch (type) {
+            case NO_STASH_ONE_HASH -> new OneHashCuckooHashBin<>(envType, binNum, keys);
+            case NO_STASH_NAIVE -> new NaiveNoStashCuckooHashBin<>(envType, maxItemSize, binNum, keys);
+            case NO_STASH_PSZ18_3_HASH, NO_STASH_PSZ18_4_HASH, NO_STASH_PSZ18_5_HASH ->
+                new Psz18NoStashCuckooHashBin<>(envType, type, maxItemSize, binNum, keys);
+            default ->
                 throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
-        }
+        };
     }
 
     private static void checkInputs(CuckooHashBinType type, int maxItemSize, byte[][] keys) {
@@ -320,24 +288,13 @@ public class CuckooHashBinFactory {
      * @return 哈希函数数量。
      */
     public static int getHashNum(CuckooHashBinType type) {
-        switch (type) {
-            case NO_STASH_ONE_HASH:
-                return 1;
-            case NAIVE_2_HASH:
-                return 2;
-            case NAIVE_3_HASH:
-            case NO_STASH_NAIVE:
-            case NO_STASH_PSZ18_3_HASH:
-                return 3;
-            case NAIVE_4_HASH:
-            case NO_STASH_PSZ18_4_HASH:
-                return 4;
-            case NAIVE_5_HASH:
-            case NO_STASH_PSZ18_5_HASH:
-                return 5;
-            default:
-                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
-        }
+        return switch (type) {
+            case NO_STASH_ONE_HASH -> 1;
+            case NAIVE_2_HASH -> 2;
+            case NAIVE_3_HASH, NO_STASH_NAIVE, NO_STASH_PSZ18_3_HASH -> 3;
+            case NAIVE_4_HASH, NO_STASH_PSZ18_4_HASH -> 4;
+            case NAIVE_5_HASH, NO_STASH_PSZ18_5_HASH -> 5;
+        };
     }
 
     /**
@@ -349,21 +306,15 @@ public class CuckooHashBinFactory {
      */
     public static int getBinNum(CuckooHashBinType type, int maxItemSize) {
         // 单哈希布谷鸟哈希必须要指定桶大小，因此不允许通过此函数得到单哈希函数布谷鸟哈希的桶数量
-        switch (type) {
-            case NAIVE_2_HASH:
-            case NAIVE_3_HASH:
-            case NAIVE_4_HASH:
-            case NAIVE_5_HASH:
-                return NaiveCuckooHashBin.getBinNum(type, maxItemSize);
-            case NO_STASH_NAIVE:
-                return NaiveNoStashCuckooHashBin.getBinNum(maxItemSize);
-            case NO_STASH_PSZ18_3_HASH:
-            case NO_STASH_PSZ18_4_HASH:
-            case NO_STASH_PSZ18_5_HASH:
-                return Psz18NoStashCuckooHashBin.getBinNum(type, maxItemSize);
-            default:
+        return switch (type) {
+            case NAIVE_2_HASH, NAIVE_3_HASH, NAIVE_4_HASH, NAIVE_5_HASH ->
+                NaiveCuckooHashBin.getBinNum(type, maxItemSize);
+            case NO_STASH_NAIVE -> NaiveNoStashCuckooHashBin.getBinNum(maxItemSize);
+            case NO_STASH_PSZ18_3_HASH, NO_STASH_PSZ18_4_HASH, NO_STASH_PSZ18_5_HASH ->
+                Psz18NoStashCuckooHashBin.getBinNum(type, maxItemSize);
+            default ->
                 throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
-        }
+        };
     }
 
     /**
@@ -374,23 +325,14 @@ public class CuckooHashBinFactory {
      * @return 插入元素的最大数量。
      */
     public static int getMaxItemSize(CuckooHashBinType type, int binNum) {
-        switch (type) {
-            case NO_STASH_ONE_HASH:
-                return 1;
-            case NAIVE_2_HASH:
-            case NAIVE_3_HASH:
-            case NAIVE_4_HASH:
-            case NAIVE_5_HASH:
-                return NaiveCuckooHashBin.getMaxItemSize(type, binNum);
-            case NO_STASH_NAIVE:
-                return NaiveNoStashCuckooHashBin.getMaxItemSize(binNum);
-            case NO_STASH_PSZ18_3_HASH:
-            case NO_STASH_PSZ18_4_HASH:
-            case NO_STASH_PSZ18_5_HASH:
-                return Psz18NoStashCuckooHashBin.getMaxItemSize(type, binNum);
-            default:
-                throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
-        }
+        return switch (type) {
+            case NO_STASH_ONE_HASH -> 1;
+            case NAIVE_2_HASH, NAIVE_3_HASH, NAIVE_4_HASH, NAIVE_5_HASH ->
+                NaiveCuckooHashBin.getMaxItemSize(type, binNum);
+            case NO_STASH_NAIVE -> NaiveNoStashCuckooHashBin.getMaxItemSize(binNum);
+            case NO_STASH_PSZ18_3_HASH, NO_STASH_PSZ18_4_HASH, NO_STASH_PSZ18_5_HASH ->
+                Psz18NoStashCuckooHashBin.getMaxItemSize(type, binNum);
+        };
     }
 
     /**
@@ -401,19 +343,11 @@ public class CuckooHashBinFactory {
      * @return 暂存区大小。
      */
     public static int getStashSize(CuckooHashBinType type, int maxItemSize) {
-        switch (type) {
-            case NAIVE_2_HASH:
-            case NAIVE_3_HASH:
-            case NAIVE_4_HASH:
-            case NAIVE_5_HASH:
-                return NaiveCuckooHashBin.getStashSize(maxItemSize);
-            case NO_STASH_NAIVE:
-            case NO_STASH_PSZ18_3_HASH:
-            case NO_STASH_PSZ18_4_HASH:
-            case NO_STASH_PSZ18_5_HASH:
-                return 0;
-            default:
+        return switch (type) {
+            case NAIVE_2_HASH, NAIVE_3_HASH, NAIVE_4_HASH, NAIVE_5_HASH -> NaiveCuckooHashBin.getStashSize(maxItemSize);
+            case NO_STASH_NAIVE, NO_STASH_PSZ18_3_HASH, NO_STASH_PSZ18_4_HASH, NO_STASH_PSZ18_5_HASH -> 0;
+            default ->
                 throw new IllegalArgumentException("Invalid " + CuckooHashBinType.class.getSimpleName() + ": " + type.name());
-        }
+        };
     }
 }

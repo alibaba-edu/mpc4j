@@ -8,6 +8,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.structure.filter.Filter;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
@@ -88,7 +89,7 @@ public class Prty20PsiClient<T> extends AbstractPsiClient<T> {
         logStepInfo(PtoState.INIT_STEP, 1, 2, initLcotTime, "Client inits LCOT");
 
         stopWatch.start();
-        paxosKeys = CommonUtils.generateRandomKeys(paxosKeyNum, secureRandom);
+        paxosKeys = BlockUtils.randomBlocks(paxosKeyNum, secureRandom);
         List<byte[]> paxosKeyPayload = Arrays.stream(paxosKeys).collect(Collectors.toList());
         DataPacketHeader paxosKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_PAXOS_KEY.ordinal(), extraInfo,

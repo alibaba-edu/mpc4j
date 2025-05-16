@@ -12,7 +12,7 @@ import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfSender;
@@ -105,15 +105,15 @@ public class Ywl20ShBspCotSender extends AbstractBspCotSender {
         logStepInfo(PtoState.PTO_STEP, 2, 3, dpprfTime);
 
         stopWatch.start();
-        byte[][] correlateByteArrays = new byte[batchNum][];
+        byte[][] correlateByteArrays = BlockUtils.zeroBlocks(batchNum);
         SspCotSenderOutput[] senderOutputs = IntStream.range(0, batchNum)
             .mapToObj(batchIndex -> {
-                correlateByteArrays[batchIndex] = BytesUtils.clone(delta);
+                BlockUtils.xori(correlateByteArrays[batchIndex], delta);
                 // S sets v = (s_0^h,...,s_{n - 1}^h)
                 byte[][] vs = bpRdpprfSenderOutput.get(batchIndex).getV0Array();
                 // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
                 for (int i = 0; i < eachNum; i++) {
-                    BytesUtils.xori(correlateByteArrays[batchIndex], vs[i]);
+                    BlockUtils.xori(correlateByteArrays[batchIndex], vs[i]);
                 }
                 return SspCotSenderOutput.create(delta, vs);
             })

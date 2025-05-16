@@ -8,8 +8,8 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k.Gf2kDokvs;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k.Gf2kDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k.Gf2kDokvsFactory.Gf2kDokvsType;
@@ -96,7 +96,7 @@ public class Rs21MpOprfReceiver extends AbstractMpOprfReceiver {
             ByteBuffer::wrap,
             hf::getBytes
         ));
-        byte[][] okvsKeys = CommonUtils.generateRandomKeys(okvsKeyNum, secureRandom);
+        byte[][] okvsKeys = BlockUtils.randomBlocks(okvsKeyNum, secureRandom);
         Gf2kDokvs<ByteBuffer> gf2kOkvs = Gf2kDokvsFactory.createInstance(
             envType, okvsType, batchSize, okvsKeys
         );

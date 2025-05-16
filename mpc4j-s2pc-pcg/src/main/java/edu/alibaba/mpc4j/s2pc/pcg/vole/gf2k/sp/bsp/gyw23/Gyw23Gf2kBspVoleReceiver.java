@@ -3,11 +3,10 @@ package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.bsp.gyw23;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
@@ -253,10 +252,10 @@ public class Gyw23Gf2kBspVoleReceiver extends AbstractGf2kBspVoleReceiver {
                 // treat Δ as the root node
                 ggmTree.add(new byte[][]{delta});
                 // X_1^0 = k, later we let c_1 := K[r1] ⊕ k
-                byte[][] level1 = new byte[2][CommonConstants.BLOCK_BYTE_LENGTH];
+                byte[][] level1 = BlockUtils.zeroBlocks(2);
                 secureRandom.nextBytes(level1[0]);
                 // X_1^1 = Δ - k
-                level1[1] = BytesUtils.xor(delta, level1[0]);
+                level1[1] = BlockUtils.xor(delta, level1[0]);
                 // the first level should use randomness
                 ggmTree.add(level1);
                 // For i ∈ {1,...,h - 1}, j ∈ [2^{i − 1}], do X_i^{2j} = H(X_{i - 1}^j), X_i^{2j + 1} = X_{i - 1}^j - X_i^{2j}
@@ -266,19 +265,18 @@ public class Gyw23Gf2kBspVoleReceiver extends AbstractGf2kBspVoleReceiver {
                     for (int j = 0; j < (1 << (i - 1)); j++) {
                         // X_i^{2j} = H(X_{i - 1}^j)
                         currentLevel[2 * j] = hash.hash(previousLowLevel[j]);
-                        currentLevel[2 * j + 1] = BytesUtils.xor(previousLowLevel[j], currentLevel[2 * j]);
+                        currentLevel[2 * j + 1] = BlockUtils.xor(previousLowLevel[j], currentLevel[2 * j]);
                     }
                     ggmTree.add(currentLevel);
                 }
                 // for j ∈ [0, 2^{n − 1}), b ∈ {0, 1} do X_n^{2j+b} := H(X_{n-1}^j ⊕ b)
                 byte[][] previousLastLevel = ggmTree.get(h - 1);
                 byte[][] lastLevel = new byte[1 << h][];
-                byte[] one = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                Arrays.fill(one, (byte) 0b11111111);
+                byte[] one = BlockUtils.allOneBlock();
                 for (int j = 0; j < (1 << (h - 1)); j++) {
                     // X_i^{2j} = H(X_{i - 1}^j)
                     lastLevel[2 * j] = hash.hash(previousLastLevel[j]);
-                    lastLevel[2 * j + 1] = hash.hash(BytesUtils.xor(previousLastLevel[j], one));
+                    lastLevel[2 * j + 1] = hash.hash(BlockUtils.xor(previousLastLevel[j], one));
                 }
                 ggmTree.add(lastLevel);
                 // For each i ∈ {1,...,h - 1}, do K_i^0 = ⊕_{j ∈ [2^{i - 1}]} X_i^{2j}
@@ -286,14 +284,14 @@ public class Gyw23Gf2kBspVoleReceiver extends AbstractGf2kBspVoleReceiver {
                     int hIndex = i - 1;
                     byte[][] currentLevel = ggmTree.get(i);
                     // K_i^0 = ⊕_{j ∈ [2^{i - 1}]} X_i^{2j}
-                    knsArray[batchIndex][hIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    knsArray[batchIndex][hIndex] = BlockUtils.zeroBlock();
                     for (int j = 0; j < (1 << (i - 1)); j++) {
-                        BytesUtils.xori(knsArray[batchIndex][hIndex], currentLevel[2 * j]);
+                        BlockUtils.xori(knsArray[batchIndex][hIndex], currentLevel[2 * j]);
                     }
                 }
                 // K_n^0, K_n^1
-                kn0Array[batchIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                kn1Array[batchIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                kn0Array[batchIndex] = BlockUtils.zeroBlock();
+                kn1Array[batchIndex] = BlockUtils.zeroBlock();
                 for (int j = 0; j < (1 << (h - 1)); j++) {
                     field.addi(kn0Array[batchIndex], lastLevel[2 * j]);
                     field.addi(kn1Array[batchIndex], lastLevel[2 * j + 1]);
@@ -308,14 +306,14 @@ public class Gyw23Gf2kBspVoleReceiver extends AbstractGf2kBspVoleReceiver {
             .mapToObj(batchIndex -> {
                 int cotOffset = batchIndex * h;
                 byte[][] collection = new byte[4][];
-                byte[] mu = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+                byte[] mu = BlockUtils.randomBlock(secureRandom);
                 collection[0] = mu;
                 // c_n^b := H(µ ⊕ K[r_n] ⊕ b · ∆)) + K_n^b for b ∈ {0, 1}
-                byte[] cn0 = BytesUtils.xor(mu, cotSenderOutput.getR0(cotOffset));
+                byte[] cn0 = BlockUtils.xor(mu, cotSenderOutput.getR0(cotOffset));
                 cn0 = hash.hash(cn0);
                 field.addi(cn0, kn0Array[batchIndex]);
                 collection[1] = cn0;
-                byte[] cn1 = BytesUtils.xor(mu, cotSenderOutput.getR1(cotOffset));
+                byte[] cn1 = BlockUtils.xor(mu, cotSenderOutput.getR1(cotOffset));
                 cn1 = hash.hash(cn1);
                 field.addi(cn1, kn1Array[batchIndex]);
                 collection[2] = cn1;
@@ -343,18 +341,18 @@ public class Gyw23Gf2kBspVoleReceiver extends AbstractGf2kBspVoleReceiver {
                 byte[][] correlations = new byte[h + 3][];
                 // c_1 := K[r1] ⊕ k, c_i := K[r_i] ⊕ K_i^0 for i ∈ [2, n − 1]
                 for (int i = 0; i < h - 1; i++) {
-                    byte[] ci = BytesUtils.xor(knsArray[batchIndex][i], cotSenderOutput.getR0(cotOffset + i));
+                    byte[] ci = BlockUtils.xor(knsArray[batchIndex][i], cotSenderOutput.getR0(cotOffset + i));
                     correlations[i] = ci;
                 }
-                byte[] mu = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+                byte[] mu = BlockUtils.randomBlock(secureRandom);
                 correlations[h - 1] = mu;
                 // c_n^b := H(µ ⊕ K[r_n] ⊕ b · ∆)) + K_n^b for b ∈ {0, 1}
-                byte[] cn0 = BytesUtils.xor(cotSenderOutput.getR0(cotOffset + h - 1), mu);
+                byte[] cn0 = BlockUtils.xor(cotSenderOutput.getR0(cotOffset + h - 1), mu);
                 cn0 = hash.hash(cn0);
                 field.addi(cn0, kn0Array[batchIndex]);
                 correlations[h] = cn0;
-                byte[] cn1 = BytesUtils.xor(cotSenderOutput.getR0(cotOffset + h - 1), mu);
-                BytesUtils.xori(cn1, delta);
+                byte[] cn1 = BlockUtils.xor(cotSenderOutput.getR0(cotOffset + h - 1), mu);
+                BlockUtils.xori(cn1, delta);
                 cn1 = hash.hash(cn1);
                 field.addi(cn1, kn1Array[batchIndex]);
                 correlations[h + 1] = cn1;

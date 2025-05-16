@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.common.tool.utils;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -33,9 +32,9 @@ public class CommonUtilsTest {
 
     @Test
     public void testSeedSecureRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        byte[] seedSecureRandomBytes0 = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        byte[] seedSecureRandomBytes1 = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] seed = BlockUtils.zeroBlock();
+        byte[] seedSecureRandomBytes0 = BlockUtils.zeroBlock();
+        byte[] seedSecureRandomBytes1 = BlockUtils.zeroBlock();
         // create standard SecureRandom
         SecureRandom stdSecureRandom0 = new SecureRandom();
         stdSecureRandom0.setSeed(seed);

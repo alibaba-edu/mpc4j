@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.hash;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory.HashType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -38,7 +39,7 @@ public class HashTest {
     /**
      * 全0消息
      */
-    private static final byte[] ZERO_MESSAGE = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_MESSAGE = BlockUtils.zeroBlock();
     /**
      * 随机状态
      */
@@ -193,8 +194,7 @@ public class HashTest {
             Set<ByteBuffer> outputSet = new HashSet<>();
             Hash hash = HashFactory.createInstance(hashType, outputByteLength);
             for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-                byte[] randomMessage = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                SECURE_RANDOM.nextBytes(randomMessage);
+                byte[] randomMessage = BlockUtils.randomBlock(SECURE_RANDOM);
                 outputSet.add(ByteBuffer.wrap(hash.digestToBytes(randomMessage)));
             }
             Assert.assertEquals(MAX_RANDOM_ROUND, outputSet.size());

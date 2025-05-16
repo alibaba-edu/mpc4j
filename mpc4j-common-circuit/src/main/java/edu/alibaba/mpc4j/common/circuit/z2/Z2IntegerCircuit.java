@@ -165,6 +165,20 @@ public class Z2IntegerCircuit extends AbstractZ2Circuit {
         return comparator.leq(xiArray, yiArray);
     }
 
+    /**
+     * x < y. compare for data without sign bit, which means the values of data in [0, 2^l - 1];
+     *
+     * @param xiArray xi array.
+     * @param yiArray yi array.
+     * @return zi array, where z = (x < y).
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    public MpcZ2Vector lessThan(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) throws MpcAbortException {
+        MpcZ2Vector f = comparator.leq(yiArray, xiArray);
+        party.noti(f);
+        return f;
+    }
+
     public void sort(MpcZ2Vector[][] xiArray) throws MpcAbortException {
         Arrays.stream(xiArray).forEach(this::checkInputs);
         sorter.sort(xiArray);

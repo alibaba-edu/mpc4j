@@ -4,8 +4,11 @@ import com.google.common.io.LittleEndianDataInputStream;
 import com.google.common.io.LittleEndianDataOutputStream;
 import edu.alibaba.mpc4j.crypto.fhe.seal.context.EncryptionParameters;
 import edu.alibaba.mpc4j.crypto.fhe.seal.context.ParmsId;
+import edu.alibaba.mpc4j.crypto.fhe.seal.context.SchemeType;
 import edu.alibaba.mpc4j.crypto.fhe.seal.context.SealContext;
 import edu.alibaba.mpc4j.crypto.fhe.seal.context.SealContext.ContextData;
+import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.PolyIterator;
+import edu.alibaba.mpc4j.crypto.fhe.seal.ntt.NttTool;
 import edu.alibaba.mpc4j.crypto.fhe.seal.rand.UniformRandomGenerator;
 import edu.alibaba.mpc4j.crypto.fhe.seal.rand.UniformRandomGeneratorInfo;
 import edu.alibaba.mpc4j.crypto.fhe.seal.serialization.ComprModeType;
@@ -291,22 +294,6 @@ public class Ciphertext implements SealCloneable {
     }
 
     /**
-     * Resets the ciphertext. This function releases any memory allocated
-     * by the ciphertext. It also sets all encryption parameter specific
-     * size information to zero.
-     */
-    public void release() {
-        parmsId = ParmsId.parmsIdZero();
-        isNttForm = false;
-        size = 0;
-        polyModulusDegree = 0;
-        coeffModulusSize = 0;
-        scale = 1.0;
-        correctionFactor = 1;
-        data.release();
-    }
-
-    /**
      * Returns a reference to the backing DynArray object.
      *
      * @return a reference to the backing DynArray object.
@@ -439,23 +426,21 @@ public class Ciphertext implements SealCloneable {
     }
 
     /**
-     * Returns a reference to the scale. This is only needed when using the CKKS
-     * encryption scheme. The user should have little or no reason to ever change
-     * the scale by hand.
+     * Sets scale. This is only needed when using the CKKS encryption scheme.
      *
-     * @return the scale.
-     */
-    public double scale() {
-        return scale;
-    }
-
-    /**
-     * Sets the scale.
-     *
-     * @param scale the scale.
+     * @param scale scale.
      */
     public void setScale(double scale) {
         this.scale = scale;
+    }
+
+    /**
+     * Returns scale. This is only needed when using the CKKS encryption scheme.
+     *
+     * @return scale.
+     */
+    public double scale() {
+        return scale;
     }
 
     /**
@@ -628,6 +613,13 @@ public class Ciphertext implements SealCloneable {
             throw new IllegalArgumentException("ciphertext data is invalid");
         }
         stream.close();
+
+        // BGV Ciphertext are converted to NTT form.
+        if (context.keyContextData().parms().scheme().equals(SchemeType.BGV) && !isNttForm() && data() != null) {
+            PolyIterator polyIterator = PolyIterator.wrap(data.data(), size, polyModulusDegree, coeffModulusSize);
+            NttTool.nttNegacyclicHarveyPoly(polyIterator, coeffModulusSize, context.getContextData(parmsId()).smallNttTables());
+            isNttForm = true;
+        }
     }
 
     @Override

@@ -389,11 +389,14 @@ public class Decryptor {
         }
 
         SchemeType scheme = context.keyContextData().parms().scheme();
-        if (scheme != SchemeType.BFV && scheme != SchemeType.BGV) {
+        if (!scheme.equals(SchemeType.BFV) && !scheme.equals(SchemeType.BGV)) {
             throw new IllegalArgumentException("unsupported scheme");
         }
-        if (encrypted.isNttForm()) {
-            throw new IllegalArgumentException("encrypted cannot be in NTT form");
+        if (scheme.equals(SchemeType.BFV) && encrypted.isNttForm()) {
+            throw new IllegalArgumentException("BFV encrypted cannot be in NTT form");
+        }
+        if (scheme.equals(SchemeType.BGV) && !encrypted.isNttForm()) {
+            throw new IllegalArgumentException("BGV encrypted must be in NTT form");
         }
 
         ContextData context_data = context.getContextData(encrypted.parmsId());
@@ -402,6 +405,7 @@ public class Decryptor {
         Modulus plain_modulus = parms.plainModulus();
         int coeff_count = parms.polyModulusDegree();
         int coeff_modulus_size = coeff_modulus.length;
+        NttTables[] ntt_tables = context_data.smallNttTables();
 
         // Storage for the infinity norm of noise poly
         long[] norm = new long[coeff_modulus_size];
@@ -417,6 +421,10 @@ public class Decryptor {
         // Now do the dot product of encrypted_copy and the secret key array using NTT.
         // The secret key powers are already NTT transformed.
         dot_product_ct_sk_array(encrypted, noise_poly);
+
+        if (scheme.equals(SchemeType.BGV)) {
+            NttTool.inverseNttNegacyclicHarveyRns(noise_poly, coeff_modulus_size, ntt_tables);
+        }
 
         // Multiply by plain_modulus and reduce mod coeff_modulus to get
         // coeff_modulus()*noise.

@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.DefaultFixedKeyPrp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.FixedKeyPrp;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 /**
  * MMO(x) = π(x) ⊕ x, where π is initialized using fixed-key PRP. The scheme is presented in Section 7.2 of the paper:
@@ -44,7 +44,7 @@ public class FixedKeyMmoCrhf implements Crhf {
     public byte[] hash(byte[] block) {
         // MMO(x) = π(x) ⊕ x
         byte[] output = fixedKeyPrp.prp(block);
-        BytesUtils.xori(output, block);
+        BlockUtils.xori(output, block);
         return output;
     }
 

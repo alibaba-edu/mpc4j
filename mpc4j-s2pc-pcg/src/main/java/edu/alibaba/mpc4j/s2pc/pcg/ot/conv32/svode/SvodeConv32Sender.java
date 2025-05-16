@@ -1,15 +1,13 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.svode;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Dgf2k;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.SerializeUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.AbstractConv32Party;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.svode.SvodeConv32PtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.Gf2kVodeReceiverOutput;
@@ -17,6 +15,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.nc.Gf2kNcVodeConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.nc.Gf2kNcVodeFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.nc.Gf2kNcVodeReceiver;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +58,7 @@ public class SvodeConv32Sender extends AbstractConv32Party {
 
         stopWatch.start();
         int roundNum = Math.min(maxRoundNum, expectNum);
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         gf2kNcVodeReceiver.init(2, delta, roundNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -82,39 +81,33 @@ public class SvodeConv32Sender extends AbstractConv32Party {
         // The parties generate a random 1-out-of-4 bit OT with messages (m_0, m_1, m_2, m_3) ∈ F_2^4 held by P0 and
         // (c, m_c) ∈ F_4 × F_2 held by P1.
         stopWatch.start();
-        BitVector m0 = BitVectorFactory.createEmpty();
-        BitVector m1 = BitVectorFactory.createEmpty();
-        BitVector m2 = BitVectorFactory.createEmpty();
-        BitVector m3 = BitVectorFactory.createEmpty();
-        byte[] x0 = new byte[]{0b00000000};
-        byte[] x1 = new byte[]{0b00000001};
-        byte[] x2 = new byte[]{0b00000010};
-        byte[] x3 = new byte[]{0b00000011};
-        while (m0.bitNum() < num) {
+        BitVector[] ms = IntStream.range(0, 4).mapToObj(i -> BitVectorFactory.createEmpty()).toArray(BitVector[]::new);
+        while (ms[0].bitNum() < num) {
             Gf2kVodeReceiverOutput gf2kVodeReceiverOutput = gf2kNcVodeReceiver.receive();
             int roundNum = gf2kVodeReceiverOutput.getNum();
-            BitVector roundM0 = BitVectorFactory.createZeros(roundNum);
-            BitVector roundM1 = BitVectorFactory.createZeros(roundNum);
-            BitVector roundM2 = BitVectorFactory.createZeros(roundNum);
-            BitVector roundM3 = BitVectorFactory.createZeros(roundNum);
             byte[] delta = gf2kVodeReceiverOutput.getDelta();
             byte[][] qs = gf2kVodeReceiverOutput.getQ();
             Dgf2k field = gf2kVodeReceiverOutput.getField();
-            IntStream.range(0, roundNum).forEach(i -> {
-                roundM0.set(i, (crhf.hash(field.add(field.mixMul(x0, delta), qs[i]))[0] & 0b00000001) != 0);
-                roundM1.set(i, (crhf.hash(field.add(field.mixMul(x1, delta), qs[i]))[0] & 0b00000001) != 0);
-                roundM2.set(i, (crhf.hash(field.add(field.mixMul(x2, delta), qs[i]))[0] & 0b00000001) != 0);
-                roundM3.set(i, (crhf.hash(field.add(field.mixMul(x3, delta), qs[i]))[0] & 0b00000001) != 0);
+
+            byte[][] prfRes = new byte[4][roundNum];
+            for(int k = 0; k < 4; k++){
+                byte[] xk = new byte[]{(byte) k};
+                byte[] xkDelta = field.mixMul(xk, delta);
+                byte[] tmpPrfRes = new byte[roundNum];
+                IntStream intStream = parallel ? IntStream.range(0, roundNum).parallel() : IntStream.range(0, roundNum);
+                intStream.forEach(i -> tmpPrfRes[i] = crhf.hash(field.add(xkDelta, qs[i]))[0]);
+                prfRes[k] = tmpPrfRes;
+            }
+            IntStream intStream = parallel ? IntStream.range(0, 4).parallel() : IntStream.range(0, 4);
+            intStream.forEach(k -> {
+                byte[] tmpPrfRes = prfRes[k];
+                BitVector roundMk = BitVectorFactory.createZeros(roundNum);
+                IntStream.range(0, roundNum).forEach(i -> roundMk.set(i, (tmpPrfRes[i] & 0b00000001) != 0));
+                ms[k].merge(roundMk);
             });
-            m0.merge(roundM0);
-            m1.merge(roundM1);
-            m2.merge(roundM2);
-            m3.merge(roundM3);
         }
-        m0.reduce(num);
-        m1.reduce(num);
-        m2.reduce(num);
-        m3.reduce(num);
+        Arrays.stream(ms).forEach(m -> m.reduce(num));
+
         long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 3, roundTime, "Parties generate Subfield VODE");
@@ -130,52 +123,41 @@ public class SvodeConv32Sender extends AbstractConv32Party {
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 2, 3, decomposeTime);
 
-        // P1 sends d = w1 − c mod p to P0.
+        // According to the function "mod2OtF4" in AltModWPrfProto.cpp of secure-join [https://github.com/Visa-Research/secure-join],
+        // the choice correction is fulfilled with bit operations.
+        // P1 sends d0Diff = w1_0 ^c_0, d1Diff = w1_1 ^c_1 to P0.
         List<byte[]> dPayload = receiveOtherPartyPayload(PtoStep.RECEIVER_SEND_D.ordinal());
-
         stopWatch.start();
-        MpcAbortPreconditions.checkArgument(dPayload.size() == 1);
-        byte[] ds = SerializeUtils.decompressL2(dPayload.get(0), num);
-        // P0 computes v_0 = w_{0,0} ⊕ m_d, t_0 = v_0 ⊕ m_{d + 1} ⊕ w_{0,0} ⊕ w_{0,1} ⊕ 1, t_1 = v_0 ⊕ m_{d + 2} ⊕ w_{0,1}
-        // but the correct is v_0 = w_{0,0} ⊕ m_d, t_0 = v_0 ⊕ m_{d - 1} ⊕ w_{0,0} ⊕ w_{0,1} ⊕ 1, t_1 = v_0 ⊕ m_{d - 2} ⊕ w_{0,1}
-        BitVector md0 = BitVectorFactory.createZeros(num);
-        BitVector md1 = BitVectorFactory.createZeros(num);
-        BitVector md2 = BitVectorFactory.createZeros(num);
-        IntStream.range(0, num).forEach(i -> {
-            int d = ds[i];
-            if (d == 0) {
-                md0.set(i, m0.get(i));
-                md1.set(i, m1.get(i));
-                md2.set(i, m2.get(i));
-            } else if (d == 1) {
-                md0.set(i, m3.get(i));
-                md1.set(i, m0.get(i));
-                md2.set(i, m1.get(i));
-            } else if (d == 2) {
-                md0.set(i, m2.get(i));
-                md1.set(i, m3.get(i));
-                md2.set(i, m0.get(i));
-            } else {
-                assert d == 3;
-                md0.set(i, m1.get(i));
-                md1.set(i, m2.get(i));
-                md2.set(i, m3.get(i));
-            }
-        });
-        // v_0 = w_{0,0} ⊕ m_d
-        BitVector v0 = w00.xor(md0);
-        // t_0 = v_0 ⊕ m_{d - 1} ⊕ w_{0,0} ⊕ w_{0,1} ⊕ 1
-        BitVector t0 = v0.xor(md1);
-        t0.xori(w00);
-        t0.xori(w01);
-        t0.noti();
-        // t_0 = v_0 ⊕ m_{d - 2} ⊕ w_{0,0} ⊕ w_{0,1} ⊕ 1
-        BitVector t1 = v0.xor(md2);
-        t1.xori(w01);
-        // P0 sends (t_0, t_1) to P1.
+        // d0Diff is LSB, d1Diff is MSB
+        MpcAbortPreconditions.checkArgument(dPayload.size() == 2);
+        BitVector lsb = BitVectorFactory.create(num, dPayload.get(0));
+        BitVector msb = BitVectorFactory.create(num, dPayload.get(1));
+        swapBit(ms, 0, 1, lsb);
+        swapBit(ms, 2, 3, lsb);
+        swapBit(ms, 0, 2, msb);
+        swapBit(ms, 1, 3, msb);
+        //            u
+        //          0 1 2
+        //         ________
+        //      0 | 0 1 0
+        //   v  1 | 1 0 0
+        //      2 | 0 0 1
+        // the shared value if u=0
+        BitVector tv0 = w00;
+        // the shared value if u=1
+        BitVector tv1 = w00.xor(w01).not();
+        // the shared value if u=2
+        BitVector tv2 = w01;
+        // outShare = T[v,0] ^ ot_0. They will have ot_1 which xors with this to T[v,0]
+        BitVector v0 = tv0.xor(ms[0]);
+        // t1 = Enc( T[v, 1] ^ outShare )
+        BitVector t1 = tv1.xor(v0).xor(ms[1]);
+        // t2 = Enc( T[u, 2] ^ outShare )
+        BitVector t2 = tv2.xor(v0).xor(ms[2]);
+        // P0 sends (t_1, t_2) to P1.
         List<byte[]> t0t1Payload = new LinkedList<>();
-        t0t1Payload.add(t0.getBytes());
         t0t1Payload.add(t1.getBytes());
+        t0t1Payload.add(t2.getBytes());
         sendOtherPartyPayload(PtoStep.SENDER_SEND_T0_T1.ordinal(), t0t1Payload);
         stopWatch.stop();
         long shareTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -185,5 +167,14 @@ public class SvodeConv32Sender extends AbstractConv32Party {
         logPhaseInfo(PtoState.PTO_END);
         // P0 outputs v0
         return v0.getBytes();
+    }
+
+    /**
+     * Swap elements in array according to the choice bits.
+     */
+    private static void swapBit(BitVector[] array, int i, int j, BitVector choice) {
+        BitVector diff = array[i].xor(array[j]);
+        array[i] = array[i].xor(choice.and(diff));
+        array[j] = array[i].xor(diff);
     }
 }

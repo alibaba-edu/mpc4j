@@ -1,8 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.triple;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.*;
 import org.junit.Assert;
@@ -85,8 +84,8 @@ public class Z2TripleTest {
     @Test
     public void testCreateFromCotCorrelation() {
         int num = MAX_NUM;
-        byte[] senderDelta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
-        byte[] receiverDelta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] senderDelta = BlockUtils.randomBlock(secureRandom);
+        byte[] receiverDelta = BlockUtils.randomBlock(secureRandom);
         CotSenderOutput firstCotSenderOutput = CotSenderOutput.createRandom(num, senderDelta, secureRandom);
         CotReceiverOutput firstCotReceiverOutput = CotReceiverOutput.createRandom(firstCotSenderOutput, secureRandom);
         CotSenderOutput secondCotSenderOutput = CotSenderOutput.createRandom(num, receiverDelta, secureRandom);

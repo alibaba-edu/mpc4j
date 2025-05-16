@@ -1,8 +1,6 @@
 # Artifact Evaluation for Practical Keyword Private Information Retrieval from Key-to-Index Mappings
 
-The submodule `mpc4j-s2pc-pir` (located in `mpc4j/mpc4j-s2pc-pir/`) contains prototype implementations of several Private Information Retrieval (PIR)
-
-schemes, including schemes described in the paper "Practical Keyword Private Information Retrieval from Key-to-Index Mappings".
+The submodule `mpc4j-s2pc-pir` (located in `mpc4j/mpc4j-s2pc-pir/`) contains prototype implementations of several Private Information Retrieval (PIR) schemes, including schemes described in the paper "Practical Keyword Private Information Retrieval from Key-to-Index Mappings".
 
 ## Source Code Location
 

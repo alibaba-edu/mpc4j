@@ -4,9 +4,9 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.sst.AbstractSstSender;
@@ -97,7 +97,7 @@ public class Lll24SstSender extends AbstractSstSender {
                 int pos = pi[i];
                 SpCdpprfReceiverOutput eachReceiverOutput = receiverOutput.get(i);
                 byte[][] eachMatrix = eachReceiverOutput.getV1Array();
-                eachMatrix[pos] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                eachMatrix[pos] = BlockUtils.zeroBlock();
                 byte[][] eachExtendMatrix = new byte[num][];
                 for (int j = 0; j < num; j++) {
                     if (j != eachReceiverOutput.getAlpha()) {
@@ -106,7 +106,7 @@ public class Lll24SstSender extends AbstractSstSender {
                 }
                 for (int j = 0; j < paddingNum; j++) {
                     if (j != pos) {
-                        BytesUtils.xori(eachMatrix[pos], eachMatrix[j]);
+                        BlockUtils.xori(eachMatrix[pos], eachMatrix[j]);
                     }
                 }
                 extendMatrix[i] = eachExtendMatrix;
@@ -114,9 +114,10 @@ public class Lll24SstSender extends AbstractSstSender {
             intStream = parallel ? IntStream.range(0, num).parallel() : IntStream.range(0, num);
             extendMatrix[num - 1] = intStream.mapToObj(i -> {
                 if (i != pi[num - 1]) {
-                    byte[] xorColumn = Arrays.copyOf(receiverOutput.get(0).getV1(i), CommonConstants.BLOCK_BYTE_LENGTH);
+                    byte[] xorColumn = BlockUtils.zeroBlock();
+                    BlockUtils.xori(xorColumn, receiverOutput.get(0).getV1(i));
                     for (int j = 1; j < num - 1; j++) {
-                        BytesUtils.xori(xorColumn, receiverOutput.get(j).getV1(i));
+                        BlockUtils.xori(xorColumn, receiverOutput.get(j).getV1(i));
                     }
                     return prg.extendToBytes(xorColumn);
                 } else {

@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.crypto.prp;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 /**
  * default fixed key PRP.
@@ -20,7 +20,7 @@ public class DefaultFixedKeyPrp implements FixedKeyPrp {
      */
     public DefaultFixedKeyPrp(EnvType envType) {
         prp = PrpFactory.createInstance(envType);
-        prp.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        prp.setKey(BlockUtils.zeroBlock());
     }
 
     @Override

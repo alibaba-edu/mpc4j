@@ -13,6 +13,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64PolyFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
@@ -90,7 +91,7 @@ public class Sj23PeqtUcpsiServer<T> extends AbstractUcpsiServer<T> {
         stopWatch.start();
         params = Sj23PeqtUcpsiParams.getParams(serverElementSize, maxClientElementSize);
         // generate simple hash bin
-        hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
+        hashKeys = BlockUtils.randomBlocks(hashNum, secureRandom);
         List<byte[][]> hashBins = generateSimpleHashBin(CommonUtils.getByteLength(params.l));
         // max bin size
         int approxMaxBinSize = MaxBinSizeUtils.approxMaxBinSize(serverElementSize * hashNum, params.binNum);

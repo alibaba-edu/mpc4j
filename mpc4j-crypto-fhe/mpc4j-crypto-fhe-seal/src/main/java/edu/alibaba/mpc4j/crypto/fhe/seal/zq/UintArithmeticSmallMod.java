@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.fhe.seal.zq;
 
-import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 
 import java.util.Arrays;
 
@@ -32,7 +32,7 @@ public class UintArithmeticSmallMod {
      * @param modulus  modulus.
      * @return Σ_i (a_i * b_i) mod modulus, i ∈ [0, count).
      */
-    public static long dotProductMod(long[] operand1, long[] operand2, int count, Modulus modulus) {
+    public static long dotProductMod(long[] operand1, long[] operand2, int count, AbstractModulus modulus) {
         assert count >= 0;
         long[] accumulator = new long[2];
         switch (count) {
@@ -104,7 +104,7 @@ public class UintArithmeticSmallMod {
      * @param modulus  modulus.
      * @return a^e mod modulus.
      */
-    public static long exponentUintMod(long operand, long exponent, Modulus modulus) {
+    public static long exponentUintMod(long operand, long exponent, AbstractModulus modulus) {
         assert !modulus.isZero();
         assert operand < modulus.value();
         if (exponent == 0) {
@@ -143,7 +143,7 @@ public class UintArithmeticSmallMod {
      * @param result  result[0] stores a^{-1} mod modulus.
      * @return true if a^{-1} exists; otherwise, return false.
      */
-    public static boolean tryInvertUintMod(long operand, Modulus modulus, long[] result) {
+    public static boolean tryInvertUintMod(long operand, AbstractModulus modulus, long[] result) {
         return Numth.tryInvertUintMod(operand, modulus.value(), result);
     }
 
@@ -167,7 +167,7 @@ public class UintArithmeticSmallMod {
      * @param uint64Count number of uint64 used in operand.
      * @param modulus     modulus.
      */
-    public static void moduloUintInplace(long[] operand, int uint64Count, Modulus modulus) {
+    public static void moduloUintInplace(long[] operand, int uint64Count, AbstractModulus modulus) {
         assert operand != null;
         assert uint64Count > 0;
 
@@ -195,7 +195,7 @@ public class UintArithmeticSmallMod {
      * @param modulus     modulus.
      * @return a mod modulus.
      */
-    public static long moduloUint(long[] operand, int uint64Count, Modulus modulus) {
+    public static long moduloUint(long[] operand, int uint64Count, AbstractModulus modulus) {
         return moduloUint(operand, 0, uint64Count, modulus);
     }
 
@@ -208,7 +208,7 @@ public class UintArithmeticSmallMod {
      * @param modulus     modulus.
      * @return a mod modulus.
      */
-    public static long moduloUint(long[] operand, int startIndex, int uint64Count, Modulus modulus) {
+    public static long moduloUint(long[] operand, int startIndex, int uint64Count, AbstractModulus modulus) {
         assert uint64Count > 0;
 
         if (uint64Count == 1) {
@@ -238,7 +238,7 @@ public class UintArithmeticSmallMod {
      * @param modulus  modulus.
      * @return (a * b) + c mod modulus.
      */
-    public static long multiplyAddUintMod(long operand1, long operand2, long operand3, Modulus modulus) {
+    public static long multiplyAddUintMod(long operand1, long operand2, long operand3, AbstractModulus modulus) {
         long[] tmp = new long[2];
         UintArithmetic.multiplyUint64(operand1, operand2, tmp);
         long[] addTmp = new long[1];
@@ -260,7 +260,7 @@ public class UintArithmeticSmallMod {
      * @param modulus  modulus.
      * @return (operand1 * operand2) + operand3 mod modulus.
      */
-    public static long multiplyAddUintMod(long operand1, MultiplyUintModOperand operand2, long operand3, Modulus modulus) {
+    public static long multiplyAddUintMod(long operand1, MultiplyUintModOperand operand2, long operand3, AbstractModulus modulus) {
         return addUintMod(multiplyUintMod(operand1, operand2, modulus), barrettReduce64(operand3, modulus), modulus);
     }
 
@@ -273,7 +273,7 @@ public class UintArithmeticSmallMod {
      * @param modulus  modulus.
      * @return (a * b) mod modulus.
      */
-    public static long multiplyUintMod(long operand1, long operand2, Modulus modulus) {
+    public static long multiplyUintMod(long operand1, long operand2, AbstractModulus modulus) {
         long[] z = new long[2];
         UintArithmetic.multiplyUint64(operand1, operand2, z);
         return barrettReduce128(z, modulus);
@@ -287,7 +287,7 @@ public class UintArithmeticSmallMod {
      * @param modulus  modulus.
      * @return a * b mod modulus.
      */
-    public static long multiplyUintMod(long operand1, MultiplyUintModOperand operand2, Modulus modulus) {
+    public static long multiplyUintMod(long operand1, MultiplyUintModOperand operand2, AbstractModulus modulus) {
         assert operand2.operand < modulus.value() : "y: " + operand2.operand + ", modulus: " + modulus.value();
 
         long tmp1, tmp2;
@@ -306,7 +306,7 @@ public class UintArithmeticSmallMod {
      * @param modulus  modulus.
      * @return (a * b mod modulus) or (a * b mod modulus + modulus).
      */
-    public static long multiplyUintModLazy(long operand1, MultiplyUintModOperand operand2, Modulus modulus) {
+    public static long multiplyUintModLazy(long operand1, MultiplyUintModOperand operand2, AbstractModulus modulus) {
         assert operand2.operand < modulus.value();
 
         long tmp1;
@@ -323,7 +323,7 @@ public class UintArithmeticSmallMod {
      * @param modulus modulus.
      * @return operand mod modulus.
      */
-    public static long barrettReduce64(long operand, Modulus modulus) {
+    public static long barrettReduce64(long operand, AbstractModulus modulus) {
         // Reduces operand using base 2^64 Barrett reduction
         // floor(2^64 / mod) == floor( floor(2^128 / mod) )
         long q = UintArithmetic.multiplyUint64Hw64(operand, modulus.constRatio()[1]);
@@ -338,7 +338,7 @@ public class UintArithmeticSmallMod {
      * @param modulus modulus.
      * @return operand mod modulus.
      */
-    public static long barrettReduce128(long[] operand, Modulus modulus) {
+    public static long barrettReduce128(long[] operand, AbstractModulus modulus) {
         assert operand.length == 2;
 
         long tmp1, tmp3, carry;
@@ -375,7 +375,7 @@ public class UintArithmeticSmallMod {
      * @param modulus modulus.
      * @return (operand + 1) mod modulus.
      */
-    public static long incrementUintMod(long operand, Modulus modulus) {
+    public static long incrementUintMod(long operand, AbstractModulus modulus) {
         assert Long.compareUnsigned(operand, (modulus.value() - 1) << 1) <= 0;
 
         operand++;
@@ -389,7 +389,7 @@ public class UintArithmeticSmallMod {
      * @param modulus modulus.
      * @return (operand - 1) mod modulus.
      */
-    public static long decrementUintMod(long operand, Modulus modulus) {
+    public static long decrementUintMod(long operand, AbstractModulus modulus) {
         assert !modulus.isZero();
         assert Long.compareUnsigned(operand, modulus.value()) < 0;
 
@@ -404,7 +404,7 @@ public class UintArithmeticSmallMod {
      * @param modulus modulus.
      * @return (- operand) mod modulus.
      */
-    public static long negateUintMod(long operand, Modulus modulus) {
+    public static long negateUintMod(long operand, AbstractModulus modulus) {
         assert !modulus.isZero();
         assert Long.compareUnsigned(operand, modulus.value()) < 0;
 
@@ -419,7 +419,7 @@ public class UintArithmeticSmallMod {
      * @param modulus modulus.
      * @return (operand / 2) mod modulus.
      */
-    public static long div2UintMod(long operand, Modulus modulus) {
+    public static long div2UintMod(long operand, AbstractModulus modulus) {
         assert !modulus.isZero();
         assert Long.compareUnsigned(operand, modulus.value()) < 0;
 
@@ -446,7 +446,7 @@ public class UintArithmeticSmallMod {
      * @param modulus  modulus.
      * @return (a + b) mod modulus.
      */
-    public static long addUintMod(long operand1, long operand2, Modulus modulus) {
+    public static long addUintMod(long operand1, long operand2, AbstractModulus modulus) {
         assert !modulus.isZero();
         assert Long.compareUnsigned(operand1 + operand2, modulus.value() << 1) < 0;
         // Sum of a + b modulo Modulus can never wrap around 2^64
@@ -462,7 +462,7 @@ public class UintArithmeticSmallMod {
      * @param modulus  modulus.
      * @return (a - b) mod modulus.
      */
-    public static long subUintMod(long operand1, long operand2, Modulus modulus) {
+    public static long subUintMod(long operand1, long operand2, AbstractModulus modulus) {
         assert !modulus.isZero();
         assert Long.compareUnsigned(operand1, modulus.value()) < 0;
         assert Long.compareUnsigned(operand2, modulus.value()) < 0;

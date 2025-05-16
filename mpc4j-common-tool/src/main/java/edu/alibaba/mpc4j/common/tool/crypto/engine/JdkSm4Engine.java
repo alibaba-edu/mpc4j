@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.crypto.engine;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -190,7 +190,7 @@ public class JdkSm4Engine {
         if (rk == null) {
             throw new IllegalStateException("SM4 not initialized");
         }
-        if (input.length != CommonConstants.BLOCK_BYTE_LENGTH) {
+        if (input.length != BlockUtils.BYTE_LENGTH) {
             if (forEncryption) {
                 throw new IllegalArgumentException(String.format("Invalid plaintext length: %s bytes", input.length));
             } else {
@@ -211,7 +211,7 @@ public class JdkSm4Engine {
             state[3] = F3(state, rk[i + 3]);
         }
         // 返回输出
-        byte[] output = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] output = BlockUtils.zeroBlock();
         Pack.intToBigEndian(state[3], output, 0);
         Pack.intToBigEndian(state[2], output, 4);
         Pack.intToBigEndian(state[1], output, 8);

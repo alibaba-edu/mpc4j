@@ -2,8 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfFactory.BpRdpprfType;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfSenderOutput;
@@ -222,7 +221,7 @@ public class BpRdpprfTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         int batchNum = DEFAULT_BATCH_NUM;
         int alphaBound = DEFAULT_EACH_NUM;
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+        byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
         int[] alphaArray = IntStream.range(0, batchNum)
             .map(mIndex -> SECURE_RANDOM.nextInt(batchNum))
             .toArray();

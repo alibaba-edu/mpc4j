@@ -5,12 +5,11 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.structure.fusefilter.Arity3ByteFuseFilter;
 import edu.alibaba.mpc4j.common.structure.matrix.IntMatrix;
 import edu.alibaba.mpc4j.common.structure.vector.IntVector;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.hash.IntHash;
 import edu.alibaba.mpc4j.common.tool.hash.bobhash.BobIntHash;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.AbstractCpKsPirServer;
@@ -68,7 +67,7 @@ public class ChalametCpKsPirServer<T> extends AbstractCpKsPirServer<T> implement
 
         stopWatch.start();
         // random matrix A
-        byte[] matrixSeed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] matrixSeed = BlockUtils.randomBlock(secureRandom);
         sendOtherPartyPayload(PtoStep.SERVER_SEND_SEED.ordinal(), Collections.singletonList(matrixSeed));
         filterLength = fuseFilter.filterLength();
         db = IntMatrix.createZeros(filterLength, byteL + DIGEST_BYTE_L);

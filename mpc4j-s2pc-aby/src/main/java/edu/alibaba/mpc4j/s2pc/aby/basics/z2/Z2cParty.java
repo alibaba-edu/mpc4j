@@ -141,6 +141,17 @@ public interface Z2cParty extends TwoPartyPto, MpcZ2cParty {
     SquareZ2Vector[] and(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) throws MpcAbortException;
 
     /**
+     * And operation between a vector and multiple vector, treat the xiArray as multiple vectors
+     *
+     * @param f f.
+     * @param xiArray xi array.
+     * @return zi array, such that for each j, z[i] = f[i] · x[i].
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    @Override
+    SquareZ2Vector[] and(MpcZ2Vector f, MpcZ2Vector[] xiArray) throws MpcAbortException;
+
+    /**
      * XOR operation.
      *
      * @param xi xi.
@@ -207,4 +218,15 @@ public interface Z2cParty extends TwoPartyPto, MpcZ2cParty {
     default SquareZ2Vector[] or(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) throws MpcAbortException {
         return xor(xor(xiArray, yiArray), and(xiArray, yiArray));
     }
+
+    /**
+     * Vector AND operations.
+     *
+     * @param xiArray xi array.
+     * @param yiArray yi array.
+     * @return zi array, such that for each j, z[i] = x[i] & y[i].
+     * @throws MpcAbortException if the protocol is abort.
+     */
+    @Override
+    SquareZ2Vector[] mux(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray, MpcZ2Vector ciArray) throws MpcAbortException;
 }

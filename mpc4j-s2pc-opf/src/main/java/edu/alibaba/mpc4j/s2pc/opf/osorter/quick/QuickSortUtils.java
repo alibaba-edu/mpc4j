@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.stream.IntStream;
 
 /**
+ * utilities for quick sort
+ *
  * @author Feng Han
  * @date 2024/9/29
  */
@@ -18,8 +20,6 @@ public class QuickSortUtils {
      * @return [[rank determined in pivot chosen process], [index to be compared]]
      */
     public static int[][] moveIndex(int[] range, int[] pivotRank){
-//        System.out.println(Arrays.toString(range));
-//        System.out.println(Arrays.toString(pivotRank));
         int[] all = IntStream.range(range[0], range[1] + 1).toArray();
         int[] partRank = new int[all.length];
         int threshold = pivotRank.length;
@@ -28,7 +28,6 @@ public class QuickSortUtils {
                 partRank[j] = pivotRank[j];
                 partRank[end] = pivotRank[pivotRank.length - 1 - j];
             }
-//            swap(pivotRank, threshold - 1, pivotRank.length / 2);
         }
         HashSet<Integer> set = new HashSet<>();
         Arrays.stream(pivotRank).forEach(set::add);
@@ -44,8 +43,6 @@ public class QuickSortUtils {
             }
         }
         all[threshold - 1] = pivotRank[threshold / 2];
-//        System.out.println(Arrays.toString(partRank));
-//        System.out.println(Arrays.toString(all));
         return new int[][]{partRank, Arrays.copyOfRange(all, threshold - 1, all.length)};
     }
 

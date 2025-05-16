@@ -26,7 +26,7 @@ public class EncryptionParameterQualifiers {
      * <li>success, if parameters are considered valid;</li>
      * <li>other values.</li>
      */
-    ErrorType parameterError;
+    public ErrorType parameterError;
     /**
      * Tells whether FFT can be used for polynomial multiplication. If the
      * polynomial modulus is of the form X^N+1, where N is a power of two, then
@@ -35,7 +35,7 @@ public class EncryptionParameterQualifiers {
      * currently Microsoft SEAL requires this to be the case for the parameters
      * to be valid. Therefore, parameters_set can only be true if using_fft is true.
      */
-    boolean usingFft;
+    public boolean usingFft;
     /**
      * Tells whether NTT can be used for polynomial multiplication. If the primes
      * in the coefficient modulus are congruent to 1 modulo 2N, where X^N+1 is the
@@ -46,7 +46,7 @@ public class EncryptionParameterQualifiers {
      * this to be the case for the parameters to be valid. Therefore, parameters_set
      * can only be true if using_ntt is true.
      */
-    boolean usingNtt;
+    public boolean usingNtt;
     /**
      * Tells whether batching is supported by the encryption parameters. If the
      * plaintext modulus is congruent to 1 modulo 2N, where X^N+1 is the polynomial
@@ -58,7 +58,7 @@ public class EncryptionParameterQualifiers {
      * batching can yield a huge performance boost. If the encryption parameters
      * support batching, the variable using_batching is set to true.
      */
-    boolean usingBatching;
+    public boolean usingBatching;
     /**
      * Tells whether fast plain lift is supported by the encryption parameters.
      * A certain performance optimization in multiplication of a ciphertext by
@@ -67,18 +67,18 @@ public class EncryptionParameterQualifiers {
      * plaintext modulus is smaller than each prime in the coefficient modulus.
      * In this case the variable using_fast_plain_lift is set to true.
      */
-    boolean usingFastPlainLift;
+    public boolean usingFastPlainLift;
     /**
      * Tells whether the coefficient modulus consists of a set of primes that
      * are in decreasing order. If this is true, certain modular reductions in
      * base conversion can be omitted, improving performance.
      */
-    boolean usingDescendingModulusChain;
+    public boolean usingDescendingModulusChain;
     /**
      * Tells whether the encryption parameters are secure based on the standard
      * parameters from HomomorphicEncryption.org security standard.
      */
-    SecLevelType securityLevel;
+    public SecLevelType securityLevel;
 
     /**
      * Creates an EncryptionParameterQualifiers with the default value.

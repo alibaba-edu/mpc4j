@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2024/5/27
  */
 public class FakeZ2TripleGenSender extends AbstractZ2TripleGenParty {
+    public static long mtNum = 0;
     /**
      * PRNG
      */
@@ -52,6 +53,7 @@ public class FakeZ2TripleGenSender extends AbstractZ2TripleGenParty {
         logStepInfo(PtoState.INIT_STEP, 1, 1, time);
 
         logPhaseInfo(PtoState.PTO_END);
+        mtNum += num;
         return senderTriple;
     }
 

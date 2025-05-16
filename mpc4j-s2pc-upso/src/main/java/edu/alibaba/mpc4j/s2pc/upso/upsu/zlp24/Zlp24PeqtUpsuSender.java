@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.MaxBinSizeUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
@@ -119,13 +120,13 @@ public class Zlp24PeqtUpsuSender extends AbstractUpsuSender {
         cuckooHashBin = CuckooHashBinFactory.createNoStashCuckooHashBin(
             envType, cuckooHashBinType, maxSenderElementSize, cuckooHashKeys
         );
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         // init single query OPRF
         sqOprfReceiver.init(maxSenderElementSize);
         // send dokvs hash keys
         int dokvsHashKeyNum = getHashKeyNum(gf2eDokvsType);
-        byte[][] dokvsHashKeys = CommonUtils.generateRandomKeys(dokvsHashKeyNum, secureRandom);
+        byte[][] dokvsHashKeys = BlockUtils.randomBlocks(dokvsHashKeyNum, secureRandom);
         DataPacketHeader dokvsHashKeysHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_DOKVS_KEYS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
@@ -278,7 +279,7 @@ public class Zlp24PeqtUpsuSender extends AbstractUpsuSender {
                                          List<Integer> retrievalIndexList) {
         byte[][] dokvsStorage = new byte[dokvs.getM()][];
         IntStream.range(0, retrievalIndexList.size()).forEach(i ->
-            dokvsStorage[retrievalIndexList.get(i)] = BytesUtils.clone(okvsSparsePayload[i]).clone()
+            dokvsStorage[retrievalIndexList.get(i)] = BytesUtils.clone(okvsSparsePayload[i])
         );
         IntStream.range(0, dokvs.densePositionRange()).forEach(i ->
             dokvsStorage[i + dokvs.sparsePositionRange()] = BytesUtils.clone(okvsDensePayload.get(i))

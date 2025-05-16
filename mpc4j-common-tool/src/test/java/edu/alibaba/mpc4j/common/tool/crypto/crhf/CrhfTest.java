@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,24 +39,24 @@ public class CrhfTest {
     /**
      * 全0明文
      */
-    private static final byte[] ZERO_MESSAGE = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_MESSAGE = BlockUtils.zeroBlock();
     /**
      * 随机状态
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    @Parameterized.Parameters(name="{0}")
+    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
         // SIMD_MMO_SIGMA
-        configurations.add(new Object[] {CrhfType.SIMD_MMO_SIGMA.name(), CrhfType.SIMD_MMO_SIGMA, });
+        configurations.add(new Object[]{CrhfType.SIMD_MMO_SIGMA.name(), CrhfType.SIMD_MMO_SIGMA,});
         // JDK_MMO_SIGMA
-        configurations.add(new Object[] {CrhfType.JDK_MMO_SIGMA.name(), CrhfType.JDK_MMO_SIGMA, });
+        configurations.add(new Object[]{CrhfType.JDK_MMO_SIGMA.name(), CrhfType.JDK_MMO_SIGMA,});
         // FIXED_KEY_MMO
-        configurations.add(new Object[] {CrhfType.FIXED_KEY_MMO.name(), CrhfType.FIXED_KEY_MMO, });
+        configurations.add(new Object[]{CrhfType.FIXED_KEY_MMO.name(), CrhfType.FIXED_KEY_MMO,});
         // MMO
-        configurations.add(new Object[] {CrhfType.MMO.name(), CrhfType.MMO, });
+        configurations.add(new Object[]{CrhfType.MMO.name(), CrhfType.MMO,});
 
         return configurations;
     }
@@ -112,8 +113,7 @@ public class CrhfTest {
         Crhf crhf = CrhfFactory.createInstance(EnvType.STANDARD, type);
         // 不同消息的CRHF结果应不相同
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-            byte[] randomMessage = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomMessage);
+            byte[] randomMessage = BlockUtils.randomBlock(SECURE_RANDOM);
             randomHashSet.add(ByteBuffer.wrap(crhf.hash(randomMessage)));
         }
         Assert.assertEquals(MAX_RANDOM_ROUND, randomHashSet.size());

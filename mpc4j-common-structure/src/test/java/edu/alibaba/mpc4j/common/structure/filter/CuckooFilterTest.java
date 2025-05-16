@@ -2,9 +2,8 @@ package edu.alibaba.mpc4j.common.structure.filter;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.structure.filter.CuckooFilterFactory.CuckooFilterType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import gnu.trove.set.TIntSet;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -73,7 +72,7 @@ public class CuckooFilterTest {
     }
 
     private void testParameters(int maxSize) {
-        byte[][] keys = CommonUtils.generateRandomKeys(CuckooFilter.getHashKeyNum(), secureRandom);
+        byte[][] keys = BlockUtils.randomBlocks(CuckooFilter.getHashKeyNum(), secureRandom);
         CuckooFilter<ByteBuffer> cuckooFilter = CuckooFilterFactory.createCuckooFilter(EnvType.STANDARD, type, maxSize, keys);
         // type
         Assert.assertEquals(type, cuckooFilter.getCuckooFilterType());
@@ -95,7 +94,7 @@ public class CuckooFilterTest {
 
     private void testCuckooFilter(int maxSize) {
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(CuckooFilter.getHashKeyNum(), secureRandom);
+            byte[][] keys = BlockUtils.randomBlocks(CuckooFilter.getHashKeyNum(), secureRandom);
             CuckooFilter<ByteBuffer> cuckooFilter = CuckooFilterFactory.createCuckooFilter(EnvType.STANDARD, type, maxSize, keys);
             int bucketNum = cuckooFilter.getBucketNum();
             // start with empty filer
@@ -152,7 +151,7 @@ public class CuckooFilterTest {
 
     private void testCuckooFilterPosition(int maxSize) {
         // test parameters
-        byte[][] parameterKeys = CommonUtils.generateRandomKeys(CuckooFilter.getHashKeyNum(), secureRandom);
+        byte[][] parameterKeys = BlockUtils.randomBlocks(CuckooFilter.getHashKeyNum(), secureRandom);
         CuckooFilterPosition<ByteBuffer> parameterCuckooFilterPosition = CuckooFilterFactory
             .createCuckooFilterPosition(EnvType.STANDARD, type, maxSize, parameterKeys);
         // type
@@ -164,7 +163,7 @@ public class CuckooFilterTest {
         // fingerprint byte length
         Assert.assertEquals(CuckooFilterFactory.getFingerprintByteLength(type), parameterCuckooFilterPosition.getFingerprintByteLength());
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(CuckooFilter.getHashKeyNum(), secureRandom);
+            byte[][] keys = BlockUtils.randomBlocks(CuckooFilter.getHashKeyNum(), secureRandom);
             // create cuckoo filter and its corresponding cuckoo filter position.
             CuckooFilterPosition<ByteBuffer> cuckooFilterPosition = CuckooFilterFactory
                 .createCuckooFilterPosition(EnvType.STANDARD, type, maxSize, keys);
@@ -196,7 +195,7 @@ public class CuckooFilterTest {
 
     @Test
     public void testSerialize() {
-        byte[][] keys = CommonUtils.generateRandomKeys(CuckooFilter.getHashKeyNum(), secureRandom);
+        byte[][] keys = BlockUtils.randomBlocks(CuckooFilter.getHashKeyNum(), secureRandom);
         CuckooFilter<ByteBuffer> cuckooFilter = CuckooFilterFactory.createCuckooFilter(EnvType.STANDARD, type, DEFAULT_SIZE, keys);
         // insert elements into the filter
         List<ByteBuffer> items = randomItems(DEFAULT_SIZE);
@@ -211,8 +210,7 @@ public class CuckooFilterTest {
     private ArrayList<ByteBuffer> randomItems(int size) {
         return IntStream.range(0, size)
             .mapToObj(index -> {
-                byte[] itemByteArray = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                secureRandom.nextBytes(itemByteArray);
+                byte[] itemByteArray = BlockUtils.randomBlock(secureRandom);
                 return ByteBuffer.wrap(itemByteArray);
             })
             .collect(Collectors.toCollection(ArrayList::new));

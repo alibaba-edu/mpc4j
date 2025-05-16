@@ -7,10 +7,8 @@ import edu.alibaba.mpc4j.crypto.fhe.seal.serialization.SealCloneable;
 import edu.alibaba.mpc4j.crypto.fhe.seal.serialization.SealVersion;
 import edu.alibaba.mpc4j.crypto.fhe.seal.serialization.Serialization;
 import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.*;
-import java.util.Arrays;
 
 /**
  * Uniform random generator information.
@@ -21,11 +19,7 @@ import java.util.Arrays;
  * @author Weiran Liu
  * @date 2023/12/13
  */
-public class UniformRandomGeneratorInfo implements SealCloneable {
-    /**
-     * PRNG info indicator
-     */
-    public static final long PRNG_INFO_INDICATOR = 0xFFFFFFFFFFFFFFFFL;
+public class UniformRandomGeneratorInfo extends AbstractUniformRandomGeneratorInfo implements SealCloneable {
     /**
      * Returns an upper bound on the size of the UniformRandomGeneratorInfo, as
      * if it was written to an output stream. The implementation is different
@@ -40,20 +34,10 @@ public class UniformRandomGeneratorInfo implements SealCloneable {
     }
 
     /**
-     * prng_type
-     */
-    private PrngType type;
-    /**
-     * seed
-     */
-    private final long[] seed;
-
-    /**
      * Creates a new UniformRandomGeneratorInfo.
      */
     public UniformRandomGeneratorInfo() {
-        type = PrngType.UNKNOWN;
-        seed = new long[UniformRandomGeneratorFactory.PRNG_SEED_UINT64_COUNT];
+        super();
     }
 
     /**
@@ -63,8 +47,7 @@ public class UniformRandomGeneratorInfo implements SealCloneable {
      * @param seed the PRNG seed.
      */
     public UniformRandomGeneratorInfo(PrngType type, long[] seed) {
-        this.type = type;
-        this.seed = seed;
+        super(type, seed);
     }
 
     /**
@@ -73,50 +56,7 @@ public class UniformRandomGeneratorInfo implements SealCloneable {
      * @param copy the UniformRandomGeneratorInfo to copy from.
      */
     public UniformRandomGeneratorInfo(UniformRandomGeneratorInfo copy) {
-        this.type = copy.type;
-        this.seed = Arrays.copyOf(copy.seed, copy.seed.length);
-    }
-
-    /**
-     * Creates a new UniformRandomGenerator object of type indicated by the PRNG
-     * type and seeded with the current seed. If the current PRNG type is not
-     * an official Microsoft SEAL PRNG type, the return value is nullptr.
-     *
-     * @return a PRNG.
-     */
-    public UniformRandomGenerator makePrng() {
-        return switch (type) {
-            case BLAKE2XB -> new Blake2xbPrng(seed);
-            case SHAKE256 -> new Shake256Prng(seed);
-            case UNKNOWN -> null;
-        };
-    }
-
-    /**
-     * Returns whether this object holds a valid PRNG type.
-     *
-     * @return true if holding a valid PRNG type; false otherwise.
-     */
-    public boolean hasValidPrngType() {
-        return true;
-    }
-
-    /**
-     * Returns the PRNG type.
-     *
-     * @return the PRNG type.
-     */
-    public PrngType getType() {
-        return type;
-    }
-
-    /**
-     * Returns a reference to the PRNG seed.
-     *
-     * @return a reference to the PRNG seed.
-     */
-    public long[] getSeed() {
-        return seed;
+        super(copy);
     }
 
     @Override
@@ -131,14 +71,6 @@ public class UniformRandomGeneratorInfo implements SealCloneable {
             .append(this.type, that.type)
             .append(this.seed, that.seed)
             .isEquals();
-    }
-
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder()
-            .append(type)
-            .append(seed)
-            .toHashCode();
     }
 
     @Override
@@ -174,31 +106,5 @@ public class UniformRandomGeneratorInfo implements SealCloneable {
     @Override
     public void load(SealContext context, byte[] in) throws IOException {
         unsafeLoad(context, in);
-    }
-
-    /**
-     * Saves the PRNG flag and seed into a long array.
-     *
-     * @param out the long array.
-     * @param offset the offset.
-     */
-    public void save(long[] out, int offset) {
-        out[offset] = type.getValue();
-        for (int i = 0; i < UniformRandomGeneratorFactory.PRNG_SEED_UINT64_COUNT; i++) {
-            out[offset + 1 + i] = seed[i];
-        }
-    }
-
-    /**
-     * Loads the PRNG from a long array.
-     *
-     * @param in the long array.
-     * @param offset the offset.
-     */
-    public void load(long[] in, int offset) {
-        type = PrngType.getByValue((int)in[offset]);
-        for (int i = 0; i < UniformRandomGeneratorFactory.PRNG_SEED_UINT64_COUNT; i++) {
-            seed[i] = in[offset + 1 + i];
-        }
     }
 }

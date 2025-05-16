@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp.gyw23;
 
 import edu.alibaba.mpc4j.common.rpc.*;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.SpCdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.SpCdpprfSender;
@@ -111,7 +112,7 @@ public class Gyw23SspCotSender extends AbstractSspCotSender {
             SpCdpprfSenderOutput spCdpprfSenderOutput = spCdpprfSender.puncture(1 << h, cotSenderOutput);
             byte[][] r0Array = spCdpprfSenderOutput.getV0Array();
             if (num < (1 << h)) {
-                byte[][] reduceR0Array = new byte[num][];
+                byte[][] reduceR0Array = BlockUtils.zeroBlocks(num);
                 System.arraycopy(r0Array, 0, reduceR0Array, 0, num);
                 r0Array = reduceR0Array;
             }

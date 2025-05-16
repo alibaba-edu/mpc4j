@@ -11,7 +11,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfSender;
@@ -149,12 +149,13 @@ public class Ywl20MaSspCotSender extends AbstractSspCotSender {
         logStepInfo(PtoState.PTO_STEP, 2, 4, dpprfTime);
 
         stopWatch.start();
-        byte[] correlateByteArray = BytesUtils.clone(delta);
+        byte[] correlateByteArray = BlockUtils.zeroBlock();
+        BlockUtils.xori(correlateByteArray, delta);
         // S sets v = (s_0^h,...,s_{n - 1}^h)
         byte[][] vs = spRdpprfSenderOutput.getV0Array();
         // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
         for (int i = 0; i < num; i++) {
-            BytesUtils.xori(correlateByteArray, vs[i]);
+            BlockUtils.xori(correlateByteArray, vs[i]);
         }
         SspCotSenderOutput senderOutput = SspCotSenderOutput.create(delta, vs);
         List<byte[]> correlatePayload = Collections.singletonList(correlateByteArray);
@@ -196,15 +197,15 @@ public class Ywl20MaSspCotSender extends AbstractSspCotSender {
         byte[] xPrime = checkChoicePayload.get(0);
         boolean[] xPrimeBinary = BinaryUtils.byteArrayToBinary(xPrime, CommonConstants.BLOCK_BIT_LENGTH);
         // S computes \vec{y} := \vec{y}^* + \vec{x}·∆, Y := Σ_{i ∈ [κ]} (y[i]·X^i) ∈ F_{2^κ}
-        byte[] y = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] y = BlockUtils.zeroBlock();
         for (int checkIndex = 0; checkIndex < CommonConstants.BLOCK_BIT_LENGTH; checkIndex++) {
             // y[i] = y[i]^* + x[i]·∆
             byte[] yi = checkCotSenderOutput.getR0(checkIndex);
             if (xPrimeBinary[checkIndex]) {
-                BytesUtils.xori(yi, delta);
+                BlockUtils.xori(yi, delta);
             }
             // y[i]·X^i
-            byte[] xi = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            byte[] xi = BlockUtils.zeroBlock();
             BinaryUtils.setBoolean(xi, checkIndex, true);
             gf2k.muli(yi, xi);
             // y += y[i]·X^i
@@ -212,7 +213,7 @@ public class Ywl20MaSspCotSender extends AbstractSspCotSender {
         }
         checkCotSenderOutput = null;
         // S computes V := Σ_{i ∈ [n]} (χ[i]·v[i]) + Y ∈ F_{2^κ}
-        byte[] v = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] v = BlockUtils.zeroBlock();
         for (int i = 0; i < num; i++) {
             // samples uniform {χ_i}_{i ∈ [n]}
             byte[] indexMessage = ByteBuffer.allocate(Long.BYTES + Integer.BYTES).putLong(extraInfo).putInt(i).array();

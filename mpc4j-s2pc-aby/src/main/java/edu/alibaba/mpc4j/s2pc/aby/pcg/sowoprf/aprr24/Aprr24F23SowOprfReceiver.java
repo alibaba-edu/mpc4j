@@ -4,10 +4,10 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3Utils;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.AbstractF23SowOprfReceiver;
@@ -23,6 +23,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -79,7 +80,8 @@ public class Aprr24F23SowOprfReceiver extends AbstractF23SowOprfReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        coreCotSender.init(BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom));
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
+        coreCotSender.init(delta);
         // The parties run the setup for Conv32 for m conversions.
         assert expectBatchSize != 0;
         if (expectBatchSize > 0) {
@@ -183,7 +185,7 @@ public class Aprr24F23SowOprfReceiver extends AbstractF23SowOprfReceiver {
                 return f;
             })
             .toArray(byte[][]::new);
-        List<byte[]> fPayload = Arrays.stream(fs).toList();
+        List<byte[]> fPayload = Arrays.stream(fs).collect(Collectors.toList());
         sendOtherPartyPayload(PtoStep.RECEIVER_SEND_F.ordinal(), fPayload);
         // P1 computes u := A ·_2 h0, δ := u ⊕ d
         IntStream deltaIntStream = IntStream.range(0, subBatchSize);
@@ -232,7 +234,7 @@ public class Aprr24F23SowOprfReceiver extends AbstractF23SowOprfReceiver {
         List<byte[]> tPayload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_T.ordinal());
 
         stopWatch.start();
-        byte[][] ts = tPayload.toArray(byte[][]::new);
+        byte[][] ts = tPayload.stream().toArray(byte[][]::new);
         // P1 computes q := B ·_3 [s′ +_3 (t ⊙ d)].
         IntStream qIntStream = parallel ? IntStream.range(0, subBatchSize).parallel() : IntStream.range(0, subBatchSize);
         byte[][] qs = qIntStream

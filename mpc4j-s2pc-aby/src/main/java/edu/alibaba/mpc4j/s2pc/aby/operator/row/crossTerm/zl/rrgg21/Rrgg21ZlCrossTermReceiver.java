@@ -5,9 +5,8 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cParty;
 import edu.alibaba.mpc4j.s2pc.aby.operator.row.crossTerm.zl.AbstractZlCrossTermReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotFactory;
@@ -52,7 +51,7 @@ public class Rrgg21ZlCrossTermReceiver extends AbstractZlCrossTermReceiver {
 
         stopWatch.start();
         for (int i = 0; i < Long.SIZE; i++) {
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[] delta = BlockUtils.randomBlock(secureRandom);
             cotSender[i].init(delta, 1);
         }
         stopWatch.stop();

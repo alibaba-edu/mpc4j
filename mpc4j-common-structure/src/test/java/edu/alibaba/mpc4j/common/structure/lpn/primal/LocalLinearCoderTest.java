@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.structure.lpn.primal;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -67,7 +68,7 @@ public class LocalLinearCoderTest {
 
     private void testGf2eEncode(boolean parallel) {
         // init coder with random seed
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         LocalLinearCoder localLinearCoder = new LocalLinearCoder(k, n, seed);
         localLinearCoder.setParallel(parallel);
         // encode different byte length
@@ -93,7 +94,7 @@ public class LocalLinearCoderTest {
 
     private void testBinaryEncode(boolean parallel) {
         // init coder with random seed
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         LocalLinearCoder localLinearCoder = new LocalLinearCoder(k, n, seed);
         localLinearCoder.setParallel(parallel);
         // random input

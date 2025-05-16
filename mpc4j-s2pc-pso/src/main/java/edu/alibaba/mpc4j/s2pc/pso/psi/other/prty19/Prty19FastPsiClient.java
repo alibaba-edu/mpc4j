@@ -21,8 +21,8 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.TwoChoiceHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePoly;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePolyFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
@@ -80,10 +80,10 @@ public class Prty19FastPsiClient<T> extends AbstractPsiClient<T> {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         // generate and send two-choice hash keys
-        twoChoiceHashKeys = CommonUtils.generateRandomKeys(2, secureRandom);
+        twoChoiceHashKeys = BlockUtils.randomBlocks(2, secureRandom);
         List<byte[]> twoChoiceHashKeyPayload = Arrays.stream(twoChoiceHashKeys).collect(Collectors.toList());
         DataPacketHeader twoChoiceHashKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_TWO_CHOICE_HASH_KEY.ordinal(), extraInfo,
@@ -150,7 +150,7 @@ public class Prty19FastPsiClient<T> extends AbstractPsiClient<T> {
         // Bob computes a polynomial for each bin
         byte[][][] tys = new byte[binNum][binSize][];
         Prf elementPrf = PrfFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
-        elementPrf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        elementPrf.setKey(BlockUtils.zeroBlock());
         IntStream binIndexIntStream = IntStream.range(0, twoChoiceHashBin.binNum());
         binIndexIntStream = parallel ? binIndexIntStream.parallel() : binIndexIntStream;
         List<byte[]> polynomialsPayload = binIndexIntStream

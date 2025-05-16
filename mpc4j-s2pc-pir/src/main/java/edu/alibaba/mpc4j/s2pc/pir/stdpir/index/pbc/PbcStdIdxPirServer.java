@@ -6,11 +6,11 @@ import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.IntHashBin;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
+import edu.alibaba.mpc4j.common.tool.hashbin.primitive.ArraySimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory.IntCuckooHashBinType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pir.IdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.AbstractStdIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.PbcableStdIdxPirConfig;
@@ -67,7 +67,7 @@ public class PbcStdIdxPirServer extends AbstractStdIdxPirServer implements IdxPi
         List<byte[]> serverKeys = receiveOtherPartyPayload(PtoStep.CLIENT_SEND_PUBLIC_KEYS.ordinal());
         int hashNum = IntCuckooHashBinFactory.getHashNum(cuckooHashBinType);
         binNum = IntCuckooHashBinFactory.getBinNum(cuckooHashBinType, maxBatchNum);
-        byte[][] hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
+        byte[][] hashKeys = BlockUtils.randomBlocks(hashNum, secureRandom);
         NaiveDatabase[] binDatabase = generateSimpleHashBin(database, hashKeys);
         sendOtherPartyPayload(
             PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), Arrays.stream(hashKeys).collect(Collectors.toList())
@@ -120,7 +120,7 @@ public class PbcStdIdxPirServer extends AbstractStdIdxPirServer implements IdxPi
      */
     private NaiveDatabase[] generateSimpleHashBin(NaiveDatabase database, byte[][] hashKeys) {
         int[] totalIndex = IntStream.range(0, n).toArray();
-        IntHashBin intHashBin = new SimpleIntHashBin(envType, binNum, n, hashKeys);
+        IntHashBin intHashBin = new ArraySimpleIntHashBin(envType, binNum, n, hashKeys);
         intHashBin.insertItems(totalIndex);
         int maxBinSize = IntStream.range(0, binNum).map(intHashBin::binSize).max().orElse(0);
         byte[][][] paddingCompleteHashBin = new byte[binNum][maxBinSize][byteL];

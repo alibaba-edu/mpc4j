@@ -1,13 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.aprr24;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3Utils;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.AbstractF23SowOprfSender;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.F23Wprf;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.aprr24.Aprr24F23SowOprfPtoDesc.PtoStep;
@@ -74,7 +70,7 @@ public class Aprr24F23SowOprfSender extends AbstractF23SowOprfSender {
 
         stopWatch.start();
         coreCotReceiver.init();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         assert expectBatchSize != 0;
         if (expectBatchSize > 0) {
             cotSender.init(delta, expectBatchSize * F23Wprf.M);

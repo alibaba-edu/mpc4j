@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.AbstractBaseOtReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.csw20.Csw20BaseOtPtoDesc.PtoStep;
@@ -108,8 +108,7 @@ public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
 
     private List<byte[]> generateReceiverChoosePayLoad() {
         // 随机选取种子，用于生成群元素T
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         ECPoint upperT = ecc.hashToCurve(ByteBuffer
             .allocate(Long.BYTES + CommonConstants.BLOCK_BYTE_LENGTH)
             .putLong(extraInfo).put(seed)
@@ -153,7 +152,7 @@ public class Csw20BaseOtReceiver extends AbstractBaseOtReceiver {
                 .array());
             // 计算resp = H(k) \xor b* chall
             respByteArray[index] = choices[index] ?
-                BytesUtils.xor(kdf.deriveKey(rbArray[index]), sByteArray[index]) :
+                BlockUtils.xor(kdf.deriveKey(rbArray[index]), sByteArray[index]) :
                 kdf.deriveKey(rbArray[index]);
         });
         aArray = null;

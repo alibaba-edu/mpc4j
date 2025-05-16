@@ -34,12 +34,8 @@ public class PsorterFactory {
      * @return a adder.
      */
     public static Psorter createPsorter(PsorterFactory.SorterTypes type, Z2IntegerCircuit circuit) {
-        //noinspection SwitchStatementWithTooFewBranches
-        switch (type) {
-            case BITONIC:
-                return new PermutableBitonicSorter(circuit);
-            default:
-                throw new IllegalArgumentException("Invalid " + PsorterFactory.SorterTypes.class.getSimpleName() + ": " + type.name());
-        }
+        return switch (type) {
+            case BITONIC -> new PermutableBitonicSorter(circuit);
+        };
     }
 }

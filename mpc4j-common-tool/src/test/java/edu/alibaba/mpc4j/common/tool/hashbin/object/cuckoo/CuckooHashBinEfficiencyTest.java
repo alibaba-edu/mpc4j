@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -74,9 +74,8 @@ public class CuckooHashBinEfficiencyTest {
     private void testEfficiency(int logN) {
         int n = 1 << logN;
         for (CuckooHashBinType type : TYPES) {
-            byte[][] keys = CommonUtils.generateRandomKeys(
-                CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-            );
+            int hashNum = CuckooHashBinFactory.getHashNum(type);
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
             // 创建OKVS实例
             CuckooHashBin<ByteBuffer> hashBin = CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, n, keys);
             // 生成随机元素
@@ -95,9 +94,7 @@ public class CuckooHashBinEfficiencyTest {
                 } catch (ArithmeticException ignored) {
                     STOP_WATCH.stop();
                     STOP_WATCH.reset();
-                    keys = CommonUtils.generateRandomKeys(
-                        CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-                    );
+                    keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
                     hashBin = CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, n, keys);
                 }
             }

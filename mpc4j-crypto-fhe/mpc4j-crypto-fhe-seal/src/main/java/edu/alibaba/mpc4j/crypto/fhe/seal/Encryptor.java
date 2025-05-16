@@ -343,9 +343,9 @@ public class Encryptor {
         int coeff_count = parms.polyModulusDegree();
         boolean is_ntt_form = false;
 
-        if (parms.scheme().equals(SchemeType.CKKS)) {
+        if (parms.scheme().equals(SchemeType.CKKS) || parms.scheme().equals(SchemeType.BGV)) {
             is_ntt_form = true;
-        } else if (!parms.scheme().equals(SchemeType.BFV) && !parms.scheme().equals(SchemeType.BGV)) {
+        } else if (!parms.scheme().equals(SchemeType.BFV)) {
             throw new IllegalArgumentException("unsupported scheme");
         }
 
@@ -367,10 +367,10 @@ public class Encryptor {
                 // Modulus switching
                 PolyIterator tempIterator = PolyIterator.fromCiphertext(temp);
                 for (int i = 0; i < temp.size(); i++) {
-                    if (is_ntt_form) {
+                    if (parms.scheme().equals(SchemeType.CKKS)) {
                         // temp in ciphertext RnsBase
                         rns_tool.divideAndRoundQLastNttInplace(tempIterator.rnsIter[i], prev_context_data.smallNttTables());
-                    } else if (parms.scheme() != SchemeType.BGV) {
+                    } else if (parms.scheme().equals(SchemeType.BFV)) {
                         // bfv switch-to-next
                         rns_tool.divideAndRoundQLastInplace(tempIterator.rnsIter[i]);
                     } else {

@@ -1,10 +1,9 @@
 package edu.alibaba.mpc4j.common.tool.crypto.crhf;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 /**
  * MMO(x) = π(x) ⊕ x（满足抗关联性），由下述论文第7.2节给出：
@@ -28,14 +27,14 @@ class MmoCrhf implements Crhf {
     MmoCrhf(EnvType envType) {
         prp = PrpFactory.createInstance(envType);
         // 默认伪随机置换密钥为全0
-        prp.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        prp.setKey(BlockUtils.zeroBlock());
     }
 
     @Override
     public byte[] hash(byte[] block) {
         // MMO(x) = π(x) ⊕ x
         byte[] output = prp.prp(block);
-        BytesUtils.xori(output, block);
+        BlockUtils.xori(output, block);
         return output;
     }
 

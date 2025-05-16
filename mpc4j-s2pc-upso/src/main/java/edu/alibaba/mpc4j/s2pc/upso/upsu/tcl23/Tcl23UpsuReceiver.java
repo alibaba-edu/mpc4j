@@ -13,6 +13,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64PolyFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
@@ -121,7 +122,7 @@ public class Tcl23UpsuReceiver extends AbstractUpsuReceiver {
         // init core COT
         coreCotReceiver.init();
         // generate hash keys
-        hashKeys = CommonUtils.generateRandomKeys(params.getCuckooHashNum(), secureRandom);
+        hashKeys = BlockUtils.randomBlocks(params.getCuckooHashNum(), secureRandom);
         DataPacketHeader hashKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             rpc.ownParty().getPartyId(), otherParty().getPartyId()

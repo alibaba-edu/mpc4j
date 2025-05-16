@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
@@ -75,8 +75,8 @@ public class SimpleIntHashBinTest {
 
     @Test
     public void testIllegalInputs() {
-        byte[][] keys = CommonUtils.generateRandomKeys(1, HashBinTestUtils.SECURE_RANDOM);
-        SimpleIntHashBin intHashBin = new SimpleIntHashBin(EnvType.STANDARD, binNum, itemSize, keys);
+        byte[][] keys = BlockUtils.randomBlocks(1, HashBinTestUtils.SECURE_RANDOM);
+        ArraySimpleIntHashBin intHashBin = new ArraySimpleIntHashBin(EnvType.STANDARD, binNum, itemSize, keys);
         // 尝试插入较多数量的元素
         try {
             int[] items = randomItems(itemSize + 1);
@@ -130,8 +130,8 @@ public class SimpleIntHashBinTest {
     }
 
     private void testIntHashBin(int hashNum) {
-        byte[][] keys = CommonUtils.generateRandomKeys(hashNum, HashBinTestUtils.SECURE_RANDOM);
-        SimpleIntHashBin intHashBin = new SimpleIntHashBin(EnvType.STANDARD, binNum, itemSize, keys);
+        byte[][] keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
+        ArraySimpleIntHashBin intHashBin = new ArraySimpleIntHashBin(EnvType.STANDARD, binNum, itemSize, keys);
         // 验证参数设置
         Assert.assertEquals(hashNum, intHashBin.getHashNum());
         Assert.assertEquals(binNum, intHashBin.binNum());
@@ -167,7 +167,7 @@ public class SimpleIntHashBinTest {
         assertEmptyIntHashBin(intHashBin);
     }
 
-    private void assertEmptyIntHashBin(SimpleIntHashBin intHashBin) {
+    private void assertEmptyIntHashBin(ArraySimpleIntHashBin intHashBin) {
         Assert.assertFalse(intHashBin.insertedItems());
         Assert.assertEquals(0, intHashBin.itemSize());
         // 验证每个桶的数量
@@ -176,7 +176,7 @@ public class SimpleIntHashBinTest {
         }
     }
 
-    private void assertInsertedIntHashBin(SimpleIntHashBin intHashBin, int hashNum, int[] items) {
+    private void assertInsertedIntHashBin(ArraySimpleIntHashBin intHashBin, int hashNum, int[] items) {
         // 验证插入之后的状态
         Assert.assertTrue(intHashBin.insertedItems());
         // 验证元素数量
@@ -193,7 +193,7 @@ public class SimpleIntHashBinTest {
         }
     }
 
-    private void assertItemBinIndexes(SimpleIntHashBin intHashBin, byte[][] keys, int[] items) {
+    private void assertItemBinIndexes(ArraySimpleIntHashBin intHashBin, byte[][] keys, int[] items) {
         // 外部初始化哈希函数，计算位置，验证外部计算的结果与内部计算结果相同
         Prf[] hashes = Arrays.stream(keys).map(key -> {
                 Prf prf = PrfFactory.createInstance(EnvType.STANDARD, Integer.BYTES);

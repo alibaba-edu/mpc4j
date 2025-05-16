@@ -13,10 +13,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.cm20.Cm20MpOprfPtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.AbstractMpOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfReceiverOutput;
@@ -101,7 +98,7 @@ public class Cm20MpOprfReceiver extends AbstractMpOprfReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

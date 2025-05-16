@@ -7,7 +7,7 @@ import java.util.stream.IntStream;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfReceiverOutput;
@@ -122,7 +122,7 @@ public class Ywl20ShBspCotReceiver extends AbstractBspCotReceiver {
 
     private BspCotReceiverOutput generateReceiverOutput(List<byte[]> correlatePayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(correlatePayload.size() == batchNum);
-        byte[][] correlateByteArrays = correlatePayload.toArray(new byte[0][]);
+        byte[][] correlateByteArrays = correlatePayload.toArray(byte[][]::new);
         IntStream batchIndexIntStream = IntStream.range(0, batchNum);
         batchIndexIntStream = parallel ? batchIndexIntStream.parallel() : batchIndexIntStream;
         SspCotReceiverOutput[] sspCotReceiverOutputs = batchIndexIntStream
@@ -131,7 +131,7 @@ public class Ywl20ShBspCotReceiver extends AbstractBspCotReceiver {
                 // computes w[α]
                 for (int i = 0; i < eachNum; i++) {
                     if (i != alphaArray[batchIndex]) {
-                        BytesUtils.xori(correlateByteArrays[batchIndex], rbArray[i]);
+                        BlockUtils.xori(correlateByteArrays[batchIndex], rbArray[i]);
                     }
                 }
                 rbArray[alphaArray[batchIndex]] = correlateByteArrays[batchIndex];

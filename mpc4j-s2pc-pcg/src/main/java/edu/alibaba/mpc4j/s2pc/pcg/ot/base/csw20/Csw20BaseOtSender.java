@@ -5,7 +5,7 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.AbstractBaseOtSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.csw20.Csw20BaseOtPtoDesc.PtoStep;
@@ -147,7 +147,7 @@ public class Csw20BaseOtSender extends AbstractBaseOtSender {
                     .array());
                 // 计算挑战消息chall = H(k0) \xor H(k1)，并添加到payload
                 answerInputArray[index] = kdf.deriveKey(r0Array[index]);
-                return BytesUtils.xor(answerInputArray[index], kdf.deriveKey(r1Array[index]));
+                return BlockUtils.xor(answerInputArray[index], kdf.deriveKey(r1Array[index]));
             })
             .collect(Collectors.toList());
         // 计算ans= H(k0_1, ...., k0_n)

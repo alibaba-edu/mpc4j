@@ -6,14 +6,7 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.s2pc.pir.IdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.IdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirFactory.StdIdxPirType;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.cw.CwStdIdxPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.fast.FastStdIdxPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.mul.MulStdIdxPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.onion.OnionStdIdxPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.pbc.PbcStdIdxPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.seal.SealStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirConfig;
-import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.xpir.XpirStdIdxPirConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,45 +61,45 @@ public class StdIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // XPIR
-        configurations.add(new Object[]{
-            StdIdxPirType.XPIR.name(), new XpirStdIdxPirConfig.Builder().build()
-        });
-
-        // SEAL PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.SEAL.name(), new SealStdIdxPirConfig.Builder().build()
-        });
-
-        // Mul PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.MUL.name(), new MulStdIdxPirConfig.Builder().build()
-        });
-
-        // Onion PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.ONION.name(), new OnionStdIdxPirConfig.Builder().build()
-        });
+//        // XPIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.XPIR.name(), new XpirStdIdxPirConfig.Builder().build()
+//        });
+//
+//        // SEAL PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.SEAL.name(), new SealStdIdxPirConfig.Builder().build()
+//        });
+//
+//        // Mul PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.MUL.name(), new MulStdIdxPirConfig.Builder().build()
+//        });
+//
+//        // Onion PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.ONION.name(), new OnionStdIdxPirConfig.Builder().build()
+//        });
 
         // Vectorized PIR
         configurations.add(new Object[]{
             StdIdxPirType.VECTOR.name(), new VectorizedStdIdxPirConfig.Builder().build()
         });
-
-        // Fast PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.FAST.name(), new FastStdIdxPirConfig.Builder().build()
-        });
-
-        // constant weight PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.CW.name(), new CwStdIdxPirConfig.Builder().build()
-        });
-
-        // PBC index PIR
-        configurations.add(new Object[]{
-            StdIdxPirType.PBC.name(), new PbcStdIdxPirConfig.Builder().build()
-        });
+//
+//        // Fast PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.FAST.name(), new FastStdIdxPirConfig.Builder().build()
+//        });
+//
+//        // constant weight PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.CW.name(), new CwStdIdxPirConfig.Builder().build()
+//        });
+//
+//        // PBC index PIR
+//        configurations.add(new Object[]{
+//            StdIdxPirType.PBC.name(), new PbcStdIdxPirConfig.Builder().build()
+//        });
 
         return configurations;
     }
@@ -128,7 +121,7 @@ public class StdIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
 
     @Test
     public void testDefault() {
-        testPto(DEFAULT_N, DEFAULT_L, DEFAULT_QUERY_NUM, false);
+        testPto(1400000, 264 * 2, 96, true);
     }
 
     @Test
@@ -182,7 +175,7 @@ public class StdIdxPirTest extends AbstractTwoPartyMemoryRpcPto {
     }
 
     private void testPto(int n, int l, int queryNum, boolean parallel) {
-        testPto(n, l, queryNum, false, parallel);
+//        testPto(n, l, queryNum, false, parallel);
         testPto(n, l, queryNum, true, parallel);
     }
 

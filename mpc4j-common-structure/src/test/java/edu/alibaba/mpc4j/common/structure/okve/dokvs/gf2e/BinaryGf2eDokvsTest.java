@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
@@ -126,7 +127,7 @@ public class BinaryGf2eDokvsTest {
     private void testBinaryDokvs(int n, int l) {
         int byteL = CommonUtils.getByteLength(l);
         for (int round = 0; round < ROUND; round++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, SECURE_RANDOM);
             BinaryGf2eDokvs<ByteBuffer> dokvs = Gf2eDokvsFactory.createBinaryInstance(EnvType.STANDARD, type, n, l, keys);
             Map<ByteBuffer, byte[]> keyValueMap = Gf2eDokvsTest.randomKeyValueMap(n, l);
             // non-doubly encode

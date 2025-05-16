@@ -18,6 +18,7 @@ import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.KdfOtSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.base.BaseOtFactory;
@@ -103,8 +104,7 @@ public class Iknp03CoreCotReceiver extends AbstractCoreCotReceiver {
         return columnIndexIntStream
             .mapToObj(columnIndex -> {
                 // Receiver forms m \times k matrices T_0, T_1 such that t_{j, 0} \oplus t_{j, 1} = (r_j || \cdots || r_j)
-                byte[] columnSeed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                secureRandom.nextBytes(columnSeed);
+                byte[] columnSeed = BlockUtils.randomBlock(secureRandom);
                 byte[] column0Bytes = prg.extendToBytes(columnSeed);
                 BytesUtils.reduceByteArray(column0Bytes, num);
                 tMatrix.setColumn(columnIndex, column0Bytes);

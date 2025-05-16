@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.crypto.prp;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -41,15 +41,15 @@ public class PrpEfficiencyTest {
     /**
      * 全0密钥
      */
-    private static final byte[] ZERO_KEY = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_KEY = BlockUtils.zeroBlock();
     /**
      * 全0明文
      */
-    private static final byte[] ZERO_PLAINTEXT = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_PLAINTEXT = BlockUtils.zeroBlock();
     /**
      * 全0密文
      */
-    private static final byte[] ZERO_CIPHERTEXT = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_CIPHERTEXT = BlockUtils.zeroBlock();
     /**
      * 秒表
      */

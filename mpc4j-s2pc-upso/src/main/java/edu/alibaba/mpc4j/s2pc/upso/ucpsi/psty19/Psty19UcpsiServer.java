@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
@@ -99,7 +100,7 @@ public class Psty19UcpsiServer<T> extends AbstractUcpsiServer<T> {
         int opprfL = Math.max(CommonConstants.STATS_BIT_LENGTH + LongUtils.ceilLog2(pointNum), peqtL);
         int opprfByteL = CommonUtils.getByteLength(opprfL);
         // simple hash
-        hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
+        hashKeys = BlockUtils.randomBlocks(hashNum, secureRandom);
         // generate key-value map
         generateKeyValueMap(opprfL);
         stopWatch.stop();

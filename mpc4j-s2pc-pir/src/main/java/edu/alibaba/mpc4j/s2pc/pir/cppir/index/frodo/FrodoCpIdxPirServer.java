@@ -4,8 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.structure.matrix.IntMatrix;
 import edu.alibaba.mpc4j.common.structure.vector.IntVector;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.HintCpIdxPirServer;
@@ -39,7 +38,7 @@ public class FrodoCpIdxPirServer extends AbstractCpIdxPirServer implements HintC
 
         stopWatch.start();
         // server derives a matrix A ∈ Z_q^{n×m}, where m is the num, n is the LWE dimension.
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         List<byte[]> seedPayload = Collections.singletonList(seed);
         sendOtherPartyPayload(PtoStep.SERVER_SEND_SEED.ordinal(), seedPayload);
         stopWatch.stop();

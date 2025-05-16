@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.structure.fusefilter;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -85,7 +85,7 @@ public class ByteFuseFilterTest {
     private Map<ByteBuffer, byte[]> randomKeyValueMap(int size, int valueByteLength) {
         Map<ByteBuffer, byte[]> keyValueMap = new HashMap<>(size);
         for (int i = 0; i < size; i++) {
-            byte[] key = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[] key = BlockUtils.randomBlock(secureRandom);
             byte[] value = BytesUtils.randomByteArray(valueByteLength, secureRandom);
             keyValueMap.put(ByteBuffer.wrap(key), value);
         }

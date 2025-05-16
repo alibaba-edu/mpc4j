@@ -8,6 +8,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetwork;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetworkFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.lll24.Lll24NetRosnPtoDesc.PtoStep;
@@ -146,7 +147,7 @@ public class Lll24NetRosnReceiver extends AbstractNetRosnReceiver {
                     paddingChoices[widthIndex] = cotReceiverOutputs[levelIndex].getChoice(index);
                     index++;
                 } else {
-                    paddingRbArray[widthIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    paddingRbArray[widthIndex] = BlockUtils.zeroBlock();
                     paddingChoices[widthIndex] = false;
                 }
             }

@@ -185,7 +185,7 @@ public class Rr17EcPsiServer<T> extends AbstractPsiServer<T> {
             return IntStream.range(0, binSize).mapToObj(entryIndex -> {
                 HashBinEntry<BigInteger> hashBinEntry = phaseHashBin.getBin(binIndex).get(entryIndex);
                 if (hashBinEntry.getHashIndex() == 0) {
-                    byte[] rx = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+                    byte[] rx = BlockUtils.randomBlock(secureRandom);
                     byte[] elementByteArray = BigIntegerUtils.nonNegBigIntegerToByteArray(phaseHashBin.dephaseItem(binIndex, hashBinEntry.getItem()), h1.getOutputByteLength());
                     byte[] phasedElementByteArray = BigIntegerUtils.nonNegBigIntegerToByteArray(hashBinEntry.getItem(), encodeInputByteLength);
                     Commitment commitment = commit.commit(ByteBuffer.allocate(

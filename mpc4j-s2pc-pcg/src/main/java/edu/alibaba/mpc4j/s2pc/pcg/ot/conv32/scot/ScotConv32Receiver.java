@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.AbstractConv32Party;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.scot.ScotConv32PtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
@@ -79,14 +80,12 @@ public class ScotConv32Receiver extends AbstractConv32Party {
             // R sets x_1 = R_b, y_1 = b
             int bitNum = cotReceiverOutput.getNum();
             BitVector b = BitVectorFactory.createZeros(bitNum);
-            BitVector rb = BitVectorFactory.createZeros(bitNum);
             RotReceiverOutput rotReceiverOutput = new RotReceiverOutput(envType, CrhfType.MMO, cotReceiverOutput);
             boolean[] choices = rotReceiverOutput.getChoices();
             byte[][] rbArray = rotReceiverOutput.getRbArray();
-            IntStream.range(0, bitNum).forEach(i -> {
-                b.set(i, choices[i]);
-                rb.set(i, (rbArray[i][0] & 0b00000001) != 0);
-            });
+            IntStream.range(0, bitNum).forEach(i -> b.set(i, choices[i]));
+            byte[] rbByteArray = BytesUtils.extractLsb(rbArray);
+            BitVector rb = BitVectorFactory.create(bitNum, rbByteArray);
             x1p.merge(rb);
             y1p.merge(b);
         }

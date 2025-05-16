@@ -5,7 +5,7 @@ import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory.EccDokv
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.math.ec.ECPoint;
 import org.junit.Assert;
@@ -105,7 +105,7 @@ public class SparseEccDokvsTest {
 
     private void testSparseDokvs(int n) {
         for (int round = 0; round < ROUND; round++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, SECURE_RANDOM);
             SparseEccDokvs<ByteBuffer> dokvs = EccDokvsFactory.createSparseInstance(EnvType.STANDARD, type, DEFAULT_ECC, n, keys);
             Map<ByteBuffer, ECPoint> keyValueMap = EccDokvsTest.randomKeyValueMap(DEFAULT_ECC, n);
             int sparseRange = dokvs.sparsePositionRange();

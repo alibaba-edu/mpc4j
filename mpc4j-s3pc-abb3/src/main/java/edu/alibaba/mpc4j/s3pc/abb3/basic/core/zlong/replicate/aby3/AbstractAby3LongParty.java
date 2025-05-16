@@ -33,6 +33,7 @@ public abstract class AbstractAby3LongParty extends AbstractTripletLongParty imp
         if (partyState.equals(PartyState.INITIALIZED)) {
             return;
         }
+        tripletProvider.init(0, estimateLongTupleNum);
         initState();
     }
 

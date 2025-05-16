@@ -5,7 +5,7 @@ import edu.alibaba.mpc4j.common.structure.okve.dokvs.zp.*;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.bouncycastle.math.ec.ECPoint;
@@ -77,7 +77,7 @@ public class EccDokvsEfficiencyTest {
         int n = 1 << logN;
         for (EccDokvsType type : TYPES) {
             int hashNum = EccDokvsFactory.getHashKeyNum(type);
-            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, SECURE_RANDOM);
             EccDokvs<ByteBuffer> dokvs = EccDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_ECC, n, keys);
             dokvs.setParallelEncode(parallelEncode);
             Map<ByteBuffer, ECPoint> keyValueMap = EccDokvsTest.randomKeyValueMap(DEFAULT_ECC, n);

@@ -5,9 +5,8 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
@@ -109,7 +108,7 @@ public class CoreCotTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             boolean[] choices = BinaryUtils.randomBinary(num, SECURE_RANDOM);
             CoreCotSenderThread senderThread = new CoreCotSenderThread(sender, delta, num);
             CoreCotReceiverThread receiverThread = new CoreCotReceiverThread(receiver, choices);

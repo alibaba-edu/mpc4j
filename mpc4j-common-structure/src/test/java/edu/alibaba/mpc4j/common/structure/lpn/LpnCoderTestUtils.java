@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.structure.lpn;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.junit.Assert;
 
@@ -30,7 +30,7 @@ public class LpnCoderTestUtils {
      * @return R0 array.
      */
     public static byte[][] generateR0Array(int n, SecureRandom secureRandom) {
-        return BytesUtils.randomByteArrayVector(n, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        return BlockUtils.randomBlocks(n, secureRandom);
     }
 
     /**

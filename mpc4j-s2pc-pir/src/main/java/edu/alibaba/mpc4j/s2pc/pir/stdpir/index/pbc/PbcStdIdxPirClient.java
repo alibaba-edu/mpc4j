@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pir.stdpir.index.pbc;
 
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.IntHashBin;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
+import edu.alibaba.mpc4j.common.tool.hashbin.primitive.ArraySimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntNoStashCuckooHashBin;
 import edu.alibaba.mpc4j.s2pc.pir.IdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.AbstractStdIdxPirClient;
@@ -80,7 +80,7 @@ public class PbcStdIdxPirClient extends AbstractStdIdxPirClient implements IdxPi
         binNum = getBinNum(cuckooHashBinType, maxBatchNum);
         hashKeys = hashKeysPayload.toArray(new byte[0][]);
         int[] totalIndex = IntStream.range(0, n).toArray();
-        IntHashBin intHashBin = new SimpleIntHashBin(envType, binNum, n, hashKeys);
+        IntHashBin intHashBin = new ArraySimpleIntHashBin(envType, binNum, n, hashKeys);
         intHashBin.insertItems(totalIndex);
         int maxBinSize = IntStream.range(0, binNum).map(intHashBin::binSize).max().orElse(0);
         hashBin = new int[binNum][];

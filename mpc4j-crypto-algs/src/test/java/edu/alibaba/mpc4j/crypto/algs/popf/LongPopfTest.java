@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.algs.popf;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.crypto.algs.restriction.LongEmptyRestriction;
 import edu.alibaba.mpc4j.crypto.algs.restriction.LongLinearBoundRestriction;
 import edu.alibaba.mpc4j.crypto.algs.utils.range.LongRange;
@@ -43,8 +43,7 @@ public class LongPopfTest {
     @Test
     public void testEqualDefault() throws CryptoException {
         Zlp24LongPopfEngine popfEngine = new Zlp24LongPopfEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         LongRange rangeD = new LongRange(0, 1L << 16);
         LongRange rangeR = new LongRange(0, 1L << 16);
         popfEngine.init(key, new LongEmptyRestriction(rangeD, rangeR));
@@ -57,8 +56,7 @@ public class LongPopfTest {
     @Test
     public void testEqualBoundRestriction() throws CryptoException {
         Zlp24LongPopfEngine popfEngine = new Zlp24LongPopfEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         LongRange rangeD = new LongRange(0, 1L << 16);
         LongRange rangeR = new LongRange(0, 1L << 16);
         popfEngine.init(key, new LongLinearBoundRestriction(rangeD, rangeR, 0.9, 1.1));
@@ -71,8 +69,7 @@ public class LongPopfTest {
     @Test
     public void testShrinkSmallRange() throws CryptoException {
         Zlp24LongPopfEngine popfEngine = new Zlp24LongPopfEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         LongRange rangeD = new LongRange(0, 1L << 5);
         LongRange rangeR = new LongRange(0, 1L << 4);
         popfEngine.init(key, new LongEmptyRestriction(rangeD, rangeR));
@@ -83,8 +80,7 @@ public class LongPopfTest {
     @Test
     public void testShrinkDefault() throws CryptoException {
         Zlp24LongPopfEngine popfEngine = new Zlp24LongPopfEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         LongRange rangeD = new LongRange(0, 1L << 16);
         LongRange rangeR = new LongRange(0, 1L << 15);
         popfEngine.init(key, new LongEmptyRestriction(rangeD, rangeR));
@@ -97,8 +93,7 @@ public class LongPopfTest {
     @Test
     public void testShrinkBoundRestriction() throws CryptoException {
         Zlp24LongPopfEngine popfEngine = new Zlp24LongPopfEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         LongRange rangeD = new LongRange(0, 1L << 16);
         LongRange rangeR = new LongRange(0, 1L << 15);
         popfEngine.init(key, new LongLinearBoundRestriction(rangeD, rangeR, 0.4, 0.6));
@@ -111,8 +106,7 @@ public class LongPopfTest {
     @Test
     public void testMagnifySmallRange() throws CryptoException {
         Zlp24LongPopfEngine popfEngine = new Zlp24LongPopfEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         LongRange rangeD = new LongRange(0, 1L << 5);
         LongRange rangeR = new LongRange(0, 1L << 6);
         popfEngine.init(key, new LongEmptyRestriction(rangeD, rangeR));
@@ -123,8 +117,7 @@ public class LongPopfTest {
     @Test
     public void testMagnifyDefault() throws CryptoException {
         Zlp24LongPopfEngine popfEngine = new Zlp24LongPopfEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         LongRange rangeD = new LongRange(0, 1L << 16);
         LongRange rangeR = new LongRange(0, 1L << 17);
         popfEngine.init(key, new LongEmptyRestriction(rangeD, rangeR));

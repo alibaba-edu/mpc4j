@@ -1,10 +1,10 @@
 package edu.alibaba.mpc4j.common.tool.coder;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.coder.random.RandomCoder;
 import edu.alibaba.mpc4j.common.tool.coder.random.RandomCoderUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -64,8 +64,7 @@ public class RandomCoderTest {
     @Test
     public void testEncode() {
         RandomCoder randomCoder = new RandomCoder(EnvType.STANDARD, codewordByteLength);
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(SECURE_RANDOM);
         randomCoder.setKey(key);
         byte[][] datawords = IntStream.range(0, MAX_CODE_NUM)
             .mapToObj(IntUtils::intToByteArray)
@@ -90,8 +89,7 @@ public class RandomCoderTest {
     @Test
     public void testParallel() {
         RandomCoder randomCoder = new RandomCoder(EnvType.STANDARD, codewordByteLength);
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(SECURE_RANDOM);
         randomCoder.setKey(key);
         byte[][] datawords = IntStream.range(0, MAX_CODE_NUM)
             .mapToObj(index -> IntUtils.intToByteArray(0))

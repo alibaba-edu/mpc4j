@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.hash;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.hash.IntHashFactory.IntHashType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Test;
@@ -35,7 +35,7 @@ public class IntHashEfficiencyTest {
     /**
      * all 0 data
      */
-    private static final byte[] ZERO_DATA = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_DATA = BlockUtils.zeroBlock();
     /**
      * the stop watch
      */

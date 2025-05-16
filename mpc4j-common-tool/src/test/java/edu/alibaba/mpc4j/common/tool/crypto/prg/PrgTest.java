@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.prg;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory.PrgType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class PrgTest {
     /**
      * all-zero seed
      */
-    private static final byte[] ZERO_SEED = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_SEED = BlockUtils.zeroBlock();
     /**
      * the random state
      */
@@ -128,8 +129,7 @@ public class PrgTest {
         Set<ByteBuffer> outputSet = new HashSet<>();
         Prg prg = PrgFactory.createInstance(type, outputByteLength);
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-            byte[] randomSeed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomSeed);
+            byte[] randomSeed = BlockUtils.randomBlock(SECURE_RANDOM);
             outputSet.add(ByteBuffer.wrap(prg.extendToBytes(randomSeed)));
         }
         Assert.assertEquals(MAX_RANDOM_ROUND, outputSet.size());

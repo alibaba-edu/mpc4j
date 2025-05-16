@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.AbstractConv32Party;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.ccot.CcotConv32PtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
@@ -75,21 +76,17 @@ public class CcotConv32Receiver extends AbstractConv32Party {
             y1p.set(i, w11Binary[i]);
         });
         // run first COT
-        BitVector x1 = BitVectorFactory.createZeros(num);
         CotReceiverOutput cotReceiverOutput = coreCotReceiver.receive(w10Binary);
         RotReceiverOutput rotReceiverOutput = new RotReceiverOutput(envType, CrhfType.MMO, cotReceiverOutput);
         byte[][] rbArray = rotReceiverOutput.getRbArray();
-        for (int i = 0; i < num; i++) {
-            x1.set(i, (rbArray[i][0] & 0b00000001) != 0);
-        }
+        byte[] x1ByteArray = BytesUtils.extractLsb(rbArray);
+        BitVector x1 = BitVectorFactory.create(num, x1ByteArray);
         // run second COT
-        BitVector x1p = BitVectorFactory.createZeros(num);
         cotReceiverOutput = coreCotReceiver.receive(w11Binary);
         rotReceiverOutput = new RotReceiverOutput(envType, CrhfType.MMO, cotReceiverOutput);
         rbArray = rotReceiverOutput.getRbArray();
-        for (int i = 0; i < num; i++) {
-            x1p.set(i, (rbArray[i][0] & 0b00000001) != 0);
-        }
+        byte[] x1pByteArray = BytesUtils.extractLsb(rbArray);
+        BitVector x1p = BitVectorFactory.create(num, x1pByteArray);
         long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 3, roundTime, "Parties generate 1-out-of-2 bit ROT");

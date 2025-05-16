@@ -1,14 +1,10 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.triple.zl64.silent;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.Zl64Triple;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.zl64.AbstractZl64TripleGenParty;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.zl64.silent.SilentZl64TripleGenPtoDesc.PtoStep;
@@ -91,7 +87,7 @@ public class SilentZl64TripleGenReceiver extends AbstractZl64TripleGenParty {
         stopWatch.start();
         roundNum = Math.min(expectTotalNum, config.defaultRoundNum(l));
         int ncCotNum = SilentZl64TripleGenConfig.maxNcCotNum(roundNum, maxL);
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         ncCotSender.init(delta, ncCotNum);
         ncCotReceiver.init(ncCotNum);
         // each bit of a and b can be shifted to reduce the communication cost

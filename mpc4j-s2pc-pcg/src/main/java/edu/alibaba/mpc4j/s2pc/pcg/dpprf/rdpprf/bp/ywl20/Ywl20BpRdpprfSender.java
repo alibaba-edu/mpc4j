@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.AbstractBpRdpprfSender;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfSenderOutput;
@@ -71,7 +71,7 @@ public class Ywl20BpRdpprfSender extends AbstractBpRdpprfSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         preCotSender.init();
         stopWatch.stop();
@@ -143,7 +143,7 @@ public class Ywl20BpRdpprfSender extends AbstractBpRdpprfSender {
             .mapToObj(batchIndex -> {
                 ArrayList<byte[][]> treeKeys = new ArrayList<>(eachLogNum + 1);
                 // S picks a random s_0^0 ∈ {0, 1}^κ
-                byte[][] s0 = new byte[1][CommonConstants.BLOCK_BYTE_LENGTH];
+                byte[][] s0 = BlockUtils.zeroBlocks(1);
                 secureRandom.nextBytes(s0[0]);
                 // 把s0作为第0项，从而方便后续迭代
                 treeKeys.add(s0);
@@ -153,16 +153,14 @@ public class Ywl20BpRdpprfSender extends AbstractBpRdpprfSender {
                     byte[][] currentLevelSeeds = new byte[1 << i][];
                     for (int j = 0; j < (1 << (i - 1)); j++) {
                         byte[] extendSeeds = prg.extendToBytes(lowLevelSeeds[j]);
-                        currentLevelSeeds[2 * j] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                        currentLevelSeeds[2 * j] = BlockUtils.zeroBlock();
                         System.arraycopy(
-                            extendSeeds, 0,
-                            currentLevelSeeds[2 * j], 0,
+                            extendSeeds, 0, currentLevelSeeds[2 * j], 0,
                             CommonConstants.BLOCK_BYTE_LENGTH
                         );
-                        currentLevelSeeds[2 * j + 1] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                        currentLevelSeeds[2 * j + 1] = BlockUtils.zeroBlock();
                         System.arraycopy(
-                            extendSeeds, CommonConstants.BLOCK_BYTE_LENGTH,
-                            currentLevelSeeds[2 * j + 1], 0,
+                            extendSeeds, CommonConstants.BLOCK_BYTE_LENGTH, currentLevelSeeds[2 * j + 1], 0,
                             CommonConstants.BLOCK_BYTE_LENGTH
                         );
                     }
@@ -173,14 +171,14 @@ public class Ywl20BpRdpprfSender extends AbstractBpRdpprfSender {
                     int hIndex = i - 1;
                     byte[][] currentLevelSeeds = treeKeys.get(i);
                     // S then computes K_0^i = ⊕_{j ∈ [2^{i - 1}]} s_{2j}^i
-                    k0sArray[batchIndex][hIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    k0sArray[batchIndex][hIndex] = BlockUtils.zeroBlock();
                     for (int j = 0; j < (1 << (i - 1)); j++) {
-                        BytesUtils.xori(k0sArray[batchIndex][hIndex], currentLevelSeeds[2 * j]);
+                        BlockUtils.xori(k0sArray[batchIndex][hIndex], currentLevelSeeds[2 * j]);
                     }
                     // and K_1^i = ⊕_{j ∈ [2^{i - 1}]} s_{2j + 1}^i
-                    k1sArray[batchIndex][hIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    k1sArray[batchIndex][hIndex] = BlockUtils.zeroBlock();
                     for (int j = 0; j < (1 << (i - 1)); j++) {
-                        BytesUtils.xori(k1sArray[batchIndex][hIndex], currentLevelSeeds[2 * j + 1]);
+                        BlockUtils.xori(k1sArray[batchIndex][hIndex], currentLevelSeeds[2 * j + 1]);
                     }
                 }
                 return treeKeys.get(eachLogNum);
@@ -199,11 +197,11 @@ public class Ywl20BpRdpprfSender extends AbstractBpRdpprfSender {
                         // S sends M_0^i = K_0^i ⊕ H(q_i, i || l)
                         byte[] message0 = cotSenderOutput.getR0(batchIndex * eachLogNum + lIndex);
                         message0 = crhf.hash(message0);
-                        BytesUtils.xori(message0, k0sArray[batchIndex][lIndex]);
+                        BlockUtils.xori(message0, k0sArray[batchIndex][lIndex]);
                         // and M_1^i = K_1^i ⊕ H(q_i ⊕ ∆, i || l)
                         byte[] message1 = cotSenderOutput.getR1(batchIndex * eachLogNum + lIndex);
                         message1 = crhf.hash(message1);
-                        BytesUtils.xori(message1, k1sArray[batchIndex][lIndex]);
+                        BlockUtils.xori(message1, k1sArray[batchIndex][lIndex]);
                         return new byte[][]{message0, message1};
                     })
                     .flatMap(Arrays::stream)

@@ -12,6 +12,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetwork;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetworkFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.AbstractNetRosnSender;
@@ -77,7 +78,7 @@ public class Lll24NetRosnSender extends AbstractNetRosnSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         cotSender.init(delta);
         preCotSender.init();
         stopWatch.stop();
@@ -139,7 +140,7 @@ public class Lll24NetRosnSender extends AbstractNetRosnSender {
                     paddingR0Array[widthIndex] = cotSenderOutputs[levelIndex].getR0(index);
                     index++;
                 } else {
-                    paddingR0Array[widthIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                    paddingR0Array[widthIndex] = BlockUtils.zeroBlock();
                 }
             }
             assert index == cotSenderOutputs[levelIndex].getNum();

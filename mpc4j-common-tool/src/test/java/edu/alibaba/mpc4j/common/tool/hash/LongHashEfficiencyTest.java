@@ -1,10 +1,10 @@
 package edu.alibaba.mpc4j.common.tool.hash;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hash.LongHashFactory.LongHashType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Test;
@@ -38,7 +38,7 @@ public class LongHashEfficiencyTest {
     /**
      * all 0 data
      */
-    private static final byte[] ZERO_DATA = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_DATA = BlockUtils.zeroBlock();
     /**
      * the type
      */
@@ -59,7 +59,7 @@ public class LongHashEfficiencyTest {
     public LongHashEfficiencyTest() {
         stopWatch = new StopWatch();
         prf = PrfFactory.createInstance(EnvType.STANDARD, Long.BYTES);
-        prf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        prf.setKey(BlockUtils.zeroBlock());
     }
 
     @Test

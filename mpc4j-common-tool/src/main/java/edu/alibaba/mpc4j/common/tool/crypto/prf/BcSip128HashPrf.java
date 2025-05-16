@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.prf;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.bouncycastle.crypto.macs.SipHash128;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -62,7 +63,7 @@ class BcSip128HashPrf implements Prf {
         assert keyParameter != null;
         SipHash128 sip128Hash = new SipHash128();
         sip128Hash.init(keyParameter);
-        byte[] mac = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] mac = BlockUtils.zeroBlock();
         sip128Hash.update(message, 0, message.length);
         sip128Hash.doFinal(mac, 0);
         if (outputByteLength == CommonConstants.BLOCK_BYTE_LENGTH) {

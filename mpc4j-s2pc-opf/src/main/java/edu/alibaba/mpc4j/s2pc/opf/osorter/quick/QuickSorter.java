@@ -9,7 +9,6 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
@@ -35,6 +34,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
+ * Quick sorter.
+ *
  * @author Feng Han
  * @date 2024/9/26
  */
@@ -119,10 +120,10 @@ public class QuickSorter extends AbstractObSorter {
         shuffleParty.init();
         z2cParty.init();
 
-        seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        seed = BlockUtils.randomBlock(secureRandom);
         sendOtherPartyPayload(PtoStep.SHARE_SEED.ordinal(), Collections.singletonList(seed));
         byte[] otherSeed = receiveOtherPartyPayload(PtoStep.SHARE_SEED.ordinal()).get(0);
-        BytesUtils.xori(seed, otherSeed);
+        BlockUtils.xori(seed, otherSeed);
         prps = IntStream.range(0, parallel ? ForkJoinPool.getCommonPoolParallelism() : 1)
             .mapToObj(i -> {
                 Prp prp = PrpFactory.createInstance(envType);
@@ -225,8 +226,6 @@ public class QuickSorter extends AbstractObSorter {
                 originalIndex = null;
             }
         }
-//        LOGGER.info("input:");
-//        openAndPrint();
         compareCount = 0;
         compareTime = 0;
     }
@@ -354,11 +353,6 @@ public class QuickSorter extends AbstractObSorter {
                 smallRanges[2 * i + 1] = IntStream.range(partStart + tmpEnd + 1, partEnd + 1).toArray();
             }
         });
-//        if (ownParty().getPartyId() == 0) {
-//            LOGGER.info("nextCompRanges:{}", Arrays.deepToString(nextCompRanges));
-//            LOGGER.info("smallRanges:{}", Arrays.deepToString(smallRanges));
-//        }
-//        openAndPrint();
 
         return new List[]{
             Arrays.stream(nextCompRanges).filter(Objects::nonNull).toList(),
@@ -454,7 +448,6 @@ public class QuickSorter extends AbstractObSorter {
             IntStream intStream = parallel ? IntStream.range(0, ranks.length).parallel() : IntStream.range(0, ranks.length);
             intStream.forEach(i -> switchDataAndIndex(compareInput, ranks[i], smallSets.get(i)));
         }
-//        openAndPrint();
     }
 
     private void switchDataAndIndex(BitVector[] input, int[] replaceIndexes, int[] sourceIndexes) {

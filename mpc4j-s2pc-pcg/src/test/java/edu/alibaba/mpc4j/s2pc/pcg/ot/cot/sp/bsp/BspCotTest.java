@@ -6,8 +6,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.bsp.BspCotFactory.BspCotType;
@@ -221,7 +220,7 @@ public class BspCotTest extends AbstractTwoPartyMemoryRpcPto {
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
             int batchNum = alphaArray.length;
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             BspCotSenderThread senderThread = new BspCotSenderThread(sender, delta, batchNum, eachNum);
             BspCotReceiverThread receiverThread = new BspCotReceiverThread(receiver, alphaArray, eachNum);
             STOP_WATCH.start();
@@ -259,7 +258,7 @@ public class BspCotTest extends AbstractTwoPartyMemoryRpcPto {
         int batchNum = DEFAULT_BATCH_NUM;
         try {
             LOGGER.info("-----test {} (precompute) start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             int[] alphaArray = IntStream.range(0, batchNum)
                 .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
                 .toArray();

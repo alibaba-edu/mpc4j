@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.aby.pcg.st.bst;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.bst.BstFactory.BstType;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.bst.cgp20.Cgp20BstConfig;
@@ -211,7 +212,7 @@ public class BstTest extends AbstractTwoPartyMemoryRpcPto {
                     sender.setTaskId(randomTaskId);
                     receiver.setTaskId(randomTaskId);
                     int[][] piArray = randomPiArray(batchNum, eachNum);
-                    byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+                    byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
                     CotSenderOutput preSenderOutput = CotSenderOutput.createRandom(
                         BstFactory.getPrecomputeNum(config, batchNum, eachNum), delta, SECURE_RANDOM
                     );

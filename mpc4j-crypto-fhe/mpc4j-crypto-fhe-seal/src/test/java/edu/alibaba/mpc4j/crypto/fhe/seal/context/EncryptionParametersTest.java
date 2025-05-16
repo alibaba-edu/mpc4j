@@ -39,14 +39,14 @@ public class EncryptionParametersTest {
         parms.setRandomGeneratorFactory(UniformRandomGeneratorFactory.defaultFactory());
 
         Assert.assertEquals(scheme, parms.scheme());
-        Assert.assertEquals(parms.coeffModulus()[0].value(), 2);
-        Assert.assertEquals(parms.coeffModulus()[1].value(), 3);
+        Assert.assertEquals(2, parms.coeffModulus()[0].value());
+        Assert.assertEquals(3, parms.coeffModulus()[1].value());
         if (scheme.equals(SchemeType.BFV) || scheme.equals(SchemeType.BGV)) {
-            Assert.assertEquals(parms.plainModulus().value(), 2);
+            Assert.assertEquals(2, parms.plainModulus().value());
         } else if (scheme.equals(SchemeType.CKKS)) {
-            Assert.assertEquals(parms.plainModulus().value(), 0);
+            Assert.assertEquals(0, parms.plainModulus().value());
         }
-        Assert.assertEquals(parms.polyModulusDegree(), 2);
+        Assert.assertEquals(2, parms.polyModulusDegree());
         Assert.assertEquals(parms.randomGeneratorFactory(), UniformRandomGeneratorFactory.defaultFactory());
 
         parms.setCoeffModulus(CoeffModulus.create(2, new int[]{30, 40, 50}));
@@ -61,9 +61,9 @@ public class EncryptionParametersTest {
         Assert.assertTrue(Numth.isPrime(parms.coeffModulus()[2].value()));
 
         if (scheme.equals(SchemeType.BFV) || scheme.equals(SchemeType.BGV)) {
-            Assert.assertEquals(parms.plainModulus().value(), 2);
+            Assert.assertEquals(2, parms.plainModulus().value());
         } else if (scheme.equals(SchemeType.CKKS)) {
-            Assert.assertEquals(parms.plainModulus().value(), 0);
+            Assert.assertEquals(0, parms.plainModulus().value());
         }
         Assert.assertEquals(128, parms.polyModulusDegree());
         Assert.assertEquals(parms.randomGeneratorFactory(), UniformRandomGeneratorFactory.defaultFactory());
@@ -104,8 +104,8 @@ public class EncryptionParametersTest {
         parms3 = new EncryptionParameters(parms2);
         if (scheme.equals(SchemeType.BFV) || scheme.equals(SchemeType.BGV)) {
             parms3.setPlainModulus((1 << 6) + 1);
+            Assert.assertNotEquals(parms3, parms2);
         }
-        Assert.assertNotEquals(parms3, parms2);
 
         parms3 = new EncryptionParameters(parms2);
         parms3.setRandomGeneratorFactory(null);

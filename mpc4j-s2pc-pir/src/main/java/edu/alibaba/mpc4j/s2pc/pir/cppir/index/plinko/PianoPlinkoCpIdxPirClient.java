@@ -2,8 +2,8 @@ package edu.alibaba.mpc4j.s2pc.pir.cppir.index.plinko;
 
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.crypto.algs.iprf.InversePrf;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirClient;
@@ -132,7 +132,7 @@ public class PianoPlinkoCpIdxPirClient extends AbstractCpIdxPirClient implements
         inversePrfs = new InversePrf[blockNum];
         for (int i = 0; i < blockNum; i++) {
             inversePrfs[i] = new InversePrf(envType);
-            byte[] ki = CommonUtils.generateRandomKey(secureRandom);
+            byte[] ki = BlockUtils.randomBlock(secureRandom);
             inversePrfs[i].init(m, blockSize, ki);
         }
         // For i = 1, ..., λw: H[i] = 0^B

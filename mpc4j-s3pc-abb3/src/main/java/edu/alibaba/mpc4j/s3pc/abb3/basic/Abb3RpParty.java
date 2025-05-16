@@ -28,14 +28,6 @@ public class Abb3RpParty extends AbstractAbbThreePartyPto implements Abb3Party{
     private final Cgh18RpLongParty macParty;
     private final Aby3ConvParty convParty;
     private final Aby3ShuffleParty shuffleParty;
-    /**
-     * estimated number of and gate
-     */
-    protected long estimateBitTupleNum;
-    /**
-     * estimated number of mul gate
-     */
-    protected long estimateLongTupleNum;
 
     public Abb3RpParty(Rpc rpc, Abb3RpConfig config, TripletProvider tripletProvider) {
         super(Abb3RpPtoDesc.getInstance(), rpc, config);
@@ -54,9 +46,6 @@ public class Abb3RpParty extends AbstractAbbThreePartyPto implements Abb3Party{
         convParty = Aby3ConvFactory.createParty(config.getConvConfig(), z2cParty, longParty);
         shuffleParty = Aby3ShuffleFactory.createParty(config.getShuffleConfig(), z2cParty, longParty, macParty);
         addMultiSubPto(tripletProvider, z2cParty, longParty, convParty, shuffleParty);
-
-        estimateBitTupleNum = 0;
-        estimateLongTupleNum = 0;
     }
 
     public Abb3RpParty(Rpc rpc, Abb3RpConfig config) {
@@ -76,15 +65,12 @@ public class Abb3RpParty extends AbstractAbbThreePartyPto implements Abb3Party{
         convParty = Aby3ConvFactory.createParty(config.getConvConfig(), z2cParty, longParty);
         shuffleParty = Aby3ShuffleFactory.createParty(config.getShuffleConfig(), z2cParty, longParty, macParty);
         addMultiSubPto(tripletProvider, z2cParty, longParty, convParty, shuffleParty);
-
-        estimateBitTupleNum = 0;
-        estimateLongTupleNum = 0;
     }
 
     @Override
     public void updateNum(long bitTupleNum, long longTupleNum){
-        estimateBitTupleNum += bitTupleNum;
-        estimateLongTupleNum += longTupleNum;
+        z2cParty.updateEstimateBitTupleNum(bitTupleNum);
+        longParty.updateEstimateLongTupleNum(longTupleNum);
     }
 
     @Override
@@ -92,7 +78,7 @@ public class Abb3RpParty extends AbstractAbbThreePartyPto implements Abb3Party{
         if(partyState.equals(PartyState.INITIALIZED)){
             return;
         }
-        tripletProvider.init(estimateBitTupleNum, estimateLongTupleNum);
+        tripletProvider.init(z2cParty.getEstimateBitTupleNum(), longParty.getEstimateLongTupleNum());
         z2cParty.init();
         longParty.init();
         convParty.init();

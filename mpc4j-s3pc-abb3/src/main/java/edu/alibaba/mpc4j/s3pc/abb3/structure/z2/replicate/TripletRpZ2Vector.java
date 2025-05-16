@@ -162,11 +162,6 @@ public class TripletRpZ2Vector implements TripletZ2Vector {
     }
 
     @Override
-    public void extendLength(int targetBitLength) {
-        Arrays.stream(innerVec).forEach(each -> each.extendBitNum(targetBitLength));
-    }
-
-    @Override
     public TripletZ2Vector padShiftLeft(int n) {
         BitVector[] bitVectors = Arrays.stream(innerVec).map(each -> each.padShiftLeft(n)).toArray(BitVector[]::new);
         return create(bitVectors);
@@ -176,21 +171,6 @@ public class TripletRpZ2Vector implements TripletZ2Vector {
     public TripletZ2Vector reduceShiftRight(int n) {
         BitVector[] bitVectors = Arrays.stream(innerVec).map(each -> each.reduceShiftRight(n)).toArray(BitVector[]::new);
         return create(bitVectors);
-    }
-
-    @Override
-    public void reduceShiftRighti(int n) {
-        Arrays.stream(innerVec).forEach(each -> each.reduceShiftRighti(n));
-    }
-
-    @Override
-    public void fixShiftRighti(int n) {
-        Arrays.stream(innerVec).forEach(each -> each.fixShiftRighti(n));
-    }
-
-    @Override
-    public void fixShiftLefti(int n) {
-        Arrays.stream(innerVec).forEach(each -> each.fixShiftLefti(n));
     }
 
     @Override
@@ -241,15 +221,6 @@ public class TripletRpZ2Vector implements TripletZ2Vector {
     public MpcZ2Vector getPointsWithFixedSpace(int startPos, int num, int skipLen) {
         return TripletRpZ2Vector.create(innerVec[0].getBitsByInterval(startPos, num, skipLen),
             innerVec[1].getBitsByInterval(startPos, num, skipLen));
-    }
-
-    @Override
-    public void setPointsWithFixedSpace(MpcZ2Vector source, int startPos, int num, int skipLen) {
-        assert isPlain() == source.isPlain();
-        assert source instanceof TripletRpZ2Vector;
-        TripletRpZ2Vector that = (TripletRpZ2Vector) source;
-        innerVec[0].setBitsByInterval(that.getBitVectors()[0], startPos, num, skipLen);
-        innerVec[1].setBitsByInterval(that.getBitVectors()[1], startPos, num, skipLen);
     }
 
     /**

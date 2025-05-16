@@ -4,12 +4,11 @@ import com.google.common.primitives.Bytes;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.structure.matrix.IntMatrix;
 import edu.alibaba.mpc4j.common.structure.vector.IntVector;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
@@ -74,7 +73,7 @@ public class SimpleBinCpKsPirServer<T> extends AbstractCpKsPirServer<T> implemen
         });
         partition = byteL + DIGEST_BYTE_L;
         int binNum = (int) Math.ceil(Math.sqrt((long) n * (long) partition));
-        byte[] hashKey = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] hashKey = BlockUtils.randomBlock(secureRandom);
         RandomPadHashBin<T> hashBin = new RandomPadHashBin<>(envType, binNum, n, new byte[][]{hashKey});
         hashBin.insertItems(keyValueMap.keySet());
         int maxBinSize = IntStream.range(0, binNum).map(hashBin::binSize).filter(i -> i >= 0).max().orElse(0);
@@ -91,7 +90,7 @@ public class SimpleBinCpKsPirServer<T> extends AbstractCpKsPirServer<T> implemen
         rows = maxBinSize;
         columns = binNum;
         // server generates and sends the seed for the random matrix A.
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         List<byte[]> seedPayload = Collections.singletonList(seed);
         sendOtherPartyPayload(PtoStep.SERVER_SEND_SEED.ordinal(), seedPayload);
         // create database

@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp.ywl20;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfReceiverOutput;
@@ -120,15 +120,15 @@ public class Ywl20ShSspCotReceiver extends AbstractSspCotReceiver {
 
     private SspCotReceiverOutput generateReceiverOutput(List<byte[]> correlatePayload) throws MpcAbortException {
         MpcAbortPreconditions.checkArgument(correlatePayload.size() == 1);
-        byte[] correlateByteArray = correlatePayload.get(0);
         byte[][] rbArray = spRdpprfReceiverOutput.getV1Array();
+        rbArray[alpha] = BlockUtils.zeroBlock();
+        BlockUtils.xori(rbArray[alpha], correlatePayload.get(0));
         // computes w[α]
         for (int i = 0; i < num; i++) {
             if (i != alpha) {
-                BytesUtils.xori(correlateByteArray, rbArray[i]);
+                BlockUtils.xori(rbArray[alpha], rbArray[i]);
             }
         }
-        rbArray[alpha] = correlateByteArray;
         return SspCotReceiverOutput.create(alpha, rbArray);
     }
 }

@@ -3,6 +3,8 @@ package edu.alibaba.mpc4j.common.circuit.z2;
 import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 
+import java.util.Arrays;
+
 /**
  * MPC Bit Vector.
  *
@@ -108,6 +110,60 @@ public interface MpcZ2Vector extends MpcVector {
      */
     default void setPointsWithFixedSpace(MpcZ2Vector source, int startPos, int num, int skipLen){
         assert isPlain() == source.isPlain();
-        getBitVector().setBitsByInterval(source.getBitVector(), startPos, num, skipLen);
+        for(int i = 0; i < getBitVectors().length; i++){
+            getBitVectors()[i].setBitsByInterval(source.getBitVectors()[i], startPos, num, skipLen);
+        }
+    }
+
+    /**
+     * pad zeros in the front of bits to make the valid bit length = targetBitLength
+     *
+     * @param targetBitLength the target bit length
+     */
+    default void extendLength(int targetBitLength){
+        Arrays.stream(getBitVectors()).forEach(each -> each.extendBitNum(targetBitLength));
+    }
+
+    /**
+     * Shift left by padding zero in the end.
+     *
+     * @param n shift distance, in bits.
+     * @return result.
+     */
+    MpcZ2Vector padShiftLeft(int n);
+
+    /**
+     * Inner shift left by fixing number of bits in the bit vector.
+     *
+     * @param n shift distance, in bits.
+     */
+    default void fixShiftLefti(int n){
+        Arrays.stream(getBitVectors()).forEach(each -> each.fixShiftLefti(n));
+    }
+
+    /**
+     * Shift right by reducing number of bits in the bit vector.
+     *
+     * @param n shift distance, in bits.
+     * @return result.
+     */
+    MpcZ2Vector reduceShiftRight(int n);
+
+    /**
+     * Inner shift right by reducing number of bits in the bit vector.
+     *
+     * @param n shift distance, in bits.
+     */
+    default void reduceShiftRighti(int n){
+        Arrays.stream(getBitVectors()).forEach(each -> each.reduceShiftRighti(n));
+    }
+
+    /**
+     * Inner shift right by fixing number of bits in the bit vector.
+     *
+     * @param n shift distance, in bits.
+     */
+    default void fixShiftRighti(int n){
+        Arrays.stream(getBitVectors()).forEach(each -> each.fixShiftRighti(n));
     }
 }

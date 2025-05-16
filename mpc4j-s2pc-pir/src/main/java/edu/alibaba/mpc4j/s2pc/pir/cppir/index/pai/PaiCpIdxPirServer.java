@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.pir.cppir.index.pai;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirServer;
@@ -138,7 +139,7 @@ public class PaiCpIdxPirServer extends AbstractCpIdxPirServer {
             ByteBuffer finalByteBuffer = ByteBuffer.wrap(finalDataByteArray);
             for (int iRow = 0; iRow < rows; iRow++) {
                 // final key
-                byte[] finalKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                byte[] finalKey = BlockUtils.zeroBlock();
                 finalByteBuffer.get(finalKey);
                 // final value
                 byte[] finalValue = new byte[CommonConstants.BLOCK_BYTE_LENGTH + byteL];

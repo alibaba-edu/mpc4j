@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.structure.lpn.primal.LocalLinearCoder;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.Gf2kVodeReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.core.Gf2kCoreVodeFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.core.Gf2kCoreVodeReceiver;
@@ -113,7 +113,7 @@ public class Aprr24Gf2kNcVodeReceiver extends AbstractGf2kNcVodeReceiver {
 
         stopWatch.start();
         // get seed for matrix A used in setup
-        byte[][] matrixKeys = BytesUtils.randomByteArrayVector(2, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[][] matrixKeys = BlockUtils.randomBlocks(2, secureRandom);
         List<byte[]> matrixKeysPayload = Arrays.stream(matrixKeys).collect(Collectors.toList());
         sendOtherPartyPayload(PtoStep.RECEIVER_SEND_KEYS.ordinal(), matrixKeysPayload);
         LocalLinearCoder matrixInitA = new LocalLinearCoder(envType, initK, initN, matrixKeys[0]);
@@ -174,7 +174,8 @@ public class Aprr24Gf2kNcVodeReceiver extends AbstractGf2kNcVodeReceiver {
         stopWatch.start();
         // y = v * A + s
         byte[][] y = matrixA.encodeBlock(vGf2kVodeReceiverOutput.getQ());
-        IntStream.range(0, iterationN).forEach(index ->
+        IntStream intStream = parallel ? IntStream.range(0, iterationN).parallel() : IntStream.range(0, iterationN);
+        intStream.forEach(index ->
             field.addi(y[index], bGf2kMspVodeReceiverOutput.getQ(index))
         );
         // split GF2K-VODE output into k0 + MSP-COT + output

@@ -7,6 +7,7 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtServer;
@@ -79,8 +80,7 @@ public abstract class AbstractMqRpmtPsiClient<T> extends AbstractPsiClient<T> {
                 element -> element
             ));
         if (clientElementSize == 1) {
-            byte[] paddingHashElement = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            secureRandom.nextBytes(paddingHashElement);
+            byte[] paddingHashElement = BlockUtils.randomBlock(secureRandom);
             clientHashElementMap.put(ByteBuffer.wrap(paddingHashElement), null);
         }
         stopWatch.stop();

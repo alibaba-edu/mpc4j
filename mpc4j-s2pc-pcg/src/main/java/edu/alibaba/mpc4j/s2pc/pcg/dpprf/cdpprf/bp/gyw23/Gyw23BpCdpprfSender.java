@@ -4,11 +4,10 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.AbstractBpCdpprfSender;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.BpCdpprfSenderOutput;
@@ -164,7 +163,9 @@ public class Gyw23BpCdpprfSender extends AbstractBpCdpprfSender {
     }
 
     private void generateGgmTree(byte[] actualDelta) {
-        k0sArray = new byte[batchNum][h][CommonConstants.BLOCK_BYTE_LENGTH];
+        k0sArray = IntStream.range(0, batchNum)
+            .mapToObj(i -> BlockUtils.zeroBlocks(h))
+            .toArray(byte[][][]::new);
         IntStream batchIndexIntStream = IntStream.range(0, batchNum);
         // find secureRandom.nextBytes(level1[0]); will output the same randomness, change to prg
         batchIndexIntStream = parallel ? batchIndexIntStream.parallel() : batchIndexIntStream;
@@ -174,26 +175,26 @@ public class Gyw23BpCdpprfSender extends AbstractBpCdpprfSender {
                 // treat Δ as the root node
                 ggmTree.add(new byte[][]{actualDelta});
                 // X_1^0 = k
-                byte[][] level1 = new byte[2][CommonConstants.BLOCK_BYTE_LENGTH];
+                byte[][] level1 = BlockUtils.zeroBlocks(2);
                 secureRandom.nextBytes(level1[0]);
                 // X_1^1 = Δ - k
-                BytesUtils.xori(level1[1], actualDelta);
-                BytesUtils.xori(level1[1], level1[0]);
+                BlockUtils.xori(level1[1], actualDelta);
+                BlockUtils.xori(level1[1], level1[0]);
                 // K_1^0 = X_1^0
-                BytesUtils.xori(k0sArray[batchIndex][0], level1[0]);
+                BlockUtils.xori(k0sArray[batchIndex][0], level1[0]);
                 // the first level should use randomness
                 ggmTree.add(level1);
                 // For i ∈ {1,...,h}, j ∈ [2^{i − 1}], do X_i^{2j} = H(X_{i - 1}^j), X_i^{2j + 1} = X_{i - 1}^j - X_i^{2j}
                 for (int i = 2; i <= h; i++) {
                     byte[][] previousLowLevel = ggmTree.get(i - 1);
-                    byte[][] currentLevel = new byte[1 << i][CommonConstants.BLOCK_BYTE_LENGTH];
+                    byte[][] currentLevel = BlockUtils.zeroBlocks(1 << i);
                     for (int j = 0; j < (1 << (i - 1)); j++) {
                         // X_i^{2j} = H(X_{i - 1}^j)
                         currentLevel[2 * j] = hash.hash(previousLowLevel[j]);
-                        BytesUtils.xori(currentLevel[2 * j + 1], previousLowLevel[j]);
-                        BytesUtils.xori(currentLevel[2 * j + 1], currentLevel[2 * j]);
+                        BlockUtils.xori(currentLevel[2 * j + 1], previousLowLevel[j]);
+                        BlockUtils.xori(currentLevel[2 * j + 1], currentLevel[2 * j]);
                         // K_i^0 = ⊕_{j ∈ [2^{i - 1}]} X_i^{2j}
-                        BytesUtils.xori(k0sArray[batchIndex][i - 1], currentLevel[2 * j]);
+                        BlockUtils.xori(k0sArray[batchIndex][i - 1], currentLevel[2 * j]);
                     }
                     ggmTree.add(currentLevel);
                 }
@@ -211,7 +212,7 @@ public class Gyw23BpCdpprfSender extends AbstractBpCdpprfSender {
                     .mapToObj(hIndex -> {
                         // S sends C_i = K_0^i ⊕ K[r_i]
                         byte[] ci = cotSenderOutput.getR0(batchIndex * h + hIndex);
-                        BytesUtils.xori(ci, k0sArray[batchIndex][hIndex]);
+                        BlockUtils.xori(ci, k0sArray[batchIndex][hIndex]);
                         return ci;
                     })
                     .collect(Collectors.toList()))

@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,7 +56,7 @@ public class TwoChoiceHashBinTest {
 
     @Test
     public void testIllegalInputs() {
-        byte[][] keys = CommonUtils.generateRandomKeys(2, HashBinTestUtils.SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(2, HashBinTestUtils.SECURE_RANDOM);
         TwoChoiceHashBin<ByteBuffer> hashBin = new TwoChoiceHashBin<>(EnvType.STANDARD, itemSize, keys[0], keys[1]);
         // 尝试未插入元素时就填充数据
         try {
@@ -77,8 +77,8 @@ public class TwoChoiceHashBinTest {
         if (itemSize > 1) {
             try {
                 List<ByteBuffer> duplicateItems = HashBinTestUtils.randomByteBufferItems(itemSize - 2);
-                duplicateItems.add(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
-                duplicateItems.add(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
+                duplicateItems.add(ByteBuffer.wrap(BlockUtils.zeroBlock()));
+                duplicateItems.add(ByteBuffer.wrap(BlockUtils.zeroBlock()));
                 hashBin.insertItems(duplicateItems);
                 throw new IllegalStateException("ERROR: successfully insert duplicate items");
             } catch (IllegalArgumentException ignored) {
@@ -106,7 +106,7 @@ public class TwoChoiceHashBinTest {
 
     @Test
     public void testHashBin() {
-        byte[][] keys = CommonUtils.generateRandomKeys(2, HashBinTestUtils.SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(2, HashBinTestUtils.SECURE_RANDOM);
         TwoChoiceHashBin<ByteBuffer> hashBin = new TwoChoiceHashBin<>(EnvType.STANDARD, itemSize, keys[0], keys[1]);
         List<ByteBuffer> items = HashBinTestUtils.randomByteBufferItems(itemSize);
         assertHashBinParams(hashBin);

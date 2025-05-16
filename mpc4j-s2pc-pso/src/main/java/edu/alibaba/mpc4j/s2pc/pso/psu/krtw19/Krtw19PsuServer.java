@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.s2pc.pso.psu.krtw19;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
@@ -11,6 +10,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.EmptyPadHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePoly;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePolyFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.*;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -107,7 +107,7 @@ public class Krtw19PsuServer extends AbstractPsuServer {
         stopWatch.start();
         rpmtOprfReceiver.init(Krtw19PsuPtoDesc.MAX_BIN_NUM);
         peqtOprfSender.init(Krtw19PsuPtoDesc.MAX_BIN_NUM);
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -116,7 +116,7 @@ public class Krtw19PsuServer extends AbstractPsuServer {
 
         stopWatch.start();
         List<byte[]> keysPayload = new LinkedList<>();
-        hashBinKeys = new byte[1][CommonConstants.BLOCK_BYTE_LENGTH];
+        hashBinKeys = BlockUtils.zeroBlocks(1);
         secureRandom.nextBytes(hashBinKeys[0]);
         keysPayload.add(hashBinKeys[0]);
         DataPacketHeader keysHeader = new DataPacketHeader(

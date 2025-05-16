@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl.ZlFactory.ZlType;
@@ -9,6 +8,7 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.zn.ZnFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zn.ZnFactory.ZnType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory.ZpType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -149,8 +149,7 @@ public class BigIntegerRingTest {
 
     @Test
     public void testCreateRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(SECURE_RANDOM);
         // create random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             BigInteger randomElement = bigIntegerRing.createRandom(SECURE_RANDOM);
@@ -170,8 +169,7 @@ public class BigIntegerRingTest {
 
     @Test
     public void testCreateNonZeroRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(SECURE_RANDOM);
         // create non-zero random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             BigInteger randomNonZeroElement = bigIntegerRing.createNonZeroRandom(SECURE_RANDOM);
@@ -195,8 +193,7 @@ public class BigIntegerRingTest {
 
     @Test
     public void testCreateRangeRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(SECURE_RANDOM);
         // create range random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             BigInteger randomElement = bigIntegerRing.createRangeRandom(SECURE_RANDOM);

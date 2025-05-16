@@ -27,6 +27,10 @@ public class Gmr21FlatNetRosnPtoDesc implements PtoDesc {
          * sender sends switch corrections
          */
         SENDER_SEND_SWITCH_CORRECTIONS,
+        /**
+         * sender sends switch corrections
+         */
+        SYNCHRONIZE_MSG,
     }
 
     /**

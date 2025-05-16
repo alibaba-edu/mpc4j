@@ -2,9 +2,9 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp;
 
 import java.util.Arrays;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
 
 /**
@@ -32,13 +32,11 @@ public class SspCotSenderOutput implements PcgPartyOutput {
      */
     public static SspCotSenderOutput create(byte[] delta, byte[][] r0Array) {
         SspCotSenderOutput senderOutput = new SspCotSenderOutput();
-        MathPreconditions.checkEqual("delta.length", "λ in bytes", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        senderOutput.delta = BytesUtils.clone(delta);
+        Preconditions.checkArgument(BlockUtils.valid(delta));
+        senderOutput.delta = BlockUtils.clone(delta);
         MathPreconditions.checkPositive("R0Array.length", r0Array.length);
         senderOutput.r0Array = Arrays.stream(r0Array)
-            .peek(r0 ->
-                MathPreconditions.checkEqual("R0.length", "λ in bytes", r0.length, CommonConstants.BLOCK_BYTE_LENGTH)
-            )
+            .peek(r0 -> Preconditions.checkArgument(BlockUtils.valid(r0)))
             .toArray(byte[][]::new);
         return senderOutput;
     }
@@ -76,7 +74,7 @@ public class SspCotSenderOutput implements PcgPartyOutput {
      * @return the assigned R1.
      */
     public byte[] getR1(int index) {
-        return BytesUtils.xor(delta, getR0(index));
+        return BlockUtils.xor(delta, getR0(index));
     }
 
     @Override

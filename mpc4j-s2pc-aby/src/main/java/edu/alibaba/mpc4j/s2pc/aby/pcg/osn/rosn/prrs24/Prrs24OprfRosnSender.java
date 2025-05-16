@@ -80,7 +80,7 @@ public class Prrs24OprfRosnSender extends AbstractRosnSender {
         int m = CommonUtils.getUnitNum(byteLength, w);
         byte[][][] xss = new byte[m][num][n];
         // parallel if needed
-        if (seedNum > 1 && num > CommonConstants.STATS_BIT_LENGTH * seedNum) {
+        if (seedNum > 1 && num * m > CommonConstants.STATS_BIT_LENGTH * seedNum) {
             int eachLen = (int) Math.ceil(num * 1.0 / tPayload.size());
             IntStream intStream = parallel ? IntStream.range(0, seedNum).parallel() : IntStream.range(0, seedNum);
             intStream.forEach(randIndex -> {

@@ -206,7 +206,7 @@ public class LabelpsiStdKsPirClient<T> extends AbstractStdKsPirClient<T> {
                             }
                         }
                         byte[] oprf = cuckooHashBin.getHashBinEntry(hashBinIndex).getItem().array();
-                        byte[] keyBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                        byte[] keyBytes = BlockUtils.zeroBlock();
                         System.arraycopy(oprf, 0, keyBytes, 0, CommonConstants.BLOCK_BYTE_LENGTH);
                         byte[] ciphertextLabel = BigIntegerUtils.nonNegBigIntegerToByteArray(label, byteL + ivByteLength);
                         byte[] paddingCipher = BytesUtils.paddingByteArray(

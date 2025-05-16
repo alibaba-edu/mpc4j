@@ -1,9 +1,7 @@
 package edu.alibaba.mpc4j.crypto.algs.popf;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.crypto.algs.restriction.LongRestriction;
 import edu.alibaba.mpc4j.crypto.algs.utils.distribution.Coins;
@@ -71,10 +69,7 @@ public class Zlp24LongPopfEngine {
      * @return key.
      */
     public byte[] keyGen(SecureRandom secureRandom) {
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
-
-        return key;
+        return BlockUtils.randomBlock(secureRandom);
     }
 
     /**
@@ -89,8 +84,8 @@ public class Zlp24LongPopfEngine {
         LongRange outputRange = restriction.getOutputRange();
         // R ∪ {max(R) + 1, ..., max(R) + |D| - 1}
         innerOutputRange = new LongRange(outputRange.getStart(), outputRange.getEnd() + inputSize - 1);
-        MathPreconditions.checkEqual("key.length", "λ", key.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        this.key = BytesUtils.clone(key);
+        Preconditions.checkArgument(BlockUtils.valid(key));
+        this.key = BlockUtils.clone(key);
         this.restriction = restriction;
         initialized = true;
     }

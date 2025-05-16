@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtTestUtils;
 import org.junit.Assert;
@@ -38,24 +39,24 @@ public class CotOutputTest {
         // create a sender output with short length Δ
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH - 1, secureRandom);
-            byte[][] r0Array = BytesUtils.randomByteArrayVector(MAX_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] r0Array = BlockUtils.randomBlocks(MAX_NUM, secureRandom);
             CotSenderOutput.create(delta, r0Array);
         });
         // create a sender output with long length Δ
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH + 1, secureRandom);
-            byte[][] r0Array = BytesUtils.randomByteArrayVector(MAX_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] r0Array = BlockUtils.randomBlocks(MAX_NUM, secureRandom);
             CotSenderOutput.create(delta, r0Array);
         });
         // create a sender output with short length r0
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[] delta = BlockUtils.randomBlock(secureRandom);
             byte[][] r0Array = BytesUtils.randomByteArrayVector(MAX_NUM, CommonConstants.BLOCK_BYTE_LENGTH - 1, secureRandom);
             CotSenderOutput.create(delta, r0Array);
         });
         // create a sender output with long length r0
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[] delta = BlockUtils.randomBlock(secureRandom);
             byte[][] r0Array = BytesUtils.randomByteArrayVector(MAX_NUM, CommonConstants.BLOCK_BYTE_LENGTH + 1, secureRandom);
             CotSenderOutput.create(delta, r0Array);
         });
@@ -64,22 +65,22 @@ public class CotOutputTest {
     @Test
     public void testIllegalReceiverInputs() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] rbArray = BytesUtils.randomByteArrayVector(MAX_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] rbArray = BlockUtils.randomBlocks(MAX_NUM, secureRandom);
             CotReceiverOutput.create(new boolean[0], rbArray);
         });
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             boolean[] choices = BinaryUtils.randomBinary(MAX_NUM, secureRandom);
-            CotReceiverOutput.create(choices, new byte[0][CommonConstants.BLOCK_BYTE_LENGTH]);
+            CotReceiverOutput.create(choices, BlockUtils.randomBlocks(0, secureRandom));
         });
         // create a receiver output with mismatched num
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             boolean[] choices = BinaryUtils.randomBinary(MIN_NUM, secureRandom);
-            byte[][] rbArray = BytesUtils.randomByteArrayVector(MAX_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] rbArray = BlockUtils.randomBlocks(MAX_NUM, secureRandom);
             CotReceiverOutput.create(choices, rbArray);
         });
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             boolean[] choices = BinaryUtils.randomBinary(MAX_NUM, secureRandom);
-            byte[][] rbArray = BytesUtils.randomByteArrayVector(MIN_NUM, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] rbArray = BlockUtils.randomBlocks(MIN_NUM, secureRandom);
             CotReceiverOutput.create(choices, rbArray);
         });
         // create a receiver output with short length rb
@@ -98,7 +99,7 @@ public class CotOutputTest {
 
     @Test
     public void testIllegalUpdate() {
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         // split with 0 length
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             CotSenderOutput senderOutput = CotSenderOutput.createRandom(4, delta, secureRandom);
@@ -141,9 +142,9 @@ public class CotOutputTest {
         });
         // merge two sender outputs with different Δ
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[] delta0 = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[] delta0 = BlockUtils.randomBlock(secureRandom);
             CotSenderOutput senderOutput0 = CotSenderOutput.createRandom(4, delta0, secureRandom);
-            byte[] delta1 = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[] delta1 = BlockUtils.randomBlock(secureRandom);
             CotSenderOutput senderOutput1 = CotSenderOutput.createRandom(4, delta1, secureRandom);
             senderOutput0.merge(senderOutput1);
         });
@@ -152,7 +153,7 @@ public class CotOutputTest {
     @Test
     public void testCreateRandomCorrelation() {
         int num = MAX_NUM;
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         CotSenderOutput senderOutput = CotSenderOutput.createRandom(num, delta, secureRandom);
         CotReceiverOutput receiverOutput = CotReceiverOutput.createRandom(senderOutput, secureRandom);
         OtTestUtils.assertOutput(num, senderOutput, receiverOutput);
@@ -166,7 +167,7 @@ public class CotOutputTest {
     }
 
     private void testReduce(int num) {
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         // reduce 1
         CotSenderOutput senderOutput1 = CotSenderOutput.createRandom(num, delta, secureRandom);
         CotReceiverOutput receiverOutput1 = CotReceiverOutput.createRandom(senderOutput1, secureRandom);
@@ -205,7 +206,7 @@ public class CotOutputTest {
     }
 
     private void testMerge(int num1, int num2) {
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         CotSenderOutput senderOutput = CotSenderOutput.createRandom(num1, delta, secureRandom);
         CotSenderOutput mergeSenderOutput = CotSenderOutput.createRandom(num2, delta, secureRandom);
         CotReceiverOutput receiverOutput = CotReceiverOutput.createRandom(senderOutput, secureRandom);
@@ -225,7 +226,7 @@ public class CotOutputTest {
     }
 
     private void testSplit(int num) {
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         // split 1
         CotSenderOutput senderOutput1 = CotSenderOutput.createRandom(num, delta, secureRandom);
         CotReceiverOutput receiverOutput1 = CotReceiverOutput.createRandom(senderOutput1, secureRandom);
@@ -266,7 +267,7 @@ public class CotOutputTest {
     }
 
     private void testSplitMerge(int num) {
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         // split and merge 1
         CotSenderOutput senderOutput1 = CotSenderOutput.createRandom(num, delta, secureRandom);
         CotSenderOutput copySenderOutput1 = senderOutput1.copy();

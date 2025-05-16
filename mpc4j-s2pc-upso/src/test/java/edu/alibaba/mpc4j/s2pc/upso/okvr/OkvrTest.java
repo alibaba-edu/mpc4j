@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.upso.okvr;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.OkvrFactory.OkvrType;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.kw.KwOkvrConfig;
 import edu.alibaba.mpc4j.s2pc.upso.okvr.okvs.OkvsOkvrConfig;
@@ -161,7 +161,7 @@ public class OkvrTest extends AbstractTwoPartyMemoryRpcPto {
                 "-----test {}, l = {}, batch_num = {}, point_num = {}, parallel = {}, equal_target = {}-----",
                 sender.getPtoDesc().getPtoName(), l, retrievalSize, num, parallel, equalTarget
             );
-            byte[][] simpleHashKeys = CommonUtils.generateRandomKeys(1, SECURE_RANDOM);
+            byte[][] simpleHashKeys = BlockUtils.randomBlocks(1, SECURE_RANDOM);
             Pair<Map<ByteBuffer, byte[]>, Set<ByteBuffer>> inputs = OkvrTestUtils.generateInputs(
                 num, l, retrievalSize, equalTarget, simpleHashKeys, SECURE_RANDOM
             );

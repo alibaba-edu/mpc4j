@@ -50,7 +50,7 @@ public class TripletRpLongCpThread extends Thread {
         long mulOpNum = Arrays.stream(ops).filter(MUL_REQ_OP::contains).count();
         long totalNum = mulOpNum * (dataNums[0] + Arrays.stream(dataNums).sum());
         try {
-            z64cParty.getTripletProvider().init(0, totalNum);
+            z64cParty.updateEstimateLongTupleNum(totalNum);
             z64cParty.init();
             for (AcOperator op : ops) {
                 switch (op) {

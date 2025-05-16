@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.crypto.fhe.seal.rns;
 
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.zq.*;
 import org.apache.commons.lang3.builder.MultilineRecursiveToStringStyle;
@@ -32,7 +33,7 @@ public class RnsBase {
     /**
      * Z_{q_i}
      */
-    private Modulus[] base;
+    private AbstractModulus[] base;
     /**
      * q = Π_{i = 1}^{k} q_i. This is a base-2^64 number represented by long[].
      */
@@ -52,7 +53,7 @@ public class RnsBase {
      *
      * @param rnsBase a group of moduli represented by Modulus[].
      */
-    public RnsBase(Modulus[] rnsBase) {
+    public RnsBase(AbstractModulus[] rnsBase) {
         assert rnsBase.length > 0;
         size = rnsBase.length;
         // co-prime check
@@ -305,7 +306,7 @@ public class RnsBase {
         // Copy over this base
         RnsBase newBase = new RnsBase();
         newBase.size = Common.addSafe(size, other.size, false);
-        newBase.base = new Modulus[newBase.size];
+        newBase.base = new AbstractModulus[newBase.size];
         System.arraycopy(this.base, 0, newBase.base, 0, this.size);
         // Extend with other base
         System.arraycopy(other.base, 0, newBase.base, this.size, other.size);
@@ -323,14 +324,14 @@ public class RnsBase {
      * @param value an extend modulus q'.
      * @return a new RNS-base for [q1, q2, ..., qk, q'].
      */
-    public RnsBase extend(Modulus value) {
+    public RnsBase extend(AbstractModulus value) {
         if (Arrays.stream(base).parallel().anyMatch(m -> !Numth.areCoPrime(m.value(), value.value()))) {
             throw new IllegalArgumentException("cannot extend by given value");
         }
         // Copy over this base
         RnsBase newBase = new RnsBase();
         newBase.size = Common.addSafe(size, 1, false);
-        newBase.base = new Modulus[newBase.size];
+        newBase.base = new AbstractModulus[newBase.size];
         System.arraycopy(this.base, 0, newBase.base, 0, this.size);
         // Extend with value
         newBase.base[size] = value;
@@ -429,7 +430,7 @@ public class RnsBase {
      * @return true if the RNS-base contains the moduli; false otherwise.
      */
     public boolean contains(long value) {
-        return Arrays.stream(base).map(Modulus::value).anyMatch(v -> v == value);
+        return Arrays.stream(base).map(AbstractModulus::value).anyMatch(v -> v == value);
     }
 
     /**
@@ -440,7 +441,7 @@ public class RnsBase {
      */
     public boolean isSubBaseOf(RnsBase superBase) {
         // we use set to improve performance.
-        Set<Modulus> superBaseSet = Arrays.stream(superBase.base).collect(Collectors.toSet());
+        Set<AbstractModulus> superBaseSet = Arrays.stream(superBase.base).collect(Collectors.toSet());
         return Arrays.stream(base).allMatch(superBaseSet::contains);
     }
 
@@ -506,7 +507,7 @@ public class RnsBase {
      *
      * @return qi for all i ∈ [1, k].
      */
-    public Modulus[] getBase() {
+    public AbstractModulus[] getBase() {
         return base;
     }
 
@@ -516,7 +517,7 @@ public class RnsBase {
      * @param index index.
      * @return qi.
      */
-    public Modulus getBase(int index) {
+    public AbstractModulus getBase(int index) {
         return base[index];
     }
 

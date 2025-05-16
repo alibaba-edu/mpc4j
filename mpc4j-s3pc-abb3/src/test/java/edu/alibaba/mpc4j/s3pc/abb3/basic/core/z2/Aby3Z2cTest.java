@@ -47,11 +47,11 @@ public class Aby3Z2cTest extends AbstractThreePartyMemoryRpcPto {
 
     private static final int BATCH_NUM = 64;
 
-    private static final int SMALL_SIZE = 1 << 8;
+    private static final int SMALL_SIZE = 1 << 7;
 
-    private static final int MIDDLE_SIZE = 1 << 12;
+    private static final int MIDDLE_SIZE = (1 << 10) - 67;
 
-    private static final int LARGE_SIZE = 1 << 16;
+    private static final int LARGE_SIZE = (1 << 14) - 279;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {

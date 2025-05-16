@@ -2,9 +2,8 @@ package edu.alibaba.mpc4j.common.structure.filter;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -68,26 +67,26 @@ public class FilterTest {
         // try less keys
         if (FilterFactory.getHashKeyNum(type) > 0) {
             Assert.assertThrows(IllegalArgumentException.class, () -> {
-                byte[][] lessKeys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type) - 1, SECURE_RANDOM);
+                byte[][] lessKeys = BlockUtils.randomBlocks(FilterFactory.getHashKeyNum(type) - 1, SECURE_RANDOM);
                 FilterFactory.createFilter(EnvType.STANDARD, type, DEFAULT_SIZE, lessKeys);
             });
         }
         // try more keys
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] moreKeys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type) + 1, SECURE_RANDOM);
+            byte[][] moreKeys = BlockUtils.randomBlocks(FilterFactory.getHashKeyNum(type) + 1, SECURE_RANDOM);
             FilterFactory.createFilter(EnvType.STANDARD, type, DEFAULT_SIZE, moreKeys);
         });
         // create filter with 0 elements
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
             FilterFactory.createFilter(EnvType.STANDARD, type, 0, keys);
         });
-        byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
         // insert duplicated elements
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             Filter<ByteBuffer> filter = FilterFactory.createFilter(EnvType.STANDARD, type, DEFAULT_SIZE, keys);
-            filter.put(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
-            filter.put(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
+            filter.put(ByteBuffer.wrap(BlockUtils.zeroBlock()));
+            filter.put(ByteBuffer.wrap(BlockUtils.zeroBlock()));
         });
         // insert more elements
         Assert.assertThrows(IllegalArgumentException.class, () -> {
@@ -108,7 +107,7 @@ public class FilterTest {
 
     private void testFilter(int maxSize) {
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
             Filter<ByteBuffer> filter = FilterFactory.createFilter(EnvType.STANDARD, type, maxSize, keys);
             // start with empty filer
             Assert.assertEquals(0, filter.size());
@@ -126,7 +125,7 @@ public class FilterTest {
 
     @Test
     public void testSerialize() {
-        byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(FilterFactory.getHashKeyNum(type), SECURE_RANDOM);
         Filter<ByteBuffer> filter = FilterFactory.createFilter(EnvType.STANDARD, type, DEFAULT_SIZE, keys);
         // insert elements into the filter
         Set<ByteBuffer> items = generateRandomItems(DEFAULT_SIZE);

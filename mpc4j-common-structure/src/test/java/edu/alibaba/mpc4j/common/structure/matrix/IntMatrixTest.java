@@ -1,8 +1,7 @@
 package edu.alibaba.mpc4j.common.structure.matrix;
 
 import edu.alibaba.mpc4j.common.structure.vector.IntVector;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,14 +36,14 @@ public class IntMatrixTest {
     @Test
     public void testCreateRandomWithSeed() {
         // create with the same seed
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         IntMatrix matrix1 = IntMatrix.createRandom(rows, columns, seed);
         IntMatrix matrix2 = IntMatrix.createRandom(rows, columns, seed);
         Assert.assertEquals(matrix1, matrix2);
         // create with different seeds
         for (int r = 0; r < 10; r++) {
-            byte[] seed1 = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
-            byte[] seed2 = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[] seed1 = BlockUtils.randomBlock(secureRandom);
+            byte[] seed2 = BlockUtils.randomBlock(secureRandom);
             matrix1 = IntMatrix.createRandom(rows, columns, seed1);
             matrix2 = IntMatrix.createRandom(rows, columns, seed2);
             Assert.assertNotEquals(matrix1, matrix2);

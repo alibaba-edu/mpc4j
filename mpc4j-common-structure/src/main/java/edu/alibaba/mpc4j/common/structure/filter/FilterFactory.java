@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.common.structure.filter;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 
 import java.security.SecureRandom;
@@ -109,7 +109,7 @@ public class FilterFactory {
      */
     public static <X> Filter<X> createFilter(EnvType envType, FilterType type, int maxSize, SecureRandom secureRandom) {
         int hashKeyNum = getHashKeyNum(type);
-        byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, secureRandom);
+        byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, secureRandom);
         return createFilter(envType, type, maxSize, keys);
     }
 

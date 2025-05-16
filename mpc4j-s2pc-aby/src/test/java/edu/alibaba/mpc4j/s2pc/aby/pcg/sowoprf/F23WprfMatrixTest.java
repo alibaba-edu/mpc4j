@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3Utils;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.F23WprfMatrixFactory.F23WprfMatrixType;
 import org.junit.Assert;
 import org.junit.Test;
@@ -67,8 +67,8 @@ public class F23WprfMatrixTest {
         matrix2 = F23WprfMatrixFactory.createRandom(z3Field, secureRandom, type);
         Assert.assertNotEquals(matrix1, matrix2);
         // create with same seed
-        matrix1 = F23WprfMatrixFactory.createRandom(z3Field, new byte[CommonConstants.BLOCK_BYTE_LENGTH], type);
-        matrix2 = F23WprfMatrixFactory.createRandom(z3Field, new byte[CommonConstants.BLOCK_BYTE_LENGTH], type);
+        matrix1 = F23WprfMatrixFactory.createRandom(z3Field, BlockUtils.zeroBlock(), type);
+        matrix2 = F23WprfMatrixFactory.createRandom(z3Field, BlockUtils.zeroBlock(), type);
         Assert.assertEquals(matrix1, matrix2);
     }
 

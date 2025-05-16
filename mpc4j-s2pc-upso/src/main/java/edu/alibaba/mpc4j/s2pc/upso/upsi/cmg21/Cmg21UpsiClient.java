@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.MpOprfReceiver;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfFactory;
 import edu.alibaba.mpc4j.s2pc.opf.oprf.OprfReceiverOutput;
@@ -213,7 +213,7 @@ public class Cmg21UpsiClient<T> extends AbstractUpsiClient<T> {
         boolean success = false;
         byte[][] hashKeys;
         do {
-            hashKeys = CommonUtils.generateRandomKeys(params.getCuckooHashNum(), secureRandom);
+            hashKeys = BlockUtils.randomBlocks(params.getCuckooHashNum(), secureRandom);
             cuckooHashBin = CuckooHashBinFactory.createCuckooHashBin(
                 envType, params.getCuckooHashBinType(), clientElementSize, params.getBinNum(), hashKeys
             );

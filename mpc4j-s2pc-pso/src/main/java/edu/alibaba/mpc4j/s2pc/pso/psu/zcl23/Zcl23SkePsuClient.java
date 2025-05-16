@@ -14,6 +14,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
@@ -126,8 +127,7 @@ public class Zcl23SkePsuClient extends AbstractPsuClient {
         // init DOKVS hash keys
         dokvsHashKeys = keysPayload.toArray(new byte[0][]);
         // 初始化PRP
-        prpKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(prpKey);
+        prpKey = BlockUtils.randomBlock(secureRandom);
         prp = PrpFactory.createInstance(oprpSender.getPrpType());
         prp.setKey(prpKey);
         stopWatch.stop();

@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.crypto.prg;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory.PrgType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -20,7 +20,7 @@ public class BcSm4CtrPrg implements Prg {
     /**
      * 初始向量为全0
      */
-    private static final byte[] IV = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] IV = BlockUtils.zeroBlock();
     /**
      * 输出字节长度
      */
@@ -37,7 +37,7 @@ public class BcSm4CtrPrg implements Prg {
 
     @Override
     public byte[] extendToBytes(byte[] seed) {
-        assert seed.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert BlockUtils.valid(seed);
         // 经过测试，SM4/CTR模式不是线程安全的，每次扩展要创建新的实例
         try {
             KeyParameter keyParameter = new KeyParameter(seed);

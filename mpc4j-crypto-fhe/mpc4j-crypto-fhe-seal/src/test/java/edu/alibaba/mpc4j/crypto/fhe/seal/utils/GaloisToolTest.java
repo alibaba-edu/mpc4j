@@ -29,6 +29,10 @@ public class GaloisToolTest {
 
     @Test
     public void testEltFromStep() {
+        /*
+         * galois tool uses the generator 3, when coeff_count_power = 3, we have N = 2^4 = 16,
+         * 3^0 = 1 = 15; 3^1 = 3^-3 = 3 = 3; 3^2 = 3^-2 = 9 = 9; 3^3 = 3^-1 = 27 = 11;
+         */
         GaloisTool galoisTool = new GaloisTool(3);
         Assert.assertEquals(15, galoisTool.getEltFromStep(0));
         Assert.assertEquals(3, galoisTool.getEltFromStep(1));
@@ -41,6 +45,10 @@ public class GaloisToolTest {
 
     @Test
     public void testEltFromSteps() {
+        /*
+         * galois tool uses the generator 3, when coeff_count_power = 3, we have N = 2^4 = 16,
+         * 0 -> 15; 1 -> 3; -3 -> 3; 2 -> 9; -2 -> 9; 3 -> 11; -1 -> 11;
+         */
         GaloisTool galoisTool = new GaloisTool(3);
         int[] elts = galoisTool.getEltsFromSteps(new int[]{0, 1, -3, 2, -2, 3, -1});
         int[] eltsTrue = new int[]{15, 3, 3, 9, 9, 11, 11};
@@ -51,6 +59,9 @@ public class GaloisToolTest {
 
     @Test
     public void testEltsAll() {
+        /*
+         * CKKS galois tool uses the generator 3, when coeff_count_power = 3, we have N = 2^4 = 16: 15, 3, 11, 9, 9;
+         */
         GaloisTool galoisTool = new GaloisTool(3);
         int[] elts = galoisTool.getEltsAll();
         int[] eltsTrue = new int[]{15, 3, 11, 9, 9};

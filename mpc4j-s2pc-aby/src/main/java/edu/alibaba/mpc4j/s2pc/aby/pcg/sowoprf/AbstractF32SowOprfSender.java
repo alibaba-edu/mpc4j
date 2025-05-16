@@ -5,10 +5,10 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 import java.util.Arrays;
 
@@ -51,8 +51,8 @@ public abstract class AbstractF32SowOprfSender extends AbstractTwoPartyPto imple
     protected AbstractF32SowOprfSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, F32SowOprfConfig config) {
         super(ptoDesc, senderRpc, receiverParty, config);
         z3Field = new Z3ByteField();
-        byte[] seedA = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        byte[] seedB = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] seedA = BlockUtils.zeroBlock();
+        byte[] seedB = BlockUtils.zeroBlock();
         Arrays.fill(seedB, (byte) 0xFF);
         f32Wprf = new F32Wprf(z3Field, seedA, seedB, config.getMatrixType());
         matrixA = f32Wprf.getMatrixA();

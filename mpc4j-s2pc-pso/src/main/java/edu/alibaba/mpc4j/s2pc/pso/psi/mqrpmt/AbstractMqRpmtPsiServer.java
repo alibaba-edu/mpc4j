@@ -10,6 +10,7 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtClient;
 import edu.alibaba.mpc4j.s2pc.opf.mqrpmt.MqRpmtFactory;
@@ -79,8 +80,7 @@ public abstract class AbstractMqRpmtPsiServer<T> extends AbstractPsiServer<T> {
             .collect(Collectors.toSet());
         // pad a random element when server_size = 1, this is because mq-RPMT cannot support n = 1.
         if (serverElementSize == 1) {
-            byte[] paddingHashElement = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            secureRandom.nextBytes(paddingHashElement);
+            byte[] paddingHashElement = BlockUtils.randomBlock(secureRandom);
             serverHashElementSet.add(ByteBuffer.wrap(paddingHashElement));
         }
         stopWatch.stop();

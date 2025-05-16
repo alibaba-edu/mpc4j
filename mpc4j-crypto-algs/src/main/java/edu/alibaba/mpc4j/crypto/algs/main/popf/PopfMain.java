@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.crypto.algs.main.popf;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.crypto.algs.popf.Zlp24LongPopfEngine;
 import edu.alibaba.mpc4j.crypto.algs.restriction.LongEmptyRestriction;
@@ -48,8 +48,7 @@ public class PopfMain {
     private void warmup() throws CryptoException {
         SecureRandom secureRandom = new SecureRandom();
         Zlp24LongPopfEngine popfEngine = new Zlp24LongPopfEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         LongRange rangeD = new LongRange(0, WARMUP_ELEMENT_SET_SIZE);
         LongRange rangeR = new LongRange(0, WARMUP_ELEMENT_SET_SIZE);
         popfEngine.init(key, new LongEmptyRestriction(rangeD, rangeR));
@@ -95,8 +94,7 @@ public class PopfMain {
             outputs[i] = new TLongArrayList();
             SecureRandom secureRandom = new SecureRandom();
             Zlp24LongPopfEngine popfEngine = new Zlp24LongPopfEngine(hgdType);
-            byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            secureRandom.nextBytes(key);
+            byte[] key = BlockUtils.randomBlock(secureRandom);
             popfEngine.init(key, new LongEmptyRestriction(rangeD, rangeR));
             for (long input = minInput; input <= maxInput; input++) {
                 try {

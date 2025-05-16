@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.aprr24;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.SerializeUtils;
@@ -71,7 +71,7 @@ public class Aprr24F32SowOprfReceiver extends AbstractF32SowOprfReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         // The parties run the setup for Conv32 for m conversions.
         assert expectBatchSize != 0;
@@ -139,14 +139,17 @@ public class Aprr24F32SowOprfReceiver extends AbstractF32SowOprfReceiver {
         stopWatch.start();
         // P1 computes h_{0,i} ← G_{i,0} for i ∈ [n], h_{1,i} ← G_{i,1} for i ∈ [n]
         byte[][] h0s = new byte[singleBatchSize][F32Wprf.N];
-        byte[][] h1s = new byte[singleBatchSize][F32Wprf.N];
+        // According to the implement of the function "mult" in AltModKeyMult.cpp of secure-join [https://github.com/Visa-Research/secure-join],
+        // h1s can be random masks, only used to mask the OT correction payload
+        // Thus, h1s can be generated in column form, and each byte can mask 4 F3 elements
+        byte[][] h1s = new byte[F32Wprf.N][CommonUtils.getUnitNum(singleBatchSize, 4)];
         IntStream bitIntStream = IntStream.range(0, F32Wprf.N);
         bitIntStream = parallel ? bitIntStream.parallel() : bitIntStream;
         bitIntStream.forEach(i -> {
             for (int batchIndex = 0; batchIndex < singleBatchSize; batchIndex++) {
                 h0s[batchIndex][i] = z3Field.createRandom(g0Array[i]);
-                h1s[batchIndex][i] = z3Field.createRandom(g1Array[i]);
             }
+            g1Array[i].nextBytes(h1s[i]);
         });
         stopWatch.stop();
         long hsTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -154,17 +157,17 @@ public class Aprr24F32SowOprfReceiver extends AbstractF32SowOprfReceiver {
         logSubStepInfo(PtoState.PTO_STEP, currentBatchIndex + 1, 1, 4, hsTime);
 
         stopWatch.start();
-        // P0 computes f := x −_3 h0 −_3 h1
-        byte[][] fs = new byte[singleBatchSize][];
-        IntStream batchIntStream = IntStream.range(0, singleBatchSize);
+        // P0 computes x −_3 h0 ⊕ h1 and compress them in column form
+        byte[][] fs = new byte[F32Wprf.N][];
+        IntStream batchIntStream = IntStream.range(0, F32Wprf.N);
         batchIntStream = parallel ? batchIntStream.parallel() : batchIntStream;
         batchIntStream.forEach(batchIndex -> {
-            byte[] singleData = new byte[F32Wprf.N];
-            for (int i = 0; i < F32Wprf.N; i++) {
-                singleData[i] = z3Field.sub(inputs[batchIndex][i], h0s[batchIndex][i]);
-                singleData[i] = z3Field.sub(singleData[i], h1s[batchIndex][i]);
+            byte[] singleData = new byte[singleBatchSize];
+            for (int i = 0; i < singleBatchSize; i++) {
+                singleData[i] = z3Field.sub(inputs[i][batchIndex], h0s[i][batchIndex]);
             }
             fs[batchIndex] = SerializeUtils.compressL2(singleData);
+            BytesUtils.xori(fs[batchIndex], h1s[batchIndex]);
         });
         List<byte[]> fPayload = Arrays.stream(fs).collect(Collectors.toList());
         sendOtherPartyPayload(PtoStep.RECEIVER_SEND_F.ordinal(), fPayload);

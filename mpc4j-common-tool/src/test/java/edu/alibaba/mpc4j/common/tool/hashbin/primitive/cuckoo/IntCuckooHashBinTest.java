@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory.IntCuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -66,32 +66,31 @@ public class IntCuckooHashBinTest {
      * 布谷鸟哈希通类型
      */
     private final IntCuckooHashBinType type;
+    /**
+     * number of hashes
+     */
+    private final int hashNum;
 
     public IntCuckooHashBinTest(String name, IntCuckooHashBinType type) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.type = type;
+        hashNum = IntCuckooHashBinFactory.getHashNum(type);
     }
 
     @Test
     public void testIllegalInputs() {
         // try less keys
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] lessKeys = CommonUtils.generateRandomKeys(
-                IntCuckooHashBinFactory.getHashNum(type) - 1, HashBinTestUtils.SECURE_RANDOM
-            );
+            byte[][] lessKeys = BlockUtils.randomBlocks(hashNum - 1, HashBinTestUtils.SECURE_RANDOM);
             IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, lessKeys);
         });
         // try more kesy
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] moreKeys = CommonUtils.generateRandomKeys(
-                IntCuckooHashBinFactory.getHashNum(type) + 1, HashBinTestUtils.SECURE_RANDOM
-            );
+            byte[][] moreKeys = BlockUtils.randomBlocks(hashNum + 1, HashBinTestUtils.SECURE_RANDOM);
             IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, moreKeys);
         });
         // try 0 elements
-        final byte[][] keys = CommonUtils.generateRandomKeys(
-            IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-        );
+        final byte[][] keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
         Assert.assertThrows(IllegalArgumentException.class, () ->
             IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, 0, keys)
         );
@@ -122,9 +121,8 @@ public class IntCuckooHashBinTest {
 
     @Test
     public void testType() {
-        byte[][] keys = CommonUtils.generateRandomKeys(
-            IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-        );
+        int hashNum = IntCuckooHashBinFactory.getHashNum(type);
+        byte[][] keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
         IntNoStashCuckooHashBin intHashBin = IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, keys);
         Assert.assertEquals(type, intHashBin.getType());
     }
@@ -162,9 +160,7 @@ public class IntCuckooHashBinTest {
     private void testIntCuckooHashBin(int n) {
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
             int[] items = HashBinTestUtils.randomIntItems(n);
-            byte[][] keys = CommonUtils.generateRandomKeys(
-                IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-            );
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
             IntNoStashCuckooHashBin intHashBin = IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, n, keys);
             // 验证插入前的状态
             assertEmptyIntHashBin(intHashBin);
@@ -174,9 +170,7 @@ public class IntCuckooHashBinTest {
                     intHashBin.insertItems(items);
                     success = true;
                 } catch (ArithmeticException ignored) {
-                    keys = CommonUtils.generateRandomKeys(
-                        IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-                    );
+                    keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
                     intHashBin = IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, n, keys);
                 }
             }

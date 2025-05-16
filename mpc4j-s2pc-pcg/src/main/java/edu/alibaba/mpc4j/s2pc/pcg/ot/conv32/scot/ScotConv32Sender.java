@@ -1,10 +1,10 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.scot;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.AbstractConv32Party;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.scot.ScotConv32PtoDesc.PtoStep;
@@ -51,7 +51,7 @@ public class ScotConv32Sender extends AbstractConv32Party {
 
         stopWatch.start();
         int roundNum = Math.min(maxRoundNum, expectNum);
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         ncCotSender.init(delta, roundNum * 2);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -81,15 +81,13 @@ public class ScotConv32Sender extends AbstractConv32Party {
             CotSenderOutput cotSenderOutput = ncCotSender.send();
             // S sets x_0 = R_0 ⊕ R_1, y_0 = R_0
             int bitNum = cotSenderOutput.getNum();
-            BitVector r0 = BitVectorFactory.createZeros(bitNum);
-            BitVector r1 = BitVectorFactory.createZeros(bitNum);
             RotSenderOutput rotSenderOutput = new RotSenderOutput(envType, CrhfType.MMO, cotSenderOutput);
             byte[][] r0Array = rotSenderOutput.getR0Array();
             byte[][] r1Array = rotSenderOutput.getR1Array();
-            IntStream.range(0, bitNum).forEach(i -> {
-                r0.set(i, (r0Array[i][0] & 0b00000001) != 0);
-                r1.set(i, (r1Array[i][0] & 0b00000001) != 0);
-            });
+            byte[] r0ByteArray = BytesUtils.extractLsb(r0Array);
+            byte[] r1ByteArray = BytesUtils.extractLsb(r1Array);
+            BitVector r0 = BitVectorFactory.create(bitNum, r0ByteArray);
+            BitVector r1 = BitVectorFactory.create(bitNum, r1ByteArray);
             // x_0 = R_0, y_0 = R_0 ⊕ R_1
             r1.xori(r0);
             x0p.merge(r0);

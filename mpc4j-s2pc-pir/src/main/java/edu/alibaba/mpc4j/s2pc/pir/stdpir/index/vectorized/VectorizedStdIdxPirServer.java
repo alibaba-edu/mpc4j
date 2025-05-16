@@ -2,17 +2,17 @@ package edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized;
 
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
-import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.hashbin.primitive.DynamicSimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.IntHashBin;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.AbstractStdIdxPirServer;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.StdIdxPirServer;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -71,10 +71,6 @@ public class VectorizedStdIdxPirServer extends AbstractStdIdxPirServer implement
      */
     private int queryPayloadSize;
     /**
-     * simple hash bin
-     */
-    int[][] hashBin;
-    /**
      * hash num
      */
     private final int hashNum;
@@ -105,25 +101,17 @@ public class VectorizedStdIdxPirServer extends AbstractStdIdxPirServer implement
 
         stopWatch.start();
         int binNum = (int) Math.ceil(cuckooFactor * maxBatchNum);
-        byte[][] hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
+        byte[][] hashKeys = BlockUtils.randomBlocks(hashNum, secureRandom);
         int[] totalIndex = IntStream.range(0, n).toArray();
-        IntHashBin intHashBin = new SimpleIntHashBin(envType, binNum, n, hashKeys);
+        IntHashBin intHashBin = new DynamicSimpleIntHashBin(envType, binNum, n, hashKeys);
         intHashBin.insertItems(totalIndex);
         int maxBinSize = IntStream.range(0, binNum)
             .mapToObj(intHashBin::binSize)
             .max(Integer::compare)
             .orElse(0);
         assert maxBinSize > 0;
-        hashBin = new int[binNum][];
-        for (int i = 0; i < binNum; i++) {
-            hashBin[i] = new int[intHashBin.binSize(i)];
-            for (int j = 0; j < intHashBin.binSize(i); j++) {
-                hashBin[i][j] = intHashBin.getBin(i)[j];
-            }
-        }
         partitionSize = CommonUtils.getUnitNum(l, params.getPlainModulusBitLength() - 1);
         params.calculateDimensions(maxBinSize);
-        ZlDatabase[] databases = database.partitionZl(params.getPlainModulusBitLength() - 1);
         sendOtherPartyPayload(
             PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), Arrays.stream(hashKeys).collect(Collectors.toList())
         );
@@ -148,16 +136,18 @@ public class VectorizedStdIdxPirServer extends AbstractStdIdxPirServer implement
         for (int i = 0; i < serverNum; i++) {
             int offset = Math.min(perServerCapacity, binNum - previousIdx);
             for (int j = previousIdx; j < previousIdx + offset; j++) {
-                long[][] coeffs = vectorizedPirSetup(hashBin[j], databases);
+                long[][] coeffs = vectorizedPirSetup(intHashBin.getBin(j), database);
                 mergeToDb(coeffs, j - previousIdx, i);
             }
             previousIdx += offset;
             rotateDbCols(i);
         }
+        intHashBin.clear();
         IntStream intStream = parallel ? IntStream.range(0, serverNum).parallel() : IntStream.range(0, serverNum);
         encodedDatabase = intStream
             .mapToObj(i -> VectorizedStdIdxPirNativeUtils.preprocessDatabase(params.getEncryptionParams(), db[i]))
             .collect(Collectors.toList());
+        db = null;
         stopWatch.stop();
         long encodeTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
@@ -197,13 +187,24 @@ public class VectorizedStdIdxPirServer extends AbstractStdIdxPirServer implement
         logPhaseInfo(PtoState.PTO_END);
     }
 
-    private long[][] vectorizedPirSetup(int[] binItems, ZlDatabase[] databases) {
+    private long[][] vectorizedPirSetup(int[] binItems, NaiveDatabase database) {
+        // and = 2^l - 1, where l is the partition L.
+        BigInteger and = BigInteger.ONE.shiftLeft(params.getPlainModulusBitLength() - 1).subtract(BigInteger.ONE);
         int roundedNum = (int) (Math.pow(params.firstTwoDimensionSize, 2) * params.thirdDimensionSize);
         long[][] items = new long[roundedNum][partitionSize];
         for (int i = 0; i < roundedNum; i++) {
             if (i < binItems.length) {
+                int[] partitionDatabases = new int[partitionSize];
+                BigInteger item = database.getBigIntegerData(binItems[i]);
+                // we need to partition in reverse order so that we can then combine
+                for (int partitionIndex = partitionSize - 1; partitionIndex >= 0; partitionIndex--) {
+                    BigInteger element = item.and(and);
+                    item = item.shiftRight(params.getPlainModulusBitLength() - 1);
+                    partitionDatabases[partitionIndex] = element.intValue();
+                }
                 for (int j = 0; j < partitionSize; j++) {
-                    items[i][j] = IntUtils.fixedByteArrayToNonNegInt(databases[j].getBytesData(binItems[i]));
+                    items[i][j] = partitionDatabases[j];
+                    //items[i][j] = IntUtils.fixedByteArrayToNonNegInt(databases[j].getBytesData(binItems[i]));
                 }
             } else {
                 items[i] = IntStream.range(0, partitionSize).mapToLong(j -> 1L).toArray();

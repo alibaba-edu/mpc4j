@@ -268,7 +268,7 @@ public class Cmg21JavaUpsiServer<T> extends AbstractUpsiServer<T> {
                     return new Ciphertext[0];
                 }
             )
-            .collect(Collectors.toList());
+            .toList();
         if (upsiParams.getPsLowDegree() > 0) {
             return IntStream.range(0, upsiParams.getCiphertextNum())
                 .mapToObj(i ->

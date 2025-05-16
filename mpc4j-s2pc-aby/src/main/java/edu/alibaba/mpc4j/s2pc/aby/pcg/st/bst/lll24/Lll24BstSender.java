@@ -4,9 +4,9 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.sst.SstSenderOutput;
@@ -107,31 +107,31 @@ public class Lll24BstSender extends AbstractBstSender {
                 // and adding the sum row i (again, except the element v_i[π(i)] which it doesn't know).
                 byte[][][] extendMatrix = new byte[eachNum][][];
                 if (eachNum > 2) {
-                    byte[][] xorColumn = new byte[eachNum][CommonConstants.BLOCK_BYTE_LENGTH];
+                    byte[][] xorColumn = BlockUtils.zeroBlocks(eachNum);
                     IntStream.range(0, eachNum - 1).map(i -> offset + i).forEach(i -> {
                         SpCdpprfReceiverOutput eachReceiverOutput = receiverOutput.get(i);
                         byte[][] eachMatrix = eachReceiverOutput.getV1Array();
                         int pos = eachReceiverOutput.getAlpha();
-                        eachMatrix[pos] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                        eachMatrix[pos] = BlockUtils.zeroBlock();
                         byte[][] eachExtendMatrix = new byte[eachNum][];
                         for (int j = 0; j < eachNum; j++) {
                             if (j != eachReceiverOutput.getAlpha()) {
                                 eachExtendMatrix[j] = prg.extendToBytes(eachMatrix[j]);
                                 // update the column data xor result
-                                BytesUtils.xori(xorColumn[j], eachMatrix[j]);
+                                BlockUtils.xori(xorColumn[j], eachMatrix[j]);
                             }
                         }
                         for (int j = 0; j < paddingEachNum; j++) {
                             if (j != pos) {
                                 // update the column data with missing value in cdpprf
-                                BytesUtils.xori(xorColumn[pos], eachMatrix[j]);
+                                BlockUtils.xori(xorColumn[pos], eachMatrix[j]);
                             }
                         }
                         extendMatrix[i - offset] = eachExtendMatrix;
                     });
-                    extendMatrix[eachNum - 1] = IntStream.range(0, eachNum).mapToObj(i ->
-                        i != piArray[batchIndex][eachNum - 1] ? prg.extendToBytes(xorColumn[i]) : null
-                    ).toArray(byte[][]::new);
+                    extendMatrix[eachNum - 1] = IntStream.range(0, eachNum)
+                        .mapToObj(i -> i != piArray[batchIndex][eachNum - 1] ? prg.extendToBytes(xorColumn[i]) : null)
+                        .toArray(byte[][]::new);
                 } else {
                     IntStream.range(0, eachNum).map(i -> offset + i).forEach(i -> {
                         SpCdpprfReceiverOutput eachReceiverOutput = receiverOutput.get(i);

@@ -4,9 +4,8 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtSenderOutput;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -38,7 +37,7 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
     public static CotSenderOutput create(byte[] delta, byte[][] r0Array) {
         CotSenderOutput senderOutput = new CotSenderOutput(delta);
         senderOutput.r0Array = Arrays.stream(r0Array)
-            .peek(r0 -> MathPreconditions.checkEqual("R0.length", "λ", r0.length, CommonConstants.BLOCK_BYTE_LENGTH))
+            .peek(r0 -> Preconditions.checkArgument(BlockUtils.valid(r0)))
             .toArray(byte[][]::new);
 
         return senderOutput;
@@ -52,7 +51,7 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
      */
     public static CotSenderOutput createEmpty(byte[] delta) {
         CotSenderOutput senderOutput = new CotSenderOutput(delta);
-        senderOutput.r0Array = new byte[0][];
+        senderOutput.r0Array = BlockUtils.zeroBlocks(0);
 
         return senderOutput;
     }
@@ -67,7 +66,7 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
      */
     public static CotSenderOutput createRandom(int num, byte[] delta, SecureRandom secureRandom) {
         CotSenderOutput senderOutput = new CotSenderOutput(delta);
-        senderOutput.r0Array = BytesUtils.randomByteArrayVector(num, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        senderOutput.r0Array = BlockUtils.randomBlocks(num, secureRandom);
         return senderOutput;
     }
 
@@ -77,14 +76,14 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
      * @param delta Δ.
      */
     private CotSenderOutput(byte[] delta) {
-        MathPreconditions.checkEqual("delta.length", "λ", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        this.delta = BytesUtils.clone(delta);
+        Preconditions.checkArgument(BlockUtils.valid(delta));
+        this.delta = BlockUtils.clone(delta);
     }
 
     @Override
     public CotSenderOutput copy() {
         CotSenderOutput copy = new CotSenderOutput(delta);
-        copy.r0Array = BytesUtils.clone(r0Array);
+        copy.r0Array = BlockUtils.clone(r0Array);
         return copy;
     }
 
@@ -117,7 +116,7 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
     @Override
     public void merge(MergedPcgPartyOutput other) {
         CotSenderOutput that = (CotSenderOutput) other;
-        Preconditions.checkArgument(BytesUtils.equals(this.delta, that.delta));
+        Preconditions.checkArgument(BlockUtils.equals(this.delta, that.delta));
         // merge R0 array
         byte[][] mergeR0Array = new byte[this.r0Array.length + that.r0Array.length][];
         System.arraycopy(this.r0Array, 0, mergeR0Array, 0, this.r0Array.length);
@@ -146,13 +145,13 @@ public class CotSenderOutput implements OtSenderOutput, MergedPcgPartyOutput {
 
     @Override
     public byte[] getR1(int index) {
-        return BytesUtils.xor(delta, getR0(index));
+        return BlockUtils.xor(delta, getR0(index));
     }
 
     @Override
     public byte[][] getR1Array() {
         return Arrays.stream(r0Array)
-            .map(r0 -> BytesUtils.xor(delta, r0))
+            .map(r0 -> BlockUtils.xor(delta, r0))
             .toArray(byte[][]::new);
     }
 

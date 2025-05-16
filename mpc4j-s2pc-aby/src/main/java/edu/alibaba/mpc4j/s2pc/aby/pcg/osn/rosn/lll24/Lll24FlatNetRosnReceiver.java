@@ -9,6 +9,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetwork;
 import edu.alibaba.mpc4j.common.tool.network.waksman.WaksmanNetworkFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.AbstractNetRosnReceiver;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnReceiverOutput;
@@ -122,7 +123,9 @@ public class Lll24FlatNetRosnReceiver extends AbstractNetRosnReceiver {
 
         for (int levelIndex = 0; levelIndex < level; levelIndex++) {
             LOGGER.info("switching level: {}", levelIndex);
-            sendOtherPartyEqualSizePayload(PtoStep.SYNCHRONIZE_MSG.ordinal(), Collections.singletonList(new byte[]{0}));
+            if(level >= 39 && levelIndex % 4 == 0){
+                sendOtherPartyEqualSizePayload(PtoStep.SYNCHRONIZE_MSG.ordinal(), Collections.singletonList(new byte[]{0}));
+            }
 
             StopWatch stopWatch2 = new StopWatch();
             stopWatch2.start();
@@ -182,7 +185,7 @@ public class Lll24FlatNetRosnReceiver extends AbstractNetRosnReceiver {
                 paddingChoices[widthIndex] = cotReceiverOutputs.getChoice(index);
                 index++;
             } else {
-                paddingRbArray[widthIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                paddingRbArray[widthIndex] = BlockUtils.zeroBlock();
                 paddingChoices[widthIndex] = false;
             }
         }

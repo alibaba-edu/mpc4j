@@ -9,7 +9,7 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.structure.lpn.primal.LocalLinearCoder;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.Gf2kVoleReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.core.Gf2kCoreVoleReceiver;
@@ -21,7 +21,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.AbstractGf2kNcVoleReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.nc.wykw21.Wykw21Gf2kNcVolePtoDesc.PtoStep;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -116,7 +115,7 @@ public class Wykw21Gf2kNcVoleReceiver extends AbstractGf2kNcVoleReceiver {
 
         stopWatch.start();
         // get seed for matrix A used in setup
-        byte[][] matrixKeys = BytesUtils.randomByteArrayVector(2, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[][] matrixKeys = BlockUtils.randomBlocks(2, secureRandom);
         List<byte[]> matrixKeysPayload = Arrays.stream(matrixKeys).collect(Collectors.toList());
         DataPacketHeader matrixKeysHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_KEYS.ordinal(),

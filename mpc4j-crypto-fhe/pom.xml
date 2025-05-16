@@ -5,7 +5,7 @@
     <parent>
         <artifactId>mpc4j</artifactId>
         <groupId>edu.alibaba</groupId>
-        <version>1.1.4-alpha</version>
+        <version>1.1.4-beta</version>
     </parent>
     <packaging>pom</packaging>
     <modules>
@@ -14,6 +14,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>mpc4j-crypto-fhe</artifactId>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -51,6 +58,11 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.obermuhlner</groupId>
+            <artifactId>big-math</artifactId>
+            <version>2.3.2</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.github.luben/zstd-jni -->
         <dependency>

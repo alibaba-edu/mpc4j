@@ -15,7 +15,7 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2e;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eManager;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.Gf2xUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -193,7 +193,7 @@ abstract class AbstractSubSgf2k implements Sgf2k {
                 }
                 break;
             case 128:
-                subfieldElements[0] = BytesUtils.clone(fieldElement);
+                subfieldElements[0] = BlockUtils.clone(fieldElement);
                 break;
             default:
                 throw new IllegalStateException("Invalid subfield L, must be ∈ {2, 4, 8, 16, 32, 64, 128}: " + subfieldL);
@@ -211,13 +211,13 @@ abstract class AbstractSubSgf2k implements Sgf2k {
             case 2:
                 for (int i = 0; i < r; i++) {
                     assert subfield.validateElement(subfieldElements[i]);
-                    p[(r - 1 - i) / 4] |= (subfieldElements[i][0] << (i * 2) % 8);
+                    p[(r - 1 - i) / 4] |= (byte) (subfieldElements[i][0] << (i * 2) % 8);
                 }
                 break;
             case 4:
                 for (int i = 0; i < r; i++) {
                     assert subfield.validateElement(subfieldElements[i]);
-                    p[(r - 1 - i) / 2] |= (subfieldElements[i][0] << (i * 4) % 8);
+                    p[(r - 1 - i) / 2] |= (byte) (subfieldElements[i][0] << (i * 4) % 8);
                 }
                 break;
             case 8:
@@ -256,7 +256,7 @@ abstract class AbstractSubSgf2k implements Sgf2k {
                 }
                 break;
             case 128:
-                BytesUtils.ori(p, subfieldElements[0]);
+                BlockUtils.ori(p, subfieldElements[0]);
                 break;
             default:
                 throw new IllegalStateException("Invalid subfield L, must be ∈ {2, 4, 8, 16, 32, 64, 128}: " + subfieldL);
@@ -269,7 +269,7 @@ abstract class AbstractSubSgf2k implements Sgf2k {
         assert validateElement(p);
         assert validateElement(q);
         // p + q is bit-wise p ⊕ q
-        return BytesUtils.xor(p, q);
+        return BlockUtils.xor(p, q);
     }
 
     @Override
@@ -277,14 +277,14 @@ abstract class AbstractSubSgf2k implements Sgf2k {
         assert validateElement(p);
         assert validateElement(q);
         // p + q is bit-wise p ⊕ q
-        BytesUtils.xori(p, q);
+        BlockUtils.xori(p, q);
     }
 
     @Override
     public byte[] neg(byte[] p) {
         assert validateElement(p);
         // -p = p
-        return BytesUtils.clone(p);
+        return BlockUtils.clone(p);
     }
 
     @Override
@@ -319,7 +319,7 @@ abstract class AbstractSubSgf2k implements Sgf2k {
 
     @Override
     public byte[] createRandom(SecureRandom secureRandom) {
-        return BytesUtils.randomByteArray(fieldByteL, secureRandom);
+        return BlockUtils.randomBlock(secureRandom);
     }
 
     @Override
@@ -340,7 +340,7 @@ abstract class AbstractSubSgf2k implements Sgf2k {
     @Override
     public byte[] createNonZeroRandom(byte[] seed) {
         byte[] randomFieldElement;
-        byte[] key = BytesUtils.clone(seed);
+        byte[] key = BlockUtils.clone(seed);
         do {
             key = fieldKdf.deriveKey(key);
             randomFieldElement = createRandom(key);
@@ -361,13 +361,13 @@ abstract class AbstractSubSgf2k implements Sgf2k {
     @Override
     public boolean isZero(byte[] p) {
         assert validateElement(p);
-        return BytesUtils.equals(p, fieldElementZero);
+        return BlockUtils.equals(p, fieldElementZero);
     }
 
     @Override
     public boolean isOne(byte[] p) {
         assert validateElement(p);
-        return BytesUtils.equals(p, fieldElementOne);
+        return BlockUtils.equals(p, fieldElementOne);
     }
 
     @Override
@@ -405,10 +405,10 @@ abstract class AbstractSubSgf2k implements Sgf2k {
         byte[] result = createZero();
         switch (subfieldL) {
             case 2:
-                result[(r - 1 - h) / 4] |= (p[0] << (h * 2) % 8);
+                result[(r - 1 - h) / 4] |= (byte) (p[0] << (h * 2) % 8);
                 break;
             case 4:
-                result[(r - 1 - h) / 2] |= (p[0] << (h * 4) % 8);
+                result[(r - 1 - h) / 2] |= (byte) (p[0] << (h * 4) % 8);
                 break;
             case 8:
                 result[(r - 1 - h)] = (p[0]);
@@ -434,7 +434,7 @@ abstract class AbstractSubSgf2k implements Sgf2k {
                 result[(r - 1 - h) * 8 + 7] = (p[7]);
                 break;
             case 128:
-                BytesUtils.ori(result, p);
+                BlockUtils.ori(result, p);
                 break;
             default:
                 throw new IllegalStateException("Invalid subfield L, must be ∈ {2, 4, 8, 16, 32, 64, 128}: " + subfieldL);

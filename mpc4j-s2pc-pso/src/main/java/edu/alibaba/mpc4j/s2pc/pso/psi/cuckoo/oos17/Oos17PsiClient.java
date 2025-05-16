@@ -14,7 +14,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.LcotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.LcotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.lcot.LcotReceiverOutput;
@@ -82,7 +82,7 @@ public class Oos17PsiClient<T> extends AbstractPsiClient<T> {
         h1 = HashFactory.createInstance(envType, byteL);
         int l = byteL * Byte.SIZE;
         // init cuckoo hash keys
-        cuckooHashKeys = CommonUtils.generateRandomKeys(cuckooHashNum, secureRandom);
+        cuckooHashKeys = BlockUtils.randomBlocks(cuckooHashNum, secureRandom);
         List<byte[]> cuckooHashKeysPayload = Arrays.stream(cuckooHashKeys).collect(Collectors.toList());
         DataPacketHeader cuckooHashKeysHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,

@@ -6,7 +6,6 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.structure.matrix.IntMatrix;
 import edu.alibaba.mpc4j.common.structure.pgm.LongApproxPgmIndex;
 import edu.alibaba.mpc4j.common.structure.vector.IntVector;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.Hash;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory;
 import edu.alibaba.mpc4j.common.tool.utils.*;
@@ -111,7 +110,7 @@ public class SimplePgmCpKsPirServer<T> extends AbstractCpKsPirServer<T> implemen
 
         stopWatch.start();
         // server generates and sends the seed for the random matrix A.
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         List<byte[]> seedPayload = Collections.singletonList(seed);
         sendOtherPartyPayload(PtoStep.SERVER_SEND_SEED.ordinal(), seedPayload);
         IntMatrix matrixA = IntMatrix.createRandom(columns, dimension, seed);

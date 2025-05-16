@@ -2,9 +2,8 @@ package edu.alibaba.mpc4j.common.structure.filter;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.structure.filter.BloomFilterFactory.BloomFilterType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -61,7 +60,7 @@ public class BloomFilterTest {
     public void testIllegalInputs() {
         // merge filters with different maxSize
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[] key = CommonUtils.generateRandomKey(secureRandom);
+            byte[] key = BlockUtils.randomBlock(secureRandom);
             BloomFilter<ByteBuffer> masterMergeFilter = BloomFilterFactory.createBloomFilter(
                 EnvType.STANDARD, type, DEFAULT_SIZE * 2, key
             );
@@ -76,7 +75,7 @@ public class BloomFilterTest {
         });
         // merge filters with sum of sizes greater than maxSize
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[] key = CommonUtils.generateRandomKey(secureRandom);
+            byte[] key = BlockUtils.randomBlock(secureRandom);
             BloomFilter<ByteBuffer> masterMergeFilter = BloomFilterFactory.createBloomFilter(
                 EnvType.STANDARD, type, DEFAULT_SIZE * 2 - 1, key
             );
@@ -93,7 +92,7 @@ public class BloomFilterTest {
 
     @Test
     public void testType() {
-        byte[] key = CommonUtils.generateRandomKey(secureRandom);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         BloomFilter<ByteBuffer> bloomFilter = BloomFilterFactory.createBloomFilter(EnvType.STANDARD, type, DEFAULT_SIZE, key);
         Assert.assertEquals(type, bloomFilter.getBloomFilterType());
     }
@@ -108,7 +107,7 @@ public class BloomFilterTest {
     }
 
     private void testBloomFilter(int maxSize) {
-        byte[] key = CommonUtils.generateRandomKey(secureRandom);
+        byte[] key = BlockUtils.randomBlock(secureRandom);
         BloomFilter<ByteBuffer> masterMergeFilter = BloomFilterFactory.createBloomFilter(
             EnvType.STANDARD, type, maxSize * 2, key
         );
@@ -137,9 +136,9 @@ public class BloomFilterTest {
     @Test
     public void testDistinctBloomFilter() {
         if (type.equals(BloomFilterType.DISTINCT_BLOOM_FILTER)) {
-            byte[] key = CommonUtils.generateRandomKey(secureRandom);
+            byte[] key = BlockUtils.randomBlock(secureRandom);
             BloomFilter<ByteBuffer> filter = BloomFilterFactory.createBloomFilter(EnvType.STANDARD, type, DEFAULT_SIZE, key);
-            byte[] itemByteArray = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            byte[] itemByteArray = BlockUtils.zeroBlock();
             for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
                 // generate random inputs and test if the hash index are distinct
                 secureRandom.nextBytes(itemByteArray);
@@ -153,11 +152,7 @@ public class BloomFilterTest {
 
     private Set<ByteBuffer> generateRandomItems(int size) {
         return IntStream.range(0, size)
-            .mapToObj(index -> {
-                byte[] itemByteArray = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                secureRandom.nextBytes(itemByteArray);
-                return ByteBuffer.wrap(itemByteArray);
-            })
+            .mapToObj(index -> ByteBuffer.wrap(BlockUtils.randomBlock(secureRandom)))
             .collect(Collectors.toSet());
     }
 }

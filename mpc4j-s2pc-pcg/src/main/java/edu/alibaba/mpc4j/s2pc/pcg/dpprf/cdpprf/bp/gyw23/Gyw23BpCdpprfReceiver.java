@@ -5,10 +5,7 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.AbstractBpCdpprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.BpCdpprfReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.gyw23.Gyw23BpCdpprfPtoDesc.PtoStep;
@@ -171,7 +168,8 @@ public class Gyw23BpCdpprfReceiver extends AbstractBpCdpprfReceiver {
             logStepInfo(PtoState.PTO_STEP, 2, 3, updateCotTime);
 
             List<byte[]> correlationPayload = receiveOtherPartyEqualSizePayload(
-                PtoStep.SENDER_SEND_CORRELATION.ordinal(), h * batchNum, CommonConstants.BLOCK_BYTE_LENGTH);
+                PtoStep.SENDER_SEND_CORRELATION.ordinal(), h * batchNum, CommonConstants.BLOCK_BYTE_LENGTH
+            );
 
             stopWatch.start();
             handleCorrelationPayload(correlationPayload);
@@ -194,7 +192,7 @@ public class Gyw23BpCdpprfReceiver extends AbstractBpCdpprfReceiver {
             .mapToObj(batchIndex -> {
                 // set K_i^{!α_i} := M[r_i] ⊕ c_i for i ∈ [1, n]
                 for (int i = 0; i < h; i++) {
-                    BytesUtils.xori(kbsArray[batchIndex * h + i], cotReceiverOutput.getRb(batchIndex * h + i));
+                    BlockUtils.xori(kbsArray[batchIndex * h + i], cotReceiverOutput.getRb(batchIndex * h + i));
                 }
                 ArrayList<byte[][]> ggmTree = new ArrayList<>(h + 1);
                 // place the level-0 key with an empty key
@@ -203,7 +201,7 @@ public class Gyw23BpCdpprfReceiver extends AbstractBpCdpprfReceiver {
                 // For each i ∈ {1,...,h}
                 for (int i = 1; i <= h; i++) {
                     int hIndex = i - 1;
-                    byte[][] currentLevel = new byte[1 << i][CommonConstants.BLOCK_BYTE_LENGTH];
+                    byte[][] currentLevel = BlockUtils.zeroBlocks(1 << i);
                     // R defines an i-bit string α_i^* = α_1 ... α_{i − 1} !α_i
                     boolean alphai = binaryAlphaArray[batchIndex][hIndex];
                     int alphaiInt = alphai ? 1 : 0;
@@ -223,17 +221,18 @@ public class Gyw23BpCdpprfReceiver extends AbstractBpCdpprfReceiver {
                                 // K_i^{2j} = H(K_{i - 1}^{j})
                                 currentLevel[2 * j] = hash.hash(previousLevel[j]);
                                 // K_i^{2j + 1} = K_{i - 1}^{j} - K_i^{2j}
-                                BytesUtils.xori(currentLevel[2 * j + 1], previousLevel[j]);
-                                BytesUtils.xori(currentLevel[2 * j + 1], currentLevel[2 * j]);
+                                BlockUtils.xori(currentLevel[2 * j + 1], previousLevel[j]);
+                                BlockUtils.xori(currentLevel[2 * j + 1], currentLevel[2 * j]);
                             }
                         }
                         // compute the remaining seeds
                         int alphaStar = (alphaPrefix << 1) + notAlphaiInt;
-                        currentLevel[alphaStar] = kb;
+                        currentLevel[alphaStar] = BlockUtils.zeroBlock();
+                        BlockUtils.xori(currentLevel[alphaStar], kb);
                         currentLevel[(alphaPrefix << 1) + alphaiInt] = null;
                         for (int j = 0; j < (1 << (i - 1)); j++) {
                             if (j != alphaPrefix) {
-                                BytesUtils.xori(currentLevel[alphaStar], currentLevel[2 * j + notAlphaiInt]);
+                                BlockUtils.xori(currentLevel[alphaStar], currentLevel[2 * j + notAlphaiInt]);
                             }
                         }
                     }

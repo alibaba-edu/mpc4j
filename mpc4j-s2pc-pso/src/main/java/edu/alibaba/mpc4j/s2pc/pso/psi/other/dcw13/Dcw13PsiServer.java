@@ -12,7 +12,7 @@ import edu.alibaba.mpc4j.common.structure.filter.Filter;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.DistinctGbfGf2eDokvs;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
@@ -70,7 +70,7 @@ public class Dcw13PsiServer<T> extends AbstractPsiServer<T> {
         MpcAbortPreconditions.checkArgument(gbfKeyPayload.size() == DistinctGbfUtils.HASH_KEY_NUM);
         gbfKey = gbfKeyPayload.get(0);
         // init core COT
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

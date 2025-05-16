@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.BpCdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.BpCdpprfSender;
@@ -121,7 +122,7 @@ public class Gyw23BspCotSender extends AbstractBspCotSender {
                 .mapToObj(batchIndex -> {
                     byte[][] r0Array = bpCdpprfSenderOutput.get(batchIndex).getV0Array();
                     if (eachNum < (1 << h)) {
-                        byte[][] reduceR0Array = new byte[eachNum][];
+                        byte[][] reduceR0Array = BlockUtils.zeroBlocks(eachNum);
                         System.arraycopy(r0Array, 0, reduceR0Array, 0, eachNum);
                         r0Array = reduceR0Array;
                     }

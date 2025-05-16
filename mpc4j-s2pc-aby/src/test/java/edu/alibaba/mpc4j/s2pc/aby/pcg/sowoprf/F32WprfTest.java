@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.F32WprfMatrixFactory.F32WprfMatrixType;
 import org.junit.Assert;
@@ -57,8 +57,8 @@ public class F32WprfTest {
     public F32WprfTest(F32WprfMatrixType type) {
         z3Field = new Z3ByteField();
         secureRandom = new SecureRandom();
-        byte[] seedA = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
-        byte[] seedB = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seedA = BlockUtils.randomBlock(secureRandom);
+        byte[] seedB = BlockUtils.randomBlock(secureRandom);
         wprf = new F32Wprf(z3Field, seedA, seedB, type);
     }
 

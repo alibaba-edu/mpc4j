@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.kdf.Kdf;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 import java.security.SecureRandom;
 
@@ -74,7 +74,7 @@ abstract class AbstractGf2k implements Gf2k {
         assert validateElement(p);
         assert validateElement(q);
         // p + q is bit-wise p ⊕ q
-        return BytesUtils.xor(p, q);
+        return BlockUtils.xor(p, q);
     }
 
     @Override
@@ -82,14 +82,14 @@ abstract class AbstractGf2k implements Gf2k {
         assert validateElement(p);
         assert validateElement(q);
         // p + q is bit-wise p ⊕ q
-        BytesUtils.xori(p, q);
+        BlockUtils.xori(p, q);
     }
 
     @Override
     public byte[] neg(byte[] p) {
         assert validateElement(p);
         // -p = p
-        return BytesUtils.clone(p);
+        return BlockUtils.clone(p);
     }
 
     @Override
@@ -124,7 +124,7 @@ abstract class AbstractGf2k implements Gf2k {
 
     @Override
     public byte[] createRandom(SecureRandom secureRandom) {
-        return BytesUtils.randomByteArray(BYTE_L, secureRandom);
+        return BlockUtils.randomBlock(secureRandom);
     }
 
     @Override
@@ -145,7 +145,7 @@ abstract class AbstractGf2k implements Gf2k {
     @Override
     public byte[] createNonZeroRandom(byte[] seed) {
         byte[] random;
-        byte[] key = BytesUtils.clone(seed);
+        byte[] key = BlockUtils.clone(seed);
         do {
             key = kdf.deriveKey(key);
             random = createRandom(key);
@@ -166,13 +166,13 @@ abstract class AbstractGf2k implements Gf2k {
     @Override
     public boolean isZero(byte[] p) {
         assert validateElement(p);
-        return BytesUtils.equals(p, zero);
+        return BlockUtils.equals(p, zero);
     }
 
     @Override
     public boolean isOne(byte[] p) {
         assert validateElement(p);
-        return BytesUtils.equals(p, one);
+        return BlockUtils.equals(p, one);
     }
 
     @Override

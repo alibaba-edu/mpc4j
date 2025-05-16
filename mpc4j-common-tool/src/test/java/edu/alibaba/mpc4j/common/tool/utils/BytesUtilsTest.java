@@ -227,4 +227,152 @@ public class BytesUtilsTest {
             );
         }
     }
+
+    @Test
+    public void testExtractLsb() {
+        // naive way
+        Assert.assertThrows(AssertionError.class, () -> BytesUtils.naiveExtractLsb(new byte[0][1]));
+        Assert.assertThrows(AssertionError.class, () -> BytesUtils.simdExtractLsb(new byte[0][1]));
+
+        byte[][] data;
+        byte[] expect;
+        byte[] actual;
+
+        // num = 1
+        data = new byte[][]{{(byte) 0b00000000}};
+        expect = new byte[]{(byte) 0b00000000};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        data = new byte[][]{{(byte) 0b00000001}};
+        expect = new byte[]{(byte) 0b00000001};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        // num = 2
+        data = new byte[][]{{(byte) 0b00000000}, {(byte) 0b00000001}};
+        expect = new byte[]{(byte) 0b00000001};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        data = new byte[][]{{(byte) 0b00000001}, {(byte) 0b00000000}};
+        expect = new byte[]{(byte) 0b00000010};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        // num = 9
+        data = new byte[][]{
+            {(byte) 0b00000001},
+            {(byte) 0b00000000}, {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001},
+            {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001},
+        };
+        expect = new byte[]{(byte) 0b00000001, (byte) 0b01111111};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        data = new byte[][]{
+            {(byte) 0b00000000},
+            {(byte) 0b00000001}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000001},
+        };
+        expect = new byte[]{(byte) 0b00000000, (byte) 0b10000001};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        // num = 17
+        data = new byte[][]{
+            {(byte) 0b00000001},
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000001},
+            {(byte) 0b00000001}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+        };
+        expect = new byte[]{(byte) 0b00000001, (byte) 0b00000001, (byte) 0b10000000};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        data = new byte[][]{
+            {(byte) 0b00000001},
+            {(byte) 0b00000000}, {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001},
+            {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001},
+            {(byte) 0b00000001}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+        };
+        expect = new byte[]{(byte) 0b00000001, (byte) 0b01111111, (byte) 0b10000000};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        data = new byte[][]{
+            {(byte) 0b00000000},
+            {(byte) 0b00000001}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000001},
+            {(byte) 0b00000001}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000001},
+        };
+        expect = new byte[]{(byte) 0b00000000, (byte) 0b10000001, (byte) 0b10000001};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        // num = 23
+        data = new byte[][]{
+            {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000000},
+            {(byte) 0b00000000}, {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001},
+            {(byte) 0b00000000}, {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001},
+            {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001},
+            {(byte) 0b00000000}, {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001},
+            {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001}, {(byte) 0b00000001},
+        };
+        expect = new byte[]{(byte) 0b01100111, (byte) 0b01111111, (byte) 0b01111111};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        data = new byte[][]{
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000001},
+            {(byte) 0b00000001}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+            {(byte) 0b00000001}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000001},
+            {(byte) 0b00000001}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000},
+            {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000000}, {(byte) 0b00000001},
+        };
+        expect = new byte[]{(byte) 0b00011000, (byte) 0b10000001, (byte) 0b10000001};
+        actual = BytesUtils.naiveExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+
+        // test long byte array, note that naive solution is always correct
+        SecureRandom secureRandom = new SecureRandom();
+        data = BlockUtils.randomBlocks(127, secureRandom);
+        expect = BytesUtils.naiveExtractLsb(data);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        data = BlockUtils.randomBlocks(128, secureRandom);
+        expect = BytesUtils.naiveExtractLsb(data);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+        data = BlockUtils.randomBlocks(129, secureRandom);
+        expect = BytesUtils.naiveExtractLsb(data);
+        actual = BytesUtils.simdExtractLsb(data);
+        Assert.assertArrayEquals(expect, actual);
+    }
 }

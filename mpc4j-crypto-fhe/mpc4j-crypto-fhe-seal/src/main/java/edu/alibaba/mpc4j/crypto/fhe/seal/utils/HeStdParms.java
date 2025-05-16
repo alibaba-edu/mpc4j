@@ -4,13 +4,15 @@ package edu.alibaba.mpc4j.crypto.fhe.seal.utils;
  * Largest allowed bit counts for coeff_modulus (modulus in the ciphertext space) based on the security estimates from
  * homomorphicencryption.org security standard. Microsoft SEAL samples the secret key from a ternary {-1, 0, 1}
  * distribution.
- * <p></p>
- * The implementation is from: https://github.com/microsoft/SEAL/blob/v4.0.0/native/src/seal/util/hestdparms.h
- * <p></p>
+ * <p>
+ * The implementation is from
+ * <a href="https://github.com/microsoft/SEAL/blob/v4.0.0/native/src/seal/util/hestdparms.h">hestdparms.h</a>.
+ * <p>
  * The standard can be found at:
  * <p>
- * https://homomorphicencryption.org/wp-content/uploads/2018/11/HomomorphicEncryptionStandardv1.1.pdf
- * </p>
+ * <a href="https://homomorphicencryption.org/wp-content/uploads/2018/11/HomomorphicEncryptionStandardv1.1.pdf">
+ * HomomorphicEncryptionStandardv1.1.pdf
+ * </a>
  *
  * @author Anony_Trent, Weiran Liu
  * @date 2023/8/29
@@ -22,11 +24,10 @@ public class HeStdParms {
     private HeStdParms() {
         // empty
     }
+
     /**
-     * Standard deviation for error distribution, 𝜎 = 8 / √(2π) ≈ 3.2. See Section 8.3 of the following paper:
-     * <p>
-     * https://www.microsoft.com/en-us/research/uploads/prod/2017/11/sealmanual-2-3-1.pdf
-     * </p>
+     * Standard deviation for error distribution, 𝜎 = 8 / √(2π) ≈ 3.2. See Section 8.3 of the paper
+     * <a href="https://www.microsoft.com/en-us/research/uploads/prod/2017/11/sealmanual-2-3-1.pdf">sealmanual-2-3-1.pdf</a>
      */
     public final static double HE_STD_PARMS_ERROR_STD_DEV = 3.2;
 
@@ -39,22 +40,18 @@ public class HeStdParms {
      * @return the largest allowed bit counts for coeff_modulus.
      */
     public static int heStdParms128Tc(int polyModulusDegree) {
-        switch (polyModulusDegree) {
-            case 1024:
-                return 27;
-            case 2048:
-                return 54;
-            case 4096:
-                return 109;
-            case 8192:
-                return 218;
-            case 16384:
-                return 438;
-            case 32768:
-                return 881;
-            default:
-                return 0;
-        }
+        return switch (polyModulusDegree) {
+            case 1024 -> 27;
+            case 2048 -> 54;
+            case 4096 -> 109;
+            case 8192 -> 218;
+            case 16384 -> 438;
+            case 32768 -> 881;
+            // add for CKKS bootstrapping, see
+            // https://github.com/zju-abclab/NEXUS/blob/main/thirdparty/SEAL-4.1-bs/native/src/seal/util/hestdparms.h#L35
+            case 65536 -> 1792;
+            default -> 0;
+        };
     }
 
     /**
@@ -66,22 +63,15 @@ public class HeStdParms {
      * @return the largest allowed bit counts for coeff_modulus.
      */
     public static int heStdParms192Tc(int polyModulusDegree) {
-        switch (polyModulusDegree) {
-            case 1024:
-                return 19;
-            case 2048:
-                return 37;
-            case 4096:
-                return 75;
-            case 8192:
-                return 152;
-            case 16384:
-                return 305;
-            case 32768:
-                return 611;
-            default:
-                return 0;
-        }
+        return switch (polyModulusDegree) {
+            case 1024 -> 19;
+            case 2048 -> 37;
+            case 4096 -> 75;
+            case 8192 -> 152;
+            case 16384 -> 305;
+            case 32768 -> 611;
+            default -> 0;
+        };
     }
 
     /**
@@ -93,22 +83,15 @@ public class HeStdParms {
      * @return the largest allowed bit counts for coeff_modulus.
      */
     public static int heStdParms256Tc(int polyModulusDegree) {
-        switch (polyModulusDegree) {
-            case 1024:
-                return 14;
-            case 2048:
-                return 29;
-            case 4096:
-                return 58;
-            case 8192:
-                return 118;
-            case 16384:
-                return 237;
-            case 32768:
-                return 476;
-            default:
-                return 0;
-        }
+        return switch (polyModulusDegree) {
+            case 1024 -> 14;
+            case 2048 -> 29;
+            case 4096 -> 58;
+            case 8192 -> 118;
+            case 16384 -> 237;
+            case 32768 -> 476;
+            default -> 0;
+        };
     }
 
     /**
@@ -120,22 +103,15 @@ public class HeStdParms {
      * @return the largest allowed bit counts for coeff_modulus.
      */
     public static int heStdParms128Tq(int polyModulusDegree) {
-        switch (polyModulusDegree) {
-            case 1024:
-                return 25;
-            case 2048:
-                return 51;
-            case 4096:
-                return 101;
-            case 8192:
-                return 202;
-            case 16384:
-                return 411;
-            case 32768:
-                return 827;
-            default:
-                return 0;
-        }
+        return switch (polyModulusDegree) {
+            case 1024 -> 25;
+            case 2048 -> 51;
+            case 4096 -> 101;
+            case 8192 -> 202;
+            case 16384 -> 411;
+            case 32768 -> 827;
+            default -> 0;
+        };
     }
 
     /**
@@ -147,22 +123,15 @@ public class HeStdParms {
      * @return the largest allowed bit counts for coeff_modulus.
      */
     public static int heStdParms192Tq(int polyModulusDegree) {
-        switch (polyModulusDegree) {
-            case 1024:
-                return 17;
-            case 2048:
-                return 35;
-            case 4096:
-                return 70;
-            case 8192:
-                return 141;
-            case 16384:
-                return 284;
-            case 32768:
-                return 571;
-            default:
-                return 0;
-        }
+        return switch (polyModulusDegree) {
+            case 1024 -> 17;
+            case 2048 -> 35;
+            case 4096 -> 70;
+            case 8192 -> 141;
+            case 16384 -> 284;
+            case 32768 -> 571;
+            default -> 0;
+        };
     }
 
     /**
@@ -174,21 +143,14 @@ public class HeStdParms {
      * @return the largest allowed bit counts for coeff_modulus.
      */
     public static int heStdParms256Tq(int polyModulusDegree) {
-        switch (polyModulusDegree) {
-            case 1024:
-                return 13;
-            case 2048:
-                return 27;
-            case 4096:
-                return 54;
-            case 8192:
-                return 109;
-            case 16384:
-                return 220;
-            case 32768:
-                return 443;
-            default:
-                return 0;
-        }
+        return switch (polyModulusDegree) {
+            case 1024 -> 13;
+            case 2048 -> 27;
+            case 4096 -> 54;
+            case 8192 -> 109;
+            case 16384 -> 220;
+            case 32768 -> 443;
+            default -> 0;
+        };
     }
 }

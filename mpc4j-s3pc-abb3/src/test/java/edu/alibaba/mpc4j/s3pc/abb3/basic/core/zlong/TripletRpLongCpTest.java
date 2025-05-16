@@ -54,11 +54,11 @@ public class TripletRpLongCpTest extends AbstractThreePartyMemoryRpcPto {
 
     private static final int BATCH_NUM = 16;
 
-    private static final int SMALL_SIZE = 1 << 8;
+    private static final int SMALL_SIZE = 1 << 6;
 
-    private static final int MIDDLE_SIZE = 1 << 12;
+    private static final int MIDDLE_SIZE = (1 << 10) - 27;
 
-    private static final int LARGE_SIZE = 1 << 16;
+    private static final int LARGE_SIZE = (1 << 14) - 321;
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {

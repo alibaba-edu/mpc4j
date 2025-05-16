@@ -220,7 +220,7 @@ public class EncryptionParameters implements SealCloneable {
      */
     public void setPlainModulus(Modulus plainModulus) {
         // Check that scheme is BFV
-        if (scheme != SchemeType.BFV && scheme != SchemeType.BGV && !plainModulus.isZero()) {
+        if (!scheme.equals(SchemeType.BFV) && !scheme.equals(SchemeType.BGV) && !plainModulus.isZero()) {
             throw new IllegalArgumentException("plainModulus is not supported for this scheme");
         }
 

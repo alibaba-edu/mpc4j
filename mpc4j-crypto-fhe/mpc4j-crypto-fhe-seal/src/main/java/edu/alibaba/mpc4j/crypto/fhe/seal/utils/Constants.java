@@ -2,8 +2,9 @@ package edu.alibaba.mpc4j.crypto.fhe.seal.utils;
 
 /**
  * This class provides global static constants.
- * <p></p>
- * The implementation is from https://github.com/microsoft/SEAL/blob/v4.0.0/native/src/seal/util/defines.h
+ * <p>
+ * The implementation is from
+ * <a href="https://github.com/microsoft/SEAL/blob/v4.0.0/native/src/seal/util/defines.h">defines.h</a>.
  *
  * @author Anony_Trent, Weiran Liu
  * @date 2023/8/3
@@ -62,10 +63,9 @@ public class Constants {
      */
     public static final int SEAL_COEFF_MOD_COUNT_MIN = 1;
     /**
-     * max number of coefficient moduli (no hard requirement)
+     * max number of coefficient moduli (no hard requirement). In SEAL 4.1.2, it changes from 64 to 256.
      */
-    public static final int SEAL_COEFF_MOD_COUNT_MAX = 64;
-
+    public static final int SEAL_COEFF_MOD_COUNT_MAX = 256;
     /**
      * max polynomial modulus degree (no hard requirement)
      */
@@ -74,7 +74,6 @@ public class Constants {
      * min polynomial modulus degree
      */
     public static final int SEAL_POLY_MOD_DEGREE_MIN = 2;
-
     /**
      * max size of a ciphertext (cannot exceed 2^32 / poly_modulus_degree)
      */

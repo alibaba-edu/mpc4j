@@ -12,8 +12,8 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnFactory;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.dosn.DosnPartyOutput;
@@ -148,7 +148,7 @@ public class Gmr21MqRpmtServer extends AbstractMqRpmtServer {
 
         stopWatch.start();
         int okvsHashKeyNum = Gf2eDokvsFactory.getHashKeyNum(okvsType);
-        okvsHashKeys = CommonUtils.generateRandomKeys(okvsHashKeyNum, secureRandom);
+        okvsHashKeys = BlockUtils.randomBlocks(okvsHashKeyNum, secureRandom);
         List<byte[]> keysPayload = Arrays.stream(okvsHashKeys).collect(Collectors.toList());
         sendOtherPartyPayload(PtoStep.SERVER_SEND_KEYS.ordinal(), keysPayload);
         stopWatch.stop();

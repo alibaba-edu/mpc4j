@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.bitmatrix.dense;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.bouncycastle.util.encoders.Hex;
@@ -123,8 +123,7 @@ public class SquareDenseBitMatrixEfficiencyTest {
         LOGGER.info("{}\t{}", "                name", "   mul(us)");
         for (DenseBitMatrixType type : TYPES) {
             DenseBitMatrix bitMatrix = DenseBitMatrixFactory.createFromDense(type, 128, INVERTIBLE_SQUARE_BLOCK_MATRIX);
-            byte[] randomInput = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomInput);
+            byte[] randomInput = BlockUtils.randomBlock(SECURE_RANDOM);
             // warm-up
             IntStream.range(0, ROUND).forEach(index -> bitMatrix.leftMultiply(randomInput));
             STOP_WATCH.start();

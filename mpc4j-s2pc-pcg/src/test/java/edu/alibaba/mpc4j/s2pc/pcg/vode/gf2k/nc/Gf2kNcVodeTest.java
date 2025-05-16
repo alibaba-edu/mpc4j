@@ -2,11 +2,10 @@ package edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.nc;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Dgf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Dgf2kFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.VodeTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.Gf2kVodeReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.Gf2kVodeSenderOutput;
@@ -133,7 +132,7 @@ public class Gf2kNcVodeTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             Gf2kNcVodeSenderThread senderThread = new Gf2kNcVodeSenderThread(sender, field, num, round);
             Gf2kNcVodeReceiverThread receiverThread = new Gf2kNcVodeReceiverThread(receiver, field, delta, num, round);
             STOP_WATCH.start();

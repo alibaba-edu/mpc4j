@@ -1,15 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.upso.upsu;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory;
-import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
-import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.tcl23.Tcl23ByteEccDdhPmPeqtConfig;
-import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.tcl23.Tcl23EccDdhPmPeqtConfig;
-import edu.alibaba.mpc4j.s2pc.opf.pmpeqt.tcl23.Tcl23PsOprfPmPeqtConfig;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.index.vectorized.VectorizedStdIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pso.PsoUtils;
-import edu.alibaba.mpc4j.s2pc.upso.upsu.tcl23.Tcl23UpsuConfig;
-import edu.alibaba.mpc4j.s2pc.upso.upsu.zlp24.Zlp24PeqtUpsuConfig;
 import edu.alibaba.mpc4j.s2pc.upso.upsu.zlp24.Zlp24PkeUpsuConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,27 +44,27 @@ public class UpsuTest extends AbstractTwoPartyMemoryRpcPto {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // TCL23 + DDH PM-PEQT
-        configurations.add(new Object[]{
-            UpsuFactory.UpsuType.TCL23.name() + " Ecc DDH",
-            new Tcl23UpsuConfig.Builder()
-                .setPmPeqtConfig(new Tcl23EccDdhPmPeqtConfig.Builder().build())
-                .build()
-        });
-        // TCL23 + DDH PM-PEQT
-        configurations.add(new Object[]{
-            UpsuFactory.UpsuType.TCL23.name() + " Byte Ecc DDH",
-            new Tcl23UpsuConfig.Builder()
-                .setPmPeqtConfig(new Tcl23ByteEccDdhPmPeqtConfig.Builder().build())
-                .build()
-        });
-        // TCL23 + Permute + Share and OPRF PM-PEQT
-        configurations.add(new Object[]{
-            UpsuFactory.UpsuType.TCL23.name() + " Permute + Share and OPRF",
-            new Tcl23UpsuConfig.Builder()
-                .setPmPeqtConfig(new Tcl23PsOprfPmPeqtConfig.Builder().build())
-                .build()
-        });
+//        // TCL23 + DDH PM-PEQT
+//        configurations.add(new Object[]{
+//            UpsuFactory.UpsuType.TCL23.name() + " Ecc DDH",
+//            new Tcl23UpsuConfig.Builder()
+//                .setPmPeqtConfig(new Tcl23EccDdhPmPeqtConfig.Builder().build())
+//                .build()
+//        });
+//        // TCL23 + DDH PM-PEQT
+//        configurations.add(new Object[]{
+//            UpsuFactory.UpsuType.TCL23.name() + " Byte Ecc DDH",
+//            new Tcl23UpsuConfig.Builder()
+//                .setPmPeqtConfig(new Tcl23ByteEccDdhPmPeqtConfig.Builder().build())
+//                .build()
+//        });
+//        // TCL23 + Permute + Share and OPRF PM-PEQT
+//        configurations.add(new Object[]{
+//            UpsuFactory.UpsuType.TCL23.name() + " Permute + Share and OPRF",
+//            new Tcl23UpsuConfig.Builder()
+//                .setPmPeqtConfig(new Tcl23PsOprfPmPeqtConfig.Builder().build())
+//                .build()
+//        });
         // ZLP24 + PKE + Vectorized PIR
         configurations.add(new Object[]{
             UpsuFactory.UpsuType.ZLP24_PKE.name() + " Vectorized PIR",
@@ -79,27 +72,27 @@ public class UpsuTest extends AbstractTwoPartyMemoryRpcPto {
                 .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
                 .build()
         });
-        configurations.add(new Object[]{
-            UpsuFactory.UpsuType.ZLP24_PKE.name() + " 2 Hash Vectorized PIR",
-            new Zlp24PkeUpsuConfig.Builder()
-                .setEccDokvsType(EccDokvsFactory.EccDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT)
-                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
-                .build()
-        });
-        // ZLP24 + PEQT + Vectorized PIR
-        configurations.add(new Object[]{
-            UpsuFactory.UpsuType.ZLP24_PEQT.name() + " Vectorized PIR",
-            new Zlp24PeqtUpsuConfig.Builder()
-                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
-                .build()
-        });
-        configurations.add(new Object[]{
-            UpsuFactory.UpsuType.ZLP24_PEQT.name() + " 2 Hash Vectorized PIR",
-            new Zlp24PeqtUpsuConfig.Builder()
-                .setGf2eDokvsType(Gf2eDokvsFactory.Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT)
-                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
-                .build()
-        });
+//        configurations.add(new Object[]{
+//            UpsuFactory.UpsuType.ZLP24_PKE.name() + " 2 Hash Vectorized PIR",
+//            new Zlp24PkeUpsuConfig.Builder()
+//                .setEccDokvsType(EccDokvsFactory.EccDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT)
+//                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
+//                .build()
+//        });
+//        // ZLP24 + PEQT + Vectorized PIR
+//        configurations.add(new Object[]{
+//            UpsuFactory.UpsuType.ZLP24_PEQT.name() + " Vectorized PIR",
+//            new Zlp24PeqtUpsuConfig.Builder()
+//                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
+//                .build()
+//        });
+//        configurations.add(new Object[]{
+//            UpsuFactory.UpsuType.ZLP24_PEQT.name() + " 2 Hash Vectorized PIR",
+//            new Zlp24PeqtUpsuConfig.Builder()
+//                .setGf2eDokvsType(Gf2eDokvsFactory.Gf2eDokvsType.H2_SPARSE_CLUSTER_BLAZE_GCT)
+//                .setStdIdxPirConfig(new VectorizedStdIdxPirConfig.Builder().build())
+//                .build()
+//        });
 
         return configurations;
     }

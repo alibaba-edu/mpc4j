@@ -6,6 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.commit.Commit;
 import edu.alibaba.mpc4j.common.tool.crypto.commit.CommitFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfReceiverOutput;
@@ -187,8 +188,7 @@ public class Wykw21MaGf2kBspVoleSender extends AbstractGf2kBspVoleSender {
 
         stopWatch.start();
         // S samples χ_{i, j} for i ∈ [0, n), j ∈ [0, t), and extracts χ_{α, j}
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         List<byte[]> seedPayload = Collections.singletonList(seed);
         DataPacketHeader seedHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_CHI_SEED.ordinal(), extraInfo,

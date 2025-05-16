@@ -1,12 +1,12 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
 /**
@@ -39,8 +39,8 @@ public abstract class AbstractMspCotSender extends AbstractTwoPartyPto implement
     }
 
     protected void setInitInput(byte[] delta) {
-        MathPreconditions.checkEqual("Δ.length", "λ(B)", delta.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        this.delta = BytesUtils.clone(delta);
+        Preconditions.checkArgument(BlockUtils.valid(delta));
+        this.delta = BlockUtils.clone(delta);
         initState();
     }
 

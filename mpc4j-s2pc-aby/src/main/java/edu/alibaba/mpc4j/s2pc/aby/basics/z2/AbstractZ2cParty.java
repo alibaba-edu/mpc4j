@@ -1,5 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.basics.z2;
 
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.circuit.operator.DyadicBcOperator;
 import edu.alibaba.mpc4j.common.circuit.operator.UnaryBcOperator;
 import edu.alibaba.mpc4j.common.circuit.z2.MpcZ2Vector;
@@ -8,11 +9,23 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
+import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
+import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
+import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
+import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotReceiverOutput;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotSenderOutput;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * abstract Z2 circuit party.
@@ -62,6 +75,21 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
         MathPreconditions.checkEqual("xi.bitNum", "yi.bitNum", xi.getNum(), yi.getNum());
         MathPreconditions.checkPositive("bitNum", xi.bitNum());
         bitNum = xi.bitNum();
+    }
+
+    protected void setDyadicOperatorInput(SquareZ2Vector[] xiArray, SquareZ2Vector[] yiArray) {
+        checkInitialized();
+        MathPreconditions.checkEqual("xiArray.length", "yiArray.length", xiArray.length, yiArray.length);
+        bitNum = xiArray[0].getNum();
+        MathPreconditions.checkPositive("bitNum", bitNum);
+        boolean xIsPlain = xiArray[0].isPlain();
+        boolean yIsPlain = yiArray[0].isPlain();
+        for(int i = 0; i < xiArray.length; i++) {
+            MathPreconditions.checkEqual("xi.bitNum", "bitNum", xiArray[i].getNum(), bitNum);
+            MathPreconditions.checkEqual("yi.bitNum", "bitNum", yiArray[i].getNum(), bitNum);
+            Preconditions.checkArgument(xIsPlain == xiArray[i].isPlain());
+            Preconditions.checkArgument(yIsPlain == yiArray[i].isPlain());
+        }
     }
 
     protected void setRevealOwnInput(SquareZ2Vector xi) {
@@ -210,5 +238,84 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
         return Arrays.stream(split(mergeZiArray, bitNums))
             .map(vector -> (SquareZ2Vector) vector)
             .toArray(SquareZ2Vector[]::new);
+    }
+
+    @Override
+    public MpcZ2Vector xorSelfAllElement(MpcZ2Vector x) {
+        return create(x.isPlain(), x.getBitVector().numOf1IsOdd()
+            ? BitVectorFactory.createOnes(1)
+            : BitVectorFactory.createZeros(1));
+    }
+
+    /**
+     * y_i = \sum_0^{i} x_i
+     *
+     * @param x the input data
+     * @return y
+     */
+    @Override
+    public MpcZ2Vector xorAllBeforeElement(MpcZ2Vector x) {
+        return create(x.isPlain(), x.getBitVector().xorBeforeBit());
+    }
+
+    /**
+     * generate randomness based on OT result
+     *
+     * @param cotReceiverOutput the OT receiver output
+     * @param dim the required bit length for each data
+     * @return transposed bit vectors
+     */
+    protected BitVector[] handleOtReceiverOutput(CotReceiverOutput cotReceiverOutput, int dim) {
+        if (dim <= CommonConstants.BLOCK_BIT_LENGTH) {
+            RotReceiverOutput rotReceiverOutput = new RotReceiverOutput(envType, CrhfFactory.CrhfType.MMO, cotReceiverOutput);
+            byte[][] otResBytes = rotReceiverOutput.getRbArray();
+            ZlDatabase zlDatabase = ZlDatabase.create(CommonConstants.BLOCK_BIT_LENGTH, otResBytes);
+            BitVector[] transBitVec = zlDatabase.bitPartition(envType, parallel);
+            return Arrays.copyOf(transBitVec, dim);
+        } else {
+            // we need to use PRG
+            int targetByteLength = CommonUtils.getByteLength(dim);
+            Prg prg = PrgFactory.createInstance(envType, targetByteLength);
+            Stream<byte[]> otResStream = parallel ? Arrays.stream(cotReceiverOutput.getRbArray()).parallel() : Arrays.stream(cotReceiverOutput.getRbArray());
+            byte[][] prgRes = otResStream.map(prg::extendToBytes).toArray(byte[][]::new);
+            ZlDatabase zlDatabase = ZlDatabase.create(targetByteLength * 8, prgRes);
+            BitVector[] transBitVec = zlDatabase.bitPartition(envType, parallel);
+            return Arrays.copyOf(transBitVec, dim);
+        }
+    }
+
+    /**
+     * generate randomness based on OT result
+     *
+     * @param cotSenderOutput the OT sender output
+     * @param dim the required bit length for each data
+     * @return transposed bit vectors
+     */
+    protected BitVector[][] handleOtSenderOutput(CotSenderOutput cotSenderOutput, int dim) {
+        if (dim <= CommonConstants.BLOCK_BIT_LENGTH) {
+            RotSenderOutput rotSenderOutput = new RotSenderOutput(envType, CrhfFactory.CrhfType.MMO, cotSenderOutput);
+            byte[][] otResBytes0 = rotSenderOutput.getR0Array();
+            ZlDatabase zlDatabase0 = ZlDatabase.create(CommonConstants.BLOCK_BIT_LENGTH, otResBytes0);
+            BitVector[] transBitVec0 = zlDatabase0.bitPartition(envType, parallel);
+
+            byte[][] otResBytes1 = rotSenderOutput.getR1Array();
+            ZlDatabase zlDatabase1 = ZlDatabase.create(CommonConstants.BLOCK_BIT_LENGTH, otResBytes1);
+            BitVector[] transBitVec1 = zlDatabase1.bitPartition(envType, parallel);
+            return new BitVector[][]{Arrays.copyOf(transBitVec0, dim), Arrays.copyOf(transBitVec1, dim)};
+        } else {
+            // we need to use PRG
+            int targetByteLength = CommonUtils.getByteLength(dim);
+            Prg prg = PrgFactory.createInstance(envType, targetByteLength);
+            Stream<byte[]> otResStream0 = parallel ? Arrays.stream(cotSenderOutput.getR0Array()).parallel() : Arrays.stream(cotSenderOutput.getR0Array());
+            byte[][] prgRes0 = otResStream0.map(prg::extendToBytes).toArray(byte[][]::new);
+            ZlDatabase zlDatabase0 = ZlDatabase.create(targetByteLength * 8, prgRes0);
+            BitVector[] transBitVec0 = zlDatabase0.bitPartition(envType, parallel);
+
+            Stream<byte[]> otResStream1 = parallel ? Arrays.stream(cotSenderOutput.getR1Array()).parallel() : Arrays.stream(cotSenderOutput.getR1Array());
+            byte[][] prgRes1 = otResStream1.map(prg::extendToBytes).toArray(byte[][]::new);
+            ZlDatabase zlDatabase1 = ZlDatabase.create(targetByteLength * 8, prgRes1);
+            BitVector[] transBitVec1 = zlDatabase1.bitPartition(envType, parallel);
+            return new BitVector[][]{Arrays.copyOf(transBitVec0, dim), Arrays.copyOf(transBitVec1, dim)};
+        }
     }
 }

@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.common.tool.galoisfield.gf2k;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 /**
  * Binary GF2K gadget. The scheme comes from:
@@ -49,8 +49,8 @@ public class Gf2kGadget {
         gadgetArray = new byte[l][byteL];
         byte[] fieldOne = gf2k.createOne();
         for (int i = l - 1; i >= 0; i--) {
-            gadgetArray[i] = BytesUtils.clone(fieldOne);
-            BytesUtils.shiftLefti(fieldOne, 1);
+            gadgetArray[i] = BlockUtils.clone(fieldOne);
+            BlockUtils.shiftLefti(fieldOne, 1);
         }
     }
 

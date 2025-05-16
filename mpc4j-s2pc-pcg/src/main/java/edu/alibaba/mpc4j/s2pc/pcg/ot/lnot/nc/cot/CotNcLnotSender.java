@@ -4,9 +4,8 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotConfig;
@@ -43,7 +42,7 @@ public class CotNcLnotSender extends AbstractNcLnotSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         // log(n) * num
         ncCotSender.init(delta, l * num);
         stopWatch.stop();
@@ -74,14 +73,14 @@ public class CotNcLnotSender extends AbstractNcLnotSender {
         byte[][][] rsArray = indexIntStream.mapToObj(index -> {
             int cotIndex = index * l + l - 1;
             byte[][] rs = new byte[n][];
-            rs[0] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            rs[0] = BlockUtils.zeroBlock();
             for (int i = 0; i < l; i++, cotIndex--) {
                 byte[] c0 = rotSenderOutput.getR0(cotIndex);
                 byte[] c1 = rotSenderOutput.getR1(cotIndex);
                 int numOfRowi = 1 << i;
                 for (int j = 0; j < numOfRowi; j++) {
-                    rs[numOfRowi + j] = BytesUtils.xor(rs[j], c1);
-                    BytesUtils.xori(rs[j], c0);
+                    rs[numOfRowi + j] = BlockUtils.xor(rs[j], c1);
+                    BlockUtils.xori(rs[j], c0);
                 }
             }
             return rs;

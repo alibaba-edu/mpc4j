@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.trans.TransBitMatrixFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
@@ -104,7 +105,7 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
 
         stopWatch.start();
         // 其他部分初始化
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -117,8 +118,7 @@ public class Zcl23SkePsuServer extends AbstractPsuServer {
         int dokvsHashKeyNum = Gf2kDokvsFactory.getHashKeyNum(dokvsType);
         dokvsHashKeys = IntStream.range(0, dokvsHashKeyNum)
             .mapToObj(keyIndex -> {
-                byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                secureRandom.nextBytes(key);
+                byte[] key = BlockUtils.randomBlock(secureRandom);
                 keysPayload.add(key);
                 return key;
             })

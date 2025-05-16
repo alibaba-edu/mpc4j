@@ -287,4 +287,17 @@ public interface BitVector {
      * @return true if the number of 1 in the vector is odd; false otherwise.
      */
     boolean numOf1IsOdd();
+
+    /**
+     * y_i = \sum_0^{i} x_i
+     *
+     * @return y
+     */
+    default BitVector xorBeforeBit() {
+        BitVector y = this.copy();
+        for (int i = 1; i < y.bitNum(); i++) {
+            y.set(i, y.get(i - 1) ^ y.get(i));
+        }
+        return y;
+    }
 }

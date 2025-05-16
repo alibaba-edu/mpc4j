@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -78,7 +78,7 @@ public class PhaseHashBinTest {
 
     @Test
     public void testIllegalInputs() {
-        byte[] key = CommonUtils.generateRandomKey(HashBinTestUtils.SECURE_RANDOM);
+        byte[] key = BlockUtils.randomBlock(HashBinTestUtils.SECURE_RANDOM);
         PhaseHashBin hashBin = new PhaseHashBin(EnvType.STANDARD, binNum, itemSize, key);
         // 尝试未插入元素时就填充数据
         try {
@@ -128,7 +128,7 @@ public class PhaseHashBinTest {
 
     @Test
     public void testPhaseHashBin() {
-        byte[] key = CommonUtils.generateRandomKey(HashBinTestUtils.SECURE_RANDOM);
+        byte[] key = BlockUtils.randomBlock(HashBinTestUtils.SECURE_RANDOM);
         PhaseHashBin hashBin = new PhaseHashBin(EnvType.STANDARD, binNum, itemSize, key);
         List<BigInteger> items = HashBinTestUtils.randomBigIntegerItems(itemSize);
         Assert.assertEquals(binNum, hashBin.binNum());

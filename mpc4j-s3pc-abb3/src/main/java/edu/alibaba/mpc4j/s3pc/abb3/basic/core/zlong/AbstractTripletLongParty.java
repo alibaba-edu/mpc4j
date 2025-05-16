@@ -47,6 +47,10 @@ public abstract class AbstractTripletLongParty extends AbstractAbbThreePartyPto 
      * flag of opening process
      */
     protected boolean duringVerificationFlag;
+    /**
+     * estimated number of mul gate
+     */
+    protected long estimateLongTupleNum;
 
     protected AbstractTripletLongParty(PtoDesc ptoDesc, Rpc rpc, TripletLongConfig config, TripletProvider tripletProvider) {
         super(ptoDesc, rpc,
@@ -58,6 +62,17 @@ public abstract class AbstractTripletLongParty extends AbstractAbbThreePartyPto 
         tripletProvider.getVerificationMsg().addParty(this);
         selfId = rpc.ownParty().getPartyId();
         duringVerificationFlag = false;
+        estimateLongTupleNum = 0;
+    }
+
+    @Override
+    public void updateEstimateLongTupleNum(long estimateLongTupleNum) {
+        this.estimateLongTupleNum += estimateLongTupleNum;
+    }
+
+    @Override
+    public long getEstimateLongTupleNum() {
+        return estimateLongTupleNum;
     }
 
     @Override

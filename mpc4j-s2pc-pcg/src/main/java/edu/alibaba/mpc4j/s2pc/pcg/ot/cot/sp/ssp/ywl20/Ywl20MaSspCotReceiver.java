@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfFactory;
@@ -100,7 +101,7 @@ public class Ywl20MaSspCotReceiver extends AbstractSspCotReceiver {
 
         stopWatch.start();
         List<byte[]> randomOracleKeyPayload = new LinkedList<>();
-        byte[] randomOracleKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] randomOracleKey = BlockUtils.zeroBlock();
         secureRandom.nextBytes(randomOracleKey);
         randomOracleKeyPayload.add(randomOracleKey);
         DataPacketHeader randomOracleKeyHeader = new DataPacketHeader(
@@ -205,7 +206,7 @@ public class Ywl20MaSspCotReceiver extends AbstractSspCotReceiver {
         // computes w[α]
         for (int i = 0; i < num; i++) {
             if (i != alpha) {
-                BytesUtils.xori(correlateByteArray, rbArray[i]);
+                BlockUtils.xori(correlateByteArray, rbArray[i]);
             }
         }
         rbArray[alpha] = correlateByteArray;
@@ -214,7 +215,7 @@ public class Ywl20MaSspCotReceiver extends AbstractSspCotReceiver {
 
     private List<byte[]> generateCheckChoicePayload() {
         // R computes ϕ := Σ_{i ∈ [m]} χ_{α_l}^l ∈ F_{2^κ}
-        byte[] phi = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] phi = BlockUtils.zeroBlock();
         byte[] indexMessage = ByteBuffer.allocate(Long.BYTES + Integer.BYTES).putLong(extraInfo).putInt(alpha).array();
         // Sample χ_α
         byte[] chiAlpha = randomOracle.getBytes(indexMessage);
@@ -227,11 +228,11 @@ public class Ywl20MaSspCotReceiver extends AbstractSspCotReceiver {
 
     private byte[] computeExpectHashValue(SspCotReceiverOutput receiverOutput) {
         // R computes Z :=  Σ_{i ∈ [κ]} (z^*[i]·X^i) ∈ F_{2^κ}
-        byte[] z = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] z = BlockUtils.zeroBlock();
         for (int checkIndex = 0; checkIndex < CommonConstants.BLOCK_BIT_LENGTH; checkIndex++) {
             byte[] zi = checkCotReceiverOutput.getRb(checkIndex);
             // z^*[i]·X^i
-            byte[] xi = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            byte[] xi = BlockUtils.zeroBlock();
             BinaryUtils.setBoolean(xi, checkIndex, true);
             gf2k.muli(zi, xi);
             // z += z^*[i]·X^i
@@ -239,7 +240,7 @@ public class Ywl20MaSspCotReceiver extends AbstractSspCotReceiver {
         }
         checkCotReceiverOutput = null;
         // R computes W := Σ_{i ∈ [n]} (χ[i]·w[i]) + Z ∈ F_{2^κ}
-        byte[] w = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] w = BlockUtils.zeroBlock();
         for (int i = 0; i < num; i++) {
             // samples uniform {χ_i}_{i ∈ [n]}
             byte[] indexMessage = ByteBuffer.allocate(Long.BYTES + Integer.BYTES).putLong(extraInfo).putInt(i).array();

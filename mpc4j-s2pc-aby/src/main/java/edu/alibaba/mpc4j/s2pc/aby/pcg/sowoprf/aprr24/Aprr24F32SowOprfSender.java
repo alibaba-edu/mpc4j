@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.aprr24;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.SerializeUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.AbstractF32SowOprfSender;
@@ -16,6 +17,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -127,12 +129,23 @@ public class Aprr24F32SowOprfSender extends AbstractF32SowOprfSender {
     private byte[][] innerOprf(int subBatchSize, int currentBatchIndex) throws MpcAbortException {
         stopWatch.start();
         // P0 computes t_i ← G′_i for i ∈ [n]
-        byte[][] ts = new byte[subBatchSize][F32Wprf.N];
+        // According to the implement of the function "mult" in AltModKeyMult.cpp of secure-join [https://github.com/Visa-Research/secure-join],
+        // h1s can be random masks, only used to mask the OT correction payload
+        // Thus, h1s can be generated in column form, and each byte can mask 4 F3 elements
+        byte[][] ts = new byte[F32Wprf.N][];
+        // we use masks to store the mask when k[i] = 1
+        byte[][] masks = new byte[F32Wprf.N][];
         IntStream bitIntStream = IntStream.range(0, F32Wprf.N);
         bitIntStream = parallel ? bitIntStream.parallel() : bitIntStream;
         bitIntStream.forEach(i -> {
-            for (int batchIndex = 0; batchIndex < subBatchSize; batchIndex++) {
-                ts[batchIndex][i] = z3Field.createRandom(gbArray[i]);
+            if(BinaryUtils.getBoolean(key, i)){
+                masks[i] = new byte[CommonUtils.getUnitNum(subBatchSize, 4)];
+                gbArray[i].nextBytes(masks[i]);
+            }else{
+                ts[i] = new byte[subBatchSize];
+                for (int batchIndex = 0; batchIndex < subBatchSize; batchIndex++) {
+                    ts[i][batchIndex] = z3Field.neg(z3Field.createRandom(gbArray[i]));
+                }
             }
         });
         stopWatch.stop();
@@ -143,26 +156,22 @@ public class Aprr24F32SowOprfSender extends AbstractF32SowOprfSender {
         List<byte[]> fPayload = receiveOtherPartyPayload(PtoStep.RECEIVER_SEND_F.ordinal());
 
         stopWatch.start();
-        MpcAbortPreconditions.checkArgument(fPayload.size() == subBatchSize);
-        Stream<byte[]> fPayloadStream = parallel ? fPayload.stream().parallel() : fPayload.stream();
-        byte[][] fs = fPayloadStream.map(each -> SerializeUtils.decompressL2(each, F32Wprf.N)).toArray(byte[][]::new);
-        // P0 computes w_0 := A ·_3 ((k ⊙_3 f) +_3 t)
-        // but actually, the correct one is: if k = 1, then A ·_3 ((k ⊙_3 f) +_3 t), else A ·_3 ((k ⊙_3 f) -_3 t)
-        byte[][] w0s = new byte[subBatchSize][F32Wprf.M];
-        IntStream batchIntStream = IntStream.range(0, subBatchSize);
+        MpcAbortPreconditions.checkArgument(fPayload.size() == F32Wprf.N);
+        byte[][] kft3s = new byte[subBatchSize][F32Wprf.N];
+        IntStream batchIntStream = IntStream.range(0, F32Wprf.N);
         batchIntStream = parallel ? batchIntStream.parallel() : batchIntStream;
         batchIntStream.forEach(batchIndex -> {
-            byte[] kft3 = new byte[F32Wprf.N];
-            for (int i = 0; i < F32Wprf.N; i++) {
-                boolean k1 = BinaryUtils.getBoolean(key, i);
-                // k ⊙_3 f
-                kft3[i] = k1 ? fs[batchIndex][i] : 0;
-                // if k = 1, then ((k ⊙_3 f) +_3 t), else ((k ⊙_3 f) -_3 t)
-                kft3[i] = k1 ? z3Field.add(kft3[i], ts[batchIndex][i]) : z3Field.sub(kft3[i], ts[batchIndex][i]);
+            if(BinaryUtils.getBoolean(key, batchIndex)){
+                BytesUtils.xori(masks[batchIndex], fPayload.get(batchIndex));
+                byte[] xMinusH0 = SerializeUtils.decompressL2(masks[batchIndex], subBatchSize);
+                IntStream.range(0, subBatchSize).forEach(i -> kft3s[i][batchIndex] = xMinusH0[i]);
+            }else{
+                IntStream.range(0, subBatchSize).forEach(i -> kft3s[i][batchIndex] = ts[batchIndex][i]);
             }
-            // if k = 1, then A ·_3 ((k ⊙_3 f) +_3 t), else A ·_3 ((k ⊙_3 f) -_3 t)
-            w0s[batchIndex] = matrixA.leftMul(kft3);
         });
+        // then A ·_3 x
+        Stream<byte[]> elementStream = parallel ? Arrays.stream(kft3s).parallel() : Arrays.stream(kft3s);
+        byte[][] w0s = elementStream.map(ea -> matrixA.leftMul(ea)).toArray(byte[][]::new);
         stopWatch.stop();
         long w0Time = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();

@@ -197,6 +197,18 @@ public class PlainZ2Vector implements MpcZ2Vector {
         return PlainZ2Vector.create(bitVector.getBitsByInterval(startPos, num, skipLen));
     }
 
+    @Override
+    public PlainZ2Vector padShiftLeft(int n) {
+        BitVector resultBitVector = bitVector.padShiftLeft(n);
+        return create(resultBitVector);
+    }
+
+    @Override
+    public PlainZ2Vector reduceShiftRight(int n) {
+        BitVector newBitVec = bitVector.reduceShiftRight(n);
+        return create(newBitVec);
+    }
+
     public void andi(PlainZ2Vector plainZ2Vector) {
         bitVector.andi(plainZ2Vector.bitVector);
     }

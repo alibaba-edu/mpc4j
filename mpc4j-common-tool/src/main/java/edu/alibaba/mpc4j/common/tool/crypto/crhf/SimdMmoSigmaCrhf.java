@@ -1,11 +1,10 @@
 package edu.alibaba.mpc4j.common.tool.crypto.crhf;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorShuffle;
@@ -47,7 +46,7 @@ public class SimdMmoSigmaCrhf implements Crhf {
      */
     SimdMmoSigmaCrhf(EnvType envType) {
         prp = PrpFactory.createInstance(envType);
-        prp.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        prp.setKey(BlockUtils.zeroBlock());
     }
 
     @Override
@@ -57,7 +56,7 @@ public class SimdMmoSigmaCrhf implements Crhf {
         // π(σ(x))
         byte[] output = prp.prp(sigmaX);
         // π(σ(x)) ⊕ σ(x)
-        BytesUtils.xori(output, sigmaX);
+        BlockUtils.xori(output, sigmaX);
         return output;
     }
 
@@ -73,7 +72,7 @@ public class SimdMmoSigmaCrhf implements Crhf {
      * @return σ(x).
      */
     private byte[] sigma(byte[] x) {
-        assert x.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert BlockUtils.valid(x);
         ByteVector vectorX = ByteVector.fromArray(ByteVector.SPECIES_128, x, 0);
         ByteVector sigmaX = vectorX.rearrange(VECTOR_SHUFFLE);
         ByteVector maskX = vectorX.and(MASK);

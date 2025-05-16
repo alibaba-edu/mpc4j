@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.hashbin.object;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -79,8 +79,7 @@ public class HashBinEntry<T> {
         HashBinEntry<X> hashBinEntry = new HashBinEntry<>();
         hashBinEntry.item = null;
         hashBinEntry.hashIndex = DUMMY_ITEM_HASH_INDEX;
-        hashBinEntry.randomByteArray = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(hashBinEntry.randomByteArray);
+        hashBinEntry.randomByteArray = BlockUtils.randomBlock(secureRandom);
 
         return hashBinEntry;
     }
@@ -122,14 +121,12 @@ public class HashBinEntry<T> {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof HashBinEntry)) {
+        if (!(obj instanceof @SuppressWarnings("rawtypes")HashBinEntry that)) {
             return false;
         }
         if (this == obj) {
             return true;
         }
-        @SuppressWarnings("rawtypes")
-        HashBinEntry that = (HashBinEntry)obj;
         return new EqualsBuilder()
             .append(this.item, that.item)
             // 虚拟元素的item均为空，因此还要对比字节数组

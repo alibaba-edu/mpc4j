@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.ByteDenseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -151,7 +151,7 @@ public class NaiveSparseBitMatrixTest {
 
     private void testLextMul(int rows, int columns, int weight) {
         for (int round = 0; round < ROUND; round++) {
-            byte[][] v = BytesUtils.randomByteArrayVector(rows, 16, SECURE_RANDOM);
+            byte[][] v = BlockUtils.randomBlocks(rows, SECURE_RANDOM);
             NaiveSparseBitMatrix naiveSparseBitMatrix = NaiveSparseBitMatrix.createRandom(rows, columns, weight, SECURE_RANDOM);
             DenseBitMatrix denseBitMatrix = naiveSparseBitMatrix.toDense();
             Assert.assertArrayEquals(naiveSparseBitMatrix.lExtMul(v), denseBitMatrix.leftGf2lMultiply(v));
@@ -170,9 +170,9 @@ public class NaiveSparseBitMatrixTest {
 
     private void testLextMulAddi(int rows, int columns, int weight) {
         for (int round = 0; round < ROUND; round++) {
-            byte[][] v = BytesUtils.randomByteArrayVector(rows, 16, SECURE_RANDOM);
-            byte[][] t0 = BytesUtils.randomByteArrayVector(columns, 16, SECURE_RANDOM);
-            byte[][] t1 = Arrays.stream(t0).map(BytesUtils::clone).toArray(byte[][]::new);
+            byte[][] v = BlockUtils.randomBlocks(rows, SECURE_RANDOM);
+            byte[][] t0 = BlockUtils.randomBlocks(columns, SECURE_RANDOM);
+            byte[][] t1 = Arrays.stream(t0).map(BlockUtils::clone).toArray(byte[][]::new);
             NaiveSparseBitMatrix naiveSparseBitMatrix = NaiveSparseBitMatrix.createRandom(rows, columns, weight, SECURE_RANDOM);
             DenseBitMatrix denseBitMatrix = naiveSparseBitMatrix.transposeDense().transpose(EnvType.STANDARD_JDK, false);
             naiveSparseBitMatrix.lExtMulAddi(v, t0);

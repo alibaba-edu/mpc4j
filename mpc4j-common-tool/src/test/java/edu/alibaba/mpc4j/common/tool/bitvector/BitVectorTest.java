@@ -670,6 +670,18 @@ public class BitVectorTest {
         }
     }
 
+    @Test
+    public void testXorBeforeBit(){
+        for (int maxBitNum = MIN_BIT_NUM; maxBitNum < MAX_BIT_NUM; maxBitNum++) {
+            BitVector origin = BitVectorFactory.createRandom(MAX_BIT_NUM, secureRandom);
+            BitVector res = origin.xorBeforeBit();
+            Assert.assertEquals(origin.get(0), res.get(0));
+            for(int i = 1; i < origin.bitNum(); i++){
+                Assert.assertEquals(origin.get(i) ^ res.get(i - 1), res.get(i));
+            }
+        }
+    }
+
     private void assertEmptyCorrectness(BitVector bitVector) {
         Assert.assertEquals(type, bitVector.getType());
         Assert.assertEquals(0, bitVector.bitNum());

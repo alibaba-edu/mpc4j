@@ -6,6 +6,8 @@ import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cConfig;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.Z2cFactory;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.z2.Z2TripleGenConfig;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.triple.z2.Z2TripleGenFactory;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotConfig;
+import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotFactory;
 
 /**
  * Bea91 Z2 circuit config.
@@ -18,10 +20,19 @@ public class Bea91Z2cConfig extends AbstractMultiPartyPtoConfig implements Z2cCo
      * Z2 triple generation config
      */
     private final Z2TripleGenConfig z2TripleGenConfig;
+    /**
+     * COT config
+     */
+    private final CotConfig cotConfig;
 
     private Bea91Z2cConfig(Builder builder) {
         super(SecurityModel.SEMI_HONEST, builder.z2TripleGenConfig);
         z2TripleGenConfig = builder.z2TripleGenConfig;
+        cotConfig = builder.cotConfig;
+    }
+
+    public CotConfig getCotConfig() {
+        return cotConfig;
     }
 
     public Z2TripleGenConfig getZ2TripleGenConfig() {
@@ -43,9 +54,19 @@ public class Bea91Z2cConfig extends AbstractMultiPartyPtoConfig implements Z2cCo
          * Z2 triple generation config
          */
         private final Z2TripleGenConfig z2TripleGenConfig;
+        /**
+         * no-choice COT config
+         */
+        private CotConfig cotConfig;
 
         public Builder(SecurityModel securityModel, boolean silent) {
             z2TripleGenConfig = Z2TripleGenFactory.createDefaultConfig(securityModel, silent);
+            cotConfig = CotFactory.createDefaultConfig(SecurityModel.SEMI_HONEST, silent);
+        }
+
+        public Builder setCotConfig(CotConfig cotConfig) {
+            this.cotConfig = cotConfig;
+            return this;
         }
 
         @Override

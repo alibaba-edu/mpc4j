@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.crypto.algs.iprf.InversePrf;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirClient;
@@ -140,7 +140,7 @@ public class MirPlinkoCpIdxPirClient extends AbstractCpIdxPirClient implements S
         super(MirPlinkoCpIdxPirPtoDesc.getInstance(), clientRpc, serverParty, config);
         specificQ = config.getQ();
         prp = PrpFactory.createInstance(envType);
-        prp.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        prp.setKey(BlockUtils.zeroBlock());
     }
 
     @Override
@@ -211,7 +211,7 @@ public class MirPlinkoCpIdxPirClient extends AbstractCpIdxPirClient implements S
         inversePrfs = new InversePrf[blockNum];
         for (int i = 0; i < blockNum; i++) {
             inversePrfs[i] = new InversePrf(envType);
-            byte[] ki = CommonUtils.generateRandomKey(secureRandom);
+            byte[] ki = BlockUtils.randomBlock(secureRandom);
             inversePrfs[i].init(m, blockSize, ki);
         }
         // For i = 1, ..., λw: generate cutoffs. We generate hint keys and use these hint keys to generate cutoffs.

@@ -7,6 +7,7 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
@@ -118,7 +119,7 @@ public class SystemEcCoder implements ExCoder {
     }
 
     private void accumulate(boolean[] ws, boolean[] es, byte[] seed) {
-        byte[] block = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] block = BlockUtils.zeroBlock();
         int num = n - 1 - accumulatorWeight - k;
         // generate randomness
         int accumulatorBlockNum = CommonUtils.getUnitNum(accumulatorByteWeight * num, CommonConstants.BLOCK_BYTE_LENGTH);
@@ -196,7 +197,7 @@ public class SystemEcCoder implements ExCoder {
     }
 
     private void accumulate(byte[][] ws, byte[][] es, byte[] seed) {
-        byte[] block = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] block = BlockUtils.zeroBlock();
         int num = n - 1 - accumulatorWeight - k;
         // generate randomness
         int accumulatorBlockNum = CommonUtils.getUnitNum(accumulatorByteWeight * num, CommonConstants.BLOCK_BYTE_LENGTH);

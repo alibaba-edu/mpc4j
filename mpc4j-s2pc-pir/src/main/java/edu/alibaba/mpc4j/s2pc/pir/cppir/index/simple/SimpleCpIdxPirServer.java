@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.structure.matrix.IntMatrix;
 import edu.alibaba.mpc4j.common.structure.vector.IntVector;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.GaussianLweParam;
@@ -51,7 +51,7 @@ public class SimpleCpIdxPirServer extends AbstractCpIdxPirServer implements Hint
 
         stopWatch.start();
         // server generates and sends the seed for the random matrix A.
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         List<byte[]> seedPayload = Collections.singletonList(seed);
         sendOtherPartyPayload(PtoStep.SERVER_SEND_SEED.ordinal(), seedPayload);
         stopWatch.stop();

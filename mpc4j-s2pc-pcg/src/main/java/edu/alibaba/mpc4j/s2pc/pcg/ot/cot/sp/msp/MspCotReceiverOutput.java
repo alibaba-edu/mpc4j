@@ -2,8 +2,9 @@ package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.msp;
 
 import java.util.Arrays;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
 
 /**
@@ -44,9 +45,7 @@ public class MspCotReceiverOutput implements PcgPartyOutput {
             receiverOutput.alphaArray.length, alphaArray.length
         );
         receiverOutput.rbArray = Arrays.stream(rbArray)
-            .peek(rb -> MathPreconditions.checkEqual(
-                "rb.length", "λ in bytes", rb.length, CommonConstants.BLOCK_BYTE_LENGTH
-            ))
+            .peek(rb -> Preconditions.checkArgument(BlockUtils.valid(rb)))
             .toArray(byte[][]::new);
         return receiverOutput;
     }

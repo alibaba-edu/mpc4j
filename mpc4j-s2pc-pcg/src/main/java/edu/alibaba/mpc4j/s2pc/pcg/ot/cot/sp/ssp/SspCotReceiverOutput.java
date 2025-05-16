@@ -1,10 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp;
 
-import java.util.Arrays;
-
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
+
+import java.util.Arrays;
 
 /**
  * Single single-point COT receiver output.
@@ -35,9 +36,7 @@ public class SspCotReceiverOutput implements PcgPartyOutput {
         MathPreconditions.checkNonNegativeInRange("α", alpha, rbArray.length);
         receiverOutput.alpha = alpha;
         receiverOutput.rbArray = Arrays.stream(rbArray)
-            .peek(rb ->
-                MathPreconditions.checkEqual("Rb.length", "λ in bytes", rb.length, CommonConstants.BLOCK_BYTE_LENGTH)
-            )
+            .peek(rb -> Preconditions.checkArgument(BlockUtils.valid(rb)))
             .toArray(byte[][]::new);
         return receiverOutput;
     }

@@ -225,6 +225,22 @@ public class BinaryUtils {
     };
 
     /**
+     * In-place reverses the given <code>boolean[]</code>.
+     *
+     * @param binary the <code>boolean[]</code> to be reversed.
+     */
+    public static void reverse(boolean[] binary) {
+        if (binary == null) {
+            return;
+        }
+        for (int i = 0; i < binary.length / 2; i++) {
+            boolean temp = binary[i];
+            binary[i] = binary[binary.length - 1 - i];
+            binary[binary.length - 1 - i] = temp;
+        }
+    }
+
+    /**
      * Converts <code>long</code> to <code>boolean[]</code> with length <code>Long.SIZE</code>. The conversion is in
      * big-endian format, for example:
      * <li><code>0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 --> 1 0 ... 0</code>.</li>

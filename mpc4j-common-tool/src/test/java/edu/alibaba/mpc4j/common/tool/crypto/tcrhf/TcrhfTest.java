@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.tcrhf.TcrhfFactory.TcrhfType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,17 +40,17 @@ public class TcrhfTest {
     /**
      * 全0明文
      */
-    private static final byte[] ZERO_MESSAGE = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_MESSAGE = BlockUtils.zeroBlock();
     /**
      * 随机状态
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    @Parameterized.Parameters(name="{0}")
+    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurationParams = new ArrayList<>();
         // TMMO
-        configurationParams.add(new Object[] {TcrhfType.TMMO.name(), TcrhfType.TMMO, });
+        configurationParams.add(new Object[]{TcrhfType.TMMO.name(), TcrhfType.TMMO,});
 
         return configurationParams;
     }
@@ -110,8 +111,7 @@ public class TcrhfTest {
         Tcrhf tcrhf = TcrhfFactory.createInstance(EnvType.STANDARD, type);
         // 不同消息的CRHF结果应不相同
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-            byte[] randomMessage = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomMessage);
+            byte[] randomMessage = BlockUtils.randomBlock(SECURE_RANDOM);
             randomHashSet.add(ByteBuffer.wrap(tcrhf.hash(SECURE_RANDOM.nextInt(), randomMessage)));
         }
         Assert.assertEquals(MAX_RANDOM_ROUND, randomHashSet.size());

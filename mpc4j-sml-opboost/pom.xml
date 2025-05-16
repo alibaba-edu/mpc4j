@@ -5,11 +5,18 @@
     <parent>
         <artifactId>mpc4j</artifactId>
         <groupId>edu.alibaba</groupId>
-        <version>1.1.4-alpha</version>
+        <version>1.1.4-beta</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>mpc4j-sml-opboost</artifactId>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -41,17 +48,17 @@
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-dp-ldp</artifactId>
-            <version>1.1.4-alpha</version>
+            <version>1.1.4-beta</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-rpc</artifactId>
-            <version>1.1.4-alpha</version>
+            <version>1.1.4-beta</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-data</artifactId>
-            <version>1.1.4-alpha</version>
+            <version>1.1.4-beta</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

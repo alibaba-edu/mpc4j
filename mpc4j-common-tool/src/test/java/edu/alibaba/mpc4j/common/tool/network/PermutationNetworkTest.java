@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.network;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkFactory.PermutationNetworkType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -249,11 +249,7 @@ public class PermutationNetworkTest {
         Assert.assertEquals(expectOutputVector, actualOutputVector);
         // verify random input permutation
         Vector<ByteBuffer> randomInputVector = IntStream.range(0, n)
-            .mapToObj(position -> {
-                byte[] input = new byte[CommonConstants.STATS_BYTE_LENGTH];
-                SECURE_RANDOM.nextBytes(input);
-                return ByteBuffer.wrap(input);
-            })
+            .mapToObj(position -> ByteBuffer.wrap(BlockUtils.randomBlock(SECURE_RANDOM)))
             .collect(Collectors.toCollection(Vector::new));
         Vector<ByteBuffer> expectRandomOutputVector = PermutationNetworkUtils.permutation(permutationMap, randomInputVector);
         Vector<ByteBuffer> actualRandomOutputVector = network.permutation(randomInputVector);

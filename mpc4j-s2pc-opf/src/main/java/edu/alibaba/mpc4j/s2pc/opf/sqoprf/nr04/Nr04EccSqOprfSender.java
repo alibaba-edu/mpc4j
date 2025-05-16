@@ -11,6 +11,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.AbstractSqOprfSender;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.nr04.Nr04EccSqOprfPtoDesc.PtoStep;
@@ -97,7 +98,7 @@ public class Nr04EccSqOprfSender extends AbstractSqOprfSender {
 
         stopWatch.start();
         // init COTs, where max number of OTs = N_C^{max} * κ
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         int maxOtNum = maxBatchSize * CommonConstants.BLOCK_BIT_LENGTH;
         coreSender.init(delta, maxOtNum);
         stopWatch.stop();

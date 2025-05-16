@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtReceiverOutput;
 
-import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * Random oblivious transfer receiver output.
@@ -41,13 +41,15 @@ public class RotReceiverOutput implements OtReceiverOutput {
 
     @Override
     public byte[] getRb(int index) {
-        return crhf.hash(cotReceiverOutput.getRb(index));
+        // we only need to call CRHF for R1, recall R1 is the case when getChoice returns true (so first R1 then R0).
+        return cotReceiverOutput.getChoice(index) ?
+            crhf.hash(cotReceiverOutput.getRb(index)) : cotReceiverOutput.getRb(index);
     }
 
     @Override
     public byte[][] getRbArray() {
-        return Arrays.stream(cotReceiverOutput.getRbArray())
-            .map(crhf::hash)
+        return IntStream.range(0, cotReceiverOutput.getNum())
+            .mapToObj(this::getRb)
             .toArray(byte[][]::new);
     }
 

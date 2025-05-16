@@ -17,6 +17,7 @@ import edu.alibaba.mpc4j.common.structure.filter.DistinctBloomFilter;
 import edu.alibaba.mpc4j.common.structure.filter.Filter;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.DistinctGbfGf2eDokvs;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
@@ -64,8 +65,7 @@ public class Dcw13PsiClient<T> extends AbstractPsiClient<T> {
         int maxBfM = DistinctBloomFilter.bitSize(maxN);
         assert maxM == maxBfM : "GBF max(M) must be equal to BF max(M) (" + maxBfM + "): " + maxM;
         // init GBF key
-        gbfKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(gbfKey);
+        gbfKey = BlockUtils.randomBlock(secureRandom);
         List<byte[]> gbfKeyPayload = Collections.singletonList(gbfKey);
         DataPacketHeader gbfKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_GBF_KEY.ordinal(), extraInfo,

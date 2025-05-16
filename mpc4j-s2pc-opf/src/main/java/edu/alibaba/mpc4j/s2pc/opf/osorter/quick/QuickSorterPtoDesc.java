@@ -4,6 +4,14 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
+ * oblivious quick sorting
+ * The scheme comes from the following paper:
+ *
+ * <p>
+ * Toshinori Araki, Jun Furukawa, et al. 2021. Secure Graph Analysis at Scale.
+ * CCS 2021
+ * </p>
+ *
  * @author Feng Han
  * @date 2024/9/27
  */

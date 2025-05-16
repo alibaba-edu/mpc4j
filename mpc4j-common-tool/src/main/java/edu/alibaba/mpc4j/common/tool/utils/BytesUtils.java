@@ -1,5 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.utils;
 
+import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.VectorOperators;
+
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -840,5 +843,79 @@ public class BytesUtils {
             hammingDistance = bit ? hammingDistance + 1 : hammingDistance;
         }
         return hammingDistance;
+    }
+
+    /**
+     * Extract the least significant bits (LSB) of the given byte arrays. Performance tests show that naive way is the
+     * fastest solution. We leave SIMD way as an evidence for further tests.
+     *
+     * @param data data.
+     * @return extracted LSB.
+     */
+    public static byte[] extractLsb(byte[][] data) {
+        return naiveExtractLsb(data);
+    }
+
+    /**
+     * Naive way to extract the least significant bits (LSB) of the given byte arrays.
+     *
+     * @param data data.
+     * @return extracted LSB.
+     */
+    static byte[] naiveExtractLsb(byte[][] data) {
+        assert data.length > 0;
+        int num = data.length;
+        int byteNum = CommonUtils.getByteLength(num);
+        int offset = byteNum * Byte.SIZE - num;
+        byte[] lsb = new byte[byteNum];
+        for (int i = 0; i < data.length; i++) {
+            BinaryUtils.setBoolean(lsb, offset + i, (data[i][0] & 0b00000001) != 0);
+        }
+        return lsb;
+    }
+
+    /**
+     * SIMD may to extract the least significant bits (LSB) of the given byte arrays.
+     *
+     * @param data data.
+     * @return extracted LSB.
+     */
+    static byte[] simdExtractLsb(byte[][] data) {
+        assert data.length > 0;
+        int num = data.length;
+        int byteNum = CommonUtils.getByteLength(num);
+        int byteOffset = byteNum * Byte.SIZE - num;
+        byte[] lsb = new byte[byteNum];
+
+        int blockNum = CommonUtils.getUnitNum(num, BlockUtils.BYTE_LENGTH);
+        boolean fullBlock = num % BlockUtils.BYTE_LENGTH == 0;
+        int dataBlockOffset = fullBlock ? 0 : num - (blockNum - 1) * BlockUtils.BYTE_LENGTH;
+        int dataBound = fullBlock ? blockNum : blockNum - 1;
+        int lsbOffset = fullBlock ? 0 : (dataBlockOffset < Byte.SIZE ? 1 : 2);
+        for (int blockIndex = 0; blockIndex < dataBound; blockIndex++) {
+            int i = dataBlockOffset + blockIndex * BlockUtils.BYTE_LENGTH;
+            ByteVector byteVector = ByteVector.fromArray(
+                ByteVector.SPECIES_128,
+                new byte[]{
+                    data[i + 15][0], data[i + 14][0], data[i + 13][0], data[i + 12][0],
+                    data[i + 11][0], data[i + 10][0], data[i + 9][0], data[i + 8][0],
+                    data[i + 7][0], data[i + 6][0], data[i + 5][0], data[i + 4][0],
+                    data[i + 3][0], data[i + 2][0], data[i + 1][0], data[i][0],
+                },
+                0
+            );
+            // _mm_movemask_epi8(vec)
+            long movemask = byteVector
+                .lanewise(VectorOperators.AND, (byte) 0b00000001)
+                .compare(VectorOperators.NE, 0)
+                .toLong();
+            lsb[lsbOffset + blockIndex * 2] = (byte) ((movemask >> Byte.SIZE) & 0xFF);
+            lsb[lsbOffset + blockIndex * 2 + 1] = (byte) (movemask & 0xFF);
+        }
+        // handle non-block size
+        for (int i = 0; i < dataBlockOffset; i++) {
+            BinaryUtils.setBoolean(lsb, byteOffset + i, (data[i][0] & 0b00000001) != 0);
+        }
+        return lsb;
     }
 }

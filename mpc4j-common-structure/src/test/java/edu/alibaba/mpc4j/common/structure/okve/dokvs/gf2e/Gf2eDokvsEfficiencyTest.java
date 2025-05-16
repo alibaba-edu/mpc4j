@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -74,7 +74,7 @@ public class Gf2eDokvsEfficiencyTest {
         int l = DEFAULT_L;
         for (Gf2eDokvsType type : TYPES) {
             int hashNum = Gf2eDokvsFactory.getHashKeyNum(type);
-            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, SECURE_RANDOM);
             Gf2eDokvs<ByteBuffer> dokvs = Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, n, l, keys);
             dokvs.setParallelEncode(parallelEncode);
             Map<ByteBuffer, byte[]> keyValueMap = Gf2eDokvsTest.randomKeyValueMap(n, l);
@@ -110,8 +110,7 @@ public class Gf2eDokvsEfficiencyTest {
             STOP_WATCH.reset();
             String lm;
             String rm;
-            if (dokvs instanceof SparseGf2eDokvs) {
-                SparseGf2eDokvs<ByteBuffer> sparseDokvs = (SparseGf2eDokvs<ByteBuffer>) dokvs;
+            if (dokvs instanceof SparseGf2eDokvs<ByteBuffer> sparseDokvs) {
                 int m = sparseDokvs.getM();
                 lm = String.valueOf(sparseDokvs.sparsePositionRange());
                 rm = String.valueOf(m - sparseDokvs.sparsePositionRange());

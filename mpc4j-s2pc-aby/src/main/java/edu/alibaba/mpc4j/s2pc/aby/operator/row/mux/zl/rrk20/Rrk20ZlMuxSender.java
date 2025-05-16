@@ -3,12 +3,12 @@ package edu.alibaba.mpc4j.s2pc.aby.operator.row.mux.zl.rrk20;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.structure.vector.ZlVector;
 import edu.alibaba.mpc4j.s2pc.aby.basics.zl.SquareZlVector;
@@ -65,7 +65,7 @@ public class Rrk20ZlMuxSender extends AbstractZlMuxParty {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         cotSender.init(delta, maxNum);
         cotReceiver.init(maxNum);
         stopWatch.stop();
@@ -179,7 +179,7 @@ public class Rrk20ZlMuxSender extends AbstractZlMuxParty {
                 BytesUtils.xori(s1, s1s[index]);
                 return s1;
             })
-            .collect(Collectors.toList());
+            .toList();
         // merge s0 and s1
         s0s1Payload.addAll(s1Payload);
         // sends s0 and s1

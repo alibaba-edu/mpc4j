@@ -1,9 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.pso.psi.other.rr16;
 
-import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.PtoState;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
@@ -94,7 +91,7 @@ public class Rr16PsiServer<T> extends AbstractPsiServer<T> {
         int peqtByteLength = PsiUtils.getMaliciousPeqtByteLength(maxServerElementSize, maxClientElementSize);
         peqtHash = HashFactory.createInstance(envType, peqtByteLength);
         // init COT
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         nOt = Rr16PsiUtils.getOtBatchSize(maxClientElementSize);
         coreCotSender.init(delta);
         stopWatch.stop();
@@ -197,10 +194,12 @@ public class Rr16PsiServer<T> extends AbstractPsiServer<T> {
             .filter(Objects::nonNull).collect(Collectors.toList());
     }
 
-    void checkClientResponse(List<byte[]> responsePayload) {
-        int[] index = responsePayload.subList(0, responsePayload.size() - 1).stream().mapToInt(IntUtils::byteArrayToInt).toArray();
-        byte[] zero = new byte[cotSenderOutput.getR0(0).length];
-        IntStream.range(0, index.length).forEach(i -> BytesUtils.xori(zero, cotSenderOutput.getR0(index[i])));
-        assert BytesUtils.equals(zero, responsePayload.get(responsePayload.size() - 1));
+    private void checkClientResponse(List<byte[]> responsePayload) throws MpcAbortException {
+        int[] index = responsePayload.subList(0, responsePayload.size() - 1).stream()
+            .mapToInt(IntUtils::byteArrayToInt)
+            .toArray();
+        byte[] zero = BlockUtils.zeroBlock();
+        IntStream.range(0, index.length).forEach(i -> BlockUtils.xori(zero, cotSenderOutput.getR0(index[i])));
+        MpcAbortPreconditions.checkArgument(BlockUtils.equals(zero, responsePayload.get(responsePayload.size() - 1)));
     }
 }

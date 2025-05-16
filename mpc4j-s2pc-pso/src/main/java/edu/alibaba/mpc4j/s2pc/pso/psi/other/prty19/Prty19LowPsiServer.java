@@ -14,10 +14,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
 import edu.alibaba.mpc4j.common.structure.filter.Filter;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
@@ -209,7 +206,7 @@ public class Prty19LowPsiServer<T> extends AbstractPsiServer<T> {
     private void initServerElements() {
         xs = new byte[serverElementSize][];
         Prf elementPrf = PrfFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
-        elementPrf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        elementPrf.setKey(BlockUtils.zeroBlock());
         IntStream elementIndexIntStream = IntStream.range(0, serverElementSize);
         elementIndexIntStream = parallel ? elementIndexIntStream.parallel() : elementIndexIntStream;
         elementIndexIntStream.forEach(index -> {

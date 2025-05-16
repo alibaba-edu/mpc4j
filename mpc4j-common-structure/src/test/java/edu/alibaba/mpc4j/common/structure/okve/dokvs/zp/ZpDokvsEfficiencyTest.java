@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Assert;
@@ -82,7 +82,7 @@ public class ZpDokvsEfficiencyTest {
         int n = 1 << logN;
         for (ZpDokvsType type : TYPES) {
             int hashNum = ZpDokvsFactory.getHashKeyNum(type);
-            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, SECURE_RANDOM);
             ZpDokvs<ByteBuffer> dokvs = ZpDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_PRIME, n, keys);
             dokvs.setParallelEncode(parallelEncode);
             Map<ByteBuffer, BigInteger> keyValueMap = ZpDokvsTest.randomKeyValueMap(DEFAULT_ZP, n);
@@ -116,8 +116,7 @@ public class ZpDokvsEfficiencyTest {
             STOP_WATCH.reset();
             String lm;
             String rm;
-            if (dokvs instanceof SparseZpDokvs) {
-                SparseZpDokvs<ByteBuffer> sparseDokvs = (SparseZpDokvs<ByteBuffer>) dokvs;
+            if (dokvs instanceof SparseZpDokvs<ByteBuffer> sparseDokvs) {
                 int m = sparseDokvs.getM();
                 lm = String.valueOf(sparseDokvs.sparsePositionRange());
                 rm = String.valueOf(m - sparseDokvs.sparsePositionRange());

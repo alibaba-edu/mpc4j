@@ -2,8 +2,7 @@ package edu.alibaba.mpc4j.common.structure.fastfilter;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.structure.fastfilter.FastCuckooFilterFactory.FastCuckooFilterType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import gnu.trove.set.TIntSet;
 import org.apache.commons.lang3.StringUtils;
@@ -276,7 +275,7 @@ public class FastCuckooFilterTest {
 
     private ArrayList<ByteBuffer> randomItems(int size) {
         return IntStream.range(0, size)
-            .mapToObj(i -> BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom))
+            .mapToObj(i -> BlockUtils.randomBlock(secureRandom))
             .map(ByteBuffer::wrap)
             .collect(Collectors.toCollection(ArrayList::new));
     }

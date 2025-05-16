@@ -96,6 +96,7 @@ public class Cgh18RpLongParty extends AbstractTripletLongParty implements Triple
         if (partyState.equals(PartyState.INITIALIZED)) {
             return;
         }
+        tripletProvider.init(0, 0);
         resetMac();
         initState();
     }

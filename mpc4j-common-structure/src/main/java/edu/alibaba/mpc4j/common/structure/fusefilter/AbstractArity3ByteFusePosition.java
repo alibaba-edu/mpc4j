@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.common.structure.fusefilter;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 
@@ -27,7 +27,7 @@ abstract class AbstractArity3ByteFusePosition<T> extends AbstractArity3ByteFuseI
         super(size, valueByteLength);
         // here we do not input seed, since we need to decide seed internally in Byte Fuse Filter.
         hash = PrfFactory.createInstance(envType, Long.BYTES);
-        this.seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        seed = BlockUtils.zeroBlock();
     }
 
     @Override

@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.prp;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.ByteDenseBitMatrix;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.BufferedReader;
@@ -211,19 +211,19 @@ public class JdkBytesLowMcPrp implements Prp {
     public byte[] prp(byte[] plaintext) {
         assert (initKey != null && roundKeys != null);
         assert plaintext.length == BYTE_SIZE;
-        byte[] state = BytesUtils.clone(plaintext);
+        byte[] state = BlockUtils.clone(plaintext);
         // initial whitening
         // state = plaintext + MultiplyWithGF2Matrix(KMatrix(0),key)
-        BytesUtils.xori(state, initKey);
+        BlockUtils.xori(state, initKey);
         for (int roundIndex = 0; roundIndex < round; roundIndex++) {
             // m computations of 3-bit sbox, remaining n-3m bits remain the same
             sboxLayer(state);
             // affine layer, state = MultiplyWithGF2Matrix(LMatrix(i),state)
             state = linearMatrices[roundIndex].leftMultiply(state);
             // state = state + Constants(i)
-            BytesUtils.xori(state, constants[roundIndex]);
+            BlockUtils.xori(state, constants[roundIndex]);
             // generate round key and add to the state
-            BytesUtils.xori(state, roundKeys[roundIndex]);
+            BlockUtils.xori(state, roundKeys[roundIndex]);
         }
         // ciphertext = state
         return state;
@@ -233,12 +233,12 @@ public class JdkBytesLowMcPrp implements Prp {
     public byte[] invPrp(byte[] ciphertext) {
         assert (initKey != null && roundKeys != null);
         assert ciphertext.length == BYTE_SIZE;
-        byte[] state = BytesUtils.clone(ciphertext);
+        byte[] state = BlockUtils.clone(ciphertext);
         for (int roundIndex = round - 1; roundIndex >= 0; roundIndex--) {
             // generate round key and add to the state
-            BytesUtils.xori(state, roundKeys[roundIndex]);
+            BlockUtils.xori(state, roundKeys[roundIndex]);
             // state = state + Constants(i)
-            BytesUtils.xori(state, constants[roundIndex]);
+            BlockUtils.xori(state, constants[roundIndex]);
             // affine layer, state = MultiplyWithGF2Matrix(LMatrix(i),state)
             state = invertLinearMatrices[roundIndex].leftMultiply(state);
             // m computations of 3-bit sbox, remaining n-3m bits remain the same
@@ -246,63 +246,63 @@ public class JdkBytesLowMcPrp implements Prp {
         }
         // initial whitening
         // state = ciphertext + MultiplyWithGF2Matrix(KMatrix(0),key)
-        BytesUtils.xori(state, initKey);
+        BlockUtils.xori(state, initKey);
         // ciphertext = state
         return state;
     }
 
     private void sboxLayer(byte[] state) {
-        byte[] a = BytesUtils.and(state, MASK_A_10);
-        byte[] b = BytesUtils.and(state, MASK_B_10);
-        BytesUtils.shiftLefti(b, 1);
-        byte[] c = BytesUtils.and(state, MASK_C_10);
-        BytesUtils.shiftLefti(c, 2);
+        byte[] a = BlockUtils.and(state, MASK_A_10);
+        byte[] b = BlockUtils.and(state, MASK_B_10);
+        BlockUtils.shiftLefti(b, 1);
+        byte[] c = BlockUtils.and(state, MASK_C_10);
+        BlockUtils.shiftLefti(c, 2);
         // a = a ⊕ (b ☉ c)
-        byte[] aSbox = BytesUtils.and(b, c);
-        BytesUtils.xori(aSbox, a);
+        byte[] aSbox = BlockUtils.and(b, c);
+        BlockUtils.xori(aSbox, a);
         // b = a ⊕ b ⊕ (a ☉ c)
-        byte[] bSbox = BytesUtils.and(a, c);
-        BytesUtils.xori(bSbox, b);
-        BytesUtils.xori(bSbox, a);
-        BytesUtils.shiftRighti(bSbox, 1);
+        byte[] bSbox = BlockUtils.and(a, c);
+        BlockUtils.xori(bSbox, b);
+        BlockUtils.xori(bSbox, a);
+        BlockUtils.shiftRighti(bSbox, 1);
         // c = a ⊕ b ⊕ c ⊕ (a ☉ b)
-        byte[] cSbox = BytesUtils.and(a, b);
-        BytesUtils.xori(cSbox, c);
-        BytesUtils.xori(cSbox, b);
-        BytesUtils.xori(cSbox, a);
-        BytesUtils.shiftRighti(cSbox, 2);
+        byte[] cSbox = BlockUtils.and(a, b);
+        BlockUtils.xori(cSbox, c);
+        BlockUtils.xori(cSbox, b);
+        BlockUtils.xori(cSbox, a);
+        BlockUtils.shiftRighti(cSbox, 2);
         // 设置结果
-        BytesUtils.andi(state, MASK_MASK);
-        BytesUtils.xori(state, aSbox);
-        BytesUtils.xori(state, bSbox);
-        BytesUtils.xori(state, cSbox);
+        BlockUtils.andi(state, MASK_MASK);
+        BlockUtils.xori(state, aSbox);
+        BlockUtils.xori(state, bSbox);
+        BlockUtils.xori(state, cSbox);
     }
 
     private void sboxInvLayer(byte[] state) {
-        byte[] aSbox = BytesUtils.and(state, MASK_A_10);
-        byte[] bSbox = BytesUtils.and(state, MASK_B_10);
-        BytesUtils.shiftLefti(bSbox, 1);
-        byte[] cSbox = BytesUtils.and(state, MASK_C_10);
-        BytesUtils.shiftLefti(cSbox, 2);
+        byte[] aSbox = BlockUtils.and(state, MASK_A_10);
+        byte[] bSbox = BlockUtils.and(state, MASK_B_10);
+        BlockUtils.shiftLefti(bSbox, 1);
+        byte[] cSbox = BlockUtils.and(state, MASK_C_10);
+        BlockUtils.shiftLefti(cSbox, 2);
         // a = a ⊕ b ⊕ (b ☉ c)
-        byte[] a = BytesUtils.and(bSbox, cSbox);
-        BytesUtils.xori(a, bSbox);
-        BytesUtils.xori(a, aSbox);
+        byte[] a = BlockUtils.and(bSbox, cSbox);
+        BlockUtils.xori(a, bSbox);
+        BlockUtils.xori(a, aSbox);
         // b = b ⊕ (a ☉ c)
-        byte[] b = BytesUtils.and(aSbox, cSbox);
-        BytesUtils.xori(b, bSbox);
-        BytesUtils.shiftRighti(b, 1);
+        byte[] b = BlockUtils.and(aSbox, cSbox);
+        BlockUtils.xori(b, bSbox);
+        BlockUtils.shiftRighti(b, 1);
         // c = a ⊕ b ⊕ c ⊕ (a ☉ b)
-        byte[] c = BytesUtils.and(aSbox, bSbox);
-        BytesUtils.xori(c, cSbox);
-        BytesUtils.xori(c, bSbox);
-        BytesUtils.xori(c, aSbox);
-        BytesUtils.shiftRighti(c, 2);
+        byte[] c = BlockUtils.and(aSbox, bSbox);
+        BlockUtils.xori(c, cSbox);
+        BlockUtils.xori(c, bSbox);
+        BlockUtils.xori(c, aSbox);
+        BlockUtils.shiftRighti(c, 2);
         // 设置结果
-        BytesUtils.andi(state, MASK_MASK);
-        BytesUtils.xori(state, a);
-        BytesUtils.xori(state, b);
-        BytesUtils.xori(state, c);
+        BlockUtils.andi(state, MASK_MASK);
+        BlockUtils.xori(state, a);
+        BlockUtils.xori(state, b);
+        BlockUtils.xori(state, c);
     }
 
     @Override

@@ -214,4 +214,28 @@ public class BytesEfficiencyTest {
         LOGGER.info("UNSAFE: {} (us)", StringUtils.leftPad(String.valueOf(stopWatch.getTime(TimeUnit.MICROSECONDS)), 10));
         stopWatch.reset();
     }
+
+    @Test
+    public void testExtractLsb() {
+        LOGGER.info("----------report extract LSB ----------");
+        // we use two ways to do conversions.
+        int n = 1 << 22;
+        byte[][] data = BlockUtils.randomBlocks(n, secureRandom);
+
+        // naive conversion, warmup then test
+        BytesUtils.naiveExtractLsb(data);
+        stopWatch.start();
+        BytesUtils.naiveExtractLsb(data);
+        stopWatch.stop();
+        LOGGER.info(" NAIVE: {} (us)", StringUtils.leftPad(String.valueOf(stopWatch.getTime(TimeUnit.MICROSECONDS)), 10));
+        stopWatch.reset();
+
+        // SIMD
+        BytesUtils.simdExtractLsb(data);
+        stopWatch.start();
+        BytesUtils.simdExtractLsb(data);
+        stopWatch.stop();
+        LOGGER.info("  SIMD: {} (us)", StringUtils.leftPad(String.valueOf(stopWatch.getTime(TimeUnit.MICROSECONDS)), 10));
+        stopWatch.reset();
+    }
 }

@@ -4,7 +4,6 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.stream.IntStream;
 
 /**
  * 公共工具类。
@@ -61,31 +60,6 @@ public class CommonUtils {
      */
     public static int getBlockLength(int bitLength) {
         return CommonUtils.getUnitNum(bitLength, CommonConstants.BLOCK_BIT_LENGTH);
-    }
-
-    /**
-     * 生成随机密钥。
-     *
-     * @param secureRandom 随机状态。
-     * @return 随机密钥。
-     */
-    public static byte[] generateRandomKey(SecureRandom secureRandom) {
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
-        return key;
-    }
-
-    /**
-     * 生成随机密钥数组。
-     *
-     * @param keyNum       密钥数量。
-     * @param secureRandom 随机状态。
-     * @return 随机密钥数组。
-     */
-    public static byte[][] generateRandomKeys(int keyNum, SecureRandom secureRandom) {
-        return IntStream.range(0, keyNum)
-            .mapToObj(index -> generateRandomKey(secureRandom))
-            .toArray(byte[][]::new);
     }
 
     /**

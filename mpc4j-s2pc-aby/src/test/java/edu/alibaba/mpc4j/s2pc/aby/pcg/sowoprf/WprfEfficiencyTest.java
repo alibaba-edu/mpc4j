@@ -1,12 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.F23WprfMatrixFactory.F23WprfMatrixType;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.F32WprfMatrixFactory.F32WprfMatrixType;
 import org.apache.commons.lang3.StringUtils;
@@ -53,8 +52,8 @@ public class WprfEfficiencyTest {
         int n = 1 << logN;
         // PRP efficiency
         Prp aesPrp = PrpFactory.createInstance(PrpType.JDK_AES);
-        aesPrp.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
-        byte[] aesPrpInput = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        aesPrp.setKey(BlockUtils.zeroBlock());
+        byte[] aesPrpInput = BlockUtils.zeroBlock();
         // warmup
         IntStream.range(0, n).forEach(index -> aesPrp.prp(aesPrpInput));
         // efficiency
@@ -70,8 +69,8 @@ public class WprfEfficiencyTest {
 
         // LowMC PRP efficiency
         Prp lowMcPrp = PrpFactory.createInstance(PrpType.JDK_LONGS_LOW_MC_20);
-        lowMcPrp.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
-        byte[] lowMcPrpInput = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        lowMcPrp.setKey(BlockUtils.zeroBlock());
+        byte[] lowMcPrpInput = BlockUtils.zeroBlock();
         // warmup
         IntStream.range(0, n).forEach(index -> lowMcPrp.prp(lowMcPrpInput));
         // efficiency
@@ -87,8 +86,8 @@ public class WprfEfficiencyTest {
 
         // F32 weak PRF efficiency
         Z3ByteField field = new Z3ByteField();
-        byte[] seedA = CommonUtils.generateRandomKey(secureRandom);
-        byte[] seedB = CommonUtils.generateRandomKey(secureRandom);
+        byte[] seedA = BlockUtils.randomBlock(secureRandom);
+        byte[] seedB = BlockUtils.randomBlock(secureRandom);
         for (F32WprfMatrixType type : F32WprfMatrixType.values()) {
             F32Wprf f32Wprf = new F32Wprf(field, seedA, seedB, type);
             byte[] input = field.createRandoms(F32Wprf.getInputLength(), secureRandom);

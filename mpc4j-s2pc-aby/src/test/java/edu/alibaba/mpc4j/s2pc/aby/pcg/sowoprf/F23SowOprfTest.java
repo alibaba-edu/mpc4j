@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.F23SowOprfFactory.F23SowOprfType;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.sowoprf.aprr24.Aprr24F23SowOprfConfig;
@@ -123,7 +123,7 @@ public class F23SowOprfTest extends AbstractTwoPartyMemoryRpcPto {
 
     private void testPrecompute(int size, boolean parallel) {
         int preCotSize = F23SowOprfFactory.getPreCotNum(size);
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+        byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
         CotSenderOutput preCotSenderOutput = CotSenderOutput.createRandom(preCotSize, delta, SECURE_RANDOM);
         CotReceiverOutput preCotReceiverOutput = CotReceiverOutput.createRandom(preCotSenderOutput, SECURE_RANDOM);
         testPto(size, parallel, preCotSenderOutput, preCotReceiverOutput);

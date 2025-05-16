@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.common.tool.hashbin.primitive;
 
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -52,9 +52,9 @@ public class SimpleIntHashBinEfficiencyTest {
     private void testEfficiency(int logN) {
         int n = 1 << logN;
         for (int hashNum : HASH_NUMS) {
-            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, HashBinTestUtils.SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
             // 桶数量与元素数量一致，近似等于对应CuckooHash的要求
-            SimpleIntHashBin intHashBin = new SimpleIntHashBin(EnvType.STANDARD, n, n, keys);
+            ArraySimpleIntHashBin intHashBin = new ArraySimpleIntHashBin(EnvType.STANDARD, n, n, keys);
             int[] items = IntStream.range(0, n).toArray();
             // 插入元素
             STOP_WATCH.start();

@@ -16,6 +16,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64PolyFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.upso.UpsoUtils;
 import edu.alibaba.mpc4j.s2pc.upso.upsi.cmg21.Cmg21UpsiConfig;
@@ -135,7 +136,7 @@ public class Lpzl24BatchPirServer extends AbstractBatchPirServer {
         relinKeys = bfvKeyPair.remove(0);
 
         stopWatch.start();
-        hashKeys = CommonUtils.generateRandomKeys(params.getCuckooHashNum(), secureRandom);
+        hashKeys = BlockUtils.randomBlocks(params.getCuckooHashNum(), secureRandom);
         alpha = BigIntegerUtils.randomPositive(ecc.getN(), secureRandom);
         // compute PRF
         List<ByteBuffer> elementPrf = computeElementPrf();
@@ -251,8 +252,7 @@ public class Lpzl24BatchPirServer extends AbstractBatchPirServer {
         RandomPadHashBin<ByteBuffer> completeHash = new RandomPadHashBin<>(envType, binNum, num, hashKeys);
         completeHash.insertItems(elementList);
         maxBinSize = IntStream.range(0, binNum).map(completeHash::binSize).max().orElse(0);
-        byte[] randomBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(randomBytes);
+        byte[] randomBytes = BlockUtils.randomBlock(secureRandom);
         HashBinEntry<ByteBuffer> paddingEntry = HashBinEntry.fromEmptyItem(ByteBuffer.wrap(randomBytes));
         List<List<HashBinEntry<ByteBuffer>>> paddingHashBin = new ArrayList<>();
         for (int i = 0; i < binNum; i++) {
@@ -272,7 +272,7 @@ public class Lpzl24BatchPirServer extends AbstractBatchPirServer {
      * @throws MpcAbortException the protocol failure aborts.
      */
     private List<byte[]> handleBlindPayload(List<byte[]> blindElements) throws MpcAbortException {
-        MpcAbortPreconditions.checkArgument(blindElements.size() > 0);
+        MpcAbortPreconditions.checkArgument(!blindElements.isEmpty());
         Stream<byte[]> blindStream = blindElements.stream();
         blindStream = parallel ? blindStream.parallel() : blindStream;
         return blindStream

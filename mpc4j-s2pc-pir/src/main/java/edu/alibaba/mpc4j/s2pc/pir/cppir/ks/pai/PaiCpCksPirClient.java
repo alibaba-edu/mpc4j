@@ -8,6 +8,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipher;
 import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipherFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.opf.sqoprf.SqOprfFactory;
@@ -120,7 +121,7 @@ public class PaiCpCksPirClient<T> extends AbstractCpKsPirClient<T> {
         BigInteger alpha1 = byteFullEcc.randomZn(secureRandom);
         BigInteger alpha2 = byteFullEcc.randomZn(secureRandom);
         alpha = alpha1.multiply(alpha2).mod(byteFullEcc.getN());
-        vk = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        vk = BlockUtils.randomBlock(secureRandom);
         localExistCacheEntries = new HashMap<>(n);
         localBotCacheEntries = new HashSet<>();
         stopWatch.stop();
@@ -150,8 +151,7 @@ public class PaiCpCksPirClient<T> extends AbstractCpKsPirClient<T> {
                 // med key
                 medKeyArray[iColumn] = byteFullEcc.mul(rowKeyArray[iColumn], alpha1);
                 // med value
-                byte[] iv = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                secureRandom.nextBytes(iv);
+                byte[] iv = BlockUtils.randomBlock(secureRandom);
                 medValueArray[iColumn] = streamCipher.ivEncrypt(vk, iv, rowValueArray[iColumn]);
             });
             // send shuffled response
@@ -196,7 +196,7 @@ public class PaiCpCksPirClient<T> extends AbstractCpKsPirClient<T> {
                 finalKeyArray[iRow] = byteFullEcc.mul(columnKeyArray[iRow], alpha2);
                 // final value
                 byte[] value = streamCipher.ivDecrypt(vk, columnValueArray[iRow]);
-                byte[] iv = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+                byte[] iv = BlockUtils.randomBlock(secureRandom);
                 finalValueArray[iRow] = streamCipher.ivEncrypt(vk, iv, value);
             });
             // send shuffled response

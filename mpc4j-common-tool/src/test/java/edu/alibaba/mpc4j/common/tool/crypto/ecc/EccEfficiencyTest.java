@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory.ByteEccType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory.EccType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.bouncycastle.math.ec.ECPoint;
@@ -83,13 +83,7 @@ public class EccEfficiencyTest {
         for (EccType type : ECC_TYPES) {
             Ecc ecc = EccFactory.createInstance(type);
             // generate random messages
-            byte[][] messages = IntStream.range(0, n)
-                .mapToObj(index -> {
-                    byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                    SECURE_RANDOM.nextBytes(message);
-                    return message;
-                })
-                .toArray(byte[][]::new);
+            byte[][] messages = BlockUtils.randomBlocks(n, SECURE_RANDOM);
 
             // warmup
             Arrays.stream(messages).forEach(ecc::hashToCurve);
@@ -157,13 +151,7 @@ public class EccEfficiencyTest {
         for (ByteEccType type : BYTE_MUL_ECC_TYPES) {
             ByteMulEcc byteMulEcc = ByteEccFactory.createMulInstance(type);
             // generate random messages
-            byte[][] messages = IntStream.range(0, n)
-                .mapToObj(index -> {
-                    byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                    SECURE_RANDOM.nextBytes(message);
-                    return message;
-                })
-                .toArray(byte[][]::new);
+            byte[][] messages = BlockUtils.randomBlocks(n, SECURE_RANDOM);
 
             // warmup
             Arrays.stream(messages).forEach(byteMulEcc::hashToCurve);

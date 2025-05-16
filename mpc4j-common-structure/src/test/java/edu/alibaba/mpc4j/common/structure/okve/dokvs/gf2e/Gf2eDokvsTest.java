@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
@@ -73,17 +73,17 @@ public class Gf2eDokvsTest {
     public void testIllegalInputs() {
         // try setting more keys
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] moreKeys = CommonUtils.generateRandomKeys(hashKeyNum + 1, SECURE_RANDOM);
+            byte[][] moreKeys = BlockUtils.randomBlocks(hashKeyNum + 1, SECURE_RANDOM);
             Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, DEFAULT_L, moreKeys);
         });
         // try setting less keys
         if (Gf2eDokvsFactory.getHashKeyNum(type) > 0) {
             Assert.assertThrows(IllegalArgumentException.class, () -> {
-                byte[][] lessKeys = CommonUtils.generateRandomKeys(hashKeyNum - 1, SECURE_RANDOM);
+                byte[][] lessKeys = BlockUtils.randomBlocks(hashKeyNum - 1, SECURE_RANDOM);
                 Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, DEFAULT_L, lessKeys);
             });
         }
-        byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, SECURE_RANDOM);
         // try n = 0
         Assert.assertThrows(IllegalArgumentException.class, () ->
             Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, 0, DEFAULT_L, keys)
@@ -102,7 +102,7 @@ public class Gf2eDokvsTest {
 
     @Test
     public void testType() {
-        byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, SECURE_RANDOM);
         Gf2eDokvs<ByteBuffer> dokvs = Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_N, DEFAULT_L, keys);
         Assert.assertEquals(type, dokvs.getType());
     }
@@ -191,7 +191,7 @@ public class Gf2eDokvsTest {
     private void testDokvs(int n, int l, boolean parallelEncode) {
         int byteL = CommonUtils.getByteLength(l);
         for (int round = 0; round < ROUND; round++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, SECURE_RANDOM);
             Gf2eDokvs<ByteBuffer> dokvs = Gf2eDokvsFactory.createInstance(EnvType.STANDARD, type, n, l, keys);
             dokvs.setParallelEncode(parallelEncode);
             Map<ByteBuffer, byte[]> keyValueMap = randomKeyValueMap(n, l);
@@ -223,8 +223,7 @@ public class Gf2eDokvsTest {
             Set<ByteBuffer> valueSet = keyValueMap.values().stream().map(ByteBuffer::wrap).collect(Collectors.toSet());
             IntStream.range(0, ROUND).forEach(index -> {
                 // generate random key bytes
-                byte[] randomKeyBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                SECURE_RANDOM.nextBytes(randomKeyBytes);
+                byte[] randomKeyBytes = BlockUtils.randomBlock(SECURE_RANDOM);
                 ByteBuffer randomKey = ByteBuffer.wrap(randomKeyBytes);
                 if (!keyValueMap.containsKey(randomKey)) {
                     byte[] randomDecodeValue = dokvs.decode(doublyStorage, randomKey);
@@ -238,8 +237,7 @@ public class Gf2eDokvsTest {
         int byteL = CommonUtils.getByteLength(l);
         Map<ByteBuffer, byte[]> keyValueMap = new HashMap<>();
         IntStream.range(0, n).forEach(index -> {
-            byte[] keyBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(keyBytes);
+            byte[] keyBytes = BlockUtils.randomBlock(SECURE_RANDOM);
             byte[] valueBytes = BytesUtils.randomByteArray(byteL, l, SECURE_RANDOM);
             keyValueMap.put(ByteBuffer.wrap(keyBytes), valueBytes);
         });

@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.crypto.commit;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.commit.CommitFactory.CommitType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.crypto.Commitment;
@@ -21,7 +21,8 @@ import java.util.Collection;
 /**
  * commitment scheme tests. The test cases come form:
  * <p>
- * https://github.com/bcgit/bc-java/blob/master/core/src/test/java/org/bouncycastle/crypto/test/HashCommitmentTest.java
+ * <a href="https://github.com/bcgit/bc-java/blob/master/core/src/test/java/org/bouncycastle/crypto/test/HashCommitmentTest.java">
+ * HashCommitmentTest.java</a>
  * </p>
  *
  * @author Weiran Liu
@@ -34,16 +35,16 @@ public class CommitTest {
      */
     private static final byte[] DATA = Hex.decode("4e6f77206973207468652074696d6520666f7220616c6c20");
 
-    @Parameterized.Parameters(name="{0}")
+    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
         // RO_JDK_SHA256
-        configurations.add(new Object[] {CommitType.RO_JDK_SHA256.name(), CommitType.RO_JDK_SHA256, });
+        configurations.add(new Object[]{CommitType.RO_JDK_SHA256.name(), CommitType.RO_JDK_SHA256,});
         // RO_BC_SHA256
-        configurations.add(new Object[] {CommitType.RO_BC_SHA256.name(), CommitType.RO_BC_SHA256, });
+        configurations.add(new Object[]{CommitType.RO_BC_SHA256.name(), CommitType.RO_BC_SHA256,});
         // RO_BC_SM3
-        configurations.add(new Object[] {CommitType.RO_BC_SM3.name(), CommitType.RO_BC_SM3, });
+        configurations.add(new Object[]{CommitType.RO_BC_SM3.name(), CommitType.RO_BC_SM3,});
 
         return configurations;
     }
@@ -85,7 +86,7 @@ public class CommitTest {
 
     @Test
     public void seedRandomTest() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] seed = BlockUtils.zeroBlock();
         // the first commitment
         SecureRandom seedSecureRandom0 = CommonUtils.createSeedSecureRandom();
         seedSecureRandom0.setSeed(seed);

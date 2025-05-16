@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfSender;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfSenderOutput;
@@ -102,12 +102,12 @@ public class Ywl20ShSspCotSender extends AbstractSspCotSender {
         logStepInfo(PtoState.PTO_STEP, 2, 3, dpprfTime);
 
         stopWatch.start();
-        byte[] correlateByteArray = BytesUtils.clone(delta);
+        byte[] correlateByteArray = BlockUtils.clone(delta);
         // S sets v = (s_0^h,...,s_{n - 1}^h)
         byte[][] vs = spRdpprfSenderOutput.getV0Array();
         // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
         for (int i = 0; i < num; i++) {
-            BytesUtils.xori(correlateByteArray, vs[i]);
+            BlockUtils.xori(correlateByteArray, vs[i]);
         }
         SspCotSenderOutput senderOutput = SspCotSenderOutput.create(delta, vs);
         List<byte[]> correlatePayload = Collections.singletonList(correlateByteArray);

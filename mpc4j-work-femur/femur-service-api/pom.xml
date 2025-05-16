@@ -6,7 +6,7 @@
     <parent>
         <groupId>edu.alibaba</groupId>
         <artifactId>mpc4j-work-femur</artifactId>
-        <version>1.1.4-alpha</version>
+        <version>1.1.4-beta</version>
     </parent>
 
     <artifactId>femur-service-api</artifactId>
@@ -15,6 +15,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <os.detected.classifier>osx-x86_64</os.detected.classifier>
     </properties>
 

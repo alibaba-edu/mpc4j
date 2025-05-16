@@ -2,8 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.ywl20.Ywl20SpRdpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -168,7 +167,7 @@ public class SpRdpprfTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         int alphaBound = DEFAULT_NUM;
         int alpha = SECURE_RANDOM.nextInt(alphaBound);
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+        byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
         // pre-compute COT
         CotSenderOutput preSenderOutput = CotSenderOutput.createRandom(
             SpRdpprfFactory.getPrecomputeNum(config, alphaBound), delta, SECURE_RANDOM

@@ -2,11 +2,10 @@ package edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory.EccDokvsType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.math.ec.ECPoint;
 import org.junit.Assert;
@@ -75,16 +74,16 @@ public class EccDokvsTest {
         // try less keys
         if (hashKeyNum > 0) {
             Assert.assertThrows(IllegalArgumentException.class, () -> {
-                byte[][] lessKeys = CommonUtils.generateRandomKeys(hashKeyNum - 1, SECURE_RANDOM);
+                byte[][] lessKeys = BlockUtils.randomBlocks(hashKeyNum - 1, SECURE_RANDOM);
                 EccDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_ECC, DEFAULT_N, lessKeys);
             });
         }
         // try more keys
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] moreKeys = CommonUtils.generateRandomKeys(hashKeyNum + 1, SECURE_RANDOM);
+            byte[][] moreKeys = BlockUtils.randomBlocks(hashKeyNum + 1, SECURE_RANDOM);
             EccDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_ECC, DEFAULT_N, moreKeys);
         });
-        byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, SECURE_RANDOM);
         // try n = 0
         Assert.assertThrows(IllegalArgumentException.class, () ->
             EccDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_ECC, 0, keys)
@@ -103,7 +102,7 @@ public class EccDokvsTest {
 
     @Test
     public void testType() {
-        byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, SECURE_RANDOM);
         EccDokvs<ByteBuffer> dokvs = EccDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_ECC, DEFAULT_N, keys);
         Assert.assertEquals(type, dokvs.getType());
     }
@@ -141,7 +140,7 @@ public class EccDokvsTest {
     private void testDokvs(int n) {
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
             // create keys
-            byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, SECURE_RANDOM);
             // create an instance
             EccDokvs<ByteBuffer> dokvs = EccDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_ECC, n, keys);
             // generate key-value pairs
@@ -171,8 +170,7 @@ public class EccDokvsTest {
             // verify randomly generate values are not in the set
             Set<ECPoint> valueSet = new HashSet<>(keyValueMap.values());
             IntStream.range(0, MAX_RANDOM_ROUND).forEach(index -> {
-                byte[] randomKeyBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                SECURE_RANDOM.nextBytes(randomKeyBytes);
+                byte[] randomKeyBytes = BlockUtils.randomBlock(SECURE_RANDOM);
                 ByteBuffer randomKey = ByteBuffer.wrap(randomKeyBytes);
                 if (!keyValueMap.containsKey(randomKey)) {
                     ECPoint randomDecodeValue = dokvs.decode(doublyStorage, randomKey);
@@ -185,8 +183,7 @@ public class EccDokvsTest {
     static Map<ByteBuffer, ECPoint> randomKeyValueMap(Ecc ecc, int size) {
         Map<ByteBuffer, ECPoint> keyValueMap = new HashMap<>();
         IntStream.range(0, size).forEach(index -> {
-            byte[] keyBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(keyBytes);
+            byte[] keyBytes = BlockUtils.randomBlock(SECURE_RANDOM);
             org.bouncycastle.math.ec.ECPoint value = ecc.randomPoint(SECURE_RANDOM);
             keyValueMap.put(ByteBuffer.wrap(keyBytes), value);
         });

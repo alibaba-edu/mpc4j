@@ -18,6 +18,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.TwoChoiceHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePoly;
 import edu.alibaba.mpc4j.common.tool.polynomial.gf2e.Gf2ePolyFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
@@ -218,7 +219,7 @@ public class Prty19FastPsiServer<T> extends AbstractPsiServer<T> {
         x0s = new byte[serverElementSize][];
         x1s = new byte[serverElementSize][];
         Prf elementPrf = PrfFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
-        elementPrf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        elementPrf.setKey(BlockUtils.zeroBlock());
         IntStream elementIndexIntStream = IntStream.range(0, serverElementSize);
         elementIndexIntStream = parallel ? elementIndexIntStream.parallel() : elementIndexIntStream;
         elementIndexIntStream.forEach(index -> {

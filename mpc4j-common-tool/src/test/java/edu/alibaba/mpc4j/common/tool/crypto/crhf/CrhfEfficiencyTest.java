@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.crypto.crhf;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -57,7 +57,7 @@ public class CrhfEfficiencyTest {
 
     private void testEfficiency(Crhf crhf, boolean parallel) {
         int n = 1 << LOG_N;
-        byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] message = BlockUtils.zeroBlock();
         // warm-up
         IntStream.range(0, n).forEach(index -> crhf.hash(message));
         IntStream intStream = parallel ? IntStream.range(0, n).parallel() : IntStream.range(0, n);

@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.crypto.algs.utils.distribution;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.bouncycastle.util.Bytes;
 
 import javax.crypto.*;
@@ -93,7 +94,7 @@ public class Coins {
             assert cipher.getOutputSize(CommonConstants.BLOCK_BYTE_LENGTH) == CommonConstants.BLOCK_BYTE_LENGTH;
             // init counter and plaintext
             innerCounter = 0x0102030405060708L;
-            plaintext = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            plaintext = BlockUtils.zeroBlock();
             // init buffer
             binaryBuffer = new boolean[Bytes.SIZE];
             byteIndex = CommonConstants.BLOCK_BYTE_LENGTH;

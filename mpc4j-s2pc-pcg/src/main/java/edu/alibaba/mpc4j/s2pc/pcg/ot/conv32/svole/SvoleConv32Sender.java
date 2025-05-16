@@ -1,14 +1,13 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.svole;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2k;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.SerializeUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.AbstractConv32Party;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.svole.SvoleConv32PtoDesc.PtoStep;
@@ -59,7 +58,7 @@ public class SvoleConv32Sender extends AbstractConv32Party {
 
         stopWatch.start();
         int roundNum = Math.min(maxRoundNum, expectNum);
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         gf2kNcVoleReceiver.init(2, delta, roundNum);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

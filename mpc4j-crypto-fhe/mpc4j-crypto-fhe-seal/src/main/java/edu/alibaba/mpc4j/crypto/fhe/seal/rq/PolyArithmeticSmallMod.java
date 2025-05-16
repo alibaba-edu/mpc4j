@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.crypto.fhe.seal.rq;
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.CoeffIterator;
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.PolyIterator;
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.RnsIterator;
-import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.zq.MultiplyUintModOperand;
 import edu.alibaba.mpc4j.crypto.fhe.seal.zq.UintArithmetic;
 import edu.alibaba.mpc4j.crypto.fhe.seal.zq.UintArithmeticSmallMod;
@@ -36,7 +36,7 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param coeffR  the result Coeff representation.
      */
-    public static void moduloPolyCoeff(CoeffIterator coeff, int n, Modulus modulus, CoeffIterator coeffR) {
+    public static void moduloPolyCoeff(CoeffIterator coeff, int n, AbstractModulus modulus, CoeffIterator coeffR) {
 
         assert n > 0;
         assert !modulus.isZero();
@@ -56,7 +56,7 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param rnsR    the result RNS representation.
      */
-    public static void moduloPolyCoeffRns(RnsIterator rns, int k, Modulus[] modulus, RnsIterator rnsR) {
+    public static void moduloPolyCoeffRns(RnsIterator rns, int k, AbstractModulus[] modulus, RnsIterator rnsR) {
         assert k > 0;
         assert rns.n() == rnsR.n();
 
@@ -73,7 +73,7 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param polyR   the result Poly-RNS representation.
      */
-    public static void moduloPolyCoeffPoly(PolyIterator poly, int m, Modulus[] modulus, PolyIterator polyR) {
+    public static void moduloPolyCoeffPoly(PolyIterator poly, int m, AbstractModulus[] modulus, PolyIterator polyR) {
         assert poly.k() == polyR.k();
         assert m > 0;
 
@@ -90,7 +90,7 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param coeffR  the result Coeff representation.
      */
-    public static void negatePolyCoeffMod(CoeffIterator coeff, int n, Modulus modulus, CoeffIterator coeffR) {
+    public static void negatePolyCoeffMod(CoeffIterator coeff, int n, AbstractModulus modulus, CoeffIterator coeffR) {
 
         assert n > 0;
         assert !modulus.isZero();
@@ -112,7 +112,7 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param rnsR    the result RNS representation.
      */
-    public static void negatePolyCoeffModRns(RnsIterator rns, int k, Modulus[] modulus, RnsIterator rnsR) {
+    public static void negatePolyCoeffModRns(RnsIterator rns, int k, AbstractModulus[] modulus, RnsIterator rnsR) {
         assert k > 0;
         assert rns.k() == rnsR.k();
         assert rns.n() == rnsR.n();
@@ -130,7 +130,7 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param polyR   the result Poly-RNS representation.
      */
-    public static void negatePolyCoeffModPoly(PolyIterator poly, int m, Modulus[] modulus, PolyIterator polyR) {
+    public static void negatePolyCoeffModPoly(PolyIterator poly, int m, AbstractModulus[] modulus, PolyIterator polyR) {
         assert poly.k() == polyR.k();
         assert m > 0;
 
@@ -151,7 +151,7 @@ public class PolyArithmeticSmallMod {
      * @param coeffR  the result Coeff representation.
      */
     public static void negatePolyCoeffMod(long[] coeff, int pos, int n,
-                                          Modulus modulus, long[] coeffR, int posR) {
+                                          AbstractModulus modulus, long[] coeffR, int posR) {
         assert n > 0;
         assert !modulus.isZero();
 
@@ -173,8 +173,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param coeffR  the result Coeff representation.
      */
-    public static void addPolyCoeffMod(CoeffIterator coeff1, CoeffIterator coeff2,
-                                       int n, Modulus modulus, CoeffIterator coeffR) {
+    public static void addPolyCoeffMod(CoeffIterator coeff1, CoeffIterator coeff2, int n,
+                                       AbstractModulus modulus, CoeffIterator coeffR) {
         assert n > 0;
         assert !modulus.isZero();
 
@@ -205,8 +205,8 @@ public class PolyArithmeticSmallMod {
      * @param coeffR  the result Coeff representation.
      * @param posR    the result start position.
      */
-    public static void addPolyCoeffMod(long[] coeff1, int pos1, long[] coeff2, int pos2,
-                                       int n, Modulus modulus, long[] coeffR, int posR) {
+    public static void addPolyCoeffMod(long[] coeff1, int pos1, long[] coeff2, int pos2, int n,
+                                       AbstractModulus modulus, long[] coeffR, int posR) {
         assert n > 0;
         assert !modulus.isZero();
 
@@ -230,7 +230,7 @@ public class PolyArithmeticSmallMod {
      * @param k       the result number of RNS bases.
      */
     public static void addPolyCoeffMod(RnsIterator rns1, RnsIterator rns2, int k,
-                                       Modulus[] modulus, RnsIterator rnsR) {
+                                       AbstractModulus[] modulus, RnsIterator rnsR) {
         assert rnsR.k() == rns1.k() && rnsR.k() == rns2.k();
         assert rnsR.k() == modulus.length;
         assert k > 0;
@@ -250,8 +250,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param polyR   the result Poly-NRS representation.
      */
-    public static void addPolyCoeffModPoly(PolyIterator poly1, PolyIterator poly2, int m, Modulus[] modulus,
-                                           PolyIterator polyR) {
+    public static void addPolyCoeffModPoly(PolyIterator poly1, PolyIterator poly2, int m,
+                                           AbstractModulus[] modulus, PolyIterator polyR) {
         assert m > 0;
         assert poly1.k() == polyR.k() && poly2.k() == polyR.k();
 
@@ -269,8 +269,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param coeffR  the result Coeff representation.
      */
-    public static void subPolyCoeffMod(CoeffIterator coeff1, CoeffIterator coeff2,
-                                       int n, Modulus modulus, CoeffIterator coeffR) {
+    public static void subPolyCoeffMod(CoeffIterator coeff1, CoeffIterator coeff2, int n,
+                                       AbstractModulus modulus, CoeffIterator coeffR) {
         assert n > 0;
         assert !modulus.isZero();
 
@@ -296,7 +296,7 @@ public class PolyArithmeticSmallMod {
      * @param k       the result number of RNS bases.
      */
     public static void subPolyCoeffMod(RnsIterator rns1, RnsIterator rns2, int k,
-                                       Modulus[] modulus, RnsIterator rnsR) {
+                                       AbstractModulus[] modulus, RnsIterator rnsR) {
         assert k > 0;
         assert rnsR.n() == rns1.n() && rnsR.n() == rns2.n();
 
@@ -322,7 +322,7 @@ public class PolyArithmeticSmallMod {
      * @param polyR   the result Poly-NRS representation.
      */
     public static void subPolyCoeffModPoly(PolyIterator poly1, PolyIterator poly2, int m,
-                                           Modulus[] modulus, PolyIterator polyR) {
+                                           AbstractModulus[] modulus, PolyIterator polyR) {
         assert polyR.k() == poly1.k() && polyR.k() == poly2.k();
         assert m > 0;
 
@@ -340,8 +340,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param coeffR  the result Coeff representation.
      */
-    public static void addPolyScalarCoeffMod(CoeffIterator coeff, int n,
-                                             long scalar, Modulus modulus, CoeffIterator coeffR) {
+    public static void addPolyScalarCoeffMod(CoeffIterator coeff, int n, long scalar,
+                                             AbstractModulus modulus, CoeffIterator coeffR) {
         assert n > 0;
         assert !modulus.isZero();
         assert scalar < modulus.value();
@@ -359,8 +359,8 @@ public class PolyArithmeticSmallMod {
      * @param scalar  scalar.
      * @param modulus modulus.
      */
-    public static void subPolyScalarCoeffMod(CoeffIterator coeff, int n,
-                                             long scalar, Modulus modulus, CoeffIterator coeffR) {
+    public static void subPolyScalarCoeffMod(CoeffIterator coeff, int n, long scalar,
+                                             AbstractModulus modulus, CoeffIterator coeffR) {
         assert n > 0;
         assert !modulus.isZero();
         assert scalar < modulus.value();
@@ -380,8 +380,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param coeffR  the result Coeff representation.
      */
-    public static void multiplyPolyScalarCoeffMod(CoeffIterator coeff, int n,
-                                                  MultiplyUintModOperand scalar, Modulus modulus, CoeffIterator coeffR) {
+    public static void multiplyPolyScalarCoeffMod(CoeffIterator coeff, int n, MultiplyUintModOperand scalar,
+                                                  AbstractModulus modulus, CoeffIterator coeffR) {
         assert n > 0;
         assert !modulus.isZero();
 
@@ -399,8 +399,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param coeffR  the result Coeff representation.
      */
-    public static void multiplyPolyScalarCoeffMod(CoeffIterator coeff, int n,
-                                                  long scalar, Modulus modulus, CoeffIterator coeffR) {
+    public static void multiplyPolyScalarCoeffMod(CoeffIterator coeff, int n, long scalar,
+                                                  AbstractModulus modulus, CoeffIterator coeffR) {
         MultiplyUintModOperand tempScalar = new MultiplyUintModOperand();
         tempScalar.set(UintArithmeticSmallMod.barrettReduce64(scalar, modulus), modulus);
         multiplyPolyScalarCoeffMod(coeff, n, tempScalar, modulus, coeffR);
@@ -415,7 +415,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param rnsR    the result RNS representation.
      */
-    public static void multiplyPolyScalarCoeffMod(RnsIterator rns, int k, long scalar, Modulus[] modulus, RnsIterator rnsR) {
+    public static void multiplyPolyScalarCoeffMod(RnsIterator rns, int k, long scalar,
+                                                  AbstractModulus[] modulus, RnsIterator rnsR) {
         assert k > 0;
         assert rns.n() == rnsR.n();
 
@@ -433,7 +434,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param polyR   the result Poly-RNS representation.
      */
-    public static void multiplyPolyScalarCoeffMod(PolyIterator poly, int m, long scalar, Modulus[] modulus, PolyIterator polyR) {
+    public static void multiplyPolyScalarCoeffMod(PolyIterator poly, int m, long scalar,
+                                                  AbstractModulus[] modulus, PolyIterator polyR) {
         assert m > 0;
         assert poly.k() == polyR.k();
 
@@ -452,7 +454,7 @@ public class PolyArithmeticSmallMod {
      * @param coeffR  the result Coeff representation.
      */
     public static void dyadicProductCoeffMod(CoeffIterator coeff1, CoeffIterator coeff2, int n,
-                                             Modulus modulus, CoeffIterator coeffR) {
+                                             AbstractModulus modulus, CoeffIterator coeffR) {
         assert n > 0;
         assert !modulus.isZero();
 
@@ -495,8 +497,8 @@ public class PolyArithmeticSmallMod {
      * @param coeffR  the result Coeff representation.
      * @param posR    the result start position.
      */
-    public static void dyadicProductCoeffMod(long[] coeff1, int pos1, long[] coeff2, int pos2,
-                                             int n, Modulus modulus, long[] coeffR, int posR) {
+    public static void dyadicProductCoeffMod(long[] coeff1, int pos1, long[] coeff2, int pos2, int n,
+                                             AbstractModulus modulus, long[] coeffR, int posR) {
         assert n > 0;
         assert !modulus.isZero();
 
@@ -537,7 +539,7 @@ public class PolyArithmeticSmallMod {
      * @param k       the result number of RNS bases.
      */
     public static void dyadicProductCoeffMod(RnsIterator rns1, RnsIterator rns2, int k,
-                                             Modulus[] modulus, RnsIterator rnsR) {
+                                             AbstractModulus[] modulus, RnsIterator rnsR) {
         assert k > 0;
         assert rns1.n() == rnsR.n() && rns2.n() == rnsR.n();
 
@@ -564,7 +566,7 @@ public class PolyArithmeticSmallMod {
      * @param k       the result number of RNS bases.
      */
     public static void dyadicProductCoeffModRns(long[] rns1, int pos1, int n1, int k1, long[] rns2, int pos2, int n2, int k2,
-                                                Modulus[] modulus, long[] rnsR, int posR, int n, int k) {
+                                                AbstractModulus[] modulus, long[] rnsR, int posR, int n, int k) {
         assert k == k1 && k == k2 && k == modulus.length;
         assert n == n1 && n == n2;
 
@@ -584,7 +586,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param polyR   the result Poly-RNS representation.
      */
-    public static void dyadicProductCoeffModPoly(PolyIterator poly1, PolyIterator poly2, int m, Modulus[] modulus, PolyIterator polyR) {
+    public static void dyadicProductCoeffModPoly(PolyIterator poly1, PolyIterator poly2, int m,
+                                                 AbstractModulus[] modulus, PolyIterator polyR) {
         assert m > 0;
         assert poly1.k() == polyR.k() && poly2.k() == polyR.k();
 
@@ -602,7 +605,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param coeffR  the result Coeff representation.
      */
-    public static void negacyclicShiftPolyCoeffMod(CoeffIterator coeff, int n, int shift, Modulus modulus, CoeffIterator coeffR) {
+    public static void negacyclicShiftPolyCoeffMod(CoeffIterator coeff, int n, int shift,
+                                                   AbstractModulus modulus, CoeffIterator coeffR) {
         assert coeff != coeffR;
         assert !modulus.isZero();
         assert UintCore.getPowerOfTwo(n) >= 0;
@@ -634,7 +638,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param rnsR    the result RNS representation.
      */
-    public static void negacyclicShiftPolyCoeffModRns(RnsIterator rns, int k, int shift, Modulus[] modulus, RnsIterator rnsR) {
+    public static void negacyclicShiftPolyCoeffModRns(RnsIterator rns, int k, int shift,
+                                                      AbstractModulus[] modulus, RnsIterator rnsR) {
         assert k > 0;
         assert rns.n() == rnsR.n();
 
@@ -652,7 +657,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @param polyR   the result Poly-RNS representation.
      */
-    public static void negacyclicShiftPolyCoeffModPoly(PolyIterator poly, int m, int shift, Modulus[] modulus, PolyIterator polyR) {
+    public static void negacyclicShiftPolyCoeffModPoly(PolyIterator poly, int m, int shift,
+                                                       AbstractModulus[] modulus, PolyIterator polyR) {
         assert m > 0;
         assert poly.k() == polyR.k();
 
@@ -671,7 +677,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus      modulus.
      * @param coeffR       the result Coeff representation.
      */
-    public static void negacyclicMultiplyPolyMonoCoeffMod(CoeffIterator coeff, int n, long monoCoeff, int monoExponent, Modulus modulus, CoeffIterator coeffR) {
+    public static void negacyclicMultiplyPolyMonoCoeffMod(CoeffIterator coeff, int n, long monoCoeff, int monoExponent,
+                                                          AbstractModulus modulus, CoeffIterator coeffR) {
         assert n > 0;
         assert !modulus.isZero();
 
@@ -691,8 +698,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus      modulus.
      * @param rnsR         the result NS representation.
      */
-    public static void negacyclicMultiplyPolyMonoCoeffModRns(RnsIterator rns, int k, long monoCoeff,
-                                                             int monoExponent, Modulus[] modulus, RnsIterator rnsR) {
+    public static void negacyclicMultiplyPolyMonoCoeffModRns(RnsIterator rns, int k, long monoCoeff, int monoExponent,
+                                                             AbstractModulus[] modulus, RnsIterator rnsR) {
         assert k > 0;
         assert rns.n() == rnsR.n();
 
@@ -713,8 +720,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus      modulus.
      * @param rnsR         the result NS representation.
      */
-    public static void negacyclicMultiplyPolyMonoCoeffModRns(RnsIterator rns, int k, CoeffIterator monoCoeffs,
-                                                             int monoExponent, Modulus[] modulus, RnsIterator rnsR) {
+    public static void negacyclicMultiplyPolyMonoCoeffModRns(RnsIterator rns, int k, CoeffIterator monoCoeffs, int monoExponent,
+                                                             AbstractModulus[] modulus, RnsIterator rnsR) {
         assert k > 0;
         assert monoCoeffs.n() == k;
         assert rns.n() == rnsR.n();
@@ -736,8 +743,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus      modulus.
      * @param polyR        the result Poly-RNS representation.
      */
-    public static void negacyclicMultiplyPolyMonoCoeffModPoly(PolyIterator poly, int m, long monoCoeff, int monoExponent, Modulus[] modulus,
-                                                              PolyIterator polyR) {
+    public static void negacyclicMultiplyPolyMonoCoeffModPoly(PolyIterator poly, int m, long monoCoeff, int monoExponent,
+                                                              AbstractModulus[] modulus, PolyIterator polyR) {
         assert m > 0;
         assert poly.k() == polyR.k();
 
@@ -756,8 +763,8 @@ public class PolyArithmeticSmallMod {
      * @param modulus      modulus.
      * @param polyR        the result Poly-RNS representation.
      */
-    public static void negacyclicMultiplyPolyMonoCoeffModPoly(PolyIterator poly, int m, CoeffIterator monoCoeffs, int monoExponent, Modulus[] modulus,
-                                                              PolyIterator polyR) {
+    public static void negacyclicMultiplyPolyMonoCoeffModPoly(PolyIterator poly, int m, CoeffIterator monoCoeffs, int monoExponent,
+                                                              AbstractModulus[] modulus, PolyIterator polyR) {
         assert m > 0;
         assert poly.k() == polyR.k();
 
@@ -774,7 +781,7 @@ public class PolyArithmeticSmallMod {
      * @param modulus modulus.
      * @return the infinity norm of the Coeff representation.
      */
-    public static long polyInftyNormCoeffMod(CoeffIterator coeff, int n, Modulus modulus) {
+    public static long polyInftyNormCoeffMod(CoeffIterator coeff, int n, AbstractModulus modulus) {
         assert n > 0;
         assert !modulus.isZero();
         // Construct negative threshold (first negative modulus value) to compute absolute values of coeffs.

@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory.EccType;
 import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.math.ec.ECPoint;
 import org.junit.Assert;
@@ -119,8 +120,7 @@ public class EccTest {
         Ecc ecc = EccFactory.createInstance(eccType);
         Set<ECPoint> hashPointSet = new HashSet<>();
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(message);
+            byte[] message = BlockUtils.randomBlock(SECURE_RANDOM);
             hashPointSet.add(ecc.hashToCurve(message));
         }
         Assert.assertEquals(MAX_RANDOM_ROUND, hashPointSet.size());
@@ -274,9 +274,7 @@ public class EccTest {
     public void testParallel() {
         Ecc ecc = EccFactory.createInstance(eccType);
         // HashToCurve并发测试
-        byte[][] messages = IntStream.range(0, PARALLEL_NUM)
-            .mapToObj(index -> new byte[CommonConstants.BLOCK_BYTE_LENGTH])
-            .toArray(byte[][]::new);
+        byte[][] messages = BlockUtils.zeroBlocks(PARALLEL_NUM);
         Set<ECPoint> hashMessageSet = Arrays.stream(messages)
             .parallel()
             .map(ecc::hashToCurve)

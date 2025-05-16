@@ -1,8 +1,7 @@
 package edu.alibaba.mpc4j.common.structure.fastfilter;
 
 import edu.alibaba.mpc4j.common.structure.fastfilter.FastCuckooFilterFactory.FastCuckooFilterType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -96,7 +95,7 @@ public class FastFilterEfficiencyTest {
 
     private ArrayList<byte[]> randomItems(int size) {
         return IntStream.range(0, size)
-            .mapToObj(i -> BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom))
+            .mapToObj(i -> BlockUtils.randomBlock(secureRandom))
             .collect(Collectors.toCollection(ArrayList::new));
     }
 }

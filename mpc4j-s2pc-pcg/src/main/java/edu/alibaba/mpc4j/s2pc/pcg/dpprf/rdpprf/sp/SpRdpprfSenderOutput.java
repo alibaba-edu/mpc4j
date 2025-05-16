@@ -1,7 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
 
@@ -31,11 +32,7 @@ public class SpRdpprfSenderOutput implements PcgPartyOutput {
         MathPreconditions.checkPositive("n", v0Array.length);
         this.num = v0Array.length;
         logNum = LongUtils.ceilLog2(num);
-        IntStream.range(0, num).forEach(index ->
-            MathPreconditions.checkEqual(
-                "λ", "v[" + index + "].length", CommonConstants.BLOCK_BYTE_LENGTH, v0Array[index].length
-            )
-        );
+        IntStream.range(0, num).forEach(index -> Preconditions.checkArgument(BlockUtils.valid(v0Array[index])));
         this.v0Array = v0Array;
     }
 

@@ -84,7 +84,7 @@ public class DistinctBloomFilter<T> extends AbstractBloomFilter<T> {
         // item byte length
         int itemByteLength = headerByteBuffer.getInt();
         // key
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] key = BlockUtils.zeroBlock();
         headerByteBuffer.get(key);
 
         // read storage

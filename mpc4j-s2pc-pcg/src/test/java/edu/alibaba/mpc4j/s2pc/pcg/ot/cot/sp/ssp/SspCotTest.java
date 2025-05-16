@@ -1,8 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.sp.ssp.gyw23.Gyw23SspCotConfig;
@@ -135,7 +134,7 @@ public class SspCotTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             SspCotSenderThread senderThread = new SspCotSenderThread(sender, delta, num);
             SspCotReceiverThread receiverThread = new SspCotReceiverThread(receiver, alpha, num);
             STOP_WATCH.start();
@@ -172,7 +171,7 @@ public class SspCotTest extends AbstractTwoPartyMemoryRpcPto {
         int num = DEFAULT_NUM;
         try {
             LOGGER.info("-----test {} (precompute) start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             int alpha = SECURE_RANDOM.nextInt(num);
             CotSenderOutput preSenderOutput = CotSenderOutput.createRandom(
                 SspCotFactory.getPrecomputeNum(config, num), delta, SECURE_RANDOM

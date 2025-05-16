@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.fhe.seal.ntt;
 
-import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.zq.MultiplyUintModOperand;
 import edu.alibaba.mpc4j.crypto.fhe.seal.zq.UintArithmeticSmallMod;
 import org.apache.commons.lang3.builder.MultilineRecursiveToStringStyle;
@@ -20,7 +20,7 @@ class ModArithLazy {
     /**
      * modulus
      */
-    private final Modulus modulus;
+    private final AbstractModulus modulus;
     /**
      * 2 * modulus
      */
@@ -31,7 +31,7 @@ class ModArithLazy {
      *
      * @param modulus modulus.
      */
-    public ModArithLazy(Modulus modulus) {
+    public ModArithLazy(AbstractModulus modulus) {
         this.modulus = modulus;
         twoTimesModulus = modulus.value() << 1;
     }

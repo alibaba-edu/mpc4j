@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.s2pc.pir.stdpir.kw.pantheon;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
@@ -166,8 +166,7 @@ public class PantheonStdKwPirServer<T> extends AbstractStdKwPirServer<T> {
 
     private List<ByteBuffer> computeKeysPrf(ArrayList<T> keys) {
         Prf prf = PrfFactory.createInstance(envType, params.keywordPrfByteLength);
-        prfKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(prfKey);
+        prfKey = BlockUtils.randomBlock(secureRandom);
         prf.setKey(prfKey);
         Stream<T> keysStream = parallel ? keys.stream().parallel() : keys.stream();
         return keysStream

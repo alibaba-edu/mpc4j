@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k;
 
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2k.Gf2kDokvsFactory.Gf2kDokvsType;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -67,7 +67,7 @@ public class Gf2kDokvsEfficiencyTest {
         int n = 1 << logN;
         for (Gf2kDokvsType type : TYPES) {
             int hashNum = Gf2kDokvsFactory.getHashKeyNum(type);
-            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, SECURE_RANDOM);
             Gf2kDokvs<ByteBuffer> dokvs = Gf2kDokvsFactory.createInstance(EnvType.STANDARD, type, n, keys);
             dokvs.setParallelEncode(parallelEncode);
             Map<ByteBuffer, byte[]> keyValueMap = Gf2kDokvsTest.randomKeyValueMap(n);

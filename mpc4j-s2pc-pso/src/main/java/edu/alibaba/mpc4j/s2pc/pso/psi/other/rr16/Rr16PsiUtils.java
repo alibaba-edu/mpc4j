@@ -2,10 +2,7 @@ package edu.alibaba.mpc4j.s2pc.pso.psi.other.rr16;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.Prf;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 
@@ -58,7 +55,7 @@ public class Rr16PsiUtils {
     }
 
     /**
-     * number of ot, refer: https://github.com/osu-crypto/libPSI/
+     * number of ot, refer: <a href="https://github.com/osu-crypto/libPSI/">libPSI</a>.
      *
      * @param maxBatchSize maximum batch size
      * @return number of OT instance
@@ -105,7 +102,7 @@ public class Rr16PsiUtils {
     }
 
     /**
-     * the number of "not-one" choices in OT, refer: https://github.com/osu-crypto/libPSI/
+     * the number of "not-one" choices in OT, refer: <a href="https://github.com/osu-crypto/libPSI/">libPSI</a>.
      *
      * @param maxBatchSize maximum batch size
      * @return the number of "not-one" choices
@@ -152,7 +149,7 @@ public class Rr16PsiUtils {
     }
 
     /**
-     * get the quantity threshold of choice 1 in OT, refer: https://github.com/osu-crypto/libPSI/
+     * get the quantity threshold of choice 1 in OT, refer: <a href="https://github.com/osu-crypto/libPSI/">libPSI</a>.
      *
      * @param maxBatchSize maximum batch size
      * @return the quantity threshold
@@ -199,7 +196,7 @@ public class Rr16PsiUtils {
     }
 
     /**
-     * get the value of Prob for different input size, refer: https://github.com/osu-crypto/libPSI/
+     * get the value of Prob for different input size, refer: <a href="https://github.com/osu-crypto/libPSI/">libPSI</a>.
      *
      * @param maxBatchSize maximum batch size
      * @return Prob
@@ -226,7 +223,7 @@ public class Rr16PsiUtils {
     public static byte[] decode(byte[][] storage, byte[] key, Prf gbfHash) {
         int[] sparsePositions = Arrays.stream(IntUtils.byteArrayToIntArray(gbfHash.getBytes(ObjectUtils.objectToByteArray(key))))
             .map(hi -> Math.abs(hi % storage.length)).distinct().toArray();
-        byte[] value = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] value = BlockUtils.zeroBlock();
         for (int position : sparsePositions) {
             BytesUtils.xori(value, storage[position]);
         }

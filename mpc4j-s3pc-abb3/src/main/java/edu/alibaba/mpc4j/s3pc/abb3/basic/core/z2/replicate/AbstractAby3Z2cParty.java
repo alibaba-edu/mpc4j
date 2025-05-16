@@ -7,10 +7,10 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
-import edu.alibaba.mpc4j.s3pc.abb3.context.TripletProvider;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.core.z2.AbstractTripletZ2cParty;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.core.z2.TripletZ2cParty;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.core.z2.replicate.Aby3Z2cPtoDesc.PtoStep;
+import edu.alibaba.mpc4j.s3pc.abb3.context.TripletProvider;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.z2.TripletZ2Vector;
 import edu.alibaba.mpc4j.s3pc.abb3.structure.z2.replicate.TripletRpZ2Vector;
 
@@ -34,6 +34,8 @@ public abstract class AbstractAby3Z2cParty extends AbstractTripletZ2cParty imple
         if (partyState.equals(PartyState.INITIALIZED)) {
             return;
         }
+        // if init the z2party solely
+        tripletProvider.init(estimateBitTupleNum, 0);
         initState();
     }
 
@@ -190,11 +192,23 @@ public abstract class AbstractAby3Z2cParty extends AbstractTripletZ2cParty imple
         if (xi.isPlain()) {
             xi.getBitVector().noti();
         } else {
-//            if (selfId != 1) {
-//                xi.getBitVectors()[selfId >> 1].noti();
-//            }
             Arrays.stream(xi.getBitVectors()).forEach(BitVector::noti);
         }
+    }
+
+    @Override
+    public MpcZ2Vector xorSelfAllElement(MpcZ2Vector x) {
+        return create(x.isPlain(),
+            Arrays.stream(x.getBitVectors()).map(ea -> ea.numOf1IsOdd()
+                    ? BitVectorFactory.createOnes(1)
+                    : BitVectorFactory.createZeros(1))
+                .toArray(BitVector[]::new)
+        );
+    }
+
+    @Override
+    public MpcZ2Vector xorAllBeforeElement(MpcZ2Vector x) {
+        return create(x.isPlain(), Arrays.stream(x.getBitVectors()).map(BitVector::xorBeforeBit).toArray(BitVector[]::new));
     }
 
     /**

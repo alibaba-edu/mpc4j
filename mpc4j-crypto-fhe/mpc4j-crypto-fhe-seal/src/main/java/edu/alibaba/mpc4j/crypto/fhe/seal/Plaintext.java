@@ -429,7 +429,7 @@ public class Plaintext implements SealCloneable {
     }
 
     /**
-     * Sets the scale of the plaintext.
+     * Sets scale. This is only needed when using the CKKS encryption scheme.
      *
      * @param scale scale.
      */
@@ -438,11 +438,11 @@ public class Plaintext implements SealCloneable {
     }
 
     /**
-     * Returns the scale of the plaintext.
+     * Returns scale. This is only needed when using the CKKS encryption scheme.
      *
-     * @return the scale of the plaintext.
+     * @return scale.
      */
-    public double getScale() {
+    public double scale() {
         return scale;
     }
 
@@ -583,15 +583,6 @@ public class Plaintext implements SealCloneable {
      */
     public void setParmsId(ParmsId parmsId) {
         this.parmsId = parmsId;
-    }
-
-    /**
-     * Returns the scale of the plaintext.
-     *
-     * @return the scale of the plaintext.
-     */
-    public double scale() {
-        return scale;
     }
 
     /**

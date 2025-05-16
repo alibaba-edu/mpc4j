@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.crypto.fhe.seal.zq;
 
 import com.google.common.math.LongMath;
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.utils.Constants;
 import gnu.trove.list.array.TIntArrayList;
@@ -97,7 +98,7 @@ public class Numth {
      * @param result  result[0] stores the smallest primitive n-th root of unity for the given modulus.
      * @return true if success.
      */
-    public static boolean tryMinimalPrimitiveRoot(long degree, Modulus modulus, long[] result) {
+    public static boolean tryMinimalPrimitiveRoot(long degree, AbstractModulus modulus, long[] result) {
         assert result.length == 1;
         // try to find a primitive n-root of unity ψ
         if (!tryPrimitiveRoot(degree, modulus, result)) {
@@ -126,7 +127,7 @@ public class Numth {
      * @param result  x^n = 1 mod p, solve x, just the root is n-th root of unity modulo p.
      * @return true if success.
      */
-    public static boolean tryPrimitiveRoot(long degree, Modulus modulus, long[] result) {
+    public static boolean tryPrimitiveRoot(long degree, AbstractModulus modulus, long[] result) {
         assert UintCore.getPowerOfTwo(degree) > 0;
         assert result.length == 1;
         // We need to divide p - 1 by degree to get the size of the quotient group
@@ -165,7 +166,7 @@ public class Numth {
      * @param modulus modulus p.
      * @return true if root is n-th root of unity modulo p.
      */
-    public static boolean isPrimitiveRoot(long root, long degree, Modulus modulus) {
+    public static boolean isPrimitiveRoot(long root, long degree, AbstractModulus modulus) {
         assert modulus.bitCount() >= 2;
         assert root < modulus.value();
         assert UintCore.getPowerOfTwo(degree) > 0;

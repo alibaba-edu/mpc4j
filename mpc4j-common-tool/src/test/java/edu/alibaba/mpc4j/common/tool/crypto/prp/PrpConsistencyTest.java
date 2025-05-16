@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.common.tool.crypto.prp;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -84,13 +84,11 @@ public class PrpConsistencyTest {
     public void testPrpConsistency() {
         Prp thisPrp = PrpFactory.createInstance(thisType);
         Prp thatPrp = PrpFactory.createInstance(thatType);
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(SECURE_RANDOM);
         thisPrp.setKey(key);
         thatPrp.setKey(key);
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(message);
+            byte[] message = BlockUtils.randomBlock(SECURE_RANDOM);
             byte[] thisResult = thisPrp.prp(message);
             byte[] thatResult = thatPrp.prp(message);
             Assert.assertArrayEquals(thisResult, thatResult);
@@ -101,13 +99,11 @@ public class PrpConsistencyTest {
     public void testInvPrpConsistency() {
         Prp thisPrp = PrpFactory.createInstance(thisType);
         Prp thatPrp = PrpFactory.createInstance(thatType);
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(key);
+        byte[] key = BlockUtils.randomBlock(SECURE_RANDOM);
         thisPrp.setKey(key);
         thatPrp.setKey(key);
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(message);
+            byte[] message = BlockUtils.randomBlock(SECURE_RANDOM);
             byte[] thisResult = thisPrp.invPrp(message);
             byte[] thatResult = thatPrp.invPrp(message);
             Assert.assertArrayEquals(thisResult, thatResult);

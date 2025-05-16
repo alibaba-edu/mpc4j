@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipher;
 import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipherFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.AbstractCpIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.pai.PaiCpIdxPirPtoDesc.PtoStep;
 import gnu.trove.map.TIntObjectMap;
@@ -90,13 +90,13 @@ public class PaiCpIdxPirClient extends AbstractCpIdxPirClient {
     private void preprocessing() throws MpcAbortException {
         stopWatch.start();
         // init keys
-        byte[] ik1 = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] ik1 = BlockUtils.randomBlock(secureRandom);
         medPrp = PrpFactory.createInstance(envType);
         medPrp.setKey(ik1);
-        byte[] ik2 = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] ik2 = BlockUtils.randomBlock(secureRandom);
         finalPrp = PrpFactory.createInstance(envType);
         finalPrp.setKey(ik2);
-        vk = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        vk = BlockUtils.randomBlock(secureRandom);
         localCacheEntries = new TIntObjectHashMap<>();
         stopWatch.stop();
         long allocateTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -129,7 +129,7 @@ public class PaiCpIdxPirClient extends AbstractCpIdxPirClient {
                     .array();
                 medKeyArray[iColumn] = medPrp.prp(keyBytes);
                 // med value
-                byte[] iv = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+                byte[] iv = BlockUtils.randomBlock(secureRandom);
                 medValueArray[iColumn] = streamCipher.ivEncrypt(vk, iv, rowValueArray[iColumn]);
             });
             // send shuffled response
@@ -161,7 +161,7 @@ public class PaiCpIdxPirClient extends AbstractCpIdxPirClient {
             );
             // split columns
             ByteBuffer columnByteBuffer = ByteBuffer.wrap(columnDataByteArray);
-            byte[][] columnKeyArray = new byte[rows][CommonConstants.BLOCK_BYTE_LENGTH];
+            byte[][] columnKeyArray = BlockUtils.zeroBlocks(rows);
             byte[][] columnValueArray = new byte[rows][CommonConstants.BLOCK_BYTE_LENGTH + byteL];
             for (int iRow = 0; iRow < rows; iRow++) {
                 columnByteBuffer.get(columnKeyArray[iRow]);
@@ -175,8 +175,7 @@ public class PaiCpIdxPirClient extends AbstractCpIdxPirClient {
                 finalKeyArray[iRow] = finalPrp.prp(columnKeyArray[iRow]);
                 // final value
                 byte[] value = streamCipher.ivDecrypt(vk, columnValueArray[iRow]);
-                byte[] iv = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                secureRandom.nextBytes(iv);
+                byte[] iv = BlockUtils.randomBlock(secureRandom);
                 finalValueArray[iRow] = streamCipher.ivEncrypt(vk, iv, value);
             });
             // send shuffled response

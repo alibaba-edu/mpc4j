@@ -50,7 +50,7 @@ public class Aby3Z2cPartyThread extends Thread {
         long mulOpNum = Arrays.stream(ops).filter(MUL_REQ_OP::contains).count();
         long totalNum = mulOpNum * (bitNums[0] + Arrays.stream(bitNums).sum() + (bitNums.length * 8L + 8));
         try {
-            z2cParty.getTripletProvider().init(totalNum, 0);
+            z2cParty.updateEstimateBitTupleNum(totalNum);
             z2cParty.init();
             for(BcOperator op : ops){
                 switch (op){

@@ -12,6 +12,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - [important] Now the Java implementation of SEAL is fully compatible with SEAL 4.0.0. That is, one can use SEAL to serialize any parameters then use our Java implementation to deserialize, and verse visa.
 - [important] We implement CKKS in the Java implementation of SEAL.
 - [important] We merge the implementation of our paper SCAPE into `mpc4j` (See submodule `mpc4j-work-scape`).
+- We implement a Bristol Fashion MPC circuits generator that supports both "basic" and "extend" format.
+
+### Modified
+
+- We add a utility class named `BlockUtil.java` and move all operations on 128-bit `byte[]` into this utility class. This allows us to speedup related operations.
 
 ## \[1.1.3\]
 

@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.prf;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory.PrfType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -38,27 +39,27 @@ public class PrfTest {
     /**
      * 全0消息
      */
-    private static final byte[] ZERO_MESSAGE = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_MESSAGE = BlockUtils.zeroBlock();
     /**
      * 全0密钥
      */
-    private static final byte[] ZERO_KEY = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_KEY = BlockUtils.zeroBlock();
     /**
      * 随机状态
      */
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    @Parameterized.Parameters(name="{0}")
+    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurationParams = new ArrayList<>();
         // BC_SIP_HASH
-        configurationParams.add(new Object[] {PrfType.BC_SIP_HASH.name(), PrfType.BC_SIP_HASH, });
+        configurationParams.add(new Object[]{PrfType.BC_SIP_HASH.name(), PrfType.BC_SIP_HASH,});
         // BC_SIP128_HASH
-        configurationParams.add(new Object[] {PrfType.BC_SIP128_HASH.name(), PrfType.BC_SIP128_HASH, });
+        configurationParams.add(new Object[]{PrfType.BC_SIP128_HASH.name(), PrfType.BC_SIP128_HASH,});
         // JDK_AES_CBC
-        configurationParams.add(new Object[] {PrfType.JDK_AES_CBC.name(), PrfType.JDK_AES_CBC, });
+        configurationParams.add(new Object[]{PrfType.JDK_AES_CBC.name(), PrfType.JDK_AES_CBC,});
         // BC_SM4_CBC
-        configurationParams.add(new Object[] {PrfType.BC_SM4_CBC.name(), PrfType.BC_SM4_CBC, });
+        configurationParams.add(new Object[]{PrfType.BC_SM4_CBC.name(), PrfType.BC_SM4_CBC,});
 
         return configurationParams;
     }
@@ -229,8 +230,7 @@ public class PrfTest {
         Prf prf = PrfFactory.createInstance(prfType, outputByteLength);
         prf.setKey(ZERO_KEY);
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-            byte[] randomMessage = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomMessage);
+            byte[] randomMessage = BlockUtils.randomBlock(SECURE_RANDOM);
             outputSet.add(ByteBuffer.wrap(prf.getBytes(randomMessage)));
         }
         Assert.assertEquals(MAX_RANDOM_ROUND, outputSet.size());
@@ -253,8 +253,7 @@ public class PrfTest {
         // 不同密钥，相同消息的结果应不相同
         Prf prf = PrfFactory.createInstance(prfType, CommonConstants.BLOCK_BYTE_LENGTH);
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-            byte[] randomKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomKey);
+            byte[] randomKey = BlockUtils.randomBlock(SECURE_RANDOM);
             prf.setKey(randomKey);
             randomKeyPrfSet.add(ByteBuffer.wrap(prf.getBytes(ZERO_MESSAGE)));
         }
@@ -264,7 +263,7 @@ public class PrfTest {
     @Test
     public void testModifyKey() {
         Prf prf = PrfFactory.createInstance(prfType, CommonConstants.BLOCK_BYTE_LENGTH);
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] key = BlockUtils.zeroBlock();
         byte[] copiedKey = BytesUtils.clone(key);
         prf.setKey(key);
         byte[] output = prf.getBytes(ZERO_MESSAGE);

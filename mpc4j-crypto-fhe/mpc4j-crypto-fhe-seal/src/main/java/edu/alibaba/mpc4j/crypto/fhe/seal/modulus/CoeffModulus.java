@@ -276,5 +276,4 @@ public class CoeffModulus {
         }
         return result;
     }
-
 }

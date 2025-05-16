@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -119,7 +119,7 @@ public class SparseZpDokvsTest {
 
     private void testSparseDokvs(int n) {
         for (int round = 0; round < ROUND; round++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, SECURE_RANDOM);
             SparseZpDokvs<ByteBuffer> dokvs = ZpDokvsFactory.createSparseInstance(EnvType.STANDARD, type, DEFAULT_PRIME, n, keys);
             Map<ByteBuffer, BigInteger> keyValueMap = ZpDokvsTest.randomKeyValueMap(DEFAULT_ZP, n);
             int sparseRange = dokvs.sparsePositionRange();

@@ -2,7 +2,8 @@ package edu.alibaba.mpc4j.s2pc.opf.opprf;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
+import edu.alibaba.mpc4j.common.tool.hashbin.primitive.ArraySimpleIntHashBin;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 
@@ -28,9 +29,9 @@ public class OpprfTestUtils {
     }
 
     public static byte[][][] generateSenderInputArrays(int batchNum, int pointNum, SecureRandom secureRandom) {
-        byte[][] keys = CommonUtils.generateRandomKeys(1, secureRandom);
+        byte[][] keys = BlockUtils.randomBlocks(1, secureRandom);
         // use simple hash to place int into batched queries.
-        SimpleIntHashBin simpleIntHashBin = new SimpleIntHashBin(EnvType.STANDARD, batchNum, pointNum, keys);
+        ArraySimpleIntHashBin simpleIntHashBin = new ArraySimpleIntHashBin(EnvType.STANDARD, batchNum, pointNum, keys);
         simpleIntHashBin.insertItems(IntStream.range(0, pointNum).toArray());
         byte[][][] inputArrays = new byte[batchNum][][];
         for (int batchIndex = 0; batchIndex < batchNum; batchIndex++) {

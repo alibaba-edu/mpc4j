@@ -1,6 +1,5 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -97,8 +96,6 @@ public class Z3ByteFieldTest {
 
     @Test
     public void testCreateRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(seed);
         // create random
         long randomNum = IntStream.range(0, MAX_RANDOM)
             .mapToLong(index -> {
@@ -114,8 +111,6 @@ public class Z3ByteFieldTest {
 
     @Test
     public void testCreateNonZeroRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(seed);
         // create non-zero random
         long randomNum = IntStream.range(0, MAX_RANDOM)
             .mapToLong(index -> {

@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -82,23 +82,18 @@ public class CuckooHashBinTest {
 
     @Test
     public void testIllegalInputs() {
+        int hashNum = CuckooHashBinFactory.getHashNum(type);
         // try less keys
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] lessKeys = CommonUtils.generateRandomKeys(
-                CuckooHashBinFactory.getHashNum(type) - 1, HashBinTestUtils.SECURE_RANDOM
-            );
+            byte[][] lessKeys = BlockUtils.randomBlocks(hashNum - 1, HashBinTestUtils.SECURE_RANDOM);
             CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, DEFAULT_N, lessKeys);
         });
         // try more keys
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] moreKeys = CommonUtils.generateRandomKeys(
-                CuckooHashBinFactory.getHashNum(type) + 1, HashBinTestUtils.SECURE_RANDOM
-            );
+            byte[][] moreKeys = BlockUtils.randomBlocks(hashNum + 1, HashBinTestUtils.SECURE_RANDOM);
             CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, DEFAULT_N, moreKeys);
         });
-        final byte[][] keys = CommonUtils.generateRandomKeys(
-            CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-        );
+        final byte[][] keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
         // try 0 elements
         Assert.assertThrows(IllegalArgumentException.class, () ->
             CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, 0, keys)
@@ -122,8 +117,8 @@ public class CuckooHashBinTest {
         // try inserting duplicated elements
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             List<ByteBuffer> duplicateItems = HashBinTestUtils.randomByteBufferItems(DEFAULT_N - 2);
-            duplicateItems.add(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
-            duplicateItems.add(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
+            duplicateItems.add(ByteBuffer.wrap(BlockUtils.zeroBlock()));
+            duplicateItems.add(ByteBuffer.wrap(BlockUtils.zeroBlock()));
             hashBin.insertItems(duplicateItems);
         });
         List<ByteBuffer> items = HashBinTestUtils.randomByteBufferItems(DEFAULT_N);
@@ -146,7 +141,7 @@ public class CuckooHashBinTest {
 
     @Test
     public void testType() {
-        byte[][] keys = CommonUtils.generateRandomKeys(
+        byte[][] keys = BlockUtils.randomBlocks(
             CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
         );
         CuckooHashBin<ByteBuffer> hashBin = CuckooHashBinFactory.createCuckooHashBin(
@@ -184,13 +179,10 @@ public class CuckooHashBinTest {
     }
 
     private void testCuckooHashBin(int n) {
+        int hashNum = CuckooHashBinFactory.getHashNum(type);
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[][] keys = CommonUtils.generateRandomKeys(
-                CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-            );
-            CuckooHashBin<ByteBuffer> hashBin = CuckooHashBinFactory.createCuckooHashBin(
-                EnvType.STANDARD, type, n, keys
-            );
+            byte[][] keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
+            CuckooHashBin<ByteBuffer> hashBin = CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, n, keys);
             assertEmptyHashBin(hashBin);
             // 插入元素
             List<ByteBuffer> items = HashBinTestUtils.randomByteBufferItems(n);
@@ -200,9 +192,7 @@ public class CuckooHashBinTest {
                     hashBin.insertItems(items);
                     success = true;
                 } catch (ArithmeticException ignored) {
-                    keys = CommonUtils.generateRandomKeys(
-                        CuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-                    );
+                    keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
                     hashBin = CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, type, n, keys);
                 }
             }
@@ -219,7 +209,7 @@ public class CuckooHashBinTest {
             assertInsertedCuckooHashBin(hashBin, items);
             assertHashBinPosition(hashBin, items, keys);
             // 插入空元素
-            hashBin.insertPaddingItems(ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]));
+            hashBin.insertPaddingItems(ByteBuffer.wrap(BlockUtils.zeroBlock()));
             assertPaddingHashBin(hashBin, items);
             assertHashBinPosition(hashBin, items, keys);
             hashBin.clear();
@@ -296,7 +286,7 @@ public class CuckooHashBinTest {
                 .map(HashBinEntry::getItem)
                 .collect(Collectors.toSet());
             positionItems.addAll(
-                cuckooHashBin.getStash().stream().map(HashBinEntry::getItem).collect(Collectors.toList())
+                cuckooHashBin.getStash().stream().map(HashBinEntry::getItem).toList()
             );
             Assert.assertTrue(positionItems.contains(item));
         });

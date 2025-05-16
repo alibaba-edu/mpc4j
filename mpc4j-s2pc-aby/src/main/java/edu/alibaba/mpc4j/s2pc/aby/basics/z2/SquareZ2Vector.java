@@ -218,6 +218,18 @@ public class SquareZ2Vector implements MpcZ2Vector {
     }
 
     @Override
+    public SquareZ2Vector padShiftLeft(int n) {
+        BitVector resultBitVector = bitVector.padShiftLeft(n);
+        return create(resultBitVector, isPlain());
+    }
+
+    @Override
+    public SquareZ2Vector reduceShiftRight(int n) {
+        BitVector newBitVec = bitVector.reduceShiftRight(n);
+        return create(newBitVec, isPlain());
+    }
+
+    @Override
     public int hashCode() {
         return new HashCodeBuilder()
             .append(bitVector)

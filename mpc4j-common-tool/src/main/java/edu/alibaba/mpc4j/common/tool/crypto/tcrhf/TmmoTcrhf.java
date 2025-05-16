@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 import java.nio.ByteBuffer;
 
@@ -30,7 +30,7 @@ class TmmoTcrhf implements Tcrhf {
     TmmoTcrhf(EnvType envType) {
         prp = PrpFactory.createInstance(envType);
         // 默认伪随机置换密钥为全0
-        prp.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        prp.setKey(BlockUtils.zeroBlock());
     }
 
     @Override
@@ -42,10 +42,10 @@ class TmmoTcrhf implements Tcrhf {
         // π(x)
         byte[] pai = prp.prp(block);
         // π(π(x) ⊕ i)
-        byte[] output = BytesUtils.xor(pai, indexBytes);
+        byte[] output = BlockUtils.xor(pai, indexBytes);
         output = prp.prp(output);
         // TMMO(x) = π(π(x) ⊕ i) ⊕ π(x)
-        BytesUtils.xori(output, pai);
+        BlockUtils.xori(output, pai);
         return output;
     }
 
@@ -59,10 +59,10 @@ class TmmoTcrhf implements Tcrhf {
         // π(x)
         byte[] pai = prp.prp(block);
         // π(π(x) ⊕ i)
-        byte[] output = BytesUtils.xor(pai, indexBytes);
+        byte[] output = BlockUtils.xor(pai, indexBytes);
         output = prp.prp(output);
         // TMMO(x) = π(π(x) ⊕ i) ⊕ π(x)
-        BytesUtils.xori(output, pai);
+        BlockUtils.xori(output, pai);
         return output;
     }
 

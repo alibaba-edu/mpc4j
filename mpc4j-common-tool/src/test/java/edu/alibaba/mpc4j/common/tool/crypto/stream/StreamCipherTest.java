@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.stream;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipherFactory.StreamCipherType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -85,8 +86,8 @@ public class StreamCipherTest {
         streamCipher = StreamCipherFactory.createInstance(type);
         ivByteLength = streamCipher.ivByteLength();
         defaultIv = new byte[ivByteLength];
-        defaultKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        defaultPlaintext = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        defaultKey = BlockUtils.zeroBlock();
+        defaultPlaintext = BlockUtils.zeroBlock();
     }
 
     @Test
@@ -184,8 +185,7 @@ public class StreamCipherTest {
         Set<ByteBuffer> ivCiphertextSet = new HashSet<>(MAX_RANDOM_ROUND);
         // 不同密钥，相同密文的结果应不相同
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-            byte[] randomKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomKey);
+            byte[] randomKey = BlockUtils.randomBlock(SECURE_RANDOM);
             ciphertextSet.add(ByteBuffer.wrap(streamCipher.encrypt(randomKey, defaultIv, defaultPlaintext)));
             ivCiphertextSet.add(ByteBuffer.wrap(streamCipher.ivEncrypt(randomKey, defaultIv, defaultPlaintext)));
         }

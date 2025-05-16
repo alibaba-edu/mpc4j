@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.bitmatrix.sparse;
 
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -43,7 +43,7 @@ public class ExtremeSparseBitMatrixTest {
         );
         ExtremeSparseBitMatrix extremeSparseBitMatrix = naiveSparseBitMatrix.toExtremeSparseBitMatrix();
         boolean[] v = BinaryUtils.randomBinary(rows, SECURE_RANDOM);
-        byte[][] elements = BytesUtils.randomByteArrayVector(rows, 16, SECURE_RANDOM);
+        byte[][] elements = BlockUtils.randomBlocks(rows, SECURE_RANDOM);
         Assert.assertArrayEquals(naiveSparseBitMatrix.lmul(v), extremeSparseBitMatrix.lmul(v));
         Assert.assertArrayEquals(naiveSparseBitMatrix.lExtMul(elements), extremeSparseBitMatrix.lExtMul(elements));
     }

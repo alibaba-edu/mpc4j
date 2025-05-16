@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.common.tool.f3hash;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.f3hash.F3HashFactory.F3HashType;
 import edu.alibaba.mpc4j.common.tool.hash.LongHashFactory.LongHashType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class F3HashEfficiencyTest {
 
     private void testEfficiency(LongHashType type, boolean parallel) {
         int n = 1 << LOG_N;
-        byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] message = BlockUtils.zeroBlock();
         F3Hash hash = F3HashFactory.createInstance(F3HashType.LONG_F3_HASH, type);
         // warmup
         IntStream.range(0, n).forEach(index -> hash.digestToBytes(message));

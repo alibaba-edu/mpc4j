@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.algs.utils.distribution;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.crypto.algs.utils.distribution.HgdFactory.HgdType;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class HgdTest {
 
     @Test
     public void testConstant() {
-        Coins coins = new Coins(new byte[CommonConstants.BLOCK_BYTE_LENGTH], new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        Coins coins = new Coins(BlockUtils.zeroBlock(), BlockUtils.zeroBlock());
 
         // no good items, r should be all 0
         {
@@ -138,10 +138,8 @@ public class HgdTest {
         SecureRandom secureRandom = new SecureRandom();
         int totalRound = 100;
         for (int round = 0; round < totalRound; round++) {
-            byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            secureRandom.nextBytes(key);
-            byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            secureRandom.nextBytes(seed);
+            byte[] key = BlockUtils.randomBlock(secureRandom);
+            byte[] seed = BlockUtils.randomBlock(secureRandom);
             Coins coins = new Coins(key, seed);
 
             // all r should be in range 0 <= r <= n1, 0 <= r <= k

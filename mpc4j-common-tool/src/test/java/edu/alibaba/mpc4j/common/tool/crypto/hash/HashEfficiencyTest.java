@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.crypto.hash;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.hash.HashFactory.HashType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -58,7 +58,7 @@ public class HashEfficiencyTest {
 
     private void testEfficiency(HashType type, int outputByteLength, boolean parallel) {
         int n = 1 << LOG_N;
-        byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] message = BlockUtils.zeroBlock();
         if (outputByteLength <= HashFactory.getUnitByteLength(type)) {
             Hash hash = HashFactory.createInstance(type, outputByteLength);
             // warmup

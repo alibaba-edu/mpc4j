@@ -5,10 +5,7 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.AbstractSpCdpprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.SpCdpprfReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.gyw23.Gyw23SpCdpprfPtoDesc.PtoStep;
@@ -178,7 +175,7 @@ public class Gyw23SpCdpprfReceiver extends AbstractSpCdpprfReceiver {
         // set K_i^{!α_i} := M[r_i] ⊕ c_i for i ∈ [1, n]
         byte[][] kbs = correlationPayload.toArray(new byte[0][]);
         for (int i = 0; i < h; i++) {
-            BytesUtils.xori(kbs[i], cotReceiverOutput.getRb(i));
+            BlockUtils.xori(kbs[i], cotReceiverOutput.getRb(i));
         }
         ggmTree = new ArrayList<>(h + 1);
         // place the level-0 key with an empty key
@@ -207,15 +204,16 @@ public class Gyw23SpCdpprfReceiver extends AbstractSpCdpprfReceiver {
                         // K_i^{2j} = H(K_{i - 1}^{j})
                         currentLevel[2 * j] = hash.hash(previousLevel[j]);
                         // K_i^{2j + 1} = K_{i - 1}^{j} - K_i^{2j}
-                        currentLevel[2 * j + 1] = BytesUtils.xor(previousLevel[j], currentLevel[2 * j]);
+                        currentLevel[2 * j + 1] = BlockUtils.xor(previousLevel[j], currentLevel[2 * j]);
                     }
                 }
                 // compute the remaining seeds
                 int alphaStar = (alphaPrefix << 1) + notAlphaiInt;
-                currentLevel[alphaStar] = kb;
+                currentLevel[alphaStar] = BlockUtils.zeroBlock();
+                BlockUtils.xori(currentLevel[alphaStar], kb);
                 for (int j = 0; j < (1 << (i - 1)); j++) {
                     if (j != alphaPrefix) {
-                        BytesUtils.xori(currentLevel[alphaStar], currentLevel[2 * j + notAlphaiInt]);
+                        BlockUtils.xori(currentLevel[alphaStar], currentLevel[2 * j + notAlphaiInt]);
                     }
                 }
             }

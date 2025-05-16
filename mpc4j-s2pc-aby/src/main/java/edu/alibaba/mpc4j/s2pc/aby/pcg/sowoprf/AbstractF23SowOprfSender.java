@@ -4,10 +4,10 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrix;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
 import java.util.Arrays;
@@ -55,8 +55,8 @@ public abstract class AbstractF23SowOprfSender extends AbstractTwoPartyPto imple
     protected AbstractF23SowOprfSender(PtoDesc ptoDesc, Rpc senderRpc, Party receiverParty, F23SowOprfConfig config) {
         super(ptoDesc, senderRpc, receiverParty, config);
         z3Field = new Z3ByteField();
-        byte[] seedA = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        byte[] seedB = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] seedA = BlockUtils.zeroBlock();
+        byte[] seedB = BlockUtils.zeroBlock();
         Arrays.fill(seedB, (byte) 0xFF);
         f23Wprf = new F23Wprf(z3Field, seedA, seedB, config.getMatrixType());
         matrixA = f23Wprf.getMatrixA();

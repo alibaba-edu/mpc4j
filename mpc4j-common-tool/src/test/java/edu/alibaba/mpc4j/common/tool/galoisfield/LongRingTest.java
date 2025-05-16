@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64Factory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64Factory.Zl64Type;
@@ -9,6 +8,7 @@ import edu.alibaba.mpc4j.common.tool.galoisfield.zn64.Zn64Factory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zn64.Zn64Factory.Zn64Type;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64Factory.Zp64Type;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -148,8 +148,7 @@ public class LongRingTest {
 
     @Test
     public void testCreateRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         // create random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             long randomElement = longRing.createRandom(secureRandom);
@@ -169,8 +168,7 @@ public class LongRingTest {
 
     @Test
     public void testCreateNonZeroRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         // create non-zero random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             long randomNonZeroElement = longRing.createNonZeroRandom(secureRandom);
@@ -194,8 +192,7 @@ public class LongRingTest {
 
     @Test
     public void testCreateRangeRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         // create range random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             long randomElement = longRing.createRangeRandom(secureRandom);

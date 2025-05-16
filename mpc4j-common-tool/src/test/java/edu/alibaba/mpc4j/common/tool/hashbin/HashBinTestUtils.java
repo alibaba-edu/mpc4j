@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.hashbin;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -38,8 +39,7 @@ public class HashBinTestUtils {
     public static List<ByteBuffer> randomByteBufferItems(int size) {
         return IntStream.range(0, size)
             .mapToObj(index -> {
-                byte[] itemByteArray = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                SECURE_RANDOM.nextBytes(itemByteArray);
+                byte[] itemByteArray = BlockUtils.randomBlock(SECURE_RANDOM);
                 return ByteBuffer.wrap(itemByteArray);
             })
             .collect(Collectors.toList());

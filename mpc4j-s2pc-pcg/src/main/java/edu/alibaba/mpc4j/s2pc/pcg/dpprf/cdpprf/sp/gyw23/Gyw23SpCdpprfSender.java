@@ -6,11 +6,10 @@ import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.AbstractSpCdpprfSender;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.SpCdpprfSenderOutput;
@@ -170,10 +169,10 @@ public class Gyw23SpCdpprfSender extends AbstractSpCdpprfSender {
         // treat Δ as the root node
         ggmTree.add(new byte[][]{actualDelta});
         // X_1^0 = k
-        byte[][] level1 = new byte[2][CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[][] level1 = BlockUtils.zeroBlocks(2);
         secureRandom.nextBytes(level1[0]);
         // X_1^1 = Δ - k
-        level1[1] = BytesUtils.xor(actualDelta, level1[0]);
+        level1[1] = BlockUtils.xor(actualDelta, level1[0]);
         // the first level should use randomness
         ggmTree.add(level1);
         // For i ∈ {1,...,h}, j ∈ [2^{i − 1}], do X_i^{2j} = H(X_{i - 1}^j), X_i^{2j + 1} = X_{i - 1}^j - X_i^{2j}
@@ -183,7 +182,7 @@ public class Gyw23SpCdpprfSender extends AbstractSpCdpprfSender {
             for (int j = 0; j < (1 << (i - 1)); j++) {
                 // X_i^{2j} = H(X_{i - 1}^j)
                 currentLevel[2 * j] = hash.hash(previousLowLevel[j]);
-                currentLevel[2 * j + 1] = BytesUtils.xor(previousLowLevel[j], currentLevel[2 * j]);
+                currentLevel[2 * j + 1] = BlockUtils.xor(previousLowLevel[j], currentLevel[2 * j]);
             }
             ggmTree.add(currentLevel);
         }
@@ -192,9 +191,9 @@ public class Gyw23SpCdpprfSender extends AbstractSpCdpprfSender {
             int hIndex = i - 1;
             byte[][] currentLevel = ggmTree.get(i);
             // K_i^0 = ⊕_{j ∈ [2^{i - 1}]} X_i^{2j}
-            k0s[hIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            k0s[hIndex] = BlockUtils.zeroBlock();
             for (int j = 0; j < (1 << (i - 1)); j++) {
-                BytesUtils.xori(k0s[hIndex], currentLevel[2 * j]);
+                BlockUtils.xori(k0s[hIndex], currentLevel[2 * j]);
             }
         }
     }
@@ -204,7 +203,7 @@ public class Gyw23SpCdpprfSender extends AbstractSpCdpprfSender {
             .mapToObj(hIndex -> {
                 // S sends C_i = K_0^i ⊕ K[r_i]
                 byte[] ci = cotSenderOutput.getR0(hIndex);
-                BytesUtils.xori(ci, k0s[hIndex]);
+                BlockUtils.xori(ci, k0s[hIndex]);
                 return ci;
             })
             .collect(Collectors.toList());

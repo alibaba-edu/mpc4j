@@ -9,6 +9,7 @@ import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.CoeffIterator;
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.PolyIterator;
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.RnsIterator;
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.StrideIterator;
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.ntt.NttTables;
 import edu.alibaba.mpc4j.crypto.fhe.seal.ntt.NttTool;
@@ -30,7 +31,7 @@ import java.util.ArrayList;
  * the plaintext elements are fundamentally polynomials in the polynomial quotient ring Z_T[x]/(X^N+1), where T is the
  * plaintext modulus and X^N+1 is the polynomial modulus, this is the ring where the arithmetic operations will take
  * place. BatchEncoder (batching) provider an alternative possibly more convenient view of the plaintext elements as
- * 2-by-(N2/2) matrices of integers modulo the plaintext modulus. In the batching view the arithmetic operations act on
+ * 2-by-(N/2) matrices of integers modulo the plaintext modulus. In the batching view the arithmetic operations act on
  * the matrices element-wise. Some of the operations only apply in the batching view, such as matrix row and column
  * rotations. Other operations such as relinearization have no semantic meaning but are necessary for performance
  * reasons.
@@ -85,45 +86,42 @@ import java.util.ArrayList;
 @SuppressWarnings("BooleanMethodIsAlwaysInverted")
 public class Evaluator {
     /**
-     * SEALContext
-     */
-    private final SealContext context;
-
-    /**
-     * Creates an Evaluator instance initialized with the specified SEALContext.
+     * Checks if two ciphertexts have the same scale.
      *
-     * @param context the SEALContext.
+     * @param value1 1st ciphertext.
+     * @param value2 2nd ciphertext.
+     * @return true if two ciphertext have the same scale; false otherwise.
      */
-    public Evaluator(SealContext context) {
-        if (!context.isParametersSet()) {
-            throw new IllegalArgumentException("encryption parameters are not set correctly");
-        }
-        this.context = context;
-    }
-
-    private boolean areSameScale(Ciphertext value1, Ciphertext value2) {
+    private static boolean are_same_scale(Ciphertext value1, Ciphertext value2) {
         return Common.areClose(value1.scale(), value2.scale());
     }
 
-    private boolean areSameScale(Ciphertext value1, Plaintext value2) {
-        return Common.areClose(value1.scale(), value2.getScale());
+    /**
+     * Checks if a ciphertext and a plaintext have the same scale.
+     *
+     * @param value1 ciphertext.
+     * @param value2 plaintext.
+     * @return true if the ciphertext and the plaintext have the same scale; false otherwise.
+     */
+    private static boolean are_same_scale(Ciphertext value1, Plaintext value2) {
+        return Common.areClose(value1.scale(), value2.scale());
     }
 
-    private boolean is_scale_within_bounds(double scale, ContextData contextData) {
-        int scaleBitCountBound;
-        //noinspection EnhancedSwitchMigration
-        switch (contextData.parms().scheme()) {
-            case BFV:
-            case BGV:
-                scaleBitCountBound = contextData.parms().plainModulus().bitCount();
-                break;
-            case CKKS:
-                scaleBitCountBound = contextData.totalCoeffModulusBitCount();
-                break;
-            default:
+    /**
+     * Checks if the scale is within the bounds defined by the encryption parameters.
+     *
+     * @param scale       The scale to check.
+     * @param contextData context data.
+     * @return true if the scale is within the bounds defined by the encryption parameters; false otherwise.
+     */
+    private static boolean is_scale_within_bounds(double scale, ContextData contextData) {
+        int scaleBitCountBound = switch (contextData.parms().scheme()) {
+            case BFV, BGV -> contextData.parms().plainModulus().bitCount();
+            case CKKS -> contextData.totalCoeffModulusBitCount();
+            default ->
                 // Unsupported scheme; check will fail
-                scaleBitCountBound = -1;
-        }
+                -1;
+        };
         return !(scale <= 0 || (int) (Math.log(scale) / Math.log(2)) >= scaleBitCountBound);
     }
 
@@ -138,7 +136,7 @@ public class Evaluator {
      * @param plainModulus plain modulus.
      * @return (f, e1, e2).
      */
-    private long[] balanceCorrectionFactors(long factor1, long factor2, Modulus plainModulus) {
+    private static long[] balance_correction_factors(long factor1, long factor2, Modulus plainModulus) {
         long t = plainModulus.value();
         long halfT = t >> 1;
 
@@ -190,11 +188,28 @@ public class Evaluator {
         return new long[]{f, e1, e2};
     }
 
-    private long sumAbs(long x, long y, long t, long halfT) {
+    private static long sumAbs(long x, long y, long t, long halfT) {
         long xBal = Long.compareUnsigned(x, halfT) > 0 ? x - t : x;
         long yBal = Long.compareUnsigned(y, halfT) > 0 ? y - t : y;
 
         return Math.abs(xBal) + Math.abs(yBal);
+    }
+
+    /**
+     * SEALContext
+     */
+    private final SealContext context;
+
+    /**
+     * Creates an Evaluator instance initialized with the specified SEALContext.
+     *
+     * @param context the SEALContext.
+     */
+    public Evaluator(SealContext context) {
+        if (!context.isParametersSet()) {
+            throw new IllegalArgumentException("encryption parameters are not set correctly");
+        }
+        this.context = context;
     }
 
     /**
@@ -250,7 +265,7 @@ public class Evaluator {
         if (encrypted1.isNttForm() != encrypted2.isNttForm()) {
             throw new IllegalArgumentException("NTT form mismatch");
         }
-        if (!areSameScale(encrypted1, encrypted2)) {
+        if (!are_same_scale(encrypted1, encrypted2)) {
             throw new IllegalArgumentException("scale mismatch");
         }
 
@@ -276,7 +291,7 @@ public class Evaluator {
 
         if (encrypted1.correctionFactor() != encrypted2.correctionFactor()) {
             // Balance correction factors and multiply by scalars before addition in BGV
-            long[] factors = balanceCorrectionFactors(
+            long[] factors = balance_correction_factors(
                 encrypted1.correctionFactor(), encrypted2.correctionFactor(), plainModulus
             );
             PolyArithmeticSmallMod.multiplyPolyScalarCoeffMod(
@@ -391,7 +406,7 @@ public class Evaluator {
         if (encrypted1.isNttForm() != encrypted2.isNttForm()) {
             throw new IllegalArgumentException("NTT form mismatch");
         }
-        if (!areSameScale(encrypted1, encrypted2)) {
+        if (!are_same_scale(encrypted1, encrypted2)) {
             throw new IllegalArgumentException("scale mismatch");
         }
 
@@ -418,7 +433,7 @@ public class Evaluator {
 
         if (encrypted1.correctionFactor() != encrypted2.correctionFactor()) {
             // Balance correction factors and multiply by scalars before subtraction in BGV
-            long[] factors = balanceCorrectionFactors(
+            long[] factors = balance_correction_factors(
                 encrypted1.correctionFactor(), encrypted2.correctionFactor(), plain_modulus
             );
 
@@ -550,8 +565,8 @@ public class Evaluator {
         }
 
         // Set up iterators for bases
-        Modulus[] baseQ = parms.coeffModulus();
-        Modulus[] baseBsk = rnsTool.baseBsk().getBase();
+        AbstractModulus[] baseQ = parms.coeffModulus();
+        AbstractModulus[] baseBsk = rnsTool.baseBsk().getBase();
 
         // Set up iterators for NTT tables
         NttTables[] baseQNttTables = contextData.smallNttTables();
@@ -711,7 +726,7 @@ public class Evaluator {
      * <p>5. a PolyIter pointing to the beginning of the output ciphertext</p>
      */
     private void behzCiphertextProduct(PolyIterator in1, int in1Index, PolyIterator in2, int in2Index, int n,
-                                       int steps, Modulus[] base,
+                                       int steps, AbstractModulus[] base,
                                        PolyIterator destination, int desIndex) {
         int baseSize = base.length;
         // Create a shifted iterator for the first input
@@ -991,7 +1006,7 @@ public class Evaluator {
         }
 
         Modulus[] base_q = parms.coeffModulus();
-        Modulus[] base_Bsk = rns_tool.baseBsk().getBase();
+        AbstractModulus[] base_Bsk = rns_tool.baseBsk().getBase();
         NttTables[] base_q_ntt_tables = context_data.smallNttTables();
         NttTables[] base_Bsk_ntt_tables = rns_tool.baseBskNttTables();
 
@@ -1101,7 +1116,7 @@ public class Evaluator {
      * <p>4. the size of the base</p>
      * <p>5. a PolyIter pointing to the beginning of the output ciphertext</p>
      */
-    private void behzCiphertextSquare(PolyIterator in, Modulus[] baseQ, PolyIterator destination) {
+    private void behzCiphertextSquare(PolyIterator in, AbstractModulus[] baseQ, PolyIterator destination) {
         int baseQSize = baseQ.length;
 
         // compute c0^2
@@ -1323,8 +1338,8 @@ public class Evaluator {
         if (context_data.parms().scheme().equals(SchemeType.CKKS) && !encrypted.isNttForm()) {
             throw new IllegalArgumentException("CKKS encrypted must be in NTT form");
         }
-        if (context_data.parms().scheme().equals(SchemeType.BGV) && encrypted.isNttForm()) {
-            throw new IllegalArgumentException("BGV encrypted cannot be in NTT form");
+        if (context_data.parms().scheme().equals(SchemeType.BGV) && !encrypted.isNttForm()) {
+            throw new IllegalArgumentException("BGV encrypted must be in NTT form");
         }
 
         // Extract encryption parameters.
@@ -1697,6 +1712,84 @@ public class Evaluator {
     }
 
     /**
+     * Given a ciphertext encrypted modulo q_1...q_k, this function reduces the modulus down to q_1...q_{k-1}. Dynamic
+     * memory allocations in the process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
+     *
+     * @param encrypted The ciphertext to be reduced to a smaller modulus
+     */
+    public void mod_reduce_to_next_inplace(Ciphertext encrypted) {
+        // Verify parameters.
+        if (!ValCheck.isMetaDataValidFor(encrypted, context) || !ValCheck.isBufferValid(encrypted)) {
+            throw new IllegalArgumentException("encrypted is not valid for encryption parameters");
+        }
+
+        // ContextData context_data_ptr = context.getContextData(encrypted.parmsId());
+        if (context.lastParmsId().equals(encrypted.parmsId())) {
+            throw new IllegalArgumentException("end of modulus switching chain reached");
+        }
+
+        mod_switch_drop_to_next(encrypted, encrypted);
+        // Transparent ciphertext output is not allowed.
+        if (encrypted.isTransparent()) {
+            throw new IllegalStateException("result ciphertext is transparent");
+        }
+    }
+
+    /**
+     * Given a ciphertext encrypted modulo q_1...q_k, this function reduces the modulus down to q_1...q_{k-1} and
+     * stores the result in the destination parameter. Dynamic memory allocations in the process are allocated from the
+     * memory pool pointed to by the given MemoryPoolHandle.
+     *
+     * @param encrypted   The ciphertext to be reduced to a smaller modulus.
+     * @param destination The ciphertext to overwrite with the modular reduced result.
+     */
+    public void mod_reduce_to_next(final Ciphertext encrypted, Ciphertext destination) {
+        destination.copyFrom(encrypted);
+        mod_reduce_to_next_inplace(destination);
+    }
+
+    /**
+     * Given a ciphertext encrypted modulo q_1...q_k, this function reduces the modulus down until the parameters
+     * reach the given parms_id. Dynamic memory allocations in the process are allocated from the memory pool pointed
+     * to by the given MemoryPoolHandle.
+     *
+     * @param encrypted The ciphertext to be reduced to a smaller modulus.
+     * @param parms_id  The target parms_id.
+     */
+    public void mod_reduce_to_inplace(Ciphertext encrypted, ParmsId parms_id) {
+        // Verify parameters.
+        ContextData context_data_ptr = context.getContextData(encrypted.parmsId());
+        ContextData target_context_data_ptr = context.getContextData(parms_id);
+        if (context_data_ptr == null) {
+            throw new IllegalArgumentException("encrypted is not valid for encryption parameters");
+        }
+        if (target_context_data_ptr == null) {
+            throw new IllegalArgumentException("parms_id is not valid for encryption parameters");
+        }
+        if (context_data_ptr.chainIndex() < target_context_data_ptr.chainIndex()) {
+            throw new IllegalArgumentException("cannot switch to higher level modulus");
+        }
+
+        while (!encrypted.parmsId().equals(parms_id)) {
+            mod_reduce_to_next_inplace(encrypted);
+        }
+    }
+
+    /**
+     * Given a ciphertext encrypted modulo q_1...q_k, this function reduces the modulus down until the parameters
+     * reach the given parms_id and stores the result in the destination parameter. Dynamic memory allocations in the
+     * process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
+     *
+     * @param encrypted   The ciphertext to be reduced to a smaller modulus
+     * @param parms_id    The target parms_id
+     * @param destination The ciphertext to overwrite with the modulus reduced result
+     */
+    public void mod_reduce_to(final Ciphertext encrypted, ParmsId parms_id, Ciphertext destination) {
+        destination.copyFrom(encrypted);
+        mod_reduce_to_inplace(destination, parms_id);
+    }
+
+    /**
      * Multiplies several ciphertexts together. This function computes the product of several ciphertext given as an
      * std::vector and stores the result in the destination parameter. The multiplication is done in a depth-optimal
      * order, and relinearization is performed automatically after every multiplication in the process. In
@@ -1832,23 +1925,33 @@ public class Evaluator {
 
         ContextData contextData = context.getContextData(encrypted.parmsId());
         EncryptionParameters parms = contextData.parms();
-        if (parms.scheme().equals(SchemeType.BFV) && encrypted.isNttForm()) {
-            throw new IllegalArgumentException("BFV encrypted cannot be in NTT form");
-        }
-        if (parms.scheme().equals(SchemeType.CKKS) && !encrypted.isNttForm()) {
-            throw new IllegalArgumentException("CKKS encrypted must be in NTT form");
-        }
-        if (parms.scheme().equals(SchemeType.BGV) && encrypted.isNttForm()) {
-            throw new IllegalArgumentException("BGV encrypted cannot be in NTT form");
-        }
-        if (plain.isNttForm() != encrypted.isNttForm()) {
-            throw new IllegalArgumentException("NTT form mismatch");
-        }
-        if (encrypted.isNttForm() && (!encrypted.parmsId().equals(plain.parmsId()))) {
-            throw new IllegalArgumentException("encrypted and plain parameter mismatch");
-        }
-        if (!areSameScale(encrypted, plain)) {
-            throw new IllegalArgumentException("scale mismatch");
+        if (parms.scheme().equals(SchemeType.BFV)) {
+            if (encrypted.isNttForm()) {
+                throw new IllegalArgumentException("BFV encrypted cannot be in NTT form");
+            }
+            if (plain.isNttForm()) {
+                throw new IllegalArgumentException("BFV plain cannot be in NTT form");
+            }
+        } else if (parms.scheme().equals(SchemeType.CKKS)) {
+            if (!encrypted.isNttForm()) {
+                throw new IllegalArgumentException("CKKS encrypted must be in NTT form");
+            }
+            if (!plain.isNttForm()) {
+                throw new IllegalArgumentException("CKKS plain must be in NTT form");
+            }
+            if (!encrypted.parmsId().equals(plain.parmsId())) {
+                throw new IllegalArgumentException("encrypted and plain parameter mismatch");
+            }
+            if (!are_same_scale(encrypted, plain)) {
+                throw new IllegalArgumentException("scale mismatch");
+            }
+        } else if (parms.scheme().equals(SchemeType.BGV)) {
+            if (!encrypted.isNttForm()) {
+                throw new IllegalArgumentException("BGV encrypted must be in NTT form");
+            }
+            if (plain.isNttForm()) {
+                throw new IllegalArgumentException("BGV plain cannot be in NTT form");
+            }
         }
 
         // Extract encryption parameters.
@@ -1916,23 +2019,33 @@ public class Evaluator {
 
         ContextData contextData = context.getContextData(encrypted.parmsId());
         EncryptionParameters parms = contextData.parms();
-        if (parms.scheme().equals(SchemeType.BFV) && encrypted.isNttForm()) {
-            throw new IllegalArgumentException("BFV encrypted cannot be in NTT form");
-        }
-        if (parms.scheme().equals(SchemeType.CKKS) && !encrypted.isNttForm()) {
-            throw new IllegalArgumentException("CKKS encrypted must be in NTT form");
-        }
-        if (parms.scheme().equals(SchemeType.BGV) && encrypted.isNttForm()) {
-            throw new IllegalArgumentException("BGV encrypted cannot be in NTT form");
-        }
-        if (plain.isNttForm() != encrypted.isNttForm()) {
-            throw new IllegalArgumentException("NTT form mismatch");
-        }
-        if (encrypted.isNttForm() && (!encrypted.parmsId().equals(plain.parmsId()))) {
-            throw new IllegalArgumentException("encrypted and plain parameter mismatch");
-        }
-        if (!areSameScale(encrypted, plain)) {
-            throw new IllegalArgumentException("scale mismatch");
+        if (parms.scheme().equals(SchemeType.BFV)) {
+            if (encrypted.isNttForm()) {
+                throw new IllegalArgumentException("BFV encrypted cannot be in NTT form");
+            }
+            if (plain.isNttForm()) {
+                throw new IllegalArgumentException("BFV plain cannot be in NTT form");
+            }
+        } else if (parms.scheme().equals(SchemeType.CKKS)) {
+            if (!encrypted.isNttForm()) {
+                throw new IllegalArgumentException("CKKS encrypted must be in NTT form");
+            }
+            if (!plain.isNttForm()) {
+                throw new IllegalArgumentException("CKKS plain must be in NTT form");
+            }
+            if (!encrypted.parmsId().equals(plain.parmsId())) {
+                throw new IllegalArgumentException("encrypted and plain parameter mismatch");
+            }
+            if (!are_same_scale(encrypted, plain)) {
+                throw new IllegalArgumentException("scale mismatch");
+            }
+        } else if (parms.scheme().equals(SchemeType.BGV)) {
+            if (!encrypted.isNttForm()) {
+                throw new IllegalArgumentException("BGV encrypted must be in NTT form");
+            }
+            if (plain.isNttForm()) {
+                throw new IllegalArgumentException("BGV plain cannot be in NTT form");
+            }
         }
 
         // Extract encryption parameters.
@@ -2000,10 +2113,19 @@ public class Evaluator {
             throw new IllegalArgumentException("NTT form mismatch");
         }
 
-        if (encrypted.isNttForm()) {
+        if (encrypted.isNttForm() && plain.isNttForm()) {
             multiply_plain_ntt(encrypted, plain);
-        } else {
+        } else if (!encrypted.isNttForm() && !plain.isNttForm()) {
             multiply_plain_normal(encrypted, plain);
+        } else if (encrypted.isNttForm() && !plain.isNttForm()) {
+            Plaintext plain_copy = new Plaintext();
+            plain_copy.copyFrom(plain);
+            transformToNttInplace(plain_copy, encrypted.parmsId());
+            multiply_plain_ntt(encrypted, plain_copy);
+        } else {
+            transformToNttInplace(encrypted);
+            multiply_plain_ntt(encrypted, plain);
+            transformFromNttInplace(encrypted);
         }
 
         // Transparent ciphertext output is not allowed.
@@ -2482,7 +2604,7 @@ public class Evaluator {
         // DO NOT CHANGE EXECUTION ORDER OF FOLLOWING SECTION
         // BEGIN: Apply Galois for each ciphertext
         // Execution order is sensitive, since apply_galois is not inplace!
-        if (parms.scheme().equals(SchemeType.BFV) || parms.scheme().equals(SchemeType.BGV)) {
+        if (parms.scheme().equals(SchemeType.BFV)) {
             // !!! DO NOT CHANGE EXECUTION ORDER!!!
 
             // First transform encrypted.data(0)
@@ -2493,7 +2615,7 @@ public class Evaluator {
 
             // Next transform encrypted.data(1)
             galois_tool.applyGalois(encrypted_iter.rnsIter[1], coeff_modulus_size, galoisElt, coeff_modulus, temp);
-        } else if (parms.scheme().equals(SchemeType.CKKS)) {
+        } else if (parms.scheme().equals(SchemeType.CKKS) || parms.scheme().equals(SchemeType.BGV)) {
             // !!! DO NOT CHANGE EXECUTION ORDER!!!
 
             // First transform encrypted.data(0)
@@ -2667,7 +2789,7 @@ public class Evaluator {
      * @param galoisKeys the Galois keys.
      */
     public void rotateVectorInplace(Ciphertext encrypted, int steps, GaloisKeys galoisKeys) {
-        if (context.keyContextData().parms().scheme() != SchemeType.CKKS) {
+        if (!context.keyContextData().parms().scheme().equals(SchemeType.CKKS)) {
             throw new IllegalArgumentException("unsupported scheme");
         }
         rotateInternal(encrypted, steps, galoisKeys);
@@ -2736,7 +2858,6 @@ public class Evaluator {
         applyGaloisInplace(encrypted, galoisTool.getEltFromStep(0), galoisKeys);
     }
 
-
     private void switch_key_inplace(Ciphertext encrypted, RnsIterator target_iter, KswitchKeys kswitch_keys,
                                     int kswitch_keys_index) {
         ParmsId parms_id = encrypted.parmsId();
@@ -2771,8 +2892,8 @@ public class Evaluator {
         if (scheme.equals(SchemeType.CKKS) && !encrypted.isNttForm()) {
             throw new IllegalArgumentException("CKKS encrypted must be in NTT form");
         }
-        if (scheme.equals(SchemeType.BGV) && encrypted.isNttForm()) {
-            throw new IllegalArgumentException("BGV encrypted cannot be in NTT form");
+        if (scheme.equals(SchemeType.BGV) && !encrypted.isNttForm()) {
+            throw new IllegalArgumentException("BGV encrypted must be in NTT form");
         }
 
         // Extract encryption parameters.
@@ -2811,8 +2932,8 @@ public class Evaluator {
             t_target.coeff(), 0, decomp_modulus_size * coeff_count
         );
 
-        // In CKKS t_target is in NTT form; switch back to normal form
-        if (scheme.equals(SchemeType.CKKS)) {
+        // In CKKS or BGV, t_target is in NTT form; switch back to normal form
+        if (scheme.equals(SchemeType.CKKS) || scheme.equals(SchemeType.BGV)) {
             NttTool.inverseNttNegacyclicHarveyRns(t_target, decomp_modulus_size, key_ntt_tables);
         }
 
@@ -2840,7 +2961,8 @@ public class Evaluator {
                 CoeffIterator t_operand;
 
                 // RNS-NTT form exists in input
-                if ((scheme.equals(SchemeType.CKKS)) && (I == J)) {
+                //noinspection DuplicateExpressions
+                if (((scheme.equals(SchemeType.CKKS)) || scheme.equals(SchemeType.BGV)) && (I == J)) {
                     t_operand = target_iter.coeffIter[J];
                 } else {
                     // Perform RNS-NTT conversion

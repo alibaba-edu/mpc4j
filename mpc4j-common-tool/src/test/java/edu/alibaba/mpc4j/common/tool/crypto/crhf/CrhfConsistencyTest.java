@@ -1,10 +1,9 @@
 package edu.alibaba.mpc4j.common.tool.crypto.crhf;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -63,7 +62,7 @@ public class CrhfConsistencyTest {
         Crhf thisCrhf = CrhfFactory.createInstance(EnvType.STANDARD, thisType);
         Crhf thatCrhf = CrhfFactory.createInstance(EnvType.STANDARD, thatType);
         for (int i = 0; i < RANDOM_ROUND; i++) {
-            byte[] message = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[] message = BlockUtils.randomBlock(secureRandom);
             byte[] thisResult = thisCrhf.hash(message);
             byte[] thatResult = thatCrhf.hash(message);
             Assert.assertArrayEquals(thisResult, thatResult);

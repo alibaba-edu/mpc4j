@@ -4,9 +4,8 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.nc.NcCotConfig;
@@ -75,11 +74,11 @@ public class CotNcLnotReceiver extends AbstractNcLnotReceiver {
             .forEach(index -> {
                 int cotIndex = index * l;
                 choiceArray[index] = 0;
-                rbArray[index] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                rbArray[index] = BlockUtils.zeroBlock();
                 for (int bitPosition = 0; bitPosition < l; bitPosition++) {
                     boolean choiceBit = rotReceiverOutput.getChoice(cotIndex + bitPosition);
                     choiceArray[index] = choiceBit ? (choiceArray[index] << 1) + 1 : (choiceArray[index] << 1);
-                    BytesUtils.xori(rbArray[index], rotReceiverOutput.getRb(cotIndex + bitPosition));
+                    BlockUtils.xori(rbArray[index], rotReceiverOutput.getRb(cotIndex + bitPosition));
                 }
             });
         LnotReceiverOutput receiverOutput = LnotReceiverOutput.create(l, choiceArray, rbArray);

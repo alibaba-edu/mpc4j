@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.s2pc.upso.okvr;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
+import edu.alibaba.mpc4j.common.tool.hashbin.primitive.ArraySimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import org.apache.commons.math3.util.Pair;
@@ -38,7 +38,7 @@ public class OkvrTestUtils {
         assert simpleHashKeys.length == 1;
         int byteL = CommonUtils.getByteLength(l);
         // use simple hash to place int into batched queries.
-        SimpleIntHashBin simpleIntHashBin = new SimpleIntHashBin(EnvType.STANDARD, retrievalSize, num, simpleHashKeys);
+        ArraySimpleIntHashBin simpleIntHashBin = new ArraySimpleIntHashBin(EnvType.STANDARD, retrievalSize, num, simpleHashKeys);
         simpleIntHashBin.insertItems(IntStream.range(0, num).toArray());
         Map<ByteBuffer, byte[]> keyValueMap = new HashMap<>(num);
         Set<ByteBuffer> keys = new HashSet<>(retrievalSize);

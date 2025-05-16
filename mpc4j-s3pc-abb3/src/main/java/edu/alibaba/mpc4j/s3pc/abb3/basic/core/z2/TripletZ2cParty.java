@@ -45,6 +45,16 @@ public interface TripletZ2cParty extends AbbCoreParty, MpcZ2cParty {
     }
 
     /**
+     * update the estimated number of and gate
+     */
+    void updateEstimateBitTupleNum(long estimateBitTupleNum);
+
+    /**
+     * get the estimated number of and gate
+     */
+    long getEstimateBitTupleNum();
+
+    /**
      * create shared zero vectors
      */
     TripletZ2Vector createShareZeros(int bitNums);
@@ -182,13 +192,25 @@ public interface TripletZ2cParty extends AbbCoreParty, MpcZ2cParty {
     TripletZ2Vector[] and(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray);
 
     /**
+     * And operation between a vector and multiple vector, treat the xiArray as multiple vectors
+     *
+     * @param f f.
+     * @param xiArray xi array.
+     * @return zi array, such that for each j, z[i] = f[i] · x[i].
+     */
+    @Override
+    default TripletZ2Vector[] and(MpcZ2Vector f, MpcZ2Vector[] xiArray){
+        MpcZ2Vector[] extendF = Arrays.stream(xiArray).map(each -> (MpcZ2Vector) f.copy()).toArray(MpcZ2Vector[]::new);
+        return and(extendF, xiArray);
+    }
+
+    /**
      * Vector MUX operation.
      *
      * @param xiArray xi array.
      * @param yiArray yi array.
      * @param c       c.
      * @return zi array, such that for each j, z[i] = (c ? y[i] : x[i])
-     * @throws MpcAbortException the protocol failure aborts.
      */
     default TripletZ2Vector[] mux(TripletZ2Vector[] xiArray, TripletZ2Vector[] yiArray, TripletZ2Vector c) {
         MathPreconditions.checkEqual("xiArray.length", "yiArray.length", xiArray.length, yiArray.length);
@@ -305,6 +327,21 @@ public interface TripletZ2cParty extends AbbCoreParty, MpcZ2cParty {
     @Override
     default TripletZ2Vector[] or(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) {
         return xor(xor(xiArray, yiArray), and(xiArray, yiArray));
+    }
+
+    /**
+     * Vector MUX operation.
+     *
+     * @param xiArray xiArray array.
+     * @param yiArray yiArray array.
+     * @param ci ci.
+     * @return ziArray, such that for each i, z[i] = (c[i] ? y[i] : x[i]).
+     */
+    @Override
+    default TripletZ2Vector[] mux(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray, MpcZ2Vector ci) {
+        MathPreconditions.checkEqual("xiArray.length", "yiArray.length", xiArray.length, yiArray.length);
+        MpcZ2Vector[] extendCi = IntStream.range(0, xiArray.length).mapToObj(i -> ci).toArray(MpcZ2Vector[]::new);
+        return xor(and(xor(xiArray, yiArray), extendCi), xiArray);
     }
 
     @Override

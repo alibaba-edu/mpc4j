@@ -13,10 +13,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64PolyFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
-import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.aby.basics.z2.SquareZ2Vector;
 import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmFactory;
 import edu.alibaba.mpc4j.s2pc.opf.psm.pdsm.PdsmReceiver;
@@ -134,7 +131,7 @@ public class Sj23PdsmUcpsiServer<T> extends AbstractUcpsiServer<T> {
         stopWatch.start();
         // generate simple hash bin
         byteL = CommonUtils.getByteLength(params.l);
-        hashKeys = CommonUtils.generateRandomKeys(hashNum, secureRandom);
+        hashKeys = BlockUtils.randomBlocks(hashNum, secureRandom);
         byte[][][] hashBin = generateSimpleHashBin(byteL);
         // server sends hash keys
         List<byte[]> cuckooHashKeyPayload = Arrays.stream(hashKeys).collect(Collectors.toList());

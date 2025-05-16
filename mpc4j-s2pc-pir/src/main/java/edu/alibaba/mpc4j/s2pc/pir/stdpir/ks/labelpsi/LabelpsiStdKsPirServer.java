@@ -15,10 +15,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
 import edu.alibaba.mpc4j.common.tool.polynomial.power.PowersDag;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64Poly;
 import edu.alibaba.mpc4j.common.tool.polynomial.zp64.Zp64PolyFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BigIntegerUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.stdpir.ks.AbstractStdKsPirServer;
 import gnu.trove.set.TIntSet;
@@ -114,7 +111,7 @@ public class LabelpsiStdKsPirServer<T> extends AbstractStdKsPirServer<T> {
 
         stopWatch.start();
         // generate hash bins
-        byte[][] hashKeys = CommonUtils.generateRandomKeys(params.getCuckooHashKeyNum(), secureRandom);
+        byte[][] hashKeys = BlockUtils.randomBlocks(params.getCuckooHashKeyNum(), secureRandom);
         List<List<HashBinEntry<ByteBuffer>>> hashBins = generateCompleteHashBin(keysPrf, params.getBinNum(), hashKeys);
         List<byte[]> cuckooHashKeyPayload = Arrays.stream(hashKeys).collect(Collectors.toList());
         sendOtherPartyPayload(PtoStep.SERVER_SEND_CUCKOO_HASH_KEYS.ordinal(), cuckooHashKeyPayload);
@@ -290,7 +287,7 @@ public class LabelpsiStdKsPirServer<T> extends AbstractStdKsPirServer<T> {
                             }
                             byte[] oprf = entry.getItem().array();
                             // choose first 128 bits
-                            byte[] keyBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                            byte[] keyBytes = BlockUtils.zeroBlock();
                             System.arraycopy(oprf, 0, keyBytes, 0, CommonConstants.BLOCK_BYTE_LENGTH);
                             byte[] iv = new byte[ivByteLength];
                             secureRandom.nextBytes(iv);

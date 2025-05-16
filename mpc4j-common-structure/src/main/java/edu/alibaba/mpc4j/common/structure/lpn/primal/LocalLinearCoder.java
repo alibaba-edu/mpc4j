@@ -164,14 +164,12 @@ public class LocalLinearCoder implements PrimalLpnCoder {
         rowIndexIntStream = parallel ? rowIndexIntStream.parallel() : rowIndexIntStream;
         return rowIndexIntStream
             .mapToObj(rowIndex -> {
-                long[] w = new long[CommonConstants.BLOCK_LONG_LENGTH];
+                byte[] w = BlockUtils.zeroBlock();
                 for (int j = 0; j < D; j++) {
                     int position = matrix[rowIndex][j];
                     BlockUtils.xori(w, e[position]);
                 }
-                byte[] result = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                BlockUtils.toByteArray(w, result);
-                return result;
+                return w;
             })
             .toArray(byte[][]::new);
     }

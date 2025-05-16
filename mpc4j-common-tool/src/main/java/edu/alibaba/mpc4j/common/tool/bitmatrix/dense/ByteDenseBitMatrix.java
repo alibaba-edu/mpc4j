@@ -431,13 +431,12 @@ public class ByteDenseBitMatrix implements DenseBitMatrix {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof DenseBitMatrix)) {
+        if (!(obj instanceof DenseBitMatrix that)) {
             return false;
         }
         if (this == obj) {
             return true;
         }
-        DenseBitMatrix that = (DenseBitMatrix) obj;
         return new EqualsBuilder().append(this.data, that.getByteArrayData()).isEquals();
     }
 }

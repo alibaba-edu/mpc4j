@@ -7,7 +7,6 @@ import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -17,7 +16,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.security.SecureRandom;
-import java.util.stream.IntStream;
 
 /**
  * Z2 triple.
@@ -76,30 +74,18 @@ public class Z2Triple implements MergedPcgPartyOutput {
         if (num == 0) {
             return createEmpty();
         } else {
-            int byteNum = CommonUtils.getByteLength(num);
-            int offset = byteNum * Byte.SIZE - num;
-            byte[] b0 = new byte[byteNum];
-            byte[] c0 = new byte[byteNum];
             RotSenderOutput rotSenderOutput = new RotSenderOutput(envType, CrhfType.MMO, cotSenderOutput);
             byte[][] r0Array = rotSenderOutput.getR0Array();
             byte[][] r1Array = rotSenderOutput.getR1Array();
-            byte[] x1 = new byte[byteNum];
-            IntStream.range(0, num).forEach(tripleIndex -> {
-                // only take the highest bit for each Random OT
-                BinaryUtils.setBoolean(c0, offset + tripleIndex, (r0Array[tripleIndex][0] & 0b00000001) != 0);
-                BinaryUtils.setBoolean(b0, offset + tripleIndex, (r0Array[tripleIndex][0] & 0b00000001) != 0);
-                BinaryUtils.setBoolean(x1, offset + tripleIndex, (r1Array[tripleIndex][0] & 0b00000001) != 0);
-            });
+            byte[] c0 = BytesUtils.extractLsb(r0Array);
+            byte[] b0 = BytesUtils.extractLsb(r0Array);
+            byte[] x1 = BytesUtils.extractLsb(r1Array);
             BytesUtils.xori(b0, x1);
             RotReceiverOutput rotReceiverOutput = new RotReceiverOutput(envType, CrhfType.MMO, cotReceiverOutput);
             byte[] a0 = BinaryUtils.binaryToRoundByteArray(cotReceiverOutput.getChoices());
             byte[][] rbArray = rotReceiverOutput.getRbArray();
             // R sets u = xa
-            byte[] cb = new byte[byteNum];
-            IntStream.range(0, num).forEach(tripleIndex -> {
-                // only take the highest bit for each Random OT
-                BinaryUtils.setBoolean(cb, offset + tripleIndex, (rbArray[tripleIndex][0] & 0b00000001) != 0);
-            });
+            byte[] cb = BytesUtils.extractLsb(rbArray);
             // Finally, each Pi sets ci = (ai ⊙ bi) ⊕ ui ⊕ vi. This is the ui ⊕ vi part.
             BytesUtils.xori(c0, cb);
             byte[] temp = BytesUtils.and(a0, b0);

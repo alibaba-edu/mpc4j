@@ -1,7 +1,9 @@
 package edu.alibaba.mpc4j.common.circuit.z2;
 
+import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
+import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -207,12 +209,35 @@ public class PlainZ2cParty implements MpcZ2cParty {
     }
 
     @Override
+    public PlainZ2Vector[] and(MpcZ2Vector f, MpcZ2Vector[] xiArray) throws MpcAbortException {
+        return Arrays.stream(xiArray).map(mpcZ2Vector -> and(f, mpcZ2Vector)).toArray(PlainZ2Vector[]::new);
+    }
+
+    @Override
+    public PlainZ2Vector[] mux(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray, MpcZ2Vector ci) throws MpcAbortException {
+        return IntStream.range(0, xiArray.length)
+            .mapToObj(i -> xor(and(xor(xiArray[i], yiArray[i]), ci), xiArray[i])).toArray(PlainZ2Vector[]::new);
+    }
+
+    @Override
     public PlainZ2Vector[] setPublicValues(BitVector[] data) {
         assert data != null && data.length > 0;
         int bitNum = data[0].bitNum();
         return Arrays.stream(data).map(x -> {
             MathPreconditions.checkEqual("data[i].bitNum()", "data[0].bitNum()", x.bitNum(), bitNum);
-            return PlainZ2Vector.create(x);
+            return PlainZ2Vector.create(x.copy());
         }).toArray(PlainZ2Vector[]::new);
+    }
+
+    @Override
+    public PlainZ2Vector xorSelfAllElement(MpcZ2Vector x) {
+        return (PlainZ2Vector) create(true, x.getBitVector().numOf1IsOdd()
+            ? BitVectorFactory.createOnes(1)
+            : BitVectorFactory.createZeros(1));
+    }
+
+    @Override
+    public PlainZ2Vector xorAllBeforeElement(MpcZ2Vector x) {
+        return (PlainZ2Vector) create(true, x.getBitVector().xorBeforeBit());
     }
 }

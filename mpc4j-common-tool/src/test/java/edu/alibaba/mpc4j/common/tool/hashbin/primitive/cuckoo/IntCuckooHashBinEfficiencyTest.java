@@ -5,7 +5,7 @@ import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory.IntCuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -70,11 +70,10 @@ public class IntCuckooHashBinEfficiencyTest {
     private void testEfficiency(int logN) {
         int n = 1 << logN;
         for (IntCuckooHashBinType type : TYPES) {
+            int hashNum = IntCuckooHashBinFactory.getHashNum(type);
             int[] intItems = HashBinTestUtils.randomIntItems(n);
             // 测试整数布谷鸟哈希
-            byte[][] intKeys = CommonUtils.generateRandomKeys(
-                IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-            );
+            byte[][] intKeys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
             IntNoStashCuckooHashBin intHashBin = IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, n, intKeys);
             // 插入数据
             double time = 0;
@@ -90,9 +89,7 @@ public class IntCuckooHashBinEfficiencyTest {
                 } catch (ArithmeticException ignored) {
                     STOP_WATCH.stop();
                     STOP_WATCH.reset();
-                    intKeys = CommonUtils.generateRandomKeys(
-                        IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-                    );
+                    intKeys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
                     intHashBin = IntCuckooHashBinFactory.createInstance(EnvType.STANDARD, type, n, intKeys);
                 }
             }
@@ -105,12 +102,9 @@ public class IntCuckooHashBinEfficiencyTest {
             // 测试普通布谷鸟哈希
             List<Integer> items = Arrays.stream(intItems).boxed().collect(Collectors.toList());
             CuckooHashBinFactory.CuckooHashBinType relatedType = IntCuckooHashBinFactory.relateCuckooHashBinType(type);
-            byte[][] keys = CommonUtils.generateRandomKeys(
-                CuckooHashBinFactory.getHashNum(relatedType), HashBinTestUtils.SECURE_RANDOM
-            );
-            CuckooHashBin<Integer> hashBin = CuckooHashBinFactory.createCuckooHashBin(
-                EnvType.STANDARD, relatedType, n, keys
-            );
+            int relatedHashNum = CuckooHashBinFactory.getHashNum(relatedType);
+            byte[][] keys = BlockUtils.randomBlocks(relatedHashNum, HashBinTestUtils.SECURE_RANDOM);
+            CuckooHashBin<Integer> hashBin = CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, relatedType, n, keys);
             // 插入数据
             time = 0;
             success = false;
@@ -125,9 +119,7 @@ public class IntCuckooHashBinEfficiencyTest {
                 } catch (ArithmeticException ignored) {
                     STOP_WATCH.stop();
                     STOP_WATCH.reset();
-                    keys = CommonUtils.generateRandomKeys(
-                        IntCuckooHashBinFactory.getHashNum(type), HashBinTestUtils.SECURE_RANDOM
-                    );
+                    keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
                     hashBin = CuckooHashBinFactory.createCuckooHashBin(EnvType.STANDARD, relatedType, n, keys);
                 }
             }

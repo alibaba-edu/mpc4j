@@ -5,11 +5,11 @@ import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.EccDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.ecc.SparseEccDokvs;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.Ecc;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.EccFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -98,7 +98,7 @@ public class Zlp24PkeUpsuSender extends AbstractUpsuSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         stopWatch.stop();
         long initCotTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -107,7 +107,7 @@ public class Zlp24PkeUpsuSender extends AbstractUpsuSender {
 
         stopWatch.start();
         int dokvsHashKeyNum = EccDokvsFactory.getHashKeyNum(eccDokvsType);
-        byte[][] dokvsHashKeys = CommonUtils.generateRandomKeys(dokvsHashKeyNum, secureRandom);
+        byte[][] dokvsHashKeys = BlockUtils.randomBlocks(dokvsHashKeyNum, secureRandom);
         eccDokvs = EccDokvsFactory.createSparseInstance(envType, eccDokvsType, ecc, receiverElementSize, dokvsHashKeys);
         DataPacketHeader keysHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.SENDER_SEND_DOKVS_KEYS.ordinal(), extraInfo,

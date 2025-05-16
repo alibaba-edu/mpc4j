@@ -1,9 +1,9 @@
 package edu.alibaba.mpc4j.common.tool.bitmatrix.dense;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.bitmatrix.dense.DenseBitMatrixFactory.DenseBitMatrixType;
 import org.apache.commons.lang3.StringUtils;
@@ -74,8 +74,8 @@ public class DenseBitMatrixTest {
         denseBitMatrix2 = DenseBitMatrixFactory.createRandom(type, rows, columns, secureRandom);
         Assert.assertNotEquals(denseBitMatrix1, denseBitMatrix2);
         // create with same seed
-        denseBitMatrix1 = DenseBitMatrixFactory.createRandom(type, rows, columns, new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
-        denseBitMatrix2 = DenseBitMatrixFactory.createRandom(type, rows, columns, new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        denseBitMatrix1 = DenseBitMatrixFactory.createRandom(type, rows, columns, BlockUtils.zeroBlock());
+        denseBitMatrix2 = DenseBitMatrixFactory.createRandom(type, rows, columns, BlockUtils.zeroBlock());
         Assert.assertEquals(denseBitMatrix1, denseBitMatrix2);
     }
 

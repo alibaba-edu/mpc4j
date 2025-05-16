@@ -1,8 +1,8 @@
 package edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.PcgPartyOutput;
 
@@ -42,9 +42,7 @@ public class SpRdpprfReceiverOutput implements PcgPartyOutput {
             if (index == alpha) {
                 Preconditions.checkArgument(v1Array[index] == null);
             } else {
-                MathPreconditions.checkEqual(
-                    "λ", "v[" + index + "].length", CommonConstants.BLOCK_BYTE_LENGTH, v1Array[index].length
-                );
+                Preconditions.checkArgument(BlockUtils.valid(v1Array[index]));
             }
         });
         this.v1Array = v1Array;

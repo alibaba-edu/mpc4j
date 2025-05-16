@@ -1,12 +1,12 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2e.Gf2eFactory.Gf2eType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory.Gf2kType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -135,8 +135,7 @@ public class BytesRingTest {
 
     @Test
     public void testCreateRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(SECURE_RANDOM);
         // create random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             byte[] randomElement = bytesRing.createRandom(SECURE_RANDOM);
@@ -157,8 +156,7 @@ public class BytesRingTest {
 
     @Test
     public void testCreateNonZeroRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(SECURE_RANDOM);
         // create non-zero random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             byte[] randomNonZeroElement = bytesRing.createNonZeroRandom(SECURE_RANDOM);
@@ -183,8 +181,7 @@ public class BytesRingTest {
 
     @Test
     public void testCreateRangeRandom() {
-        byte[] seed = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        SECURE_RANDOM.nextBytes(seed);
+        byte[] seed = BlockUtils.randomBlock(SECURE_RANDOM);
         // create range random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             byte[] randomElement = bytesRing.createRangeRandom(SECURE_RANDOM);

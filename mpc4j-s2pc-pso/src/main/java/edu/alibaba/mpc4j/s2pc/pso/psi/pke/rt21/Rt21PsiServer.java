@@ -3,7 +3,6 @@ package edu.alibaba.mpc4j.s2pc.pso.psi.pke.rt21;
 import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory.ByteEccType;
@@ -16,6 +15,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.structure.filter.Filter;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
@@ -85,7 +85,7 @@ public class Rt21PsiServer<T> extends AbstractPsiServer<T> {
         okvsKeyNum = Gf2eDokvsFactory.getHashKeyNum(okvsType);
         h1 = HashFactory.createInstance(envType, Rt21PsiPtoDesc.FIELD_BYTE_LENGTH);
         h2 = PrfFactory.createInstance(envType, Rt21PsiPtoDesc.FIELD_BYTE_LENGTH);
-        h2.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        h2.setKey(BlockUtils.zeroBlock());
         encEngine = new Rijndael256Engine();
         MathPreconditions.checkEqual(
             "block_byte_length", "field_byte_length",

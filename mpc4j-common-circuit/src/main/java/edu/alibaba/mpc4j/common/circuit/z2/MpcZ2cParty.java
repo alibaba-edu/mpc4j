@@ -217,6 +217,16 @@ public interface MpcZ2cParty {
     MpcZ2Vector[] and(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) throws MpcAbortException;
 
     /**
+     * And operation between a vector and multiple vector, treat the xiArray as multiple vectors
+     *
+     * @param f f.
+     * @param xiArray xi array.
+     * @return zi array, such that for each j, z[i] = f[i] · x[i].
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    MpcZ2Vector[] and(MpcZ2Vector f, MpcZ2Vector[] xiArray) throws MpcAbortException;
+
+    /**
      * XOR operation.
      *
      * @param xi xi.
@@ -332,6 +342,17 @@ public interface MpcZ2cParty {
     }
 
     /**
+     * Vector MUX operation.
+     *
+     * @param xiArray xiArray array.
+     * @param yiArray yiArray array.
+     * @param ci ci.
+     * @return ziArray, such that for each i, z[i] = (c[i] ? y[i] : x[i]).
+     * @throws MpcAbortException the protocol failure aborts.
+     */
+    MpcZ2Vector[] mux(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray, MpcZ2Vector ci) throws MpcAbortException;
+
+    /**
      * Equality operation.
      *
      * @param xi xi.
@@ -381,4 +402,20 @@ public interface MpcZ2cParty {
         ).toArray(BitVector[]::new);
         return create(plain, mergeBits);
     }
+
+    /**
+     * xor all element in this vector, and return a new vector contains this result bit
+     *
+     * @param x the input data
+     * @return the xor result
+     */
+    MpcZ2Vector xorSelfAllElement(MpcZ2Vector x);
+
+    /**
+     * y_i = \sum_0^{i} x_i
+     *
+     * @param x the input data
+     * @return y
+     */
+    MpcZ2Vector xorAllBeforeElement(MpcZ2Vector x);
 }

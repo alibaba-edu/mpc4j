@@ -14,7 +14,7 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
+import edu.alibaba.mpc4j.common.tool.hashbin.primitive.ArraySimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntNoStashCuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
@@ -56,7 +56,7 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
     /**
      * hash bin
      */
-    private SimpleIntHashBin intHashBin;
+    private ArraySimpleIntHashBin intHashBin;
     /**
      * position maps
      */
@@ -151,7 +151,7 @@ public class Ywl20UniMspCotReceiver extends AbstractMspCotReceiver {
         // R independently builds m buckets {B_j}_{j ∈ [m]} with B_j = {x ∈ [n] | ∃i ∈ [τ]: h_i(x) = j}
         int m = intNoStashCuckooHashBin.binNum();
         // Initialize m empty buckets {B_j}_{j ∈ [m]}.
-        intHashBin = new SimpleIntHashBin(envType, m, num, intNoStashCuckooHashBin.getHashKeys());
+        intHashBin = new ArraySimpleIntHashBin(envType, m, num, intNoStashCuckooHashBin.getHashKeys());
         // For each x ∈ [n], i ∈ [τ], compute j := h_i(x) and add x into bucket B_j.
         int[] xs = IntStream.range(0, num).toArray();
         intHashBin.insertItems(xs);

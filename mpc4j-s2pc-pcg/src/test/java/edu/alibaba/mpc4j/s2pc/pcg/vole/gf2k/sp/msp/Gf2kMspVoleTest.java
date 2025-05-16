@@ -2,11 +2,10 @@ package edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp;
 
 import edu.alibaba.mpc4j.common.rpc.desc.SecurityModel;
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.sgf2k.Sgf2kFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.VoleTestUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.Gf2kMspVoleFactory.Gf2kMspVoleType;
 import edu.alibaba.mpc4j.s2pc.pcg.vole.gf2k.sp.msp.bcg19.Bcg19RegGf2kMspVoleConfig;
@@ -130,7 +129,7 @@ public class Gf2kMspVoleTest extends AbstractTwoPartyMemoryRpcPto {
         receiver.setTaskId(randomTaskId);
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             Gf2kMspVoleSenderThread senderThread = new Gf2kMspVoleSenderThread(sender, field, t, num);
             Gf2kMspVoleReceiverThread receiverThread = new Gf2kMspVoleReceiverThread(receiver, field, delta, t, num);
             STOP_WATCH.start();

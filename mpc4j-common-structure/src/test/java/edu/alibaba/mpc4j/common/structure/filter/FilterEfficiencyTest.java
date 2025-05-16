@@ -1,11 +1,9 @@
 package edu.alibaba.mpc4j.common.structure.filter;
 
 import edu.alibaba.mpc4j.common.structure.filter.CuckooFilterFactory.CuckooFilterType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory.FilterType;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -61,8 +59,8 @@ public class FilterEfficiencyTest {
     private void testEfficiency(int logN) {
         int n = 1 << logN;
         for (FilterType type : FilterType.values()) {
-            byte[][] keys = CommonUtils.generateRandomKeys(FilterFactory.getHashKeyNum(type), secureRandom);
-            byte[][] items = BytesUtils.randomByteArrayVector(n, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+            byte[][] keys = BlockUtils.randomBlocks(FilterFactory.getHashKeyNum(type), secureRandom);
+            byte[][] items = BlockUtils.randomBlocks(n, secureRandom);
             Filter<ByteBuffer> filter = FilterFactory.createFilter(EnvType.STANDARD, type, n, keys);
             stopWatch.start();
             Arrays.stream(items).forEach(item -> filter.put(ByteBuffer.wrap(item)));
@@ -113,7 +111,7 @@ public class FilterEfficiencyTest {
     private void testCuckooFilterEfficiency(int logN) {
         int n = 1 << logN;
         for (CuckooFilterType type : new CuckooFilterType[] {CuckooFilterType.MOBILE_CUCKOO_FILTER, CuckooFilterType.MOBILE_VACUUM_FILTER}) {
-            byte[][] keys = CommonUtils.generateRandomKeys(CuckooFilter.getHashKeyNum(), secureRandom);
+            byte[][] keys = BlockUtils.randomBlocks(CuckooFilter.getHashKeyNum(), secureRandom);
             byte[][] items = IntStream.range(0, n)
                 .mapToObj(IntUtils::intToByteArray)
                 .toArray(byte[][]::new);

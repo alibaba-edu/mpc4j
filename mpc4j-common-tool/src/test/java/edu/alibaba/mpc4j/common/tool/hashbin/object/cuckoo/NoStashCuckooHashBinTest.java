@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -93,7 +93,7 @@ public class NoStashCuckooHashBinTest {
                 .map(round -> {
                     try {
                         // we try TEST_ROUND to see if all insertion results are no-stash
-                        byte[][] keys = CommonUtils.generateRandomKeys(hashNum, SECURE_RANDOM);
+                        byte[][] keys = BlockUtils.randomBlocks(hashNum, SECURE_RANDOM);
                         NoStashCuckooHashBin<ByteBuffer> noStashCuckooHashBin = CuckooHashBinFactory
                             .createNoStashCuckooHashBin(EnvType.STANDARD, type, finalItemSize, keys);
                         noStashCuckooHashBin.insertItems(items);

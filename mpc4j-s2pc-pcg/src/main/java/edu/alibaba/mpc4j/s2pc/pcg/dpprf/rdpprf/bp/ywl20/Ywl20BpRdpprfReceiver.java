@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.AbstractBpRdpprfReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.ywl20.Ywl20BpRdpprfPtoDesc.PtoStep;
@@ -110,7 +110,8 @@ public class Ywl20BpRdpprfReceiver extends AbstractBpRdpprfReceiver {
         logStepInfo(PtoState.PTO_STEP, 1, 2, cotTime);
 
         List<byte[]> messagePayload = receiveOtherPartyEqualSizePayload(
-            PtoStep.SENDER_SEND_MESSAGE_ARRAY.ordinal(), 2 * eachLogNum * batchNum, CommonConstants.BLOCK_BYTE_LENGTH);
+            PtoStep.SENDER_SEND_MESSAGE_ARRAY.ordinal(), 2 * eachLogNum * batchNum, CommonConstants.BLOCK_BYTE_LENGTH
+        );
 
         stopWatch.start();
         handleMessagePayload(messagePayload);
@@ -149,9 +150,9 @@ public class Ywl20BpRdpprfReceiver extends AbstractBpRdpprfReceiver {
                     byte[] kiNot = cotReceiverOutput.getRb(eachLogNum * batchIndex + hIndex);
                     kiNot = crhf.hash(kiNot);
                     if (betai) {
-                        BytesUtils.xori(kiNot, messagesArray[batchIndex * eachLogNum * 2 + 2 * hIndex + 1]);
+                        BlockUtils.xori(kiNot, messagesArray[batchIndex * eachLogNum * 2 + 2 * hIndex + 1]);
                     } else {
-                        BytesUtils.xori(kiNot, messagesArray[batchIndex * eachLogNum * 2 + 2 * hIndex]);
+                        BlockUtils.xori(kiNot, messagesArray[batchIndex * eachLogNum * 2 + 2 * hIndex]);
                     }
                     if (i == 1) {
                         // If i = 1, define s_{β_i}^i = K_{β_i}^i
@@ -164,26 +165,25 @@ public class Ywl20BpRdpprfReceiver extends AbstractBpRdpprfReceiver {
                         for (int j = 0; j < (1 << (i - 1)); j++) {
                             if (j != alphaPrefix) {
                                 byte[] extendSeeds = prg.extendToBytes(lowLevelSeeds[j]);
-                                currentLevelSeeds[2 * j] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                                currentLevelSeeds[2 * j] = BlockUtils.zeroBlock();
                                 System.arraycopy(
-                                    extendSeeds, 0,
-                                    currentLevelSeeds[2 * j], 0,
+                                    extendSeeds, 0, currentLevelSeeds[2 * j], 0,
                                     CommonConstants.BLOCK_BYTE_LENGTH
                                 );
-                                currentLevelSeeds[2 * j + 1] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                                currentLevelSeeds[2 * j + 1] = BlockUtils.zeroBlock();
                                 System.arraycopy(
-                                    extendSeeds, CommonConstants.BLOCK_BYTE_LENGTH,
-                                    currentLevelSeeds[2 * j + 1], 0,
+                                    extendSeeds, CommonConstants.BLOCK_BYTE_LENGTH, currentLevelSeeds[2 * j + 1], 0,
                                     CommonConstants.BLOCK_BYTE_LENGTH
                                 );
                             }
                         }
                         // compute the remaining seeds
                         int alphaStar = (alphaPrefix << 1) + betaiInt;
-                        currentLevelSeeds[alphaStar] = kiNot;
+                        currentLevelSeeds[alphaStar] = BlockUtils.zeroBlock();
+                        BlockUtils.xori(currentLevelSeeds[alphaStar], kiNot);
                         for (int j = 0; j < (1 << (i - 1)); j++) {
                             if (j != alphaPrefix) {
-                                BytesUtils.xori(currentLevelSeeds[alphaStar], currentLevelSeeds[2 * j + betaiInt]);
+                                BlockUtils.xori(currentLevelSeeds[alphaStar], currentLevelSeeds[2 * j + betaiInt]);
                             }
                         }
                     }

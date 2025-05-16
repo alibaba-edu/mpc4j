@@ -1,11 +1,10 @@
 package edu.alibaba.mpc4j.common.tool.galoisfield.zl;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64Factory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -79,7 +78,7 @@ public class Zl64SpecialTest {
 
     @Test
     public void testCreateRandom() {
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         // create random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             long randomElement = zl64.createRandom(secureRandom);
@@ -99,7 +98,7 @@ public class Zl64SpecialTest {
 
     @Test
     public void testCreateNonZeroRandom() {
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         // create non-zero random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             long randomNonZeroElement = zl64.createNonZeroRandom(secureRandom);
@@ -123,7 +122,7 @@ public class Zl64SpecialTest {
 
     @Test
     public void testCreateRangeRandom() {
-        byte[] seed = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] seed = BlockUtils.randomBlock(secureRandom);
         // create range random
         IntStream.range(0, MAX_RANDOM).forEach(index -> {
             long randomElement = zl64.createRangeRandom(secureRandom);

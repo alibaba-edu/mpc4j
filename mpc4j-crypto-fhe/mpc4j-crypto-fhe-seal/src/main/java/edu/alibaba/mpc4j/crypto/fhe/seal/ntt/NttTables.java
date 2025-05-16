@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.fhe.seal.ntt;
 
-import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.utils.Constants;
 import edu.alibaba.mpc4j.crypto.fhe.seal.zq.*;
 import org.apache.commons.lang3.builder.MultilineRecursiveToStringStyle;
@@ -28,7 +28,7 @@ public class NttTables {
      * @param modulusArray    modulus array.
      * @param nttTables       where to store the created NTT tables.
      */
-    public static void createNttTables(int coeffCountPower, Modulus[] modulusArray, NttTables[] nttTables) {
+    public static void createNttTables(int coeffCountPower, AbstractModulus[] modulusArray, NttTables[] nttTables) {
         assert modulusArray.length == nttTables.length;
         for (int i = 0; i < modulusArray.length; i++) {
             nttTables[i] = new NttTables(coeffCountPower, modulusArray[i]);
@@ -54,7 +54,7 @@ public class NttTables {
     /**
      * modulus
      */
-    private Modulus modulus;
+    private AbstractModulus modulus;
     /**
      * n^(-1) modulo q
      */
@@ -82,11 +82,11 @@ public class NttTables {
      * @param coeffCountPower k, where n = 2^k.
      * @param modulus         modulus q.
      */
-    public NttTables(int coeffCountPower, Modulus modulus) {
+    public NttTables(int coeffCountPower, AbstractModulus modulus) {
         initialize(coeffCountPower, modulus);
     }
 
-    private void initialize(int coeffCountPower, Modulus modulus) {
+    private void initialize(int coeffCountPower, AbstractModulus modulus) {
         assert coeffCountPower >= UintCore.getPowerOfTwo(Constants.SEAL_POLY_MOD_DEGREE_MIN)
             && coeffCountPower <= UintCore.getPowerOfTwo(Constants.SEAL_POLY_MOD_DEGREE_MAX);
         // k
@@ -216,7 +216,7 @@ public class NttTables {
      *
      * @return modulus q.
      */
-    public Modulus getModulus() {
+    public AbstractModulus getModulus() {
         return modulus;
     }
 

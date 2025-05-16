@@ -1,10 +1,10 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.ccot;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.AbstractConv32Party;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.ccot.CcotConv32PtoDesc.PtoStep;
@@ -44,7 +44,7 @@ public class CcotConv32Sender extends AbstractConv32Party {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -69,30 +69,25 @@ public class CcotConv32Sender extends AbstractConv32Party {
         // we follow f^{ab} of [ALSZ13]
         stopWatch.start();
         // run first COT
-        BitVector x0 = BitVectorFactory.createZeros(num);
-        BitVector y0 = BitVectorFactory.createZeros(num);
-
         CotSenderOutput cotSenderOutput = coreCotSender.send(num);
         RotSenderOutput rotSenderOutput = new RotSenderOutput(envType, CrhfType.MMO, cotSenderOutput);
         byte[][] r0Array = rotSenderOutput.getR0Array();
         byte[][] r1Array = rotSenderOutput.getR1Array();
-        for (int i = 0; i < num; i++) {
-            x0.set(i, (r0Array[i][0] & 0b00000001) != 0);
-            y0.set(i, (r1Array[i][0] & 0b00000001) != 0);
-        }
+        byte[] x0ByteArray = BytesUtils.extractLsb(r0Array);
+        byte[] y0ByteArray = BytesUtils.extractLsb(r1Array);
+        BitVector x0 = BitVectorFactory.create(num, x0ByteArray);
+        BitVector y0 = BitVectorFactory.create(num, y0ByteArray);
         // x_0 = R_0, y_0 = R_0 ⊕ R_1
         y0.xori(x0);
         // run second COT
-        BitVector x0p = BitVectorFactory.createZeros(num);
-        BitVector y0p = BitVectorFactory.createZeros(num);
         cotSenderOutput = coreCotSender.send(num);
         rotSenderOutput = new RotSenderOutput(envType, CrhfType.MMO, cotSenderOutput);
         r0Array = rotSenderOutput.getR0Array();
         r1Array = rotSenderOutput.getR1Array();
-        for (int i = 0; i < num; i++) {
-            x0p.set(i, (r0Array[i][0] & 0b00000001) != 0);
-            y0p.set(i, (r1Array[i][0] & 0b00000001) != 0);
-        }
+        byte[] x0pByteArray = BytesUtils.extractLsb(r0Array);
+        byte[] y0pByteArray = BytesUtils.extractLsb(r1Array);
+        BitVector x0p = BitVectorFactory.create(num, x0pByteArray);
+        BitVector y0p = BitVectorFactory.create(num, y0pByteArray);
         // x'_0 = R_0, y'_0 = R_0 ⊕ R_1
         y0p.xori(x0p);
         long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);

@@ -12,6 +12,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.MaxBinSizeUtils;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.HashBinEntry;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.RandomPadHashBin;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
@@ -117,7 +118,7 @@ public class Zlp24PeqtUpsuReceiver extends AbstractUpsuReceiver {
         stopWatch.start();
         // send cuckoo hash keys
         int cuckooHashNum = getHashNum(cuckooHashBinType);
-        byte[][] cuckooHashKeys = CommonUtils.generateRandomKeys(cuckooHashNum, secureRandom);
+        byte[][] cuckooHashKeys = BlockUtils.randomBlocks(cuckooHashNum, secureRandom);
         DataPacketHeader cuckooHashKeysHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_CUCKOO_HASH_KEYS.ordinal(), extraInfo,
             ownParty().getPartyId(), otherParty().getPartyId()
@@ -261,7 +262,7 @@ public class Zlp24PeqtUpsuReceiver extends AbstractUpsuReceiver {
             .map(sqOprfKey::getPrf)
             .map(prg::extendToBytes)
             .peek(bytes -> BytesUtils.reduceByteArray(bytes, l))
-            .collect(Collectors.toList());
+            .toList();
         return IntStream.range(0, receiverElementSize)
             .boxed()
             .collect(Collectors.toMap(i -> receiverElementList.get(i), receiverElementPrf::get, (a, b) -> b));

@@ -35,6 +35,10 @@ public abstract class AbstractTripletZ2cParty extends AbstractAbbThreePartyPto i
      * flag of opening process
      */
     protected boolean duringVerificationFlag;
+    /**
+     * estimated number of and gate
+     */
+    protected long estimateBitTupleNum;
 
     protected AbstractTripletZ2cParty(PtoDesc ptoDesc, Rpc rpc, TripletZ2cConfig config, TripletProvider tripletProvider) {
         super(ptoDesc, rpc,
@@ -46,11 +50,22 @@ public abstract class AbstractTripletZ2cParty extends AbstractAbbThreePartyPto i
         tripletProvider.getVerificationMsg().addParty(this);
         selfId = rpc.ownParty().getPartyId();
         duringVerificationFlag = false;
+        estimateBitTupleNum = 0;
     }
 
     @Override
     public TripletProvider getTripletProvider(){
         return tripletProvider;
+    }
+
+    @Override
+    public void updateEstimateBitTupleNum(long estimateBitTupleNum) {
+        this.estimateBitTupleNum += estimateBitTupleNum;
+    }
+
+    @Override
+    public long getEstimateBitTupleNum() {
+        return estimateBitTupleNum;
     }
 
     @Override

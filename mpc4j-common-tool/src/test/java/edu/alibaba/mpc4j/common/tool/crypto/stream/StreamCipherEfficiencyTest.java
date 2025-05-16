@@ -1,7 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.crypto.stream;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.stream.StreamCipherFactory.StreamCipherType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.Ignore;
@@ -33,7 +33,7 @@ public class StreamCipherEfficiencyTest {
     /**
      * 全0密钥
      */
-    private static final byte[] ZERO_KEY = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_KEY = BlockUtils.zeroBlock();
     /**
      * 秒表
      */

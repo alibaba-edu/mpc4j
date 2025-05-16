@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtSenderOutput;
 
-import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * Random oblivious transfer sender output.
@@ -31,14 +31,13 @@ public class RotSenderOutput implements OtSenderOutput {
 
     @Override
     public byte[] getR0(int index) {
-        return crhf.hash(cotSenderOutput.getR0(index));
+        return cotSenderOutput.getR0(index);
     }
 
     @Override
     public byte[][] getR0Array() {
-        return Arrays.stream(cotSenderOutput.getR0Array())
-            .map(crhf::hash)
-            .toArray(byte[][]::new);
+        // we only need to call CRHF for R1
+        return cotSenderOutput.getR0Array();
     }
 
     @Override
@@ -48,8 +47,8 @@ public class RotSenderOutput implements OtSenderOutput {
 
     @Override
     public byte[][] getR1Array() {
-        return Arrays.stream(cotSenderOutput.getR1Array())
-            .map(crhf::hash)
+        return IntStream.range(0, cotSenderOutput.getNum())
+            .mapToObj(this::getR1)
             .toArray(byte[][]::new);
     }
 

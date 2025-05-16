@@ -7,7 +7,7 @@ import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.Zp;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zp.ZpManager;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -81,16 +81,16 @@ public class ZpDokvsTest {
         // try less keys
         if (hashKeyNum > 0) {
             Assert.assertThrows(IllegalArgumentException.class, () -> {
-                byte[][] lessKeys = CommonUtils.generateRandomKeys(hashKeyNum - 1, SECURE_RANDOM);
+                byte[][] lessKeys = BlockUtils.randomBlocks(hashKeyNum - 1, SECURE_RANDOM);
                 ZpDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_PRIME, DEFAULT_N, lessKeys);
             });
         }
         // try more keys
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            byte[][] moreKeys = CommonUtils.generateRandomKeys(hashKeyNum + 1, SECURE_RANDOM);
+            byte[][] moreKeys = BlockUtils.randomBlocks(hashKeyNum + 1, SECURE_RANDOM);
             ZpDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_PRIME, DEFAULT_N, moreKeys);
         });
-        byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, SECURE_RANDOM);
         // try n = 0
         Assert.assertThrows(IllegalArgumentException.class, () ->
             ZpDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_PRIME, 0, keys)
@@ -109,7 +109,7 @@ public class ZpDokvsTest {
 
     @Test
     public void testType() {
-        byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, SECURE_RANDOM);
         ZpDokvs<ByteBuffer> dokvs = ZpDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_PRIME, DEFAULT_N, keys);
         Assert.assertEquals(type, dokvs.getType());
     }
@@ -147,7 +147,7 @@ public class ZpDokvsTest {
     private void testDokvs(int n) {
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
             // create keys
-            byte[][] keys = CommonUtils.generateRandomKeys(hashKeyNum, SECURE_RANDOM);
+            byte[][] keys = BlockUtils.randomBlocks(hashKeyNum, SECURE_RANDOM);
             // create an instance
             ZpDokvs<ByteBuffer> dokvs = ZpDokvsFactory.createInstance(EnvType.STANDARD, type, DEFAULT_PRIME, n, keys);
             // generate key-value pairs
@@ -177,8 +177,7 @@ public class ZpDokvsTest {
             // verify randomly generate values are not in the set
             Set<BigInteger> valueSet = new HashSet<>(keyValueMap.values());
             IntStream.range(0, MAX_RANDOM_ROUND).forEach(index -> {
-                byte[] randomKeyBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-                SECURE_RANDOM.nextBytes(randomKeyBytes);
+                byte[] randomKeyBytes = BlockUtils.randomBlock(SECURE_RANDOM);
                 ByteBuffer randomKey = ByteBuffer.wrap(randomKeyBytes);
                 if (!keyValueMap.containsKey(randomKey)) {
                     BigInteger randomDecodeValue = dokvs.decode(doublyStorage, randomKey);
@@ -191,8 +190,7 @@ public class ZpDokvsTest {
     static Map<ByteBuffer, BigInteger> randomKeyValueMap(Zp zp, int size) {
         Map<ByteBuffer, BigInteger> keyValueMap = new HashMap<>();
         IntStream.range(0, size).forEach(index -> {
-            byte[] keyBytes = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(keyBytes);
+            byte[] keyBytes = BlockUtils.randomBlock(SECURE_RANDOM);
             BigInteger value = zp.createNonZeroRandom(SECURE_RANDOM);
             keyValueMap.put(ByteBuffer.wrap(keyBytes), value);
         });

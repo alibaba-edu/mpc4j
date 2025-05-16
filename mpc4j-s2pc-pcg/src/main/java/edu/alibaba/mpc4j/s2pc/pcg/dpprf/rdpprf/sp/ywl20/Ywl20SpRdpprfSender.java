@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.AbstractSpRdpprfSender;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.SpRdpprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.sp.ywl20.Ywl20SpRdpprfPtoDesc.PtoStep;
@@ -69,7 +69,7 @@ public class Ywl20SpRdpprfSender extends AbstractSpRdpprfSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         preCotSender.init();
         stopWatch.stop();
@@ -140,7 +140,7 @@ public class Ywl20SpRdpprfSender extends AbstractSpRdpprfSender {
         Prg prg = PrgFactory.createInstance(envType, 2 * CommonConstants.BLOCK_BYTE_LENGTH);
         ggmTree = new ArrayList<>(logNum + 1);
         // S picks a random s_0^0 ∈ {0, 1}^κ
-        byte[][] s0 = new byte[1][CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[][] s0 = BlockUtils.zeroBlocks(1);
         secureRandom.nextBytes(s0[0]);
         // adds s0 into level-0 GGM tree
         ggmTree.add(s0);
@@ -150,16 +150,14 @@ public class Ywl20SpRdpprfSender extends AbstractSpRdpprfSender {
             byte[][] currentLevelSeeds = new byte[1 << i][];
             for (int j = 0; j < (1 << (i - 1)); j++) {
                 byte[] extendSeeds = prg.extendToBytes(lowLevelSeeds[j]);
-                currentLevelSeeds[2 * j] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                currentLevelSeeds[2 * j] = BlockUtils.zeroBlock();
                 System.arraycopy(
-                    extendSeeds, 0,
-                    currentLevelSeeds[2 * j], 0,
+                    extendSeeds, 0, currentLevelSeeds[2 * j], 0,
                     CommonConstants.BLOCK_BYTE_LENGTH
                 );
-                currentLevelSeeds[2 * j + 1] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                currentLevelSeeds[2 * j + 1] = BlockUtils.zeroBlock();
                 System.arraycopy(
-                    extendSeeds, CommonConstants.BLOCK_BYTE_LENGTH,
-                    currentLevelSeeds[2 * j + 1], 0,
+                    extendSeeds, CommonConstants.BLOCK_BYTE_LENGTH, currentLevelSeeds[2 * j + 1], 0,
                     CommonConstants.BLOCK_BYTE_LENGTH
                 );
             }
@@ -170,14 +168,14 @@ public class Ywl20SpRdpprfSender extends AbstractSpRdpprfSender {
             int hIndex = i - 1;
             byte[][] currentLevelSeeds = ggmTree.get(i);
             // S then computes K_0^i = ⊕_{j ∈ [2^{i - 1}]} s_{2j}^i
-            k0s[hIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            k0s[hIndex] = BlockUtils.zeroBlock();
             for (int j = 0; j < (1 << (i - 1)); j++) {
-                BytesUtils.xori(k0s[hIndex], currentLevelSeeds[2 * j]);
+                BlockUtils.xori(k0s[hIndex], currentLevelSeeds[2 * j]);
             }
             // and K_1^i = ⊕_{j ∈ [2^{i - 1}]} s_{2j + 1}^i
-            k1s[hIndex] = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            k1s[hIndex] = BlockUtils.zeroBlock();
             for (int j = 0; j < (1 << (i - 1)); j++) {
-                BytesUtils.xori(k1s[hIndex], currentLevelSeeds[2 * j + 1]);
+                BlockUtils.xori(k1s[hIndex], currentLevelSeeds[2 * j + 1]);
             }
         }
     }
@@ -191,11 +189,11 @@ public class Ywl20SpRdpprfSender extends AbstractSpRdpprfSender {
                 // S sends M_0^i = K_0^i ⊕ H(q_i, i || l)
                 byte[] message0 = cotSenderOutput.getR0(hIndex);
                 message0 = crhf.hash(message0);
-                BytesUtils.xori(message0, k0s[hIndex]);
+                BlockUtils.xori(message0, k0s[hIndex]);
                 // and M_1^i = K_1^i ⊕ H(q_i ⊕ \not ∆, i || l)
                 byte[] message1 = cotSenderOutput.getR1(hIndex);
                 message1 = crhf.hash(message1);
-                BytesUtils.xori(message1, k1s[hIndex]);
+                BlockUtils.xori(message1, k1s[hIndex]);
                 return new byte[][]{message0, message1};
             })
             .flatMap(Arrays::stream)

@@ -1,9 +1,8 @@
 package edu.alibaba.mpc4j.crypto.algs.ope;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.crypto.algs.restriction.LongRestriction;
 import edu.alibaba.mpc4j.crypto.algs.utils.distribution.Coins;
@@ -71,10 +70,7 @@ public class Zlp24LongRopeEngine {
      * @return key.
      */
     public byte[] keyGen(SecureRandom secureRandom) {
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-        secureRandom.nextBytes(key);
-
-        return key;
+        return BlockUtils.randomBlock(secureRandom);
     }
 
     /**
@@ -87,8 +83,8 @@ public class Zlp24LongRopeEngine {
         inputRange = restriction.getInputRange();
         outputRange = restriction.getOutputRange();
         MathPreconditions.checkGreaterOrEqual("output range size", outputRange.size(), inputRange.size());
-        MathPreconditions.checkEqual("key.length", "λ", key.length, CommonConstants.BLOCK_BYTE_LENGTH);
-        this.key = BytesUtils.clone(key);
+        Preconditions.checkArgument(BlockUtils.valid(key));
+        this.key = BlockUtils.clone(key);
         this.restriction = restriction;
         initialized = true;
     }

@@ -34,10 +34,9 @@ public class AbstractZ2Circuit {
      * @return zi array, such that for each j, z[i] = (c ? y[i] : x[i])
      * @throws MpcAbortException the protocol failure aborts.
      */
-    protected MpcZ2Vector[] mux(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray, MpcZ2Vector ci) throws MpcAbortException {
+    public MpcZ2Vector[] mux(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray, MpcZ2Vector ci) throws MpcAbortException {
         checkInputs(xiArray, yiArray);
-        MpcZ2Vector[] ciArray = IntStream.range(0, xiArray.length).mapToObj(i -> ci).toArray(MpcZ2Vector[]::new);
-        return party.xor(party.and(party.xor(xiArray, yiArray), ciArray), xiArray);
+        return party.mux(xiArray, yiArray, ci);
     }
 
     protected void checkInputs(MpcZ2Vector[] xiArray, MpcZ2Vector[] yiArray) {

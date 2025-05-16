@@ -4,6 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.network.decomposer.Cgp20PermutationDecomposer;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.bst.*;
@@ -214,7 +215,7 @@ public class PstTest extends AbstractTwoPartyMemoryRpcPto {
                     sender.setTaskId(randomTaskId);
                     receiver.setTaskId(randomTaskId);
                     int[][] piArray = randomPiArray(batchNum, eachNum, true);
-                    byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+                    byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
                     CotSenderOutput preSenderOutput = CotSenderOutput.createRandom(
                         PstFactory.getPrecomputeNum(config, batchNum, eachNum), delta, SECURE_RANDOM
                     );

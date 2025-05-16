@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.ecc;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.ecc.ByteEccFactory.ByteEccType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -103,8 +104,7 @@ public class ByteMulEccTest {
         ByteMulEcc byteMulEcc = ByteEccFactory.createMulInstance(byteEccType);
         Set<ByteBuffer> pointSet = new HashSet<>();
         for (int i = 0; i < MAX_RANDOM_ROUND; i++) {
-            byte[] message = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(message);
+            byte[] message = BlockUtils.randomBlock(SECURE_RANDOM);
             byte[] p = byteMulEcc.hashToCurve(message);
             Assert.assertTrue(byteMulEcc.isValidPoint(p));
             pointSet.add(ByteBuffer.wrap(byteMulEcc.hashToCurve(message)));
@@ -157,9 +157,7 @@ public class ByteMulEccTest {
     public void testParallel() {
         ByteMulEcc byteMulEcc = ByteEccFactory.createMulInstance(byteEccType);
         // HashToCurve并发测试
-        byte[][] messages = IntStream.range(0, PARALLEL_NUM)
-            .mapToObj(index -> new byte[CommonConstants.BLOCK_BYTE_LENGTH])
-            .toArray(byte[][]::new);
+        byte[][] messages = BlockUtils.zeroBlocks(PARALLEL_NUM);
         Set<ByteBuffer> hashMessageSet = Arrays.stream(messages)
             .parallel()
             .map(byteMulEcc::hashToCurve)

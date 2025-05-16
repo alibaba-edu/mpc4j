@@ -12,10 +12,9 @@ import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.structure.lpn.primal.LocalLinearCoder;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotReceiver;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotReceiverOutput;
@@ -117,7 +116,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
 
         stopWatch.start();
         // get seed for matrix A
-        byte[][] matrixKeys = BytesUtils.randomByteArrayVector(2, CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[][] matrixKeys = BlockUtils.randomBlocks(2, secureRandom);
         List<byte[]> matrixKeysPayload = Arrays.stream(matrixKeys).collect(Collectors.toList());
         DataPacketHeader matrixInitKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.RECEIVER_SEND_MATRIX_KEYS.ordinal(),
@@ -150,7 +149,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         // z = w * A + r
         byte[][] initZ = matrixInitA.encodeBlock(wInitCotReceiverOutput.getRbArray());
         IntStream.range(0, initN).forEach(index ->
-            BytesUtils.xori(initZ[index], rInitMspCotReceiverOutput.getRb(index))
+            BlockUtils.xori(initZ[index], rInitMspCotReceiverOutput.getRb(index))
         );
         rCotReceiverOutput = CotReceiverOutput.create(initX, initZ);
         wCotReceiverOutput = rCotReceiverOutput.split(iterationK);
@@ -184,7 +183,7 @@ public class Ywl20NcCotReceiver extends AbstractNcCotReceiver {
         for (int eIndex : rMspCotReceiverOutput.getAlphaArray()) {
             x[eIndex] = !x[eIndex];
         }
-        IntStream.range(0, iterationN).forEach(index -> BytesUtils.xori(z[index], rMspCotReceiverOutput.getRb(index)));
+        IntStream.range(0, iterationN).forEach(index -> BlockUtils.xori(z[index], rMspCotReceiverOutput.getRb(index)));
         // split COT output into k0 + MSP-COT + output
         CotReceiverOutput receiverOutput = CotReceiverOutput.create(x, z);
         wCotReceiverOutput = receiverOutput.split(iterationK);

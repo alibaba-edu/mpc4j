@@ -13,10 +13,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
 import edu.alibaba.mpc4j.common.structure.filter.Filter;
 import edu.alibaba.mpc4j.common.structure.filter.FilterFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
-import edu.alibaba.mpc4j.common.tool.utils.ObjectUtils;
+import edu.alibaba.mpc4j.common.tool.utils.*;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvs;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory;
 import edu.alibaba.mpc4j.common.structure.okve.dokvs.gf2e.Gf2eDokvsFactory.Gf2eDokvsType;
@@ -77,10 +74,10 @@ public class Prty19LowPsiClient<T> extends AbstractPsiClient<T> {
 
         stopWatch.start();
         // init COT
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         // generate and send OKVS keys
-        okvsKeys = CommonUtils.generateRandomKeys(okvsKeyNum, secureRandom);
+        okvsKeys = BlockUtils.randomBlocks(okvsKeyNum, secureRandom);
         List<byte[]> okvsKeyPayload = Arrays.stream(okvsKeys).collect(Collectors.toList());
         DataPacketHeader okvsKeyHeader = new DataPacketHeader(
             encodeTaskId, getPtoDesc().getPtoId(), PtoStep.CLIENT_SEND_OKVS_KEY.ordinal(), extraInfo,
@@ -209,7 +206,7 @@ public class Prty19LowPsiClient<T> extends AbstractPsiClient<T> {
     private void initClientElements() {
         ys = new byte[clientElementSize][];
         Prf elementPrf = PrfFactory.createInstance(envType, CommonConstants.BLOCK_BYTE_LENGTH);
-        elementPrf.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        elementPrf.setKey(BlockUtils.zeroBlock());
         IntStream elementIndexIntStream = IntStream.range(0, clientElementSize);
         elementIndexIntStream = parallel ? elementIndexIntStream.parallel() : elementIndexIntStream;
         elementIndexIntStream.forEach(index -> {

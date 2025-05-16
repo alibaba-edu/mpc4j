@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.hashbin.HashBinTestUtils;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,7 +25,7 @@ import java.util.List;
  */
 @RunWith(Parameterized.class)
 public class EmptyPadHashBinTest {
-    private static final ByteBuffer EMPTY_ITEM = ByteBuffer.wrap(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+    private static final ByteBuffer EMPTY_ITEM = ByteBuffer.wrap(BlockUtils.zeroBlock());
     /**
      * 随机元素数量
      */
@@ -78,7 +78,7 @@ public class EmptyPadHashBinTest {
 
     @Test
     public void testIllegalInputs() {
-        byte[][] keys = CommonUtils.generateRandomKeys(1, HashBinTestUtils.SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(1, HashBinTestUtils.SECURE_RANDOM);
         EmptyPadHashBin<ByteBuffer> hashBin = new EmptyPadHashBin<>(EnvType.STANDARD, binNum, itemSize, keys);
         List<ByteBuffer> items = HashBinTestUtils.randomByteBufferItems(itemSize);
         // 尝试未插入元素时就填充数据
@@ -152,7 +152,7 @@ public class EmptyPadHashBinTest {
     }
 
     private void testHashBin(int hashNum) {
-        byte[][] keys = CommonUtils.generateRandomKeys(hashNum, HashBinTestUtils.SECURE_RANDOM);
+        byte[][] keys = BlockUtils.randomBlocks(hashNum, HashBinTestUtils.SECURE_RANDOM);
         EmptyPadHashBin<ByteBuffer> hashBin = new EmptyPadHashBin<>(EnvType.STANDARD, binNum, itemSize, keys);
         List<ByteBuffer> items = HashBinTestUtils.randomByteBufferItems(itemSize);
         // 验证参数设置

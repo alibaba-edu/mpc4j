@@ -4,8 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
 import edu.alibaba.mpc4j.common.structure.database.ZlDatabase;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.IntHashBin;
-import edu.alibaba.mpc4j.common.tool.hashbin.primitive.SimpleIntHashBin;
+import edu.alibaba.mpc4j.common.tool.hashbin.primitive.DynamicSimpleIntHashBin;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntCuckooHashBinFactory;
 import edu.alibaba.mpc4j.common.tool.hashbin.primitive.cuckoo.IntNoStashCuckooHashBin;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
@@ -114,7 +113,7 @@ public class VectorizedStdIdxPirClient extends AbstractStdIdxPirClient implement
         stopWatch.start();
         binNum = (int) Math.ceil(cuckooFactor * maxBatchNum);
         int[] totalIndex = IntStream.range(0, n).toArray();
-        IntHashBin intHashBin = new SimpleIntHashBin(envType, binNum, n, hashKeys);
+        DynamicSimpleIntHashBin intHashBin = new DynamicSimpleIntHashBin(envType, binNum, n, hashKeys);
         intHashBin.insertItems(totalIndex);
         int maxBinSize = IntStream.range(0, binNum)
             .mapToObj(intHashBin::binSize)

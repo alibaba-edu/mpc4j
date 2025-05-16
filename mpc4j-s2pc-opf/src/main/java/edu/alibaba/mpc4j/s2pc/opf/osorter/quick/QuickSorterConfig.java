@@ -11,6 +11,8 @@ import edu.alibaba.mpc4j.s2pc.opf.shuffle.ShuffleConfig;
 import edu.alibaba.mpc4j.s2pc.opf.shuffle.ShuffleFactory;
 
 /**
+ * quick sort config
+ *
  * @author Feng Han
  * @date 2024/9/27
  */

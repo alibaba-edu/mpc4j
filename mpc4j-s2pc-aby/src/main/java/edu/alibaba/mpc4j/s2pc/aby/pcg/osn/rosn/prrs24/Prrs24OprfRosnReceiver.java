@@ -4,7 +4,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.galoisfield.Z3ByteField;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.AbstractRosnReceiver;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnReceiverOutput;
@@ -77,14 +77,13 @@ public class Prrs24OprfRosnReceiver extends AbstractRosnReceiver {
         stopWatch.start();
         // the receiver samples t ∈ {0, 1}^κ. The receiver sends t to the sender.
         int selfParallelNum = parallel ? ForkJoinPool.getCommonPoolParallelism() : 1;
-        byte[][] randomSeeds = IntStream.range(0, selfParallelNum).mapToObj(i ->
-            BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom)).toArray(byte[][]::new);
+        byte[][] randomSeeds = BlockUtils.randomBlocks(selfParallelNum, secureRandom);
         sendOtherPartyPayload(PtoStep.RECEIVER_SEND_T.ordinal(), Arrays.stream(randomSeeds).toList());
         // Let x_{i,j} := H(t, i, j) for i ∈ [num], j ∈ [m] where m := ⌈ℓ/w⌉.
         int m = CommonUtils.getUnitNum(byteLength, w);
         byte[][][] xss = new byte[m][num][n];
         // parallel if needed
-        if (parallel && num > CommonConstants.STATS_BIT_LENGTH * selfParallelNum) {
+        if (parallel && num * m > CommonConstants.STATS_BIT_LENGTH * selfParallelNum) {
             int eachLen = (int) Math.ceil(num * 1.0 / selfParallelNum);
             IntStream.range(0, selfParallelNum).parallel().forEach(randIndex -> {
                 int startIndex = randIndex * eachLen;

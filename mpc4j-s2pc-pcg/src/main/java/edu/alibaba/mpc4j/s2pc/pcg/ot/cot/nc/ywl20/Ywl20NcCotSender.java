@@ -8,7 +8,7 @@ import edu.alibaba.mpc4j.common.rpc.*;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import edu.alibaba.mpc4j.common.structure.lpn.primal.LocalLinearCoder;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.core.CoreCotSender;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
@@ -137,7 +137,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         // y = v * A + s
         byte[][] initY = matrixInitA.encodeBlock(vInitCotSenderOutput.getR0Array());
         IntStream.range(0, initN).forEach(index ->
-            BytesUtils.xori(initY[index], sInitMspCotSenderOutput.getR0(index))
+            BlockUtils.xori(initY[index], sInitMspCotSenderOutput.getR0(index))
         );
         sCotSenderOutput = CotSenderOutput.create(delta, initY);
         vCotSenderOutput = sCotSenderOutput.split(iterationK);
@@ -168,7 +168,7 @@ public class Ywl20NcCotSender extends AbstractNcCotSender {
         // y = v * A + s
         byte[][] y = matrixA.encodeBlock(vCotSenderOutput.getR0Array());
         IntStream.range(0, iterationN).forEach(index ->
-            BytesUtils.xori(y[index], sMspCotSenderOutput.getR0(index))
+            BlockUtils.xori(y[index], sMspCotSenderOutput.getR0(index))
         );
         // split COT output into k0 + MSP-COT + output
         CotSenderOutput senderOutput = CotSenderOutput.create(delta, y);

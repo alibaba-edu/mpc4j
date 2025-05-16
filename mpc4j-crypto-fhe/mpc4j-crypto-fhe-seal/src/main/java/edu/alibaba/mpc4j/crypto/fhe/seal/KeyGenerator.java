@@ -93,32 +93,33 @@ public class KeyGenerator {
 
     private void generateSk(boolean isInitialized) {
         // Extract encryption parameters.
-        ContextData contextData = context.keyContextData();
-        EncryptionParameters params = contextData.parms();
-        Modulus[] coeffModulus = params.coeffModulus();
-        int coeffCount = params.polyModulusDegree();
-        int coeffModulusSize = coeffModulus.length;
+        ContextData context_data = context.keyContextData();
+        EncryptionParameters params = context_data.parms();
+        Modulus[] coeff_modulus = params.coeffModulus();
+        int coeff_count = params.polyModulusDegree();
+        int coeff_modulus_size = coeff_modulus.length;
 
         if (!isInitialized) {
+            // Initialize secret key.
             secretKey = new SecretKey();
             skGenerated = false;
-            secretKey.data().resize(Common.mulSafe(coeffCount, coeffModulusSize, false));
+            secretKey.data().resize(Common.mulSafe(coeff_count, coeff_modulus_size, false));
 
             // Generate secret key
-            RnsIterator secretKeyRns = RnsIterator.wrap(secretKey.data().data(), coeffCount, coeffModulusSize);
+            RnsIterator secretKeyRns = RnsIterator.wrap(secretKey.data().data(), coeff_count, coeff_modulus_size);
             RingLwe.samplePolyTernary(params.randomGeneratorFactory().create(), params, secretKeyRns.coeff());
 
             // Transform the secret s into NTT representation.
-            NttTables[] nttTables = contextData.smallNttTables();
-            NttTool.nttNegacyclicHarveyRns(secretKeyRns, coeffModulusSize, nttTables);
+            NttTables[] ntt_tables = context_data.smallNttTables();
+            NttTool.nttNegacyclicHarveyRns(secretKeyRns, coeff_modulus_size, ntt_tables);
 
             // Set the parms_id for secret key
-            secretKey.setParmsId(contextData.parmsId());
+            secretKey.setParmsId(context_data.parmsId());
         }
 
         // Set the secret_key_array to have size 1 (first power of secret)
-        secretKeyArray = new long[coeffCount * coeffModulusSize];
-        System.arraycopy(secretKey.data().data(), 0, secretKeyArray, 0, coeffCount * coeffModulusSize);
+        secretKeyArray = new long[coeff_count * coeff_modulus_size];
+        System.arraycopy(secretKey.data().data(), 0, secretKeyArray, 0, coeff_count * coeff_modulus_size);
         secretKeyArraySize = 1;
 
         // Secret key has been generated

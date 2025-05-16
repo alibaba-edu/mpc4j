@@ -2,7 +2,7 @@ package edu.alibaba.mpc4j.crypto.fhe.seal.rns;
 
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.CoeffIterator;
 import edu.alibaba.mpc4j.crypto.fhe.seal.iterator.RnsIterator;
-import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.Modulus;
+import edu.alibaba.mpc4j.crypto.fhe.seal.modulus.AbstractModulus;
 import edu.alibaba.mpc4j.crypto.fhe.seal.zq.Common;
 import edu.alibaba.mpc4j.crypto.fhe.seal.zq.UintArithmeticSmallMod;
 import org.apache.commons.lang3.builder.MultilineRecursiveToStringStyle;
@@ -157,7 +157,7 @@ public class BaseConverter {
         if (outBase.size() != 1) {
             throw new IllegalArgumentException("out base in exact_convert_array must be one");
         }
-        Modulus p = outBase.getBase(0);
+        AbstractModulus p = outBase.getBase(0);
         if (inBase.size() > 1) {
             // v = round( \sum ([x_i * \tilde{q_i}]_{q_i} / q_i))
             // 1. [x_i * \tilde{q_i}]_{q_i}, and the fraction

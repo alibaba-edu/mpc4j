@@ -3,7 +3,7 @@ package edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.hashbin.object.cuckoo.CuckooHashBinFactory.CuckooHashBinType;
-import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.DoubleUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import gnu.trove.map.TIntObjectMap;
@@ -159,20 +159,12 @@ public class CuckooHashBinParamsTest {
     }
 
     private void testLogNum(int logNum) {
-        int[] binNumArray;
-        switch (hashNum) {
-            case 3:
-                binNumArray = H3_LOG_NUM_BINS_MAP.get(logNum);
-                break;
-            case 4:
-                binNumArray = H4_LOG_NUM_BINS_MAP.get(logNum);
-                break;
-            case 5:
-                binNumArray = H5_LOG_NUM_BINS_MAP.get(logNum);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid hash num: " + hashNum);
-        }
+        int[] binNumArray = switch (hashNum) {
+            case 3 -> H3_LOG_NUM_BINS_MAP.get(logNum);
+            case 4 -> H4_LOG_NUM_BINS_MAP.get(logNum);
+            case 5 -> H5_LOG_NUM_BINS_MAP.get(logNum);
+            default -> throw new IllegalArgumentException("Invalid hash num: " + hashNum);
+        };
         int num = 1 << logNum;
         List<ByteBuffer> items = IntStream.range(0, num)
             .mapToObj(IntUtils::intToByteArray)
@@ -185,7 +177,7 @@ public class CuckooHashBinParamsTest {
                 .map(round -> {
                     // try to insert items and see if it is no stash
                     try {
-                        byte[][] keys = CommonUtils.generateRandomKeys(CuckooHashBinFactory.getHashNum(type), SECURE_RANDOM);
+                        byte[][] keys = BlockUtils.randomBlocks(hashNum, SECURE_RANDOM);
                         NoStashCuckooHashBin<ByteBuffer> hashBin = CuckooHashBinFactory.createNoStashCuckooHashBin(
                             EnvType.STANDARD, type, num, binNum, keys
                         );

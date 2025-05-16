@@ -1,10 +1,9 @@
 package edu.alibaba.mpc4j.common.tool.crypto.crhf;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.EnvType;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.Prp;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 /**
  * MMO_σ(x) = π(σ(x)) ⊕ σ(x)（满足电路抗关联性），由下述论文第7.3节给出：
@@ -40,7 +39,7 @@ class JdkMmoSigmaCrhf implements Crhf {
     JdkMmoSigmaCrhf(EnvType envType) {
         prp = PrpFactory.createInstance(envType);
         // 默认伪随机置换密钥为全0
-        prp.setKey(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+        prp.setKey(BlockUtils.zeroBlock());
     }
 
     @Override
@@ -50,7 +49,7 @@ class JdkMmoSigmaCrhf implements Crhf {
         // π(σ(x))
         byte[] output = prp.prp(sigmaX);
         // π(σ(x)) ⊕ σ(x)
-        BytesUtils.xori(output, sigmaX);
+        BlockUtils.xori(output, sigmaX);
         return output;
     }
 
@@ -66,17 +65,17 @@ class JdkMmoSigmaCrhf implements Crhf {
      * @return σ(x)。
      */
     private byte[] sigma(byte[] x) {
-        assert x.length == CommonConstants.BLOCK_BYTE_LENGTH;
-        byte[] sigmaX = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        assert BlockUtils.valid(x);
+        byte[] sigmaX = BlockUtils.zeroBlock();
         // mm_shuffle_epi32(a, 78)，即当x = [a_0, a_1, a_2, a_3]，每个为32比特时，s(x) = [a_1, a_0, a_3, a_2]
         System.arraycopy(x, Integer.BYTES, sigmaX, 0, Integer.BYTES);
         System.arraycopy(x, 0, sigmaX, Integer.BYTES, Integer.BYTES);
         System.arraycopy(x, Integer.BYTES * 3, sigmaX, Integer.BYTES * 2, Integer.BYTES);
         System.arraycopy(x, Integer.BYTES * 2, sigmaX, Integer.BYTES * 3, Integer.BYTES);
         // and_si128(a, mask)
-        byte[] maskX = BytesUtils.and(x, MASK);
+        byte[] maskX = BlockUtils.and(x, MASK);
         // σ(x)
-        BytesUtils.xori(sigmaX, maskX);
+        BlockUtils.xori(sigmaX, maskX);
 
         return sigmaX;
     }

@@ -4,9 +4,9 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.PtoState;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.LongUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.st.sst.SstReceiverOutput;
@@ -18,7 +18,6 @@ import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.BpCdpprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.SpCdpprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -50,7 +49,7 @@ public class Lll24BstReceiver extends AbstractBstReceiver {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         bpCdpprfSender.init(delta);
         stopWatch.stop();
         long initTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
@@ -111,9 +110,10 @@ public class Lll24BstReceiver extends AbstractBstReceiver {
                         extendMatrix[i - offset] = eachExtendMatrix;
                     });
                     extendMatrix[eachNum - 1] = IntStream.range(0, eachNum).mapToObj(i -> {
-                        byte[] xorColumn = Arrays.copyOf(senderOutput.getDelta(), senderOutput.getDelta().length);
+                        byte[] xorColumn = BlockUtils.zeroBlock();
+                        BlockUtils.xori(xorColumn, senderOutput.getDelta());
                         for (int j = offset; j < eachNum + offset - 1; j++) {
-                            BytesUtils.xori(xorColumn, senderOutput.get(j).getV0(i));
+                            BlockUtils.xori(xorColumn, senderOutput.get(j).getV0(i));
                         }
                         return prg.extendToBytes(xorColumn);
                     }).toArray(byte[][]::new);

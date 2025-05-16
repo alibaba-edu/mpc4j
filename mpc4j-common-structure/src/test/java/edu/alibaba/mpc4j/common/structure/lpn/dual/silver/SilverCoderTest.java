@@ -4,8 +4,7 @@ import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnCoderTestUtils;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnParams;
 import edu.alibaba.mpc4j.common.structure.lpn.dual.silver.SilverCodeCreatorUtils.SilverCodeType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -75,7 +74,7 @@ public class SilverCoderTest {
     public void testEncode() {
         // generate COT: (R0, Δ), (b, Rb)
         int n = silverCoder.getCodeSize();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         byte[][] r0Array = LpnCoderTestUtils.generateR0Array(n, secureRandom);
         boolean[] choices = LpnCoderTestUtils.generateChoices(n, secureRandom);
         byte[][] rbArray = LpnCoderTestUtils.generateRbArray(delta, r0Array, choices);

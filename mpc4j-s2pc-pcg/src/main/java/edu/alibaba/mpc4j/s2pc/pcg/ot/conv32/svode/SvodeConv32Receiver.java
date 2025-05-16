@@ -1,15 +1,11 @@
 package edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.svode;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.structure.vector.ByteVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.Crhf;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory;
 import edu.alibaba.mpc4j.common.tool.crypto.crhf.CrhfFactory.CrhfType;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64Factory;
-import edu.alibaba.mpc4j.common.tool.utils.SerializeUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.AbstractConv32Party;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.conv32.svode.SvodeConv32PtoDesc.PtoStep;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.Gf2kVodeSenderOutput;
@@ -17,7 +13,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.nc.Gf2kNcVodeConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.nc.Gf2kNcVodeFactory;
 import edu.alibaba.mpc4j.s2pc.pcg.vode.gf2k.nc.Gf2kNcVodeSender;
 
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -41,10 +37,6 @@ public class SvodeConv32Receiver extends AbstractConv32Party {
      * crhf
      */
     private final Crhf crhf;
-    /**
-     * Z_{2^2}, used for merging c
-     */
-    private final Zl64 zl2;
 
     public SvodeConv32Receiver(Rpc receiverRpc, Party senderParty, SvodeConv32Config config) {
         super(SvodeConv32PtoDesc.getInstance(), receiverRpc, senderParty, config);
@@ -54,7 +46,6 @@ public class SvodeConv32Receiver extends AbstractConv32Party {
         // each conversion needs 1 Subfield VODE
         maxRoundNum = gf2kNcVodeConfig.maxNum();
         crhf = CrhfFactory.createInstance(envType, CrhfType.MMO);
-        zl2 = Zl64Factory.createInstance(envType, 2);
     }
 
     @Override
@@ -86,51 +77,58 @@ public class SvodeConv32Receiver extends AbstractConv32Party {
         // The parties generate a random 1-out-of-4 bit OT with messages (m_0, m_1, m_2, m_3) ∈ F_2^4 held by P0 and
         // (c, m_c) ∈ F_4 × F_2 held by P1.
         stopWatch.start();
-        ByteVector c = ByteVector.createEmpty();
+        BitVector c0 = BitVectorFactory.createEmpty();
+        BitVector c1 = BitVectorFactory.createEmpty();
         BitVector mc = BitVectorFactory.createEmpty();
         while (mc.bitNum() < num) {
             Gf2kVodeSenderOutput gf2kVodeSenderOutput = gf2kNcVodeSender.send();
             int roundNum = gf2kVodeSenderOutput.getNum();
-            ByteVector roundC = ByteVector.createZeros(roundNum);
+            BitVector roundC0 = BitVectorFactory.createZeros(roundNum);
+            BitVector roundC1 = BitVectorFactory.createZeros(roundNum);
             BitVector roundMc = BitVectorFactory.createZeros(roundNum);
             byte[][] xs = gf2kVodeSenderOutput.getX();
             byte[][] ts = gf2kVodeSenderOutput.getT();
+
+            byte[] crhfRes = new byte[roundNum];
+            IntStream intStream = parallel ? IntStream.range(0, roundNum).parallel() : IntStream.range(0, roundNum);
+            intStream.forEach(i -> crhfRes[i] = crhf.hash(ts[i])[0]);
             IntStream.range(0, roundNum).forEach(i -> {
-                roundC.setElement(i, xs[i][0]);
-                roundMc.set(i, (crhf.hash(ts[i])[0] & 0b00000001) != 0);
+                roundC0.set(i, (xs[i][0] & 0b00000001) != 0);
+                roundC1.set(i, (xs[i][0] & 0b00000010) != 0);
+                roundMc.set(i, (crhfRes[i] & 0b00000001) != 0);
             });
-            c.merge(roundC);
+            c0.merge(roundC0);
+            c1.merge(roundC1);
             mc.merge(roundMc);
         }
-        c.reduce(num);
+        c0.reduce(num);
+        c1.reduce(num);
         mc.reduce(num);
         long roundTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
         stopWatch.reset();
         logStepInfo(PtoState.PTO_STEP, 1, 3, roundTime, "Parties generate Subfield VODE");
 
         stopWatch.start();
-        // P1 sends d = w1 − c mod p to P0.
-        byte[] ds = new byte[num];
-        for (int i = 0; i < num; i++) {
-            ds[i] = (byte) zl2.sub(w1[i], c.getElement(i));
-        }
-        byte[] dsCompress = SerializeUtils.compressL2(ds);
-        List<byte[]> dPayload = Collections.singletonList(dsCompress);
-        sendOtherPartyPayload(PtoStep.RECEIVER_SEND_D.ordinal(), dPayload);
-        stopWatch.stop();
-        long correctTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-        stopWatch.reset();
-        logStepInfo(PtoState.PTO_STEP, 2, 3, correctTime);
-
-        stopWatch.start();
-        // Let w_{1,0}, w_{1,1} ∈ F_2 be the bit decomposition of w_1, i.e. w_1 = w_{1,0} + 2 * w_{1,1}.
+        // According to the function "mod2OtF4" in AltModWPrfProto.cpp of secure-join [https://github.com/Visa-Research/secure-join],
+        // the choice correction is fulfilled with bit operations.
+        // P1 sends d0Diff = w1_0 ^c_0, d1Diff = w1_1 ^c_1 to P0.
         BitVector w10 = BitVectorFactory.createZeros(num);
         BitVector w11 = BitVectorFactory.createZeros(num);
         IntStream.range(0, num).forEach(i -> {
             w10.set(i, (w1[i] & 0b00000001) != 0);
             w11.set(i, (w1[i] & 0b00000010) != 0);
         });
+        List<byte[]> dPayload = new LinkedList<>();
+        dPayload.add(c0.xor(w10).getBytes());
+        dPayload.add(c1.xor(w11).getBytes());
+        sendOtherPartyPayload(PtoStep.RECEIVER_SEND_D.ordinal(), dPayload);
+        stopWatch.stop();
+        long correctTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
+        stopWatch.reset();
+        logStepInfo(PtoState.PTO_STEP, 2, 3, correctTime);
+
         // P0 sends (t_0, t_1) to P1.
+        stopWatch.start();
         List<byte[]> t0t1Payload = receiveOtherPartyPayload(PtoStep.SENDER_SEND_T0_T1.ordinal());
         MpcAbortPreconditions.checkArgument(t0t1Payload.size() == 2);
         BitVector t0 = BitVectorFactory.create(num, t0t1Payload.get(0));

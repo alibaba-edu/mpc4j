@@ -214,8 +214,7 @@ public class PermutableBitonicSorter extends AbstractPermutationSorter {
 
         // get the comparison result, if r = 1, switch two values
         MpcZ2Vector compFlag = party.xor(party.not(circuit.leq(upperX, belowX)), compareMaskVec);
-        MpcZ2Vector[] flags = IntStream.range(0, xiArray.length).mapToObj(i -> compFlag).toArray(MpcZ2Vector[]::new);
-        MpcZ2Vector[] switchX = party.and(flags, party.xor(upperX, belowX));
+        MpcZ2Vector[] switchX = party.and(compFlag, party.xor(upperX, belowX));
         intStream = party.getParallel() ? IntStream.range(0, xiArray.length).parallel() : IntStream.range(0, xiArray.length);
         MpcZ2Vector[] extendSwitchX = intStream.mapToObj(i -> switchX[i].extendBitsWithSkip(sortedNum, skipLen)).toArray(MpcZ2Vector[]::new);
 
@@ -230,8 +229,7 @@ public class PermutableBitonicSorter extends AbstractPermutationSorter {
                 upperPayload[i] = tmp[0];
                 belowPayload[i] = tmp[1];
             });
-            flags = IntStream.range(0, payloadArrays.length).mapToObj(i -> compFlag).toArray(MpcZ2Vector[]::new);
-            MpcZ2Vector[] switchPayload = party.and(flags, party.xor(upperPayload, belowPayload));
+            MpcZ2Vector[] switchPayload = party.and(compFlag, party.xor(upperPayload, belowPayload));
             intStream = party.getParallel() ? IntStream.range(0, payloadArrays.length).parallel() : IntStream.range(0, payloadArrays.length);
             MpcZ2Vector[] extendSwitchPayload = intStream.mapToObj(i -> switchPayload[i].extendBitsWithSkip(sortedNum, skipLen)).toArray(MpcZ2Vector[]::new);
             payloadArrays = party.xor(extendSwitchPayload, payloadArrays);

@@ -3,8 +3,7 @@ package edu.alibaba.mpc4j.common.structure.lpn.dual.excoder;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.structure.lpn.LpnCoderTestUtils;
 import edu.alibaba.mpc4j.common.structure.lpn.dual.excoder.ExCoderFactory.ExCoderType;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -64,7 +63,7 @@ public class ExCoderTest {
         // generate COT: (R0, Δ), (b, Rb)
         SecureRandom secureRandom = new SecureRandom();
         int n = ExCoderFactory.getScalar(type) * k;
-        delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        delta = BlockUtils.randomBlock(secureRandom);
         r0Array = LpnCoderTestUtils.generateR0Array(n, secureRandom);
         choices = LpnCoderTestUtils.generateChoices(n, secureRandom);
         rbArray = LpnCoderTestUtils.generateRbArray(delta, r0Array, choices);

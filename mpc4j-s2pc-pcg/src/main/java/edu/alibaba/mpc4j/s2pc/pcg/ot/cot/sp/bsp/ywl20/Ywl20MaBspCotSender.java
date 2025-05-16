@@ -11,7 +11,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prf.PrfFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2k;
 import edu.alibaba.mpc4j.common.tool.galoisfield.gf2k.Gf2kFactory;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.rdpprf.bp.BpRdpprfFactory;
@@ -151,15 +151,15 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
         logStepInfo(PtoState.PTO_STEP, 2, 4, dpprfTime);
 
         stopWatch.start();
-        byte[][] correlateByteArrays = new byte[batchNum][];
+        byte[][] correlateByteArrays = BlockUtils.zeroBlocks(batchNum);
         SspCotSenderOutput[] senderOutputs = IntStream.range(0, batchNum)
             .mapToObj(batchIndex -> {
-                correlateByteArrays[batchIndex] = BytesUtils.clone(delta);
+                BlockUtils.xori(correlateByteArrays[batchIndex], delta);
                 // S sets v = (s_0^h,...,s_{n - 1}^h)
                 byte[][] vs = bpRdpprfSenderOutput.get(batchIndex).getV0Array();
                 // and sends c = Δ + \sum_{i ∈ [n]} {v[i]}
                 for (int i = 0; i < eachNum; i++) {
-                    BytesUtils.xori(correlateByteArrays[batchIndex], vs[i]);
+                    BlockUtils.xori(correlateByteArrays[batchIndex], vs[i]);
                 }
                 return SspCotSenderOutput.create(delta, vs);
             })
@@ -204,15 +204,15 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
         byte[] xPrime = checkChoicePayload.remove(0);
         boolean[] xPrimeBinary = BinaryUtils.byteArrayToBinary(xPrime, CommonConstants.BLOCK_BIT_LENGTH);
         // S computes \vec{y} := \vec{y}^* + \vec{x}·∆, Y := Σ_{i ∈ [κ]} (y[i]·X^i) ∈ F_{2^κ}
-        byte[] y = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] y = BlockUtils.zeroBlock();
         for (int checkIndex = 0; checkIndex < CommonConstants.BLOCK_BIT_LENGTH; checkIndex++) {
             // y[i] = y[i]^* + x[i]·∆
             byte[] yi = checkCotSenderOutput.getR0(checkIndex);
             if (xPrimeBinary[checkIndex]) {
-                BytesUtils.xori(yi, delta);
+                BlockUtils.xori(yi, delta);
             }
             // y[i]·X^i
-            byte[] xi = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            byte[] xi = BlockUtils.zeroBlock();
             BinaryUtils.setBoolean(xi, checkIndex, true);
             gf2k.muli(yi, xi);
             // y += y[i]·X^i
@@ -224,7 +224,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
         lIntStream = parallel ? lIntStream.parallel() : lIntStream;
         byte[][] vs = lIntStream
             .mapToObj(l -> {
-                byte[] v = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+                byte[] v = BlockUtils.zeroBlock();
                 for (int i = 0; i < eachNum; i++) {
                     // samples uniform {χ_i}_{i ∈ [n]}
                     byte[] indexMessage = ByteBuffer.allocate(Long.BYTES + Integer.BYTES + Integer.BYTES)
@@ -239,7 +239,7 @@ public class Ywl20MaBspCotSender extends AbstractBspCotSender {
             })
             .toArray(byte[][]::new);
         // V := Σ_{l ∈ [m]} (χ[i]·v[i]) + Y
-        byte[] v = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] v = BlockUtils.zeroBlock();
         for (int l = 0; l < batchNum; l++) {
             gf2k.addi(v, vs[l]);
         }

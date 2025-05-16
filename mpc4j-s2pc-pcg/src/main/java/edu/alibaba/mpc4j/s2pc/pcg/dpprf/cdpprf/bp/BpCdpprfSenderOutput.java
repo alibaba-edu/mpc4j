@@ -1,11 +1,10 @@
 package edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.AbstractBatchPcgOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.SpCdpprfSenderOutput;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -27,10 +26,10 @@ public class BpCdpprfSenderOutput extends AbstractBatchPcgOutput {
     public BpCdpprfSenderOutput(SpCdpprfSenderOutput[] senderOutputs) {
         super(senderOutputs);
         // get Δ
-        delta = BytesUtils.clone(senderOutputs[0].getDelta());
+        delta = BlockUtils.clone(senderOutputs[0].getDelta());
         IntStream.range(0, batchNum).forEach(batchIndex -> {
             SpCdpprfSenderOutput senderOutput = senderOutputs[batchIndex];
-            Preconditions.checkArgument(Arrays.equals(delta, senderOutput.getDelta()));
+            Preconditions.checkArgument(BlockUtils.equals(delta, senderOutput.getDelta()));
         });
         this.senderOutputs = senderOutputs;
     }

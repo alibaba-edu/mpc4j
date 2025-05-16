@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.algs.ope;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.crypto.algs.utils.range.LongRange;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
@@ -35,7 +35,7 @@ public class LongOpeTest {
     @Test
     public void testDefault() throws CryptoException {
         Bclo09LongOpeEngine opeEngine = new Bclo09LongOpeEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] key = BlockUtils.zeroBlock();
         LongRange rangeD = new LongRange(-(1L << 15), 1L << 16);
         LongRange rangeR = new LongRange(-(1L << 16), 1L << 17);
         opeEngine.init(key, rangeD, rangeR);

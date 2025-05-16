@@ -17,6 +17,19 @@ import java.util.stream.IntStream;
  */
 public interface TripletLongParty extends AbbCoreParty, MpcLongParty {
     /**
+     * update the estimated number of mul gate
+     *
+     * @param estimateLongTupleNum the estimated number of mul gate
+     */
+    void updateEstimateLongTupleNum(long estimateLongTupleNum);
+    /**
+     * get the estimated number of mul gate
+     *
+     * @return the estimated number of mul gate
+     */
+    long getEstimateLongTupleNum();    // e
+
+    /**
      * inits the protocol.
      */
     void init();

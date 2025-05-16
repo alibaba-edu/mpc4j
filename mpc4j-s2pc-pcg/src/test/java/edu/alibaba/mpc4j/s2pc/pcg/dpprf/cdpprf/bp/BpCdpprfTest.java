@@ -1,9 +1,7 @@
 package edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp;
 
 import edu.alibaba.mpc4j.common.rpc.pto.AbstractTwoPartyMemoryRpcPto;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.BpCdpprfFactory.BpCdpprfType;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.bp.gyw23.Gyw23BpCdpprfConfig;
 import edu.alibaba.mpc4j.s2pc.pcg.dpprf.cdpprf.sp.SpCdpprfReceiverOutput;
@@ -212,7 +210,7 @@ public class BpCdpprfTest extends AbstractTwoPartyMemoryRpcPto {
         try {
             LOGGER.info("-----test {} start-----", sender.getPtoDesc().getPtoName());
             int batchNum = alphaArray.length;
-            byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, SECURE_RANDOM);
+            byte[] delta = BlockUtils.randomBlock(SECURE_RANDOM);
             BpCdpprfSenderThread senderThread = new BpCdpprfSenderThread(sender, delta, batchNum, eachNum);
             BpCdpprfReceiverThread receiverThread = new BpCdpprfReceiverThread(receiver, alphaArray, eachNum);
             STOP_WATCH.start();
@@ -250,10 +248,8 @@ public class BpCdpprfTest extends AbstractTwoPartyMemoryRpcPto {
         int batchNum = DEFAULT_BATCH_NUM;
         try {
             LOGGER.info("-----test {} (precompute) start-----", sender.getPtoDesc().getPtoName());
-            byte[] initDelta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(initDelta);
-            byte[] actualDelta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(actualDelta);
+            byte[] initDelta = BlockUtils.randomBlock(SECURE_RANDOM);
+            byte[] actualDelta = BlockUtils.randomBlock(SECURE_RANDOM);
             int[] alphaArray = IntStream.range(0, batchNum)
                 .map(alphaIndex -> SECURE_RANDOM.nextInt(eachNum))
                 .toArray();
@@ -302,7 +298,7 @@ public class BpCdpprfTest extends AbstractTwoPartyMemoryRpcPto {
             SpCdpprfReceiverOutput eachReceiverOutput = receiverOutput.get(batchIndex);
             Assert.assertEquals(eachNum, eachSenderOutput.getNum());
             Assert.assertEquals(eachNum, eachReceiverOutput.getNum());
-            byte[] actualDelta = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+            byte[] actualDelta = BlockUtils.zeroBlock();
             IntStream.range(0, eachNum).forEach(index -> {
                 if (index == eachReceiverOutput.getAlpha()) {
                     Assert.assertNull(eachReceiverOutput.getV1(index));

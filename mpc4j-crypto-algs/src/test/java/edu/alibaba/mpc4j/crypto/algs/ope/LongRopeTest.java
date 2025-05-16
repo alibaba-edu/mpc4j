@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.crypto.algs.ope;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.crypto.algs.restriction.LongLinearMaxBoundRestriction;
 import edu.alibaba.mpc4j.crypto.algs.restriction.LongLinearMinBoundRestriction;
 import edu.alibaba.mpc4j.crypto.algs.utils.range.LongRange;
@@ -35,7 +35,7 @@ public class LongRopeTest {
     @Test
     public void testLongLinearMinBoundDefault() throws CryptoException {
         Zlp24LongRopeEngine ropeEngine = new Zlp24LongRopeEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] key = BlockUtils.zeroBlock();
         LongRange rangeD = new LongRange(0, 1L << 16);
         LongRange rangeR = new LongRange(0, 1L << 17);
         ropeEngine.init(key, new LongLinearMinBoundRestriction(rangeD, rangeR, 2));
@@ -60,7 +60,7 @@ public class LongRopeTest {
     @Test
     public void testLongLinearMaxBoundDefault() throws CryptoException {
         Zlp24LongRopeEngine ropeEngine = new Zlp24LongRopeEngine();
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] key = BlockUtils.zeroBlock();
         LongRange rangeD = new LongRange(0, 1L << 16);
         LongRange rangeR = new LongRange(0, 1L << 17);
         ropeEngine.init(key, new LongLinearMaxBoundRestriction(rangeD, rangeR, 2));

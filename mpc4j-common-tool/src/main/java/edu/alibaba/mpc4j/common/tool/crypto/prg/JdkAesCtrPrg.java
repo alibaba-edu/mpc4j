@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.tool.crypto.prg;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -31,7 +31,7 @@ public class JdkAesCtrPrg implements Prg {
     /**
      * 初始向量为全0
      */
-    private static final IvParameterSpec IV = new IvParameterSpec(new byte[CommonConstants.BLOCK_BYTE_LENGTH]);
+    private static final IvParameterSpec IV = new IvParameterSpec(BlockUtils.zeroBlock());
     /**
      * 输出字节长度
      */
@@ -48,7 +48,7 @@ public class JdkAesCtrPrg implements Prg {
 
     @Override
     public byte[] extendToBytes(byte[] seed) {
-        assert seed.length == CommonConstants.BLOCK_BYTE_LENGTH;
+        assert BlockUtils.valid(seed);
         // 经过测试，AES/CTR模式不是线程安全的，每次扩展要创建新的实例
         try {
             Cipher cipher = Cipher.getInstance(JDK_AES_MODE_NAME);

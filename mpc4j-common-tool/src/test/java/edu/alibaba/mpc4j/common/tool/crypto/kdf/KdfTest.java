@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.kdf;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.kdf.KdfFactory.KdfType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class KdfTest {
     /**
      * 全0消息
      */
-    private static final byte[] ZERO_SEED = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_SEED = BlockUtils.zeroBlock();
     /**
      * 随机状态
      */

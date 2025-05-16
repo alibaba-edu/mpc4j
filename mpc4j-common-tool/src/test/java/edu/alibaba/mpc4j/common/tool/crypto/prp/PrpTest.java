@@ -3,6 +3,7 @@ package edu.alibaba.mpc4j.common.tool.crypto.prp;
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prp.PrpFactory.PrpType;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,15 +38,15 @@ public class PrpTest {
     /**
      * 全0密钥
      */
-    private static final byte[] ZERO_KEY = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_KEY = BlockUtils.zeroBlock();
     /**
      * 全0明文
      */
-    private static final byte[] ZERO_PLAINTEXT = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_PLAINTEXT = BlockUtils.zeroBlock();
     /**
      * 全0密文
      */
-    private static final byte[] ZERO_CIPHERTEXT = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+    private static final byte[] ZERO_CIPHERTEXT = BlockUtils.zeroBlock();
     /**
      * 随机状态
      */
@@ -198,8 +199,7 @@ public class PrpTest {
         // 不同密钥，相同明文/相同密文的结果应不相同
         Prp prp = PrpFactory.createInstance(type);
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-            byte[] randomKey = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomKey);
+            byte[] randomKey = BlockUtils.randomBlock(SECURE_RANDOM);
             prp.setKey(randomKey);
             randomKeyPrpSet.add(ByteBuffer.wrap(prp.prp(ZERO_PLAINTEXT)));
             randomKeyInvPrpSet.add(ByteBuffer.wrap(prp.invPrp(ZERO_CIPHERTEXT)));
@@ -211,7 +211,7 @@ public class PrpTest {
     @Test
     public void testModifyKey() {
         Prp prp = PrpFactory.createInstance(type);
-        byte[] key = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
+        byte[] key = BlockUtils.zeroBlock();
         prp.setKey(key);
         byte[] ciphertext = prp.prp(ZERO_PLAINTEXT);
         byte[] plaintext = prp.invPrp(ZERO_CIPHERTEXT);
@@ -230,8 +230,7 @@ public class PrpTest {
         // 不同明文，相同密钥的密文结果应不相同
         prp.setKey(ZERO_KEY);
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-            byte[] randomPlaintext = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomPlaintext);
+            byte[] randomPlaintext = BlockUtils.randomBlock(SECURE_RANDOM);
             randomPlaintextPrpSet.add(ByteBuffer.wrap(prp.prp(randomPlaintext)));
         }
         Assert.assertEquals(MAX_RANDOM_ROUND, randomPlaintextPrpSet.size());
@@ -244,8 +243,7 @@ public class PrpTest {
         // 不同密文，相同密钥的密文结果应不相同
         prp.setKey(ZERO_KEY);
         for (int round = 0; round < MAX_RANDOM_ROUND; round++) {
-            byte[] randomCiphertext = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(randomCiphertext);
+            byte[] randomCiphertext = BlockUtils.randomBlock(SECURE_RANDOM);
             randomCiphertextInvPrpSet.add(ByteBuffer.wrap(prp.invPrp(randomCiphertext)));
         }
         Assert.assertEquals(MAX_RANDOM_ROUND, randomCiphertextInvPrpSet.size());

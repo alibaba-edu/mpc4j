@@ -1,7 +1,6 @@
 package edu.alibaba.mpc4j.s2pc.aby.pcg.triple.zl64.direct;
 
 import edu.alibaba.mpc4j.common.rpc.*;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.Prg;
 import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.galoisfield.zl64.Zl64;
@@ -89,7 +88,7 @@ public class DirectZl64TripleGenReceiver extends AbstractZl64TripleGenParty {
 
         stopWatch.start();
         roundNum = Math.min(expectTotalNum, config.defaultRoundNum(maxL));
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         coreCotSender.init(delta);
         coreCotReceiver.init();
         // each bit of a and b can be shifted to reduce the communication cost

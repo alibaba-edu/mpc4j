@@ -1,6 +1,7 @@
 package edu.alibaba.mpc4j.common.tool.hash.bobhash;
 
 import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -60,8 +61,7 @@ public class BobIntHashTest {
     private void testNonDefaultPrimeIndexConsistency(int primeIndex) {
         BobIntHash bobIntHash = new BobIntHash(primeIndex);
         IntStream.range(0, TEST_ROUND).forEach(index -> {
-            byte[] data = new byte[CommonConstants.BLOCK_BYTE_LENGTH];
-            SECURE_RANDOM.nextBytes(data);
+            byte[] data = BlockUtils.randomBlock(SECURE_RANDOM);
             int hash1 = bobIntHash.hash(data);
             int hash2 = bobIntHash.hash(data);
             Assert.assertEquals(hash1, hash2);

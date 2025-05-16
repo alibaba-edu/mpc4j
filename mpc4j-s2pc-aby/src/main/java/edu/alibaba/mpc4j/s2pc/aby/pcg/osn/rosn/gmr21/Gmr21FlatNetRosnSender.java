@@ -13,6 +13,7 @@ import edu.alibaba.mpc4j.common.tool.crypto.prg.PrgFactory;
 import edu.alibaba.mpc4j.common.tool.network.PermutationNetworkUtils;
 import edu.alibaba.mpc4j.common.tool.network.benes.BenesNetwork;
 import edu.alibaba.mpc4j.common.tool.network.benes.BenesNetworkFactory;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.AbstractNetRosnSender;
 import edu.alibaba.mpc4j.s2pc.aby.pcg.osn.rosn.RosnSenderOutput;
@@ -79,7 +80,7 @@ public class Gmr21FlatNetRosnSender extends AbstractNetRosnSender {
         logPhaseInfo(PtoState.INIT_BEGIN);
 
         stopWatch.start();
-        byte[] delta = BytesUtils.randomByteArray(CommonConstants.BLOCK_BYTE_LENGTH, secureRandom);
+        byte[] delta = BlockUtils.randomBlock(secureRandom);
         cotSender.init(delta);
         preCotSender.init();
         stopWatch.stop();
@@ -126,6 +127,10 @@ public class Gmr21FlatNetRosnSender extends AbstractNetRosnSender {
             cotSenderOutputs[levelIndex] = null;
             List<byte[]> switchCorrectionPayload = generateSwitchCorrectionPayload(levelIndex);
             sendOtherPartyEqualSizePayload(PtoStep.SENDER_SEND_SWITCH_CORRECTIONS.ordinal(), switchCorrectionPayload);
+            // add one msg received from receiver to avoid too much msg stacked in RPC
+            if (level >= 39 && ((levelIndex + 1) % 4 == 0 || levelIndex == level - 1)) {
+                receiveOtherPartyPayload(PtoStep.SYNCHRONIZE_MSG.ordinal());
+            }
         }
         RosnSenderOutput senderOutput = RosnSenderOutput.create(inputMask, senderShareVector);
         senderShareVector = null;

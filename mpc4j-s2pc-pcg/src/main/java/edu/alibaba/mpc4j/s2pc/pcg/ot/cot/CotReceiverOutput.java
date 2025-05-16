@@ -4,10 +4,10 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
+import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.BinaryUtils;
-import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
+import edu.alibaba.mpc4j.common.tool.utils.BlockUtils;
 import edu.alibaba.mpc4j.s2pc.pcg.MergedPcgPartyOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.OtReceiverOutput;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -42,9 +42,7 @@ public class CotReceiverOutput implements OtReceiverOutput, MergedPcgPartyOutput
         MathPreconditions.checkEqual("num", "RbArray.length", num, rbArray.length);
         receiverOutput.choices = BinaryUtils.clone(choices);
         receiverOutput.rbArray = Arrays.stream(rbArray)
-            .peek(rb ->
-                MathPreconditions.checkEqual("Rb.length", "λ in bytes", rb.length, CommonConstants.BLOCK_BYTE_LENGTH)
-            )
+            .peek(rb -> Preconditions.checkArgument(BlockUtils.valid(rb)))
             .toArray(byte[][]::new);
 
         return receiverOutput;
@@ -58,7 +56,7 @@ public class CotReceiverOutput implements OtReceiverOutput, MergedPcgPartyOutput
     public static CotReceiverOutput createEmpty() {
         CotReceiverOutput receiverOutput = new CotReceiverOutput();
         receiverOutput.choices = new boolean[0];
-        receiverOutput.rbArray = new byte[0][];
+        receiverOutput.rbArray = BlockUtils.zeroBlocks(0);
 
         return receiverOutput;
     }
@@ -77,9 +75,9 @@ public class CotReceiverOutput implements OtReceiverOutput, MergedPcgPartyOutput
         receiverOutput.rbArray = IntStream.range(0, num)
             .mapToObj(index -> {
                 if (receiverOutput.choices[index]) {
-                    return BytesUtils.clone(senderOutput.getR1(index));
+                    return BlockUtils.clone(senderOutput.getR1(index));
                 } else {
-                    return BytesUtils.clone(senderOutput.getR0(index));
+                    return BlockUtils.clone(senderOutput.getR0(index));
                 }
             })
             .toArray(byte[][]::new);
@@ -97,7 +95,7 @@ public class CotReceiverOutput implements OtReceiverOutput, MergedPcgPartyOutput
     public CotReceiverOutput copy() {
         CotReceiverOutput copy = new CotReceiverOutput();
         copy.choices = BinaryUtils.clone(choices);
-        copy.rbArray = BytesUtils.clone(rbArray);
+        copy.rbArray = BlockUtils.clone(rbArray);
         return copy;
     }
 
