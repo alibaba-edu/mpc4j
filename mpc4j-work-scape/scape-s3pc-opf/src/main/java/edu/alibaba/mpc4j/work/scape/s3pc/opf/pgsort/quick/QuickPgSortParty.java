@@ -281,7 +281,7 @@ public class QuickPgSortParty extends AbstractPgSortParty implements PgSortParty
         }).toArray(TripletZ2Vector[]::new);
     }
 
-    private TripletZ2Vector[] sortAll(TripletZ2Vector[] keys, int[] targetRange, boolean stillSorted) throws MpcAbortException {
+    public TripletZ2Vector[] sortAll(TripletZ2Vector[] keys, int[] targetRange, boolean stillSorted) throws MpcAbortException {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         TripletZ2Vector[] index = (TripletZ2Vector[]) z2cParty.setPublicValues(Z2VectorUtils.getBinaryIndex(keys[0].getNum()));
@@ -328,7 +328,7 @@ public class QuickPgSortParty extends AbstractPgSortParty implements PgSortParty
         return allTransBack;
     }
 
-    private TripletZ2Vector[] getPerWithIndex(TripletZ2Vector[] index) throws MpcAbortException {
+    public TripletZ2Vector[] getPerWithIndex(TripletZ2Vector[] index) throws MpcAbortException {
         TripletZ2Vector[] rho = (TripletZ2Vector[]) z2cParty.setPublicValues(Z2VectorUtils.getBinaryIndex(index[0].getNum()));
         return permuteParty.applyInvPermutation(index, rho);
     }

@@ -235,4 +235,15 @@ public class TripletRpZ2Vector implements TripletZ2Vector {
         innerVec[0].setBytes(data.getBitVectors()[0].getBytes(), sourceStartIndex, targetStartIndex, byteLen);
         innerVec[1].setBytes(data.getBitVectors()[1].getBytes(), sourceStartIndex, targetStartIndex, byteLen);
     }
+
+    @Override
+    public TripletZ2Vector extendSizeWithSameEle(int targetNum) {
+        MathPreconditions.checkEqual("this.bitNum", "1", this.bitNum(), 1);
+        MathPreconditions.checkPositive("targetNum > 0", targetNum);
+        return create(
+            Arrays.stream(innerVec)
+                .map(one -> one.get(0) ? BitVectorFactory.createOnes(targetNum) : BitVectorFactory.createZeros(targetNum))
+                .toArray(BitVector[]::new)
+        );
+    }
 }

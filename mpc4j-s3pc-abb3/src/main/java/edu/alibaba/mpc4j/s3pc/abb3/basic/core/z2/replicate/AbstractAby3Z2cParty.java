@@ -73,6 +73,15 @@ public abstract class AbstractAby3Z2cParty extends AbstractTripletZ2cParty imple
     }
 
     @Override
+    public MpcZ2Vector createEmpty(boolean plain) {
+        if (plain) {
+            return PlainZ2Vector.createEmpty();
+        }else {
+            return TripletRpZ2Vector.createEmpty(0);
+        }
+    }
+
+    @Override
     public TripletRpZ2Vector xor(MpcZ2Vector xiArray, MpcZ2Vector yiArray) {
         assert !(xiArray.isPlain() && yiArray.isPlain());
         if (xiArray.isPlain()) {
@@ -217,5 +226,11 @@ public abstract class AbstractAby3Z2cParty extends AbstractTripletZ2cParty imple
      */
     protected void intoBuffer(TripletRpZ2Vector[][] unverifiedData){
 
+    }
+
+    @Override
+    public TripletZ2Vector createShareRandom(int bitNums){
+        assert bitNums > 0;
+        return this.crProvider.randRpShareZ2Vector(new int[]{bitNums})[0];
     }
 }

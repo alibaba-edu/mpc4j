@@ -57,6 +57,7 @@ public interface TripletZ2cParty extends AbbCoreParty, MpcZ2cParty {
     /**
      * create shared zero vectors
      */
+    @Override
     TripletZ2Vector createShareZeros(int bitNums);
 
     /**
@@ -407,16 +408,16 @@ public interface TripletZ2cParty extends AbbCoreParty, MpcZ2cParty {
         throw new RuntimeException("should not invoke this method");
     }
 
-    /**
-     * Creates an empty vector.
-     *
-     * @param plain the plain state.
-     * @return a vector.
-     */
-    @Override
-    default MpcZ2Vector createEmpty(boolean plain) {
-        throw new RuntimeException("should not invoke this method");
-    }
+//    /**
+//     * Creates an empty vector.
+//     *
+//     * @param plain the plain state.
+//     * @return a vector.
+//     */
+//    @Override
+//    default MpcZ2Vector createEmpty(boolean plain) {
+//        throw new RuntimeException("should not invoke this method");
+//    }
 
     /**
      * merges the vector.

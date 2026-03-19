@@ -215,4 +215,23 @@ public class TripletRpLongVector implements TripletLongVector {
         LongVector[] tmp = Arrays.stream(innerVec).map(each -> each.getElementsByInterval(startPos, num, sepDistance)).toArray(LongVector[]::new);
         return create(tmp);
     }
+
+    @Override
+    public TripletLongVector getSelfSum() {
+        LongVector[] tmp = Arrays.stream(innerVec).map(ea -> LongVector.create(new long[]{ea.sum()})).toArray(LongVector[]::new);
+        return create(tmp);
+    }
+
+    @Override
+    public TripletLongVector extendSizeWithSameEle(int targetNum) {
+        MathPreconditions.checkEqual("vec.getNum()", "1", this.getNum(), 1);
+        MathPreconditions.checkPositive("size", targetNum);
+        LongVector[] ele = Arrays.stream(this.getVectors())
+            .map(ea -> {
+                long[] tmp = new long[targetNum];
+                Arrays.fill(tmp, ea.getElement(0));
+                return LongVector.create(tmp);
+            }).toArray(LongVector[]::new);
+        return create(ele);
+    }
 }

@@ -23,6 +23,7 @@ import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.CotSenderOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotReceiverOutput;
 import edu.alibaba.mpc4j.s2pc.pcg.ot.cot.RotSenderOutput;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -317,5 +318,16 @@ public abstract class AbstractZ2cParty extends AbstractTwoPartyPto implements Z2
             BitVector[] transBitVec1 = zlDatabase1.bitPartition(envType, parallel);
             return new BitVector[][]{Arrays.copyOf(transBitVec0, dim), Arrays.copyOf(transBitVec1, dim)};
         }
+    }
+
+    @Override
+    public SquareZ2Vector createShareZeros(int bitNum) {
+        return SquareZ2Vector.create(BitVectorFactory.createZeros(bitNum), false);
+    }
+
+    @Override
+    public SquareZ2Vector createShareRandom(int bitNum) {
+        assert bitNum > 0;
+        return SquareZ2Vector.create(BitVectorFactory.createRandom(bitNum, new SecureRandom()), false);
     }
 }

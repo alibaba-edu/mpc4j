@@ -38,4 +38,13 @@ public interface TripletZ2Vector extends MpcZ2Vector {
      */
     @Override
     TripletZ2Vector reduceShiftRight(int n);
+
+    /**
+     * extend single-element data into the target length
+     *
+     * @param targetNum  the target number of rows
+     * @return the extended data
+     */
+    @Override
+    TripletZ2Vector extendSizeWithSameEle(int targetNum);
 }

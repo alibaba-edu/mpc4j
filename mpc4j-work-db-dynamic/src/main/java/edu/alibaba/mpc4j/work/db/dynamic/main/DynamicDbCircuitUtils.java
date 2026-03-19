@@ -18,11 +18,11 @@ public class DynamicDbCircuitUtils {
     /**
      * comparator type key.
      */
-    private static final String COMPARATOR_TYPE = "comparator_type";
+    public static final String COMPARATOR_TYPE = "comparator_type";
     /**
      * orderByCircuit type key.
      */
-    private static final String ORDER_BY_TYPE = "order_by_type";
+    public static final String ORDER_BY_TYPE = "order_by_type";
 
     /**
      * private constructor.

@@ -232,18 +232,16 @@ public interface MpcZ2cParty {
      * @param xi xi.
      * @param yi yi.
      * @return zi, such that z = x ^ y.
-     * @throws MpcAbortException the protocol failure aborts.
      */
-    MpcZ2Vector xor(MpcZ2Vector xi, MpcZ2Vector yi) throws MpcAbortException;
+    MpcZ2Vector xor(MpcZ2Vector xi, MpcZ2Vector yi);
 
     /**
      * XOR operation. the result stored in xi
      *
      * @param xi xi.
      * @param yi yi.
-     * @throws MpcAbortException the protocol failure aborts.
      */
-    void xori(MpcZ2Vector xi, MpcZ2Vector yi) throws MpcAbortException;
+    void xori(MpcZ2Vector xi, MpcZ2Vector yi);
 
     /**
      * Vector XOR operation.
@@ -418,4 +416,19 @@ public interface MpcZ2cParty {
      * @return y
      */
     MpcZ2Vector xorAllBeforeElement(MpcZ2Vector x);
+
+    /**
+     * Creates a (shared) random vector.
+     *
+     * @param bitNum the bit num.
+     * @return a vector.
+     */
+    MpcZ2Vector createShareRandom(int bitNum);
+    /**
+     * Creates a shared all-zero vector.
+     *
+     * @param bitNum the bit num.
+     * @return a vector.
+     */
+    MpcZ2Vector createShareZeros(int bitNum);
 }

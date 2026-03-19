@@ -21,9 +21,6 @@ import java.util.List;
  * Peizhao Zhou et el.
  * CCS 2024
  * </p>
- *
- * @author Feng Han
- * @date 2025/3/6
  */
 public class Zgc24DynamicDbOrderByCircuit extends AbstractDynamicDbCircuit implements DynamicDbOrderByCircuit{
     /**
@@ -50,35 +47,52 @@ public class Zgc24DynamicDbOrderByCircuit extends AbstractDynamicDbCircuit imple
     private List<UpdateMessage> insert() throws MpcAbortException {
         int currentRowNum = orderByMt.getData()[0].bitNum();
         MpcZ2Vector[] originalData = orderByMt.getData();
+        if(originalData[0].bitNum()  == 0) {
+            // if there is no record yet
+            for (int i = 0; i < originalData.length; i++) {
+                originalData[i].merge(updateMessage.getRowData()[i]);
+            }
+            return List.of(new UpdateMessage(OperationEnum.INSERT, originalData));
+        }
+
         MpcZ2Vector[] extendedUpDate = extendUpdateMsgData(currentRowNum);
         List<UpdateMessage> result = new LinkedList<>();
 
         if (!orderByMt.isOutputTable()) {
-            // 如果当前表不是输出表，则需要得到更新信息
-            MpcZ2Vector[] originalLast = Arrays.stream(originalData)
-                .map(ea ->
-                    z2cParty.create(ea.isPlain(),
-                        Arrays.stream(ea.getBitVectors())
-                            .map(one -> one.get(orderByMt.getLimitNum() - 1) ? BitVectorFactory.createOnes(1) : BitVectorFactory.createZeros(1))
-                            .toArray(BitVector[]::new)
-                    ))
-                .toArray(MpcZ2Vector[]::new);
-            MpcZ2Vector[] leftCompInput = new MpcZ2Vector[orderByMt.getOrderKeyIndexes().length + 1];
-            MpcZ2Vector[] rightCompInput = new MpcZ2Vector[orderByMt.getOrderKeyIndexes().length + 1];
-            leftCompInput[0] = originalLast[orderByMt.getValidityIndex()];
-            rightCompInput[0] = updateMessage.getRowData()[orderByMt.getValidityIndex()];
-            for (int i = 0; i < orderByMt.getOrderKeyIndexes().length; i++) {
-                int ind = orderByMt.getOrderKeyIndexes()[i];
-                leftCompInput[i + 1] = originalLast[ind];
-                rightCompInput[i + 1] = updateMessage.getRowData()[ind];
-            }
-            // original < new?
-            MpcZ2Vector flag = circuit.lessThan(leftCompInput, rightCompInput);
+            // if the size of the current table does not exceed the limit num, we can directly insert the new record
+            // but it only happens in running the benchmark
+            if(currentRowNum < orderByMt.getLimitNum()) {
+                MpcZ2Vector[] dummyUr1 = Arrays.stream(originalData)
+                    .map(ea -> z2cParty.createShareZeros(1))
+                    .toArray(MpcZ2Vector[]::new);
+                result.add(new UpdateMessage(OperationEnum.DELETE, dummyUr1));
+                result.add(new UpdateMessage(OperationEnum.INSERT, updateMessage.getRowData()));
+            }else {
+                MpcZ2Vector[] originalLast = Arrays.stream(originalData)
+                    .map(ea ->
+                        z2cParty.create(ea.isPlain(),
+                            Arrays.stream(ea.getBitVectors())
+                                .map(one -> one.get(orderByMt.getLimitNum() - 1) ? BitVectorFactory.createOnes(1) : BitVectorFactory.createZeros(1))
+                                .toArray(BitVector[]::new)
+                        ))
+                    .toArray(MpcZ2Vector[]::new);
+                MpcZ2Vector[] leftCompInput = new MpcZ2Vector[orderByMt.getOrderKeyIndexes().length + 1];
+                MpcZ2Vector[] rightCompInput = new MpcZ2Vector[orderByMt.getOrderKeyIndexes().length + 1];
+                leftCompInput[0] = originalLast[orderByMt.getValidityIndex()];
+                rightCompInput[0] = updateMessage.getRowData()[orderByMt.getValidityIndex()];
+                for (int i = 0; i < orderByMt.getOrderKeyIndexes().length; i++) {
+                    int ind = orderByMt.getOrderKeyIndexes()[i];
+                    leftCompInput[i + 1] = originalLast[ind];
+                    rightCompInput[i + 1] = updateMessage.getRowData()[ind];
+                }
+                // original < new?
+                MpcZ2Vector flag = circuit.lessThan(leftCompInput, rightCompInput);
 
-            MpcZ2Vector[] ur1 = z2cParty.and(flag, originalLast);
-            MpcZ2Vector[] ur2 = z2cParty.and(flag, updateMessage.getRowData());
-            result.add(new UpdateMessage(OperationEnum.DELETE, ur1));
-            result.add(new UpdateMessage(OperationEnum.INSERT, ur2));
+                MpcZ2Vector[] ur1 = z2cParty.and(flag, originalLast);
+                MpcZ2Vector[] ur2 = z2cParty.and(flag, updateMessage.getRowData());
+                result.add(new UpdateMessage(OperationEnum.DELETE, ur1));
+                result.add(new UpdateMessage(OperationEnum.INSERT, ur2));
+            }
         }
 
         // CDIC
@@ -96,13 +110,13 @@ public class Zgc24DynamicDbOrderByCircuit extends AbstractDynamicDbCircuit imple
         MpcZ2Vector compResult = circuit.lessThan(leftCompInput, rightCompInput);
         MpcZ2Vector[] dPrime = circuit.mux(originalData, extendedUpDate, compResult);
 
-        // 原始论文中针对D'_h的操作全都可以删除，因为后续还会将其去除
+        // remove all ops for D'_h in original paper
         MpcZ2Vector[] d2Prime = Arrays.stream(dPrime)
             .map(ea -> ea.reduceShiftRight(currentRowNum - 1))
             .toArray(MpcZ2Vector[]::new);
         for (int i = 0; i < dim; i++) {
-            dPrime[i].reduce(currentRowNum - 1);
-            originalData[i] = originalData[i].reduceShiftRight(1);
+            dPrime[i].merge(updateMessage.getRowData()[i]);
+            dPrime[i].reduce(currentRowNum);
         }
         // second compares
         leftCompInput[0] = originalData[orderByMt.getValidityIndex()];
@@ -119,16 +133,26 @@ public class Zgc24DynamicDbOrderByCircuit extends AbstractDynamicDbCircuit imple
         for (int i = 0; i < dim; i++) {
             d2Prime[i].merge(muxRes[i]);
         }
+        // if the current view size is too big, remove the last one
+        if(d2Prime[0].bitNum() > orderByMt.getLimitNum() + orderByMt.getDeletionThreshold()) {
+            for (int i = 0; i < dim; i++) {
+                d2Prime[i].reduceShiftRighti(1);
+            }
+        }
         orderByMt.updateData(d2Prime);
 
         return result;
     }
 
     private List<UpdateMessage> delete() throws MpcAbortException {
+        int currentRowNum = orderByMt.getData()[0].bitNum();
+        if(currentRowNum == 0) {
+            throw new MpcAbortException("empty table can not delete row");
+        }
         if (orderByMt.getCurrentDeleteNum() >= orderByMt.getDeletionThreshold()) {
             throw new MpcAbortException("currentDeleteNum >= deletionThreshold");
         }
-        int currentRowNum = orderByMt.getData()[0].bitNum();
+
         MpcZ2Vector[] originalData = orderByMt.getData();
         MpcZ2Vector[] extendedUpDate = extendUpdateMsgData(currentRowNum);
         List<UpdateMessage> result = new LinkedList<>();
@@ -141,7 +165,6 @@ public class Zgc24DynamicDbOrderByCircuit extends AbstractDynamicDbCircuit imple
         idFlag = z2cParty.and(idFlag, extendedUpDate[orderByMt.getValidityIndex()]);
 
         if (!orderByMt.isOutputTable()) {
-            // 如果当前表不是输出表，则需要得到更新信息
             MpcZ2Vector lFlags = idFlag.reduceShiftRight(currentRowNum - orderByMt.getLimitNum());
             // xor first l flag result
             MpcZ2Vector fs = z2cParty.xorSelfAllElement(lFlags);

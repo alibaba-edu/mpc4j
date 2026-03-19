@@ -20,9 +20,6 @@ import java.util.List;
  * Peizhao Zhou et el.
  * CCS 2024
  * </p>
- *
- * @author Feng Han
- * @date 2025/3/7
  */
 public class Zgc24DynamicDbGroupByCircuit extends AbstractDynamicDbCircuit implements DynamicDbGroupByCircuit {
     /**
@@ -45,12 +42,17 @@ public class Zgc24DynamicDbGroupByCircuit extends AbstractDynamicDbCircuit imple
     @Override
     public List<UpdateMessage> update(UpdateMessage updateMessage, GroupByMt groupByMt) throws MpcAbortException {
         setInputs(updateMessage, groupByMt);
+        if(updateMessage == null){
+            int x = 0;
+        }
         MathPreconditions.checkEqual("updateMessage.getRowData().length", "materializedTable.getData().length",
             updateMessage.getRowData().length, groupByMt.getData().length);
         this.groupByMt = groupByMt;
         int currentRowNum = groupByMt.getData()[0].bitNum();
         originalData = groupByMt.getData();
-        extendedUpDate = extendUpdateMsgData(currentRowNum);
+        if(currentRowNum > 0){
+            extendedUpDate = extendUpdateMsgData(currentRowNum);
+        }
         return switch (updateMessage.getOperation()) {
             case INSERT -> insert();
             case DELETE -> delete();
@@ -58,6 +60,14 @@ public class Zgc24DynamicDbGroupByCircuit extends AbstractDynamicDbCircuit imple
     }
 
     private List<UpdateMessage> insert() throws MpcAbortException {
+        if(originalData[0].bitNum() == 0) {
+            // if there is no record yet
+            for (int i = 0; i < originalData.length; i++) {
+                originalData[i].merge(updateMessage.getRowData()[i]);
+            }
+            return List.of(new UpdateMessage(OperationEnum.INSERT, originalData));
+        }
+
         List<UpdateMessage> result = new LinkedList<>();
 
         // store the sum of value attributes before all operation
@@ -115,6 +125,9 @@ public class Zgc24DynamicDbGroupByCircuit extends AbstractDynamicDbCircuit imple
     }
 
     private List<UpdateMessage> delete() throws MpcAbortException {
+        if(originalData[0].bitNum() == 0) {
+            throw new MpcAbortException("empty table can not delete row");
+        }
         if (groupByMt.getAggType().equals(AggregateEnum.MAX) || groupByMt.getAggType().equals(AggregateEnum.MIN)) {
             throw new MpcAbortException("group by extreme can not be updated");
         }

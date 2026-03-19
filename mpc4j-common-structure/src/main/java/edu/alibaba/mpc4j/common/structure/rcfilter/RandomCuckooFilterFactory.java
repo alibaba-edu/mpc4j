@@ -87,7 +87,7 @@ public class RandomCuckooFilterFactory {
                 long storageByteLength = (long) maxSize * fingerprintByteLength;
                 return Integer.BYTES * 3 + bitmapByteNum + storageByteLength;
             }
-            case null, default ->
+            default ->
                 throw new IllegalArgumentException("Invalid " + RandomCuckooFilterType.class.getSimpleName() + ": " + type);
         }
     }

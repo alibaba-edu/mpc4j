@@ -252,6 +252,13 @@ public class SquareZ2Vector implements MpcZ2Vector {
     }
 
     @Override
+    public SquareZ2Vector extendSizeWithSameEle(int targetNum) {
+        MathPreconditions.checkEqual("this.bitNum", "1", this.bitNum(), 1);
+        MathPreconditions.checkPositive("targetNum > 0", targetNum);
+        return create(this.bitVector.get(0) ? BitVectorFactory.createOnes(targetNum) : BitVectorFactory.createZeros(targetNum), isPlain());
+    }
+
+    @Override
     public String toString() {
         return String.format("%s: %s", plain ? "plain" : "secret", bitVector.toString());
     }

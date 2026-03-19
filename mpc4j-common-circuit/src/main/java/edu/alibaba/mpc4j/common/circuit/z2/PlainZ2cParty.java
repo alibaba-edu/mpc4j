@@ -5,6 +5,7 @@ import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -239,5 +240,16 @@ public class PlainZ2cParty implements MpcZ2cParty {
     @Override
     public PlainZ2Vector xorAllBeforeElement(MpcZ2Vector x) {
         return (PlainZ2Vector) create(true, x.getBitVector().xorBeforeBit());
+    }
+
+    @Override
+    public PlainZ2Vector createShareZeros(int bitNum) {
+        return PlainZ2Vector.createZeros(bitNum);
+    }
+
+    @Override
+    public MpcZ2Vector createShareRandom(int bitNum) {
+        assert bitNum > 0;
+        return PlainZ2Vector.createRandom(bitNum, new SecureRandom());
     }
 }

@@ -80,4 +80,21 @@ public class PgSortFactory implements PtoFactory {
         return new OptPgSortConfig.Builder(securityModel.equals(SecurityModel.MALICIOUS)).build();
     }
 
+    /**
+     * Creates a default configure based on the protocol type
+     *
+     * @param sortType  pto type.
+     * @param malicious malicious or not
+     * @return a permutation generation sorting party config
+     */
+    public static PgSortConfig createSortConfig(PgSortType sortType, boolean malicious) {
+        return switch (sortType) {
+            case BITONIC_PG_SORT -> new BitonicPgSortConfig.Builder(malicious).build();
+            case QUICK_PG_SORT -> new QuickPgSortConfig.Builder(malicious).build();
+            case RADIX_PG_SORT -> new RadixPgSortConfig.Builder(malicious).build();
+            case OPT_PG_SORT -> new OptPgSortConfig.Builder(malicious).build();
+            case HZF22_PG_SORT -> new Hzf22PgSortConfig.Builder(malicious).build();
+            default -> throw new IllegalArgumentException("Invalid sortType in creating PgSortConfig");
+        };
+    }
 }

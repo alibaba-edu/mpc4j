@@ -160,7 +160,7 @@ public interface Z2cParty extends TwoPartyPto, MpcZ2cParty {
      * @throws MpcAbortException if the protocol is abort.
      */
     @Override
-    SquareZ2Vector xor(MpcZ2Vector xi, MpcZ2Vector yi) throws MpcAbortException;
+    SquareZ2Vector xor(MpcZ2Vector xi, MpcZ2Vector yi);
 
     /**
      * Vector XOR operation.
