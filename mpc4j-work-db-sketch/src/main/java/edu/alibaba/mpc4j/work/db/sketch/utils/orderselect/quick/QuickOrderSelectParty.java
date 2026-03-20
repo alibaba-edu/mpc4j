@@ -24,21 +24,33 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.Arrays;
 
 /**
- * oblivious order select party using quick sorting
+ * Oblivious order select party using quick sorting algorithm.
+ * Implements order select functionality by leveraging quick sort for efficient selection.
  */
 public class QuickOrderSelectParty extends AbstractOrderSelectParty implements OrderSelectParty {
 
     /**
-     * quick sorting party
+     * Quick sort party for sorting operations
      */
     private final QuickPgSortParty sortParty;
 
+    /**
+     * Constructor for QuickOrderSelectParty
+     *
+     * @param abb3Party the underlying ABB3 party
+     * @param config    the protocol configuration
+     */
     public QuickOrderSelectParty(Abb3Party abb3Party, QuickOrderSelectConfig config) {
         super(QuickOrderSelectPtoDesc.getInstance(), abb3Party, config);
         sortParty = (QuickPgSortParty) PgSortFactory.createParty(abb3Party, config.getQuickPgSortConfig());
         addSubPto(sortParty);
     }
 
+    /**
+     * Initialize the protocol
+     *
+     * @throws MpcAbortException if initialization fails
+     */
     @Override
     public void init() throws MpcAbortException {
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -51,6 +63,12 @@ public class QuickOrderSelectParty extends AbstractOrderSelectParty implements O
         logPhaseInfo(PtoState.INIT_END);
     }
 
+    /**
+     * Set the resource usage for the protocol
+     *
+     * @param params array of function parameters
+     * @return array of required tuple numbers [z2Tuples, z64Tuples]
+     */
     @Override
     public long[] setUsage(OrderSelectFnParam... params) {
         if (!isMalicious) {
@@ -79,16 +97,45 @@ public class QuickOrderSelectParty extends AbstractOrderSelectParty implements O
         return new long[]{bitTupleNum, longTupleNum};
     }
 
+    /**
+     * Order select for arithmetic shares with sorted output
+     *
+     * @param input   array of secret-shared long values
+     * @param bitLens valid bit lengths for each input vector
+     * @param range   the required output range
+     * @return Pair containing <permutation, selected elements>
+     * @throws MpcAbortException if the protocol execution fails
+     */
     @Override
     public Pair<TripletZ2Vector[], TripletLongVector[]> orderSelect(TripletLongVector[] input, int[] bitLens, int[] range) throws MpcAbortException {
         return arithmeticInputSelect(input, bitLens, range, true);
     }
 
+    /**
+     * Order select for arithmetic shares without sorted output
+     *
+     * @param input   array of secret-shared long values
+     * @param bitLens valid bit lengths for each input vector
+     * @param range   the required output range
+     * @return Pair containing <permutation, selected elements>
+     * @throws MpcAbortException if the protocol execution fails
+     */
     @Override
     public Pair<TripletZ2Vector[], TripletLongVector[]> selectRangeNoOrder(TripletLongVector[] input, int[] bitLens, int[] range) throws MpcAbortException {
         return arithmeticInputSelect(input, bitLens, range, false);
     }
 
+    /**
+     * Core implementation for arithmetic share input selection
+     * Converts arithmetic shares to binary shares, sorts, and converts back
+     *
+     * @param input       array of secret-shared long values
+     * @param bitLens     valid bit lengths for each input vector
+     * @param range       the required output range
+     * @param stillSorted whether the output should maintain sorted order
+     * @return Pair containing <permutation, selected elements>
+     * @throws MpcAbortException if the protocol execution fails
+     */
     private Pair<TripletZ2Vector[], TripletLongVector[]> arithmeticInputSelect(TripletLongVector[] input, int[] bitLens, int[] range, boolean stillSorted) throws MpcAbortException {
         checkInput(input, bitLens, range);
         if (input[0].getNum() == 1) {
@@ -126,16 +173,42 @@ public class QuickOrderSelectParty extends AbstractOrderSelectParty implements O
         return Pair.of(invPai, valuesInRange);
     }
 
+    /**
+     * Order select for binary shares with sorted output
+     *
+     * @param input array of secret-shared binary values
+     * @param range the required output range
+     * @return Pair containing <permutation, selected elements>
+     * @throws MpcAbortException if the protocol execution fails
+     */
     @Override
     public Pair<TripletZ2Vector[], TripletZ2Vector[]> orderSelect(TripletZ2Vector[] input, int[] range) throws MpcAbortException {
         return binaryInputSelect(input, range, true);
     }
 
+    /**
+     * Order select for binary shares without sorted output
+     *
+     * @param input array of secret-shared binary values
+     * @param range the required output range
+     * @return Pair containing <permutation, selected elements>
+     * @throws MpcAbortException if the protocol execution fails
+     */
     @Override
     public Pair<TripletZ2Vector[], TripletZ2Vector[]> selectRangeNoOrder(TripletZ2Vector[] input, int[] range) throws MpcAbortException {
         return binaryInputSelect(input, range, false);
     }
 
+    /**
+     * Core implementation for binary share input selection
+     * Directly sorts binary shares without conversion
+     *
+     * @param input       array of secret-shared binary values
+     * @param range       the required output range
+     * @param stillSorted whether the output should maintain sorted order
+     * @return Pair containing <permutation, selected elements>
+     * @throws MpcAbortException if the protocol execution fails
+     */
     private Pair<TripletZ2Vector[], TripletZ2Vector[]> binaryInputSelect(TripletZ2Vector[] input, int[] range, boolean stillSorted) throws MpcAbortException {
         checkInput(input, range);
         if (input[0].bitNum() == 1) {
@@ -162,10 +235,12 @@ public class QuickOrderSelectParty extends AbstractOrderSelectParty implements O
     }
 
     /**
-     * return the data whose index after sorting is in [from, to)
+     * Extract the data whose index after sorting is in the specified range [from, to)
      *
-     * @param wires input data
-     * @param range [from, to)
+     * @param wires input data wires
+     * @param range the range [from, to)
+     * @return array of wires containing only the data in the specified range
+     * @throws MpcAbortException if the protocol execution fails
      */
     private TripletZ2Vector[] getPart(TripletZ2Vector[] wires, int[] range) throws MpcAbortException {
         MathPreconditions.checkEqual("range.length", "2", range.length, 2);

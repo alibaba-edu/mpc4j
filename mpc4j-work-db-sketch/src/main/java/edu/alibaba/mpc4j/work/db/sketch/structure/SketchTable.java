@@ -6,7 +6,20 @@ import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
 import java.util.List;
 
 /**
- * sketch table interface
+ * Interface for sketch data structures in the S³ (Sketch-based Secure Streaming) framework.
+ * <p>
+ * A sketch table consists of two parts:
+ * <ul>
+ *   <li><b>Sketch (data)</b>: a compact summary of the stream data with bounded size s, stored as secret-shared MPC vectors.</li>
+ *   <li><b>Buffer</b>: a temporary storage for incoming stream updates before they are batch-merged into the sketch.</li>
+ * </ul>
+ * When the buffer is full (i.e., buffer size reaches the table size s), a Merge protocol is triggered
+ * to incorporate the buffered updates into the sketch using the group-then-process strategy
+ * (create table → sort → segmented prefix operation → compact).
+ * <p>
+ * Supported sketch types include CMS (Count-Min Sketch), HLL (HyperLogLog), SS (SpaceSaving), and GK (Greenwald-Khanna).
+ *
+ * @see AbstractSketchTable
  */
 public interface SketchTable {
     /**

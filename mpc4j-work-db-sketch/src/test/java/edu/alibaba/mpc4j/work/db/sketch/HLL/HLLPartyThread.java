@@ -18,49 +18,65 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+/**
+ * Thread wrapper for HLL (HyperLogLog) party execution in 3PC.
+ * This class encapsulates the HLL cardinality estimation sketch operations performed by each party.
+ */
 public class HLLPartyThread extends Thread {
-    private static final Logger LOGGER= LoggerFactory.getLogger(HLLPartyThread.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HLLPartyThread.class);
     /**
-     * CMS party
+     * HLL party instance handling the sketch operations
      */
     private final HLLParty hllParty;
     /**
-     * abb3 party
+     * ABB3 party providing the underlying secure computation primitives
      */
     private final Abb3Party abb3Party;
     /**
-     * log of sketch table size
+     * Logarithm of the sketch table size (table size = 2^logSketchSize)
      */
     private final int logSketchSize;
     /**
-     * payload bit length
+     * Bit length of the hash function output
      */
     private final int hashBitLen;
     /**
-     * element bit length
+     * Bit length of the input elements
      */
     private final int elementBitLen;
     /**
-     * update keys
+     * Array of keys to be inserted into the sketch during update phase
      */
     private final BigInteger[] updateKeys;
     /**
-     * protocol output
+     * Result of the sketch operation (the sketch table after all updates)
      */
     private long[] sketchRes;
     /**
-     * query output
+     * Intermediate query result before estimator calculation
      */
     private long[] queryRes;
     /**
-     * hash parameters
+     * Hash key used for the HLL sketch
      */
     private PlainZ2Vector hashKey;
 
+    /**
+     * Gets the hash key used for HLL
+     * @return the hash key as PlainZ2Vector
+     */
     PlainZ2Vector getHashKey() {
         return hashKey;
     }
 
+    /**
+     * Constructs an HLL party thread with the specified parameters
+     * @param cmsParty the HLL party instance
+     * @param updateKeys array of keys to update
+     * @param elementBitLen bit length of elements
+     * @param logSketchSize log of sketch table size
+     * @param hashBitLen bit length of hash output
+     */
     public HLLPartyThread(HLLParty cmsParty, BigInteger[] updateKeys, int elementBitLen, int logSketchSize, int hashBitLen) {
         this.hllParty = cmsParty;
         abb3Party = cmsParty.getAbb3Party();
@@ -70,46 +86,65 @@ public class HLLPartyThread extends Thread {
         this.hashBitLen = hashBitLen;
     }
 
+    /**
+     * Gets the sketch result
+     * @return array representing the sketch table
+     */
     public long[] getSketchRes() {
         return sketchRes;
     }
 
+    /**
+     * Gets the estimated cardinality from the query result
+     * The HLL estimator is calculated as: E = a * S * 2^(sum/S)
+     * where S is the sketch size and a is a constant (0.79)
+     * @return estimated cardinality
+     */
     public long getQueryRes() {
-        // since the query res and estimator is 1-to-1 as the following
-        // E = a*S(2^(sum/S))
-        // where S is the sketch size, a is set as fixed (0.79)
-        // we calculate the estimator in plaintext
+        // The query result contains the sum of leading zeros
+        // We calculate the HLL estimator in plaintext using the formula:
+        // E = a * S * 2^(sum/S), where S is the sketch size and a is set to 0.79
         long exp = queryRes[0];
         int size = 1 << logSketchSize;
         long res = (long) (0.79 * size * Math.pow(2, (double) exp /size));
         return res;
     }
 
+    /**
+     * Main execution method for the thread
+     * Performs sketch initialization, updates, and queries
+     */
     public void run() {
         try{
+            // Initialize the HLL party
             hllParty.init();
-            // create hash keys
+            // Create hash keys for the sketch
             TripletZ2Vector encKey = (TripletZ2Vector) abb3Party.getZ2cParty().createShareRandom(CommonConstants.BLOCK_BIT_LENGTH);
-            BitVector plainKey=abb3Party.getZ2cParty().open(new TripletZ2Vector[]{encKey})[0];
-            this.hashKey=PlainZ2Vector.create(plainKey);
+            BitVector plainKey = abb3Party.getZ2cParty().open(new TripletZ2Vector[]{encKey})[0];
+            this.hashKey = PlainZ2Vector.create(plainKey);
+            // Initialize HLL table with shared zeros
             AbstractHLLTable hllTable;
             int payloadBitLen = LongUtils.ceilLog2(hashBitLen);
             TripletZ2Vector[] shareData = IntStream.range(0, payloadBitLen)
                         .mapToObj(i -> abb3Party.getZ2cParty().createShareZeros(1 << logSketchSize))
                         .toArray(TripletZ2Vector[]::new);
             hllTable = new HLLTable(shareData, hashBitLen, elementBitLen, logSketchSize, encKey);
-            // sketch
+            
+            // Sketch phase: update the sketch with all update keys
             for (BigInteger data : updateKeys) {
                     TripletZ2Vector[] currentKey = (TripletZ2Vector[]) abb3Party.getZ2cParty().setPublicValues(new BitVector[]{BitVectorFactory.create(elementBitLen, data)});
                     hllParty.update(hllTable, currentKey);
                 }
-            BitVector[] plainSketchRes = abb3Party.getZ2cParty().open((TripletZ2Vector[]) Arrays.copyOf(hllTable.getSketchTable(),hllTable.getSketchTable().length-1));
+            // Open and get the sketch result (excluding the last element which is used internally)
+            BitVector[] plainSketchRes = abb3Party.getZ2cParty().open((TripletZ2Vector[]) Arrays.copyOf(hllTable.getSketchTable(), hllTable.getSketchTable().length - 1));
             sketchRes = MatrixUtils.transBvIntoAv(plainSketchRes, abb3Party.getEnvType(), abb3Party.getParallel()).getElements();
-            // query
+            
+            // Query phase: compute the cardinality estimate
             TripletZ2Vector[] secretQueryRes = hllParty.query(hllTable);
             BitVector[] plainQueryRes = abb3Party.getZ2cParty().open(secretQueryRes);
             queryRes = MatrixUtils.transBvIntoAv(plainQueryRes, abb3Party.getEnvType(), abb3Party.getParallel()).getElements();
 
+            // Log the number of tuples used for performance measurement
             RpZ2Mtp z2Mtp = abb3Party.getTripletProvider().getZ2MtProvider();
             RpLongMtp zl64Mtp = abb3Party.getTripletProvider().getZl64MtProvider();
             long usedBitTuple = z2Mtp == null ? 0 : z2Mtp.getAllTupleNum();
@@ -121,6 +156,12 @@ public class HLLPartyThread extends Thread {
         }
     }
 
+    /**
+     * Transforms a bit integer into column bit representation
+     * @param data the integer to transform
+     * @param payloadBitLen the payload bit length
+     * @return array of bit vectors representing the data in column form
+     */
     private BitVector[] transBitIntegerIntoColumnBit(BigInteger data, int payloadBitLen) {
         BitVector row = BitVectorFactory.create(payloadBitLen, data);
         return IntStream.range(0, payloadBitLen)

@@ -15,19 +15,31 @@ import edu.alibaba.mpc4j.work.db.sketch.utils.pop.PopParty;
 import java.util.Arrays;
 
 /**
- * naive pop party.
+ * Naive implementation of Pop (Permute-and-Open) protocol.
+ * Uses basic Z2 circuit operations to remove elements from secret-shared arrays.
  */
 public class NaivePopParty extends AbstractThreePartyOpfPto implements PopParty {
     /**
-     * z2 circuit
+     * Z2 integer circuit for boolean operations
      */
     public final Z2IntegerCircuit z2IntegerCircuit;
 
+    /**
+     * Constructor for NaivePopParty
+     *
+     * @param abb3Party the underlying ABB3 party
+     * @param config    the protocol configuration
+     */
     public NaivePopParty(Abb3Party abb3Party, NaivePopConfig config) {
         super(NaivePopPtoDesc.getInstance(), abb3Party, config);
         z2IntegerCircuit = new Z2IntegerCircuit(abb3Party.getZ2cParty(), config.getCircuitConfig());
     }
 
+    /**
+     * Initialize the protocol
+     *
+     * @throws MpcAbortException if initialization fails
+     */
     @Override
     public void init() throws MpcAbortException {
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -40,6 +52,12 @@ public class NaivePopParty extends AbstractThreePartyOpfPto implements PopParty 
         logPhaseInfo(PtoState.INIT_END);
     }
 
+    /**
+     * Set the resource usage for the protocol
+     *
+     * @param params array of function parameters
+     * @return array of required tuple numbers [z2Tuples, z64Tuples]
+     */
     @Override
     public long[] setUsage(PopFnParam... params) {
         long z2Tuples = 0;
@@ -53,6 +71,15 @@ public class NaivePopParty extends AbstractThreePartyOpfPto implements PopParty 
         return new long[]{z2Tuples, 0};
     }
 
+    /**
+     * Pop operation with index-based selection
+     * Removes the element at the specified index and returns the remaining values
+     *
+     * @param input Input table of secret-shared values
+     * @param index Target index indicating which element should be popped
+     * @return array of remaining secret-shared values after popping
+     * @throws MpcAbortException if the protocol execution fails
+     */
     @Override
     public TripletZ2Vector[] pop(TripletZ2Vector[] input, TripletZ2Vector[] index) throws MpcAbortException {
         MathPreconditions.checkEqual("index.length", "LongUtils.ceilLog2(input[0].bitNum())", index.length, LongUtils.ceilLog2(input[0].bitNum()));
@@ -75,6 +102,14 @@ public class NaivePopParty extends AbstractThreePartyOpfPto implements PopParty 
         return output;
     }
 
+    /**
+     * Pop operation with flag-based selection
+     * Removes elements indicated by the flag and returns the remaining values
+     *
+     * @param input Input table of secret-shared values
+     * @param flag  Indicator flag, where each bit indicates whether the corresponding element should be popped
+     * @return array of remaining secret-shared values after popping
+     */
     @Override
     public TripletZ2Vector[] pop(TripletZ2Vector[] input, TripletZ2Vector flag) {
         MathPreconditions.checkGreater("input[0].bitNum() > 1", input[0].bitNum(), 1);
@@ -88,6 +123,14 @@ public class NaivePopParty extends AbstractThreePartyOpfPto implements PopParty 
         return output;
     }
 
+    /**
+     * Core circuit implementation of the pop operation
+     * Uses XOR and MUX operations to remove elements based on the flag
+     *
+     * @param input Input table of secret-shared values
+     * @param flag  Indicator flag for elements to pop
+     * @return array of remaining secret-shared values
+     */
     private TripletZ2Vector[] popCircuit(TripletZ2Vector[] input, TripletZ2Vector flag) {
         MathPreconditions.checkEqual("input[0].bitNum()", "flag.length", input[0].bitNum(), flag.bitNum());
         int num = flag.getNum();

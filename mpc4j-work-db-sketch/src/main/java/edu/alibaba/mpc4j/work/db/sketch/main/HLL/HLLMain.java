@@ -30,60 +30,101 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+/**
+ * HyperLogLog (HLL) sketch experiment main class.
+ * <p>
+ * This class implements the experiment runner for the HLL sketch protocol in a 3PC environment.
+ * HLL is a probabilistic data structure for estimating the cardinality of sets (counting distinct elements).
+ * The experiment measures performance metrics including initialization time, protocol execution time,
+ * communication overhead, and supports both parallel and sequential execution.
+ * </p>
+ */
 public class HLLMain extends AbstractMainAbb3PartyPto {
     private static final Logger LOGGER = LoggerFactory.getLogger(HLLMain.class);
 
     /**
-     * protocol type name
+     * Protocol type name identifier
      */
     public static final String PTO_TYPE = "HLL";
     /**
-     * protocol type key.
+     * Protocol type name for Z2 implementation
      */
-    public static final String PTO_TYPE_NAME="HLL_V1";
+    public static final String PTO_TYPE_NAME = "HLL_Z2";
     /**
-     * protocol name key.
+     * Configuration key for protocol type
      */
-    public static final String PTO_NAME_KEY="hll_pto_name";
+    public static final String PTO_NAME_KEY = "hll_pto_name";
+
+    // Warmup configuration constants
     /**
-     * sketch log table size for warm up
+     * Logarithm of sketch table size for warmup phase
      */
     private static final int WARMUP_LOG_SKETCH_SIZE = 8;
     /**
-     * log payload for warm up
+     * Hash bit length for warmup phase
      */
     private static final int WARMUP_HASH_BIT_LEN = 20;
     /**
-     * update log data size for warm up
+     * Logarithm of update count for warmup phase
      */
     private static final int WARMUP_LOG_UPDATE_NUM = 10;
-
-    private static final int WARMUP_ELEMENT_BIT_LEN=32;
-
-    private static final int WARMUP_QUERY = 100;
     /**
-     * log of table size
+     * Element bit length for warmup phase
+     */
+    private static final int WARMUP_ELEMENT_BIT_LEN = 32;
+    /**
+     * Query frequency for warmup phase
+     */
+    private static final int WARMUP_QUERY = 100;
+
+    // Experiment configuration parameters
+    /**
+     * Logarithm of sketch table sizes for each experiment
      */
     private final int[] logSketchSizes;
     /**
-     * log of value field
+     * Hash bit lengths for each experiment
      */
     private final int[] hashBitLens;
+    /**
+     * Element bit lengths for each experiment
+     */
     private final int[] elementBitLens;
+    /**
+     * Logarithm of update data sizes for each experiment
+     */
     private final int[] logUpdateSizes;
+    /**
+     * Query frequencies for each experiment
+     */
     private final int[] queryFrequencies;
     /**
-     * config
+     * HLL protocol configuration
      */
     private final HLLConfig config;
     /**
-     * rand keys
+     * Random seed keys for deterministic data generation
      */
     private byte[] randKeys;
 
-    private final DataGenerator dataGenerator=new DataGenerator();
-    private String dataType="UNIFORM";
+    private final DataGenerator dataGenerator = new DataGenerator();
+    /**
+     * Type of data distribution for experiments
+     */
+    private String dataType = "UNIFORM";
 
+    /**
+     * Generates update row data as shared Z2 vectors.
+     * <p>
+     * Creates public values for all elements in the sketch table using a shared
+     * random seed to ensure all parties have the same data.
+     * </p>
+     *
+     * @param abb3PartyTmp  the ABB3 party instance
+     * @param elementBitLen bit length of each element
+     * @param sketchSize    size of the sketch table
+     * @return array of triplet Z2 vectors containing the update data
+     */
     private TripletZ2Vector[] genUpdateRowData(Abb3Party abb3PartyTmp, int elementBitLen, int sketchSize) {
         SecureRandom secureRandom = null;
         try {
@@ -93,30 +134,52 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
         }
         secureRandom.setSeed(randKeys);
         SecureRandom finalSecureRandom = secureRandom;
-        BigInteger[] updateData=dataGenerator.genUpdateData(elementBitLen,sketchSize,dataType,finalSecureRandom);
+        BigInteger[] updateData = dataGenerator.genUpdateData(elementBitLen, sketchSize, dataType, finalSecureRandom);
         return (TripletZ2Vector[]) abb3PartyTmp.getZ2cParty().setPublicValues(IntStream.range(0, sketchSize)
                 .mapToObj(i -> BitVectorFactory.create(elementBitLen, updateData[i]))
                 .toArray(BitVector[]::new));
     }
 
 
+    /**
+     * Constructs an HLLMain instance with the given properties and party name.
+     * <p>
+     * Reads experiment configuration parameters including sketch sizes, hash bit lengths,
+     * element bit lengths, update sizes, and query frequencies.
+     * </p>
+     *
+     * @param properties configuration properties
+     * @param ownName    name of the current party
+     */
     public HLLMain(Properties properties, String ownName) {
         super(properties, ownName);
-        // read PTO config
+        // Read PTO configuration parameters
         LOGGER.info("{} read settings", ownRpc.ownParty().getPartyName());
-        logSketchSizes =PropertiesUtils.readLogIntArray(properties,"log_sketch_size");
-        hashBitLens =PropertiesUtils.readLogIntArray(properties,"hash_bit_len");
+        logSketchSizes = PropertiesUtils.readLogIntArray(properties, "log_sketch_size");
+        hashBitLens = PropertiesUtils.readLogIntArray(properties, "hash_bit_len");
         queryFrequencies = PropertiesUtils.readIntArray(properties, "query_frequency");
-        elementBitLens=PropertiesUtils.readLogIntArray(properties, "element_bit_len");
-        logUpdateSizes =PropertiesUtils.readLogIntArray(properties, "log_update_size");
+        elementBitLens = PropertiesUtils.readLogIntArray(properties, "element_bit_len");
+        logUpdateSizes = PropertiesUtils.readLogIntArray(properties, "log_update_size");
         LOGGER.info("{} read hll config", ownRpc.ownParty().getPartyName());
         config = HLLConfigUtils.createConfig(properties);
     }
 
+    /**
+     * Runs the HLL experiment for the specified party.
+     * <p>
+     * Orchestrates the complete experiment workflow including output file creation,
+     * warmup, and execution of all configured experiments with performance measurement.
+     * </p>
+     *
+     * @param ownRpc the RPC instance for the current party
+     * @throws IOException if file I/O error occurs
+     * @throws MpcAbortException if MPC protocol error occurs
+     */
     @Override
     public void runParty(Rpc ownRpc) throws IOException, MpcAbortException {
         LOGGER.info("{} create result file", ownRpc.ownParty().getPartyName());
 
+        // Create output file with descriptive name
         String filePath = MainPtoConfigUtils.getFileFolderName() + File.separator + PTO_TYPE_NAME
                 + "_" + config.getPtoType().name()
                 + "_" + appendString
@@ -126,6 +189,7 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
         FileWriter fileWriter = new FileWriter(filePath);
         PrintWriter printWriter = new PrintWriter(fileWriter, true);
 
+        // Write header with performance metrics
         String tab = "Party ID\tUpdate Size\tIs Parallel\tThread Num"
                 + "\tInit Time(ms)\tInit DataPacket Num\tInit Payload Bytes(B)\tInit Send Bytes(B)"
                 + "\tPto  Time(ms)\tPto  DataPacket Num\tPto  Payload Bytes(B)\tPto  Send Bytes(B)";
@@ -136,15 +200,16 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
 
         int taskId = 0;
 
+        // Warmup phase
         warmup(ownRpc, taskId);
         taskId++;
 
+        // Run all configured experiments
         for (int i = 0; i < logSketchSizes.length; i++) {
             runOneTest(parallel, ownRpc, taskId, logSketchSizes[i], hashBitLens[i],
                     elementBitLens[i], logUpdateSizes[i], queryFrequencies[i],printWriter);
             taskId++;
         }
-
 
         ownRpc.disconnect();
         printWriter.close();
@@ -152,6 +217,17 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
 
     }
 
+    /**
+     * Performs warmup to ensure stable performance measurements.
+     * <p>
+     * Runs a small-scale experiment to trigger JIT compilation and eliminate
+     * cold-start effects before actual measurements begin.
+     * </p>
+     *
+     * @param ownRpc the RPC instance for the current party
+     * @param taskId the task identifier for warmup
+     * @throws MpcAbortException if MPC protocol error occurs
+     */
     private void warmup(Rpc ownRpc, int taskId) throws MpcAbortException {
         HLLTable table = initData(ownRpc, WARMUP_ELEMENT_BIT_LEN, WARMUP_LOG_SKETCH_SIZE, WARMUP_HASH_BIT_LEN);
         Abb3Party abb3Party = new Abb3RpParty(ownRpc, abb3RpConfig);
@@ -171,6 +247,24 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
         LOGGER.info("(warmup) {} finish", hllGroup.ownParty().getPartyName());
     }
 
+    /**
+     * Runs a single experiment with the specified parameters.
+     * <p>
+     * Performs one complete test including initialization, protocol execution,
+     * and performance measurement with timing and communication statistics.
+     * </p>
+     *
+     * @param parallel whether to use parallel execution
+     * @param ownRpc the RPC instance for the current party
+     * @param taskId the task identifier
+     * @param logSketchSize logarithm of sketch table size
+     * @param hashBitLen hash bit length
+     * @param elementBitLen element bit length
+     * @param logUpdateSize logarithm of update count
+     * @param queryFreq query frequency
+     * @param printWriter writer for outputting results
+     * @throws MpcAbortException if MPC protocol error occurs
+     */
     private void runOneTest(boolean parallel, Rpc ownRpc, int taskId,
                             int logSketchSize, int hashBitLen, int elementBitLen,
                             int logUpdateSize,int queryFreq, PrintWriter printWriter) throws MpcAbortException {
@@ -187,6 +281,7 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
         hllGroup.getRpc().synchronize();
         hllGroup.getRpc().reset();
 
+        // Measure initialization phase
         LOGGER.info("{} init", hllGroup.ownParty().getPartyName());
         stopWatch.start();
         hllGroup.init();
@@ -200,12 +295,10 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
         hllGroup.getRpc().synchronize();
         hllGroup.getRpc().reset();
 
+        // Measure protocol execution phase
         LOGGER.info("{} execute", hllGroup.ownParty().getPartyName());
-//        stopWatch.start();
         runOp(hllGroup, table, 1 << logUpdateSize, queryFreq, printWriter);
-//        stopWatch.stop();
         long ptoTime = stopWatch.getTime(TimeUnit.MILLISECONDS);
-//        stopWatch.reset();
         long ptoDataPacketNum = hllGroup.getRpc().getSendDataPacketNum();
         long ptoPayloadByteLength = hllGroup.getRpc().getPayloadByteLength();
         long ptoSendByteLength = hllGroup.getRpc().getSendByteLength();
@@ -224,11 +317,26 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
         LOGGER.info("{} finish", hllGroup.ownParty().getPartyName());
     }
 
+    /**
+     * Executes the update and query operations for the HLL protocol.
+     * <p>
+     * Performs a stream of updates with periodic queries, regenerating update data
+     * when needed and logging progress at specified intervals.
+     * </p>
+     *
+     * @param hllParty the HLL party instance
+     * @param hllTable the HLL table to operate on
+     * @param updateNum total number of updates to perform
+     * @param queryFrequency frequency of queries
+     * @param printWriter writer for outputting progress
+     * @throws MpcAbortException if MPC protocol error occurs
+     */
     private void runOp(HLLParty hllParty, AbstractHLLTable hllTable, int updateNum, int queryFrequency, PrintWriter printWriter) throws MpcAbortException {
         TripletZ2Vector[] updateData = new TripletZ2Vector[0];
         int initSketchSize = hllTable.getTableSize();
         stopWatch.start();
         for (int i = 0; i < updateNum; i++) {
+            // Perform periodic queries to estimate cardinality
             if (i % queryFrequency == 0 ) {
                 LOGGER.info("updating index: {} / {}", i, updateNum);
                 LOGGER.info("Total update time: {}", stopWatch.getTime(TimeUnit.MILLISECONDS));
@@ -242,6 +350,7 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
                 LOGGER.info("query index: {} / {}", i, updateNum);
                 hllParty.query(hllTable);
             }
+            // Regenerate update data when we've used all elements in current batch
             stopWatch.suspend();
             if (i % initSketchSize == 0) {
                 updateData = genUpdateRowData(hllParty.getAbb3Party(), hllTable.getElementBitLen(), initSketchSize);
@@ -259,18 +368,32 @@ public class HLLMain extends AbstractMainAbb3PartyPto {
         hllParty.getAbb3Party().checkUnverified();
     }
 
+    /**
+     * Initializes an HLL table with the specified parameters.
+     * <p>
+     * Creates and initializes an HLL sketch table including hash parameters,
+     * initial shared data, and generates a shared random seed.
+     * </p>
+     *
+     * @param ownRpc the RPC instance for the current party
+     * @param elementBitLen bit length of elements
+     * @param logSketchSize logarithm of sketch table size
+     * @param hashBitLen hash bit length
+     * @return initialized HLL table
+     * @throws MpcAbortException if MPC protocol error occurs
+     */
     private HLLTable initData(Rpc ownRpc, int elementBitLen, int logSketchSize, int hashBitLen) throws MpcAbortException {
         Abb3Party abb3PartyTmp = new Abb3RpParty(ownRpc, abb3RpConfig);
         abb3PartyTmp.init();
-        // hash parameters
+        // Generate hash parameters for the sketch
         TripletZ2Vector encKey = (TripletZ2Vector) abb3PartyTmp.getZ2cParty().createShareRandom(CommonConstants.BLOCK_BIT_LENGTH);
-        // sketch
+        // Initialize sketch table with zero shares
         int payloadBitLen = LongUtils.ceilLog2(hashBitLen);
         TripletZ2Vector[] initShareData = IntStream.range(0, payloadBitLen)
                 .mapToObj(i -> abb3PartyTmp.getZ2cParty().createShareZeros(1 << logSketchSize))
                 .toArray(TripletZ2Vector[]::new);
         HLLTable hllTable = new HLLTable(initShareData, hashBitLen, elementBitLen, logSketchSize, encKey);
-        // get key for random generation
+        // Generate shared random key for deterministic data generation
         TripletZ2Vector randKey = (TripletZ2Vector) abb3PartyTmp.getZ2cParty().createShareRandom(CommonConstants.BLOCK_BIT_LENGTH);
         randKeys = abb3PartyTmp.getZ2cParty().open(new MpcZ2Vector[]{randKey})[0].getBytes();
         abb3PartyTmp.destroy();

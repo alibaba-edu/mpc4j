@@ -31,10 +31,7 @@ public class HLLMainTest extends AbstractThreePartyMemoryRpcPto {
         Collection<Object[]> configurations = new ArrayList<>();
 
         configurations.add(new Object[]{"INVALID", false});
-//        for (HLLFactory.HLLPtoType type : HLLFactory.HLLPtoType.values()) {
-//            configurations.add(new Object[]{type.name(), true});
-//        }
-        configurations.add(new Object[] {HLLFactory.HLLPtoType.V1.name(), true});
+        configurations.add(new Object[] {HLLFactory.HLLPtoType.Z2.name(), true});
         return configurations;
     }
     /**

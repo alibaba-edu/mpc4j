@@ -14,11 +14,22 @@ import edu.alibaba.mpc4j.work.scape.s3pc.opf.soprp.lowmc.LowMcParamUtils;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+/**
+ * Batch-optimized CMS implementation using LowMc circuit for hashing.
+ * Uses cryptographic hash functions for better distribution properties.
+ */
 public class CMSv2BatchImpl extends AbstractCMSBatchImpl implements CMS {
     private final PlainZ2cParty party;
     private final LowMcCircuit circuit;
     private PlainZ2Vector[] keys;
 
+    /**
+     * Constructs a batch CMS implementation with LowMc hashing
+     * @param d number of rows in the sketch
+     * @param t number of columns
+     * @param hashKeys hash keys for LowMc circuit
+     * @param elementBitLen bit length of elements
+     */
     public CMSv2BatchImpl(int d, int t, PlainZ2Vector[] hashKeys, int elementBitLen) {
         super(d, t, elementBitLen);
         assert (d == hashKeys.length) : "row size must be equal to hash parameter length";
@@ -33,6 +44,9 @@ public class CMSv2BatchImpl extends AbstractCMSBatchImpl implements CMS {
         }
     }
 
+    /**
+     * Merges buffered elements into the sketch using LowMc hashing
+     */
     @Override
     protected void merge() {
         PlainZ2Vector[] plainBuffer;
@@ -53,6 +67,12 @@ public class CMSv2BatchImpl extends AbstractCMSBatchImpl implements CMS {
         bufferSize = 0;
     }
 
+    /**
+     * Hashes buffered data using LowMc circuit
+     * @param bufferData data to hash
+     * @param index row index for hash function selection
+     * @return array of hash indices
+     */
     private int[] hash(PlainZ2Vector[] bufferData, int index) {
         MpcZ2Vector[] hashValue;
         try {
@@ -70,6 +90,12 @@ public class CMSv2BatchImpl extends AbstractCMSBatchImpl implements CMS {
         return null;
     }
 
+    /**
+     * Hashes a single element using LowMc circuit
+     * @param element element to hash
+     * @param index row index for hash function selection
+     * @return hash index
+     */
     @Override
     protected int hash(BigInteger element, int index) {
         PlainZ2Vector[] plainBuffer;

@@ -22,16 +22,26 @@ import edu.alibaba.mpc4j.work.db.sketch.utils.truncate.TruncateParty;
 
 import java.util.Arrays;
 
+/**
+ * Extended implementation of Truncate protocol using oblivious permutation.
+ * This implementation uses oblivious sorting and permutation to efficiently truncate secret-shared data.
+ */
 public class ExtTruncateParty extends AbstractThreePartyDbPto implements TruncateParty {
     /**
-     * oblivious permutation party
+     * Oblivious permutation party for permuting secret-shared data
      */
     protected final PermuteParty permuteParty;
     /**
-     * oblivious permutation party
+     * Prefix sort party for sorting and grouping operations
      */
     protected final PgSortParty pgSortParty;
 
+    /**
+     * Constructor for ExtTruncateParty
+     *
+     * @param abb3Party the underlying ABB3 party
+     * @param config    the protocol configuration
+     */
     public ExtTruncateParty(Abb3Party abb3Party, ExtTruncateConfig config) {
         super(ExtTruncatePtoDesc.getInstance(), abb3Party, config);
         permuteParty = PermuteFactory.createParty(abb3Party, config.getPermuteConfig());
@@ -39,6 +49,11 @@ public class ExtTruncateParty extends AbstractThreePartyDbPto implements Truncat
         addMultiSubPto(permuteParty, pgSortParty);
     }
 
+    /**
+     * Initialize the protocol
+     *
+     * @throws MpcAbortException if initialization fails
+     */
     @Override
     public void init() throws MpcAbortException {
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -53,6 +68,12 @@ public class ExtTruncateParty extends AbstractThreePartyDbPto implements Truncat
         logPhaseInfo(PtoState.INIT_END);
     }
 
+    /**
+     * Set the resource usage for the protocol
+     *
+     * @param params array of function parameters
+     * @return array of required tuple numbers [z2Tuples, z64Tuples]
+     */
     @Override
     public long[] setUsage(TruncateFnParam... params) {
         long[] tuple = new long[]{0, 0};
@@ -73,13 +94,15 @@ public class ExtTruncateParty extends AbstractThreePartyDbPto implements Truncat
     }
 
     /**
-     * obtain group sum result and truncate all valid values into the front
+     * Compute group sum and truncate all valid values to the front of the array
+     * Uses oblivious sorting and permutation to securely group and sum data, then truncate to keep only valid results
      *
-     * @param payload      Input group payload
-     * @param groupFlag    group flag, sucha as [0,1,1,...1,0,...], where 0 represents the first element in each group
-     * @param truncateSize target truncate size, to make sure that all valid rows are saved, this value should be large enough
-     * @param keys         group key: may be null
-     * @return [group_key(maybe nothing in result if input keys is null), group_agg_result, valid_flag]
+     * @param payload      Input group payload values to be summed
+     * @param groupFlag    Group flag, e.g., [0,1,1,...1,0,...], where 0 represents the first element in each group
+     * @param truncateSize Target truncate size, must be large enough to save all valid rows
+     * @param keys         Optional group key (may be null if no grouping needed)
+     * @return array containing [group_key(may be empty if input keys is null), group_agg_result, valid_flag]
+     * @throws MpcAbortException if the protocol execution fails
      */
     @Override
     public TripletLongVector[] groupSumAndTruncate(TripletLongVector[] payload, TripletLongVector groupFlag, int truncateSize, TripletLongVector... keys) throws MpcAbortException {

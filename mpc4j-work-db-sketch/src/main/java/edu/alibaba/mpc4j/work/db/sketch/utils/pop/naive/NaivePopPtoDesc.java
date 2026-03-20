@@ -4,30 +4,36 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * naive pop protocol description.
+ * Protocol description for the naive Pop (Permute-and-Open) implementation.
+ * Provides unique identification and naming for the protocol.
  */
 public class NaivePopPtoDesc implements PtoDesc {
     /**
-     * protocol ID
+     * Unique protocol ID
      */
     private static final int PTO_ID = Math.abs((int) -1548033272495651096L);
     /**
-     * protocol name
+     * Protocol name
      */
     private static final String PTO_NAME = "POP_NAIVE";
 
     /**
-     * singleton mode
+     * Singleton instance
      */
     private static final NaivePopPtoDesc INSTANCE = new NaivePopPtoDesc();
 
     /**
-     * private constructor
+     * Private constructor for singleton pattern
      */
     private NaivePopPtoDesc() {
         // empty
     }
 
+    /**
+     * Get the singleton instance
+     *
+     * @return the protocol description instance
+     */
     public static PtoDesc getInstance() {
         return INSTANCE;
     }

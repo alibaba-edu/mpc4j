@@ -1,49 +1,51 @@
 package edu.alibaba.mpc4j.work.db.sketch.utils.orderselect;
 
 /**
- * 3p oblivious order select operations
+ * Three-party oblivious order select operations.
+ * Defines the available operations and parameters for the order select protocol.
  */
 public class OrderSelectOperations {
     /**
-     * 3p oblivious range select operations
+     * Three-party oblivious range select operations
      */
     public enum OrderSelectOp {
         /**
-         * select the arithmetic shares. need permutation and selected data
+         * Select arithmetic shares - requires permutation and selected data
          */
         RANGE_SELECT_A,
         /**
-         * select the binary shares in the target range. need permutation and selected data
+         * Select binary shares in the target range - requires permutation and selected data
          */
         RANGE_SELECT_B,
     }
 
     /**
-     * 3p oblivious order select operation parameters
+     * Three-party oblivious order select operation parameters
      */
     public static class OrderSelectFnParam {
         /**
-         * operation
+         * The operation to perform
          */
         public OrderSelectOp op;
         /**
-         * input data size
+         * Input data size (number of elements)
          */
         public int dataNum;
         /**
-         * dimensions of input
+         * Dimensions of input (number of vectors)
          */
         public int[] dims;
         /**
-         * required output range
+         * Required output range [from, to)
          */
         public int[] range;
 
         /**
-         * constructor
+         * Constructor for order select function parameters
          *
-         * @param op      operation
+         * @param op      the operation to perform
          * @param dataNum input data size
+         * @param range   required output range [from, to)
          * @param dims    dimensions of input
          */
         public OrderSelectFnParam(OrderSelectOp op, int dataNum, int[] range, int... dims) {

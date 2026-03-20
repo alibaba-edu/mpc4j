@@ -6,7 +6,7 @@ import edu.alibaba.mpc4j.common.rpc.pto.AbstractThreePartyMemoryRpcPto;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s3pc.abb3.mainpto.AbstractMainAbb3PartyPto;
 import edu.alibaba.mpc4j.s3pc.abb3.mainpto.MainAbb3PartyThread;
-import edu.alibaba.mpc4j.work.db.sketch.SS.SSFactory.MGPtoType;
+import edu.alibaba.mpc4j.work.db.sketch.SS.SSFactory.SSPtoType;
 import edu.alibaba.mpc4j.work.db.sketch.main.SS.SSMain;
 import org.junit.Assert;
 import org.junit.Test;
@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 /**
- * mg main test case
+ * ss main test case
  */
 @RunWith(Parameterized.class)
 public class SSMainTest extends AbstractThreePartyMemoryRpcPto {
@@ -31,7 +31,7 @@ public class SSMainTest extends AbstractThreePartyMemoryRpcPto {
         Collection<Object[]> configurations = new ArrayList<>();
 
         configurations.add(new Object[]{"INVALID", false});
-        configurations.add(new Object[]{MGPtoType.V1.name(), true});
+        configurations.add(new Object[]{SSPtoType.Z2.name(), true});
         return configurations;
     }
     /**
@@ -51,7 +51,7 @@ public class SSMainTest extends AbstractThreePartyMemoryRpcPto {
 
     @Test
     public void testMain() throws InterruptedException {
-        String path = "conf_mg_example.conf";
+        String path = "conf_ss_example.conf";
         String configPath = Objects.requireNonNull(getClass().getClassLoader().getResource(path)).getPath();
         Properties properties = PropertiesUtils.loadProperties(configPath);
         Assert.assertEquals(properties.get(MainPtoConfigUtils.PTO_TYPE_KEY), SSMain.PTO_TYPE);

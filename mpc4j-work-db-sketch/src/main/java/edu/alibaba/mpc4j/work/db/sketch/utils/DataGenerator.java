@@ -16,13 +16,51 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.zip.CRC32;
 
+/**
+ * Data Generator for streaming data sketches.
+ * 
+ * This class generates test data for sketch protocols with various distributions:
+ * - GAUSSIAN: Gaussian distribution
+ * - UNIFORM: Uniform distribution
+ * - AOL: Real-world data from AOL search logs
+ * - NETFLIX: Real-world data from Netflix movie ratings
+ * - DISTINCT: Distinct values from 1 to m
+ */
 public class DataGenerator {
+    /**
+     * Map of file readers for real-world datasets
+     */
     private final Map<String,BufferedReader> readerMap;
+    /**
+     * Bit mask for element value range
+     */
     private long mask;
+    
+    /**
+     * Creates a new DataGenerator instance
+     */
     public DataGenerator() {
         this.readerMap = new HashMap<String,BufferedReader>();
     }
 
+    /**
+     * Generates update data for sketch protocols
+     * 
+     * @param elementBitLen bit length of each element
+     * @param dataSize number of elements to generate
+     * @param dataType type of data distribution (GAUSSIAN, UNIFORM, AOL, NETFLIX, DISTINCT)
+     * @param random random number generator
+     * @return array of BigInteger values
+     */
+    /**
+     * Generates update data with specified distribution and bit length
+     *
+     * @param elementBitLen bit length for each element
+     * @param dataSize number of data elements to generate
+     * @param dataType type of distribution: GAUSSIAN, UNIFORM, AOL, NETFLIX, or DISTINCT
+     * @param random random number generator
+     * @return array of BigInteger values representing the generated data
+     */
     public BigInteger[] genUpdateData(int elementBitLen, int dataSize, String dataType, Random random) {
         this.mask=(1L<<elementBitLen)-1;
         return switch (dataType) {
@@ -35,6 +73,27 @@ public class DataGenerator {
         };
     }
 
+    /**
+     * Generates m distinct values from 1 to m in random order
+     * 
+     * @param bitLen bit length of values
+     * @param m number of distinct values to generate
+     * @return array of distinct BigInteger values
+     */
+    /**
+     * Generate m distinct data values
+     *
+     * @param bitLen bit length for each value
+     * @param m number of distinct values to generate
+     * @return array of distinct BigIntegers
+     */
+    /**
+     * Generates m distinct values from 1 to m, then shuffles them
+     *
+     * @param bitLen bit length constraint for values
+     * @param m number of distinct values to generate
+     * @return shuffled array of distinct BigInteger values
+     */
     private BigInteger[] generateDistinctData(int bitLen, int m) {
         if (m <= 0) {
             throw new IllegalArgumentException("Size m must be positive");
@@ -57,12 +116,46 @@ public class DataGenerator {
     }
 
 
+    /**
+     * Generate uniformly distributed random data
+     *
+     * @param elementBitLen bit length of each element
+     * @param updateRowNum number of elements to generate
+     * @param random random number generator
+     * @return array of uniformly distributed BigIntegers
+     */
+    /**
+     * Generates uniformly random data with specified bit length
+     *
+     * @param elementBitLen bit length for each element (must be between 1 and 64)
+     * @param updateRowNum number of data elements to generate
+     * @param random random number generator
+     * @return array of uniformly random BigInteger values
+     */
     private BigInteger[] genUniformData(int elementBitLen, int updateRowNum,Random random) {
         MathPreconditions.checkPositiveInRangeClosed("0 < elementBitLen <= 64", elementBitLen, 64);
         return IntStream.range(0, updateRowNum).mapToObj(i ->
                 BitVectorFactory.createRandom(elementBitLen, random).getBigInteger()).toArray(BigInteger[]::new);
     }
 
+    /**
+     * Generate Gaussian distributed random data
+     *
+     * @param elementBitLen bit length of each element
+     * @param updateRowNum number of elements to generate
+     * @param random random number generator
+     * @return array of Gaussian distributed BigIntegers
+     */
+    /**
+     * Generates Gaussian distributed data with specified bit length
+     * Uses mean = 2^(elementBitLen-1) and standard deviation = 2^(elementBitLen-16)
+     * Values are clamped to positive range [1, 2^elementBitLen)
+     *
+     * @param elementBitLen bit length for each element
+     * @param updateRowNum number of data elements to generate
+     * @param random random number generator
+     * @return array of Gaussian distributed BigInteger values
+     */
     private BigInteger[] genGaussianData(int elementBitLen, int updateRowNum,Random random) {
         BigInteger[] updateData = new BigInteger[updateRowNum];
         for (int i = 0; i < updateData.length; i++) {
@@ -76,6 +169,14 @@ public class DataGenerator {
         }
         return updateData;
     }
+    /**
+     * Gets or creates a buffered reader for the specified file
+     * Readers are cached to avoid reopening files
+     *
+     * @param file name of the file (without .txt extension)
+     * @return buffered reader for the file
+     * @throws IOException if file cannot be found or opened
+     */
     private BufferedReader getReader(String file) throws IOException {
         if(readerMap.containsKey(file)){
             return readerMap.get(file);
@@ -89,6 +190,14 @@ public class DataGenerator {
         readerMap.put(file, reader);
         return reader;
     }
+    /**
+     * Reads real-world data from resource files
+     * Supports AOL (web URLs) and Netflix (movie IDs) datasets
+     *
+     * @param file name of the dataset file (without .txt extension)
+     * @param dataSize number of data elements to read
+     * @return array of BigInteger values extracted from the dataset
+     */
     private BigInteger[] getRealData(String file,int dataSize) {
 
         List<BigInteger> result = new ArrayList<>();
@@ -138,6 +247,13 @@ public class DataGenerator {
         }
         return result.toArray(new BigInteger[0]);
     }
+    /**
+     * Hashes a website URL to a BigInteger using CRC32
+     * The URL is normalized before hashing to ensure consistency
+     *
+     * @param website the website URL to hash
+     * @return BigInteger hash value of the website
+     */
     private BigInteger hashWebsiteToBigInteger(String website) {
         try {
             // Normalize the website URL
@@ -156,6 +272,13 @@ public class DataGenerator {
         }
     }
 
+    /**
+     * Normalizes a website URL by removing protocol, www prefix, and trailing slash
+     * This ensures consistent hashing of equivalent URLs
+     *
+     * @param website the website URL to normalize
+     * @return normalized website URL
+     */
     private String normalizeWebsite(String website) {
         // Remove protocol and www for consistency
         String normalized = website.toLowerCase()

@@ -4,13 +4,14 @@ import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 import edu.alibaba.mpc4j.work.db.sketch.utils.pop.PopFactory.PopPtoType;
 
 /**
- * pop protocol config
+ * Configuration interface for Pop (Permute-and-Open) protocol.
+ * Defines the protocol type and security parameters for the Pop operation.
  */
 public interface PopConfig extends MultiPartyPtoConfig {
     /**
-     * get the protocol type
+     * Get the protocol type
      *
-     * @return the protocol type
+     * @return the protocol type (e.g., NAIVE)
      */
     PopPtoType getPtoType();
 }

@@ -10,8 +10,8 @@ import edu.alibaba.mpc4j.s3pc.abb3.basic.Abb3RpConfig;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.Abb3RpParty;
 import edu.alibaba.mpc4j.s3pc.abb3.context.TripletProviderConfig;
 import edu.alibaba.mpc4j.s3pc.abb3.context.tuple.RpMtProviderFactory;
-import edu.alibaba.mpc4j.work.db.sketch.GK.v1.v1GKConfig;
-import edu.alibaba.mpc4j.work.db.sketch.GK.v1.v1GKPtoDesc;
+import edu.alibaba.mpc4j.work.db.sketch.GK.z2.GKz2Config;
+import edu.alibaba.mpc4j.work.db.sketch.GK.z2.GKz2PtoDesc;
 import edu.alibaba.mpc4j.work.db.sketch.utils.gk.GKBatchImpl;
 import edu.alibaba.mpc4j.work.db.sketch.utils.gk.Representative;
 import org.apache.commons.lang3.time.StopWatch;
@@ -28,104 +28,138 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * GK test.
+ * Test class for GK (Greenwald-Khanna) quantile sketch protocol in 3PC setting.
+ * Tests both small and medium scale inputs with correctness verification.
  */
 @RunWith(Parameterized.class)
 public class GKTest extends AbstractThreePartyMemoryRpcPto {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(GKTest.class);
     private static final boolean USE_MT_TEST_MODE = true;
     /**
-     * small sketch size
+     * Logarithm of small sketch size (2^4 = 16)
      */
     private static final int SMALL_LOG_SKETCH_SIZE = 4;
     /**
-     * small element bit length
+     * Bit length for small elements
      */
     private static final int SMALL_ELEMENT_BIT_LEN = 6;
     /**
-     * small payload bit length
+     * Bit length for small payload
      */
     private static final int SMALL_PAYLOAD_BIT_LEN = 7;
     /**
-     * small payload bit length
+     * Number of updates for small test
      */
     private static final int SMALL_UPDATE_NUM = 1<<6;
     /**
-     * small error level
+     * Error parameter for small test
      */
     private static final double SMALL_EPSILON = 0.2;
     /**
-     * small query number
+     * Number of queries for small test
      */
     private static final int SMALL_QUERY_NUM = 10;
     /**
-     * middle sketch size
+     * Logarithm of medium sketch size (2^10 = 1024)
      */
     private static final int MIDDLE_LOG_SKETCH_SIZE = 10;
     /**
-     * middle element bit length
+     * Bit length for medium elements
      */
     private static final int MIDDLE_ELEMENT_BIT_LEN = 16;
     /**
-     * middle payload bit length
+     * Bit length for medium payload
      */
     private static final int MIDDLE_PAYLOAD_BIT_LEN = 12;
     /**
-     * middle update number
+     * Number of updates for medium test
      */
     private static final int MIDDLE_UPDATE_NUM = 1 << 12;
     /**
-     * small error level
+     * Error parameter for medium test
      */
     private static final double MIDDLE_EPSILON = 0.1;
     /**
-     * middle query number
+     * Number of queries for medium test
      */
     private static final int MIDDLE_QUERY_NUM = 100;
 
+    /**
+     * Parameterized test configurations
+     *
+     * @return collection of test configurations
+     */
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
         configurations.add(new Object[]{
-                v1GKPtoDesc.getInstance().getPtoName() + "(semi-honest)",
-                new v1GKConfig.Builder(false).build(), false
+            GKz2PtoDesc.getInstance().getPtoName() + "(semi-honest)",
+            new GKz2Config.Builder(false).build(), false
         });
         return configurations;
     }
+
     /**
-     * party config
+     * Configuration for GK protocol
      */
     private final GKConfig config;
     /**
-     * verify with mac
+     * Flag to enable MAC verification
      */
     private final boolean baseUseMac;
+
+    /**
+     * Constructs a GK test with the specified configuration
+     * @param name test name
+     * @param config GK configuration
+     * @param baseUseMac whether to use MAC for verification
+     */
     public GKTest(String name, GKConfig config, boolean baseUseMac) {
         super(name);
         this.config = config;
         this.baseUseMac = baseUseMac;
     }
 
+    /**
+     * Test with small input size using Z2 implementation
+     */
     @Test
     public void testZ2SmallSize() {
         testOpi(false, SMALL_LOG_SKETCH_SIZE, SMALL_ELEMENT_BIT_LEN, SMALL_PAYLOAD_BIT_LEN, SMALL_EPSILON, SMALL_UPDATE_NUM, SMALL_QUERY_NUM);
     }
 
+    /**
+     * Test with medium input size using Z2 implementation
+     */
     @Test
     public void testZ2MiddleSize() {
         testOpi(false, MIDDLE_LOG_SKETCH_SIZE, MIDDLE_ELEMENT_BIT_LEN, MIDDLE_PAYLOAD_BIT_LEN, MIDDLE_EPSILON, MIDDLE_UPDATE_NUM, MIDDLE_QUERY_NUM);
     }
 
+    /**
+     * Main test method for GK protocol
+     * @param parallel whether to enable parallel execution
+     * @param logSketchSize log of sketch table size
+     * @param keyBitLen bit length of keys
+     * @param payloadBitLen bit length of payload
+     * @param epsilon error parameter
+     * @param updateNum number of updates
+     * @param queryNum number of queries
+     */
     private void testOpi(boolean parallel, int logSketchSize, int keyBitLen, int payloadBitLen, double epsilon, int updateNum, int queryNum) {
         GKParty[] parties = getParties(parallel);
         try {
             LOGGER.info("-----test {}, (updateNum = {}) start-----", parties[0].getPtoDesc().getPtoName(), logSketchSize);
+            // Generate random update and query data
             BigInteger[] updateData= genUpdateData(keyBitLen, updateNum);
             BigInteger[] queryData = genUpdateData(keyBitLen, queryNum);
+            // Create party threads
             GKPartyThread[] threads = Arrays.stream(parties)
                     .map(p -> new GKPartyThread(p, logSketchSize, keyBitLen, payloadBitLen, epsilon, updateData, queryData))
                     .toArray(GKPartyThread[]::new);
 
+            // Execute the protocol and measure time
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
             Arrays.stream(threads).forEach(Thread::start);
@@ -135,14 +169,15 @@ public class GKTest extends AbstractThreePartyMemoryRpcPto {
             stopWatch.stop();
             long time = stopWatch.getTime(TimeUnit.MILLISECONDS);
 
+            // Get results and verify correctness
             BigInteger[][] sketchRes = threads[0].getSketchRes();
             int[] queryRes = threads[0].getQueryRes();
-            // verify
+            // Verify sketch and query results
             verify(updateData, sketchRes,logSketchSize,epsilon);
             LOGGER.info("query key: {}", Arrays.toString(queryData));
             LOGGER.info("query count out: {}", Arrays.toString(queryRes));
 
-            // destroy
+            // Cleanup
             Arrays.stream(parties).forEach(p -> new Thread(p::destroy).start());
             LOGGER.info("-----test {}, (updateNum = {}) end, communication:{}, time:{} ms-----",
                     parties[0].getPtoDesc().getPtoName(), logSketchSize, parties[0].getRpc().getSendByteLength(), time);
@@ -151,6 +186,11 @@ public class GKTest extends AbstractThreePartyMemoryRpcPto {
         }
     }
 
+    /**
+     * Creates and initializes GK parties for the test
+     * @param parallel whether to enable parallel execution
+     * @return array of three GK parties
+     */
     private GKParty[] getParties(boolean parallel) {
         Rpc[] rpcAll = new Rpc[]{firstRpc, secondRpc, thirdRpc};
         boolean isMalicious = config.getSecurityModel().equals(SecurityModel.MALICIOUS);
@@ -176,11 +216,10 @@ public class GKTest extends AbstractThreePartyMemoryRpcPto {
     }
 
     /**
-     * generate update data stored in the row form
-     *
-     * @param elementBitLen element bit length
-     * @param updateRowNum  how many rows is required
-     * @return update data in row form
+     * Generates random update data
+     * @param elementBitLen bit length of elements
+     * @param updateRowNum number of elements to generate
+     * @return array of random BigIntegers
      */
     private BigInteger[] genUpdateData(int elementBitLen, int updateRowNum) {
         MathPreconditions.checkPositiveInRangeClosed("0 < elementBitLen <= 64", elementBitLen, 64);
@@ -188,12 +227,21 @@ public class GKTest extends AbstractThreePartyMemoryRpcPto {
                 BitVectorFactory.createRandom(elementBitLen, SECURE_RANDOM).getBigInteger()).toArray(BigInteger[]::new);
     }
 
-    private void verify(BigInteger[] updateElements, BigInteger[][] sketchRes,int logSketchSize,double epsilon) {
+    /**
+     * Verifies the sketch results against plain implementation
+     * @param updateElements array of update elements
+     * @param sketchRes sketch results from MPC
+     * @param logSketchSize log of sketch table size
+     * @param epsilon error parameter
+     */
+    private void verify(BigInteger[] updateElements, BigInteger[][] sketchRes, int logSketchSize, double epsilon) {
+        // Build histogram from update elements
         Map<BigInteger, Integer> updateMap = new HashMap<>();
         for (BigInteger updateElement : updateElements) {
             updateMap.put(updateElement, updateMap.getOrDefault(updateElement, 0) + 1);
         }
 
+        // Sort elements by key
         Pair<BigInteger, Integer>[] test = new Pair[updateMap.size()];
         BigInteger[] keys = updateMap.keySet().toArray(new BigInteger[0]);
         Integer[] counts = updateMap.values().toArray(new Integer[0]);
@@ -213,15 +261,14 @@ public class GKTest extends AbstractThreePartyMemoryRpcPto {
         LOGGER.info("sketch t out: {}", Arrays.toString(sketchRes[5]));
         LOGGER.info("sketch flag out: {}", Arrays.toString(sketchRes[6]));
 
-
-        //verification: the plain version's output is consistent with mpc version's
-        GKBatchImpl plainGK=new GKBatchImpl((float) epsilon,1<<logSketchSize);
+        // Verification: compare plain implementation output with MPC version
+        GKBatchImpl plainGK = new GKBatchImpl((float) epsilon, 1 << logSketchSize);
         plainGK.input(updateElements);
-        ArrayList<Representative> plainRes= plainGK.getTable();
-        for(int i=0;i<plainRes.size();i++){
+        ArrayList<Representative> plainRes = plainGK.getTable();
+        for (int i = 0; i < plainRes.size(); i++) {
             LOGGER.info(plainRes.get(i).toString());
             assert (plainRes.get(i).getKey().equals(sketchRes[0][i]));
-            assert (plainRes.get(i).getT()==(sketchRes[5][i].longValue()));
+            assert (plainRes.get(i).getT() == (sketchRes[5][i].longValue()));
             assert (plainRes.get(i).getG1().equals(sketchRes[1][i]));
             assert (plainRes.get(i).getG2().equals(sketchRes[2][i]));
             assert (plainRes.get(i).getDelta2().equals(sketchRes[4][i]));

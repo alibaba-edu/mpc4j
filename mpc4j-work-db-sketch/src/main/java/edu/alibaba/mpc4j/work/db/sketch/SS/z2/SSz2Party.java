@@ -1,4 +1,4 @@
-package edu.alibaba.mpc4j.work.db.sketch.SS.v1;
+package edu.alibaba.mpc4j.work.db.sketch.SS.z2;
 
 import edu.alibaba.mpc4j.common.circuit.MpcVector;
 import edu.alibaba.mpc4j.common.rpc.MpcAbortException;
@@ -13,14 +13,14 @@ import edu.alibaba.mpc4j.work.db.sketch.SS.AbstractSSParty;
 import edu.alibaba.mpc4j.work.db.sketch.SS.SSParty;
 import edu.alibaba.mpc4j.work.db.sketch.SS.SSTable;
 import edu.alibaba.mpc4j.work.db.sketch.structure.SketchTable;
-import edu.alibaba.mpc4j.work.db.sketch.utils.agg.AggFactory;
-import edu.alibaba.mpc4j.work.db.sketch.utils.agg.AggParty;
 import edu.alibaba.mpc4j.work.db.sketch.utils.orderselect.OrderSelectFactory;
 import edu.alibaba.mpc4j.work.db.sketch.utils.orderselect.OrderSelectParty;
 import edu.alibaba.mpc4j.work.db.sketch.utils.pop.PopFactory;
 import edu.alibaba.mpc4j.work.db.sketch.utils.pop.PopParty;
 import edu.alibaba.mpc4j.work.scape.s3pc.db.group.sum.GroupSumFactory;
 import edu.alibaba.mpc4j.work.scape.s3pc.db.group.sum.GroupSumParty;
+import edu.alibaba.mpc4j.work.scape.s3pc.opf.agg.AggFactory;
+import edu.alibaba.mpc4j.work.scape.s3pc.opf.agg.AggParty;
 import edu.alibaba.mpc4j.work.scape.s3pc.opf.permutation.PermuteFactory;
 import edu.alibaba.mpc4j.work.scape.s3pc.opf.permutation.PermuteParty;
 import edu.alibaba.mpc4j.work.scape.s3pc.opf.pgsort.PgSortFactory;
@@ -31,36 +31,89 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
- * v1 MG computing party.
+ * SpaceSaving (SS) sketch computing party using Z2 Boolean circuits.
+ * 
+ * <p>This is the main implementation of SS sketch in the S³ framework. It implements
+ * the Merge (Algorithm 4) and Query protocols using Z2 circuits for secure multi-party
+ * computation.
+ * 
+ * <p><b>Merge Protocol Implementation:</b>
+ * <ol>
+ *   <li>Create table T by merging buffer data with existing sketch table</li>
+ *   <li>Sort by key to group identical keys (using PgSort)</li>
+ *   <li>Perform segmented prefix-sum aggregation to sum frequencies (using Group-by-Sum)</li>
+ *   <li>Mark dummy entries and compact by keeping top s entries (using Order Select)</li>
+ *   <li>Sort by value (frequency) to identify highest frequency items</li>
+ * </ol>
+ * 
+ * <p><b>Query Protocol Implementation:</b>
+ * <ol>
+ *   <li>Execute Merge protocol to flush any remaining buffer data</li>
+ *   <li>Sort entries by value in descending order</li>
+ *   <li>Select and return top k entries (using Order Select)</li>
+ * </ol>
+ *
+ * @author Jianzhe Yu, Qi Dong
  */
-public class v1SSParty extends AbstractSSParty implements SSParty {
+public class SSz2Party extends AbstractSSParty implements SSParty {
     /**
-     * permute party
+     * Oblivious permutation party.
+     * 
+     * <p>Used to securely shuffle data when applying sorting results,
+     * ensuring that the permutation pattern is not revealed to any party.
      */
     public final PermuteParty permuteParty;
+    
     /**
-     * group-by-sum party
+     * Group-by-sum party.
+     * 
+     * <p>Used in Merge protocol to aggregate frequencies of identical keys
+     * after sorting. This implements the segmented prefix-sum aggregation.
      */
     public final GroupSumParty groupSumParty;
+    
     /**
-     * sorting party
+     * Parallel graph-based sorting party.
+     * 
+     * <p>Used for sorting operations in Merge protocol:
+     * - Sort by key to group identical keys
+     * - Sort by value to identify top frequency items
      */
     public final PgSortParty pgSortParty;
+    
     /**
-     * selection party
+     * Order select party.
+     * 
+     * <p>Used to select specific ranges of elements from sorted arrays:
+     * - In Merge: Select top s entries after compaction
+     * - In Query: Select top k entries for the query result
      */
     public final OrderSelectParty orderSelectParty;
+    
     /**
-     * agg party
+     * Aggregation party.
+     * 
+     * <p>Used for finding extreme values (minimum/maximum) during compaction
+     * operations in the Merge protocol.
      */
     public final AggParty aggParty;
+    
     /**
-     * pop party
+     * Pop party.
+     * 
+     * <p>Used to remove elements from the sketch table during compaction
+     * when maintaining the space constraint.
      */
     public final PopParty popParty;
 
-    public v1SSParty(Abb3Party abb3Party, v1SSConfig config) {
-        super(v1SSPtoDesc.getInstance(), abb3Party, config);
+    /**
+     * Constructor for SSz2Party.
+     *
+     * @param abb3Party the ABB3 (3-party arithmetic) party for MPC operations
+     * @param config    the SSz2 protocol configuration
+     */
+    public SSz2Party(Abb3Party abb3Party, SSz2Config config) {
+        super(SSz2PtoDesc.getInstance(), abb3Party, config);
         permuteParty = PermuteFactory.createParty(abb3Party, config.getPermuteConfig());
         groupSumParty = GroupSumFactory.createParty(abb3Party, config.getGroupSumConfig());
         pgSortParty = PgSortFactory.createParty(abb3Party, config.getPgSortConfig());
@@ -70,6 +123,11 @@ public class v1SSParty extends AbstractSSParty implements SSParty {
         addMultiSubPto(permuteParty, groupSumParty, pgSortParty);
     }
 
+    /**
+     * Initialize the SS protocol and all sub-protocols.
+     *
+     * @throws MpcAbortException if protocol initialization fails
+     */
     @Override
     public void init() throws MpcAbortException {
         logPhaseInfo(PtoState.INIT_BEGIN);
@@ -109,18 +167,22 @@ public class v1SSParty extends AbstractSSParty implements SSParty {
             TripletZ2Vector[] buffer = ssTable.getBufferTable().toArray(TripletZ2Vector[]::new);
             buffer = z2cParty.matrixTranspose(buffer);
             // merge two table, new data in the front and old data in the end
+            // Algorithm 4, Step 1: Create table T by merging buffer with existing sketch
             for (int i = 0; i < keyBitLen; i++) {
                 keyAndPayload[i] = buffer[i];
                 keyAndPayload[i].merge(ssTable.getSketchTable()[i]);
             }
+            // Extend count values with zeros for buffer entries
             for (int i = keyBitLen; i < keyAndPayload.length - 1; i++) {
                 keyAndPayload[i] = (TripletZ2Vector) ssTable.getSketchTable()[i];
                 keyAndPayload[i].extendLength(sketchSize * 2);
             }
+            // Add flag bit to mark buffer entries (1 for buffer, 0 for existing)
             keyAndPayload[keyAndPayload.length - 1] = z2cParty.createShareZeros(sketchSize);
             z2cParty.noti(keyAndPayload[keyAndPayload.length - 1]);
             keyAndPayload[keyAndPayload.length - 1].merge(ssTable.getSketchTable()[keyAndPayload.length - 1]);
             // order by the index key, we use PgSort to enable flexible selection of sorting algorithms
+            // Algorithm 4, Step 2: Sort by key to group identical keys
             TripletZ2Vector[] keys = Arrays.copyOf(keyAndPayload, keyBitLen);
             TripletZ2Vector[] countValues = Arrays.copyOfRange(keyAndPayload, keyBitLen, keyBitLen + payloadBitLen);
             TripletZ2Vector[] perm = pgSortParty.perGenAndSortOrigin(keys);
@@ -129,9 +191,10 @@ public class v1SSParty extends AbstractSSParty implements SSParty {
 
             stopWatch.start();
             // group by aggregation
+            // Algorithm 4, Step 3: Segmented prefix-sum aggregation to sum frequencies
             TripletZ2Vector[] groupInput = new TripletZ2Vector[keyBitLen + 1];
             System.arraycopy(keys, 0, groupInput, 0, keyBitLen);
-            // add flag
+            // add flag to identify group boundaries
             groupInput[keyBitLen] = z2cParty.createShareZeros(2 * sketchSize);
             z2cParty.noti(groupInput[keyBitLen]);
             int[] keyIndex = IntStream.range(0, keyBitLen).toArray();
@@ -146,6 +209,7 @@ public class v1SSParty extends AbstractSSParty implements SSParty {
 
             stopWatch.start();
             // remove the least k-1 element
+            // Algorithm 4, Step 4-5: Compact by keeping top s entries
             System.arraycopy(keys, 0, keyAndPayload, 0, keyBitLen);
             System.arraycopy(groupSum, 0, keyAndPayload, keyBitLen, payloadBitLen);
             int[] kAnd1Range = new int[]{0, sketchSize};
@@ -155,7 +219,8 @@ public class v1SSParty extends AbstractSSParty implements SSParty {
             Arrays.stream(keyAndPayload).forEach(each -> each.reduce(sketchSize));
 
 //            stopWatch.start();
-            // get minimum count and remove it, other values sub this value
+            // Alternative approach: get minimum count and remove it, other values sub this value
+            // This is commented out but shows an alternative compaction strategy
 //            Pair<TripletZ2Vector[], TripletZ2Vector> minPair = aggParty.extremeIndicator(Arrays.copyOfRange(keyAndPayload, keyBitLen, keyAndPayload.length), AggOp.MIN);
 //            TripletZ2Vector[] popResult = popParty.pop(keyAndPayload, minPair.getRight());
 //            TripletLongVector min = abb3Party.getConvParty().b2a(minPair.getLeft());
@@ -173,6 +238,20 @@ public class v1SSParty extends AbstractSSParty implements SSParty {
 
     }
 
+    /**
+     * Merge buffer data with sketch table and perform group-by aggregation.
+     * 
+     * <p>This helper method implements the core Merge protocol logic:
+     * 1. Merge buffer data with existing sketch table
+     * 2. Sort by key to group identical keys
+     * 3. Perform segmented prefix-sum aggregation
+     * 4. Compact by keeping top s entries
+     * 
+     * <p>This is used by both update() and getQuery() when buffer needs to be flushed.
+     *
+     * @param ssTable the SS sketch table to update
+     * @throws MpcAbortException if the protocol fails
+     */
     private void mergeAndGroupBy(SketchTable ssTable) throws MpcAbortException {
         TripletZ2Vector[] table = (TripletZ2Vector[]) ssTable.getSketchTable();
         TripletZ2Vector[] buffer = z2cParty.matrixTranspose(ssTable.getBufferTable().toArray(TripletZ2Vector[]::new));
@@ -184,9 +263,11 @@ public class v1SSParty extends AbstractSSParty implements SSParty {
         for (int i = 0; i < bufferCopy.length; i++) {
             dataCopy[i].merge(bufferCopy[i]);
         }
+        // Extend count values with zeros for buffer entries
         for (int i = keyBitLen; i < dataCopy.length - 1; i++) {
             dataCopy[i].merge(z2cParty.createShareZeros(bufferCopy[0].bitNum()));
         }
+        // Mark buffer entries with flag bit (1 for buffer, 0 for existing)
         TripletZ2Vector shareOne = (TripletZ2Vector) z2cParty.setPublicValues(new BitVector[]{BitVectorFactory.createOnes(bufferCopy[0].bitNum())})[0];
         dataCopy[dataCopy.length - 1].merge(shareOne);
 
@@ -233,6 +314,7 @@ public class v1SSParty extends AbstractSSParty implements SSParty {
         int keyBitLen = ((SSTable) ssTable).getKeyBitLen();
         int tableSize = ssTable.getTableSize();
         // merge the buffer
+        // Query Protocol Step 1: Execute Merge protocol to flush any remaining buffer data
         if (ssTable.getBufferIndex() > 0) {
 //            TripletZ2Vector[] bufferCopy = ssTable.getBufferTable().toArray(TripletZ2Vector[]::new);
 //            bufferCopy = z2cParty.matrixTranspose(bufferCopy);
@@ -240,6 +322,7 @@ public class v1SSParty extends AbstractSSParty implements SSParty {
         }
         TripletZ2Vector[] countCopy = new TripletZ2Vector[logPayload];
         System.arraycopy(tableCopy, keyBitLen, countCopy, 0, logPayload);
+        // Query Protocol Step 2-3: Select top k entries with highest frequencies
         int[] kRange = new int[]{tableSize - k, tableSize};
         Pair<TripletZ2Vector[], TripletZ2Vector[]> selectK = orderSelectParty.orderSelect(countCopy, kRange);
         tableCopy = permuteParty.applyInvPermutation(selectK.getLeft(), tableCopy);

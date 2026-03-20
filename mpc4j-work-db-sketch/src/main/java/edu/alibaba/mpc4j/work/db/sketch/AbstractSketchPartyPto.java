@@ -7,18 +7,30 @@ import edu.alibaba.mpc4j.s3pc.abb3.basic.AbstractAbbThreePartyPto;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.core.z2.TripletZ2cParty;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.core.zlong.TripletLongParty;
 
-public abstract class AbstractSketchPartyPto extends AbstractAbbThreePartyPto implements SketchPartyPto{
+/**
+ * Abstract base class for sketch party protocols in the S³ framework.
+ * <p>
+ * Provides access to the core MPC computation parties used by all sketch protocols:
+ * <ul>
+ *   <li>{@link Abb3Party}: the ABB3 (Arithmetic Black-Box for 3PC) party that orchestrates MPC operations.</li>
+ *   <li>{@link TripletZ2cParty}: the Z2 (Boolean) circuit party for bit-level operations
+ *       (e.g., comparisons, prefix-and for LeadingOnes in HLL, multiplexers).</li>
+ *   <li>{@link TripletLongParty}: the Zlong (64-bit integer) arithmetic party for
+ *       arithmetic operations (e.g., addition, prefix-sum for CMS).</li>
+ * </ul>
+ */
+public abstract class AbstractSketchPartyPto extends AbstractAbbThreePartyPto implements SketchPartyPto {
 
     /**
-     * initialize the party
+     * the ABB3 party that provides high-level MPC operations including sorting, compaction, and prefix operations
      */
     protected final Abb3Party abb3Party;
     /**
-     * z2c party
+     * the Z2 (Boolean) circuit party for bit-level secure computation (comparisons, AND, XOR, etc.)
      */
     protected final TripletZ2cParty z2cParty;
     /**
-     * zLong party
+     * the Zlong (64-bit integer) arithmetic party for secure integer arithmetic (addition, multiplication, etc.)
      */
     protected final TripletLongParty zl64cParty;
 

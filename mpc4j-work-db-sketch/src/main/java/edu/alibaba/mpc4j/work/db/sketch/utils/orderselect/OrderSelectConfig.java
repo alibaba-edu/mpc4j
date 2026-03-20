@@ -5,23 +5,28 @@ import edu.alibaba.mpc4j.common.rpc.pto.MultiPartyPtoConfig;
 import edu.alibaba.mpc4j.work.db.sketch.utils.orderselect.OrderSelectFactory.OrderSelectType;
 
 /**
- * Interface for three-party order select configure
+ * Configuration interface for three-party order select protocol.
+ * Defines the protocol type, stability, and comparator settings.
  */
 public interface OrderSelectConfig extends MultiPartyPtoConfig {
     /**
-     * Gets protocol type.
+     * Get the protocol type
      *
-     * @return protocol type.
+     * @return protocol type (e.g., QUICK_ORDER_SELECT)
      */
     OrderSelectType getOrderSelectType();
 
     /**
-     * whether the range select protocol is stable
+     * Check if the range select protocol is stable (maintains relative order of equal elements)
+     *
+     * @return true if stable, false otherwise
      */
     boolean isStable();
 
     /**
-     * set the comparator type in the sorting algorithm
+     * Set the comparator type in the sorting algorithm
+     *
+     * @param comparatorType the comparator type to use
      */
     void setComparatorType(ComparatorType comparatorType);
 }

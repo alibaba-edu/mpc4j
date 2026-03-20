@@ -27,7 +27,7 @@ public class CMSZ2MainTest extends AbstractThreePartyMemoryRpcPto {
         Collection<Object[]> configurations = new ArrayList<>();
 
         configurations.add(new Object[]{"INVALID", false});
-        configurations.add(new Object[] {CMSPtoType.CMS_V2.name(), true});
+        configurations.add(new Object[] {CMSPtoType.CMS_Z2.name(), true});
         return configurations;
     }
 

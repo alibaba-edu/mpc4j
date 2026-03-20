@@ -7,9 +7,13 @@ import edu.alibaba.mpc4j.work.scape.s3pc.opf.permutation.PermuteFactory;
 import edu.alibaba.mpc4j.work.db.sketch.utils.truncate.TruncateConfig;
 import edu.alibaba.mpc4j.work.db.sketch.utils.truncate.TruncateFactory.TruncatePtoType;
 
+/**
+ * Configuration for the extended (EXT) implementation of Truncate protocol.
+ * Uses oblivious permutation for efficient truncation of secret-shared data.
+ */
 public class ExtTruncateConfig extends AbstractMultiPartyPtoConfig implements TruncateConfig {
     /**
-     * config of oblivious traversal
+     * Configuration for oblivious permutation operations
      */
     private final PermuteConfig permuteConfig;
 
@@ -23,20 +27,33 @@ public class ExtTruncateConfig extends AbstractMultiPartyPtoConfig implements Tr
         return TruncatePtoType.EXT;
     }
 
+    /**
+     * Get the oblivious permutation configuration
+     *
+     * @return the permutation configuration
+     */
     public PermuteConfig getPermuteConfig() {
         return permuteConfig;
     }
 
+    /**
+     * Builder for creating ExtTruncateConfig instances
+     */
     public static class Builder implements org.apache.commons.lang3.builder.Builder<ExtTruncateConfig> {
         /**
-         * whether malicious secure or not
+         * Whether to use malicious security model
          */
         private final boolean malicious;
         /**
-         * config of oblivious traversal
+         * Configuration for oblivious permutation operations
          */
         private final PermuteConfig permuteConfig;
 
+        /**
+         * Constructor for Builder
+         *
+         * @param malicious whether to use malicious security model
+         */
         public Builder(boolean malicious) {
             this.malicious = malicious;
             permuteConfig = PermuteFactory.createDefaultConfig(malicious ? SecurityModel.MALICIOUS : SecurityModel.SEMI_HONEST);

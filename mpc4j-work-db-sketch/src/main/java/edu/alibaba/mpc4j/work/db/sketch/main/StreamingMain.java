@@ -16,23 +16,37 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * Streaming main
+ * Streaming experiment main class for the S³ framework.
+ * <p>
+ * This class serves as the entry point for running various sketch experiments in a 3-party computation (3PC) environment.
+ * It coordinates the execution of different sketch protocols including CMS, SS, HLL, and GK for streaming data processing.
+ * The class supports both single configuration files and directories containing multiple configuration files.
+ * </p>
  */
 public class StreamingMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamingMain.class);
 
+    private String dataType = "UNIFORM";
+
     /**
-     * main function.
+     * Main entry point for the streaming sketch experiments.
+     * <p>
+     * This method loads configuration files and runs the appropriate sketch protocol based on the
+     * protocol type specified in the configuration. It supports batch execution of multiple experiments
+     * by reading all .conf files from a directory.
+     * </p>
      *
-     * @param args two arguments, config and party.
+     * @param args command line arguments: args[0] = config file or directory path, args[1] = party name
+     * @throws Exception if any error occurs during experiment execution
      */
     public static void main(String[] args) throws Exception {
+        // Load Log4j configuration for logging
         PropertiesUtils.loadLog4jProperties();
         File inputFile = new File(args[0]);
         String ownName = args[1];
         List<String> allFiles;
         if (inputFile.isDirectory()) {
-            // we support directory containing many config files.
+            // Support directory containing many config files for batch execution
             File[] fs = inputFile.listFiles();
             allFiles = new LinkedList<>();
             assert fs != null;
@@ -42,27 +56,21 @@ public class StreamingMain {
                 }
             }
         } else {
-            // single file
+            // Single configuration file execution
             allFiles = List.of(inputFile.getPath());
         }
+        // Sort configuration files to ensure consistent execution order
         String[] names = allFiles.stream().sorted().toArray(String[]::new);
         LOGGER.info(Arrays.toString(names));
+        // Execute experiments for each configuration file
         for (String name : names) {
             Properties properties = PropertiesUtils.loadProperties(name);
             String ptoType = MainPtoConfigUtils.readPtoType(properties);
+            // Dispatch to appropriate sketch protocol based on protocol type
             switch (ptoType) {
-                // to change
                 case CMSZ2Main.PTO_NAME: {
-                    String ptoImplType = PropertiesUtils.readString(properties, CMSZ2Main.PTO_NAME_KEY);
-                    switch (ptoImplType) {
-                        case CMSZ2Main.PTO_TYPE_NAME: {
-                            CMSZ2Main main = new CMSZ2Main(properties, ownName);
-                            main.runNetty();
-                            break;
-                        }
-                        default:
-                            throw new IllegalArgumentException("Invalid " + CMSZ2Main.PTO_NAME_KEY + ": " + ptoImplType);
-                    }
+                    CMSZ2Main main = new CMSZ2Main(properties, ownName);
+                    main.runNetty();
                     break;
                 }
                 case SSMain.PTO_TYPE: {

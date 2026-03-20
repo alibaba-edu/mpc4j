@@ -6,25 +6,26 @@ import edu.alibaba.mpc4j.work.db.sketch.utils.orderselect.quick.QuickOrderSelect
 import edu.alibaba.mpc4j.work.db.sketch.utils.orderselect.quick.QuickOrderSelectParty;
 
 /**
- * order select factory
+ * Factory for creating Order Select protocol instances.
+ * Provides methods to create order select parties and configurations with different implementations.
  */
 public class OrderSelectFactory {
     /**
-     * the protocol type
+     * Enumeration of available Order Select protocol types
      */
     public enum OrderSelectType {
         /**
-         * quick select
+         * QUICK_ORDER_SELECT implementation - uses quick sort based selection
          */
         QUICK_ORDER_SELECT,
     }
 
     /**
-     * Creates an order select party.
+     * Creates an order select party instance based on the provided configuration
      *
-     * @param config    the config.
-     * @param abb3Party abb3 party
-     * @return an order select party.
+     * @param config    the protocol configuration
+     * @param abb3Party the underlying ABB3 party for three-party computation
+     * @return a new order select party instance
      */
     public static OrderSelectParty createParty(Abb3Party abb3Party, OrderSelectConfig config) {
         return switch (config.getOrderSelectType()) {
@@ -34,9 +35,10 @@ public class OrderSelectFactory {
     }
 
     /**
-     * Creates an order select party config
+     * Creates a default order select configuration
      *
-     * @param securityModel security model
+     * @param securityModel the security model to use (MALICIOUS or SEMI_HONEST)
+     * @return a default order select configuration
      */
     public static OrderSelectConfig createDefaultConfig(SecurityModel securityModel) {
         return new QuickOrderSelectConfig.Builder(securityModel.equals(SecurityModel.MALICIOUS)).build();
