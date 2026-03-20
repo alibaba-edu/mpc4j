@@ -5,6 +5,9 @@ import edu.alibaba.mpc4j.common.rpc.pto.ThreePartyPto;
 import edu.alibaba.mpc4j.s3pc.abb3.basic.Abb3Party;
 
 /**
+ * This module contains the implementations for the sketch-DB protocols
+ * Sketch-based Secure Query Processing for Streaming Data (SIGMOD 2026)
+ *
  * Interface for a sketch party protocol in the S³ framework.
  * <p>
  * In the outsourced 3PC (three-party computation) model, three non-colluding servers

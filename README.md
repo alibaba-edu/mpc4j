@@ -297,7 +297,7 @@ We thank [Qixian Zhou](https://github.com/qxzhou1010) for writing a guideline de
 
 - Translate JavaDoc and comments in English.
 - More secure two-party computation (2PC) protocol implementations.
-- More secure three-party computation (3PC) protocol implementations. Specifically, release the source code of our paper "Scape: Scalable Collaborative Analytics System on Private Database with Malicious Security" accepted at [ICDE 2022](https://ieeexplore.ieee.org/document/9835540/). 
+- More secure three-party computation (3PC) protocol implementations.
 - More differentially private algorithms and protocols, especially for the Shuffle Model implementations of our paper ["Privacy Enhancement via Dummy Points in the Shuffle Model."](https://arxiv.org/abs/2009.13738)
 
 ### Impossible Missions, but We Will Try
