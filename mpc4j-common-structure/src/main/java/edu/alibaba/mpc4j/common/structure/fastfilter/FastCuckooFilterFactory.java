@@ -116,7 +116,7 @@ public class FastCuckooFilterFactory {
                 // type + hashSeed + maxSize + size
                 return Integer.BYTES + Long.BYTES + Integer.BYTES * 2 + bitmapByteNum + storageByteLength;
             }
-            case null, default ->
+            default ->
                 throw new IllegalArgumentException("Invalid " + FastCuckooFilterType.class.getSimpleName() + ": " + type);
         }
     }

@@ -55,6 +55,8 @@ If you want to test and evaluate our protocol implementations, compile and run t
 - Our paper ["Efficient Private Multiset ID Protocols"](https://eprint.iacr.org/2023/986.pdf) was accepted to ICICS 2023. Package `pmid` in `mpc4j-s2pc-pso` contains the implementation of this paper.
 - Our paper ["Linear Private Set Union from Multi-Query Reverse Private Membership Test"](https://eprint.iacr.org/2022/358.pdf) was accepted to USENIX Security 2023. Package `psu` in `mpc4j-s2pc-pso` contains the implementation of this paper.
 - Our paper ["OpBoost: A Vertical Federated Tree Boosting Framework Based on Order-Preserving Desensitization"](https://arxiv.org/abs/2210.01318) was accepted to VLDB 2023. Module `mpc4j-sml-opboost` contains the implementation of this paper.
+- Our paper "Sketch-based Secure Query Processing for Streaming Data" was accepted by SIGMOD 2026, and the final version will be made available later. Module `mpc4j-work-db-sketch` contains the implementation of this paper.
+- Our paper ["Concretely Efficient Correlated Oblivious Permutation"](https://eprint.iacr.org/2025/449) was accepted by ASIACCS 2026. Package `pcg/osn` in Module `mpc4j-s2pc-aby` contains the implementation of this paper.
 
 ## Some Implementations of Existing Works
 
@@ -297,7 +299,7 @@ We thank [Qixian Zhou](https://github.com/qxzhou1010) for writing a guideline de
 
 - Translate JavaDoc and comments in English.
 - More secure two-party computation (2PC) protocol implementations.
-- More secure three-party computation (3PC) protocol implementations. Specifically, release the source code of our paper "Scape: Scalable Collaborative Analytics System on Private Database with Malicious Security" accepted at [ICDE 2022](https://ieeexplore.ieee.org/document/9835540/). 
+- More secure three-party computation (3PC) protocol implementations.
 - More differentially private algorithms and protocols, especially for the Shuffle Model implementations of our paper ["Privacy Enhancement via Dummy Points in the Shuffle Model."](https://arxiv.org/abs/2009.13738)
 
 ### Impossible Missions, but We Will Try

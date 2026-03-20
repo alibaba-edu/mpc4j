@@ -100,7 +100,7 @@ public class BytesBitVector implements BitVector {
     }
 
     static BitVector createZeros(int bitNum) {
-        assert bitNum > 0 : "the number of bits must be greater than 0: " + bitNum;
+        assert bitNum >= 0 : "the number of bits must not be less than 0: " + bitNum;
         int byteLength = CommonUtils.getByteLength(bitNum);
         // create bytes with all 0
         byte[] zeros = new byte[byteLength];

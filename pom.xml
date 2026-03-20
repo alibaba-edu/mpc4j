@@ -36,6 +36,7 @@
         <module>mpc4j-work-femur</module>
         <module>mpc4j-work-scape</module>
         <module>mpc4j-work-db-dynamic</module>
+        <module>mpc4j-work-db-sketch</module>
     </modules>
 
     <properties>

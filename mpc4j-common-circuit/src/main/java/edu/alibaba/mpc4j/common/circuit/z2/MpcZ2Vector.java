@@ -150,6 +150,14 @@ public interface MpcZ2Vector extends MpcVector {
     MpcZ2Vector reduceShiftRight(int n);
 
     /**
+     * extend single-element data into the target length
+     *
+     * @param targetNum the target number of rows
+     * @return the extended data
+     */
+    MpcZ2Vector extendSizeWithSameEle(int targetNum);
+
+    /**
      * Inner shift right by reducing number of bits in the bit vector.
      *
      * @param n shift distance, in bits.

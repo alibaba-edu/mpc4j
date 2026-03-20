@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.circuit.z2;
 
 import edu.alibaba.mpc4j.common.circuit.z2.utils.Z2VectorUtils;
 import edu.alibaba.mpc4j.common.structure.vector.Vector;
+import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVector;
 import edu.alibaba.mpc4j.common.tool.bitvector.BitVectorFactory;
 
@@ -211,5 +212,12 @@ public class PlainZ2Vector implements MpcZ2Vector {
 
     public void andi(PlainZ2Vector plainZ2Vector) {
         bitVector.andi(plainZ2Vector.bitVector);
+    }
+
+    @Override
+    public PlainZ2Vector extendSizeWithSameEle(int targetNum) {
+        MathPreconditions.checkEqual("this.bitNum", "1", this.bitNum(), 1);
+        MathPreconditions.checkPositive("targetNum > 0", targetNum);
+        return create(this.bitVector.get(0) ? BitVectorFactory.createOnes(targetNum) : BitVectorFactory.createZeros(targetNum));
     }
 }

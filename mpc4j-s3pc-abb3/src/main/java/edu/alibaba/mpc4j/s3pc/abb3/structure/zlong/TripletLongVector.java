@@ -74,4 +74,17 @@ public interface TripletLongVector extends MpcLongVector {
      * @param sepDistance 取位的间隔是多少个
      */
     TripletLongVector getPointsWithFixedSpace(int startPos, int num, int sepDistance);
+
+    /**
+     * get sum of all data
+     */
+    TripletLongVector getSelfSum();
+
+    /**
+     * extend single-element data into the target length by setting all elements to be this value
+     *
+     * @param targetNum  the target number of rows
+     * @return the extended data
+     */
+    TripletLongVector extendSizeWithSameEle(int targetNum);
 }

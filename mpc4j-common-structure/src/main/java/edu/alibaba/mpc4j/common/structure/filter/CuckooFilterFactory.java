@@ -110,7 +110,7 @@ public class CuckooFilterFactory {
                 long storageByteLength = (long) maxSize * fingerprintByteLength;
                 return Integer.BYTES * 4 + CommonConstants.BLOCK_BYTE_LENGTH * 2 + bitmapByteNum + storageByteLength;
             }
-            case null, default ->
+            default ->
                 throw new IllegalArgumentException("Invalid " + CuckooFilterType.class.getSimpleName() + ": " + cuckooFilterType);
         }
     }

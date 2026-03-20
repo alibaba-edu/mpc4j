@@ -201,7 +201,7 @@ public class Bea91Z2cReceiver extends AbstractZ2cParty {
     }
 
     @Override
-    public void xori(MpcZ2Vector x1, MpcZ2Vector y1) throws MpcAbortException {
+    public void xori(MpcZ2Vector x1, MpcZ2Vector y1) {
         SquareZ2Vector x1SquareVector = (SquareZ2Vector) x1;
         SquareZ2Vector y1SquareVector = (SquareZ2Vector) y1;
         assert !(x1.isPlain() && (!y1.isPlain()));

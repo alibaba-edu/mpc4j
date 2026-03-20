@@ -379,4 +379,38 @@ public class TripletRpLongMacVector extends TripletRpLongVector implements Tripl
             return create(tmp);
         }
     }
+
+    @Override
+    public TripletLongVector getSelfSum() {
+        LongVector[] tmp = Arrays.stream(innerVec).map(ea -> LongVector.create(new long[]{ea.sum()})).toArray(LongVector[]::new);
+        if (this.macIndex > 0) {
+            LongVector[] tmpMac = Arrays.stream(macVec).map(ea -> LongVector.create(new long[]{ea.sum()})).toArray(LongVector[]::new);
+            return create(macIndex, tmp, tmpMac);
+        } else {
+            return create(tmp);
+        }
+    }
+
+    @Override
+    public TripletLongVector extendSizeWithSameEle(int targetNum) {
+        MathPreconditions.checkEqual("vec.getNum()", "1", this.getNum(), 1);
+        MathPreconditions.checkPositive("size", targetNum);
+        LongVector[] ele = Arrays.stream(this.getVectors())
+            .map(ea -> {
+                long[] tmp = new long[targetNum];
+                Arrays.fill(tmp, ea.getElement(0));
+                return LongVector.create(tmp);
+            }).toArray(LongVector[]::new);
+        if (this.macIndex > 0) {
+            LongVector[] eleMac = Arrays.stream(this.getMacVec())
+                .map(ea -> {
+                    long[] tmp = new long[targetNum];
+                    Arrays.fill(tmp, ea.getElement(0));
+                    return LongVector.create(tmp);
+                }).toArray(LongVector[]::new);
+            return create(macIndex, ele, eleMac);
+        } else {
+            return create(ele);
+        }
+    }
 }
