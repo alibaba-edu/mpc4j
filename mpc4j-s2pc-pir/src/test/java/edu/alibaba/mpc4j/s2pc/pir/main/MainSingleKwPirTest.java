@@ -57,8 +57,8 @@ public class MainSingleKwPirTest extends AbstractTwoPartyMemoryRpcPto {
         String path = "conf_single_kw_pir_example.conf";
         String configPath = Objects.requireNonNull(getClass().getClassLoader().getResource(path)).getPath();
         Properties properties = PropertiesUtils.loadProperties(configPath);
-        Assert.assertEquals(properties.get(MainPtoConfigUtils.PTO_TYPE_KEY), SingleKsPirMain.PTO_TYPE_NAME);
-        Assert.assertEquals(properties.get(SingleKsPirMain.PTO_NAME_KEY), "");
+        Assert.assertEquals(SingleKsPirMain.PTO_TYPE_NAME, properties.get(MainPtoConfigUtils.PTO_TYPE_KEY));
+        Assert.assertEquals("", properties.get(SingleKsPirMain.PTO_NAME_KEY));
         properties.setProperty(SingleKsPirMain.PTO_NAME_KEY, typeName);
         if (correct) {
             runMain(properties);

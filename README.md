@@ -220,7 +220,7 @@ To sucessfully run RAPPOR, one also needs to add dependencies in `pom.xml` of `m
 
 ### Notes for Running PSO on Very Large Sets
 
-`mpc4j` requires PSO to take `Set` as inputs. For PSO experiements, `mpc4j` uses `Set<ByteBuffer>` . However, when running PSO on very large sets, it is possible that `Set<ByteBuffer>` does not successfully contain the assigned number of elements, leading to unexpected Exceptions when running experiments. This happens with probability with the size of sets $n$ increases, especially when $n > 2^{20}$.
+`mpc4j` requires PSO to take `Set` as inputs. For PSO experiments, `mpc4j` uses `Set<ByteBuffer>` . However, when running PSO on very large sets, it is possible that `Set<ByteBuffer>` does not successfully contain the assigned number of elements, leading to unexpected Exceptions when running experiments. This happens with probability with the size of sets $n$ increases, especially when $n > 2^{20}$.
 
 If you meet problems when running experiments for $n > 2^{20}$, you can simply try deleting files in the path `temp` and rerun experiments. We are trying to fix this bug in the next version.
 

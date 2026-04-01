@@ -5,7 +5,6 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.main.AbstractMainTwoPartyPto;
 import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
@@ -14,7 +13,6 @@ import edu.alibaba.mpc4j.work.payable.pir.PayablePirClient;
 import edu.alibaba.mpc4j.work.payable.pir.PayablePirConfig;
 import edu.alibaba.mpc4j.work.payable.pir.PayablePirFactory;
 import edu.alibaba.mpc4j.work.payable.pir.PayablePirServer;
-import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +51,7 @@ public class PayablePirMain extends AbstractMainTwoPartyPto {
     /**
      * warmup retrieval size
      */
-    private static final int WARMUP_RETRIEVAL_SIZE = 1 << 2;
+    private static final int WARMUP_QUERY_NUM = 1 << 2;
     /**
      * element bit length
      */
@@ -130,7 +128,7 @@ public class PayablePirMain extends AbstractMainTwoPartyPto {
         // formal test multi thread
         for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
             int serverSetSize = serverSetSizes[setSizeIndex];
-            byte[][] serverElementArray = readServerElementArray(serverSetSize, elementBitLength);
+            byte[][] serverElementArray = PirUtils.readServerEntries(serverSetSize, elementBitLength);
             runServer(serverRpc, clientParty, config, taskId++, serverElementArray, elementBitLength, queryNum,
                 parallel, printWriter);
         }
@@ -140,24 +138,9 @@ public class PayablePirMain extends AbstractMainTwoPartyPto {
         fileWriter.close();
     }
 
-    private byte[][] readServerElementArray(int elementSize, int elementBitLength) throws IOException {
-        LOGGER.info("Server read element array");
-        InputStreamReader inputStreamReader = new InputStreamReader(
-            new FileInputStream(PirUtils.getServerFileName(PirUtils.BYTES_SERVER_PREFIX, elementSize, elementBitLength)),
-            CommonConstants.DEFAULT_CHARSET
-        );
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        byte[][] elementArray = bufferedReader.lines()
-            .map(Hex::decode)
-            .toArray(byte[][]::new);
-        bufferedReader.close();
-        inputStreamReader.close();
-        return elementArray;
-    }
-
     private void warmupServer(Rpc serverRpc, Party clientParty, PayablePirConfig config, int taskId)
         throws MpcAbortException, IOException {
-        byte[][] elementArray = readServerElementArray(WARMUP_SERVER_ELEMENT_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
+        byte[][] elementArray = PirUtils.readServerEntries(WARMUP_SERVER_ELEMENT_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
         int byteL = CommonUtils.getByteLength(WARMUP_ELEMENT_BIT_LENGTH);
         Map<ByteBuffer, byte[]> keywordValueMap = IntStream.range(0, WARMUP_SERVER_ELEMENT_SIZE)
             .boxed()
@@ -177,7 +160,7 @@ public class PayablePirMain extends AbstractMainTwoPartyPto {
         server.getRpc().synchronize();
         // execute protocol
         LOGGER.info("(warmup) {} execute", server.ownParty().getPartyName());
-        for (int i = 0; i < WARMUP_RETRIEVAL_SIZE; i++) {
+        for (int i = 0; i < WARMUP_QUERY_NUM; i++) {
             server.pir();
         }
         server.getRpc().synchronize();
@@ -252,7 +235,7 @@ public class PayablePirMain extends AbstractMainTwoPartyPto {
     public void runParty2(Rpc clientRpc, Party serverParty) throws MpcAbortException, IOException {
         // client generates input files
         LOGGER.info("{} generate warm-up element files", clientRpc.ownParty().getPartyName());
-        PirUtils.generateIndexInputFiles(WARMUP_SERVER_ELEMENT_SIZE, WARMUP_RETRIEVAL_SIZE);
+        PirUtils.generateIndexInputFiles(WARMUP_SERVER_ELEMENT_SIZE, WARMUP_QUERY_NUM);
         LOGGER.info("{} generate element files", clientRpc.ownParty().getPartyName());
         for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
             PirUtils.generateIndexInputFiles(serverSetSizes[setSizeIndex], queryNum);
@@ -281,7 +264,10 @@ public class PayablePirMain extends AbstractMainTwoPartyPto {
         // formal test multi thread
         for (int setSizeIndex = 0; setSizeIndex < setSizeNum; setSizeIndex++) {
             int serverSetSize = serverSetSizes[setSizeIndex];
-            int[] index = readClientRetrievalIndexList(queryNum).stream().mapToInt(i -> i).toArray();
+            int[] index = PirUtils.readClientIndexList(serverSetSize, elementBitLength)
+                .stream()
+                .mapToInt(i -> i)
+                .toArray();
             runClient(clientRpc, serverParty, config, taskId++, index, serverSetSize, elementBitLength, parallel, printWriter);
         }
         // disconnect
@@ -290,31 +276,18 @@ public class PayablePirMain extends AbstractMainTwoPartyPto {
         fileWriter.close();
     }
 
-    private List<Integer> readClientRetrievalIndexList(int retrievalSize) throws IOException {
-        LOGGER.info("Client read retrieval list");
-        InputStreamReader inputStreamReader = new InputStreamReader(
-            new FileInputStream(PirUtils.getClientFileName(PirUtils.BYTES_CLIENT_PREFIX, retrievalSize)),
-            CommonConstants.DEFAULT_CHARSET
-        );
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        List<Integer> indexList = bufferedReader.lines()
-            .map(Hex::decode)
-            .map(IntUtils::byteArrayToInt)
-            .collect(Collectors.toCollection(ArrayList::new));
-        bufferedReader.close();
-        inputStreamReader.close();
-        return indexList;
-    }
-
     private void warmupClient(Rpc clientRpc, Party serverParty, PayablePirConfig config, int taskId)
         throws MpcAbortException, IOException {
         int byteL = CommonUtils.getByteLength(WARMUP_ELEMENT_BIT_LENGTH);
         LOGGER.info(
             "{}: serverSetSize = {}, elementBitLength = {}, queryNumber = {}, parallel = {}",
-            clientRpc.ownParty().getPartyName(), WARMUP_SERVER_ELEMENT_SIZE, WARMUP_ELEMENT_BIT_LENGTH, WARMUP_RETRIEVAL_SIZE,
+            clientRpc.ownParty().getPartyName(), WARMUP_SERVER_ELEMENT_SIZE, WARMUP_ELEMENT_BIT_LENGTH, WARMUP_QUERY_NUM,
             false
         );
-        int[] index = readClientRetrievalIndexList(WARMUP_RETRIEVAL_SIZE).stream().mapToInt(i -> i).toArray();
+        int[] index = PirUtils.readClientIndexList(WARMUP_QUERY_NUM, WARMUP_ELEMENT_BIT_LENGTH)
+            .stream()
+            .mapToInt(i -> i)
+            .toArray();
         PayablePirClient client = PayablePirFactory.createClient(clientRpc, serverParty, config);
         client.setTaskId(taskId);
         client.setParallel(false);
@@ -325,7 +298,7 @@ public class PayablePirMain extends AbstractMainTwoPartyPto {
         client.getRpc().synchronize();
         // execute protocol
         LOGGER.info("(warmup) {} execute", client.ownParty().getPartyName());
-        for (int i = 0; i < WARMUP_RETRIEVAL_SIZE; i++) {
+        for (int i = 0; i < WARMUP_QUERY_NUM; i++) {
             client.pir(ByteBuffer.wrap(IntUtils.intToByteArray(index[i])));
         }
         // synchronize

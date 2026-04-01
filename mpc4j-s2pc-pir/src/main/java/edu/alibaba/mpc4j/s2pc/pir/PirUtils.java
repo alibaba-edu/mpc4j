@@ -2,9 +2,8 @@ package edu.alibaba.mpc4j.s2pc.pir;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
-import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
+import edu.alibaba.mpc4j.common.tool.CommonConstants;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
-import edu.alibaba.mpc4j.common.tool.galoisfield.zp64.Zp64;
 import edu.alibaba.mpc4j.common.tool.utils.BytesUtils;
 import edu.alibaba.mpc4j.common.tool.utils.CommonUtils;
 import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
@@ -12,10 +11,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.*;
@@ -155,17 +151,6 @@ public class PirUtils {
     }
 
     /**
-     * Creates a random database.
-     *
-     * @param elementSize      database size.
-     * @param elementBitLength element bit length.
-     * @return random database.
-     */
-    public static NaiveDatabase generateDataBase(int elementSize, int elementBitLength) {
-        return NaiveDatabase.createRandom(elementBitLength, elementSize, SECURE_RANDOM);
-    }
-
-    /**
      * generate random element array.
      *
      * @param elementSize      element size.
@@ -180,26 +165,16 @@ public class PirUtils {
     }
 
     /**
-     * generate a random retrieval index.
-     *
-     * @param elementSize element size.
-     * @return a random retrieval index.
-     */
-    public static int generateRetrievalIndex(int elementSize) {
-        return SECURE_RANDOM.nextInt(elementSize);
-    }
-
-    /**
      * generate random retrieval index set.
      *
-     * @param elementSize   element size.
-     * @param retrievalSize retrieval size.
+     * @param setSize      set size.
+     * @param retrievalNum retrieval num.
      * @return random retrieval index set.
      */
-    public static Set<Integer> generateRetrievalIndexSet(int elementSize, int retrievalSize) {
+    public static Set<Integer> generateRetrievalIndexSet(int setSize, int retrievalNum) {
         Set<Integer> indexSet = new HashSet<>();
-        while (indexSet.size() < retrievalSize) {
-            int index = SECURE_RANDOM.nextInt(elementSize);
+        while (indexSet.size() < retrievalNum) {
+            int index = SECURE_RANDOM.nextInt(setSize);
             indexSet.add(index);
         }
         return indexSet;
@@ -208,11 +183,11 @@ public class PirUtils {
     /**
      * server bytes prefix
      */
-    public static final String BYTES_SERVER_PREFIX = "BYTES_SERVER";
+    private static final String BYTES_SERVER_PREFIX = "BYTES_SERVER";
     /**
      * client bytes prefix
      */
-    public static final String BYTES_CLIENT_PREFIX = "BYTES_CLIENT";
+    private static final String BYTES_CLIENT_PREFIX = "BYTES_CLIENT";
 
     /**
      * generate bytes input files.
@@ -223,7 +198,7 @@ public class PirUtils {
      */
     public static void generateBytesInputFiles(int setSize, int elementBitLength) throws IOException {
         MathPreconditions.checkPositive("elementBitLength", elementBitLength);
-        File serverInputFile = new File(getServerFileName(BYTES_SERVER_PREFIX, setSize, elementBitLength));
+        File serverInputFile = new File(getServerFileName(setSize, elementBitLength));
         if (serverInputFile.exists()) {
             return;
         }
@@ -245,15 +220,39 @@ public class PirUtils {
     }
 
     /**
+     * Reads server entries.
+     *
+     * @param n              entry size.
+     * @param entryBitLength entry bit length.
+     * @return server database.
+     * @throws IOException read files failed.
+     */
+    public static byte[][] readServerEntries(int n, int entryBitLength) throws IOException {
+        LOGGER.info("Server read database");
+        InputStreamReader inputStreamReader = new InputStreamReader(
+            new FileInputStream(PirUtils.getServerFileName(n, entryBitLength)),
+            CommonConstants.DEFAULT_CHARSET
+        );
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+        byte[][] entries = bufferedReader.lines()
+            .map(Hex::decode)
+            .toArray(byte[][]::new);
+        bufferedReader.close();
+        inputStreamReader.close();
+        return entries;
+    }
+
+    /**
      * generate retrieval index input files.
      *
-     * @param retrievalSize retrieval size.
+     * @param setSize      set size.
+     * @param retrievalNum retrieval num.
      * @throws IOException create files failed.
      */
-    public static void generateIndexInputFiles(int elementSize, int retrievalSize)
+    public static void generateIndexInputFiles(int setSize, int retrievalNum)
         throws IOException {
-        MathPreconditions.checkPositive("retrievalSize", retrievalSize);
-        File clientInputFile = new File(getClientFileName(BYTES_CLIENT_PREFIX, retrievalSize, elementSize));
+        MathPreconditions.checkPositive("retrievalNum", retrievalNum);
+        File clientInputFile = new File(getClientFileName(setSize, retrievalNum));
         if (clientInputFile.exists()) {
             return;
         }
@@ -264,7 +263,7 @@ public class PirUtils {
                 clientInputFile.delete(), "Fail to delete file: %s", clientInputFile.getName()
             );
         }
-        Set<Integer> retrievalIndexSet = generateRetrievalIndexSet(elementSize, retrievalSize);
+        Set<Integer> retrievalIndexSet = generateRetrievalIndexSet(setSize, retrievalNum);
         FileWriter clientFileWriter = new FileWriter(clientInputFile);
         PrintWriter clientPrintWriter = new PrintWriter(clientFileWriter, true);
         retrievalIndexSet.stream()
@@ -276,30 +275,49 @@ public class PirUtils {
     }
 
     /**
+     * read client retrieval index list.
+     *
+     * @param setSize  set size.
+     * @param queryNum query num.
+     * @return client retrieval index list.
+     * @throws IOException read files failed.
+     */
+    public static List<Integer> readClientIndexList(int setSize, int queryNum) throws IOException {
+        LOGGER.info("Client read retrieval list");
+        InputStreamReader inputStreamReader = new InputStreamReader(
+            new FileInputStream(PirUtils.getClientFileName(setSize, queryNum)),
+            CommonConstants.DEFAULT_CHARSET
+        );
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+        List<Integer> indexList = bufferedReader.lines()
+            .map(Hex::decode)
+            .map(IntUtils::byteArrayToInt)
+            .collect(Collectors.toCollection(ArrayList::new));
+        bufferedReader.close();
+        inputStreamReader.close();
+        return indexList;
+    }
+
+    /**
      * return server file name.
      *
-     * @param prefix           prefix.
      * @param setSize          set size.
      * @param elementBitLength element bit length.
      * @return server file name.
      */
-    public static String getServerFileName(String prefix, int setSize, int elementBitLength) {
-        return MainPtoConfigUtils.getFileFolderName() + prefix + "_" + prefix + "_" + elementBitLength + "_" + setSize + ".input";
+    private static String getServerFileName(int setSize, int elementBitLength) {
+        return MainPtoConfigUtils.getFileFolderName() + BYTES_SERVER_PREFIX + "_" + setSize + "_" + elementBitLength + ".input";
     }
 
     /**
-     * return client file name.
+     * Return client file name.
      *
-     * @param prefix  prefix.
-     * @param setSize set size.
+     * @param setSize      set size.
+     * @param retrievalNum retrieval num.
      * @return client file name.
      */
-    public static String getClientFileName(String prefix, int setSize) {
-        return MainPtoConfigUtils.getFileFolderName() + prefix + "_" + prefix + "_" + setSize + ".input";
-    }
-
-    public static String getClientFileName(String prefix, int setSize, int elementSize) {
-        return MainPtoConfigUtils.getFileFolderName() + prefix + "_" + prefix + "_" + setSize + "_" + elementSize + ".input";
+    private static String getClientFileName(int setSize, int retrievalNum) {
+        return MainPtoConfigUtils.getFileFolderName() + PirUtils.BYTES_CLIENT_PREFIX + "_" + setSize + "_" + retrievalNum + ".input";
     }
 
     /**
@@ -487,46 +505,5 @@ public class PirUtils {
             dimensionArray = new int[]{firstDimensionSize, subsequentDimensionSize};
         }
         return dimensionArray;
-    }
-
-    /**
-     * Find smallest l, m such that l*m >= num * d and d divides l, where d is
-     * the number of Z_p elements per DB entry determined by bit-length and p.
-     *
-     * @param num database size.
-     * @param d   Z_p element num.
-     * @return l and m.
-     */
-    public static int[] approxSquareDatabaseDims(int num, int d) {
-        MathPreconditions.checkPositive("num", num);
-        long rows = (long) Math.max(2, Math.ceil(Math.sqrt(d * num)));
-        long rem = rows % d;
-        if (rem != 0) {
-            rows += d - rem;
-        }
-        long cols = (long) Math.ceil((double) d * num / rows);
-        return new int[]{Math.toIntExact(rows), Math.toIntExact(cols)};
-    }
-
-    /**
-     * compute powers.
-     *
-     * @param zp64      zp64.
-     * @param base      base.
-     * @param exponents exponents.
-     * @return powers.
-     */
-    public static long[][] computePowers(Zp64 zp64, long[] base, int[] exponents) {
-        long[][] result = new long[exponents.length][];
-        assert exponents[0] == 1;
-        result[0] = base;
-        for (int i = 1; i < exponents.length; i++) {
-            long[] temp = new long[base.length];
-            for (int j = 0; j < base.length; j++) {
-                temp[j] = zp64.pow(base[j], exponents[i]);
-            }
-            result[i] = temp;
-        }
-        return result;
     }
 }

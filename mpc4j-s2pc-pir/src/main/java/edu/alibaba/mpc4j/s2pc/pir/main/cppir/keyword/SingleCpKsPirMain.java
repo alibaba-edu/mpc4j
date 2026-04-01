@@ -5,15 +5,12 @@ import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.main.AbstractMainTwoPartyPto;
 import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirFactory;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.ks.CpKsPirServer;
-import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +118,7 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         taskId++;
         for (int i = 0; i < serverSetSizeNum; i++) {
             int serverSetSize = serverSetSizes[i];
-            byte[][] entries = readServerDatabase(serverSetSize, entryBitLength);
+            byte[][] entries = PirUtils.readServerEntries(serverSetSize, entryBitLength);
             runServer(serverRpc, clientParty, config, taskId, parallel, entries, entryBitLength, queryNum, printWriter);
             taskId++;
         }
@@ -130,24 +127,9 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         fileWriter.close();
     }
 
-    private byte[][] readServerDatabase(int n, int entryBitLength) throws IOException {
-        LOGGER.info("Server read database");
-        InputStreamReader inputStreamReader = new InputStreamReader(
-            new FileInputStream(PirUtils.getServerFileName(PirUtils.BYTES_SERVER_PREFIX, n, entryBitLength)),
-            CommonConstants.DEFAULT_CHARSET
-        );
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        byte[][] entries = bufferedReader.lines()
-            .map(Hex::decode)
-            .toArray(byte[][]::new);
-        bufferedReader.close();
-        inputStreamReader.close();
-        return entries;
-    }
-
     private void warmupServer(Rpc serverRpc, Party clientParty, CpKsPirConfig config, int taskId)
         throws IOException, MpcAbortException {
-        byte[][] entries = readServerDatabase(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
+        byte[][] entries = PirUtils.readServerEntries(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
         Map<String, byte[]> keywordValueMap = IntStream.range(0, WARMUP_SERVER_SET_SIZE)
             .boxed()
             .collect(Collectors.toMap(
@@ -264,29 +246,13 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
         taskId++;
         for (int i = 0; i < serverSetSizeNum; i++) {
             int serverSetSize = serverSetSizes[i];
-            List<Integer> indexList = readClientRetrievalIndexList(queryNum);
+            List<Integer> indexList = PirUtils.readClientIndexList(serverSetSize, queryNum);
             runClient(clientRpc, serverParty, config, taskId, indexList, serverSetSize, entryBitLength, parallel, printWriter);
             taskId++;
         }
         clientRpc.disconnect();
         printWriter.close();
         fileWriter.close();
-    }
-
-    private List<Integer> readClientRetrievalIndexList(int retrievalSize) throws IOException {
-        LOGGER.info("Client read retrieval list");
-        InputStreamReader inputStreamReader = new InputStreamReader(
-            new FileInputStream(PirUtils.getClientFileName(PirUtils.BYTES_CLIENT_PREFIX, retrievalSize)),
-            CommonConstants.DEFAULT_CHARSET
-        );
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        List<Integer> indexList = bufferedReader.lines()
-            .map(Hex::decode)
-            .map(IntUtils::byteArrayToInt)
-            .collect(Collectors.toCollection(ArrayList::new));
-        bufferedReader.close();
-        inputStreamReader.close();
-        return indexList;
     }
 
     private void warmupClient(Rpc clientRpc, Party serverParty, CpKsPirConfig config, int taskId)
@@ -296,7 +262,7 @@ public class SingleCpKsPirMain extends AbstractMainTwoPartyPto {
             clientRpc.ownParty().getPartyName(), WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH, WARMUP_QUERY_NUM,
             false
         );
-        List<Integer> indexList = readClientRetrievalIndexList(WARMUP_QUERY_NUM);
+        List<Integer> indexList = PirUtils.readClientIndexList(WARMUP_SERVER_SET_SIZE, WARMUP_QUERY_NUM);
         CpKsPirClient<String> client = CpKsPirFactory.createClient(clientRpc, serverParty, config);
         client.setTaskId(taskId);
         client.setParallel(false);

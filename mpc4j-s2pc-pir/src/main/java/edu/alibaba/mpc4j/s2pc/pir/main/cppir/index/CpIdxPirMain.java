@@ -6,15 +6,12 @@ import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.main.AbstractMainTwoPartyPto;
 import edu.alibaba.mpc4j.common.rpc.main.MainPtoConfigUtils;
 import edu.alibaba.mpc4j.common.structure.database.NaiveDatabase;
-import edu.alibaba.mpc4j.common.tool.CommonConstants;
-import edu.alibaba.mpc4j.common.tool.utils.IntUtils;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
 import edu.alibaba.mpc4j.s2pc.pir.PirUtils;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirClient;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirConfig;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirFactory;
 import edu.alibaba.mpc4j.s2pc.pir.cppir.index.CpIdxPirServer;
-import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +19,6 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * client-specific preprocessing PIR main.
@@ -121,7 +117,8 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
         taskId++;
         for (int i = 0; i < serverSetSizeNum; i++) {
             int serverSetSize = serverSetSizes[i];
-            NaiveDatabase database = readServerDatabase(serverSetSize, entryBitLength);
+            byte[][] entries = PirUtils.readServerEntries(serverSetSize, entryBitLength);
+            NaiveDatabase database = NaiveDatabase.create(entryBitLength, entries);
             runServer(serverRpc, clientParty, config, taskId, parallel, database, queryNum, printWriter);
             taskId++;
         }
@@ -130,24 +127,10 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
         fileWriter.close();
     }
 
-    private NaiveDatabase readServerDatabase(int n, int entryBitLength) throws IOException {
-        LOGGER.info("Server read database");
-        InputStreamReader inputStreamReader = new InputStreamReader(
-            new FileInputStream(PirUtils.getServerFileName(PirUtils.BYTES_SERVER_PREFIX, n, entryBitLength)),
-            CommonConstants.DEFAULT_CHARSET
-        );
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        byte[][] entries = bufferedReader.lines()
-            .map(Hex::decode)
-            .toArray(byte[][]::new);
-        bufferedReader.close();
-        inputStreamReader.close();
-        return NaiveDatabase.create(entryBitLength, entries);
-    }
-
     private void warmupServer(Rpc serverRpc, Party clientParty, CpIdxPirConfig config, int taskId)
         throws IOException, MpcAbortException {
-        NaiveDatabase database = readServerDatabase(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
+        byte[][] entries = PirUtils.readServerEntries(WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH);
+        NaiveDatabase database = NaiveDatabase.create(WARMUP_ELEMENT_BIT_LENGTH, entries);
         LOGGER.info(
             "{}: serverSetSize = {}, entryBitLength = {}, queryNum = {}, parallel = {}",
             serverRpc.ownParty().getPartyName(), database.rows(), database.getL(), WARMUP_QUERY_NUM, false
@@ -246,45 +229,13 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
         taskId++;
         for (int setSizeIndex = 0; setSizeIndex < serverSetSizeNum; setSizeIndex++) {
             int serverSetSize = serverSetSizes[setSizeIndex];
-            List<Integer> indexList = readClientRetrievalIndexList(queryNum, serverSetSize);
+            List<Integer> indexList = PirUtils.readClientIndexList(serverSetSize, queryNum);
             runClient(clientRpc, serverParty, config, taskId, indexList, serverSetSize, entryBitLength, parallel, printWriter);
             taskId++;
         }
         clientRpc.disconnect();
         printWriter.close();
         fileWriter.close();
-    }
-
-    private List<Integer> readClientRetrievalIndexList(int retrievalSize) throws IOException {
-        LOGGER.info("Client read retrieval list");
-        InputStreamReader inputStreamReader = new InputStreamReader(
-            new FileInputStream(PirUtils.getClientFileName(PirUtils.BYTES_CLIENT_PREFIX, retrievalSize)),
-            CommonConstants.DEFAULT_CHARSET
-        );
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        List<Integer> indexList = bufferedReader.lines()
-            .map(Hex::decode)
-            .map(IntUtils::byteArrayToInt)
-            .collect(Collectors.toCollection(ArrayList::new));
-        bufferedReader.close();
-        inputStreamReader.close();
-        return indexList;
-    }
-
-    private List<Integer> readClientRetrievalIndexList(int retrievalSize, int elementSize) throws IOException {
-        LOGGER.info("Client read retrieval list");
-        InputStreamReader inputStreamReader = new InputStreamReader(
-                new FileInputStream(PirUtils.getClientFileName(PirUtils.BYTES_CLIENT_PREFIX, retrievalSize, elementSize)),
-                CommonConstants.DEFAULT_CHARSET
-        );
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        List<Integer> indexList = bufferedReader.lines()
-                .map(Hex::decode)
-                .map(IntUtils::byteArrayToInt)
-                .collect(Collectors.toCollection(ArrayList::new));
-        bufferedReader.close();
-        inputStreamReader.close();
-        return indexList;
     }
 
     private void warmupClient(Rpc clientRpc, Party serverParty, CpIdxPirConfig config, int taskId)
@@ -294,7 +245,7 @@ public class CpIdxPirMain extends AbstractMainTwoPartyPto {
             clientRpc.ownParty().getPartyName(), WARMUP_SERVER_SET_SIZE, WARMUP_ELEMENT_BIT_LENGTH, WARMUP_QUERY_NUM,
             false
         );
-        List<Integer> indexList = readClientRetrievalIndexList(WARMUP_QUERY_NUM, WARMUP_SERVER_SET_SIZE);
+        List<Integer> indexList = PirUtils.readClientIndexList(WARMUP_SERVER_SET_SIZE, WARMUP_QUERY_NUM);
         CpIdxPirClient client = CpIdxPirFactory.createClient(clientRpc, serverParty, config);
         client.setTaskId(taskId);
         client.setParallel(false);
