@@ -1,4 +1,4 @@
-package edu.alibaba.mpc4j.common.rpc.impl.netty;
+package edu.alibaba.mpc4j.common.rpc.impl.netty.simple;
 
 import edu.alibaba.mpc4j.common.rpc.impl.RpcImplTestUtils;
 import org.junit.Assert;
@@ -21,9 +21,9 @@ public class SimpleNettyRpcTest {
      */
     private static final int PARTY_NUM = 5;
     /**
-     * 起始端口（与 RpcConnectTest 使用的 9500 错开，避免端口冲突）
+     * 起始端口
      */
-    private static final int START_PORT = 9600;
+    private static final int START_PORT = 9500;
     /**
      * 超时时间（秒）
      */

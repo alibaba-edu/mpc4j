@@ -1,4 +1,4 @@
-package edu.alibaba.mpc4j.common.rpc.impl.netty;
+package edu.alibaba.mpc4j.common.rpc.impl.netty.simple;
 
 import com.google.protobuf.ByteString;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto;

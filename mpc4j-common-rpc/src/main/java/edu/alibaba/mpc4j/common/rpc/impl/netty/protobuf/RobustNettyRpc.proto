@@ -1,0 +1,55 @@
+// define proto using proto3 syntax.
+syntax = "proto3";
+// package name for the generated Java file
+option java_package = "edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf";
+// class name for the generated Java file
+option java_outer_classname = "RobustNettyRpcProtobuf";
+
+// Top-level wrapper message containing a single data chunk.
+// The receiver reconstructs the full DataPacket once all chunks have arrived.
+// On write failure the sender retransmits the chunk; the receiver is idempotent.
+message RobustMessageProto {
+    ChunkProto chunk = 1;
+}
+
+// Data chunk sent from sender to receiver.
+// A DataPacket larger than CHUNK_SIZE (1MB) is split into multiple ChunkProtos.
+// For small DataPackets, totalChunks = 1 and chunkIndex = 0.
+message ChunkProto {
+    // header identifying which DataPacket this chunk belongs to
+    HeaderProto headerProto = 1;
+    // payload type identifier
+    TypeProto typeProto = 2;
+    // index of this chunk within the DataPacket (0-based)
+    int32 chunkIndex = 3;
+    // total number of chunks this DataPacket was split into
+    int32 totalChunks = 4;
+    // raw bytes of this chunk (slice of the serialized DataPacket payload)
+    bytes chunkData = 5;
+    // total byte length of the serialized payload across all chunks;
+    // sent in every chunk so the receiver can pre-allocate the exact output buffer,
+    // eliminating the intermediate copy that would otherwise be required during reassembly
+    int64 totalBytes = 6;
+
+    // Identifies the original DataPacket this chunk belongs to.
+    message HeaderProto {
+        // encode task ID
+        int64 encodeTaskId = 1;
+        // protocol ID
+        int32 ptoId = 2;
+        // step ID
+        int32 stepId = 3;
+        // extra information
+        int64 extraInfo = 4;
+        // sender ID
+        int32 senderId = 5;
+        // receiver ID
+        int32 receiverId = 6;
+    }
+
+    // Payload type, mirrors SimpleNettyRpc's TypeProto for compatibility.
+    message TypeProto {
+        // type ID corresponding to PayloadType enum ordinal
+        int32 typeId = 1;
+    }
+}

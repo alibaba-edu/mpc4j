@@ -1,9 +1,10 @@
-package edu.alibaba.mpc4j.common.rpc.impl.netty;
+package edu.alibaba.mpc4j.common.rpc.impl.netty.simple;
 
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyParty;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto.HeaderProto;
@@ -403,7 +404,7 @@ public class SimpleNettyRpc implements Rpc {
         // 对参与方进行排序，所有在自己之前的自己作为client、所有在自己之后的自己作为server
         partyIdHashMap.keySet().stream().sorted().forEach(otherPartyId -> {
             if (otherPartyId < ownPartyId) {
-                // 如果对方排序比自己小，则自己是client，需要给对方发送连接信息
+                // 如果对方排序比自己小，则自己是client，需要给对方发送断开连接信息
                 DataPacketHeader clientFinishHeader = new DataPacketHeader(
                     Long.MAX_VALUE - ownPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.CLIENT_FINISH.ordinal(),
                     ownPartyId, otherPartyId

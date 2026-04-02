@@ -1,26 +1,26 @@
-package edu.alibaba.mpc4j.common.rpc.impl.netty;
+package edu.alibaba.mpc4j.common.rpc.impl.netty.robust;
 
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDesc;
 import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
 
 /**
- * Netty连接协议信息。
+ * Robust Netty连接协议信息。
  *
  * @author Weiran Liu
- * @date 2021/06/06
+ * @date 2026/04/02
  */
-class SimpleNettyPtoDesc implements PtoDesc {
+class RobustNettyPtoDesc implements PtoDesc {
     /**
-     * 协议ID
+     * 协议ID，与SimpleNettyPtoDesc使用不同的值避免命名空间冲突
      */
-    private static final int PTO_ID = Math.abs((int) 3448038492420117282L);
+    private static final int PTO_ID = Math.abs((int) 7219463850124837291L);
     /**
      * 协议名称
      */
-    private static final String PTO_NAME = "SIMPLE_NETTY_CONNECT";
+    private static final String PTO_NAME = "ROBUST_NETTY_CONNECT";
 
     /**
-     * 协议步骤
+     * 协议步骤，与SimpleNettyPtoDesc保持相同结构
      */
     enum StepEnum {
         /**
@@ -32,7 +32,7 @@ class SimpleNettyPtoDesc implements PtoDesc {
          */
         SERVER_CONNECT,
         /**
-         * 客户端连接
+         * 客户端确认
          */
         CLIENT_CONFIRM,
         /**
@@ -44,7 +44,7 @@ class SimpleNettyPtoDesc implements PtoDesc {
          */
         SERVER_SYNCHRONIZE,
         /**
-         * 客户端断开链接
+         * 客户端断开连接
          */
         CLIENT_FINISH,
         /**
@@ -56,12 +56,12 @@ class SimpleNettyPtoDesc implements PtoDesc {
     /**
      * 单例模式
      */
-    private static final SimpleNettyPtoDesc INSTANCE = new SimpleNettyPtoDesc();
+    private static final RobustNettyPtoDesc INSTANCE = new RobustNettyPtoDesc();
 
     /**
      * 私有构造函数
      */
-    private SimpleNettyPtoDesc() {
+    private RobustNettyPtoDesc() {
         // empty
     }
 

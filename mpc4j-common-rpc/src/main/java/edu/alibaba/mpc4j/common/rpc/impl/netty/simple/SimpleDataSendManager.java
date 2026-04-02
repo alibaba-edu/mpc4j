@@ -1,6 +1,7 @@
-package edu.alibaba.mpc4j.common.rpc.impl.netty;
+package edu.alibaba.mpc4j.common.rpc.impl.netty.simple;
 
 import com.google.common.base.Preconditions;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyParty;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;

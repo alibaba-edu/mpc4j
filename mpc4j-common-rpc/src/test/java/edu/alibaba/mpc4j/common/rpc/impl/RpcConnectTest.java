@@ -6,8 +6,10 @@ import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.SimpleNettyRpc;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.SimpleNettyRpcManager;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.robust.RobustNettyRpc;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.robust.RobustNettyRpcManager;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.simple.SimpleNettyRpc;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.simple.SimpleNettyRpcManager;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,13 +41,9 @@ public class RpcConnectTest {
      */
     private static final int PARTY_NUM = 5;
     /**
-     * 起始端口（选择不常用的端口范围，避免与其他测试冲突）
-     */
-    private static final int START_PORT = 9500;
-    /**
      * 连接超时时间（秒）
      */
-    private static final int CONNECT_TIMEOUT_SECONDS = 15;
+    private static final int CONNECT_TIMEOUT_SECONDS = 10;
     /**
      * 重连间隔时间（毫秒），确保端口完全释放
      */
@@ -55,12 +53,14 @@ public class RpcConnectTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // MemoryRpc
-        configurations.add(new Object[]{MemoryRpc.class.getSimpleName(), new MemoryRpcManager(PARTY_NUM),});
+        // RobustNettyRpc
+        configurations.add(new Object[] {RobustNettyRpc.class.getSimpleName(), new RobustNettyRpcManager(PARTY_NUM, 10000),});
+        // SimpleNettyRpc
+        configurations.add(new Object[] {SimpleNettyRpc.class.getSimpleName(), new SimpleNettyRpcManager(PARTY_NUM, 9000),});
         // FileRpc
         configurations.add(new Object[]{FileRpc.class.getSimpleName(), new FileRpcManager(PARTY_NUM),});
-        // NettyRpc
-        configurations.add(new Object[]{SimpleNettyRpc.class.getSimpleName(), new SimpleNettyRpcManager(PARTY_NUM, START_PORT),});
+        // MemoryRpc
+        configurations.add(new Object[]{MemoryRpc.class.getSimpleName(), new MemoryRpcManager(PARTY_NUM),});
 
         return configurations;
     }

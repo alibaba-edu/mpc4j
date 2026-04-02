@@ -7,8 +7,10 @@ import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.SimpleNettyRpc;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.SimpleNettyRpcManager;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.simple.SimpleNettyRpc;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.simple.SimpleNettyRpcManager;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.robust.RobustNettyRpc;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.robust.RobustNettyRpcManager;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -37,12 +39,14 @@ public class RpcSendRecvTest {
     public static Collection<Object[]> configurations() {
         Collection<Object[]> configurations = new ArrayList<>();
 
-        // MemoryRpc
-        configurations.add(new Object[] {MemoryRpc.class.getSimpleName(), new MemoryRpcManager(3),});
+        // RobustNettyRpc
+        configurations.add(new Object[] {RobustNettyRpc.class.getSimpleName(), new RobustNettyRpcManager(3, 10100),});
+        // SimpleNettyRpc
+        configurations.add(new Object[] {SimpleNettyRpc.class.getSimpleName(), new SimpleNettyRpcManager(3, 9100),});
         // FileRpc
         configurations.add(new Object[] {FileRpc.class.getSimpleName(), new FileRpcManager(3),});
-        // NettyRpc
-        configurations.add(new Object[] {SimpleNettyRpc.class.getSimpleName(), new SimpleNettyRpcManager(3, 8800),});
+        // MemoryRpc
+        configurations.add(new Object[] {MemoryRpc.class.getSimpleName(), new MemoryRpcManager(3),});
 
         return configurations;
     }

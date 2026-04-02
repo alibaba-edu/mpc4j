@@ -1,6 +1,7 @@
-package edu.alibaba.mpc4j.common.rpc.impl.netty;
+package edu.alibaba.mpc4j.common.rpc.impl.netty.robust;
 
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyParty;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.RobustNettyRpcProtobuf;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketBuffer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -28,18 +29,25 @@ import java.util.concurrent.CyclicBarrier;
  *   <li>ChannelPipeline: 入站数据依次流经各Handler（解码器 → 业务Handler）</li>
  * </ul>
  * </p>
+ * <p>
+ * 与SimpleDataReceiveThread的区别：
+ * <ul>
+ *   <li>使用RobustDataReceiveHandler替代SimpleDataReceiveHandler</li>
+ *   <li>ProtobufDecoder解码RobustMessageProto（包含ChunkProto的oneof字段）</li>
+ * </ul>
+ * </p>
  *
- * @author Li Peng, Weiran Liu
- * @date 2020/10/12
+ * @author Weiran Liu
+ * @date 2026/04/02
  */
-public class SimpleDataReceiveThread extends Thread {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleDataReceiveThread.class);
+public class RobustDataReceiveThread extends Thread {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RobustDataReceiveThread.class);
     /**
      * 自己的参与方信息
      */
     private final NettyParty ownParty;
     /**
-     * CyclicBarrier，用于多线程同步
+     * CyclicBarrier，用于与主线程同步（close()完成后通知主线程）
      */
     private final CyclicBarrier cyclicBarrier;
     /**
@@ -47,28 +55,40 @@ public class SimpleDataReceiveThread extends Thread {
      */
     private final DataPacketBuffer dataPacketBuffer;
     /**
-     * BossGroup用来处理nio的Accept
+     * 分片重组器
+     */
+    private final RobustChunkAssembler robustChunkAssembler;
+    /**
+     * BossGroup：处理Accept事件
      */
     private EventLoopGroup bossGroup;
     /**
-     * WorkerGroup处理nio的Read和Write事件
+     * WorkerGroup：处理Read/Write事件
      */
     private EventLoopGroup workerGroup;
     /**
-     * 服务端channel
+     * 服务端ServerChannel
      */
     private Channel channel;
 
     /**
-     * 构建数据接收管理器
+     * 构建数据接收管理器。
      *
-     * @param ownParty 参与方自身信息
-     * @param cyclicBarrier 用于线程同步的cyclicBarrier
+     * @param ownParty             本参与方信息（含监听端口）
+     * @param cyclicBarrier        用于close()完成后与主线程同步
+     * @param dataPacketBuffer     完整DataPacket的接收缓冲区
+     * @param robustChunkAssembler 分片重组器
      */
-    public SimpleDataReceiveThread(NettyParty ownParty, CyclicBarrier cyclicBarrier, DataPacketBuffer dataPacketBuffer) {
+    RobustDataReceiveThread(
+        NettyParty ownParty,
+        CyclicBarrier cyclicBarrier,
+        DataPacketBuffer dataPacketBuffer,
+        RobustChunkAssembler robustChunkAssembler
+    ) {
         this.ownParty = ownParty;
-        this.dataPacketBuffer = dataPacketBuffer;
         this.cyclicBarrier = cyclicBarrier;
+        this.dataPacketBuffer = dataPacketBuffer;
+        this.robustChunkAssembler = robustChunkAssembler;
         bossGroup = null;
         workerGroup = null;
         channel = null;
@@ -77,40 +97,38 @@ public class SimpleDataReceiveThread extends Thread {
     @Override
     public void run() {
         try {
-            SimpleDataReceiveHandler simpleDataReceiveHandler = new SimpleDataReceiveHandler(dataPacketBuffer);
+            RobustDataReceiveHandler robustDataReceiveHandler = new RobustDataReceiveHandler(
+                dataPacketBuffer, robustChunkAssembler
+            );
             // (1) 创建EventLoopGroup
-            // BossGroup处理Accept，WorkerGroup处理Read/Write，都是NIO线程池
             bossGroup = new NioEventLoopGroup();
             workerGroup = new NioEventLoopGroup();
             // (2) 创建ServerBootstrap
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
-                // (3) 指定所使用的 NIO 传输 Channel
+                // (3) 指定NIO传输Channel
                 .channel(NioServerSocketChannel.class)
-                // (4) 使用指定的端口设置套接字地址
+                // (4) 绑定端口
                 .localAddress(new InetSocketAddress(ownParty.getPort()))
-                // (5) 添加Handler
+                // (5) 为每个新建立的子Channel配置pipeline
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(SocketChannel ch) {
-                        // 为每个新建立的连接配置pipeline（入站数据的处理链）
-                        // 数据流向：网络字节流 → FrameDecoder → ProtobufDecoder → 自定义Handler
-                        // ProtobufVarint32FrameDecoder: 根据varint32长度字段分割TCP流，解决粘包/拆包问题
+                        // 数据流向：网络字节流 → FrameDecoder → ProtobufDecoder → RobustDataReceiveHandler
+                        // ProtobufVarint32FrameDecoder: 解决粘包/拆包问题
                         ch.pipeline().addLast(new ProtobufVarint32FrameDecoder());
-                        // ProtobufDecoder: 将字节数组解码为Protobuf消息对象
-                        ch.pipeline().addLast(
-                            new ProtobufDecoder(SimpleNettyRpcProtobuf.DataPacketProto.getDefaultInstance())
-                        );
-                        // 自定义Handler: 处理解码后的业务数据
-                        ch.pipeline().addLast(simpleDataReceiveHandler);
+                        // 解码为RobustMessageProto（包含ChunkProto或AckProto的oneof）
+                        // 帧大小限制由ProtobufVarint32FrameDecoder负责（默认无限制）
+                        ch.pipeline().addLast(new ProtobufDecoder(
+                            RobustNettyRpcProtobuf.RobustMessageProto.getDefaultInstance()
+                        ));
+                        // 业务Handler：处理分片重组和ACK回送
+                        ch.pipeline().addLast(robustDataReceiveHandler);
                     }
                 });
-            // (6) 异步地绑定服务器；调用 sync()方法阻塞等待直到绑定完成
-            // bind()返回ChannelFuture（异步），sync()阻塞当前线程直到绑定完成
+            // (6) 异步绑定，sync()阻塞等待绑定完成
             ChannelFuture f = b.bind().sync();
-            // (7) 获取 Channel 的CloseFuture，并且阻塞当前线程直到它完成
-            // closeFuture()返回一个Future，当Channel关闭时该Future完成
-            // sync()阻塞当前线程，使run()方法持续运行直到Channel关闭
+            // (7) 阻塞直到ServerChannel关闭
             channel = f.channel();
             channel.closeFuture().sync();
         } catch (InterruptedException e) {
@@ -120,22 +138,21 @@ public class SimpleDataReceiveThread extends Thread {
     }
 
     /**
-     * 关闭server端的group，也会关闭server channel
+     * 关闭服务端，释放所有资源。
      * <p>
      * 关闭流程：
      * <ol>
      *   <li>优雅关闭BossGroup（停止接收新连接）</li>
-     *   <li>优雅关闭WorkerGroup（处理完已接收的请求后关闭）</li>
-     *   <li>关闭完成后通知CyclicBarrier，让主线程继续</li>
+     *   <li>优雅关闭WorkerGroup（处理完已接收的请求后关闭），完成后通知CyclicBarrier</li>
      *   <li>关闭ServerChannel</li>
      * </ol>
      * </p>
+     *
+     * @throws InterruptedException 若等待过程中线程被中断
      */
     public void close() throws InterruptedException {
-        // shutdownGracefully: 优雅关闭，不再接受新任务，但等待已提交任务完成
         this.bossGroup.shutdownGracefully().sync();
         this.workerGroup.shutdownGracefully().addListener(future -> {
-            // 添加一个GenericFutureListener()来监听操作完成
             // WorkerGroup关闭完成后，通过CyclicBarrier通知主线程
             cyclicBarrier.await();
         });
