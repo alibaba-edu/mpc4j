@@ -81,10 +81,10 @@ public class RpcSendRecvTest {
     public void testData() throws InterruptedException {
         int partyNum = rpcManager.getPartyNum();
         int randomTaskId = Math.abs(SECURE_RANDOM.nextInt());
-        RpcDataThread[] threads = new RpcDataThread[partyNum];
+        RpcSendRecvThread[] threads = new RpcSendRecvThread[partyNum];
         // start RPC threads
         for (int partyId = 0; partyId < partyNum; partyId++) {
-            threads[partyId] = new RpcDataThread(randomTaskId, rpcManager.getRpc(partyId));
+            threads[partyId] = new RpcSendRecvThread(randomTaskId, rpcManager.getRpc(partyId));
             threads[partyId].start();
         }
         // join
@@ -94,7 +94,7 @@ public class RpcSendRecvTest {
         // check data packet
         Set<DataPacket> sendDataPacketSet = new HashSet<>();
         Set<DataPacket> receivedDataPacketSet = new HashSet<>();
-        for (RpcDataThread thread : threads) {
+        for (RpcSendRecvThread thread : threads) {
             sendDataPacketSet.addAll(thread.getSendDataPacketSet());
             receivedDataPacketSet.addAll(thread.getReceivedDataPacketSet());
         }

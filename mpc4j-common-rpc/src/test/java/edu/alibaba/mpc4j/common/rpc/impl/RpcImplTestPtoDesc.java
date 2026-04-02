@@ -9,7 +9,7 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
  * @author Weiran Liu
  * @date 2021/12/09
  */
-class RpcTestPtoDesc implements PtoDesc {
+class RpcImplTestPtoDesc implements PtoDesc {
     /**
      * 协议ID
      */
@@ -68,9 +68,9 @@ class RpcTestPtoDesc implements PtoDesc {
     /**
      * 单例模式
      */
-    private static final RpcTestPtoDesc INSTANCE = new RpcTestPtoDesc();
+    private static final RpcImplTestPtoDesc INSTANCE = new RpcImplTestPtoDesc();
 
-    private RpcTestPtoDesc() {
+    private RpcImplTestPtoDesc() {
         // empty
     }
 
@@ -79,7 +79,7 @@ class RpcTestPtoDesc implements PtoDesc {
     }
 
     static {
-        PtoDescManager.registerPtoDesc(RpcTestPtoDesc.getInstance());
+        PtoDescManager.registerPtoDesc(RpcImplTestPtoDesc.getInstance());
     }
 
     @Override

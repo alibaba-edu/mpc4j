@@ -1,8 +1,6 @@
 package edu.alibaba.mpc4j.common.rpc.impl;
 
 import com.google.common.base.Preconditions;
-import edu.alibaba.mpc4j.common.rpc.Party;
-import edu.alibaba.mpc4j.common.rpc.Rpc;
 import edu.alibaba.mpc4j.common.rpc.RpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpcManager;
@@ -10,20 +8,13 @@ import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.SimpleNettyRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.SimpleNettyRpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.RpcTestPtoDesc.PtoStep;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
-import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * RPC connect/disconnect 重连测试。
@@ -86,257 +77,78 @@ public class RpcConnectTest {
 
     @Test
     public void testSingleConnectDisconnect() throws InterruptedException {
-        connectRandom();
-        sendAndReceiveEmptyPackets();
-        disconnectRandom();
+        RpcImplTestUtils.connectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
     }
 
     @Test
     public void testDoubleConnect() throws InterruptedException {
-        connectRandom();
+        RpcImplTestUtils.connectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
         // 再次 connect 应该被忽略（只打印警告日志）
-        connectRandom();
-        sendAndReceiveEmptyPackets();
-        disconnectRandom();
+        RpcImplTestUtils.connectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
     }
 
     @Test
     public void testDoubleDisconnect() throws InterruptedException {
-        connectRandom();
-        sendAndReceiveEmptyPackets();
-        disconnectRandom();
+        RpcImplTestUtils.connectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
         // 再次 disconnect 应该被忽略（只打印警告日志）
-        disconnectRandom();
+        RpcImplTestUtils.disconnectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
     }
 
     @Test
     public void testReconnect() throws InterruptedException {
         // 核心测试：connect -> disconnect -> connect -> disconnect（并发随机顺序）
-        connectRandom();
-        sendAndReceiveEmptyPackets();
-        disconnectRandom();
+        RpcImplTestUtils.connectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
         // 等待端口完全释放
         Thread.sleep(RECONNECT_DELAY_MS);
         // 重连
-        connectRandom();
-        sendAndReceiveEmptyPackets();
-        disconnectRandom();
+        RpcImplTestUtils.connectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectRandom(rpcManager, CONNECT_TIMEOUT_SECONDS);
     }
 
     @Test
     public void testAscendingConnectDisconnect() throws InterruptedException {
-        connectAscending();
-        sendAndReceiveEmptyPackets();
-        disconnectAscending();
+        RpcImplTestUtils.connectAscending(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectAscending(rpcManager, CONNECT_TIMEOUT_SECONDS);
     }
 
     @Test
     public void testDescendingConnectDisconnect() throws InterruptedException {
-        connectDescending();
-        sendAndReceiveEmptyPackets();
-        disconnectDescending();
+        RpcImplTestUtils.connectDescending(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectDescending(rpcManager, CONNECT_TIMEOUT_SECONDS);
     }
 
     @Test
     public void testAscendingReconnect() throws InterruptedException {
         // 从小到大顺序 connect -> disconnect -> connect -> disconnect
-        connectAscending();
-        sendAndReceiveEmptyPackets();
-        disconnectAscending();
+        RpcImplTestUtils.connectAscending(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectAscending(rpcManager, CONNECT_TIMEOUT_SECONDS);
         Thread.sleep(RECONNECT_DELAY_MS);
-        connectAscending();
-        sendAndReceiveEmptyPackets();
-        disconnectAscending();
+        RpcImplTestUtils.connectAscending(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectAscending(rpcManager, CONNECT_TIMEOUT_SECONDS);
     }
 
     @Test
     public void testDescendingReconnect() throws InterruptedException {
         // 从大到小顺序 connect -> disconnect -> connect -> disconnect
-        connectDescending();
-        sendAndReceiveEmptyPackets();
-        disconnectDescending();
+        RpcImplTestUtils.connectDescending(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectDescending(rpcManager, CONNECT_TIMEOUT_SECONDS);
         Thread.sleep(RECONNECT_DELAY_MS);
-        connectDescending();
-        sendAndReceiveEmptyPackets();
-        disconnectDescending();
-    }
-
-    /**
-     * 所有参与方并发执行 connect（随机顺序）。
-     */
-    private void connectRandom() throws InterruptedException {
-        int partyNum = rpcManager.getPartyNum();
-        CountDownLatch latch = new CountDownLatch(partyNum);
-        for (int partyId = 0; partyId < partyNum; partyId++) {
-            Rpc rpc = rpcManager.getRpc(partyId);
-            new Thread(() -> {
-                try {
-                    rpc.connect();
-                } finally {
-                    latch.countDown();
-                }
-            }).start();
-        }
-        boolean success = latch.await(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        Assert.assertTrue("connect() timeout", success);
-    }
-
-    /**
-     * 所有参与方并发执行 disconnect（随机顺序）。
-     */
-    private void disconnectRandom() throws InterruptedException {
-        int partyNum = rpcManager.getPartyNum();
-        CountDownLatch latch = new CountDownLatch(partyNum);
-        for (int partyId = 0; partyId < partyNum; partyId++) {
-            Rpc rpc = rpcManager.getRpc(partyId);
-            new Thread(() -> {
-                try {
-                    rpc.disconnect();
-                } finally {
-                    latch.countDown();
-                }
-            }).start();
-        }
-        boolean success = latch.await(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        Assert.assertTrue("disconnect() timeout", success);
-    }
-
-    /**
-     * 从小到大顺序依次执行 connect（partyId 0, 1, 2, ..., partyNum-1）。
-     * <p>
-     * 顺序启动时，小 partyId（client）先启动，大 partyId（server）后启动。
-     * 由于 connect() 的握手协议有重试机制，server 后启动不影响正确性。
-     * </p>
-     */
-    private void connectAscending() throws InterruptedException {
-        int partyNum = rpcManager.getPartyNum();
-        CountDownLatch latch = new CountDownLatch(partyNum);
-        for (int partyId = 0; partyId < partyNum; partyId++) {
-            Rpc rpc = rpcManager.getRpc(partyId);
-            new Thread(() -> {
-                try {
-                    rpc.connect();
-                } finally {
-                    latch.countDown();
-                }
-            }).start();
-            // 每个参与方启动后稍等一会，形成先小后大的顺序
-            Thread.sleep(50);
-        }
-        boolean success = latch.await(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        Assert.assertTrue("connect() ascending timeout", success);
-    }
-
-    /**
-     * 从小到大顺序依次执行 disconnect（partyId 0, 1, 2, ..., partyNum-1）。
-     */
-    private void disconnectAscending() throws InterruptedException {
-        int partyNum = rpcManager.getPartyNum();
-        CountDownLatch latch = new CountDownLatch(partyNum);
-        for (int partyId = 0; partyId < partyNum; partyId++) {
-            Rpc rpc = rpcManager.getRpc(partyId);
-            new Thread(() -> {
-                try {
-                    rpc.disconnect();
-                } finally {
-                    latch.countDown();
-                }
-            }).start();
-            Thread.sleep(50);
-        }
-        boolean success = latch.await(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        Assert.assertTrue("disconnect() ascending timeout", success);
-    }
-
-    /**
-     * 从大到小顺序依次执行 connect（partyId partyNum-1, ..., 1, 0）。
-     * <p>
-     * 逆序启动时，大 partyId（server）先启动，小 partyId（client）后启动。
-     * server 先就绪，等待 client 连接，符合常见部署场景。
-     * </p>
-     */
-    private void connectDescending() throws InterruptedException {
-        int partyNum = rpcManager.getPartyNum();
-        CountDownLatch latch = new CountDownLatch(partyNum);
-        for (int partyId = partyNum - 1; partyId >= 0; partyId--) {
-            Rpc rpc = rpcManager.getRpc(partyId);
-            new Thread(() -> {
-                try {
-                    rpc.connect();
-                } finally {
-                    latch.countDown();
-                }
-            }).start();
-            // 每个参与方启动后稍等一会，形成先大后小的顺序
-            Thread.sleep(50);
-        }
-        boolean success = latch.await(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        Assert.assertTrue("connect() descending timeout", success);
-    }
-
-    /**
-     * 从大到小顺序依次执行 disconnect（partyId partyNum-1, ..., 1, 0）。
-     */
-    private void disconnectDescending() throws InterruptedException {
-        int partyNum = rpcManager.getPartyNum();
-        CountDownLatch latch = new CountDownLatch(partyNum);
-        for (int partyId = partyNum - 1; partyId >= 0; partyId--) {
-            Rpc rpc = rpcManager.getRpc(partyId);
-            new Thread(() -> {
-                try {
-                    rpc.disconnect();
-                } finally {
-                    latch.countDown();
-                }
-            }).start();
-            Thread.sleep(50);
-        }
-        boolean success = latch.await(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        Assert.assertTrue("disconnect() descending timeout", success);
-    }
-
-    /**
-     * 验证 connect 后通信正常：每个参与方给其他所有参与方各发一个空数据包并接收。
-     * <p>
-     * 每个参与方启动一个线程，先发送再接收，通过 CountDownLatch 等待全部完成。
-     * </p>
-     */
-    private void sendAndReceiveEmptyPackets() throws InterruptedException {
-        int partyNum = rpcManager.getPartyNum();
-        // taskId 固定为 0，仅用于握手验证，不与业务 taskId 冲突
-        int taskId = 0;
-        CountDownLatch latch = new CountDownLatch(partyNum);
-        for (int partyId = 0; partyId < partyNum; partyId++) {
-            Rpc rpc = rpcManager.getRpc(partyId);
-            new Thread(() -> {
-                try {
-                    // 向其他每个参与方发送一个空数据包
-                    for (Party other : rpc.getPartySet()) {
-                        if (!other.equals(rpc.ownParty())) {
-                            DataPacketHeader sendHeader = new DataPacketHeader(
-                                taskId, RpcTestPtoDesc.getInstance().getPtoId(), PtoStep.EMPTY.ordinal(),
-                                rpc.ownParty().getPartyId(), other.getPartyId()
-                            );
-                            rpc.send(DataPacket.fromByteArrayList(sendHeader, new LinkedList<>()));
-                        }
-                    }
-                    // 从其他每个参与方接收一个空数据包
-                    for (Party other : rpc.getPartySet()) {
-                        if (!other.equals(rpc.ownParty())) {
-                            DataPacketHeader recvHeader = new DataPacketHeader(
-                                taskId, RpcTestPtoDesc.getInstance().getPtoId(), PtoStep.EMPTY.ordinal(),
-                                other.getPartyId(), rpc.ownParty().getPartyId()
-                            );
-                            DataPacket received = rpc.receive(recvHeader);
-                            Assert.assertNotNull("received packet should not be null", received);
-                        }
-                    }
-                } finally {
-                    latch.countDown();
-                }
-            }).start();
-        }
-        boolean success = latch.await(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        Assert.assertTrue("sendAndReceiveEmptyPackets() timeout", success);
+        RpcImplTestUtils.connectDescending(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.sendAndReceiveEmptyPackets(rpcManager, CONNECT_TIMEOUT_SECONDS);
+        RpcImplTestUtils.disconnectDescending(rpcManager, CONNECT_TIMEOUT_SECONDS);
     }
 }

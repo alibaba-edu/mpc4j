@@ -52,8 +52,7 @@ public class SimpleDataReceiveHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         // 当Pipeline中的上一个Handler（ProtobufDecoder）完成解码后，调用此方法
-        // msg已经被解码为DataPacketProto对象
-        // read data packet from channel
+        // ProtobufDecoder已经把msg解码为DataPacketProto对象
         DataPacketProto dataPacketProto = (DataPacketProto) msg;
         // handle header
         HeaderProto headerProto = dataPacketProto.getHeaderProto();
@@ -90,8 +89,7 @@ public class SimpleDataReceiveHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         // 当Pipeline中任何Handler抛出异常时，异常会沿Pipeline传播，最终调用此方法
-        // 对于SimpleNettyRpc，我们假设网络稳定，异常应快速暴露而非静默恢复
-        // 捕获到任何异常时都会调用exceptionCaught，记录异常并关闭channel
+        // 对于SimpleNettyRpc，我们假设网络稳定，因此应该快速暴露异常：调用exceptionCaught，记录异常并关闭channel
         LOGGER.error("Exception caught in receive handler, closing channel: {}", ctx.channel(), cause);
         ctx.close();
     }
