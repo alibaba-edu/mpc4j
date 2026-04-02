@@ -5,7 +5,7 @@
     <parent>
         <artifactId>mpc4j</artifactId>
         <groupId>edu.alibaba</groupId>
-        <version>1.1.4-beta</version>
+        <version>1.1.5</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -35,17 +35,17 @@
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-sampler</artifactId>
-            <version>1.1.4-beta</version>
+            <version>1.1.5</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-tool</artifactId>
-            <version>1.1.4-beta</version>
+            <version>1.1.5</version>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-dp-cdp</artifactId>
-            <version>1.1.4-beta</version>
+            <version>1.1.5</version>
         </dependency>
     </dependencies>
 </project>

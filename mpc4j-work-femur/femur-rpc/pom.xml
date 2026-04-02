@@ -6,7 +6,7 @@
     <parent>
         <groupId>edu.alibaba</groupId>
         <artifactId>mpc4j-work-femur</artifactId>
-        <version>1.1.4-beta</version>
+        <version>1.1.5</version>
     </parent>
 
     <artifactId>femur-rpc</artifactId>
@@ -22,13 +22,13 @@
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>mpc4j-common-rpc</artifactId>
-            <version>1.1.4-beta</version>
+            <version>1.1.5</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>edu.alibaba</groupId>
             <artifactId>femur-common</artifactId>
-            <version>1.1.4-beta</version>
+            <version>1.1.5</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
