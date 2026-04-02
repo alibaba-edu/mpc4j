@@ -97,6 +97,16 @@ public class RobustNettyRpc implements Rpc {
     /**
      * 构建RobustNettyRpc。
      *
+     * @param ownParty 参与方信息。
+     * @param partySet 所有参与方集合。
+     */
+    public RobustNettyRpc(NettyParty ownParty, Set<NettyParty> partySet) {
+        this(ownParty, partySet, null);
+    }
+
+    /**
+     * 构建RobustNettyRpc。
+     *
      * @param ownParty         参与方信息。
      * @param partySet         所有参与方集合。
      * @param extraSendHandler 可选的发送管道额外Handler（如故障注入Handler）；传null则不注入。

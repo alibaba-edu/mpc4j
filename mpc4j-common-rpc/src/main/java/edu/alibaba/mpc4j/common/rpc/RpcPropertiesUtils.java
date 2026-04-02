@@ -2,6 +2,7 @@ package edu.alibaba.mpc4j.common.rpc;
 
 import com.google.common.base.Preconditions;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyParty;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.robust.RobustNettyRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.netty.simple.SimpleNettyRpc;
 import edu.alibaba.mpc4j.common.tool.MathPreconditions;
 import edu.alibaba.mpc4j.common.tool.utils.PropertiesUtils;
@@ -44,6 +45,11 @@ public class RpcPropertiesUtils {
         NettyParty ownParty = Preconditions.checkNotNull(
             nettyPartyMap.get(ownName), "ownName must be in %s: %s", Arrays.toString(partyPrefix), ownName
         );
-        return new SimpleNettyRpc(ownParty, nettyPartySet);
+        boolean robustRpc = PropertiesUtils.readBoolean(properties, "robust_rpc", false);
+        if (!robustRpc) {
+            return new SimpleNettyRpc(ownParty, nettyPartySet);
+        } else {
+            return new RobustNettyRpc(ownParty, nettyPartySet);
+        }
     }
 }
