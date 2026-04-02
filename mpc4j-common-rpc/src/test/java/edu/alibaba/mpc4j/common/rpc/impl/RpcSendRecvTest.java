@@ -25,13 +25,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * RPC unit test.
+ * RPC send/receive test.
  *
  * @author Weiran Liu
  * @date 2021/12/10
  */
 @RunWith(Parameterized.class)
-public class RpcTest {
+public class RpcSendRecvTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> configurations() {
@@ -53,7 +53,7 @@ public class RpcTest {
      */
     private final RpcManager rpcManager;
 
-    public RpcTest(String name, RpcManager rpcManager) {
+    public RpcSendRecvTest(String name, RpcManager rpcManager) {
         Preconditions.checkArgument(StringUtils.isNotBlank(name));
         this.rpcManager = rpcManager;
     }

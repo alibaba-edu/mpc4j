@@ -46,7 +46,7 @@ public class DataPacketBuffer {
      */
     public synchronized DataPacket takeImmediately(DataPacketHeader header) throws InterruptedException {
         assert (header != null);
-        // if there is no target data packet in the buffer, waiting until new data packet is added.
+        // if there is no target data packet in the buffer, return null immediately
         if (!dataPacketBuffer.containsKey(header)) {
             return null;
         } else {
@@ -61,6 +61,14 @@ public class DataPacketBuffer {
      */
     public synchronized void clearBuffer(DataPacketHeader header) {
         dataPacketBuffer.remove(header);
+    }
+
+    /**
+     * Clears all data packets in the buffer. Used after disconnect() to ensure no stale packets
+     * remain before the next connect().
+     */
+    public synchronized void clearAll() {
+        dataPacketBuffer.clear();
     }
 
     /**

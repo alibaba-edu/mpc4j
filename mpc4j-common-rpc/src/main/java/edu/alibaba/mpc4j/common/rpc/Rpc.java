@@ -7,6 +7,18 @@ import java.util.Set;
 
 /**
  * 协议通信接口。
+ * <p>
+ * RPC生命周期：
+ * <ol>
+ *   <li>构造Rpc实例</li>
+ *   <li>connect(): 主动上线，初始化通信资源，与其他参与方建立连接</li>
+ *   <li>send()/receive(): 执行协议通信</li>
+ *   <li>disconnect(): 主动下线，通知其他参与方，释放通信资源</li>
+ * </ol>
+ * </p>
+ * <p>
+ * 注意：connect()和disconnect()可以循环调用，实现多次上线/下线。
+ * </p>
  *
  * @author Weiran Liu
  * @date 2021/12/08
@@ -35,7 +47,14 @@ public interface Rpc {
     Party getParty(int partyId);
 
     /**
-     * 开启连接。
+     * 主动上线。
+     * <p>
+     * 初始化通信资源，与其他参与方建立连接。
+     * 可以在disconnect()后再次调用，实现重连。
+     * </p>
+     * <p>
+     * 调用后进入已连接状态，可以开始send()/receive()通信。
+     * </p>
      */
     void connect();
 
@@ -95,7 +114,14 @@ public interface Rpc {
     void reset();
 
     /**
-     * 关闭连接。
+     * 主动下线。
+     * <p>
+     * 通知其他参与方下线，释放通信资源。
+     * 下线后可以再次调用connect()重连。
+     * </p>
+     * <p>
+     * 调用后进入已断开状态，不可再调用send()/receive()。
+     * </p>
      */
     void disconnect();
 }

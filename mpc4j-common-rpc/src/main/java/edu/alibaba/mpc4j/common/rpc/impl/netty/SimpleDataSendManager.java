@@ -79,13 +79,12 @@ public class SimpleDataSendManager {
                     @Override
                     public void channelCreated(Channel channel) {
                         // 当连接池需要新建Channel时调用此方法，配置Channel的pipeline
-                        // Pipeline是处理链，数据出站时依次流经各Handler（编码器）
                         SocketChannel ch = (SocketChannel) channel;
-                        // ProtobufVarint32LengthFieldPrepender: 在消息前添加varint32格式的长度字段
+                        // 在消息前添加varint32格式的长度字段
                         ch.pipeline().addLast(new ProtobufVarint32LengthFieldPrepender());
-                        // ProtobufEncoder: 将Protobuf消息对象编码为字节数组
+                        // 将Protobuf消息对象编码为字节数组
                         ch.pipeline().addLast(new ProtobufEncoder());
-                        // 自定义Handler: 处理Channel生命周期事件（如异常）
+                        // 处理Channel生命周期事件（如异常）
                         ch.pipeline().addLast(simpleDataSendHandler);
                     }
 
@@ -115,7 +114,6 @@ public class SimpleDataSendManager {
         );
         // 从连接池中尝试获取一个channel
         // acquire()是异步操作：提交获取请求后立即返回Future，实际结果通过回调获取
-        // 这种模式避免了阻塞调用线程，让IO操作在EventLoop线程中完成
         Future<Channel> f = simpleChannelPool.acquire();
         // 添加监听器：当acquire完成时（无论成功或失败）在IO线程中被回调
         f.addListener((FutureListener<Channel>) futureChannel -> {
@@ -141,5 +139,38 @@ public class SimpleDataSendManager {
                 throw new RuntimeException("acquire channel failed to " + receiver, futureChannel.cause());
             }
         });
+    }
+
+    /**
+     * 关闭发送管理器，释放所有资源。
+     * <p>
+     * 关闭流程：
+     * <ol>
+     *   <li>关闭所有连接池中的Channel</li>
+     *   <li>关闭EventLoopGroup（NIO线程池）并等待完成</li>
+     * </ol>
+     * </p>
+     */
+    public void close() {
+        // 关闭连接池映射中的所有连接池
+        // AbstractChannelPoolMap 实现了 Iterable<Map.Entry<K, V>>，可直接遍历
+        // 注意：iterator() 返回的是只读迭代器，不能调用 remove()
+        if (poolMap instanceof AbstractChannelPoolMap<InetSocketAddress, FixedChannelPool> abstractPoolMap) {
+            for (java.util.Map.Entry<InetSocketAddress, FixedChannelPool> entry : abstractPoolMap) {
+                FixedChannelPool pool = entry.getValue();
+                if (pool != null) {
+                    pool.close();
+                }
+            }
+        }
+        // 关闭Bootstrap的EventLoopGroup并等待完成
+        // senderBootstrap.group() 返回的是构造函数中创建的 NioEventLoopGroup
+        if (senderBootstrap.config().group() != null) {
+            try {
+                senderBootstrap.config().group().shutdownGracefully().sync();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }

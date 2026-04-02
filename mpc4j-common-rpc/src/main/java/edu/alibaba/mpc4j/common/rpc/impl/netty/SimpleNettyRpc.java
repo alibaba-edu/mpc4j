@@ -53,9 +53,9 @@ public class SimpleNettyRpc implements Rpc {
      */
     private final DataPacketBuffer dataPacketBuffer;
     /**
-     * CyclicBarrier，用于多线程同步
+     * CyclicBarrier，用于多线程同步。每次connect()时创建新实例。
      */
-    private final CyclicBarrier cyclicBarrier;
+    private CyclicBarrier cyclicBarrier;
     /**
      * 数据接收线程
      */
@@ -64,6 +64,10 @@ public class SimpleNettyRpc implements Rpc {
      * 数据发送管理器
      */
     private SimpleDataSendManager simpleDataSendManager;
+    /**
+     * 连接状态：true表示已连接，false表示已断开
+     */
+    private boolean connected;
     /**
      * 数据包数量
      */
@@ -97,9 +101,11 @@ public class SimpleNettyRpc implements Rpc {
         dataPacketNum = 0;
         payloadByteLength = 0;
         sendByteLength = 0;
+        // 初始化状态：未连接
+        connected = false;
+        cyclicBarrier = null;
         simpleDataReceiveThread = null;
-        // 用于父线程和server子线程的同步，parties设置成2
-        cyclicBarrier = new CyclicBarrier(2);
+        simpleDataSendManager = null;
         dataPacketBuffer = new DataPacketBuffer();
     }
 
@@ -108,7 +114,7 @@ public class SimpleNettyRpc implements Rpc {
      *
      * @param port port.
      */
-    public void testPortInUse(int port) {
+    private void testPortInUse(int port) {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             serverSocket.setReuseAddress(true);
         } catch (IOException e) {
@@ -135,6 +141,13 @@ public class SimpleNettyRpc implements Rpc {
 
     @Override
     public void connect() {
+        // 防止重复connect
+        if (connected) {
+            LOGGER.warn("{} already connected, skip connect()", ownParty);
+            return;
+        }
+        // 每次connect()创建新的CyclicBarrier，用于父线程和server子线程的同步，parties设置成2
+        cyclicBarrier = new CyclicBarrier(2);
         // 先开启数据接收服务
         simpleDataReceiveThread = new SimpleDataReceiveThread(ownParty, cyclicBarrier, dataPacketBuffer);
         simpleDataReceiveThread.start();
@@ -209,6 +222,8 @@ public class SimpleNettyRpc implements Rpc {
                 );
             }
         });
+        // 标记为已连接
+        connected = true;
         LOGGER.info("{} connected", ownParty);
     }
 
@@ -380,6 +395,11 @@ public class SimpleNettyRpc implements Rpc {
 
     @Override
     public void disconnect() {
+        // 防止重复disconnect
+        if (!connected) {
+            LOGGER.warn("{} already disconnected, skip disconnect()", ownParty);
+            return;
+        }
         // 对参与方进行排序，所有在自己之前的自己作为client、所有在自己之后的自己作为server
         partyIdHashMap.keySet().stream().sorted().forEach(otherPartyId -> {
             if (otherPartyId < ownPartyId) {
@@ -418,6 +438,18 @@ public class SimpleNettyRpc implements Rpc {
             LOGGER.error("Interrupted while disconnecting", e);
             Thread.currentThread().interrupt();
         }
+        // 关闭数据发送服务
+        if (simpleDataSendManager != null) {
+            simpleDataSendManager.close();
+        }
+        // 清理资源引用，便于GC
+        simpleDataReceiveThread = null;
+        simpleDataSendManager = null;
+        cyclicBarrier = null;
+        // 清空数据缓冲区，防止残留数据包干扰下次connect()的握手流程
+        dataPacketBuffer.clearAll();
+        // 标记为已断开
+        connected = false;
         LOGGER.info("{} disconnected", ownParty);
     }
 }
