@@ -11,7 +11,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
  * @date 2020/10/12
  */
 @ChannelHandler.Sharable
-public class DataSendHandler extends ChannelInboundHandlerAdapter {
+public class SimpleDataSendHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {

@@ -1,10 +1,10 @@
 package edu.alibaba.mpc4j.common.rpc.impl.netty;
 
 import com.google.protobuf.ByteString;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto.HeaderProto;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto.PayloadProto;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto.TypeProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto.HeaderProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto.PayloadProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto.TypeProto;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketBuffer;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
@@ -25,13 +25,13 @@ import java.util.stream.Collectors;
  * @date 2020/10/12
  */
 @ChannelHandler.Sharable
-public class DataReceiveHandler extends ChannelInboundHandlerAdapter {
+public class SimpleDataReceiveHandler extends ChannelInboundHandlerAdapter {
     /**
      * buffer
      */
     private final DataPacketBuffer dataPacketBuffer;
 
-    DataReceiveHandler(DataPacketBuffer dataPacketBuffer) {
+    SimpleDataReceiveHandler(DataPacketBuffer dataPacketBuffer) {
         this.dataPacketBuffer = dataPacketBuffer;
     }
 
@@ -53,22 +53,15 @@ public class DataReceiveHandler extends ChannelInboundHandlerAdapter {
         PayloadType payloadType = PayloadType.values()[typeProto.getTypeId()];
         // handle payload
         PayloadProto payloadProto = dataPacketProto.getPayloadProto();
-        List<byte[]> payload;
-        switch (payloadType) {
-            case NORMAL:
-            case EMPTY:
-            case SINGLETON:
-                payload = payloadProto.getPayloadBytesList().stream()
+        List<byte[]> payload = switch (payloadType) {
+            case NORMAL, EMPTY, SINGLETON -> payloadProto.getPayloadBytesList().stream()
                 .map(ByteString::toByteArray)
                 .collect(Collectors.toList());
-                break;
-            case EQUAL_SIZE:
+            case EQUAL_SIZE -> {
                 int length = IntUtils.byteArrayToInt(payloadProto.getPayloadBytes(0).toByteArray());
-                payload = SerializeUtils.decompressEqual(payloadProto.getPayloadBytes(1).toByteArray(), length);
-                break;
-            default:
-                throw new IllegalStateException("Invalid " + PayloadType.class.getSimpleName() + ": " + payloadType);
-        }
+                yield SerializeUtils.decompressEqual(payloadProto.getPayloadBytes(1).toByteArray(), length);
+            }
+        };
         // put data into the buffer
         dataPacketBuffer.put(DataPacket.fromByteArrayList(header, payload));
     }

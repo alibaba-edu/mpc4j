@@ -3,7 +3,7 @@ syntax = "proto3";
 // package name for the generated Java file
 option java_package = "edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf";
 // class name for the generated Java file
-option java_outer_classname = "NettyRpcProtobuf";
+option java_outer_classname = "SimpleNettyRpcProtobuf";
 
 message DataPacketProto {
     // data packet contains 3 types: head, type, payload, defined by HeaderProto, TypeProto, PayloadProto, respectively.

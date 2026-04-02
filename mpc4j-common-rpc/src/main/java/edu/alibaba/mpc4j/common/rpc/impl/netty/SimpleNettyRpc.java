@@ -4,11 +4,11 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import edu.alibaba.mpc4j.common.rpc.Party;
 import edu.alibaba.mpc4j.common.rpc.Rpc;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto.HeaderProto;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto.PayloadProto;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf.DataPacketProto.TypeProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto.HeaderProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto.PayloadProto;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf.DataPacketProto.TypeProto;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketBuffer;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketHeader;
@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
  * @author Feng Qing, Weiran Liu
  * @date 2020/10/12
  */
-public class NettyRpc implements Rpc {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyRpc.class);
+public class SimpleNettyRpc implements Rpc {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleNettyRpc.class);
     /**
      * 参与方ID映射
      */
@@ -59,11 +59,11 @@ public class NettyRpc implements Rpc {
     /**
      * 数据接收线程
      */
-    private DataReceiveThread dataReceiveThread;
+    private SimpleDataReceiveThread simpleDataReceiveThread;
     /**
      * 数据发送管理器
      */
-    private DataSendManager dataSendManager;
+    private SimpleDataSendManager simpleDataSendManager;
     /**
      * 数据包数量
      */
@@ -82,7 +82,7 @@ public class NettyRpc implements Rpc {
      *
      * @param ownParty 参与方信息。
      */
-    public NettyRpc(NettyParty ownParty, Set<NettyParty> partySet) {
+    public SimpleNettyRpc(NettyParty ownParty, Set<NettyParty> partySet) {
         // 所有参与方的数量必须大于1
         Preconditions.checkArgument(partySet.size() > 1, "Party set size must be greater than 1");
         // 参与方自身必须在所有参与方之中
@@ -97,7 +97,7 @@ public class NettyRpc implements Rpc {
         dataPacketNum = 0;
         payloadByteLength = 0;
         sendByteLength = 0;
-        dataReceiveThread = null;
+        simpleDataReceiveThread = null;
         // 用于父线程和server子线程的同步，parties设置成2
         cyclicBarrier = new CyclicBarrier(2);
         dataPacketBuffer = new DataPacketBuffer();
@@ -137,23 +137,23 @@ public class NettyRpc implements Rpc {
     @Override
     public void connect() {
         // 先开启数据接收服务
-        dataReceiveThread = new DataReceiveThread(ownParty, cyclicBarrier, dataPacketBuffer);
-        dataReceiveThread.start();
+        simpleDataReceiveThread = new SimpleDataReceiveThread(ownParty, cyclicBarrier, dataPacketBuffer);
+        simpleDataReceiveThread.start();
         // 再开启数据发送服务
-        dataSendManager = new DataSendManager();
+        simpleDataSendManager = new SimpleDataSendManager();
         partyIdHashMap.keySet().stream().sorted().forEach(otherPartyId -> {
             if (otherPartyId < ownPartyId) {
                 // 如果对方排序比自己小，则自己是client，先给对方发送连接信息
                 DataPacketHeader clientConnectHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_CONNECT.ordinal(),
+                    Long.MAX_VALUE - ownPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.CLIENT_CONNECT.ordinal(),
                     ownPartyId, otherPartyId
                 );
                 DataPacketHeader serverConnectHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.SERVER_CONNECT.ordinal(),
+                    Long.MAX_VALUE - otherPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.SERVER_CONNECT.ordinal(),
                     otherPartyId, ownPartyId
                 );
                 DataPacketHeader clientConfirmHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_CONFIRM.ordinal(),
+                    Long.MAX_VALUE - ownPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.CLIENT_CONFIRM.ordinal(),
                     ownPartyId, otherPartyId
                 );
 
@@ -175,15 +175,15 @@ public class NettyRpc implements Rpc {
             } else if (otherPartyId > ownPartyId) {
                 // 如果对方排序比自己大，则自己是server，先接收对方的连接信息
                 DataPacketHeader clientConnectHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_CONNECT.ordinal(),
+                    Long.MAX_VALUE - otherPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.CLIENT_CONNECT.ordinal(),
                     otherPartyId, ownPartyId
                 );
                 DataPacketHeader serverConnectHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.SERVER_CONNECT.ordinal(),
+                    Long.MAX_VALUE - ownPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.SERVER_CONNECT.ordinal(),
                     ownPartyId, otherPartyId
                 );
                 DataPacketHeader clientConfirmHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_CONFIRM.ordinal(),
+                    Long.MAX_VALUE - otherPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.CLIENT_CONFIRM.ordinal(),
                     otherPartyId, ownPartyId
                 );
 
@@ -284,7 +284,7 @@ public class NettyRpc implements Rpc {
             .addAllPayloadBytes(payloadByteStringList)
             .build();
         // package data packet
-        DataPacketProto dataPacketProto = NettyRpcProtobuf.DataPacketProto
+        DataPacketProto dataPacketProto = SimpleNettyRpcProtobuf.DataPacketProto
             .newBuilder()
             .setHeaderProto(headerProto)
             .setTypeProto(typeProto)
@@ -293,7 +293,7 @@ public class NettyRpc implements Rpc {
         payloadByteLength += dataPacket.getPayload().stream().mapToLong(data -> data.length).sum();
         sendByteLength += dataPacketProto.getSerializedSize();
         dataPacketNum++;
-        dataSendManager.sendData(partyIdHashMap.get(header.getReceiverId()), dataPacketProto);
+        simpleDataSendManager.sendData(partyIdHashMap.get(header.getReceiverId()), dataPacketProto);
     }
 
     @Override
@@ -352,25 +352,25 @@ public class NettyRpc implements Rpc {
             if (otherPartyId < ownPartyId) {
                 // 如果对方排序比自己小，则自己是client，需要给对方发送同步信息
                 DataPacketHeader clientSynchronizeHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_SYNCHRONIZE.ordinal(),
+                    Long.MAX_VALUE - ownPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.CLIENT_SYNCHRONIZE.ordinal(),
                     ownPartyId, otherPartyId
                 );
                 send(DataPacket.fromByteArrayList(clientSynchronizeHeader, new LinkedList<>()));
                 // 获得对方的回复
                 DataPacketHeader serverSynchronizeHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.SERVER_SYNCHRONIZE.ordinal(),
+                    Long.MAX_VALUE - otherPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.SERVER_SYNCHRONIZE.ordinal(),
                     otherPartyId, ownPartyId
                 );
                 receive(serverSynchronizeHeader);
             } else if (otherPartyId > ownPartyId) {
                 // 如果对方排序比自己大，则自己是server
                 DataPacketHeader clientSynchronizeHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_SYNCHRONIZE.ordinal(),
+                    Long.MAX_VALUE - otherPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.CLIENT_SYNCHRONIZE.ordinal(),
                     otherPartyId, ownPartyId
                 );
                 receive(clientSynchronizeHeader);
                 DataPacketHeader serverSynchronizeHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.SERVER_SYNCHRONIZE.ordinal(),
+                    Long.MAX_VALUE - ownPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.SERVER_SYNCHRONIZE.ordinal(),
                     ownPartyId, otherPartyId
                 );
                 send(DataPacket.fromByteArrayList(serverSynchronizeHeader, new LinkedList<>()));
@@ -386,25 +386,25 @@ public class NettyRpc implements Rpc {
             if (otherPartyId < ownPartyId) {
                 // 如果对方排序比自己小，则自己是client，需要给对方发送连接信息
                 DataPacketHeader clientFinishHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_FINISH.ordinal(),
+                    Long.MAX_VALUE - ownPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.CLIENT_FINISH.ordinal(),
                     ownPartyId, otherPartyId
                 );
                 send(DataPacket.fromByteArrayList(clientFinishHeader, new LinkedList<>()));
                 // 获得对方的回复
                 DataPacketHeader serverFinishHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.SERVER_FINISH.ordinal(),
+                    Long.MAX_VALUE - otherPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.SERVER_FINISH.ordinal(),
                     otherPartyId, ownPartyId
                 );
                 receive(serverFinishHeader);
             } else if (otherPartyId > ownPartyId) {
                 // 如果对方排序比自己大，则自己是server
                 DataPacketHeader clientFinishHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - otherPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.CLIENT_FINISH.ordinal(),
+                    Long.MAX_VALUE - otherPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.CLIENT_FINISH.ordinal(),
                     otherPartyId, ownPartyId
                 );
                 receive(clientFinishHeader);
                 DataPacketHeader serverFinishHeader = new DataPacketHeader(
-                    Long.MAX_VALUE - ownPartyId, NettyPtoDesc.getInstance().getPtoId(), NettyPtoDesc.StepEnum.SERVER_FINISH.ordinal(),
+                    Long.MAX_VALUE - ownPartyId, SimpleNettyPtoDesc.getInstance().getPtoId(), SimpleNettyPtoDesc.StepEnum.SERVER_FINISH.ordinal(),
                     ownPartyId, otherPartyId
                 );
                 send(DataPacket.fromByteArrayList(serverFinishHeader, new LinkedList<>()));
@@ -412,7 +412,7 @@ public class NettyRpc implements Rpc {
         });
         try {
             // 关闭数据接收服务
-            dataReceiveThread.close();
+            simpleDataReceiveThread.close();
             // 通过CyclicBarrier变量与主线程进行同步
             cyclicBarrier.await();
         } catch (InterruptedException | BrokenBarrierException e) {

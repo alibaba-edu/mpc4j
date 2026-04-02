@@ -9,15 +9,15 @@ import edu.alibaba.mpc4j.common.rpc.desc.PtoDescManager;
  * @author Weiran Liu
  * @date 2021/06/06
  */
-class NettyPtoDesc implements PtoDesc {
+class SimpleNettyPtoDesc implements PtoDesc {
     /**
      * 协议ID
      */
-    private static final int PTO_ID = Math.abs((int)3448038492420117282L);
+    private static final int PTO_ID = Math.abs((int) 3448038492420117282L);
     /**
      * 协议名称
      */
-    private static final String PTO_NAME = "NETTY_CONNECT";
+    private static final String PTO_NAME = "SIMPLE_NETTY_CONNECT";
 
     /**
      * 协议步骤
@@ -56,12 +56,12 @@ class NettyPtoDesc implements PtoDesc {
     /**
      * 单例模式
      */
-    private static final NettyPtoDesc INSTANCE = new NettyPtoDesc();
+    private static final SimpleNettyPtoDesc INSTANCE = new SimpleNettyPtoDesc();
 
     /**
      * 私有构造函数
      */
-    private NettyPtoDesc() {
+    private SimpleNettyPtoDesc() {
         // empty
     }
 

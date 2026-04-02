@@ -1,6 +1,6 @@
 package edu.alibaba.mpc4j.common.rpc.impl.netty;
 
-import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.NettyRpcProtobuf;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.protobuf.SimpleNettyRpcProtobuf;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacketBuffer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -22,7 +22,7 @@ import java.util.concurrent.CyclicBarrier;
  * @author Li Peng, Weiran Liu
  * @date 2020/10/12
  */
-public class DataReceiveThread extends Thread {
+public class SimpleDataReceiveThread extends Thread {
     /**
      * 自己的参与方信息
      */
@@ -54,7 +54,7 @@ public class DataReceiveThread extends Thread {
      * @param ownParty 参与方自身信息
      * @param cyclicBarrier 用于线程同步的cyclicBarrier
      */
-    public DataReceiveThread(NettyParty ownParty, CyclicBarrier cyclicBarrier, DataPacketBuffer dataPacketBuffer) {
+    public SimpleDataReceiveThread(NettyParty ownParty, CyclicBarrier cyclicBarrier, DataPacketBuffer dataPacketBuffer) {
         this.ownParty = ownParty;
         this.dataPacketBuffer = dataPacketBuffer;
         this.cyclicBarrier = cyclicBarrier;
@@ -66,7 +66,7 @@ public class DataReceiveThread extends Thread {
     @Override
     public void run() {
         try {
-            DataReceiveHandler dataReceiveHandler = new DataReceiveHandler(dataPacketBuffer);
+            SimpleDataReceiveHandler simpleDataReceiveHandler = new SimpleDataReceiveHandler(dataPacketBuffer);
             // (1) 创建EventLoopGroup
             bossGroup = new NioEventLoopGroup();
             workerGroup = new NioEventLoopGroup();
@@ -84,10 +84,10 @@ public class DataReceiveThread extends Thread {
                         // 由于使用protobuf作为协议解析，需要先添加以下两个Decoder()
                         ch.pipeline().addLast(new ProtobufVarint32FrameDecoder());
                         ch.pipeline().addLast(
-                            new ProtobufDecoder(NettyRpcProtobuf.DataPacketProto.getDefaultInstance())
+                            new ProtobufDecoder(SimpleNettyRpcProtobuf.DataPacketProto.getDefaultInstance())
                         );
                         // 自定义的协议解析handler
-                        ch.pipeline().addLast(dataReceiveHandler);
+                        ch.pipeline().addLast(simpleDataReceiveHandler);
                     }
                 });
             // (6) 异步地绑定服务器；调用 sync()方法阻塞等待直到绑定完成

@@ -7,8 +7,8 @@ import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.file.FileRpcManager;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpc;
 import edu.alibaba.mpc4j.common.rpc.impl.memory.MemoryRpcManager;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyRpc;
-import edu.alibaba.mpc4j.common.rpc.impl.netty.NettyRpcManager;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.SimpleNettyRpc;
+import edu.alibaba.mpc4j.common.rpc.impl.netty.SimpleNettyRpcManager;
 import edu.alibaba.mpc4j.common.rpc.utils.DataPacket;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -42,7 +42,7 @@ public class RpcTest {
         // FileRpc
         configurations.add(new Object[] {FileRpc.class.getSimpleName(), new FileRpcManager(3),});
         // NettyRpc
-        configurations.add(new Object[] {NettyRpc.class.getSimpleName(), new NettyRpcManager(3, 8800),});
+        configurations.add(new Object[] {SimpleNettyRpc.class.getSimpleName(), new SimpleNettyRpcManager(3, 8800),});
 
         return configurations;
     }

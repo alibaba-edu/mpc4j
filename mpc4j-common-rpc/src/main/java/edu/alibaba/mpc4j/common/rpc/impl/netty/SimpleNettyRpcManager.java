@@ -14,13 +14,13 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 /**
- * 负责创建和维护所有NettyRpc的实例。
+ * Simple Netty RPC manager, used to create and maintain all SimpleNettyRpc instances.
  *
  * @author Feng Qing, Weiran Liu
  * @date 2020/10/12
  */
-public class NettyRpcManager implements RpcManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyRpcManager.class);
+public class SimpleNettyRpcManager implements RpcManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleNettyRpcManager.class);
     /**
      * 默认IP地址，本地测试时都使用本地地址
      */
@@ -36,7 +36,7 @@ public class NettyRpcManager implements RpcManager {
     /**
      * 所有参与方RPC
      */
-    private final Map<Integer, NettyRpc> nettyRpcMap;
+    private final Map<Integer, SimpleNettyRpc> nettyRpcMap;
 
     /**
      * 初始化Netty通信管理器。
@@ -44,7 +44,7 @@ public class NettyRpcManager implements RpcManager {
      * @param partyNum 参与方数量。
      * @param startPort 起始端口。
      */
-    public NettyRpcManager(int partyNum, int startPort) {
+    public SimpleNettyRpcManager(int partyNum, int startPort) {
         Preconditions.checkArgument(partyNum > 1, "Number of parties must be greater than 1");
         this.partyNum = partyNum;
         nettyPartySet = new HashSet<>(partyNum);
@@ -58,8 +58,8 @@ public class NettyRpcManager implements RpcManager {
         });
         // 将所有的NettyRpc对象放到一个集合里
         for (NettyParty nettyParty : nettyPartySet) {
-            NettyRpc nettyRpc = new NettyRpc(nettyParty, nettyPartySet);
-            nettyRpcMap.put(nettyRpc.ownParty().getPartyId(), nettyRpc);
+            SimpleNettyRpc simpleNettyRpc = new SimpleNettyRpc(nettyParty, nettyPartySet);
+            nettyRpcMap.put(simpleNettyRpc.ownParty().getPartyId(), simpleNettyRpc);
             LOGGER.debug("Add Netty party: {}", nettyParty);
         }
     }

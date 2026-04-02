@@ -81,13 +81,12 @@ public class NettyParty implements Party {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof NettyParty)) {
+        if (!(obj instanceof NettyParty that)) {
             return false;
         }
         if (this == obj) {
             return true;
         }
-        NettyParty that = (NettyParty)obj;
         return new EqualsBuilder()
             .append(this.partyId, that.partyId)
             .append(this.partyName, that.partyName)
