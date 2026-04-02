@@ -112,8 +112,7 @@ public class SimpleNettyRpc implements Rpc {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             serverSocket.setReuseAddress(true);
         } catch (IOException e) {
-            e.printStackTrace();
-            LOGGER.error("configure error, port: {} may be already in use. please check the running process or change the port", port);
+            LOGGER.error("configure error, port: {} may be already in use. please check the running process or change the port", port, e);
             System.exit(1);
         }
     }
@@ -416,7 +415,8 @@ public class SimpleNettyRpc implements Rpc {
             // 通过CyclicBarrier变量与主线程进行同步
             cyclicBarrier.await();
         } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
+            LOGGER.error("Interrupted while disconnecting", e);
+            Thread.currentThread().interrupt();
         }
         LOGGER.info("{} disconnected", ownParty);
     }

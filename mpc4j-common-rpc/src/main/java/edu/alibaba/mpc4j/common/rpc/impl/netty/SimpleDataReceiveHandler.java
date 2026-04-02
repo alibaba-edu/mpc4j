@@ -14,18 +14,32 @@ import edu.alibaba.mpc4j.common.tool.utils.SerializeUtils;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * ServerHandler for handling received data.
+ * 接收端Channel Handler，处理入站数据。
+ * <p>
+ * 当Channel收到数据时，Netty会依次调用pipeline中的Handler：
+ * ProtobufVarint32FrameDecoder → ProtobufDecoder → 本Handler.channelRead()
+ * </p>
+ * <p>
+ * <code>@ChannelHandler.Sharable</code>注解说明：
+ * <ul>
+ *   <li>表示此Handler可以安全地被多个Channel共享</li>
+ *   <li>dataPacketBuffer是线程安全的，可以被多Channel并发写入</li>
+ * </ul>
+ * </p>
  *
  * @author Feng Qing, Weiran Liu
  * @date 2020/10/12
  */
 @ChannelHandler.Sharable
 public class SimpleDataReceiveHandler extends ChannelInboundHandlerAdapter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleDataReceiveHandler.class);
     /**
      * buffer
      */
@@ -37,6 +51,8 @@ public class SimpleDataReceiveHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        // 当Pipeline中的上一个Handler（ProtobufDecoder）完成解码后，调用此方法
+        // msg已经被解码为DataPacketProto对象
         // read data packet from channel
         DataPacketProto dataPacketProto = (DataPacketProto) msg;
         // handle header
@@ -73,8 +89,10 @@ public class SimpleDataReceiveHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        // 捕获到任何异常时都会调用exceptionCaught， 打印异常栈跟踪
-        cause.printStackTrace();
+        // 当Pipeline中任何Handler抛出异常时，异常会沿Pipeline传播，最终调用此方法
+        // 对于SimpleNettyRpc，我们假设网络稳定，异常应快速暴露而非静默恢复
+        // 捕获到任何异常时都会调用exceptionCaught，记录异常并关闭channel
+        LOGGER.error("Exception caught in receive handler, closing channel: {}", ctx.channel(), cause);
         ctx.close();
     }
 }
