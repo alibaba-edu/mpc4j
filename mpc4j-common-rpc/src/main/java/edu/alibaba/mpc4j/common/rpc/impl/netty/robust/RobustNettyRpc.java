@@ -89,21 +89,10 @@ public class RobustNettyRpc implements Rpc {
      * 发送字节长度
      */
     private long sendByteLength;
-
     /**
      * 可选的发送管道额外Handler（如测试用的故障注入Handler）；null表示不注入
      */
     private final ChannelHandler extraSendHandler;
-
-    /**
-     * 构建RobustNettyRpc（不带额外Handler）。
-     *
-     * @param ownParty 参与方信息。
-     * @param partySet 所有参与方集合。
-     */
-    public RobustNettyRpc(NettyParty ownParty, Set<NettyParty> partySet) {
-        this(ownParty, partySet, null);
-    }
 
     /**
      * 构建RobustNettyRpc。

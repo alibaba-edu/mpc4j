@@ -66,13 +66,6 @@ public class RobustDataSendManager {
     private final ChannelPoolMap<InetSocketAddress, FixedChannelPool> poolMap;
 
     /**
-     * 构建发送管理器（不带故障注入Handler）。
-     */
-    RobustDataSendManager() {
-        this(null);
-    }
-
-    /**
      * 构建发送管理器。
      * <p>
      * 初始化流程：
